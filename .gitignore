@@ -1,0 +1,37 @@
+# Dependency directories
+node_modules/
+
+# Output of build tools
+dist/
+build/
+out/
+*.log
+
+# Environment variables file
+.env
+
+# IDE and editor files
+.vscode/
+.idea/
+
+
+
+# TypeScript cache
+*.tsbuildinfo
+
+# macOS specific files
+.DS_Store
+
+# Windows thumbnail cache files
+Thumbs.db
+
+# npm package locks
+package-lock.json
+yarn.lock
+
+
+coverage/
+
+test-results/
+
+dbdump/kanaclean.sql
