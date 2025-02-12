@@ -3,10 +3,9 @@
   "display": "Shared UI",
   "extends": "./base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "allowJs": true,
     "skipLibCheck": true,
