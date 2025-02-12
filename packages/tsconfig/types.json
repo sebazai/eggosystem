@@ -3,7 +3,7 @@
   "display": "Shared Types",
   "extends": "./base.json",
   "compilerOptions": {
-    "outDir": "./dist",
+    "outDir": "dist",
     "declaration": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true

@@ -2,7 +2,7 @@
   "extends": "@eggosystem/tsconfig/ui.json",
   "include": ["."],
   "compilerOptions": {
-    //"outDir": "dist"
+    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "@eggosystem/ui/*": ["./src/*"],

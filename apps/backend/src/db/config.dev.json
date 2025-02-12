@@ -1,0 +1,9 @@
+{
+  "mysql": {
+    "server": "devdb",
+    "port": "3306",
+    "user": "root",
+    "pass": "dev-pass",
+    "db": "kana"
+  }
+}

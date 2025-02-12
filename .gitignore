@@ -33,12 +33,6 @@ package-lock.json
 yarn.lock
 
 
-/coverage/
-/test-results/
-
-/dbdump/kanaclean.sql
-
-
 .next# next.js
 /.next/
 
@@ -53,3 +47,13 @@ packages/*/dist.turbo
 /test-results/
 
 .turbo/
+
+
+**/coverage/
+**/test-results/
+
+# apps/backend/
+**/dbdump/kanaclean.sql
+
+
+
