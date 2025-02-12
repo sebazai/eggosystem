@@ -13,7 +13,7 @@
     "lint:fix": "turbo lint --continue -- --fix",
     "clean": "turbo clean",
     "check-types": "turbo check-types",
-    "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\""
   },
   "keywords": [
     "kanahub",

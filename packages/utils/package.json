@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "check-types": "tsc --noEmit",
-    "build": "tsup",
     "lint": "eslint ."
   },
   "keywords": [],

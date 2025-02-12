@@ -6,7 +6,6 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "add-shadcn-component": "pnpm dlx shadcn@latest add",
-    "build": "tsup",
     "lint": "eslint ."
   },
   "keywords": [],
