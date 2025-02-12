@@ -12,7 +12,7 @@
   "scripts": {
     "test": "jest --coverage --runInBand",
     "build": "tsc -p .",
-    "start": "node .",
+    "start": "node ./dist/server.js",
     "dev": "nodemon server.ts",
     "lint": "eslint .",
     "migrate": "knex migrate:latest",
