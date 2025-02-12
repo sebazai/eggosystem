@@ -1,8 +1,8 @@
 {
-  "name": "kanastats-backend",
+  "name": "backend",
   "version": "1.0.0",
   "description": "Backend for CS stats",
-  "main": "build/app.js",
+  "main": "dist/app.js",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,css,scss,md}": [
       "prettier --write",
