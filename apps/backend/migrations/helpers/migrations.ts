@@ -55,7 +55,7 @@ export const migrateCompanies = async () => {
 
   for (const query of insertUniqueCompaniesQueries) {
     if (query) {
-      await runNewDbQuery(query) 
+      await runNewDbQuery(query);
     }
   }
   console.log("Companies migrated");
