@@ -1,23 +1,13 @@
-import { fixupPluginRules } from "@eslint/compat";
 import eslint from "@eslint/js";
-import eslintConfigPrettier from "eslint-config-prettier";
-import _import from "eslint-plugin-import";
-import perfectionist from "eslint-plugin-perfectionist";
 import prettier from "eslint-plugin-prettier";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-import flatCompat from "./compat.js";
+const tsConfig = tseslint.configs.strict;
 
-const tsConfig = /** @type {import("eslint").Linter.Config[]} */ (tseslint.configs.strict);
-
-/** @type {import("eslint").Linter.Config[]} */
 export default [
   eslint.configs.recommended,
   ...tsConfig,
-  eslintConfigPrettier,
-  perfectionist.configs["recommended-natural"],
-  ...flatCompat.plugins("eslint-plugin-only-warn"),
   {
     languageOptions: {
       globals: {
@@ -32,7 +22,6 @@ export default [
     },
     plugins: {
       "@typescript-eslint": tseslint.plugin,
-      import: fixupPluginRules(_import),
       prettier,
     },
   },
@@ -78,12 +67,6 @@ export default [
       "import/no-anonymous-default-export": "off",
       "no-duplicate-imports": "error",
       "no-unused-vars": "off",
-      "perfectionist/sort-objects": [
-        "error",
-        {
-          type: "alphabetical",
-        },
-      ],
       "prefer-arrow-callback": "off",
       "prettier/prettier": [
         "error",

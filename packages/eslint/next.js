@@ -1,19 +1,24 @@
-import { fixupConfigRules } from "@eslint/compat";
 import next from "@next/eslint-plugin-next";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
 import baseConfig from "./base.js";
-import flatCompat from "./compat.js";
 
-const nextConfig = /** @type {import("eslint").Linter.Config[]} */ (
-  fixupConfigRules(
-    /** @type {import("@eslint/compat").FixupConfigArray} */
-    (flatCompat.config(next.configs["core-web-vitals"]))
-  )
-);
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { FlatCompat } from "@eslint/eslintrc";
 
-/** @type {import("eslint").Linter.Config[]} */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+const nextConfig = compat.config({
+  extends: ["next", "prettier", "next/core-web-vitals", "next/typescript"],
+});
+
 export default [
   ...baseConfig,
   ...nextConfig,
@@ -35,9 +40,6 @@ export default [
       next,
     },
     rules: {
-      // Next.js specific rules
-      "@next/next/no-html-link-for-pages": "off",
-      "@next/next/no-img-element": "off",
       // TypeScript specific rules
       "@typescript-eslint/array-type": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
@@ -49,11 +51,6 @@ export default [
           prefer: "type-imports",
         },
       ],
-      "@typescript-eslint/no-empty-function": "off",
-
-      // Import/Export rules
-      "import/no-default-export": "off",
-      "import/prefer-default-export": "off",
 
       "react/display-name": "off",
       "react/prop-types": "off",
