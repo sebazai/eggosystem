@@ -1,43 +1,86 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response } from 'express';
-import { getPlayers, getPlayerBySteamId, getPlayersByFilters, getPlayerLeaderboard } from '../models/player.models';
+import { Request, Response } from "express";
+import {
+  getPlayers,
+  getPlayerBySteamId,
+  getPlayersByFilters,
+  getPlayerLeaderboard,
+} from "../models/player.models";
 
-export const getPlayersController = async (req: Request, res: Response): Promise<void> => {
+export const getPlayersController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const players = await getPlayers();
   res.status(200).json({ players });
 };
 
-export const getPlayerBySteamIdController = async (req: Request, res: Response): Promise<void> => {
+export const getPlayerBySteamIdController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const steam_id = req.params.steam_id;
   const player = await getPlayerBySteamId(steam_id);
 
   if (!player) {
-    res.status(404).json({ message: 'User not found' });
+    res.status(404).json({ message: "User not found" });
     return;
   }
 
   res.status(200).json({ player });
 };
 
-export const getPlayersByFiltersController = async (req: Request, res: Response): Promise<void> => {
-  const { season_id, map, league_id, stage, team_id } = (req as any).parsedParams;
+export const getPlayersByFiltersController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { season_id, map, league_id, stage, team_id } = (req as any)
+    .parsedParams;
 
   // Call the model function with the parameters in the correct order
-  const players = await getPlayersByFilters(team_id, season_id, map, league_id, stage);
+  const players = await getPlayersByFilters(
+    team_id,
+    season_id,
+    map,
+    league_id,
+    stage,
+  );
 
   // Return the players as a response
   res.json(players);
 };
 
-export const getPlayerLeaderboardController = async (req: Request, res: Response): Promise<void> => {
-  const { season_id, map, league_id, stage, team_id, leaderboard } = (req as any).parsedParams;
-  const result = await getPlayerLeaderboard(leaderboard, team_id, season_id, map, league_id, stage);
+export const getPlayerLeaderboardController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { season_id, map, league_id, stage, team_id, leaderboard } = (
+    req as any
+  ).parsedParams;
+  const result = await getPlayerLeaderboard(
+    leaderboard,
+    team_id,
+    season_id,
+    map,
+    league_id,
+    stage,
+  );
   res.json(result);
 };
 
-export const getMultipleLeaderboardsController = async (req: Request, res: Response): Promise<void> => {
+export const getMultipleLeaderboardsController = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   const { parsedParams } = req;
-  const leaderboards = ['kills', 'assists', 'deaths', 'kast', 'kd', 'flash_assists']; // Add more as needed
+  const leaderboards = [
+    "kills",
+    "assists",
+    "deaths",
+    "kast",
+    "kd",
+    "flash_assists",
+  ]; // Add more as needed
 
   const results = await Promise.all(
     leaderboards.map((leaderboard) =>
@@ -47,9 +90,9 @@ export const getMultipleLeaderboardsController = async (req: Request, res: Respo
         parsedParams?.season_id,
         parsedParams?.map,
         parsedParams?.league_id,
-        parsedParams?.stage
-      )
-    )
+        parsedParams?.stage,
+      ),
+    ),
   );
 
   const response = leaderboards.reduce(
@@ -57,7 +100,7 @@ export const getMultipleLeaderboardsController = async (req: Request, res: Respo
       acc[leaderboard] = results[index];
       return acc;
     },
-    {} as { [key: string]: any[] }
+    {} as { [key: string]: any[] },
   );
 
   res.json(response);

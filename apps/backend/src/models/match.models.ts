@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { generateQueryWithFilters } from '../middlewares/queryFilter';
-import { runQuery } from '../db/mysqlRunQuery';
-import { Match } from '../db/interfaces';
+import { generateQueryWithFilters } from "../middlewares/queryFilter";
+import { runQuery } from "../db/mysqlRunQuery";
+import { Match } from "@eggosystem/types";
 
 export const getMatches = (): Promise<Match[]> => {
-  return runQuery('SELECT * FROM Matches');
+  return runQuery("SELECT * FROM Matches");
 };
 
-export const getMatchPlayerStats = async (id: number): Promise<Match | undefined> => {
+export const getMatchPlayerStats = async (
+  id: number,
+): Promise<Match | undefined> => {
   const query = `SELECT 
         p.name,
         team, 
@@ -30,7 +32,9 @@ export const getMatchPlayerStats = async (id: number): Promise<Match | undefined
   return result.length > 0 ? result[0] : undefined;
 };
 
-export const getMatchTeamStats = async (id: number): Promise<Match | undefined> => {
+export const getMatchTeamStats = async (
+  id: number,
+): Promise<Match | undefined> => {
   const query = `SELECT 
         if(ps.team=1,team1_ht_score,team2_ht_score) as team_ht_score,
         if(ps.team=1, team1_score-team1_ht_score,team2_score-team2_ht_score) as team_score,
@@ -53,23 +57,32 @@ export const getMatchTeamStats = async (id: number): Promise<Match | undefined> 
 };
 
 export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
-  const result = await runQuery<Match[]>(`SELECT round_info from MatchStats WHERE match_id=? ORDER BY round_number;`, [
-    id,
-  ]);
+  const result = await runQuery<Match[]>(
+    `SELECT round_info from MatchStats WHERE match_id=? ORDER BY round_number;`,
+    [id],
+  );
   return result.length > 0 ? result[0] : undefined;
 };
 
-export const getTopPlayers = async (id: number): Promise<Record<string, any>> => {
+export const getTopPlayers = async (
+  id: number,
+): Promise<Record<string, any>> => {
   const stats = [
-    { key: 'most_kills', column: 'kills' },
-    { key: 'most_adr', column: 'adr' },
-    { key: 'most_assists', column: 'assists' },
-    { key: 'most_awp_kills', column: 'awp_kills' },
-    { key: 'most_utility_damage', column: 'utility_damage' },
-    { key: 'most_first_kills', column: 'first_kills' },
-    { key: 'most_mates_flashed', column: 'mates_flashed' },
+    { key: "most_kills", column: "kills" },
+    { key: "most_adr", column: "adr" },
+    { key: "most_assists", column: "assists" },
+    { key: "most_awp_kills", column: "awp_kills" },
+    { key: "most_utility_damage", column: "utility_damage" },
+    { key: "most_first_kills", column: "first_kills" },
+    { key: "most_mates_flashed", column: "mates_flashed" },
   ];
-  const fetchStat = async ({ key, column }: { key: string; column: string }) => {
+  const fetchStat = async ({
+    key,
+    column,
+  }: {
+    key: string;
+    column: string;
+  }) => {
     const query = `
       SELECT name, ${column} 
       FROM PlayerStats ps 
@@ -91,7 +104,7 @@ export const getTopPlayers = async (id: number): Promise<Record<string, any>> =>
       acc[key] = value;
       return acc;
     },
-    {} as Record<string, any>
+    {} as Record<string, any>,
   );
 
   return results;
@@ -102,10 +115,10 @@ export const getMatchesByFilters = async (
   season_id?: number,
   map?: string,
   league_id?: number,
-  stage?: number
+  stage?: number,
 ): Promise<Match[]> => {
   // Base query
-  let baseQuery = `
+  const baseQuery = `
       SELECT t1.name as team1_name, t2.name as team2_name, team1_score, team2_score, date, l.name as league_name, CONCAT(UPPER(SUBSTRING(map, 4, 1)), SUBSTRING(map, 5)) as map
       FROM Matches m
        INNER JOIN Leagues l ON m.league_id = l.id
@@ -114,7 +127,11 @@ export const getMatchesByFilters = async (
       WHERE 1 = 1
       `;
 
-  let { query, queryParams } = generateQueryWithFilters(baseQuery, { team_id, season_id, map, league_id, stage }, true);
+  const { query, queryParams } = generateQueryWithFilters(
+    baseQuery,
+    { team_id, season_id, map, league_id, stage },
+    true,
+  );
 
   return runQuery(query, queryParams);
 };

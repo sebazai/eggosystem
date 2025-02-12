@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { app } from './src/app';
-import { endDbConnection } from './src/db/mysqlConnection';
+import { app } from "./src/app";
+import { endDbConnection } from "./src/db/mysqlConnection";
 
 let server: any;
 

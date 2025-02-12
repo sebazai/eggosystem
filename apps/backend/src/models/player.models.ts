@@ -1,22 +1,25 @@
-import { generateQueryWithFilters } from '../middlewares/queryFilter';
-import { runQuery } from '../db/mysqlRunQuery';
-import { Player } from '../db/interfaces';
+import { generateQueryWithFilters } from "../middlewares/queryFilter";
+import { runQuery } from "../db/mysqlRunQuery";
+import { Player } from "@eggosystem/types";
 
 const leaderboardExpressions: { [key: string]: string } = {
-  Kills: 'sum(ps.kills)',
-  Assists: 'sum(ps.assists)',
-  Deaths: 'sum(ps.deaths)',
-  KAST: 'avg(ps.kast)',
-  KD: 'sum(ps.kills) - sum(ps.deaths)',
-  flashAssists: 'sum(ps.flash_assists)',
+  Kills: "sum(ps.kills)",
+  Assists: "sum(ps.assists)",
+  Deaths: "sum(ps.deaths)",
+  KAST: "avg(ps.kast)",
+  KD: "sum(ps.kills) - sum(ps.deaths)",
+  flashAssists: "sum(ps.flash_assists)",
 };
 
 export const getPlayers = () => {
-  return runQuery<Player[]>('SELECT * FROM Players');
+  return runQuery<Player[]>("SELECT * FROM Players");
 };
 
 export const getPlayerBySteamId = async (steam_id: string) => {
-  const results = await runQuery<Player[]>(`SELECT * FROM Players WHERE steam_id = ?`, [steam_id]);
+  const results = await runQuery<Player[]>(
+    `SELECT * FROM Players WHERE steam_id = ?`,
+    [steam_id],
+  );
   return results.length > 0 ? results[0] : undefined;
 };
 
@@ -26,18 +29,33 @@ export const getPlayersByFilters = async (
   season_id?: number,
   map?: string,
   league_id?: number,
-  stage?: number
+  stage?: number,
 ): Promise<Player[]> => {
   // Base query
   const baseQuery = `
       SELECT p.name, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
-      ${['kills', 'assists', 'deaths', 'flash_assists', 'awp_kills', 'total_damage', 'headshots']
+      ${[
+        "kills",
+        "assists",
+        "deaths",
+        "flash_assists",
+        "awp_kills",
+        "total_damage",
+        "headshots",
+      ]
         .map((col) => `sum(ps.${col}) as ${col}`)
-        .join(', ')},
-      ${['enemies_flashed', 'mates_flashed', 'first_kills', 'first_deaths', 'kills_5', 'utility_damage']
+        .join(", ")},
+      ${[
+        "enemies_flashed",
+        "mates_flashed",
+        "first_kills",
+        "first_deaths",
+        "kills_5",
+        "utility_damage",
+      ]
         .map((col) => `sum(ps.${col}) as ${col}`)
-        .join(', ')},
-      ${['adr', 'kana_rating', 'hs_percent'].map((col) => `avg(ps.${col}) as ${col}`).join(', ')}
+        .join(", ")},
+      ${["adr", "kana_rating", "hs_percent"].map((col) => `avg(ps.${col}) as ${col}`).join(", ")}
       FROM PlayerStats ps
       INNER JOIN Players p ON p.steam_id = ps.steam_id
       INNER JOIN Matches m ON m.id = ps.match_id
@@ -45,16 +63,16 @@ export const getPlayersByFilters = async (
       INNER JOIN Teams t ON p.team_id = t.id
     `;
 
-  let { query, queryParams } = generateQueryWithFilters(baseQuery, {
+  const { query, queryParams } = generateQueryWithFilters(baseQuery, {
     team_id,
     season_id,
     map,
     league_id,
     stage,
   });
-  query += ' GROUP BY p.steam_id';
+  const fullQuery = query + " GROUP BY p.steam_id";
 
-  return runQuery(query, queryParams);
+  return runQuery(fullQuery, queryParams);
 };
 
 // Fix this...
@@ -64,7 +82,7 @@ export const getPlayerLeaderboard = async (
   season_id?: number,
   map?: string,
   league_id?: number,
-  stage?: number
+  stage?: number,
 ): Promise<Player[]> => {
   const leaderboardExpression = leaderboardExpressions[leaderboard];
   if (!leaderboardExpression) {
@@ -79,11 +97,12 @@ export const getPlayerLeaderboard = async (
     WHERE 1=1
   `;
 
-  let { query: subQueryWithFilters, queryParams: subQueryParams } = generateQueryWithFilters(subQuery, {
-    team_id,
-    season_id,
-    league_id,
-  });
+  const { query: subQueryWithFilters, queryParams: subQueryParams } =
+    generateQueryWithFilters(subQuery, {
+      team_id,
+      season_id,
+      league_id,
+    });
 
   const baseQuery = `
     SELECT p.name, t.name as team_name, ${leaderboardExpression} as ${leaderboard}

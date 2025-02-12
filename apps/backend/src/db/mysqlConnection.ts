@@ -1,5 +1,5 @@
-import mysql from 'mysql2/promise';
-import { envConfig } from '../configs/env';
+import mysql from "mysql2/promise";
+import { envConfig } from "../configs/env";
 
 const newDbPool = mysql.createPool({
   ...envConfig,

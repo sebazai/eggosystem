@@ -9,6 +9,7 @@
     "add-shadcn-component": "turbo run add-shadcn-component -- --",
     "build": "turbo build",
     "dev": "turbo dev",
+    "test": "turbo test",
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint --continue -- --fix",
     "clean": "turbo clean",
@@ -23,7 +24,7 @@
     "turbo": "2.4.1"
   },
   "devDependencies": {
-    "typescript": "5.7.3",
+    "typescript": "5.6.3",
     "postcss": "8.5.2",
     "@types/node": "22.13.1",
     "eslint": "9.20.1",

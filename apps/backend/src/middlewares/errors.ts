@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
+import { Request, Response } from "express";
 
 export const errorHandler = (err: Error, req: Request, res: Response) => {
   console.error(err);
-  res.status(500).send({ errors: [{ message: 'Something went wrong' }] });
+  res.status(500).send({ errors: [{ message: "Something went wrong" }] });
 };

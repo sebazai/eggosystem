@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import { Router } from "express";
 
-import parseParams from '../../middlewares/parseParams';
-import { filterPath } from './filters';
+import parseParams from "../../middlewares/parseParams";
+import { filterPath } from "./filters";
 
 const router = Router();
 

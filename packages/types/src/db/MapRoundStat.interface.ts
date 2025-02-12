@@ -9,6 +9,6 @@ export interface MapRoundStat {
     T: number[]; // Array of player steam IDs on the T side
     CT: number[]; // Array of player steam IDs on the CT side
   } | null; // optional, can be null
-  first_kill: 'CT' | 'T'; // 'CT' or 'T'
-  plant_site?: 'A' | 'B' | null; // CHAR(1), optional, can be null
+  first_kill: "CT" | "T"; // 'CT' or 'T'
+  plant_site?: "A" | "B" | null; // CHAR(1), optional, can be null
 }
