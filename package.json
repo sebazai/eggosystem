@@ -14,7 +14,12 @@
     "lint:fix": "turbo lint --continue -- --fix",
     "clean": "turbo clean",
     "check-types": "turbo check-types",
-    "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
+    "prepare": "husky init"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx,jsx}": "pnpm lint:fix",
+    "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format"
   },
   "keywords": [
     "kanahub",
@@ -24,13 +29,15 @@
     "turbo": "2.4.1"
   },
   "devDependencies": {
-    "typescript": "5.6.3",
-    "postcss": "8.5.2",
+    "@eggosystem/eslint": "workspace:*",
+    "@eggosystem/tsconfig": "workspace:*",
     "@types/node": "22.13.1",
     "eslint": "9.20.1",
+    "husky": "9.1.7",
+    "lint-staged": "15.4.3",
+    "postcss": "8.5.2",
     "prettier": "3.5.0",
-    "@eggosystem/eslint": "workspace:*",
-    "@eggosystem/tsconfig": "workspace:*"
+    "typescript": "5.6.3"
   },
   "packageManager": "pnpm@10.3.0+sha512.ee592eda8815a8a293c206bb0917c4bb0ff274c50def7cbc17be05ec641fc2d1b02490ce660061356bd0d126a4d7eb2ec8830e6959fb8a447571c631d5a2442d"
 }
