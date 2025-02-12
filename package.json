@@ -14,7 +14,7 @@
     "clean": "turbo clean",
     "check-types": "turbo check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
-    "prepare": "husky"
+    "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true"
   },
   "lint-staged": {
     "**/*.{js,ts,tsx,jsx}": "pnpm lint:fix",

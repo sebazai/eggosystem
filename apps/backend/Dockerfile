@@ -1,46 +1,23 @@
-# Builder stage
-FROM node:22-slim AS builder
-# Install pnpm globally
-RUN npm install -g pnpm
-# Set working directory
+# Base image
+FROM node:22-slim AS base
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
-COPY package.json pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 COPY apps/backend/package.json ./apps/backend/
+RUN npm install -g pnpm 
+# Builder stage
+FROM base AS builder
 COPY packages/ ./packages/
-
-# Install the shared dependencies
-RUN pnpm install
-
-# Copy and build the TypeScript source code
-COPY apps/backend/ ./apps/backend/ 
+COPY . .
+RUN pnpm install --frozen-lockfile
 RUN pnpm build --filter=backend
+# runner stage, lean image
+FROM base AS runner
+ENV  NODE_ENV=production
 
-# Production stage
-FROM builder AS runner
-ENV NODE_ENV=production
+RUN pnpm install --prod --frozen-lockfile
 
-USER node
+COPY --from=builder /usr/src/app/apps/backend/dist ./apps/backend/dist
 
-# Create and change to the app directory
-WORKDIR /app
-
-# Copy other necessary files (e.g., configuration files)
-COPY --from=builder --chown=node:node /usr/src/app/package.json ./
-
-# Copy node_modules from builder stage
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-# Copy built TypeScript code from builder stage
-COPY --from=builder /usr/src/app/apps/backend/dist ./dist
-# Copy built TypeScript code from builder stage
-COPY --from=builder --chown=node:node /usr/src/app/apps/backend/package.json ./dist/
-# Copy node_modules from builder stage
-COPY --from=builder /usr/src/app/apps/backend/node_modules ./dist/node_modules
-
-
-# Expose the port
-EXPOSE 8080
-
-# Specify the command to run your application
-CMD [ "pnpm", "start" ]
+EXPOSE 3001
+CMD [ "node", "apps/backend/dist/server.js" ]
