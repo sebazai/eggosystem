@@ -1,5 +1,4 @@
 import { config as baseConfig } from "@eggosystem/eslint/base";
-/** @type {import("eslint").Linter.Config[]} */
 export default [
   ...baseConfig,
   {

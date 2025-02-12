@@ -1,5 +1,5 @@
 {
   "extends": "@eggosystem/tsconfig/utils.json",
-  "include": ["**/*.ts", "eslint.config.mjs"],
+  "include": ["src/**/*.ts", "eslint.config.mjs"],
   "exclude": ["node_modules"]
 }

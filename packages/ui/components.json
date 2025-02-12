@@ -5,17 +5,17 @@
   "tsx": true,
   "tailwind": {
     "config": "tailwind.config.ts",
-    "css": "src/index.css",
+    "css": "src/styles/globals.css",
     "baseColor": "zinc",
     "cssVariables": true,
     "prefix": ""
   },
   "aliases": {
     "components": "@eggosystem/ui/components",
-    "utils": "@eggosystem/ui/lib/utils",
+    "ui": "@eggosystem/ui/components",
     "hooks": "@eggosystem/ui/hooks",
-    "lib": "@eggosystem/ui/lib",
-    "ui": "@eggosystem/ui/components"
+    "utils": "@eggosystem/utils/styles",
+    "lib/utils": "@eggosystem/utils/styles"
   },
   "iconLibrary": "lucide"
 }

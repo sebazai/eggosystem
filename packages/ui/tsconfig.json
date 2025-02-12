@@ -1,10 +1,15 @@
 {
   "extends": "@eggosystem/tsconfig/ui.json",
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "tailwind.config.ts",
-    "eslint.config.mjs"
-  ],
+  "include": ["."],
+  "compilerOptions": {
+    //"outDir": "dist"
+    "baseUrl": ".",
+    "paths": {
+      "@eggosystem/ui/*": ["./src/*"],
+      "@eggosystem/ui/components/*": ["./src/components/*"],
+      "@eggosystem/ui/hooks/*": ["./src/hooks/*"],
+      "@eggosystem/lib/utils": ["../utils/src/styles"]
+    }
+  },
   "exclude": ["node_modules"]
 }
