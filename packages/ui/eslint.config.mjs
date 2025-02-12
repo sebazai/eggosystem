@@ -1,2 +1,2 @@
-import reactInternalConfig from "@eggosystem/eslint/react-internal";
-export default [...reactInternalConfig];
+import { config } from "@eggosystem/eslint/react-internal";
+export default [...config];

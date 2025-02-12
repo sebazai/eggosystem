@@ -1,2 +1,2 @@
-import nextJsConfig from "@eggosystem/eslint/next";
+import { config as nextJsConfig } from "@eggosystem/eslint/next";
 export default [...nextJsConfig];

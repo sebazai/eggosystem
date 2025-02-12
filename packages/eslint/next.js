@@ -1,78 +1,51 @@
-import next from "@next/eslint-plugin-next";
+import js from "@eslint/js";
+import pluginNext from "@next/eslint-plugin-next";
+import eslintConfigPrettier from "eslint-config-prettier";
+import pluginReact from "eslint-plugin-react";
+import pluginReactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-import baseConfig from "./base.js";
+import { config as baseConfig } from "./base.js";
 
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const nextConfig = compat.config({
-  extends: ["next", "prettier", "next/core-web-vitals", "next/typescript"],
-});
-
-export default [
+/**
+ * A custom ESLint configuration for libraries that use Next.js.
+ *
+ * @type {import("eslint").Linter.Config}
+ * */
+export const config = [
   ...baseConfig,
-  ...nextConfig,
+  js.configs.recommended,
+  eslintConfigPrettier,
+  ...tseslint.configs.recommended,
   {
+    ...pluginReact.configs.flat.recommended,
     languageOptions: {
+      ...pluginReact.configs.flat.recommended.languageOptions,
       globals: {
-        ...globals.node,
-        ...globals.browser,
-        JSX: true,
-        React: true,
-      },
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
+        ...globals.serviceworker,
       },
     },
+  },
+  {
     plugins: {
-      "@typescript-eslint": tseslint.plugin,
-      next,
+      "@next/next": pluginNext,
     },
     rules: {
-      // TypeScript specific rules
-      "@typescript-eslint/array-type": "off",
-      "@typescript-eslint/consistent-type-definitions": "off",
-
-      "@typescript-eslint/consistent-type-imports": [
-        "warn",
-        {
-          fixStyle: "inline-type-imports",
-          prefer: "type-imports",
-        },
-      ],
-
-      "react/display-name": "off",
-      "react/prop-types": "off",
-      // React specific rules
-      "react/react-in-jsx-scope": "off",
+      ...pluginNext.configs.recommended.rules,
+      ...pluginNext.configs["core-web-vitals"].rules,
     },
-    settings: {
-      "import/parsers": {
-        "@typescript-eslint/parser": [".ts", ".tsx"],
-      },
-      "import/resolver": {
-        node: {
-          extensions: [".js", ".jsx", ".ts", ".tsx"],
-        },
-        typescript: {
-          alwaysTryTypes: true,
-          project: ["./tsconfig.json"],
-        },
-      },
-      react: {
-        version: "detect",
-      },
+  },
+  {
+    plugins: {
+      "react-hooks": pluginReactHooks,
+    },
+    settings: { react: { version: "detect" } },
+    rules: {
+      ...pluginReactHooks.configs.recommended.rules,
+      // React scope no longer necessary with new JSX transform.
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
     },
   },
 ];
