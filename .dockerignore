@@ -1,0 +1,12 @@
+**/.git
+
+**/Dockerfile
+**/.dockerignore
+**/node_modules
+**/npm-debug.log
+**/README.md
+**/.next
+**/.pnpm-store
+**/.husky
+**/.devcontainer
+**/.turbo
