@@ -1,5 +1,7 @@
 # Dependency directories
-node_modules/
+node_modules
+packages/*/node_modules
+apps/*/node_modules
 
 # Output of build tools
 dist/
@@ -9,6 +11,7 @@ out/
 
 # Environment variables file
 .env
+.env*.local
 
 # IDE and editor files
 .vscode/
@@ -30,8 +33,23 @@ package-lock.json
 yarn.lock
 
 
-coverage/
+/coverage/
+/test-results/
 
-test-results/
+/dbdump/kanaclean.sql
 
-dbdump/kanaclean.sql
+
+.next# next.js
+/.next/
+
+.DS_Store
+
+*.tsbuildinfo
+.ideadist/**
+/dist
+
+packages/*/dist.turbo
+
+/test-results/
+
+.turbo/
