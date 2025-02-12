@@ -1,0 +1,25 @@
+{
+  "name": "Node.js with TypeScript",
+  "dockerFile": "Dockerfile",
+  "runArgs": ["--network=web"],
+  // Use 'docker-compose' if your development environment requires services such as databases
+  // "dockerComposeFile": "docker-compose.yml",
+  // Add the IDs of extensions you want installed when the container is created
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      "settings": {},
+      "extensions": ["streetsidesoftware.code-spell-checker"]
+    }
+  },
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [3000],
+  // Use 'portsAttributes' to set default properties for specific forwarded ports.
+  // More info: https://containers.dev/implementors/json_reference/#port-attributes
+  "portsAttributes": {
+    "3000": {
+      "label": "Hello Remote World",
+      "onAutoForward": "notify"
+    }
+  }
+}
