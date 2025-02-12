@@ -11,7 +11,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint --continue -- --fix",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "check-types": "turbo check-types"
   },
   "keywords": [
     "kanahub",
