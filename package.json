@@ -4,7 +4,6 @@
   "author": "Sebastian Sergelius",
   "license": "GPL-3.0",
   "description": "A unified monorepo for Kanahub’s frontend and backend services.",
-  "main": "index.js",
   "scripts": {
     "add-shadcn-component": "turbo run add-shadcn-component -- --",
     "build": "turbo build",
