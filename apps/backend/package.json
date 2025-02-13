@@ -3,12 +3,6 @@
   "version": "1.0.0",
   "description": "Backend for CS stats",
   "main": "dist/app.js",
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json,css,scss,md}": [
-      "prettier --write",
-      "eslint --fix"
-    ]
-  },
   "scripts": {
     "test": "jest --coverage --runInBand",
     "build": "tsc -p .",
