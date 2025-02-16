@@ -1,6 +1,7 @@
 services:
   backend:
     image: eggo-back
+    container_name: eggo-backend
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.dev
@@ -11,17 +12,12 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src # Mount source code for live reloading
-    environment: &env
-      - NODE_ENV=development
-      - DB_HOST=eggo-devdb
-      - DB_PORT=3306
-      - DB_USER=kanadbuser
-      - DB_PASSWORD=dev-pass
-      - DB_NAME=kanaliiga
+    env_file: "dev.env"
     command: 'pnpm --filter=backend dev'
 
   frontend:
     image: eggo-front
+    container_name: eggo-frontend
     build:
       context: .
       dockerfile: ./apps/frontend/Dockerfile
@@ -37,10 +33,11 @@ services:
     container_name: eggo-redis
 
   phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: eggo-phpmyadmin
     depends_on:
       eggo-devdb:
         condition: service_healthy
-    image: phpmyadmin/phpmyadmin
     ports:
       - 8082:80
     restart: always
@@ -89,7 +86,7 @@ services:
   #   command: 'pnpm --filter=backend migrate'
 
   backend-test:
-    container_name: be_test
+    container_name: eggo-back-test
     image: eggo-back
     build:
       context: .
@@ -99,7 +96,7 @@ services:
         condition: service_healthy
       # migrations:
       #   condition: service_completed_successfully
-    environment: *env
+    env_file: "dev.env"
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
     # ports:

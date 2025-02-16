@@ -1,19 +1,34 @@
-# KanaHub backend
+# Eggosystem
 
-This is the backend of a very shiny new project...
+This is the Egg o system for Kanaliiga hub
 
 ## Development environment
 
 `docker compose up`
 
-- docker compose up -d devdb
-- start devcontainer
-- npm run dev
+This will start everything you need (dev database with test seed, backend & frontend, redis, phpmyadmin and will run tests)
+
+- docker compose up
+
+Then open the folder in devcontainer, it should run pnpm install automatically so you get the tools too if you need
+to install some new packages etc and no need to install npm or anything on your own machine.
+
+Backend can be accessed from localhost:3001 and frontend from localhost:3000 via browser
+
+## Running tests on devcontainer
+
+### Backend
+
+Run all tests
+- pnpm --filter=backend test
+
+Run specific test, example run players tests
+- pnpm --filter=backend test players
 
 ## Database structure
 
-Read [docs/database.md](docs/database.md)
+Read [apps/backend/docs/database.md](apps/backend/docs/database.md)
 
 ## Other
 
-- if you need phpmyadmin, run docker compose up -d phpmyadmin, starts in localhost:8081 by default
+- Phpmyadmin runs as default with docker compose up, on port :8081 so just open http://localhost:8081 to access db (check passwords etc from [dev.env](dev.env))

@@ -1,17 +1,27 @@
 {
   "name": "Node.js with TypeScript",
   "dockerFile": "Dockerfile",
-  "runArgs": ["--network=web"],
+  // This could be useful so we could just start devcontainer and get db running
+  // But did not get it to work yeat // 16.2.2025 @JHa
+  // "dockerComposeFile": ["docker-compose.yml"], 
+  // "service": ["eggo-devdb"],
   // Use 'docker-compose' if your development environment requires services such as databases
-  // "dockerComposeFile": "docker-compose.yml",
+  "runArgs": ["--network=eggosystem_default", "--env-file","dev.env"],
   // Add the IDs of extensions you want installed when the container is created
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
       "settings": {},
-      "extensions": ["streetsidesoftware.code-spell-checker"]
+      "extensions": [
+        "streetsidesoftware.code-spell-checker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-tslint-plugin",
+        "ms-vscode.vscode-typescript-next"
+      ]
     }
   },
+  "postCreateCommand": "pnpm install",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [3000],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.

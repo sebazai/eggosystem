@@ -1,5 +1,6 @@
 # Base image
 FROM node:22-slim AS base
+ENV NODE_ENV=development
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
 # Copy monorepo things
@@ -7,17 +8,17 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
 # Copy backend package as well
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/ ./packages/
+
 # Builder stage
 FROM base AS builder
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --filter=!frontend --frozen-lockfile
 RUN pnpm build --filter=backend
+RUN rm -r node_modules/.pnpm/turbo-linux-*
+
+# Final stage
 FROM base AS runner
 # set environment variable
-ENV NODE_ENV=development
-# Ensure ts-node is available for Knex
-# ENV NODE_OPTIONS="--require ts-node/register"
-RUN pnpm install --frozen-lockfile
 # We need to copy these for backend express etc
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 # Copy apps backend

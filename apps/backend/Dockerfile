@@ -20,7 +20,7 @@ FROM base AS leaner
 ARG NODE_ENV=production
 # set environment variable
 ENV NODE_ENV=${NODE_ENV}
-RUN  pnpm install --prod --frozen-lockfile
+RUN pnpm install --filter=!frontend --prod --frozen-lockfile
 # Remove the turbo cache, it is not needed in the final image and makes image leaner
 RUN rm -r node_modules/.pnpm/turbo-linux-*
 # Finally the runner stage as final stage
