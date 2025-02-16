@@ -1,0 +1,27 @@
+# Base image
+FROM node:22-slim AS base
+WORKDIR /usr/src/app
+RUN npm install -g pnpm
+# Copy monorepo things
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
+# Copy backend package as well
+COPY apps/backend/package.json ./apps/backend/
+COPY packages/ ./packages/
+# Builder stage
+FROM base AS builder
+COPY . .
+RUN pnpm install --frozen-lockfile
+RUN pnpm build --filter=backend
+FROM base AS runner
+# set environment variable
+ENV NODE_ENV=development
+# Ensure ts-node is available for Knex
+# ENV NODE_OPTIONS="--require ts-node/register"
+RUN pnpm install --frozen-lockfile
+# We need to copy these for backend express etc
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Copy apps backend
+COPY --from=builder  /usr/src/app/apps/backend ./apps/backend
+
+EXPOSE 3001
+CMD [ "node", "apps/backend/dist/server.js" ]
