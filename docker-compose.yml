@@ -32,7 +32,7 @@ services:
     restart: always
     container_name: eggo-redis
 
-  phpmyadmin:
+  eggo-phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: eggo-phpmyadmin
     depends_on:

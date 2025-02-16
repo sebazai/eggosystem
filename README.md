@@ -4,14 +4,18 @@ This is the Egg o system for Kanaliiga hub
 
 ## Development environment
 
+Open devcontainer, it should run pnpm install automatically so you get the tools too if you need
+to install some new packages etc and no need to install npm or anything on your own machine. 
+
+It will also start the devdb and phpmyadmin from [docker-compose.yml](docker-compose.yml)
+
+### Other way 
+
 `docker compose up`
 
 This will start everything you need (dev database with test seed, backend & frontend, redis, phpmyadmin and will run tests)
 
 - docker compose up
-
-Then open the folder in devcontainer, it should run pnpm install automatically so you get the tools too if you need
-to install some new packages etc and no need to install npm or anything on your own machine.
 
 Backend can be accessed from localhost:3001 and frontend from localhost:3000 via browser
 

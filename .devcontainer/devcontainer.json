@@ -1,13 +1,9 @@
 {
   "name": "Node.js with TypeScript",
-  "dockerFile": "Dockerfile",
-  // This could be useful so we could just start devcontainer and get db running
-  // But did not get it to work yeat // 16.2.2025 @JHa
-  // "dockerComposeFile": ["docker-compose.yml"], 
-  // "service": ["eggo-devdb"],
-  // Use 'docker-compose' if your development environment requires services such as databases
-  "runArgs": ["--network=eggosystem_default", "--env-file","dev.env"],
-  // Add the IDs of extensions you want installed when the container is created
+  "dockerComposeFile": ["docker-compose.yml"], 
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {
