@@ -13,7 +13,7 @@ services:
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src # Mount source code for live reloading
     env_file: "dev.env"
-    command: 'pnpm --filter=backend dev'
+    command: "pnpm --filter=backend dev"
 
   frontend:
     image: eggo-front
@@ -51,8 +51,8 @@ services:
     restart: always
     container_name: eggo-devdb
     # If you need to access from own host with some other tool
-    # ports:
-    #   - 6666:3306
+    ports:
+      - 6666:3306
     environment:
       - MARIADB_ROOT_PASSWORD=dev-pass
       - MARIADB_USER=kanadbuser
@@ -64,7 +64,17 @@ services:
       # - ./apps/backend/dbdump/kanaliiga.sql:/docker-entrypoint-initdb.d/dump.sql -- For production migration...
       - ./apps/backend/seeds/dev/kana_dev_test_seed.sql:/docker-entrypoint-initdb.d/dump.sql
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$$MARIADB_ROOT_PASSWORD']
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MARIADB_ROOT_PASSWORD",
+        ]
       timeout: 20s
       retries: 10
 
@@ -90,7 +100,7 @@ services:
     image: eggo-back
     build:
       context: .
-      dockerfile:  ./apps/backend/Dockerfile.dev
+      dockerfile: ./apps/backend/Dockerfile.dev
     depends_on:
       eggo-devdb:
         condition: service_healthy
