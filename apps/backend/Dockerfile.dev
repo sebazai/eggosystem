@@ -12,9 +12,9 @@ COPY packages/ ./packages/
 # Builder stage
 FROM base AS builder
 COPY . .
-RUN pnpm install --filter=!frontend --frozen-lockfile
-RUN pnpm build --filter=backend
-RUN rm -r node_modules/.pnpm/turbo-linux-*
+RUN pnpm install --filter=!frontend
+# RUN pnpm build --filter=backend
+# RUN rm -r node_modules/.pnpm/turbo-linux-*
 
 # Final stage
 FROM base AS runner
@@ -25,4 +25,4 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder  /usr/src/app/apps/backend ./apps/backend
 
 EXPOSE 3001
-CMD [ "node", "apps/backend/dist/server.js" ]
+CMD [ "pnpm", "run", "dev" ]
