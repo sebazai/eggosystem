@@ -6,5 +6,10 @@
       "@eggosystem/types": ["../../packages/types/src"]
     }
   },
-  "include": ["src/**/*.ts", "eslint.config.mjs", "server.ts"]
+  "include": [
+    "src/**/*.ts",
+    "eslint.config.mjs",
+    "server.ts",
+    "migrations/**/*.ts"
+  ]
 }

@@ -31,9 +31,13 @@ Run specific test, example run players tests
 
 - pnpm --filter=backend test players
 
-## Database structure
+## Database
 
-Read [apps/backend/docs/database.md](apps/backend/docs/database.md)
+Read [docs/database.md](docs/database.md) for understanding DB Schema.
+
+### Migrating ebinstats prod
+
+Read [docs/migration.md](docs/migration.md).
 
 ## Other
 

@@ -70,7 +70,7 @@ export async function up(): Promise<void> {
         }
         console.log("SQL file imported successfully");
       } catch (error) {
-        console.error(`Error: ${error.message}`);
+        console.error(`Error: ${error}`);
       }
     }
 

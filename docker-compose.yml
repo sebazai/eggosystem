@@ -61,8 +61,8 @@ services:
       - MARIADB_MAX_ALLOWED_PACKET=128M
       - MARIADB_INNODB_LOG_FILE_SIZE=64M
     volumes:
-      # - ./apps/backend/dbdump/kanaliiga.sql:/docker-entrypoint-initdb.d/dump.sql -- For production migration...
-      - ./apps/backend/seeds/dev/kana_dev_test_seed.sql:/docker-entrypoint-initdb.d/dump.sql
+      - ./apps/backend/dbdump/kanaliiga.sql:/docker-entrypoint-initdb.d/dump.sql
+      # - ./apps/backend/seeds/dev/kana_dev_test_seed.sql:/docker-entrypoint-initdb.d/dump.sql
     healthcheck:
       test:
         [
@@ -78,22 +78,22 @@ services:
       timeout: 20s
       retries: 10
 
-  # migrations:
-  #   container_name: be_migrations
-  #   image: eggo-back
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/backend/Dockerfile.dev
-  #   depends_on:
-  #     eggo-devdb:
-  #       condition: service_healthy
-  #   environment: *env
-  #   working_dir: /usr/src/app/apps/backend
-  #   ports:
-  #     - 8485:3000
-  #   volumes:
-  #     - ./apps/dbdump:/usr/src/app/dbdump
-  #   command: 'pnpm --filter=backend migrate'
+  migrations:
+    container_name: be_migrations
+    image: eggo-back
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile.dev
+    depends_on:
+      eggo-devdb:
+        condition: service_healthy
+    env_file: "dev.env"
+    working_dir: /usr/src/app/apps/backend
+    ports:
+      - 8485:8485
+    volumes:
+      - ./apps/dbdump:/usr/src/app/dbdump
+    command: "pnpm --filter=backend migrate"
 
   backend-test:
     container_name: eggo-back-test
