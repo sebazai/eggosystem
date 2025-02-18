@@ -22,12 +22,14 @@ services:
     container_name: eggo-frontend
     build:
       context: .
-      dockerfile: ./apps/frontend/Dockerfile
+      dockerfile: ./apps/frontend/Dockerfile.dev
+    volumes:
+      - ./apps/frontend/src:/usr/src/app/apps/frontend/src # Mount source code for live reloading
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    command: ["node", "./apps/frontend/server.js"]
+    command: "pnpm --filter=frontend dev"
 
   eggo-redis:
     image: redis:7-alpine
