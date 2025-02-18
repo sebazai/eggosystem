@@ -1,5 +1,10 @@
 {
   "extends": "@eggosystem/tsconfig/express.json",
+  "compilerOptions": {
+    "paths": {
+      "@eggosystem/types": ["../../packages/types/src"]
+    }
+  },
   "include": [
     "src/**/*.ts",
     "eslint.config.mjs",
