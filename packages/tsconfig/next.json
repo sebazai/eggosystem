@@ -4,7 +4,8 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@eggosystem/lib/utils": ["../utils/src/styles"]
+      "@eggosystem/lib/utils": ["../utils/src/styles"],
+      "@eggosystem/types": ["../types/src"],
     },
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,

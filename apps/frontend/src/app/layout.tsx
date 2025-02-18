@@ -1,5 +1,6 @@
 import "@eggosystem/ui/globals.css";
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 
 import { cn } from "@eggosystem/utils/styles";
 
@@ -9,6 +10,45 @@ const META_THEME_COLORS = {
   light: "#ffffff",
   dark: "#09090b",
 };
+
+const kanaHeadingFonts = localFont({
+  fallback: ["system-ui", "arial"],
+  src: [
+    {
+      path: "../../public/fonts/NEXT_ART_Heavy.otf",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-headings",
+});
+
+const kanaFonts = localFont({
+  fallback: ["system-ui", "arial"],
+  src: [
+    {
+      path: "../../public/fonts/VeraMono.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/VeraMoIt.ttf",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/VeraMoBd.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/VeraMoBI.ttf",
+      weight: "700",
+      style: "italic",
+    },
+  ],
+  variable: "--font-body",
+});
 
 export const metadata: Metadata = {
   title: "Eggosystem",
@@ -41,7 +81,9 @@ export default function Layout({
       </head>
       <body
         className={cn(
-          "bg-background min-h-svh overscroll-none font-sans antialiased",
+          `bg-background min-h-svh overscroll-none font-sans antialiased`,
+          kanaFonts.variable,
+          kanaHeadingFonts.variable
         )}
       >
         <ThemeProvider

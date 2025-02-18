@@ -12,6 +12,7 @@
     "@eggosystem/types": "workspace:*",
     "@eggosystem/ui": "workspace:*",
     "@eggosystem/utils": "workspace:*",
+    "@next/font": "14.2.15",
     "@tailwindcss/postcss": "4.0.6",
     "next": "15.1.7",
     "next-themes": "0.4.3",

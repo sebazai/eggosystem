@@ -135,10 +135,31 @@
 }
 
 @layer base {
+  /* Kanaliigan oranssi: #f29209
+  Tummanharmaa: #161515
+  Valkoinen: #ffffff
+  Vaaleanruskea: #d09158 */
   * {
     @apply border-border outline-ring/50;
+    font-family: var(--font-body);
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1 {
+    font-size: var(--text-2xl);
+    color: #f29209;
+    font-family: var(--font-headings);
+  }
+  h2 {
+    font-size: var(--text-xl);
+    color: #d09158;
+    font-family: var(--font-headings);
+  }
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-headings);
   }
 }
