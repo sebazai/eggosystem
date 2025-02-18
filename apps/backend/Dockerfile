@@ -22,7 +22,7 @@ ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 RUN pnpm install --filter=!frontend --prod --frozen-lockfile
 # Remove the turbo cache, it is not needed in the final image and makes image leaner
-RUN rm -r node_modules/.pnpm/turbo-linux-*
+RUN rm -r node_modules/.pnpm/turbo-*
 # Finally the runner stage as final stage
 FROM node:22-slim AS runner
 WORKDIR /usr/src/app
