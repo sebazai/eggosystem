@@ -1,10 +1,7 @@
 {
   "extends": "@eggosystem/tsconfig/express.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "paths": {
-      "@eggosystem/types": ["../../packages/types/src"]
-    }
+    "outDir": "dist"
   },
   "include": [
     "src/**/*.ts",
@@ -12,5 +9,5 @@
     "server.ts",
     "migrations/**/*.ts"
   ],
-  "exclude": ["src/__tests__/**/*"]
+  "exclude": ["src/__tests__/**/*", "migrations/**/*"]
 }

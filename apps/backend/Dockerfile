@@ -30,9 +30,9 @@ WORKDIR /usr/src/app
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
 # Copy app dist
-COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./
 # Do not run as root
 USER node
 
 EXPOSE 3001
-CMD [ "node", "apps/backend/dist/server.js" ]
+CMD [ "node", "apps/backend/server.js" ]

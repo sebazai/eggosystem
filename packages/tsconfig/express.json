@@ -17,6 +17,9 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "removeComments": true,
-    "strict": true
+    "strict": true,
+    "paths": {
+      "@eggosystem/types": ["../../packages/types/src"]
+    }
   }
 }
