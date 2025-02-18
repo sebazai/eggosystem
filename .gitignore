@@ -1,7 +1,5 @@
 # Dependency directories
-node_modules
-packages/*/node_modules
-apps/*/node_modules
+**/node_modules
 
 # Output of build tools
 dist/
