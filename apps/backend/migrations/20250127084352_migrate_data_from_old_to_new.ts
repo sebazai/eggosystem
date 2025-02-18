@@ -15,7 +15,7 @@ import { envConnection } from "./helpers/migrationsDbConnections";
 export const config = { transaction: false };
 
 // Migrate data from the old 'kana' database to the new one if kana table exists
-export async function up(): Promise<void> {
+export async function up(knex: Knex): Promise<void> {
   const baseDbConfig = {
     client: "mysql2",
     connection: {
@@ -23,9 +23,9 @@ export async function up(): Promise<void> {
     },
   };
 
-  const knex = require("knex");
+  const knexi = require("knex");
   // Create a temporary connection without specifying a database
-  const tempDb = knex(baseDbConfig);
+  const tempDb = knexi(baseDbConfig);
 
   try {
     // Check if the 'kana' database exists
@@ -49,6 +49,8 @@ export async function up(): Promise<void> {
   await migrateTrades();
   await cleanTeamsWithCascade();
   await experimentalTeamsIntoCompanies();
+
+  await knex.raw("DROP DATABASE kana;");
 }
 
 // Rollback only if the 'kana' database exists, as we have got the data from the old database
@@ -77,9 +79,9 @@ export async function down(knex: Knex): Promise<void> {
   } finally {
     await tempDb.destroy(); // Close temporary connection
   }
-  await knex.raw("DELETE FROM Ranks");
+  await knex.raw("DELETE FROM SeasonPlayerRanks");
   await knex.raw("DELETE FROM PlayerStats");
-  await knex.raw("DELETE FROM Trades");
+  await knex.raw("DELETE FROM PlayerTrades");
   await knex.raw("DELETE FROM TeamRosters");
   await knex.raw("DELETE FROM Matches");
   await knex.raw("DELETE FROM MatchReservations");
@@ -92,6 +94,4 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM SeasonTeams");
   await knex.raw("DELETE FROM Teams");
   await knex.raw("DELETE FROM Companies");
-  await knex.raw("DELETE FROM Seasons");
-  await knex.raw("DELETE FROM Games");
 }

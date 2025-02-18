@@ -377,7 +377,6 @@ export const migrateMatchesAndReservations = async () => {
   const matchMapsPlayedAlreadyMigratedIds = new Set();
 
   for (const match of allOldMatches) {
-    console.log("Migrating match", match.id);
     const matchSeasonId = newLeaguesByLeagueIdToSeasonId[match.leagueID];
 
     // If one old match has been migrated, we don't want to migrate it again, i.e. if one match of a BO3 has been migrated, we know that all other one the same date the matches were played has been migrated, we can skip.

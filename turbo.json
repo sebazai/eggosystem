@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
+  "ui": "stream",
   "tasks": {
     "build": {
       "env": [
@@ -33,6 +33,9 @@
     },
     "add-shadcn-component": {
       "cache": false
-    }
+    },
+    "migrate": {},
+    "migrate:rollback": {},
+    "migrate:down": {}
   }
 }

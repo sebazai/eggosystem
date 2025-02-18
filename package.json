@@ -14,7 +14,10 @@
     "clean": "turbo clean",
     "check-types": "turbo check-types",
     "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
-    "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true"
+    "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true",
+    "migrate": "turbo migrate",
+    "migrate:rollback": "turbo migrate:rollback",
+    "migrate:down": "turbo migrate:down"
   },
   "lint-staged": {
     "**/*.{js,ts,tsx,jsx}": "pnpm lint:fix",

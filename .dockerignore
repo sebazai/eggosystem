@@ -1,12 +1,18 @@
 **/.git
 
-**/Dockerfile
+**/Dockerfile*
 **/.dockerignore
+
 **/node_modules
 **/npm-debug.log
-**/README.md
+**/*.md
+**/.DS_Store
+
+# Frontend
 **/.next
 **/.pnpm-store
+
+# Dev stuff
 **/.husky
 **/.devcontainer
 **/.turbo

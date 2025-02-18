@@ -5,7 +5,7 @@
   "main": "dist/app.js",
   "scripts": {
     "test": "jest --coverage --runInBand",
-    "build": "tsc -p .",
+    "build": "tsc -p tsconfig.prod.json",
     "start": "node ./dist/server.js",
     "dev": "nodemon server.ts",
     "lint": "eslint .",
