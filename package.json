@@ -21,7 +21,8 @@
     "seed": "turbo seed"
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx,jsx}": "pnpm lint:fix",
+    "**/*.{js,ts,tsx,jsx}": "pnpm --filter=!frontend lint:fix",
+    "**/apps/frontend/**/*.{js,ts,tsx,jsx}": "pnpm --filter=frontend lint:fix",
     "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format"
   },
   "keywords": [
