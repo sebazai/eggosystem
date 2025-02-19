@@ -4,25 +4,8 @@ ENV NODE_ENV=development
 WORKDIR /usr/src/app
 RUN npm install -g pnpm
 # Copy monorepo things
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
-# Copy backend package as well
-COPY apps/backend/package.json ./apps/backend/
-COPY packages/ ./packages/
-
-# Builder stage
-FROM base AS builder
 COPY . .
 RUN pnpm install --filter=!frontend
-# RUN pnpm build --filter=backend
-# RUN rm -r node_modules/.pnpm/turbo-linux-*
-
-# Final stage
-FROM base AS runner
-# set environment variable
-# We need to copy these for backend express etc
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-# Copy apps backend
-COPY --from=builder  /usr/src/app/apps/backend ./apps/backend
 
 EXPOSE 3001
 CMD [ "pnpm", "run", "dev" ]

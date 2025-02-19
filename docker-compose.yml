@@ -12,10 +12,24 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+      seed:
+        condition: service_completed_successfully
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src # Mount source code for live reloading
     env_file: "dev.env"
     command: "pnpm --filter=backend dev"
+
+  seed:
+    image: eggo-back
+    container_name: eggo-seed
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile.dev
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    env_file: "dev.env"
+    command: "pnpm --filter=backend seed"
 
   frontend:
     image: eggo-front

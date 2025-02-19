@@ -83,7 +83,7 @@ export default function Layout({
         className={cn(
           `bg-background min-h-svh overscroll-none font-sans antialiased`,
           kanaFonts.variable,
-          kanaHeadingFonts.variable
+          kanaHeadingFonts.variable,
         )}
       >
         <ThemeProvider

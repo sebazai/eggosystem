@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Backend for CS stats",
-  "main": "dist/app.js",
+  "main": "dist/server.js",
   "scripts": {
     "test": "jest --coverage --runInBand",
     "build": "tsc -p tsconfig.prod.json",
@@ -19,8 +19,6 @@
     "express.api",
     "typescript"
   ],
-  "author": "jari.haikonen@gmail.com",
-  "license": "ISC",
   "dependencies": {
     "@eggosystem/types": "workspace:*",
     "cors": "2.8.5",
