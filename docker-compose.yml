@@ -80,9 +80,6 @@ services:
       - MARIADB_DATABASE=kanaliiga
       - MARIADB_MAX_ALLOWED_PACKET=128M
       - MARIADB_INNODB_LOG_FILE_SIZE=64M
-    volumes:
-      - ./apps/backend/dbdump/kanaliiga.sql:/docker-entrypoint-initdb.d/dump.sql
-      # - ./apps/backend/seeds/dev/kana_dev_test_seed.sql:/docker-entrypoint-initdb.d/dump.sql
     healthcheck:
       test:
         [
