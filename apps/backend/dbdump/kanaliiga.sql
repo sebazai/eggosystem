@@ -1,4 +1,5 @@
 SET time_zone = "+00:00";
+SET GLOBAL max_allowed_packet = 134217728;  -- 128MB
 
 -- Table: Games
 CREATE TABLE IF NOT EXISTS Games (

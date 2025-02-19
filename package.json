@@ -17,7 +17,8 @@
     "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true",
     "migrate": "turbo migrate",
     "migrate:rollback": "turbo migrate:rollback",
-    "migrate:down": "turbo migrate:down"
+    "migrate:down": "turbo migrate:down",
+    "seed": "turbo seed"
   },
   "lint-staged": {
     "**/*.{js,ts,tsx,jsx}": "pnpm lint:fix",
