@@ -81,7 +81,7 @@ export default function Layout({
       </head>
       <body
         className={cn(
-          `bg-background min-h-svh overscroll-none font-sans antialiased`,
+          `bg-kana min-h-svh overscroll-none font-sans antialiased`,
           kanaFonts.variable,
           kanaHeadingFonts.variable,
         )}

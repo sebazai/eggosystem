@@ -146,6 +146,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  .bg-kana {
+    background-image: url('/images/kana_background.png');
+    background-size: cover;
+    background-position: center;
+  }
+
   h1 {
     font-size: var(--text-2xl);
     color: #f29209;
