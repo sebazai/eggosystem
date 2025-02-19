@@ -1,5 +1,5 @@
 SET time_zone = "+00:00";
-SET GLOBAL max_allowed_packet = 134217728;  -- 128MB
+SET GLOBAL max_allowed_packet = 134217728;
 
 -- Table: Games
 CREATE TABLE IF NOT EXISTS Games (
@@ -113,45 +113,6 @@ CREATE TABLE IF NOT EXISTS SeasonTeamPlayers (
 );
 
 
--- Ensure that only one primary player per season is allowed
-DELIMITER //
-
-CREATE TRIGGER before_insert_primary_check
-BEFORE INSERT ON SeasonTeamPlayers
-FOR EACH ROW
-BEGIN
-    IF NEW.role = 'primary' THEN
-        -- Check if this player is already marked as primary in the same season
-        IF (SELECT COUNT(*) FROM SeasonTeamPlayers 
-            WHERE season_id = NEW.season_id 
-              AND role = 'primary' 
-              AND steam_id = NEW.steam_id) > 0 THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'A player can only be primary for one team per season';
-        END IF;
-    END IF;
-END;
-//
-
-CREATE TRIGGER before_update_primary_check
-BEFORE UPDATE ON SeasonTeamPlayers
-FOR EACH ROW
-BEGIN
-    IF NEW.role = 'primary' THEN
-        -- Check if the same player is already marked as primary in the same season, excluding this row
-        IF (SELECT COUNT(*) FROM SeasonTeamPlayers 
-            WHERE season_id = NEW.season_id 
-              AND role = 'primary' 
-              AND steam_id = NEW.steam_id
-              AND (team_id <> NEW.team_id OR steam_id <> NEW.steam_id)) > 0 THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'A player can only be primary for one team per season';
-        END IF;
-    END IF;
-END;
-//
-
-DELIMITER ;
 
 -- All maps of games by name
 CREATE TABLE IF NOT EXISTS Maps (

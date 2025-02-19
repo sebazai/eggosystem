@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import type { Knex } from "knex";
+import * as fs from "fs";
+
 import {
   cleanTeamsWithCascade,
   experimentalTeamsIntoCompanies,
@@ -39,6 +41,14 @@ export async function up(knex: Knex): Promise<void> {
     console.log("Database 'kana' exists. Proceeding with migration.");
   } finally {
     await tempDb.destroy(); // Close temporary connection
+  }
+
+  const base = fs.readFileSync("./seeds/base.sql", "utf8");
+  const baseStatements = base.split(";").filter((stmt) => stmt.trim()); // Split SQL into individual statements
+
+  for (const statement of baseStatements) {
+    console.log("Executing:", statement); // Log each statement for debugging
+    await knex.raw(statement);
   }
 
   await migrateCompanies();
@@ -94,4 +104,6 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM SeasonTeams");
   await knex.raw("DELETE FROM Teams");
   await knex.raw("DELETE FROM Companies");
+  await knex.raw("DELETE FROM Seasons");
+  await knex.raw("DELETE FROM Games");
 }

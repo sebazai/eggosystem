@@ -122,6 +122,8 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
+      seeds:
+        condition: service_completed_successfully
     env_file: "dev.env"
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
