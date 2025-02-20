@@ -15,7 +15,6 @@ function NavigationMenu({
 }: React.ComponentProps<typeof NavigationMenuPrimitive.Root> & {
   viewport?: boolean;
 }) {
-  className = "hidden justify-between items-center lg:flex";
   return (
     <NavigationMenuPrimitive.Root
       data-slot="navigation-menu"
