@@ -146,7 +146,7 @@
   body {
     @apply bg-background text-foreground;
   }
-  
+
   .bg-kana {
     background-image: url('/images/kana_background.png');
     background-size: cover;

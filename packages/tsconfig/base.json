@@ -5,7 +5,7 @@
     "noUncheckedIndexedAccess": true,
     "alwaysStrict": false,
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "target": "ESNext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],

@@ -1,10 +1,9 @@
-import "@eggosystem/ui/globals.css";
+import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
-import { cn } from "@eggosystem/utils/styles";
-
 import { ThemeProvider } from "../providers/theme-provider";
+import { cn } from "@/lib/utils";
 
 const META_THEME_COLORS = {
   light: "#ffffff",

@@ -1,8 +1,11 @@
+import { NavigationMenuDemo } from "../components/navigation-menu-demo";
+
 export default function Home() {
   return (
-    <main className="min-h-screen p-8 max-w-4xl mx-auto">
+    <div>
+      <NavigationMenuDemo />
       <h1>Hello</h1>
       <p>We are Kanahub</p>
-    </main>
+    </div>
   );
 }

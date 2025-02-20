@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "add-shadcn-component": "pnpm dlx shadcn@canary add",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
@@ -10,23 +11,32 @@
   },
   "dependencies": {
     "@eggosystem/types": "workspace:*",
-    "@eggosystem/ui": "workspace:*",
-    "@eggosystem/utils": "workspace:*",
     "@tailwindcss/postcss": "4.0.6",
-    "next": "15.1.7",
+    "next": "15.2.0-canary.33",
     "next-themes": "0.4.3",
-    "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@radix-ui/react-accordion": "1.2.3",
+    "@radix-ui/react-icons": "1.3.2",
+    "@radix-ui/react-navigation-menu": "1.2.5",
+    "@radix-ui/react-select": "2.1.6",
+    "@radix-ui/react-slot": "1.1.2",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "lucide-react": "0.475.0",
+    "tailwind-merge": "3.0.1"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
-    "@types/node": "22.13.1",
+    "@types/node": "^22",
     "@types/react": "19.0.8",
     "@types/react-dom": "19.0.3",
     "eslint": "9.20.1",
     "eslint-config-next": "15.1.7",
     "tailwindcss": "4.0.6",
-    "typescript": "5.6.3"
+    "tailwindcss-animate": "1.0.7",
+    "typescript": "5.6.3",
+    "shadcn": "2.3.0"
   }
 }

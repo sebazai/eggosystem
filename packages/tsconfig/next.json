@@ -4,8 +4,8 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@eggosystem/lib/utils": ["../utils/src/styles"],
-      "@eggosystem/types": ["../types/src"]
+      "@eggosystem/types": ["../types/src"],
+      "react": ["./node_modules/@types/react"]
     },
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
@@ -20,6 +20,7 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "target": "ES2017",
+    "moduleResolution": "bundler"
   }
 }

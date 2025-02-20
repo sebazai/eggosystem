@@ -3,11 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
-  transpilePackages: [
-    "@eggosystem/ui",
-    "@eggosystem/utils",
-    "@eggosystem/types",
-  ],
+  transpilePackages: ["@eggosystem/types"],
   eslint: {
     dirs: ["src"],
   },

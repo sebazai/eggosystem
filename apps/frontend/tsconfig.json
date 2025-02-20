@@ -1,11 +1,10 @@
 {
   "extends": "@eggosystem/tsconfig/next.json",
   "compilerOptions": {
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "paths": {
+      "@/*": ["./src/*"],
+      "react": ["./node_modules/@types/react"]
+    }
   },
   "include": [
     "next-env.d.ts",
