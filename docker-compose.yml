@@ -1,7 +1,6 @@
 services:
   backend:
     image: eggo-back
-    container_name: eggo-backend
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.dev
@@ -21,7 +20,6 @@ services:
 
   seed:
     image: eggo-back
-    container_name: eggo-seed
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.dev
@@ -33,7 +31,6 @@ services:
 
   frontend:
     image: eggo-front
-    container_name: eggo-frontend
     build:
       context: .
       dockerfile: ./apps/frontend/Dockerfile.dev
@@ -52,11 +49,9 @@ services:
   eggo-redis:
     image: redis:7-alpine
     restart: always
-    container_name: eggo-redis
 
   eggo-phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: eggo-phpmyadmin
     depends_on:
       eggo-devdb:
         condition: service_healthy
@@ -71,10 +66,6 @@ services:
   eggo-devdb:
     image: bitnami/mariadb:11.4.2
     restart: always
-    container_name: eggo-devdb
-    # If you need to access from own host with some other tool
-    ports:
-      - 6666:3306
     environment:
       - MARIADB_ROOT_PASSWORD=dev-pass
       - MARIADB_USER=kanadbuser
@@ -98,7 +89,6 @@ services:
       retries: 10
 
   migrations:
-    container_name: eggo-migrations
     image: eggo-migrations
     build:
       context: .
@@ -114,7 +104,6 @@ services:
     command: "npx knex migrate:latest"
 
   backend-test:
-    container_name: eggo-back-test
     image: eggo-back
     build:
       context: .

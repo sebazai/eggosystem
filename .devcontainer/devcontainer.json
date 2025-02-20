@@ -26,5 +26,7 @@
       "label": "Hello Remote World",
       "onAutoForward": "notify"
     }
-  }
+  },
+  "runServices": ["devcontainer", "eggo-devdb", "eggo-phpmyadmin"],
+  "overrideCommand": false
 }

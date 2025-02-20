@@ -6,13 +6,24 @@ services:
       - ..:/workspace
     env_file: "../dev.env"
     command: sleep infinity
+    networks:
+      - eggo-dev
 
   eggo-devdb:
     extends:
       file: ../docker-compose.yml
       service: eggo-devdb
+    networks:
+      - eggo-dev
 
   eggo-phpmyadmin:
     extends:
       file: ../docker-compose.yml
       service: eggo-phpmyadmin
+    networks:
+      - eggo-dev
+    ports:
+      - 8083:8080
+    
+networks:
+  eggo-dev:
