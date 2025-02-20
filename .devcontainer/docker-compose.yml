@@ -19,7 +19,7 @@ services:
   eggo-phpmyadmin:
     extends:
       file: ../docker-compose.yml
-      service: eggo-phpmyadmin
+      service: eggo-phpmyadmin-dev
     networks:
       - eggo-dev
     ports:
