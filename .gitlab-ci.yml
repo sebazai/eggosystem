@@ -1,0 +1,154 @@
+image: node:22-slim
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ''
+  NODE_ENV: 'test'
+  PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
+  DB_HOST: 'eggo-devdb'
+  DB_PORT: 3306
+  DB_USER: 'kanadbuser'
+  DB_PASSWORD: 'dev-pass'
+  DB_NAME: 'kanaliiga'
+
+workflow:
+  rules:
+    - if: $CI_JOB_MANUAL
+      when: always
+    - if: $CI_MERGE_REQUEST_TITLE =~ /^WIP/
+      when: never
+    - if: $CI_MERGE_REQUEST_ID
+      when: always
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: always
+    - when: never
+
+.only-merge-request:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: never
+
+.front:
+  rules:
+      - changes:
+          - apps/frontend/**
+          - .gitlab-ci.yml
+
+.back:
+  rules:
+    - changes:
+        - apps/backend/**
+        - .gitlab-ci.yml
+
+.pull-only-cache:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    policy: pull
+    paths:
+      - .pnpm-store
+      - node_modules/
+      - packages/
+      - apps/frontend/node_modules/
+      - apps/backend/node_modules/
+
+before_script:
+  - npm install -g pnpm
+
+stages:
+  - install
+  - lint
+  - test
+  - build
+  - build-docker
+
+install:
+  stage: install
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .pnpm-store
+      - node_modules/
+      - packages/
+      - apps/frontend/node_modules/
+      - apps/backend/node_modules/
+  script:
+    - pnpm install
+
+lint:frontend:
+  stage: lint
+  extends: [.only-merge-request, .pull-only-cache, .front]
+  script:
+    - pnpm --filter=frontend lint
+
+lint:backend:
+  stage: lint
+  extends: [.only-merge-request, .pull-only-cache, .back]
+  script:
+    - pnpm --filter=backend lint
+
+# test:frontend:
+#   stage: test
+#   extends: .only-merge-request
+#   script:
+#     - pnpm --filter=frontend test
+#   rules:
+#     - if: $CI_COMMIT_BRANCH == "main"
+#       when: never
+#     - changes:
+#         - apps/frontend/**
+#         - .gitlab-ci.yml
+
+test:backend:
+  stage: test
+  extends: [.only-merge-request, .pull-only-cache, .back]
+  services:
+    - name: bitnami/mariadb:11.4.2
+      alias: eggo-devdb
+  variables:
+    MARIADB_ROOT_PASSWORD: dev-pass
+    MARIADB_USER: kanadbuser
+    MARIADB_PASSWORD: dev-pass
+    MARIADB_DATABASE: kanaliiga
+    MARIADB_MAX_ALLOWED_PACKET: 128M
+    MARIADB_INNODB_LOG_FILE_SIZE: 64M
+  before_script:
+    - npm install -g pnpm
+    - export $(grep -v '^#' dev.env | xargs)
+    - pnpm --filter=backend migrate
+    - pnpm --filter=backend seed
+  script:
+    - pnpm --filter=backend test
+
+build:frontend:
+  stage: build
+  extends: [.only-merge-request, .pull-only-cache, .front]
+  script:
+    - pnpm --filter=frontend build
+
+build:backend:
+  stage: build
+  extends: [.only-merge-request, .pull-only-cache, .back]
+  script:
+    - pnpm --filter=backend build
+
+build-dockerfile:backend:
+  image: docker:dind
+  services:
+  - docker:dind
+  stage: build-docker
+  extends: .back
+  before_script:
+    - echo "Jee"
+  script:
+    - docker compose build backend
+        
+build-dockerfile:frontend:
+  image: docker:dind
+  services:
+  - docker:dind
+  extends: .front
+  stage: build-docker
+  before_script:
+    - echo "Jee"
+  script:
+    - docker compose build frontend
