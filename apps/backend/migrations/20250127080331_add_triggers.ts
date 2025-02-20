@@ -40,22 +40,8 @@ export async function up(knex: Knex): Promise<void> {
         END;
       `;
 
-  await knex
-    .raw(createBeforeInsertTrigger)
-    .then(() => {
-      console.log("Triggers created successfully.");
-    })
-    .catch((error) => {
-      console.error("Error creating triggers:", error);
-    });
-  await knex
-    .raw(createBeforeUpdateTrigger)
-    .then(() => {
-      console.log("Triggers created successfully.");
-    })
-    .catch((error) => {
-      console.error("Error creating triggers:", error);
-    });
+  await knex.raw(createBeforeInsertTrigger);
+  await knex.raw(createBeforeUpdateTrigger);
 }
 
 export async function down(): Promise<void> {
