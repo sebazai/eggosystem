@@ -1,49 +1,31 @@
 image: node:22-slim
+##############
+# Use =>
+#   stage:
+#   image:
+#   services:
+#   needs:
+#   extends:
+#   before_script:
+#   script:
+#   after_script:
 
 variables:
   DOCKER_HOST: tcp://docker:2375
-  DOCKER_TLS_CERTDIR: ''
-  NODE_ENV: 'test'
+  DOCKER_TLS_CERTDIR: ""
+  NODE_ENV: "test"
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
-  DB_HOST: 'eggo-devdb'
+  DB_HOST: "eggo-devdb"
   DB_PORT: 3306
-  DB_USER: 'kanadbuser'
-  DB_PASSWORD: 'dev-pass'
-  DB_NAME: 'kanaliiga'
+  DB_USER: "kanadbuser"
+  DB_PASSWORD: "dev-pass"
+  DB_NAME: "kanaliiga"
+  TRIVY_VERSION: "0.59.1" # Set the Trivy version here
 
-workflow:
-  rules:
-    - if: $CI_JOB_MANUAL
-      when: always
-    - if: $CI_MERGE_REQUEST_TITLE =~ /^WIP/
-      when: never
-    - if: $CI_MERGE_REQUEST_ID
-      when: always
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: always
-    - when: never
-
-.only-merge-request:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: never
-
-.front:
-  rules:
-      - changes:
-          - apps/frontend/**
-          - .gitlab-ci.yml
-
-.back:
-  rules:
-    - changes:
-        - apps/backend/**
-        - .gitlab-ci.yml
-
-.pull-only-cache:
+# Define a common anchor for the cache configuration
+.common-cache: &common-cache
   cache:
     key: ${CI_COMMIT_REF_SLUG}
-    policy: pull
     paths:
       - .pnpm-store
       - node_modules/
@@ -51,56 +33,111 @@ workflow:
       - apps/frontend/node_modules/
       - apps/backend/node_modules/
 
-before_script:
-  - npm install -g pnpm
+.default:
+  before_script:
+    - npm install -g pnpm
+  <<: *common-cache # Include the common cache configuration
+
+.mr-and-main:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_MERGE_REQUEST_ID
+
+.mr:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
+.main:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+.change-tracker:
+  rules:
+    - changes:
+        - "apps/$APP/**"
+        - .gitlab-ci.yml
+
+# Define the pull-only cache configuration
+.pull-only-cache:
+  <<: *common-cache # Merge the common cache configuration
+  cache:
+    policy: pull # Add the pull policy
+
+# Define common configurations using anchors
+.common-docker-build: &common-docker-build
+  stage: build-docker
+  image: docker:stable
+  services:
+    - docker:dind
+  cache:
+    paths:
+      - .trivycache/
+  before_script:
+    - wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
+    - apk update && apk add jq
+
+.common-trivy-scan: &common-trivy-scan
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
+    - ./trivy image --exit-code 0 --scanners vuln --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
+    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
+  artifacts:
+    paths:
+      - gl-codeclimate-image-$IMAGE_NAME.json
+      - gl-codeclimate-fs-$IMAGE_NAME.json
 
 stages:
   - install
   - lint
+  - security
   - test
   - build
   - build-docker
+  - post-build
 
 install:
   stage: install
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - .pnpm-store
-      - node_modules/
-      - packages/
-      - apps/frontend/node_modules/
-      - apps/backend/node_modules/
+  extends: [.default, .mr-and-main]
   script:
     - pnpm install
 
 lint:frontend:
   stage: lint
-  extends: [.only-merge-request, .pull-only-cache, .front]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr]
+  variables:
+    APP: frontend
   script:
     - pnpm --filter=frontend lint
 
 lint:backend:
   stage: lint
-  extends: [.only-merge-request, .pull-only-cache, .back]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr]
+  variables:
+    APP: backend
   script:
     - pnpm --filter=backend lint
 
-# test:frontend:
-#   stage: test
-#   extends: .only-merge-request
-#   script:
-#     - pnpm --filter=frontend test
-#   rules:
-#     - if: $CI_COMMIT_BRANCH == "main"
-#       when: never
-#     - changes:
-#         - apps/frontend/**
-#         - .gitlab-ci.yml
+audit:
+  stage: security
+  extends: [.default, .pull-only-cache, .mr]
+  allow_failure: true
+  script:
+    - pnpm audit
+
+secrets_scan:
+  stage: security
+  image: python:3.9
+  extends: .mr
+  script:
+    - pip install trufflehog
+    - trufflehog --regex --entropy=False .
+  allow_failure: true
 
 test:backend:
   stage: test
-  extends: [.only-merge-request, .pull-only-cache, .back]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr]
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
@@ -111,6 +148,7 @@ test:backend:
     MARIADB_DATABASE: kanaliiga
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
+    APP: backend
   before_script:
     - npm install -g pnpm
     - export $(grep -v '^#' dev.env | xargs)
@@ -118,37 +156,105 @@ test:backend:
     - pnpm --filter=backend seed
   script:
     - pnpm --filter=backend test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - apps/backend/test-results/junit/results.xml
+    paths:
+      - apps/backend/test-results/junit/results.xml
 
 build:frontend:
   stage: build
-  extends: [.only-merge-request, .pull-only-cache, .front]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr-and-main]
+  variables:
+    APP: frontend
   script:
     - pnpm --filter=frontend build
 
 build:backend:
   stage: build
-  extends: [.only-merge-request, .pull-only-cache, .back]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr-and-main]
+  variables:
+    APP: backend
   script:
     - pnpm --filter=backend build
 
+# We could maybe add manual job to push the commit image to repository for
+# Some manual deployment to dev env ?
+# Backend job
 build-dockerfile:backend:
-  image: docker:dind
-  services:
-  - docker:dind
-  stage: build-docker
-  extends: .back
-  before_script:
-    - echo "Jee"
-  script:
-    - docker compose build backend
-        
+  extends: [.change-tracker, .mr-and-main, .pull-only-cache]
+  <<: *common-docker-build
+  variables:
+    IMAGE_NAME: eggo-backend
+    DOCKERFILE_DEV: apps/backend/Dockerfile.dev
+    DOCKERFILE: apps/backend/Dockerfile
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
+    APP: backend
+  <<: *common-trivy-scan
+
+# Frontend job
 build-dockerfile:frontend:
-  image: docker:dind
-  services:
-  - docker:dind
-  extends: .front
+  extends: [.change-tracker, .mr-and-main, .pull-only-cache]
+  <<: *common-docker-build
+  variables:
+    IMAGE_NAME: eggo-frontend
+    DOCKERFILE_DEV: apps/frontend/Dockerfile.dev
+    DOCKERFILE: apps/frontend/Dockerfile
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
+    APP: frontend
+  <<: *common-trivy-scan
+
+push-dockerfile:backend:
   stage: build-docker
+  image: docker:latest
+  services:
+    - docker:dind # Docker-in-Docker service for building images
+  extends: [.change-tracker, .main]
+  needs: ["build-dockerfile:backend"]
+  variables:
+    APP: backend
   before_script:
-    - echo "Jee"
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker compose build frontend
+    - docker push $CI_REGISTRY/eggo-backend
+
+push-dockerfile:frontend:
+  stage: build-docker
+  image: docker:latest
+  services:
+    - docker:dind # Docker-in-Docker service for building images
+  needs: ["build-dockerfile:frontend"]
+  extends: [.change-tracker, .main]
+  variables:
+    APP: frontend
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker push $CI_REGISTRY/eggo-frontend
+
+# Combine artifacts job
+combine-codequality-reports:
+  stage: post-build
+  image: alpine:latest
+  extends: .mr
+  needs:
+    - job: build-dockerfile:backend
+      artifacts: true
+    - job: build-dockerfile:frontend
+      artifacts: true
+  script:
+    - apk add jq
+    - jq -s 'add' gl-codeclimate-image-eggo-backend.json gl-codeclimate-fs-eggo-backend.json gl-codeclimate-image-eggo-frontend.json gl-codeclimate-fs-eggo-frontend.json > gl-codeclimate.json
+  artifacts:
+    paths:
+      - gl-codeclimate.json
+    reports:
+      codequality: gl-codeclimate.json
