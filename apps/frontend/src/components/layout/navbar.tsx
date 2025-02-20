@@ -150,19 +150,20 @@ const Navbar = ({
   return (
     <section className="py-8">
       <div className="container">
-        <NavigationMenu>
-          <NavigationMenuList>
-            {menu.map((item) => renderMenuItem(item))}
-          </NavigationMenuList>
-        </NavigationMenu>
-
+        <div className="hidden justify-center md:flex">
+          <NavigationMenu>
+            <NavigationMenuList>
+              {menu.map((item) => renderMenuItem(item))}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
         {/* <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href={auth.login.url}>{auth.login.text}</Link>
             </Button>
           </div> */}
 
-        <div className="block lg:hidden">
+        <div className="block md:hidden">
           <div className="flex items-center justify-between">
             <Link href={logo.url} className="flex items-center gap-2">
               <Image src={logo.src} alt={logo.alt} width={75} height={75} />
@@ -222,7 +223,7 @@ const renderMenuItem = (item: MenuItem) => {
   if ("src" in item) {
     return (
       <Link key={item.alt} href={item.url} className="flex items-center gap-2">
-        <Image src={item.src} alt={item.alt} width={100} height={100} />
+        <Image src={item.src} alt={item.alt} width={150} height={150} />
       </Link>
     );
   }
