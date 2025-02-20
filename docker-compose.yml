@@ -37,10 +37,12 @@ services:
     build:
       context: .
       dockerfile: ./apps/frontend/Dockerfile.dev
+    environment:
+      - NEXT_PUBLIC_BASE_URL=http://localhost:3000/
     volumes:
       - ./apps/frontend/src:/usr/src/app/apps/frontend/src # Mount source code for live reloading
-      - ./packages/ui/src:/usr/src/app/packages/ui/src # Mount source code for live reloading
       - ./apps/frontend/public:/usr/src/app/apps/frontend/public # Mount source code for live reloading
+      - ./apps/frontend/node_modules:/usr/src/app/apps/frontend/node_modules # Mount source code for live reloading
     ports:
       - "3000:3000"
     depends_on:
