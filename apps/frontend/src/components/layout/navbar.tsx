@@ -17,6 +17,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import {
   Sheet,
@@ -28,13 +29,19 @@ import {
 import type { JSX } from "react";
 import Link from "next/link";
 
-interface MenuItem {
+interface MenuItemLink {
   title: string;
   url: string;
-  description?: string;
   icon?: JSX.Element;
-  items?: MenuItem[];
+  items?: MenuItemLink[];
 }
+interface MenuItemLogo {
+  src: string;
+  url: string;
+  alt: string;
+}
+
+type MenuItem = MenuItemLink | MenuItemLogo;
 
 interface NavbarProps {
   logo?: {
@@ -53,79 +60,39 @@ interface NavbarProps {
       text: string;
       url: string;
     };
-    signup: {
-      text: string;
-      url: string;
-    };
   };
 }
 
 const Navbar = ({
   logo = {
     url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
-    src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`,
+    src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
     alt: "logo",
     title: "Kanaliiga",
   },
   menu = [
-    { title: "Home", url: "#" },
     {
       title: "Products",
       url: "#",
       items: [
         {
           title: "Blog",
-          description: "The latest industry news, updates, and info",
           icon: <Book className="size-5 shrink-0" />,
           url: "#",
         },
         {
           title: "Company",
-          description: "Our mission is to innovate and empower the world",
           icon: <Trees className="size-5 shrink-0" />,
           url: "#",
         },
         {
           title: "Careers",
-          description: "Browse job listing and discover our workspace",
           icon: <Sunset className="size-5 shrink-0" />,
           url: "#",
         },
         {
           title: "Support",
-          description:
-            "Get in touch with our support team or visit our community forums",
           icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Resources",
-      url: "#",
-      items: [
-        {
-          title: "Help Center",
-          description: "Get all the answers you need right here",
-          icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Contact Us",
-          description: "We are here to help you with any questions you have",
-          icon: <Sunset className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Status",
-          description: "Check the current status of our services and APIs",
-          icon: <Trees className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Terms of Service",
-          description: "Our terms and conditions for using our services",
-          icon: <Book className="size-5 shrink-0" />,
           url: "#",
         },
       ],
@@ -135,8 +102,39 @@ const Navbar = ({
       url: "#",
     },
     {
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
+      src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
+      alt: "Kanaliiga logo",
+    },
+    {
       title: "Blog",
       url: "#",
+    },
+    {
+      title: "Resources",
+      url: "#",
+      items: [
+        {
+          title: "Help Center",
+          icon: <Zap className="size-5 shrink-0" />,
+          url: "#",
+        },
+        {
+          title: "Contact Us",
+          icon: <Sunset className="size-5 shrink-0" />,
+          url: "#",
+        },
+        {
+          title: "Status",
+          icon: <Trees className="size-5 shrink-0" />,
+          url: "#",
+        },
+        {
+          title: "Terms of Service",
+          icon: <Book className="size-5 shrink-0" />,
+          url: "#",
+        },
+      ],
     },
   ],
   mobileExtraLinks = [
@@ -147,57 +145,32 @@ const Navbar = ({
   ],
   auth = {
     login: { text: "Log in", url: "#" },
-    signup: { text: "Sign up", url: "#" },
   },
 }: NavbarProps) => {
   return (
-    <section className="py-4">
+    <section className="py-8">
       <div className="container">
-        <nav className="hidden justify-between lg:flex">
-          <div className="flex items-center gap-6">
-            <Link href={logo.url} className="flex items-center gap-2">
-              <Image
-                src={logo.src}
-                className="w-8"
-                alt={logo.alt}
-                width={100}
-                height={100}
-              />
-              <span className="text-lg font-semibold">{logo.title}</span>
-            </Link>
-            <div className="flex items-center">
-              <NavigationMenu>
-                <NavigationMenuList>
-                  {menu.map((item) => renderMenuItem(item))}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </div>
-          </div>
-          <div className="flex gap-2">
+        <NavigationMenu>
+          <NavigationMenuList>
+            {menu.map((item) => renderMenuItem(item))}
+          </NavigationMenuList>
+        </NavigationMenu>
+
+        {/* <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href={auth.login.url}>{auth.login.text}</Link>
             </Button>
-            <Button asChild size="sm">
-              <Link href={auth.signup.url}>{auth.signup.text}</Link>
-            </Button>
-          </div>
-        </nav>
+          </div> */}
+
         <div className="block lg:hidden">
           <div className="flex items-center justify-between">
             <Link href={logo.url} className="flex items-center gap-2">
-              <Image
-                src={logo.src}
-                className="w-8"
-                alt={logo.alt}
-                width={100}
-                height={100}
-              />
-              <span className="text-lg font-semibold">{logo.title}</span>
+              <Image src={logo.src} alt={logo.alt} width={75} height={75} />
             </Link>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon">
-                  <Menu className="size-4" />
+                  <Menu className="size-6" />
                 </Button>
               </SheetTrigger>
               <SheetContent className="overflow-y-auto">
@@ -206,18 +179,14 @@ const Navbar = ({
                     <Link href={logo.url} className="flex items-center gap-2">
                       <Image
                         src={logo.src}
-                        className="w-8"
                         alt={logo.alt}
-                        width={100}
-                        height={100}
+                        width={75}
+                        height={75}
                       />
-                      <span className="text-lg font-semibold">
-                        {logo.title}
-                      </span>
                     </Link>
                   </SheetTitle>
                 </SheetHeader>
-                <div className="my-6 flex flex-col gap-6">
+                <div className="my-6 mx-2 flex flex-col gap-6">
                   <Accordion
                     type="single"
                     collapsible
@@ -228,11 +197,7 @@ const Navbar = ({
                   <div className="border-t py-4">
                     <div className="grid grid-cols-2 justify-start">
                       {mobileExtraLinks.map((link, idx) => (
-                        <Link
-                          key={idx}
-                          className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-accent-foreground"
-                          href={link.url}
-                        >
+                        <Link key={idx} href={link.url}>
                           {link.name}
                         </Link>
                       ))}
@@ -240,10 +205,7 @@ const Navbar = ({
                   </div>
                   <div className="flex flex-col gap-3">
                     <Button asChild variant="outline">
-                      <a href={auth.login.url}>{auth.login.text}</a>
-                    </Button>
-                    <Button asChild>
-                      <a href={auth.signup.url}>{auth.signup.text}</a>
+                      <Link href={auth.login.url}>{auth.login.text}</Link>
                     </Button>
                   </div>
                 </div>
@@ -257,20 +219,25 @@ const Navbar = ({
 };
 
 const renderMenuItem = (item: MenuItem) => {
+  if ("src" in item) {
+    return (
+      <Link key={item.alt} href={item.url} className="flex items-center gap-2">
+        <Image src={item.src} alt={item.alt} width={100} height={100} />
+      </Link>
+    );
+  }
   if (item.items) {
     return (
-      <NavigationMenuItem key={item.title} className="text-muted-foreground">
+      <NavigationMenuItem key={item.title}>
         <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
         <NavigationMenuContent>
-          <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
+          <ul className="grid w-[100px] gap-3 p-4 md:w-[200px] lg:w-[300px] ">
             {item.items.map((component) => (
               <ListItem
                 key={component.title}
                 title={component.title}
                 href={component.url}
-              >
-                {component.description}
-              </ListItem>
+              />
             ))}
           </ul>
         </NavigationMenuContent>
@@ -279,17 +246,18 @@ const renderMenuItem = (item: MenuItem) => {
   }
 
   return (
-    <Link
-      key={item.title}
-      className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-accent-foreground"
-      href={item.url}
-    >
-      {item.title}
-    </Link>
+    <NavigationMenuItem key={item.title}>
+      <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+        <Link href={item.url}>{item.title}</Link>
+      </NavigationMenuLink>
+    </NavigationMenuItem>
   );
 };
 
 const renderMobileMenuItem = (item: MenuItem) => {
+  if ("src" in item) {
+    return null;
+  }
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">
@@ -298,21 +266,12 @@ const renderMobileMenuItem = (item: MenuItem) => {
         </AccordionTrigger>
         <AccordionContent className="mt-2">
           {item.items.map((subItem) => (
-            <a
-              key={subItem.title}
-              className="flex select-none gap-4 rounded-md p-3 leading-none outline-none transition-colors hover:bg-muted hover:text-accent-foreground"
-              href={subItem.url}
-            >
+            <Link key={subItem.title} href={subItem.url}>
               {subItem.icon}
               <div>
                 <div className="text-sm font-semibold">{subItem.title}</div>
-                {subItem.description && (
-                  <p className="text-sm leading-snug text-muted-foreground">
-                    {subItem.description}
-                  </p>
-                )}
               </div>
-            </a>
+            </Link>
           ))}
         </AccordionContent>
       </AccordionItem>
@@ -320,26 +279,22 @@ const renderMobileMenuItem = (item: MenuItem) => {
   }
 
   return (
-    <a key={item.title} href={item.url} className="font-semibold">
+    <Link key={item.title} href={item.url} className="font-semibold">
       {item.title}
-    </a>
+    </Link>
   );
 };
 
 function ListItem({
   title,
-  children,
   href,
   ...props
 }: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
   return (
     <li {...props}>
       <NavigationMenuLink asChild>
-        <Link href={href}>
-          <div className="text-sm leading-none font-medium">{title}</div>
-          <p className="text-muted-foreground line-clamp-2 text-sm leading-snug">
-            {children}
-          </p>
+        <Link className="text-sm leading-none font-medium" href={href}>
+          {title}
         </Link>
       </NavigationMenuLink>
     </li>

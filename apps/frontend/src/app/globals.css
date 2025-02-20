@@ -141,16 +141,23 @@
   Vaaleanruskea: #d09158 */
   * {
     @apply border-border outline-ring/50;
-    font-family: var(--font-body);
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  body > * {
+    font-family: var(--font-body);
   }
 
   .bg-kana {
     background-image: url('/images/kana_background.png');
     background-size: cover;
     background-position: center;
+  }
+
+  nav > * {
+    font-family: var(--font-headings);
   }
 
   h1 {

@@ -58,7 +58,7 @@ export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
 };
 
-export default function Layout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -80,18 +80,22 @@ export default function Layout({
       </head>
       <body
         className={cn(
-          `bg-kana min-h-svh overscroll-none font-sans antialiased`,
+          `bg-kana min-h-svh overscroll-none antialiased`,
           kanaFonts.variable,
           kanaHeadingFonts.variable,
         )}
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="flex justify-center w-full">
+            <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
+              {children}
+            </div>
+          </div>
         </ThemeProvider>
       </body>
     </html>
