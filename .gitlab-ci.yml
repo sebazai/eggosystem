@@ -101,7 +101,7 @@ stages:
 
 install:
   stage: install
-  extends: [.default, .mr-and-main]
+  extends: [.default, .mr]
   script:
     - pnpm install
 
