@@ -140,7 +140,7 @@ export const Navigation = (props: NavbarProps) => {
       if (nav) {
         document.documentElement.style.setProperty(
           "--nav-height",
-          `${nav.offsetHeight}px`,
+          `${nav.offsetHeight}px`
         );
       }
     };
@@ -156,7 +156,7 @@ export const Navigation = (props: NavbarProps) => {
       if (nav) {
         document.documentElement.style.setProperty(
           "--nav-height",
-          `${nav.offsetHeight}px`,
+          `${nav.offsetHeight}px`
         );
       }
     };

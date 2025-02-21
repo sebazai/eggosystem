@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 
 export default function FadeOnScroll({
-  children,
+  children
 }: {
   children: React.ReactNode;
 }) {
@@ -52,7 +52,7 @@ export default function FadeOnScroll({
 
       let fadeFactor = Math.min(
         1,
-        Math.max(0, (elementTop - fadeEnd) / fadeRange),
+        Math.max(0, (elementTop - fadeEnd) / fadeRange)
       );
 
       // 🚀 Make elements fade in faster when scrolling up
@@ -74,7 +74,7 @@ export default function FadeOnScroll({
         opacity,
         transition: scrollingUp
           ? "opacity 0.15s ease-in"
-          : "opacity 0.4s ease-out",
+          : "opacity 0.4s ease-out"
       }}
     >
       {children}

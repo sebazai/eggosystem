@@ -96,8 +96,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
               <CardTitle>{frontTitle}</CardTitle>
               <CardDescription>{frontDesc}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow p-0">
-              <Image src={imageSrc} alt={frontTitle} />
+            <CardContent className="relative flex-1 m-5">
+              <Image src={imageSrc} alt={frontTitle} fill />
             </CardContent>
           </Card>
         </div>

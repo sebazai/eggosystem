@@ -16,7 +16,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -26,7 +26,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -36,7 +36,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -46,7 +46,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -56,7 +56,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -66,7 +66,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -76,7 +76,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -86,7 +86,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -96,7 +96,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -106,7 +106,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -116,7 +116,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -126,7 +126,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -136,7 +136,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
         <FadeOnScroll>
@@ -146,7 +146,7 @@ export default function Home() {
             backTitle="Jepulis"
             backDesc="Nebulis"
             href="http://kanaliiga.fi"
-            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-64px.png`}
+            imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
           />
         </FadeOnScroll>
       </div>
