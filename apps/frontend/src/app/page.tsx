@@ -1,9 +1,9 @@
-import { Navbar } from "@/components/layout/navbar";
+import { Navigation } from "@/components/layout/navbar";
 
 export default function Home() {
   return (
     <div>
-      <Navbar />
+      <Navigation />
       <h1>Kanaliiga</h1>
       <p>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam a

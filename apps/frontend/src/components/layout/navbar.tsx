@@ -63,42 +63,20 @@ interface NavbarProps {
   };
 }
 
-const Navbar = ({
-  logo = {
+const defaultProps: NavbarProps = {
+  logo: {
     url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
     src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
     alt: "logo",
     title: "Kanaliiga",
   },
-  menu = [
+  menu: [
     {
-      title: "Products",
+      title: "Home",
       url: "#",
-      items: [
-        {
-          title: "Blog",
-          icon: <Book className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Company",
-          icon: <Trees className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Careers",
-          icon: <Sunset className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Support",
-          icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Pricing",
+      title: "Companies",
       url: "#",
     },
     {
@@ -107,11 +85,11 @@ const Navbar = ({
       alt: "Kanaliiga logo",
     },
     {
-      title: "Blog",
+      title: "Teams",
       url: "#",
     },
     {
-      title: "Resources",
+      title: "Matches",
       url: "#",
       items: [
         {
@@ -137,46 +115,45 @@ const Navbar = ({
       ],
     },
   ],
-  mobileExtraLinks = [
+  mobileExtraLinks: [
     { name: "Press", url: "#" },
     { name: "Contact", url: "#" },
     { name: "Imprint", url: "#" },
     { name: "Sitemap", url: "#" },
   ],
-  auth = {
+  auth: {
     login: { text: "Log in", url: "#" },
   },
-}: NavbarProps) => {
-  return (
-    <section className="py-8">
-      <div className="container">
-        <div className="hidden justify-center md:flex">
-          <NavigationMenu>
-            <NavigationMenuList>
-              {menu.map((item) => renderMenuItem(item))}
-            </NavigationMenuList>
-          </NavigationMenu>
-        </div>
-        {/* <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href={auth.login.url}>{auth.login.text}</Link>
-            </Button>
-          </div> */}
+};
 
-        <div className="block md:hidden">
-          <div className="flex items-center justify-between">
+export const Navigation = (props: NavbarProps) => {
+  const navigationProps =
+    Object.keys(props).length === 0 ? defaultProps : props;
+  const { logo, menu, mobileExtraLinks, auth } = navigationProps;
+  return (
+    <div className="container py-8">
+      <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
+        <NavigationMenu viewport={false}>
+          <NavigationMenuList>{menu?.map(renderMenuItem)}</NavigationMenuList>
+        </NavigationMenu>
+      </div>
+      <div className="block md:hidden">
+        <div className="flex items-center justify-between">
+          {logo && (
             <Link href={logo.url} className="flex items-center gap-2">
               <Image src={logo.src} alt={logo.alt} width={75} height={75} />
             </Link>
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Menu className="size-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>
+          )}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Menu className="size-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>
+                  {logo && (
                     <Link href={logo.url} className="flex items-center gap-2">
                       <Image
                         src={logo.src}
@@ -185,16 +162,18 @@ const Navbar = ({
                         height={75}
                       />
                     </Link>
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="my-6 mx-2 flex flex-col gap-6">
-                  <Accordion
-                    type="single"
-                    collapsible
-                    className="flex w-full flex-col gap-4"
-                  >
-                    {menu.map((item) => renderMobileMenuItem(item))}
-                  </Accordion>
+                  )}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="my-6 mx-2 flex flex-col gap-6">
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="flex w-full flex-col gap-4"
+                >
+                  {menu?.map(renderMobileMenuItem)}
+                </Accordion>
+                {mobileExtraLinks && (
                   <div className="border-t py-4">
                     <div className="grid grid-cols-2 justify-start">
                       {mobileExtraLinks.map((link, idx) => (
@@ -204,27 +183,35 @@ const Navbar = ({
                       ))}
                     </div>
                   </div>
+                )}
+                {auth && (
                   <div className="flex flex-col gap-3">
                     <Button asChild variant="outline">
                       <Link href={auth.login.url}>{auth.login.text}</Link>
                     </Button>
                   </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
 
 const renderMenuItem = (item: MenuItem) => {
   if ("src" in item) {
     return (
-      <Link key={item.alt} href={item.url} className="flex items-center gap-2">
-        <Image src={item.src} alt={item.alt} width={150} height={150} />
-      </Link>
+      <NavigationMenuItem key={item.alt}>
+        <Link
+          key={item.alt}
+          href={item.url}
+          className="flex items-center gap-2"
+        >
+          <Image src={item.src} alt={item.alt} width={150} height={150} />
+        </Link>
+      </NavigationMenuItem>
     );
   }
   if (item.items) {
@@ -232,7 +219,7 @@ const renderMenuItem = (item: MenuItem) => {
       <NavigationMenuItem key={item.title}>
         <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
         <NavigationMenuContent>
-          <ul className="grid w-[100px] gap-3 p-4 md:w-[200px] lg:w-[300px] ">
+          <ul className="grid w-[200px] gap-4">
             {item.items.map((component) => (
               <ListItem
                 key={component.title}
@@ -286,20 +273,17 @@ const renderMobileMenuItem = (item: MenuItem) => {
   );
 };
 
-function ListItem({
+const ListItem = ({
   title,
   href,
-  ...props
-}: React.ComponentPropsWithoutRef<"li"> & { href: string }) {
+}: React.ComponentPropsWithoutRef<"li"> & { href: string }) => {
   return (
-    <li {...props}>
+    <li>
       <NavigationMenuLink asChild>
-        <Link className="text-sm leading-none font-medium" href={href}>
+        <Link href={href} className="flex-row items-center gap-2">
           {title}
         </Link>
       </NavigationMenuLink>
     </li>
   );
-}
-
-export { Navbar };
+};
