@@ -1,6 +1,6 @@
 "use client";
 
-import { Book, Menu, Sunset, Trees, Zap } from "lucide-react";
+import { Menu } from "lucide-react";
 import Image from "next/image";
 
 import {
@@ -76,6 +76,10 @@ const defaultProps: NavbarProps = {
       url: "#",
     },
     {
+      title: "Matches",
+      url: "#",
+    },
+    {
       title: "Companies",
       url: "#",
     },
@@ -87,32 +91,20 @@ const defaultProps: NavbarProps = {
     {
       title: "Teams",
       url: "#",
-    },
-    {
-      title: "Matches",
-      url: "#",
       items: [
         {
-          title: "Help Center",
-          icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Contact Us",
-          icon: <Sunset className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Status",
-          icon: <Trees className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Terms of Service",
-          icon: <Book className="size-5 shrink-0" />,
+          title: "Top Teams",
           url: "#",
         },
       ],
+    },
+    {
+      title: "Players",
+      url: "#",
+    },
+    {
+      title: "Leaderboards",
+      url: "#",
     },
   ],
   mobileExtraLinks: [
