@@ -55,6 +55,8 @@ variables:
   rules:
     - changes:
         - "apps/$APP/**"
+        - package.json
+        - pnpm-*.yaml
         - .gitlab-ci.yml
 
 # Define the pull-only cache configuration
@@ -184,7 +186,7 @@ build:backend:
 # Some manual deployment to dev env ?
 # Backend job
 build-dockerfile:backend:
-  extends: [.change-tracker, .mr-and-main, .pull-only-cache]
+  extends: [.change-tracker, .mr, .pull-only-cache]
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-backend
@@ -199,7 +201,7 @@ build-dockerfile:backend:
 
 # Frontend job
 build-dockerfile:frontend:
-  extends: [.change-tracker, .mr-and-main, .pull-only-cache]
+  extends: [.change-tracker, .mr, .pull-only-cache]
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-frontend
@@ -224,6 +226,7 @@ push-dockerfile:backend:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
+    - docker build -t $CI_REGISTRY/eggo-backend . -f apps/backend/Dockerfile
     - docker push $CI_REGISTRY/eggo-backend
 
 push-dockerfile:frontend:
@@ -238,6 +241,7 @@ push-dockerfile:frontend:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
+    - docker build -t $CI_REGISTRY/eggo-frontend . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/eggo-frontend
 
 # Combine artifacts job

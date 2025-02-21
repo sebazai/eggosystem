@@ -26,6 +26,7 @@ RUN rm -r node_modules/.pnpm/turbo-*
 # Finally the runner stage as final stage
 FROM node:22-slim AS runner
 WORKDIR /usr/src/app
+RUN apt update && apt upgrade -y
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
