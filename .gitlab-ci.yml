@@ -168,7 +168,7 @@ test:backend:
 
 build:frontend:
   stage: build
-  extends: [.default, .pull-only-cache, .change-tracker, .mr-and-main]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr]
   variables:
     APP: frontend
   script:
@@ -176,7 +176,7 @@ build:frontend:
 
 build:backend:
   stage: build
-  extends: [.default, .pull-only-cache, .change-tracker, .mr-and-main]
+  extends: [.default, .pull-only-cache, .change-tracker, .mr]
   variables:
     APP: backend
   script:
