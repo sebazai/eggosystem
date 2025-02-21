@@ -220,7 +220,6 @@ push-dockerfile:backend:
   services:
     - docker:dind # Docker-in-Docker service for building images
   extends: [.change-tracker, .main]
-  needs: ["build-dockerfile:backend"]
   variables:
     APP: backend
   before_script:
@@ -234,7 +233,6 @@ push-dockerfile:frontend:
   image: docker:latest
   services:
     - docker:dind # Docker-in-Docker service for building images
-  needs: ["build-dockerfile:frontend"]
   extends: [.change-tracker, .main]
   variables:
     APP: frontend
