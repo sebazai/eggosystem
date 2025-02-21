@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 
 import { ThemeProvider } from "../providers/theme-provider";
 import { cn } from "@/lib/utils";
+import { Navigation } from "@/components/layout/navbar";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -91,9 +92,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <a
+            href="#main-content"
+            className="absolute left-[-999px] top-0 m-2 bg-blue-600 px-4 py-2 text-white focus:left-0"
+          >
+            Skip to main content
+          </a>
           <div className="flex justify-center w-full">
             <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-              {children}
+              <Navigation />
+              <main id="main-content">{children}</main>
             </div>
           </div>
         </ThemeProvider>

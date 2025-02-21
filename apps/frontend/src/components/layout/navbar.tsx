@@ -65,9 +65,9 @@ interface NavbarProps {
 
 const defaultProps: NavbarProps = {
   logo: {
-    url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
+    url: `https://kanaliiga.fi/`,
     src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
-    alt: "logo",
+    alt: "Kanaliiga logo",
     title: "Kanaliiga"
   },
   menu: [
@@ -81,10 +81,10 @@ const defaultProps: NavbarProps = {
     },
     {
       title: "Companies",
-      url: "#"
+      url: "/companies"
     },
     {
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
+      url: `https://kanaliiga.fi/`,
       src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
       alt: "Kanaliiga logo"
     },

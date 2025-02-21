@@ -155,6 +155,26 @@
     background-size: cover;
     background-position: center;
   }
+  /* Ensure backface is hidden properly */
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* Preserve 3D transform for smooth flipping */
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Rotation for flipping effect */
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Perspective to enhance flip effect */
+.perspective {
+  perspective: 1000px;
+}
+
 
   nav > * {
     font-family: var(--font-headings);
