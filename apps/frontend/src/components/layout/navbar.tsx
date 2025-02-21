@@ -26,7 +26,7 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
-import type { JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import Link from "next/link";
 
 interface MenuItemLink {
@@ -122,11 +122,55 @@ export const Navigation = (props: NavbarProps) => {
   const navigationProps =
     Object.keys(props).length === 0 ? defaultProps : props;
   const { logo, menu, mobileExtraLinks, auth } = navigationProps;
+
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const updateNavHeight = () => {
+      const nav = document.getElementById("navigation");
+      if (nav) {
+        document.documentElement.style.setProperty(
+          "--nav-height",
+          `${nav.offsetHeight}px`,
+        );
+      }
+    };
+
+    updateNavHeight(); // Run on mount
+    window.addEventListener("resize", updateNavHeight); // Handle window resize
+    return () => window.removeEventListener("resize", updateNavHeight);
+  }, []);
+
+  useEffect(() => {
+    const updateNavHeight = () => {
+      const nav = document.getElementById("navigation");
+      if (nav) {
+        document.documentElement.style.setProperty(
+          "--nav-height",
+          `${nav.offsetHeight}px`,
+        );
+      }
+    };
+
+    updateNavHeight(); // Update when `isScrolled` changes
+  }, [scrollY]);
+
   return (
-    <div className="container py-8">
+    <div className="container py-8 mx-auto">
       <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
         <NavigationMenu viewport={false}>
-          <NavigationMenuList>{menu?.map(renderMenuItem)}</NavigationMenuList>
+          <NavigationMenuList>
+            {menu?.map((item) => renderMenuItem(item, scrollY))}
+          </NavigationMenuList>
         </NavigationMenu>
       </div>
       <div className="block md:hidden">
@@ -192,16 +236,22 @@ export const Navigation = (props: NavbarProps) => {
   );
 };
 
-const renderMenuItem = (item: MenuItem) => {
+const renderMenuItem = (item: MenuItem, scrollY: number) => {
   if ("src" in item) {
     return (
       <NavigationMenuItem key={item.alt}>
         <Link
           key={item.alt}
           href={item.url}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 transition-all duration-300"
         >
-          <Image src={item.src} alt={item.alt} width={150} height={150} />
+          <Image
+            src={item.src}
+            alt={item.alt}
+            width={Math.max(80, 150 - scrollY)} // Shrinks dynamically
+            height={Math.max(80, 150 - scrollY)}
+            className="transition-all duration-300"
+          />
         </Link>
       </NavigationMenuItem>
     );

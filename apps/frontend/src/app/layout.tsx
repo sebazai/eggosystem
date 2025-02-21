@@ -5,6 +5,8 @@ import localFont from "next/font/local";
 import { ThemeProvider } from "../providers/theme-provider";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/navbar";
+import Footer from "@/components/layout/footer";
+import SkipToContent from "@/components/layout/skip-to-content";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -92,18 +94,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <a
-            href="#main-content"
-            className="absolute left-[-999px] top-0 m-2 bg-blue-600 px-4 py-2 text-white focus:left-0"
-          >
-            Skip to main content
-          </a>
+          <SkipToContent />
           <div className="flex justify-center w-full">
             <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-              <Navigation />
+              <div id="navigation" className="sticky top-0 z-50">
+                <Navigation />
+              </div>
               <main id="main-content">{children}</main>
             </div>
           </div>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>

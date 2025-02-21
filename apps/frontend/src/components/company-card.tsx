@@ -46,10 +46,14 @@ const FlipCard: React.FC<FlipCardProps> = ({
     e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>
   ) => {
     e.preventDefault();
-    if (isMobile && isFlipped) {
-      router.push(href); // Navigate on mobile if already flipped
+
+    if (isFlipped) {
+      // Navigate only if it's a mobile device or a click event (not keyboard)
+      if (isMobile || e.type === "click") {
+        router.push(href);
+      }
     } else {
-      setIsFlipped((prev) => !prev); // Otherwise, just flip the card
+      setIsFlipped(true); // Flip the card
     }
   };
 
@@ -69,7 +73,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
 
   return (
     <div
-      className="group relative w-64 h-96 cursor-pointer focus-visible:ring-4 focus-visible:ring-blue-300 outline-none perspective"
+      className="group relative w-70 h-80 cursor-pointer focus-visible:ring-4 focus-visible:ring-blue-300 outline-none perspective"
       onClick={toggleFlip}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
@@ -93,13 +97,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
               <CardDescription>{frontDesc}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow p-0">
-              <Image
-                src={imageSrc}
-                alt={frontTitle}
-                className="aspect-video object-cover rounded-xl"
-                width={500}
-                height={500}
-              />
+              <Image src={imageSrc} alt={frontTitle} />
             </CardContent>
           </Card>
         </div>
