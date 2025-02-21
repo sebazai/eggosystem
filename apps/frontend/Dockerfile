@@ -26,7 +26,7 @@ RUN pnpm build --filter=frontend
 # Stage 2: Run Stage
 FROM base AS runner
 ENV NODE_ENV=production
-
+RUN apt update && apt upgrade
 # Create and change to the app directory
 WORKDIR /usr/src/app
 
