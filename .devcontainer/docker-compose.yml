@@ -23,7 +23,7 @@ services:
     networks:
       - eggo-dev
     ports:
-      - 8083:8080
-    
+      - 8083:80
+
 networks:
   eggo-dev:
