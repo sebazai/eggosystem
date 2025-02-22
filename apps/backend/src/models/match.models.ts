@@ -146,5 +146,18 @@ export const getMatchesByFilters = async (
       ORDER BY m.match_date DESC;
       `;
 
-  return runQuery(baseQuery, [season_id, league_id, team_id, stage, map_id]);
+  const queryParams = [
+    season_id,
+    season_id,
+    league_id,
+    league_id,
+    team_id,
+    team_id,
+    team_id,
+    stage,
+    stage,
+    map_id,
+    map_id,
+  ];
+  return runQuery(baseQuery, queryParams);
 };
