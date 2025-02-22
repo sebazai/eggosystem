@@ -1,4 +1,4 @@
-import { generateQueryWithFilters } from "../middlewares/queryFilter";
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { runQuery } from "../db/mysqlRunQuery";
 import { ParsedParams, Player } from "@eggosystem/types";
 
@@ -30,49 +30,47 @@ export const getPlayersByFilters = async (
   map?: string,
   league_id?: number,
   stage?: number,
-): Promise<Player[]> => {
-  // Base query
-  const baseQuery = `
-      SELECT p.name, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
-      ${[
-        "kills",
-        "assists",
-        "deaths",
-        "flash_assists",
-        "awp_kills",
-        "total_damage",
-        "headshots",
-      ]
-        .map((col) => `sum(ps.${col}) as ${col}`)
-        .join(", ")},
-      ${[
-        "enemies_flashed",
-        "mates_flashed",
-        "first_kills",
-        "first_deaths",
-        "kills_5",
-        "utility_damage",
-      ]
-        .map((col) => `sum(ps.${col}) as ${col}`)
-        .join(", ")},
-      ${["adr", "kana_rating", "hs_percent"].map((col) => `avg(ps.${col}) as ${col}`).join(", ")}
-      FROM PlayerStats ps
-      INNER JOIN Players p ON p.steam_id = ps.steam_id
-      INNER JOIN Matches m ON m.id = ps.match_id
-      INNER JOIN Leagues l ON m.league_id = l.id
-      INNER JOIN Teams t ON p.team_id = t.id
-    `;
-
-  const { query, queryParams } = generateQueryWithFilters(baseQuery, {
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  });
-  const fullQuery = query + " GROUP BY p.steam_id";
-
-  return runQuery(fullQuery, queryParams);
+) => {
+  // // Base query
+  // const baseQuery = `
+  //     SELECT p.name, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
+  //     ${[
+  //       "kills",
+  //       "assists",
+  //       "deaths",
+  //       "flash_assists",
+  //       "awp_kills",
+  //       "total_damage",
+  //       "headshots",
+  //     ]
+  //       .map((col) => `sum(ps.${col}) as ${col}`)
+  //       .join(", ")},
+  //     ${[
+  //       "enemies_flashed",
+  //       "mates_flashed",
+  //       "first_kills",
+  //       "first_deaths",
+  //       "kills_5",
+  //       "utility_damage",
+  //     ]
+  //       .map((col) => `sum(ps.${col}) as ${col}`)
+  //       .join(", ")},
+  //     ${["adr", "kana_rating", "hs_percent"].map((col) => `avg(ps.${col}) as ${col}`).join(", ")}
+  //     FROM PlayerStats ps
+  //     INNER JOIN Players p ON p.steam_id = ps.steam_id
+  //     INNER JOIN Matches m ON m.id = ps.match_id
+  //     INNER JOIN Leagues l ON m.league_id = l.id
+  //     INNER JOIN Teams t ON p.team_id = t.id
+  //   `;
+  // const { query, queryParams } = generateQueryWithFilters({
+  //   team_id,
+  //   season_id,
+  //   map,
+  //   league_id,
+  //   stage,
+  // });
+  // const fullQuery = query + " GROUP BY p.steam_id";
+  // return runQuery(fullQuery, queryParams);
 };
 
 // Fix this...

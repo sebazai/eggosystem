@@ -5,7 +5,6 @@ import {
   getPlayers,
   getPlayerBySteamId,
   getPlayersByFilters,
-  getPlayerLeaderboard,
 } from "../models/player.models";
 
 export const getPlayersController = async (
@@ -58,15 +57,15 @@ export const getPlayerLeaderboardController = async (
   const { season_id, map, league_id, stage, team_id, leaderboard } = (
     req as any
   ).parsedParams;
-  const result = await getPlayerLeaderboard(
-    leaderboard,
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  );
-  res.json(result);
+  // const result = await getPlayerLeaderboard(
+  //   leaderboard,
+  //   team_id,
+  //   season_id,
+  //   map,
+  //   league_id,
+  //   stage,
+  // );
+  // res.json(result);
 };
 
 export const getMultipleLeaderboardsController = async (

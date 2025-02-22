@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
 import { Match, MatchesByFilters, ParsedParams } from "@eggosystem/types";
 
@@ -109,14 +110,21 @@ export const getTopPlayers = async (
   return results;
 };
 
-export const getMatchesByFilters = async (
-  season_id: ParsedParams["season_id"],
-  league_id: ParsedParams["league_id"],
-  team_id: ParsedParams["team_id"],
-  stage: ParsedParams["stage"],
-  map_id: ParsedParams["map_id"],
-): Promise<MatchesByFilters[]> => {
+export const getMatchesByFilters = async ({
+  season_id,
+  league_id,
+  team_id,
+  stage,
+  map_id,
+}: ParsedParams): Promise<MatchesByFilters[]> => {
   // Base query
+  const { query, queryParams } = generateQueryWithFilters([
+    { column: "m.season_id", value: season_id },
+    { column: "m.league_id", value: league_id },
+    { column: "(t1.id = ? OR t2.id = ?)", value: team_id },
+    { column: "m.stage", value: stage },
+    { column: "mmp.map_id", value: map_id },
+  ]);
   const baseQuery = `
       SELECT 
           m.match_date,
@@ -138,26 +146,9 @@ export const getMatchesByFilters = async (
       JOIN Teams t1 ON tms1.team_id = t1.id
       JOIN Teams t2 ON tms2.team_id = t2.id
       WHERE 1=1
-          AND (m.season_id = ? OR ? IS NULL)
-          AND (m.league_id = ? OR ? IS NULL)
-          AND (? IS NULL OR t1.id = ? OR t2.id = ?)
-          AND (m.stage = ? OR ? IS NULL)
-          AND (mmp.map_id = ? OR ? IS NULL)
+        ${query}
       ORDER BY m.match_date DESC;
       `;
-
-  const queryParams = [
-    season_id,
-    season_id,
-    league_id,
-    league_id,
-    team_id,
-    team_id,
-    team_id,
-    stage,
-    stage,
-    map_id,
-    map_id,
-  ];
+  console.log(baseQuery, queryParams);
   return runQuery(baseQuery, queryParams);
 };

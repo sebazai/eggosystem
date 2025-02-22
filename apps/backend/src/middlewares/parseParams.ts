@@ -22,6 +22,8 @@ const parseParams = (req: Request, res: Response, next: NextFunction): void => {
 
   req.parsedParams = parsedParams;
 
+  console.log(parsedParams);
+
   next();
 };
 

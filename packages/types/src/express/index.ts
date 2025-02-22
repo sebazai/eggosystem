@@ -7,5 +7,5 @@ export interface ParsedParams {
   team_id: Nullable<number>;
   stage: Nullable<number>;
   map_id: Nullable<number>;
-  leaderboard: Nullable<string>;
+  leaderboard?: Nullable<string>;
 }

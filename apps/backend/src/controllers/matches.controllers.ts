@@ -19,16 +19,8 @@ export const getMatchesByFiltersController = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { season_id, map_id, league_id, stage, team_id } = req.parsedParams;
-
   // Call the model function with the parameters in the correct order
-  const matches = await getMatchesByFilters(
-    team_id,
-    season_id,
-    map_id,
-    league_id,
-    stage,
-  );
+  const matches = await getMatchesByFilters(req.parsedParams);
 
   res.json(matches);
 };

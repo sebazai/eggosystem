@@ -1,44 +1,32 @@
+import { Nullable } from "@eggosystem/types";
+
 interface Filter {
-  key: string;
   column: string;
-  value: string | number | undefined;
+  value: Nullable<number>;
 }
 
 export const generateQueryWithFilters = (
-  baseQuery: string,
-  filterValues: {
-    team_id?: number;
-    season_id?: number;
-    map?: string;
-    league_id?: number;
-    stage?: number;
-  },
-  isMatchQuery: boolean = false,
+  filters: Filter[],
 ): { query: string; queryParams: (string | number)[] } => {
-  const filters: Filter[] = [
-    {
-      key: "team_id",
-      column: isMatchQuery ? "(m.team1 = ? OR m.team2 = ?)" : "p.team_id",
-      value: filterValues.team_id,
-    },
-    { key: "season_id", column: "l.season_id", value: filterValues.season_id },
-    { key: "map_id", column: "m.map", value: filterValues.map },
-    { key: "league_id", column: "l.id", value: filterValues.league_id },
-    { key: "stage", column: "m.stage", value: filterValues.stage },
-  ];
+  // const filters: Filter[] = [
+  //   { key: "season_id", column: "l.season_id", value: filterValues.season_id },
+  //   { key: "league_id", column: "l.id", value: filterValues.league_id },
+  //   {
+  //     key: "team_id",
+  //     column: isMatchQuery ? "(m.team1 = ? OR m.team2 = ?)" : "p.team_id",
+  //     value: filterValues.team_id,
+  //   },
+  //   { key: "stage", column: "m.stage", value: filterValues.stage },
+  //   { key: "map_id", column: "m.map", value: filterValues.map_id },
+  // ];
 
-  let query = baseQuery;
+  let query = "";
   const queryParams: (string | number)[] = [];
 
   filters.forEach((filter) => {
-    if (filter.value !== undefined) {
-      if (filter.key === "team_id" && isMatchQuery) {
-        query += ` AND ${filter.column}`;
-        queryParams.push(filter.value, filter.value); // Push the value twice for the OR condition
-      } else {
-        query += ` AND ${filter.column} = ?`;
-        queryParams.push(filter.value);
-      }
+    if (filter.value !== null) {
+      query += ` AND ${filter.column} = ?`;
+      queryParams.push(filter.value);
     }
   });
 
