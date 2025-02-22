@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import {
@@ -72,36 +73,33 @@ export const getMultipleLeaderboardsController = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { parsedParams } = req;
-  const leaderboards = [
-    "kills",
-    "assists",
-    "deaths",
-    "kast",
-    "kd",
-    "flash_assists",
-  ]; // Add more as needed
-
-  const results = await Promise.all(
-    leaderboards.map((leaderboard) =>
-      getPlayerLeaderboard(
-        leaderboard,
-        parsedParams?.team_id,
-        parsedParams?.season_id,
-        parsedParams?.map,
-        parsedParams?.league_id,
-        parsedParams?.stage,
-      ),
-    ),
-  );
-
-  const response = leaderboards.reduce(
-    (acc, leaderboard, index) => {
-      acc[leaderboard] = results[index];
-      return acc;
-    },
-    {} as { [key: string]: any[] },
-  );
-
-  res.json(response);
+  // const { parsedParams } = req;
+  // const leaderboards = [
+  //   "kills",
+  //   "assists",
+  //   "deaths",
+  //   "kast",
+  //   "kd",
+  //   "flash_assists",
+  // ]; // Add more as needed
+  // const results = await Promise.all(
+  //   leaderboards.map((leaderboard) =>
+  //     getPlayerLeaderboard(
+  //       leaderboard,
+  //       parsedParams.team_id,
+  //       parsedParams.season_id,
+  //       parsedParams.map_id,
+  //       parsedParams.league_id,
+  //       parsedParams.stage,
+  //     ),
+  //   ),
+  // );
+  // const response = leaderboards.reduce(
+  //   (acc, leaderboard, index) => {
+  //     acc[leaderboard] = results[index];
+  //     return acc;
+  //   },
+  //   {} as { [key: string]: any[] },
+  // );
+  // res.json(response);
 };

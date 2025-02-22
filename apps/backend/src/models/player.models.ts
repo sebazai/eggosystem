@@ -1,6 +1,6 @@
 import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import { Player } from "@eggosystem/types";
+import { ParsedParams, Player } from "@eggosystem/types";
 
 const leaderboardExpressions: { [key: string]: string } = {
   Kills: "sum(ps.kills)",
@@ -77,53 +77,57 @@ export const getPlayersByFilters = async (
 
 // Fix this...
 export const getPlayerLeaderboard = async (
-  leaderboard: string,
-  team_id?: number,
-  season_id?: number,
-  map?: string,
-  league_id?: number,
-  stage?: number,
-): Promise<Player[]> => {
+  season_id: ParsedParams["season_id"],
+  league_id: ParsedParams["league_id"],
+  team_id: ParsedParams["team_id"],
+  stage: ParsedParams["stage"],
+  map_id: ParsedParams["map_id"],
+  leaderboard: ParsedParams["leaderboard"],
+) => {
+  if (!leaderboard) {
+    throw new Error("Leaderboard type is required");
+  }
+
   const leaderboardExpression = leaderboardExpressions[leaderboard];
   if (!leaderboardExpression) {
     throw new Error(`Invalid leaderboard type: ${leaderboard}`);
   }
 
-  const subQuery = `
-    SELECT steam_id, p.name, team_id 
-    FROM Players p 
-    JOIN Teams t ON t.id = p.team_id 
-    JOIN leagues l ON l.id = t.league_id 
-    WHERE 1=1
-  `;
+  // const subQuery = `
+  //   SELECT steam_id, p.name, team_id
+  //   FROM Players p
+  //   JOIN Teams t ON t.id = p.team_id
+  //   JOIN leagues l ON l.id = t.league_id
+  //   WHERE 1=1
+  // `;
 
-  const { query: subQueryWithFilters, queryParams: subQueryParams } =
-    generateQueryWithFilters(subQuery, {
-      team_id,
-      season_id,
-      league_id,
-    });
+  // const { query: subQueryWithFilters, queryParams: subQueryParams } =
+  //   generateQueryWithFilters(subQuery, {
+  //     team_id,
+  //     season_id,
+  //     league_id,
+  //   });
 
-  const baseQuery = `
-    SELECT p.name, t.name as team_name, ${leaderboardExpression} as ${leaderboard}
-    FROM PlayerStats ps
-    LEFT JOIN (${subQueryWithFilters}) p ON p.steam_id = ps.steam_id
-    LEFT JOIN Matches m ON m.id = ps.match_id
-    LEFT JOIN Leagues l ON m.league_id = l.id
-    LEFT JOIN Teams t ON p.team_id = t.id
-    WHERE 1=1
-  `;
+  // const baseQuery = `
+  //   SELECT p.name, t.name as team_name, ${leaderboardExpression} as ${leaderboard}
+  //   FROM PlayerStats ps
+  //   LEFT JOIN (${subQueryWithFilters}) p ON p.steam_id = ps.steam_id
+  //   LEFT JOIN Matches m ON m.id = ps.match_id
+  //   LEFT JOIN Leagues l ON m.league_id = l.id
+  //   LEFT JOIN Teams t ON p.team_id = t.id
+  //   WHERE 1=1
+  // `;
 
-  let { query, queryParams } = generateQueryWithFilters(baseQuery, {
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  });
+  // let { query, queryParams } = generateQueryWithFilters(baseQuery, {
+  //   team_id,
+  //   season_id,
+  //   map,
+  //   league_id,
+  //   stage,
+  // });
 
-  query += ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`;
-  queryParams = [...subQueryParams, ...queryParams]; // Combine subquery params with main query params
+  // query += ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`;
+  // queryParams = [...subQueryParams, ...queryParams]; // Combine subquery params with main query params
 
-  return runQuery(query, queryParams);
+  // return runQuery(query, queryParams);
 };

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import { Match } from "@eggosystem/types";
+import { Match, MatchesByFilters, ParsedParams } from "@eggosystem/types";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -111,27 +110,41 @@ export const getTopPlayers = async (
 };
 
 export const getMatchesByFilters = async (
-  team_id?: number,
-  season_id?: number,
-  map?: string,
-  league_id?: number,
-  stage?: number,
-): Promise<Match[]> => {
+  season_id: ParsedParams["season_id"],
+  league_id: ParsedParams["league_id"],
+  team_id: ParsedParams["team_id"],
+  stage: ParsedParams["stage"],
+  map_id: ParsedParams["map_id"],
+): Promise<MatchesByFilters[]> => {
   // Base query
   const baseQuery = `
-      SELECT t1.name as team1_name, t2.name as team2_name, team1_score, team2_score, date, l.name as league_name, CONCAT(UPPER(SUBSTRING(map, 4, 1)), SUBSTRING(map, 5)) as map
-      FROM Matches m
-       INNER JOIN Leagues l ON m.league_id = l.id
-       INNER JOIN Teams t1 ON m.team1_id = t1.id
-       INNER JOIN Teams t2 ON m.team2_id = t2.id
-      WHERE 1 = 1
+      SELECT 
+          m.match_date,
+          sl.name AS league_name,
+          m.stage,
+          maps.name AS map_name,
+          t1.name AS team_1_name,
+          t2.name AS team_2_name,
+          t1.team_logo AS team_1_logo,
+          t2.team_logo AS team_2_logo,
+          tms1.score AS team_1_map_end_score,
+          tms2.score AS team_2_map_end_score
+      FROM MatchMapsPlayed mmp
+      JOIN Matches m ON mmp.match_id = m.id
+      JOIN SeasonLeagues sl ON m.league_id = sl.id
+      JOIN Maps maps ON mmp.map_id = maps.id
+      JOIN TeamMapScores tms1 ON mmp.id = tms1.match_maps_played_id
+      JOIN TeamMapScores tms2 ON mmp.id = tms2.match_maps_played_id AND tms1.team_id <> tms2.team_id
+      JOIN Teams t1 ON tms1.team_id = t1.id
+      JOIN Teams t2 ON tms2.team_id = t2.id
+      WHERE 1=1
+          AND (m.season_id = ? OR ? IS NULL)
+          AND (m.league_id = ? OR ? IS NULL)
+          AND (? IS NULL OR t1.id = ? OR t2.id = ?)
+          AND (m.stage = ? OR ? IS NULL)
+          AND (mmp.map_id = ? OR ? IS NULL)
+      ORDER BY m.match_date DESC;
       `;
 
-  const { query, queryParams } = generateQueryWithFilters(
-    baseQuery,
-    { team_id, season_id, map, league_id, stage },
-    true,
-  );
-
-  return runQuery(query, queryParams);
+  return runQuery(baseQuery, [season_id, league_id, team_id, stage, map_id]);
 };

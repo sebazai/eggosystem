@@ -21,9 +21,9 @@ export const generateQueryWithFilters = (
       column: isMatchQuery ? "(m.team1 = ? OR m.team2 = ?)" : "p.team_id",
       value: filterValues.team_id,
     },
-    { key: "seasonid", column: "l.season_id", value: filterValues.season_id },
-    { key: "map", column: "m.map", value: filterValues.map },
-    { key: "leagueid", column: "l.id", value: filterValues.league_id },
+    { key: "season_id", column: "l.season_id", value: filterValues.season_id },
+    { key: "map_id", column: "m.map", value: filterValues.map },
+    { key: "league_id", column: "l.id", value: filterValues.league_id },
     { key: "stage", column: "m.stage", value: filterValues.stage },
   ];
 

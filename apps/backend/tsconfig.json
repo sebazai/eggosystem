@@ -1,6 +1,7 @@
 {
   "extends": "@eggosystem/tsconfig/express.json",
   "compilerOptions": {
+    "baseUrl": "./",
     "paths": {
       "@eggosystem/types": ["../../packages/types/src"]
     }

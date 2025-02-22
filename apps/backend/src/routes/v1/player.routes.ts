@@ -16,7 +16,7 @@ const router = Router();
 router.get("/", getPlayersController);
 router.get("/:steam_id", getPlayerBySteamIdController);
 router.get(
-  "/:season_id/:map/:league_id/:stage/:team_id/leaderboards",
+  "/:season_id/:map_id/:league_id/:stage/:team_id/leaderboards",
   parseParams,
   getMultipleLeaderboardsController,
 );

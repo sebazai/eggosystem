@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import {
   getMatches,
@@ -20,13 +19,15 @@ export const getMatchesByFiltersController = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { seasonid, map, leagueid, stage, teamid } = (req as any).parsedParams;
+  const { season_id, map_id, league_id, stage, team_id } = req.parsedParams;
+
+  console.log(req.parsedParams);
   // Call the model function with the parameters in the correct order
   const matches = await getMatchesByFilters(
-    teamid,
-    seasonid,
-    map,
-    leagueid,
+    team_id,
+    season_id,
+    map_id,
+    league_id,
     stage,
   );
 
