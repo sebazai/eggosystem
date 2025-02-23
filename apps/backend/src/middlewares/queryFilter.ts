@@ -1,13 +1,13 @@
-import { Nullable } from "@eggosystem/types";
+import type { Nullable } from "@eggosystem/types";
 
 interface FilterGroup {
   operator: "AND" | "OR";
   filters: Filter[];
 }
 
-type Filter =
-  | { column: string; value: Nullable<number> } // Single column filter
-  | { column: Array<{ column: string }>; value: Nullable<number> } // Multiple OR columns
+export type Filter =
+  | { column: string; value: Nullable<number | string> } // Single column filter
+  | { column: Array<{ column: string }>; value: Nullable<number | string> } // Multiple OR columns
   | { group: FilterGroup }; // Nested AND/OR groups
 
 interface QueryAndWithQueryParams {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 import type { Nullable } from "../utils";
 
 export interface ParsedParams {
