@@ -18,7 +18,7 @@
     "migrate": "turbo migrate",
     "migrate:rollback": "turbo migrate:rollback",
     "migrate:down": "turbo migrate:down",
-    "seed": "turbo seed"
+    "seed": "turbo seed --"
   },
   "lint-staged": {
     "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",

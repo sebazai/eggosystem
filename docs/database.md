@@ -33,13 +33,13 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `season_id` (INT, FK → Seasons.id)
   - `tier` (INT) - Defines ranking order, where Tier 1 is the highest level.
 
-### Companies
+### Organizations
 
-- **Purpose**: Represents companies with teams in the league.
+- **Purpose**: Represents organizations with teams in the league.
 - **Columns**:
   - `id` (INT, PK)
   - `name` (VARCHAR)
-  - `company_code` (VARCHAR, UNIQUE) - Unique business identifier.
+  - `organization_code` (VARCHAR, UNIQUE) - Unique business identifier.
   - `admin_steam_id` (BIGINT, FK → Players.steam_id) - Admin's Steam ID.
 
 ### Teams
@@ -47,7 +47,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 - **Purpose**: Represents a team, always belonging to one company.
 - **Columns**:
   - `id` (INT, PK)
-  - `company_id` (INT, FK → Companies.id)
+  - `organization_id` (INT, FK → Organizations.id)
   - `name` (VARCHAR)
 
 ### Players

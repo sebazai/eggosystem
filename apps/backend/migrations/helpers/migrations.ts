@@ -49,7 +49,7 @@ export const migrateCompanies = async () => {
         return null;
       }
 
-      return `INSERT INTO Companies (name, country, company_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.svg', '${company.yrityksen_internet_sivut}');`;
+      return `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.svg', '${company.yrityksen_internet_sivut}');`;
     },
   );
 
@@ -107,7 +107,7 @@ export const migrateAlmostErrything = async () => {
     {},
   );
 
-  const newCompanies = await runNewDbQuery<any>("SELECT * FROM Companies");
+  const newCompanies = await runNewDbQuery<any>("SELECT * FROM Organizations");
 
   const newCompaniesByCompanyCode: any = newCompanies.reduce(
     (acc: any, obj: any) => {
@@ -199,19 +199,19 @@ export const migrateAlmostErrything = async () => {
       const emailToAddForTeam =
         team.email === "noreply@kanaliiga.fi" ? teamCompany.email : team.email;
 
-      const query = `INSERT INTO Teams (id, company_id, name, team_logo, email) VALUES ('${teamId}', ${
+      const query = `INSERT INTO Teams (id, organization_id, name, team_logo, email) VALUES ('${teamId}', ${
         newCompany?.id ?? "NULL"
       }, "${team.Name}", '${team_company_logo}', '${emailToAddForTeam}');`;
       await runNewDbQuery(query);
 
       if (newCompany?.logo === "nologo.svg") {
         const getNewCompany: any[] = await runNewDbQuery(
-          `SELECT * FROM Companies WHERE company_code = '${newCompany.company_code}'`,
+          `SELECT * FROM Organizations WHERE organization_code = '${newCompany.company_code}'`,
         );
         const newCompanyLogo = getNewCompany[0].logo;
         // Update newCompany logo from team
         if (newCompanyLogo === "nologo.svg") {
-          const query = `UPDATE Companies SET logo='${team_company_logo}' WHERE company_code = '${newCompany.company_code}';`;
+          const query = `UPDATE Organizations SET logo='${team_company_logo}' WHERE organization_code = '${newCompany.company_code}';`;
           await runNewDbQuery(query);
         }
       }
@@ -793,7 +793,7 @@ export const cleanTeamsWithCascade = async () => {
 
 export const experimentalTeamsIntoCompanies = async () => {
   console.log("Experimental teams into companies");
-  const query = `SELECT * FROM Teams WHERE company_id IS NULL;`;
+  const query = `SELECT * FROM Teams WHERE organization_id IS NULL;`;
 
   const teams: any[] = await runNewDbQuery(query);
 
@@ -801,13 +801,13 @@ export const experimentalTeamsIntoCompanies = async () => {
     const teamNameSplit = team.name.split(" ");
     const teamName = teamNameSplit[0];
     const likeCompanyName = `%${teamName}%`;
-    const query = `SELECT * FROM Companies WHERE name LIKE ?;`;
+    const query = `SELECT * FROM Organizations WHERE name LIKE ?;`;
     const companies = await runNewDbQuery<any>(query, [likeCompanyName]);
 
     if (companies.length > 0) {
       const company: any = companies[0];
       const companyId = company.id;
-      const updateQuery = `UPDATE Teams SET company_id = ? WHERE id = ?;`;
+      const updateQuery = `UPDATE Teams SET organization_id = ? WHERE id = ?;`;
       await runNewDbQuery(updateQuery, [companyId, team.id]);
     }
   }

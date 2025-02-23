@@ -103,7 +103,7 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM SeasonLeagues");
   await knex.raw("DELETE FROM SeasonTeams");
   await knex.raw("DELETE FROM Teams");
-  await knex.raw("DELETE FROM Companies");
+  await knex.raw("DELETE FROM Organizations");
   await knex.raw("DELETE FROM Seasons");
   await knex.raw("DELETE FROM Games");
 }

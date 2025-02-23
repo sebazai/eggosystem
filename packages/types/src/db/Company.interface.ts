@@ -1,8 +1,8 @@
-export interface Company {
+export interface Organizations {
   id: number;
   name: string;
   country?: string | null;
-  company_code?: string | null; // Unique but nullable
+  organization_code?: string | null; // Unique but nullable
   logo: string;
   website?: string | null;
 }

@@ -8,8 +8,8 @@ out/
 *.log
 
 # Environment variables file
-.env
-.env*.local
+**/.env
+**/.env*.local
 
 # IDE and editor files
 .vscode/

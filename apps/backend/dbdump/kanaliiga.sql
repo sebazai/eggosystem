@@ -31,25 +31,25 @@ CREATE TABLE IF NOT EXISTS SeasonLeagues (
 );
 
 
--- Table: Companies
-CREATE TABLE IF NOT EXISTS Companies (
+-- Table: Organizations
+CREATE TABLE IF NOT EXISTS Organizations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     country VARCHAR(255),
-    company_code VARCHAR(255),
+    organization_code VARCHAR(255),
     logo VARCHAR(255) NOT NULL,
     website VARCHAR(255),
-    UNIQUE KEY unique_company_code (company_code)
+    UNIQUE KEY unique_org_code (organization_code)
 );
 
 -- Table: Teams
 CREATE TABLE IF NOT EXISTS Teams (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    company_id INT,
+    organization_id INT,
     name VARCHAR(255) NOT NULL,
     team_logo VARCHAR(255),
     email VARCHAR(255) NOT NULL,
-    FOREIGN KEY (company_id) REFERENCES Companies(id)
+    FOREIGN KEY (organization_id) REFERENCES Organizations(id)
 );
 
 -- Table: Players
