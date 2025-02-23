@@ -64,7 +64,7 @@ export const getMultipleLeaderboardsController = async (
   ]; // Add more as needed
   const results = await Promise.all(
     leaderboards.map((lb) =>
-      getPlayerLeaderboard({ leaderboard: lb, ...parsedParams })
+      getPlayerLeaderboard({ ...parsedParams, leaderboard: lb })
     )
   );
   const response = leaderboards.reduce(
