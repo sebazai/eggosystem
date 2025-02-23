@@ -121,34 +121,38 @@ export const getMatchesByFilters = async ({
   const { query, queryParams } = generateQueryWithFilters([
     { column: "m.season_id", value: season_id },
     { column: "m.league_id", value: league_id },
-    { column: "(t1.id = ? OR t2.id = ?)", value: team_id },
     { column: "m.stage", value: stage },
     { column: "mmp.map_id", value: map_id },
   ]);
   const baseQuery = `
-      SELECT 
-          m.match_date,
-          sl.name AS league_name,
-          m.stage,
-          maps.name AS map_name,
-          t1.name AS team_1_name,
-          t2.name AS team_2_name,
-          t1.team_logo AS team_1_logo,
-          t2.team_logo AS team_2_logo,
-          tms1.score AS team_1_map_end_score,
-          tms2.score AS team_2_map_end_score
-      FROM MatchMapsPlayed mmp
-      JOIN Matches m ON mmp.match_id = m.id
-      JOIN SeasonLeagues sl ON m.league_id = sl.id
-      JOIN Maps maps ON mmp.map_id = maps.id
-      JOIN TeamMapScores tms1 ON mmp.id = tms1.match_maps_played_id
-      JOIN TeamMapScores tms2 ON mmp.id = tms2.match_maps_played_id AND tms1.team_id <> tms2.team_id
-      JOIN Teams t1 ON tms1.team_id = t1.id
-      JOIN Teams t2 ON tms2.team_id = t2.id
-      WHERE 1=1
-        ${query}
-      ORDER BY m.match_date DESC;
+SELECT 
+    m.match_date,
+    sl.name AS league_name,
+    sl.id AS league_id,
+    m.stage,
+    m.season_id,
+    maps.name AS map_name,
+    t.team_name AS team_name,
+    t.team_logo AS team_logo,
+    opp.team_name AS opponent_name,
+    opp.team_logo AS opponent_logo,
+    tms.score AS team_score,
+    opp_tms.score AS opponent_score
+FROM MatchMapsPlayed mmp
+JOIN Matches m ON mmp.match_id = m.id
+JOIN SeasonLeagues sl ON m.league_id = sl.id
+JOIN Maps maps ON mmp.map_id = maps.id
+JOIN TeamMapScores tms ON mmp.id = tms.match_maps_played_id  -- Current team score
+JOIN Teams t ON tms.team_id = t.id
+JOIN TeamMapScores opp_tms 
+    ON mmp.id = opp_tms.match_maps_played_id 
+    AND opp_tms.team_id <> tms.team_id -- Get the opponent team
+JOIN Teams opp ON opp_tms.team_id = opp.id
+WHERE t.team_id = 1650 -- Filter for the specific team
+ORDER BY m.match_date DESC;
+
+
       `;
-  console.log(baseQuery, queryParams);
-  return runQuery(baseQuery, queryParams);
+
+  return runQuery(baseQuery, [team_id, ...queryParams]);
 };

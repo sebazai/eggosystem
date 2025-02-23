@@ -5,10 +5,10 @@ export interface MatchesByFilters {
   stage: Match["stage"];
   league_name: SeasonLeague["name"];
   map_name: Map["name"];
-  team_1_name: Team["name"];
-  team_2_name: Team["name"];
-  team_1_logo: Team["team_logo"];
-  team_2_logo: Team["team_logo"];
-  team_1_map_end_score: TeamMapScore["score"];
-  team_2_map_end_score: TeamMapScore["score"];
+  team_name: Team["name"];
+  opponent_name: Team["name"];
+  team_logo: Team["team_logo"];
+  opponent_logo: Team["team_logo"];
+  team_score: TeamMapScore["score"];
+  opponent_score: TeamMapScore["score"];
 }
