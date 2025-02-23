@@ -27,7 +27,7 @@ describe("parseParams Middleware", () => {
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
+    expect(req.parsedParams).toEqual({
       season_id: 1,
       map_id: 1,
       league_id: 2,
@@ -50,13 +50,13 @@ describe("parseParams Middleware", () => {
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
-      season_id: undefined,
-      map_id: undefined,
-      league_id: undefined,
-      stage: undefined,
-      team_id: undefined,
-      leaderboard: undefined,
+    expect(req.parsedParams).toEqual({
+      season_id: null,
+      map_id: null,
+      league_id: null,
+      stage: null,
+      team_id: null,
+      leaderboard: null,
     });
     expect(next).toHaveBeenCalled();
   });
@@ -66,9 +66,9 @@ describe("parseParams Middleware", () => {
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
+    expect(req.parsedParams).toEqual({
       season_id: NaN,
-      map_id: undefined,
+      map_id: NaN,
       league_id: NaN,
       stage: NaN,
       team_id: NaN,
@@ -86,9 +86,9 @@ describe("parseParams Middleware", () => {
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
+    expect(req.parsedParams).toEqual({
       season_id: 1,
-      map_id: undefined,
+      map_id: null,
       league_id: 2,
       stage: NaN,
       team_id: NaN,

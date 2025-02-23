@@ -1,6 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import type { ParsedParams } from "@eggosystem/types";
 
+/**
+ * If 'any', set to null.
+ * If missing, is undefined.
+ * @param req
+ * @param res
+ * @param next
+ */
 const parseParams = (req: Request, res: Response, next: NextFunction): void => {
   const parsedParams: ParsedParams = {
     season_id:
@@ -21,8 +28,6 @@ const parseParams = (req: Request, res: Response, next: NextFunction): void => {
   };
 
   req.parsedParams = parsedParams;
-
-  console.log(parsedParams);
 
   next();
 };
