@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import { Player } from "@eggosystem/types";
+import type { ParsedParams, Player } from "@eggosystem/types";
 
 const leaderboardExpressions: { [key: string]: string } = {
   Kills: "sum(ps.kills)",
@@ -8,7 +9,7 @@ const leaderboardExpressions: { [key: string]: string } = {
   Deaths: "sum(ps.deaths)",
   KAST: "avg(ps.kast)",
   KD: "sum(ps.kills) - sum(ps.deaths)",
-  flashAssists: "sum(ps.flash_assists)",
+  flashAssists: "sum(ps.flash_assists)"
 };
 
 export const getPlayers = () => {
@@ -18,19 +19,20 @@ export const getPlayers = () => {
 export const getPlayerBySteamId = async (steam_id: string) => {
   const results = await runQuery<Player[]>(
     `SELECT * FROM Players WHERE steam_id = ?`,
-    [steam_id],
+    [steam_id]
   );
   return results.length > 0 ? results[0] : undefined;
 };
 
 // ????????? Fix this, does not return Player array
-export const getPlayersByFilters = async (
-  team_id?: number,
-  season_id?: number,
-  map?: string,
-  league_id?: number,
-  stage?: number,
-): Promise<Player[]> => {
+export const getPlayersByFilters = async ({
+  season_id,
+  league_id,
+  team_id,
+  stage,
+  map_id
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+}: ParsedParams): Promise<any[]> => {
   // Base query
   const baseQuery = `
       SELECT p.name, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
@@ -41,7 +43,7 @@ export const getPlayersByFilters = async (
         "flash_assists",
         "awp_kills",
         "total_damage",
-        "headshots",
+        "headshots"
       ]
         .map((col) => `sum(ps.${col}) as ${col}`)
         .join(", ")},
@@ -51,7 +53,7 @@ export const getPlayersByFilters = async (
         "first_kills",
         "first_deaths",
         "kills_5",
-        "utility_damage",
+        "utility_damage"
       ]
         .map((col) => `sum(ps.${col}) as ${col}`)
         .join(", ")},
@@ -62,68 +64,76 @@ export const getPlayersByFilters = async (
       INNER JOIN Leagues l ON m.league_id = l.id
       INNER JOIN Teams t ON p.team_id = t.id
     `;
-
-  const { query, queryParams } = generateQueryWithFilters(baseQuery, {
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  });
+  const { query, queryParams } = generateQueryWithFilters([
+    { column: "p.team_id", value: team_id },
+    { column: "l.season_id", value: season_id },
+    { column: "l.id", value: league_id },
+    { column: "m.stage", value: stage },
+    { column: "mmp.map_id", value: map_id }
+  ]);
   const fullQuery = query + " GROUP BY p.steam_id";
-
   return runQuery(fullQuery, queryParams);
 };
 
 // Fix this...
-export const getPlayerLeaderboard = async (
-  leaderboard: string,
-  team_id?: number,
-  season_id?: number,
-  map?: string,
-  league_id?: number,
-  stage?: number,
-): Promise<Player[]> => {
+export const getPlayerLeaderboard = async ({
+  season_id,
+  league_id,
+  team_id,
+  stage,
+  map_id,
+  leaderboard
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+}: ParsedParams): Promise<any[]> => {
+  if (!leaderboard) {
+    throw new Error("Leaderboard type is required");
+  }
+
   const leaderboardExpression = leaderboardExpressions[leaderboard];
   if (!leaderboardExpression) {
     throw new Error(`Invalid leaderboard type: ${leaderboard}`);
   }
 
+  const { query: subQueryWithFilters, queryParams: subQueryParams } =
+    generateQueryWithFilters([
+      { column: "p.team_id", value: team_id },
+      { column: "l.season_id", value: season_id },
+      { column: "l.id", value: league_id }
+    ]);
+
   const subQuery = `
-    SELECT steam_id, p.name, team_id 
-    FROM Players p 
-    JOIN Teams t ON t.id = p.team_id 
-    JOIN leagues l ON l.id = t.league_id 
+    SELECT steam_id, p.name, team_id
+    FROM Players p
+    JOIN Teams t ON t.id = p.team_id
+    JOIN leagues l ON l.id = t.league_id
     WHERE 1=1
+    ${subQueryWithFilters}
   `;
 
-  const { query: subQueryWithFilters, queryParams: subQueryParams } =
-    generateQueryWithFilters(subQuery, {
-      team_id,
-      season_id,
-      league_id,
-    });
+  const { query: baseQueryFilters, queryParams: additionalParams } =
+    generateQueryWithFilters([
+      { column: "p.team_id", value: team_id },
+      { column: "l.season_id", value: season_id },
+      { column: "l.id", value: league_id },
+      { column: "m.stage", value: stage },
+      { column: "mmp.map_id", value: map_id }
+    ]);
 
   const baseQuery = `
     SELECT p.name, t.name as team_name, ${leaderboardExpression} as ${leaderboard}
     FROM PlayerStats ps
-    LEFT JOIN (${subQueryWithFilters}) p ON p.steam_id = ps.steam_id
+    LEFT JOIN (${subQuery}) p ON p.steam_id = ps.steam_id
     LEFT JOIN Matches m ON m.id = ps.match_id
     LEFT JOIN Leagues l ON m.league_id = l.id
     LEFT JOIN Teams t ON p.team_id = t.id
     WHERE 1=1
+    ${baseQueryFilters}
   `;
 
-  let { query, queryParams } = generateQueryWithFilters(baseQuery, {
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  });
-
-  query += ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`;
-  queryParams = [...subQueryParams, ...queryParams]; // Combine subquery params with main query params
+  const query = baseQuery.concat(
+    ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`
+  );
+  const queryParams = [...subQueryParams, ...additionalParams]; // Combine subquery params with main query params
 
   return runQuery(query, queryParams);
 };

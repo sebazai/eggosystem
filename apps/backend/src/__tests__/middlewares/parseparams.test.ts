@@ -9,7 +9,7 @@ describe("parseParams Middleware", () => {
 
   beforeEach(() => {
     req = {
-      params: {},
+      params: {}
     };
     res = {};
     next = jest.fn();
@@ -18,22 +18,22 @@ describe("parseParams Middleware", () => {
   it("should parse params correctly when all params are provided", () => {
     req.params = {
       season_id: "1",
-      map: "de_dust2",
+      map_id: "1",
       league_id: "2",
       stage: "3",
       team_id: "4",
-      leaderboard: "top",
+      leaderboard: "top"
     };
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
+    expect(req.parsedParams).toEqual({
       season_id: 1,
-      map: "de_dust2",
+      map_id: 1,
       league_id: 2,
       stage: 3,
       team_id: 4,
-      leaderboard: "top",
+      leaderboard: "top"
     });
     expect(next).toHaveBeenCalled();
   });
@@ -41,22 +41,22 @@ describe("parseParams Middleware", () => {
   it('should handle "any" values correctly', () => {
     req.params = {
       season_id: "any",
-      map: "any",
+      map_id: "any",
       league_id: "any",
       stage: "any",
       team_id: "any",
-      leaderboard: "any",
+      leaderboard: "any"
     };
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
-      season_id: undefined,
-      map: undefined,
-      league_id: undefined,
-      stage: undefined,
-      team_id: undefined,
-      leaderboard: undefined,
+    expect(req.parsedParams).toEqual({
+      season_id: null,
+      map_id: null,
+      league_id: null,
+      stage: null,
+      team_id: null,
+      leaderboard: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -66,13 +66,13 @@ describe("parseParams Middleware", () => {
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
+    expect(req.parsedParams).toEqual({
       season_id: NaN,
-      map: undefined,
+      map_id: NaN,
       league_id: NaN,
       stage: NaN,
       team_id: NaN,
-      leaderboard: undefined,
+      leaderboard: undefined
     });
     expect(next).toHaveBeenCalled();
   });
@@ -80,19 +80,19 @@ describe("parseParams Middleware", () => {
   it("should handle partial params correctly", () => {
     req.params = {
       season_id: "1",
-      map: "any",
-      league_id: "2",
+      map_id: "any",
+      league_id: "2"
     };
 
     parseParams(req as Request, res as Response, next);
 
-    expect((req as any).parsedParams).toEqual({
+    expect(req.parsedParams).toEqual({
       season_id: 1,
-      map: undefined,
+      map_id: null,
       league_id: 2,
       stage: NaN,
       team_id: NaN,
-      leaderboard: undefined,
+      leaderboard: undefined
     });
     expect(next).toHaveBeenCalled();
   });

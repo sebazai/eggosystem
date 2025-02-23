@@ -7,7 +7,7 @@ import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionTrigger,
+  AccordionTrigger
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,14 +17,14 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
+  navigationMenuTriggerStyle
 } from "@/components/ui/navigation-menu";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
+  SheetTrigger
 } from "@/components/ui/sheet";
 import type { JSX } from "react";
 import Link from "next/link";
@@ -68,25 +68,25 @@ const defaultProps: NavbarProps = {
     url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
     src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
     alt: "logo",
-    title: "Kanaliiga",
+    title: "Kanaliiga"
   },
   menu: [
     {
       title: "Home",
-      url: "#",
+      url: "#"
     },
     {
       title: "Matches",
-      url: "#",
+      url: "#"
     },
     {
       title: "Companies",
-      url: "#",
+      url: "#"
     },
     {
       url: `${process.env.NEXT_PUBLIC_BASE_URL}`,
       src: `${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1800px.png`,
-      alt: "Kanaliiga logo",
+      alt: "Kanaliiga logo"
     },
     {
       title: "Teams",
@@ -94,28 +94,28 @@ const defaultProps: NavbarProps = {
       items: [
         {
           title: "Top Teams",
-          url: "#",
-        },
-      ],
+          url: "#"
+        }
+      ]
     },
     {
       title: "Players",
-      url: "#",
+      url: "#"
     },
     {
       title: "Leaderboards",
-      url: "#",
-    },
+      url: "#"
+    }
   ],
   mobileExtraLinks: [
     { name: "Press", url: "#" },
     { name: "Contact", url: "#" },
     { name: "Imprint", url: "#" },
-    { name: "Sitemap", url: "#" },
+    { name: "Sitemap", url: "#" }
   ],
   auth: {
-    login: { text: "Log in", url: "#" },
-  },
+    login: { text: "Log in", url: "#" }
+  }
 };
 
 export const Navigation = (props: NavbarProps) => {
@@ -267,7 +267,7 @@ const renderMobileMenuItem = (item: MenuItem) => {
 
 const ListItem = ({
   title,
-  href,
+  href
 }: React.ComponentPropsWithoutRef<"li"> & { href: string }) => {
   return (
     <li>

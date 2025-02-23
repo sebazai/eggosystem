@@ -1,5 +1,5 @@
 import type { Game } from "./Game.interface";
-import type { Company } from "./Company.interface";
+import type { Organizations } from "./Organization.interface";
 import type { Map } from "./Map.interface";
 import type { MapRoundStat } from "./MapRoundStat.interface";
 import type { Match } from "./Match.interface";
@@ -23,7 +23,7 @@ import type { TeamRoster } from "./TeamRoster";
 
 export type {
   Game,
-  Company,
+  Organizations,
   Map,
   MapRoundStat,
   Match,
@@ -43,5 +43,5 @@ export type {
   SeasonTeamPlayer,
   Team,
   TeamMapScore,
-  TeamRoster,
+  TeamRoster
 };

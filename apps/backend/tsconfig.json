@@ -2,13 +2,14 @@
   "extends": "@eggosystem/tsconfig/express.json",
   "compilerOptions": {
     "paths": {
-      "@eggosystem/types": ["../../packages/types/src"]
+      "@eggosystem/types": ["../../packages/types"]
     }
   },
   "include": [
     "src/**/*.ts",
     "eslint.config.mjs",
     "server.ts",
-    "migrations/**/*.ts"
+    "migrations/**/*.ts",
+    "seeds/**/*.ts"
   ]
 }

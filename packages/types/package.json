@@ -6,6 +6,7 @@
     "lint": "eslint .",
     "check-types": "tsc --noEmit"
   },
+  "types": "./src/index.ts",
   "keywords": [],
   "author": "",
   "devDependencies": {

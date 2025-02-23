@@ -1,15 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import {
   getPlayers,
   getPlayerBySteamId,
   getPlayersByFilters,
-  getPlayerLeaderboard,
+  getPlayerLeaderboard
 } from "../models/player.models";
 
 export const getPlayersController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const players = await getPlayers();
   res.status(200).json({ players });
@@ -17,7 +16,7 @@ export const getPlayersController = async (
 
 export const getPlayerBySteamIdController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const steam_id = req.params.steam_id;
   const player = await getPlayerBySteamId(steam_id);
@@ -32,19 +31,10 @@ export const getPlayerBySteamIdController = async (
 
 export const getPlayersByFiltersController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
-  const { season_id, map, league_id, stage, team_id } = (req as any)
-    .parsedParams;
-
-  // Call the model function with the parameters in the correct order
-  const players = await getPlayersByFilters(
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  );
+  const { parsedParams } = req;
+  const players = await getPlayersByFilters(parsedParams);
 
   // Return the players as a response
   res.json(players);
@@ -52,25 +42,16 @@ export const getPlayersByFiltersController = async (
 
 export const getPlayerLeaderboardController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
-  const { season_id, map, league_id, stage, team_id, leaderboard } = (
-    req as any
-  ).parsedParams;
-  const result = await getPlayerLeaderboard(
-    leaderboard,
-    team_id,
-    season_id,
-    map,
-    league_id,
-    stage,
-  );
+  const { parsedParams } = req;
+  const result = await getPlayerLeaderboard(parsedParams);
   res.json(result);
 };
 
 export const getMultipleLeaderboardsController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const { parsedParams } = req;
   const leaderboards = [
@@ -79,29 +60,20 @@ export const getMultipleLeaderboardsController = async (
     "deaths",
     "kast",
     "kd",
-    "flash_assists",
+    "flash_assists"
   ]; // Add more as needed
-
   const results = await Promise.all(
-    leaderboards.map((leaderboard) =>
-      getPlayerLeaderboard(
-        leaderboard,
-        parsedParams?.team_id,
-        parsedParams?.season_id,
-        parsedParams?.map,
-        parsedParams?.league_id,
-        parsedParams?.stage,
-      ),
-    ),
+    leaderboards.map((lb) =>
+      getPlayerLeaderboard({ ...parsedParams, leaderboard: lb })
+    )
   );
-
   const response = leaderboards.reduce(
     (acc, leaderboard, index) => {
       acc[leaderboard] = results[index];
       return acc;
     },
-    {} as { [key: string]: any[] },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    {} as { [key: string]: any[] }
   );
-
   res.json(response);
 };

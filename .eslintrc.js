@@ -5,6 +5,6 @@ module.exports = {
   extends: ["@eggosystem/eslint/library.js"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
-    project: true,
-  },
+    project: true
+  }
 };

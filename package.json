@@ -12,18 +12,18 @@
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint --continue -- --fix",
     "clean": "turbo clean",
-    "check-types": "turbo check-types",
+    "check-types": "turbo check-types --",
     "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
     "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true",
     "migrate": "turbo migrate",
     "migrate:rollback": "turbo migrate:rollback",
     "migrate:down": "turbo migrate:down",
-    "seed": "turbo seed"
+    "seed": "turbo seed --"
   },
   "lint-staged": {
+    "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",
     "**/*.{js,ts,tsx,jsx}": "pnpm --filter=!frontend lint:fix",
-    "**/apps/frontend/**/*.{js,ts,tsx,jsx}": "pnpm --filter=frontend lint:fix",
-    "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format"
+    "**/apps/frontend/**/*.{js,ts,tsx,jsx}": "pnpm --filter=frontend lint:fix"
   },
   "keywords": [
     "kanahub",

@@ -7,12 +7,13 @@
     "test": "jest --coverage --runInBand",
     "build": "tsc -p tsconfig.prod.json",
     "start": "node ./dist/server.js",
-    "dev": "nodemon server.ts",
+    "dev": "NODE_ENV=development nodemon server.ts",
     "lint": "eslint .",
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "migrate:down": "knex migrate:down",
-    "seed": "knex seed:run"
+    "seed": "knex seed:run",
+    "check-types": "tsc --noEmit"
   },
   "keywords": [
     "node.js",
@@ -36,6 +37,7 @@
     "@eslint/js": "9.20.0",
     "@types/cors": "2.8.17",
     "@types/express": "5.0.0",
+    "@types/node": "22.13.4",
     "@types/jest": "29.5.14",
     "@types/morgan": "1.9.9",
     "@types/mysql": "2.15.26",

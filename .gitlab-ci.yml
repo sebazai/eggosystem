@@ -105,6 +105,12 @@ install:
   script:
     - pnpm install
 
+check-types:
+  stage: lint
+  extends: [.default, .pull-only-cache, .change-tracker, .mr]
+  script:
+    - pnpm check-types
+
 lint:frontend:
   stage: lint
   extends: [.default, .pull-only-cache, .change-tracker, .mr]

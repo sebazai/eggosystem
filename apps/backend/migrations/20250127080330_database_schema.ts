@@ -13,8 +13,8 @@ export async function up(): Promise<void> {
       ...envConnection,
       user: process.env.DB_ROOT_USER ?? "root",
       password: process.env.DB_ROOT_PASSWORD ?? "dev-pass",
-      database: "kanaliiga",
-    },
+      database: "kanaliiga"
+    }
   };
   const knex = require("knex");
   const tempDb = knex(baseDbConfig);

@@ -1,71 +1,108 @@
-import { generateQueryWithFilters } from "../../middlewares/queryFilter";
+import {
+  Filter,
+  generateQueryWithFilters
+} from "../../middlewares/queryFilter";
 
 describe("generateQueryWithFilters", () => {
-  it("should generate query without filters", () => {
-    const baseQuery = "SELECT * FROM matches";
-    const filterValues = {};
-    const result = generateQueryWithFilters(baseQuery, filterValues);
-
-    expect(result.query).toBe("SELECT * FROM matches");
-    expect(result.queryParams).toEqual([]);
+  test("should return an empty query when no filters are provided", () => {
+    const result = generateQueryWithFilters([]);
+    expect(result).toEqual({ query: "", queryParams: [] });
   });
 
-  it("should generate query with team_id filter for match query", () => {
-    const baseQuery = "SELECT * FROM matches WHERE 1=1";
-    const filterValues = { team_id: 1 };
-    const result = generateQueryWithFilters(baseQuery, filterValues, true);
-
-    expect(result.query).toBe(
-      "SELECT * FROM matches WHERE 1=1 AND (m.team1 = ? OR m.team2 = ?)",
-    );
-    expect(result.queryParams).toEqual([1, 1]);
+  test("should generate query for a single filter", () => {
+    const filters = [{ column: "age", value: 30 }];
+    const result = generateQueryWithFilters(filters);
+    expect(result).toEqual({ query: "age = ?", queryParams: [30] });
   });
 
-  it("should generate query with multiple filters", () => {
-    const baseQuery = "SELECT * FROM matches WHERE 1=1";
-    const filterValues = { team_id: 1, season_id: 2021, map: "de_dust2" };
-    const result = generateQueryWithFilters(baseQuery, filterValues);
-
-    expect(result.query).toBe(
-      "SELECT * FROM matches WHERE 1=1 AND p.team_id = ? AND l.season_id = ? AND m.map = ?",
-    );
-    expect(result.queryParams).toEqual([1, 2021, "de_dust2"]);
+  test("should ignore filters with null values", () => {
+    const filters = [
+      { column: "age", value: 30 },
+      { column: "name", value: null }
+    ];
+    const result = generateQueryWithFilters(filters);
+    expect(result).toEqual({ query: "age = ?", queryParams: [30] });
   });
 
-  it("should generate query with league_id filter", () => {
-    const baseQuery = "SELECT * FROM matches WHERE 1=1";
-    const filterValues = { league_id: 5 };
-    const result = generateQueryWithFilters(baseQuery, filterValues);
-
-    expect(result.query).toBe("SELECT * FROM matches WHERE 1=1 AND l.id = ?");
-    expect(result.queryParams).toEqual([5]);
+  test("should generate query for multiple filters with AND", () => {
+    const filters = [
+      { column: "age", value: 30 },
+      { column: "salary", value: 5000 }
+    ];
+    const result = generateQueryWithFilters(filters, "AND");
+    expect(result).toEqual({
+      query: "age = ? AND salary = ?",
+      queryParams: [30, 5000]
+    });
   });
 
-  it("should generate query with stage filter", () => {
-    const baseQuery = "SELECT * FROM matches WHERE 1=1";
-    const filterValues = { stage: 2 };
-    const result = generateQueryWithFilters(baseQuery, filterValues);
-
-    expect(result.query).toBe(
-      "SELECT * FROM matches WHERE 1=1 AND m.stage = ?",
-    );
-    expect(result.queryParams).toEqual([2]);
+  test("should generate query for multiple filters with OR", () => {
+    const filters = [
+      { column: "age", value: 30 },
+      { column: "salary", value: 5000 }
+    ];
+    const result = generateQueryWithFilters(filters, "OR");
+    expect(result).toEqual({
+      query: "age = ? OR salary = ?",
+      queryParams: [30, 5000]
+    });
   });
 
-  it("should generate query with all filters", () => {
-    const baseQuery = "SELECT * FROM matches WHERE 1=1";
-    const filterValues = {
-      team_id: 1,
-      season_id: 2021,
-      map: "de_dust2",
-      league_id: 5,
-      stage: 2,
-    };
-    const result = generateQueryWithFilters(baseQuery, filterValues);
+  test("should handle filters with multiple OR columns", () => {
+    const filters = [
+      { column: [{ column: "age" }, { column: "years" }], value: 30 }
+    ];
+    const result = generateQueryWithFilters(filters);
+    expect(result).toEqual({
+      query: "(age = ? OR years = ?)",
+      queryParams: [30, 30]
+    });
+  });
 
-    expect(result.query).toBe(
-      "SELECT * FROM matches WHERE 1=1 AND p.team_id = ? AND l.season_id = ? AND m.map = ? AND l.id = ? AND m.stage = ?",
-    );
-    expect(result.queryParams).toEqual([1, 2021, "de_dust2", 5, 2]);
+  test("should handle nested filter groups", () => {
+    const filters = [
+      {
+        group: {
+          operator: "OR",
+          filters: [
+            { column: "age", value: 30 },
+            { column: "salary", value: 5000 }
+          ]
+        }
+      },
+      { column: "status", value: "active" }
+    ] satisfies Filter[];
+    const result = generateQueryWithFilters(filters, "AND");
+    expect(result).toEqual({
+      query: "(age = ? OR salary = ?) AND status = ?",
+      queryParams: [30, 5000, "active"]
+    });
+  });
+
+  test("should handle deeply nested filter groups", () => {
+    const filters = [
+      {
+        group: {
+          operator: "AND",
+          filters: [
+            { column: "age", value: 30 },
+            {
+              group: {
+                operator: "OR",
+                filters: [
+                  { column: "salary", value: 5000 },
+                  { column: "bonus", value: 1000 }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ] satisfies Filter[];
+    const result = generateQueryWithFilters(filters);
+    expect(result).toEqual({
+      query: "(age = ? AND (salary = ? OR bonus = ?))",
+      queryParams: [30, 5000, 1000]
+    });
   });
 });

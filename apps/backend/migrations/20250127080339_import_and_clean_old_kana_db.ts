@@ -10,8 +10,8 @@ export async function up(): Promise<void> {
     connection: {
       ...envConnection,
       user: process.env.DB_ROOT_USER ?? "root",
-      password: process.env.DB_ROOT_PASSWORD ?? "dev-pass",
-    },
+      password: process.env.DB_ROOT_PASSWORD ?? "dev-pass"
+    }
   };
 
   // if dbdump/kanaclean.sql exists
@@ -42,8 +42,8 @@ export async function up(): Promise<void> {
     client: "mysql2",
     connection: {
       ...envConnection,
-      database: "kana",
-    },
+      database: "kana"
+    }
   };
 
   const otherDb = require("knex")(oldKanaDbConfig);
