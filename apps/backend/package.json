@@ -12,7 +12,8 @@
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "migrate:down": "knex migrate:down",
-    "seed": "knex seed:run"
+    "seed": "knex seed:run",
+    "check-types": "tsc --noEmit"
   },
   "keywords": [
     "node.js",
