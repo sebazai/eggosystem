@@ -4,7 +4,7 @@ import {
   getPlayerBySteamIdController,
   getPlayersByFiltersController,
   getPlayerLeaderboardController,
-  getMultipleLeaderboardsController,
+  getMultipleLeaderboardsController
 } from "../../controllers/players.controllers";
 
 import parseParams from "../../middlewares/parseParams";
@@ -18,17 +18,17 @@ router.get("/:steam_id", getPlayerBySteamIdController);
 router.get(
   "/:season_id/:map_id/:league_id/:stage/:team_id/leaderboards",
   parseParams,
-  getMultipleLeaderboardsController,
+  getMultipleLeaderboardsController
 );
 router.get(
   "/:season_id/:map/:league_id/:stage/:team_id/:leaderboard",
   parseParams,
-  getPlayerLeaderboardController,
+  getPlayerLeaderboardController
 );
 router.get(
   "/:season_id/:map/:league_id/:stage/:team_id",
   parseParams,
-  getPlayersByFiltersController,
+  getPlayersByFiltersController
 );
 
 export default router;

@@ -5,7 +5,7 @@ export const errorHandler = (
   req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction,
+  next: NextFunction
 ) => {
   console.error(err);
   res.status(500).json({ errors: [{ message: "Something went wrong" }] });

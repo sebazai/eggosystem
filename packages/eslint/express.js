@@ -10,35 +10,35 @@ export default [
     languageOptions: {
       globals: {
         ...globals.node,
-        Express: true,
+        Express: true
       },
       parserOptions: {
         ecmaVersion: "latest",
-        sourceType: "module",
-      },
+        sourceType: "module"
+      }
     },
     plugins: {
-      "@typescript-eslint": tseslint.plugin,
+      "@typescript-eslint": tseslint.plugin
     },
     rules: {
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         {
           fixStyle: "inline-type-imports",
-          prefer: "type-imports",
-        },
+          prefer: "type-imports"
+        }
       ],
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-floating-promises": [
         "error",
-        { ignoreVoid: true },
+        { ignoreVoid: true }
       ],
       // TypeScript specific rules
       "@typescript-eslint/no-misused-promises": [
         "error",
         {
-          checksVoidReturn: false,
-        },
+          checksVoidReturn: false
+        }
       ],
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
@@ -46,8 +46,8 @@ export default [
         "warn",
         {
           argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-        },
+          varsIgnorePattern: "^_"
+        }
       ],
 
       "@typescript-eslint/require-await": "off",
@@ -58,21 +58,21 @@ export default [
 
       "no-process-env": "off",
       // Error handling
-      "no-unused-vars": "off",
+      "no-unused-vars": "off"
     },
     settings: {
       "import/parsers": {
-        "@typescript-eslint/parser": [".ts"],
+        "@typescript-eslint/parser": [".ts"]
       },
       "import/resolver": {
         node: {
-          extensions: [".js", ".ts"],
+          extensions: [".js", ".ts"]
         },
         typescript: {
           alwaysTryTypes: true,
-          project: ["./tsconfig.json"],
-        },
-      },
-    },
-  },
+          project: ["./tsconfig.json"]
+        }
+      }
+    }
+  }
 ];

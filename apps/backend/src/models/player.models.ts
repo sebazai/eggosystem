@@ -9,7 +9,7 @@ const leaderboardExpressions: { [key: string]: string } = {
   Deaths: "sum(ps.deaths)",
   KAST: "avg(ps.kast)",
   KD: "sum(ps.kills) - sum(ps.deaths)",
-  flashAssists: "sum(ps.flash_assists)",
+  flashAssists: "sum(ps.flash_assists)"
 };
 
 export const getPlayers = () => {
@@ -19,7 +19,7 @@ export const getPlayers = () => {
 export const getPlayerBySteamId = async (steam_id: string) => {
   const results = await runQuery<Player[]>(
     `SELECT * FROM Players WHERE steam_id = ?`,
-    [steam_id],
+    [steam_id]
   );
   return results.length > 0 ? results[0] : undefined;
 };
@@ -30,7 +30,7 @@ export const getPlayersByFilters = async ({
   league_id,
   team_id,
   stage,
-  map_id,
+  map_id
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: ParsedParams): Promise<any[]> => {
   // Base query
@@ -43,7 +43,7 @@ export const getPlayersByFilters = async ({
         "flash_assists",
         "awp_kills",
         "total_damage",
-        "headshots",
+        "headshots"
       ]
         .map((col) => `sum(ps.${col}) as ${col}`)
         .join(", ")},
@@ -53,7 +53,7 @@ export const getPlayersByFilters = async ({
         "first_kills",
         "first_deaths",
         "kills_5",
-        "utility_damage",
+        "utility_damage"
       ]
         .map((col) => `sum(ps.${col}) as ${col}`)
         .join(", ")},
@@ -69,7 +69,7 @@ export const getPlayersByFilters = async ({
     { column: "l.season_id", value: season_id },
     { column: "l.id", value: league_id },
     { column: "m.stage", value: stage },
-    { column: "mmp.map_id", value: map_id },
+    { column: "mmp.map_id", value: map_id }
   ]);
   const fullQuery = query + " GROUP BY p.steam_id";
   return runQuery(fullQuery, queryParams);
@@ -82,7 +82,7 @@ export const getPlayerLeaderboard = async ({
   team_id,
   stage,
   map_id,
-  leaderboard,
+  leaderboard
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: ParsedParams): Promise<any[]> => {
   if (!leaderboard) {
@@ -98,7 +98,7 @@ export const getPlayerLeaderboard = async ({
     generateQueryWithFilters([
       { column: "p.team_id", value: team_id },
       { column: "l.season_id", value: season_id },
-      { column: "l.id", value: league_id },
+      { column: "l.id", value: league_id }
     ]);
 
   const subQuery = `
@@ -116,7 +116,7 @@ export const getPlayerLeaderboard = async ({
       { column: "l.season_id", value: season_id },
       { column: "l.id", value: league_id },
       { column: "m.stage", value: stage },
-      { column: "mmp.map_id", value: map_id },
+      { column: "mmp.map_id", value: map_id }
     ]);
 
   const baseQuery = `
@@ -131,7 +131,7 @@ export const getPlayerLeaderboard = async ({
   `;
 
   const query = baseQuery.concat(
-    ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`,
+    ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`
   );
   const queryParams = [...subQueryParams, ...additionalParams]; // Combine subquery params with main query params
 

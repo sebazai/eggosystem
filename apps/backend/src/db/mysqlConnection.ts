@@ -4,7 +4,7 @@ import { envConfig } from "../configs/env";
 const newDbPool = createPool({
   ...envConfig,
   connectionLimit: 10, // Adjust based on load
-  dateStrings: true,
+  dateStrings: true
 });
 
 export const getConnection = () => {

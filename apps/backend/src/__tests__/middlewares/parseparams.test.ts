@@ -9,7 +9,7 @@ describe("parseParams Middleware", () => {
 
   beforeEach(() => {
     req = {
-      params: {},
+      params: {}
     };
     res = {};
     next = jest.fn();
@@ -22,7 +22,7 @@ describe("parseParams Middleware", () => {
       league_id: "2",
       stage: "3",
       team_id: "4",
-      leaderboard: "top",
+      leaderboard: "top"
     };
 
     parseParams(req as Request, res as Response, next);
@@ -33,7 +33,7 @@ describe("parseParams Middleware", () => {
       league_id: 2,
       stage: 3,
       team_id: 4,
-      leaderboard: "top",
+      leaderboard: "top"
     });
     expect(next).toHaveBeenCalled();
   });
@@ -45,7 +45,7 @@ describe("parseParams Middleware", () => {
       league_id: "any",
       stage: "any",
       team_id: "any",
-      leaderboard: "any",
+      leaderboard: "any"
     };
 
     parseParams(req as Request, res as Response, next);
@@ -56,7 +56,7 @@ describe("parseParams Middleware", () => {
       league_id: null,
       stage: null,
       team_id: null,
-      leaderboard: null,
+      leaderboard: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -72,7 +72,7 @@ describe("parseParams Middleware", () => {
       league_id: NaN,
       stage: NaN,
       team_id: NaN,
-      leaderboard: undefined,
+      leaderboard: undefined
     });
     expect(next).toHaveBeenCalled();
   });
@@ -81,7 +81,7 @@ describe("parseParams Middleware", () => {
     req.params = {
       season_id: "1",
       map_id: "any",
-      league_id: "2",
+      league_id: "2"
     };
 
     parseParams(req as Request, res as Response, next);
@@ -92,7 +92,7 @@ describe("parseParams Middleware", () => {
       league_id: 2,
       stage: NaN,
       team_id: NaN,
-      leaderboard: undefined,
+      leaderboard: undefined
     });
     expect(next).toHaveBeenCalled();
   });

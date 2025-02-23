@@ -15,17 +15,17 @@ const config: { [key: string]: Knex.Config } = {
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 6666,
       user: process.env.DB_USER ?? "kanadbuser",
       password: process.env.DB_PASSWORD ?? "dev-pass",
-      database: "kanaliiga",
+      database: "kanaliiga"
     },
     migrations: {
       directory: "./migrations",
-      extension: "ts",
+      extension: "ts"
     },
     seeds: {
       directory: "./seeds",
-      extension: "ts",
-    },
-  },
+      extension: "ts"
+    }
+  }
 };
 
 module.exports = config;

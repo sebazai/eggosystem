@@ -10,7 +10,7 @@ import {
   migrateMatchesAndReservations,
   migratePlayerStats,
   migrateRanks,
-  migrateTrades,
+  migrateTrades
 } from "./helpers/migrations";
 import { envConnection } from "./helpers/migrationsDbConnections";
 
@@ -21,8 +21,8 @@ export async function up(knex: Knex): Promise<void> {
   const baseDbConfig = {
     client: "mysql2",
     connection: {
-      ...envConnection,
-    },
+      ...envConnection
+    }
   };
 
   const knexi = require("knex");
@@ -68,8 +68,8 @@ export async function down(knex: Knex): Promise<void> {
   const baseDbConfig = {
     client: "mysql2",
     connection: {
-      ...envConnection,
-    },
+      ...envConnection
+    }
   };
 
   const knexi = require("knex");

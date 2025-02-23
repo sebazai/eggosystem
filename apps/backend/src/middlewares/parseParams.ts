@@ -24,7 +24,7 @@ const parseParams = (req: Request, res: Response, next: NextFunction): void => {
     map_id:
       req.params.map_id !== "any" ? parseInt(req.params.map_id, 10) : null,
     leaderboard:
-      req.params.leaderboard !== "any" ? req.params.leaderboard : null,
+      req.params.leaderboard !== "any" ? req.params.leaderboard : null
   };
 
   req.parsedParams = parsedParams;

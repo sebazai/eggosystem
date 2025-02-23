@@ -4,7 +4,7 @@ import {
   getMatchPlayerStatsController,
   getMatchTeamStatsController,
   getMatchesByFiltersController,
-  getTopPlayersController,
+  getTopPlayersController
 } from "../../controllers/matches.controllers";
 
 import parseParams from "../../middlewares/parseParams";
@@ -14,7 +14,7 @@ const router = Router();
 router.get(
   "/seasons/:season_id/leagues/:league_id/teams/:team_id/stages/:stage/maps/:map_id",
   parseParams,
-  getMatchesByFiltersController,
+  getMatchesByFiltersController
 );
 router.get("/:match_id/playerstats", getMatchPlayerStatsController);
 router.get("/:match_id/teamstats", getMatchTeamStatsController);

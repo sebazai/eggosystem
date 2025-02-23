@@ -100,7 +100,7 @@ describe("Migration tests", () => {
       { name: "tiMMyd", team_name: "Evitec Esports", mates_flashed: "465" },
       { name: "Miqu", team_name: "K-Auto Marmoripojat", mates_flashed: "461" },
       { name: "ville1", team_name: "Frendy Fire", mates_flashed: "453" },
-      { name: "havukr", team_name: "Janla eSports", mates_flashed: "430" },
+      { name: "havukr", team_name: "Janla eSports", mates_flashed: "430" }
     ];
 
     expectedResults.forEach((expected, index) => {
@@ -127,7 +127,7 @@ describe("Migration tests", () => {
     const expectedResult = {
       nick: "BEHUNAMIÄS",
       team_name: "Hoxhunt e-urheilu",
-      kana_rating: "1.35",
+      kana_rating: "1.35"
     };
     expect(result[0]).toEqual(expectedResult);
   });

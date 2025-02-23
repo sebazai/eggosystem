@@ -9,7 +9,7 @@ export const migrateCompanies = async () => {
     "SELECT * FROM teamsbuild_s11 GROUP BY yrityksen_y_tunnus",
     "SELECT * FROM teamsbuild_s12 GROUP BY yrityksen_y_tunnus",
     "SELECT * FROM teamsbuild_s13 GROUP BY yrityksen_y_tunnus",
-    "SELECT * FROM teamsbuild_s14 GROUP BY yrityksen_y_tunnus",
+    "SELECT * FROM teamsbuild_s14 GROUP BY yrityksen_y_tunnus"
   ];
 
   const allCompanies = (
@@ -31,7 +31,7 @@ export const migrateCompanies = async () => {
     }
     return {
       ...company,
-      yrityksen_y_tunnus: fixed_cc,
+      yrityksen_y_tunnus: fixed_cc
     };
   });
 
@@ -39,8 +39,8 @@ export const migrateCompanies = async () => {
     (company: any, index: number, self: any) =>
       index ===
       self.findIndex(
-        (t: any) => t.yrityksen_y_tunnus === company.yrityksen_y_tunnus,
-      ),
+        (t: any) => t.yrityksen_y_tunnus === company.yrityksen_y_tunnus
+      )
   );
 
   const insertUniqueCompaniesQueries = uniqueCompaniesByYtunnus.map(
@@ -50,7 +50,7 @@ export const migrateCompanies = async () => {
       }
 
       return `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.svg', '${company.yrityksen_internet_sivut}');`;
-    },
+    }
   );
 
   for (const query of insertUniqueCompaniesQueries) {
@@ -77,7 +77,7 @@ export const migrateAlmostErrything = async () => {
     "SELECT * FROM teamsbuild_s11 GROUP BY yrityksen_y_tunnus",
     "SELECT * FROM teamsbuild_s12 GROUP BY yrityksen_y_tunnus",
     "SELECT * FROM teamsbuild_s13 GROUP BY yrityksen_y_tunnus",
-    "SELECT * FROM teamsbuild_s14 GROUP BY yrityksen_y_tunnus",
+    "SELECT * FROM teamsbuild_s14 GROUP BY yrityksen_y_tunnus"
   ];
 
   const allTeambuilderCompanies = (
@@ -100,11 +100,11 @@ export const migrateAlmostErrything = async () => {
 
       acc[obj.Name.trim().toLowerCase().replaceAll(/\s/g, "")] = {
         ...obj,
-        yrityksen_y_tunnus: fixed_cc,
+        yrityksen_y_tunnus: fixed_cc
       };
       return acc;
     },
-    {},
+    {}
   );
 
   const newCompanies = await runNewDbQuery<any>("SELECT * FROM Organizations");
@@ -114,12 +114,12 @@ export const migrateAlmostErrything = async () => {
       acc[obj.company_code] = obj;
       return acc;
     },
-    {},
+    {}
   );
 
   // Get all players from old db
   const oldPlayers = await runOldDbQuery<any>(
-    "SELECT * FROM players ORDER BY id ASC",
+    "SELECT * FROM players ORDER BY id ASC"
   );
 
   // Players by steamID, we shoould have the latest/freshest objective per steam id due to ordering by id ASC
@@ -128,7 +128,7 @@ export const migrateAlmostErrything = async () => {
       acc[obj.steamID] = obj;
       return acc;
     },
-    {},
+    {}
   );
 
   const oldPlayersReducedToId: any = oldPlayers.reduce((acc: any, obj: any) => {
@@ -147,7 +147,7 @@ export const migrateAlmostErrything = async () => {
       acc[obj.teamId].push(obj.steamID);
       return acc;
     },
-    {},
+    {}
   );
 
   const teamIdAllPlayersInTeamById: any = oldPlayers.reduce(
@@ -159,7 +159,7 @@ export const migrateAlmostErrything = async () => {
       acc[obj.teamId].push(obj.id);
       return acc;
     },
-    {},
+    {}
   );
 
   console.log("Migrating teams");
@@ -184,7 +184,7 @@ export const migrateAlmostErrything = async () => {
         player.name,
         player.email,
         player.pelaajan_nimi,
-        player.work_email,
+        player.work_email
       ]);
     }
 
@@ -206,7 +206,7 @@ export const migrateAlmostErrything = async () => {
 
       if (newCompany?.logo === "nologo.svg") {
         const getNewCompany: any[] = await runNewDbQuery(
-          `SELECT * FROM Organizations WHERE organization_code = '${newCompany.company_code}'`,
+          `SELECT * FROM Organizations WHERE organization_code = '${newCompany.company_code}'`
         );
         const newCompanyLogo = getNewCompany[0].logo;
         // Update newCompany logo from team
@@ -226,7 +226,7 @@ export const migrateAlmostErrything = async () => {
         teamId,
         team.Name,
         team_company_logo,
-        team.email,
+        team.email
       ]);
       const addTeamToSeasonQuery = `INSERT INTO SeasonTeams (season_id, team_id) VALUES ('${teamSeason}', '${teamId}');`;
       await runNewDbQuery(addTeamToSeasonQuery);
@@ -249,19 +249,19 @@ export const migrateAlmostErrything = async () => {
 
   console.log("Getting capitans for season 11-14");
   const seasonteams = await runNewDbQuery<any>(
-    "SELECT st.season_id, st.team_id, t.name FROM SeasonTeams st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14)",
+    "SELECT st.season_id, st.team_id, t.name FROM SeasonTeams st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14)"
   );
   for (const st of seasonteams) {
     const teamName = st.name;
     const seasonId = st.season_id;
     const registrationID = await runOldDbQuery<any>(
       `SELECT registrationID FROM teamsbuild_s${seasonId} WHERE LOWER(Name) = LOWER(?)`,
-      [teamName],
+      [teamName]
     );
     if (registrationID.length !== 0) {
       try {
         await runNewDbQuery(
-          `UPDATE SeasonTeams SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = ${seasonId} AND team_id = ${st.team_id}`,
+          `UPDATE SeasonTeams SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = ${seasonId} AND team_id = ${st.team_id}`
         );
       } catch (errmageddon) {
         console.error(errmageddon);
@@ -269,19 +269,19 @@ export const migrateAlmostErrything = async () => {
           "Error updating captain for team",
           teamName,
           "with registrationID",
-          registrationID,
+          registrationID
         );
       }
     } else {
       console.log("No captain found for team", teamName);
       const registrationID = await runOldDbQuery<any>(
         `SELECT registrationID FROM teamsbuild WHERE LOWER(Name) = LOWER(?)`,
-        [teamName],
+        [teamName]
       );
       if (registrationID.length !== 0) {
         try {
           await runNewDbQuery(
-            `UPDATE SeasonTeams SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = 15 AND team_id = ${st.team_id}`,
+            `UPDATE SeasonTeams SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = 15 AND team_id = ${st.team_id}`
           );
         } catch (errmageddon) {
           console.error(errmageddon);
@@ -289,7 +289,7 @@ export const migrateAlmostErrything = async () => {
             "Error updating captain for team",
             teamName,
             "with registrationID",
-            registrationID,
+            registrationID
           );
         }
       }
@@ -301,17 +301,17 @@ const migrateMatchCrazy = async (
   match: any,
   newParentMatchId: number,
   t_team_id: string,
-  ct_team_id: string,
+  ct_team_id: string
 ) => {
   const mapId = await runNewDbQuery<any>("SELECT id FROM Maps WHERE name = ?", [
-    match.map,
+    match.map
   ]);
   const matchMapPlayedQuery = `INSERT INTO MatchMapsPlayed (id, match_id, map_id, demofile) VALUES (?, ?, ?, ?);`;
   await runNewDbQuery(matchMapPlayedQuery, [
     match.id,
     newParentMatchId,
     mapId[0].id,
-    match.demofile,
+    match.demofile
   ]);
 
   const MatchTeamMapScoresInsert = `INSERT INTO TeamMapScores (match_id, team_id, match_maps_played_id, score, halftime_score, overtime_score, starting_side) VALUES (?, ?, ?, ?, ?, ?, ?);`;
@@ -322,7 +322,7 @@ const migrateMatchCrazy = async (
     match.team1Score,
     match.team1HTScore,
     match.team1OTScore,
-    "T",
+    "T"
   ]);
   await runNewDbQuery(MatchTeamMapScoresInsert, [
     newParentMatchId,
@@ -331,12 +331,12 @@ const migrateMatchCrazy = async (
     match.team2Score,
     match.team2HTScore,
     match.team2OTScore,
-    "CT",
+    "CT"
   ]);
 
   const allOldMatchStats: any[] = await runOldDbQuery(
     "SELECT * FROM afterplant WHERE matchID = ?",
-    [match.id],
+    [match.id]
   );
   const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (id, match_maps_played_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
   for (const round of allOldMatchStats) {
@@ -352,7 +352,7 @@ const migrateMatchCrazy = async (
       round.roundInfo,
       ct_T_parsed,
       round.firstKill,
-      plantSite,
+      plantSite
     ]);
   }
 };
@@ -370,7 +370,7 @@ export const migrateMatchesAndReservations = async () => {
       acc[obj.id] = obj.season_id;
       return acc;
     },
-    {},
+    {}
   );
 
   // This contains all matches id's that have been migrated, i.e. if type=2 we might migrate match.id's earlier than they arrive in for loop
@@ -391,7 +391,7 @@ export const migrateMatchesAndReservations = async () => {
       matchSeasonId,
       match.leagueID,
       match.type,
-      match.date,
+      match.date
     ]);
     const newParentMatchId = parentMatch.insertId;
 
@@ -402,19 +402,19 @@ export const migrateMatchesAndReservations = async () => {
       newParentMatchId,
       t_team_id,
       matchSeasonId,
-      match.leagueID,
+      match.leagueID
     ]);
     await runNewDbQuery(insertMatchteams, [
       newParentMatchId,
       ct_team_id,
       matchSeasonId,
-      match.leagueID,
+      match.leagueID
     ]);
 
     // Ensure all maps exists...
     const checkIfMapWithNameExists = `SELECT * FROM Maps WHERE name = ?;`;
     const mapExists = await runNewDbQuery<any>(checkIfMapWithNameExists, [
-      match.map,
+      match.map
     ]);
     if (mapExists.length === 0) {
       const insertMapIfNotExistsQuery = `INSERT INTO Maps (name) VALUES (?);`;
@@ -427,7 +427,7 @@ export const migrateMatchesAndReservations = async () => {
 
     if (match.type === 2) {
       console.log(
-        "Match is best of, let's migrate all other matches played on the same date between the same teams",
+        "Match is best of, let's migrate all other matches played on the same date between the same teams"
       );
       // Select all other matches played between the teams on the same date for the same league, except this match
       console.log("match date", match.date);
@@ -439,14 +439,14 @@ export const migrateMatchesAndReservations = async () => {
         await runOldDbQuery(allOtherBestOfMatchesQuery);
       console.log(
         "Found matches that weren't migrated",
-        matchesPlayedOnSameDateBetweenSameTeams.length,
+        matchesPlayedOnSameDateBetweenSameTeams.length
       );
       for (const matchPlayed of matchesPlayedOnSameDateBetweenSameTeams) {
         console.log(
           "Migrating match that wasn't migrated, ",
           matchPlayed.id,
           "parent, ",
-          newParentMatchId,
+          newParentMatchId
         );
 
         const t_team_id_other = matchPlayed.team1;
@@ -456,7 +456,7 @@ export const migrateMatchesAndReservations = async () => {
           matchPlayed,
           newParentMatchId,
           t_team_id_other,
-          ct_team_id_other,
+          ct_team_id_other
         );
         matchMapsPlayedAlreadyMigratedIds.add(matchPlayed.id);
       }
@@ -465,7 +465,7 @@ export const migrateMatchesAndReservations = async () => {
 
   console.log("Matches migrated");
   const allOldReservations: any[] = await runOldDbQuery(
-    "SELECT * FROM reservations",
+    "SELECT * FROM reservations"
   );
 
   // Old reservations insert
@@ -483,7 +483,7 @@ export const migrateMatchesAndReservations = async () => {
       reservation.date,
       reservation.dateEnd,
       reservation.stream,
-      reservation.hash,
+      reservation.hash
     ]);
     const reservationDate = new Date(reservation.date)
       .toISOString()
@@ -495,7 +495,7 @@ export const migrateMatchesAndReservations = async () => {
         JOIN Matches m ON mt1.match_id = m.id
         WHERE mt1.team_id = ${reservation.team1}
         AND mt2.team_id = ${reservation.team2}
-        AND m.match_date = '${reservationDate}';`,
+        AND m.match_date = '${reservationDate}';`
     );
 
     for (const match of foundMatchesIds) {
@@ -535,7 +535,7 @@ export const migrateRanks = async () => {
       rank.kanaelo,
       rank.ekd,
       rank.esportalElo,
-      rank.esportalRank,
+      rank.esportalRank
     ]);
   }
   console.log("Ranks migrated");
@@ -544,7 +544,7 @@ export const migrateRanks = async () => {
 export const migratePlayerStats = async () => {
   console.log("Migrating player stats");
   const oldPlayerStats: any[] = await runOldDbQuery(
-    "SELECT * FROM stats_all_seasons",
+    "SELECT * FROM stats_all_seasons"
   );
 
   for (const playerStat of oldPlayerStats) {
@@ -658,7 +658,7 @@ export const migratePlayerStats = async () => {
       playerStat.Shots,
       playerStat.ShotsHit,
       playerStat.TotalStrafingShots,
-      playerStat.GoodStrafingShots,
+      playerStat.GoodStrafingShots
     ]);
   }
   console.log("Player stats migrated");
@@ -687,7 +687,7 @@ export const migrateTrades = async () => {
       trade.Attempted,
       trade.Time,
       trade.TradeTime,
-      trade.DeathTime,
+      trade.DeathTime
     ]);
   }
   console.log("Trades migrated");

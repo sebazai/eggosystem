@@ -17,7 +17,7 @@ interface QueryAndWithQueryParams {
 
 export const generateQueryWithFilters = (
   filters: Filter[],
-  parentOperator: "AND" | "OR" = "AND",
+  parentOperator: "AND" | "OR" = "AND"
 ): QueryAndWithQueryParams => {
   const queryParts: string[] = [];
   const queryParams: (string | number)[] = [];
@@ -27,7 +27,7 @@ export const generateQueryWithFilters = (
       // Recursively process nested groups
       const nestedResult = generateQueryWithFilters(
         filter.group.filters,
-        filter.group.operator,
+        filter.group.operator
       );
       if (nestedResult.query) {
         queryParts.push(`(${nestedResult.query})`);
@@ -50,6 +50,6 @@ export const generateQueryWithFilters = (
 
   return {
     query: queryParts.length > 0 ? queryParts.join(` ${parentOperator} `) : "",
-    queryParams,
+    queryParams
   };
 };

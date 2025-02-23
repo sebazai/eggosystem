@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@eggosystem/types"],
   eslint: {
-    dirs: ["src"],
+    dirs: ["src"]
   },
   images: {
     remotePatterns: [
@@ -14,10 +14,10 @@ const nextConfig: NextConfig = {
         hostname: "localhost",
         port: "3000",
         pathname: "/images/**",
-        search: "",
-      },
-    ],
-  },
+        search: ""
+      }
+    ]
+  }
 };
 
 export default nextConfig;

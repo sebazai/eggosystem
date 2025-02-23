@@ -3,12 +3,12 @@ import {
   getPlayers,
   getPlayerBySteamId,
   getPlayersByFilters,
-  getPlayerLeaderboard,
+  getPlayerLeaderboard
 } from "../models/player.models";
 
 export const getPlayersController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const players = await getPlayers();
   res.status(200).json({ players });
@@ -16,7 +16,7 @@ export const getPlayersController = async (
 
 export const getPlayerBySteamIdController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const steam_id = req.params.steam_id;
   const player = await getPlayerBySteamId(steam_id);
@@ -31,7 +31,7 @@ export const getPlayerBySteamIdController = async (
 
 export const getPlayersByFiltersController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const { parsedParams } = req;
   const players = await getPlayersByFilters(parsedParams);
@@ -42,7 +42,7 @@ export const getPlayersByFiltersController = async (
 
 export const getPlayerLeaderboardController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const { parsedParams } = req;
   const result = await getPlayerLeaderboard(parsedParams);
@@ -51,7 +51,7 @@ export const getPlayerLeaderboardController = async (
 
 export const getMultipleLeaderboardsController = async (
   req: Request,
-  res: Response,
+  res: Response
 ): Promise<void> => {
   const { parsedParams } = req;
   const leaderboards = [
@@ -60,12 +60,12 @@ export const getMultipleLeaderboardsController = async (
     "deaths",
     "kast",
     "kd",
-    "flash_assists",
+    "flash_assists"
   ]; // Add more as needed
   const results = await Promise.all(
-    leaderboards.map((leaderboard) =>
-      getPlayerLeaderboard({ leaderboard, ...parsedParams }),
-    ),
+    leaderboards.map((lb) =>
+      getPlayerLeaderboard({ leaderboard: lb, ...parsedParams })
+    )
   );
   const response = leaderboards.reduce(
     (acc, leaderboard, index) => {
@@ -73,7 +73,7 @@ export const getMultipleLeaderboardsController = async (
       return acc;
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    {} as { [key: string]: any[] },
+    {} as { [key: string]: any[] }
   );
   res.json(response);
 };

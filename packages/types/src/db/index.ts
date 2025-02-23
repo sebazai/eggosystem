@@ -43,5 +43,5 @@ export type {
   SeasonTeamPlayer,
   Team,
   TeamMapScore,
-  TeamRoster,
+  TeamRoster
 };

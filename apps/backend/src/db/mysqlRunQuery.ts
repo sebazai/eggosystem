@@ -16,7 +16,7 @@ type dbQuery<T> = T & dbDefaults;
 
 export const runQuery = async <T>(
   query: string,
-  queryParams: QueryParams = [],
+  queryParams: QueryParams = []
 ): Promise<T> => {
   const connection = await getConnection();
 

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
-  dark: "#09090b",
+  dark: "#09090b"
 };
 
 const kanaHeadingFonts = localFont({
@@ -16,10 +16,10 @@ const kanaHeadingFonts = localFont({
     {
       path: "../../public/fonts/NEXT_ART_Heavy.otf",
       weight: "400",
-      style: "normal",
-    },
+      style: "normal"
+    }
   ],
-  variable: "--font-headings",
+  variable: "--font-headings"
 });
 
 const kanaFonts = localFont({
@@ -28,38 +28,38 @@ const kanaFonts = localFont({
     {
       path: "../../public/fonts/VeraMono.ttf",
       weight: "400",
-      style: "normal",
+      style: "normal"
     },
     {
       path: "../../public/fonts/VeraMoIt.ttf",
       weight: "400",
-      style: "italic",
+      style: "italic"
     },
     {
       path: "../../public/fonts/VeraMoBd.ttf",
       weight: "700",
-      style: "normal",
+      style: "normal"
     },
     {
       path: "../../public/fonts/VeraMoBI.ttf",
       weight: "700",
-      style: "italic",
-    },
+      style: "italic"
+    }
   ],
-  variable: "--font-body",
+  variable: "--font-body"
 });
 
 export const metadata: Metadata = {
   title: "Eggosystem",
-  description: "Kanahub statistics and analytics",
+  description: "Kanahub statistics and analytics"
 };
 
 export const viewport: Viewport = {
-  themeColor: META_THEME_COLORS.light,
+  themeColor: META_THEME_COLORS.light
 };
 
 export default function RootLayout({
-  children,
+  children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
@@ -74,7 +74,7 @@ export default function RootLayout({
                 document.querySelector('meta[name="theme-color"]').setAttribute('content', '${META_THEME_COLORS.dark}')
               }
             } catch (_) {}
-          `,
+          `
           }}
         />
       </head>
@@ -82,7 +82,7 @@ export default function RootLayout({
         className={cn(
           `bg-kana min-h-svh overscroll-none antialiased`,
           kanaFonts.variable,
-          kanaHeadingFonts.variable,
+          kanaHeadingFonts.variable
         )}
       >
         <ThemeProvider

@@ -7,7 +7,7 @@ export const envConnection = {
   host: process.env.DB_HOST ?? "localhost",
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 6666,
   user: process.env.DB_USER ?? "kanadbuser",
-  password: process.env.DB_PASSWORD ?? "dev-pass",
+  password: process.env.DB_PASSWORD ?? "dev-pass"
 };
 
 type dbDefaults = RowDataPacket[] | RowDataPacket[][];
@@ -17,19 +17,19 @@ const oldDbPool = mysql.createPool({
   ...envConnection,
   database: "kana",
   connectionLimit: 10, // Adjust based on load
-  dateStrings: true,
+  dateStrings: true
 });
 
 const newDbPool = mysql.createPool({
   ...envConnection,
   database: process.env.DB_NAME ?? "kanaliiga",
   connectionLimit: 10, // Adjust based on load
-  dateStrings: true,
+  dateStrings: true
 });
 
 export const runOldDbQuery = async <T>(
   query: string,
-  queryParams: any[] = [],
+  queryParams: any[] = []
 ): Promise<T[]> => {
   const connection = await oldDbPool.getConnection();
 
@@ -49,7 +49,7 @@ export const runOldDbQuery = async <T>(
 
 export const runNewDbQuery = async <T>(
   query: string,
-  queryParams: any[] = [],
+  queryParams: any[] = []
 ): Promise<T> => {
   const connection = await newDbPool.getConnection();
 

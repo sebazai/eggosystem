@@ -1,6 +1,6 @@
 import {
   Filter,
-  generateQueryWithFilters,
+  generateQueryWithFilters
 } from "../../middlewares/queryFilter";
 
 describe("generateQueryWithFilters", () => {
@@ -18,7 +18,7 @@ describe("generateQueryWithFilters", () => {
   test("should ignore filters with null values", () => {
     const filters = [
       { column: "age", value: 30 },
-      { column: "name", value: null },
+      { column: "name", value: null }
     ];
     const result = generateQueryWithFilters(filters);
     expect(result).toEqual({ query: "age = ?", queryParams: [30] });
@@ -27,35 +27,35 @@ describe("generateQueryWithFilters", () => {
   test("should generate query for multiple filters with AND", () => {
     const filters = [
       { column: "age", value: 30 },
-      { column: "salary", value: 5000 },
+      { column: "salary", value: 5000 }
     ];
     const result = generateQueryWithFilters(filters, "AND");
     expect(result).toEqual({
       query: "age = ? AND salary = ?",
-      queryParams: [30, 5000],
+      queryParams: [30, 5000]
     });
   });
 
   test("should generate query for multiple filters with OR", () => {
     const filters = [
       { column: "age", value: 30 },
-      { column: "salary", value: 5000 },
+      { column: "salary", value: 5000 }
     ];
     const result = generateQueryWithFilters(filters, "OR");
     expect(result).toEqual({
       query: "age = ? OR salary = ?",
-      queryParams: [30, 5000],
+      queryParams: [30, 5000]
     });
   });
 
   test("should handle filters with multiple OR columns", () => {
     const filters = [
-      { column: [{ column: "age" }, { column: "years" }], value: 30 },
+      { column: [{ column: "age" }, { column: "years" }], value: 30 }
     ];
     const result = generateQueryWithFilters(filters);
     expect(result).toEqual({
       query: "(age = ? OR years = ?)",
-      queryParams: [30, 30],
+      queryParams: [30, 30]
     });
   });
 
@@ -66,16 +66,16 @@ describe("generateQueryWithFilters", () => {
           operator: "OR",
           filters: [
             { column: "age", value: 30 },
-            { column: "salary", value: 5000 },
-          ],
-        },
+            { column: "salary", value: 5000 }
+          ]
+        }
       },
-      { column: "status", value: "active" },
+      { column: "status", value: "active" }
     ] satisfies Filter[];
     const result = generateQueryWithFilters(filters, "AND");
     expect(result).toEqual({
       query: "(age = ? OR salary = ?) AND status = ?",
-      queryParams: [30, 5000, "active"],
+      queryParams: [30, 5000, "active"]
     });
   });
 
@@ -91,18 +91,18 @@ describe("generateQueryWithFilters", () => {
                 operator: "OR",
                 filters: [
                   { column: "salary", value: 5000 },
-                  { column: "bonus", value: 1000 },
-                ],
-              },
-            },
-          ],
-        },
-      },
+                  { column: "bonus", value: 1000 }
+                ]
+              }
+            }
+          ]
+        }
+      }
     ] satisfies Filter[];
     const result = generateQueryWithFilters(filters);
     expect(result).toEqual({
       query: "(age = ? AND (salary = ? OR bonus = ?))",
-      queryParams: [30, 5000, 1000],
+      queryParams: [30, 5000, 1000]
     });
   });
 });

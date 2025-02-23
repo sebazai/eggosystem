@@ -8,7 +8,7 @@ export const getMatches = (): Promise<Match[]> => {
 };
 
 export const getMatchPlayerStats = async (
-  id: number,
+  id: number
 ): Promise<Match | undefined> => {
   const query = `SELECT 
         p.name,
@@ -33,7 +33,7 @@ export const getMatchPlayerStats = async (
 };
 
 export const getMatchTeamStats = async (
-  id: number,
+  id: number
 ): Promise<Match | undefined> => {
   const query = `SELECT 
         if(ps.team=1,team1_ht_score,team2_ht_score) as team_ht_score,
@@ -59,13 +59,13 @@ export const getMatchTeamStats = async (
 export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
   const result = await runQuery<Match[]>(
     `SELECT round_info from MatchStats WHERE match_id=? ORDER BY round_number;`,
-    [id],
+    [id]
   );
   return result.length > 0 ? result[0] : undefined;
 };
 
 export const getTopPlayers = async (
-  id: number,
+  id: number
 ): Promise<Record<string, any>> => {
   const stats = [
     { key: "most_kills", column: "kills" },
@@ -74,11 +74,11 @@ export const getTopPlayers = async (
     { key: "most_awp_kills", column: "awp_kills" },
     { key: "most_utility_damage", column: "utility_damage" },
     { key: "most_first_kills", column: "first_kills" },
-    { key: "most_mates_flashed", column: "mates_flashed" },
+    { key: "most_mates_flashed", column: "mates_flashed" }
   ];
   const fetchStat = async ({
     key,
-    column,
+    column
   }: {
     key: string;
     column: string;
@@ -104,7 +104,7 @@ export const getTopPlayers = async (
       acc[key] = value;
       return acc;
     },
-    {} as Record<string, any>,
+    {} as Record<string, any>
   );
 
   return results;
@@ -115,7 +115,7 @@ export const getMatchesByFilters = async ({
   league_id,
   team_id,
   stage,
-  map_id,
+  map_id
 }: ParsedParams): Promise<MatchesByFilters[]> => {
   // Base query
   const { query, queryParams } = generateQueryWithFilters([
@@ -123,7 +123,7 @@ export const getMatchesByFilters = async ({
     { column: "m.league_id", value: league_id },
     { column: "tms.team_id", value: team_id },
     { column: "m.stage", value: stage },
-    { column: "mmp.map_id", value: map_id },
+    { column: "mmp.map_id", value: map_id }
   ]);
   const baseQuery = `
       SELECT 
