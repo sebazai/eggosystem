@@ -449,11 +449,14 @@ export const migrateMatchesAndReservations = async () => {
           newParentMatchId,
         );
 
+        const t_team_id_other = matchPlayed.team1;
+        const ct_team_id_other = matchPlayed.team2;
+
         await migrateMatchCrazy(
           matchPlayed,
           newParentMatchId,
-          t_team_id,
-          ct_team_id,
+          t_team_id_other,
+          ct_team_id_other,
         );
         matchMapsPlayedAlreadyMigratedIds.add(matchPlayed.id);
       }
