@@ -24,7 +24,7 @@
     "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",
     "**/apps/backend/**/*.{ts,tsx}": "pnpm --filter=!frontend check-types",
     "**/apps/frontend/**/*.{ts,tsx}": "pnpm --filter=!backend check-types",
-    "**/apps/packages/**/*.{ts,tsx}": "pnpm check-types",
+    "**/packages/**/*.{ts,tsx}": "pnpm check-types",
     "**/*.{js,ts,tsx,jsx}": "pnpm --filter=!frontend lint:fix",
     "**/apps/frontend/**/*.{js,ts,tsx,jsx}": "pnpm --filter=frontend lint:fix"
   },
