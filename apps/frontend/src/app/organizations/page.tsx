@@ -11,7 +11,7 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6 justify-items-center">
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -21,7 +21,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -31,7 +31,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -41,7 +41,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -51,7 +51,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -61,7 +61,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -71,7 +71,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -81,7 +81,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -91,7 +91,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -101,7 +101,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -111,7 +111,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -121,7 +121,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -131,7 +131,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"
@@ -141,7 +141,7 @@ export default function Home() {
         </FadeOnScroll>
         <FadeOnScroll>
           <FlipCard
-            frontTitle="Kanaliiga"
+            companyName="Kanaliiga"
             frontDesc="On paras Kana"
             backTitle="Jepulis"
             backDesc="Nebulis"

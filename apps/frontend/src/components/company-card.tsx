@@ -12,9 +12,8 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 
-// Define props interface
 interface FlipCardProps {
-  frontTitle: string;
+  companyName: string;
   frontDesc: string;
   backTitle: string;
   backDesc: string;
@@ -23,14 +22,14 @@ interface FlipCardProps {
 }
 
 const FlipCard: React.FC<FlipCardProps> = ({
-  frontTitle,
+  companyName,
   frontDesc,
   backTitle,
   backDesc,
   imageSrc,
   href
 }) => {
-  const router = useRouter(); // Use Next.js navigation
+  const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -48,22 +47,24 @@ const FlipCard: React.FC<FlipCardProps> = ({
     e.preventDefault();
 
     if (isFlipped) {
-      // Navigate only if it's a mobile device or a click event (not keyboard)
       if (isMobile || e.type === "click") {
         router.push(href);
+      } else {
+        setIsFlipped(false);
       }
     } else {
-      setIsFlipped(true); // Flip the card
+      setIsFlipped(true);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === " ") {
+    if (e.key === " " || (e.key === "Enter" && !isFlipped)) {
       e.preventDefault();
-      toggleFlip(e); // Flip on Space key
-    }
-    if (e.key === "Enter" && isFlipped) {
-      router.push(href); // Navigate on Enter if flipped
+      toggleFlip(e);
+    } else if (e.key === "Enter" && isFlipped) {
+      router.push(href);
+    } else if (e.key === "Escape" && isFlipped) {
+      setIsFlipped(false); // Allow Escape key to unflip the card
     }
   };
 
@@ -78,10 +79,8 @@ const FlipCard: React.FC<FlipCardProps> = ({
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
       role="button"
-      tabIndex={0}
-      aria-label={`${frontTitle}, ${isFlipped ? "Back side visible, press Enter to navigate." : "Front side visible, press Space to flip."}`}
       aria-expanded={isFlipped}
-      aria-live="polite"
+      tabIndex={0}
     >
       {/* Card Container with Flip Effect */}
       <div
@@ -90,31 +89,52 @@ const FlipCard: React.FC<FlipCardProps> = ({
         }`}
       >
         {/* Front of Card */}
-        <div className="absolute inset-0 backface-hidden">
+        <div
+          className="absolute inset-0 backface-hidden"
+          aria-hidden={isFlipped}
+        >
           <Card className="w-full h-full flex flex-col">
             <CardHeader>
-              <CardTitle>{frontTitle}</CardTitle>
+              <CardTitle>{companyName}</CardTitle>
               <CardDescription>{frontDesc}</CardDescription>
             </CardHeader>
             <CardContent className="relative flex-1 m-5">
-              <Image src={imageSrc} alt={frontTitle} fill />
+              <Image src={imageSrc} alt={companyName} fill />
             </CardContent>
           </Card>
         </div>
 
         {/* Back of Card */}
-        <div className="absolute inset-0 rotate-y-180 backface-hidden">
+        <div
+          className="absolute inset-0 rotate-y-180 backface-hidden"
+          aria-hidden={!isFlipped}
+        >
           <Card className="w-full h-full flex flex-col bg-secondary">
             <CardHeader>
               <CardTitle>{backTitle}</CardTitle>
               <CardDescription>{backDesc}</CardDescription>
             </CardHeader>
-            <CardFooter className="flex justify-center">
-              <span className="text-lg font-semibold">Tap to Navigate</span>
+            <CardFooter className="flex justify-center items-center">
+              <p>Footer</p>
             </CardFooter>
           </Card>
         </div>
       </div>
+      {/* Invisible description for screen readers */}
+      <p
+        id="flipped-card-description"
+        className="sr-only"
+        aria-hidden={!isFlipped}
+      >
+        Press Enter to navigate to the link.
+      </p>
+      <p
+        id="unflipped-card-description"
+        className="sr-only"
+        aria-hidden={isFlipped}
+      >
+        Press Space to flip the card.
+      </p>
     </div>
   );
 };
