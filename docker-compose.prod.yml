@@ -6,10 +6,11 @@ services:
         condition: service_healthy
     environment:
       - NODE_ENV=production
-      - DB_HOST="eggo-prod-db"
+      - DB_HOST=eggo-prod-db
       - DB_USER=${MARIADB_USER}
       - DB_PASSWORD="${MARIADB_PASSWORD}"
       - DB_NAME=${MARIADB_DATABASE}
+      - DB_PORT=3306
     networks:
       - web
     labels:
