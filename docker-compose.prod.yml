@@ -33,17 +33,17 @@ services:
       - backend
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_BASE_URL=http://csadmin.kanaliiga.fi/khbe/
+      - NEXT_PUBLIC_BASE_URL=http://csadmin.kanaliiga.fi/hub/
     networks:
       - web
     labels: # Set correct urls later
       - "traefik.enable=true"
       - "traefik.http.routers.kanahub.entrypoints=http"
-      - "traefik.http.routers.kanahub.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub`)"
+      - "traefik.http.routers.kanahub.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub/`)"
       - "traefik.http.middlewares.kanahub-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.kanahub.middlewares=kanahub-https-redirect"
       - "traefik.http.routers.kanahub-secure.entrypoints=https"
-      - "traefik.http.routers.kanahub-secure.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub`)"
+      - "traefik.http.routers.kanahub-secure.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub/`)"
       - "traefik.http.routers.kanahub-secure.tls=true"
       - "traefik.http.routers.kanahub-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
       - "traefik.http.routers.kanahub-secure.tls.certresolver=http"
