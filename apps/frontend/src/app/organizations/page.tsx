@@ -1,6 +1,6 @@
 "use client";
 
-import FlipCard from "@/components/company-card";
+import FlipCard from "@/components/organization-card";
 import FadeOnScroll from "@/components/layout/fade-on-scroll";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 
@@ -23,8 +23,8 @@ export default function AllOrganizations() {
                 companyName={org.name}
                 backTitle="Jepulis"
                 backDesc="Nebulis"
-                href="http://kanaliiga.fi"
-                imageSrc={`${process.env.NEXT_PUBLIC_BASE_URL}images/kanaliiga-logo-1000px.png`}
+                href={`/organizations/${org.id}`}
+                imageSrc={`https://stats.kanaliiga.fi/img/${org.logo}`}
               />
             </FadeOnScroll>
           );
