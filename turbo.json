@@ -38,6 +38,7 @@
     "migrate": {},
     "migrate:rollback": {},
     "migrate:down": {},
+    "migrate:up": {},
     "seed": {}
   }
 }

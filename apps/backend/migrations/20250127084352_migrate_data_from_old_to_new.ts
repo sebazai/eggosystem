@@ -10,7 +10,8 @@ import {
   migrateMatchesAndReservations,
   migratePlayerStats,
   migrateRanks,
-  migrateTrades
+  migrateTrades,
+  teamLogosToCompanies
 } from "./helpers/migrations";
 import { envConnection } from "./helpers/migrationsDbConnections";
 
@@ -57,6 +58,7 @@ export async function up(knex: Knex): Promise<void> {
   await migratePlayerStats();
   await migrateRanks();
   await migrateTrades();
+  await teamLogosToCompanies();
   await cleanTeamsWithCascade();
   await experimentalTeamsIntoCompanies();
 
@@ -105,5 +107,5 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM Teams");
   await knex.raw("DELETE FROM Organizations");
   await knex.raw("DELETE FROM Seasons");
-  await knex.raw("DELETE FROM Games");
+  return knex.raw("DELETE FROM Games");
 }

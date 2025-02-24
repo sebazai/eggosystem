@@ -44,6 +44,8 @@ export async function up(knex: Knex): Promise<void> {
   await knex.raw(createBeforeUpdateTrigger);
 }
 
-export async function down(): Promise<void> {
-  // NO-OP
+export async function down(knex: Knex): Promise<void> {
+  await knex.raw("DROP TRIGGER IF EXISTS before_insert_primary_check;");
+  await knex.raw("DROP TRIGGER IF EXISTS before_update_primary_check;");
+  return;
 }

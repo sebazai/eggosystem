@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as fs from "fs";
-import type { Knex } from "knex";
 import { envConnection } from "./helpers/migrationsDbConnections";
 
 export const config = { transaction: false };
@@ -27,6 +26,7 @@ export async function up(): Promise<void> {
   }
 }
 
-export async function down(knex: Knex): Promise<void> {
-  return knex.raw("DROP DATABASE IF EXISTS kanaliiga;");
+export async function down(): Promise<void> {
+  // return knex.raw("DROP DATABASE IF EXISTS kanaliiga;");
+  return;
 }

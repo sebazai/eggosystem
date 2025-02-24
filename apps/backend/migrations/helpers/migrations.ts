@@ -1,6 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { runOldDbQuery, runNewDbQuery } from "./migrationsDbConnections";
 
+const trimTeamName = (teamName: string) => {
+  return teamName.trim().toLowerCase().replaceAll(/\s/g, "");
+};
+
+const fixYTunnus = (ytunnus: string) => {
+  const replacedYTunnus = ytunnus
+    .replaceAll(/\s/g, "")
+    .replace(/^FI/, "")
+    .replace(/^Y-tunnus/, "")
+    .replace(/^1234567-8/, "")
+    .replace(/\./, "")
+    .replace(/–/, "-");
+  if (!replacedYTunnus.includes("-")) {
+    return replacedYTunnus.slice(0, -1) + "-" + replacedYTunnus.slice(-1);
+  }
+  return replacedYTunnus;
+};
+
 export const migrateCompanies = async () => {
   console.log("Migrating companies");
   // Use these tables to fetch possible companydata.
@@ -17,21 +35,10 @@ export const migrateCompanies = async () => {
   ).flat();
 
   const allCompaniesCleanedYTunnus: any[] = allCompanies.map((company: any) => {
-    // Remove whitespaces
     const company_code = company.yrityksen_y_tunnus;
-    let fixed_cc = company_code
-      .replaceAll(/\s/g, "")
-      .replace(/^FI/, "")
-      .replace(/^Y-tunnus/, "")
-      .replace(/^1234567-8/, "")
-      .replace(/\./, "")
-      .replace(/–/, "-");
-    if (!fixed_cc.includes("-")) {
-      fixed_cc = fixed_cc.slice(0, -1) + "-" + fixed_cc.slice(-1);
-    }
     return {
       ...company,
-      yrityksen_y_tunnus: fixed_cc
+      yrityksen_y_tunnus: fixYTunnus(company_code)
     };
   });
 
@@ -87,20 +94,14 @@ export const migrateAlmostErrything = async () => {
   const teambuilderCompaniesByTeamName: any = allTeambuilderCompanies.reduce(
     (acc: any, obj: any) => {
       const company_code = obj.yrityksen_y_tunnus;
-      let fixed_cc = company_code
-        .replaceAll(/\s/g, "")
-        .replace(/^FI/, "")
-        .replace(/^Y-tunnus/, "")
-        .replace(/^1234567-8/, "")
-        .replace(/\./, "")
-        .replace(/–/, "-");
-      if (!fixed_cc.includes("-")) {
-        fixed_cc = fixed_cc.slice(0, -1) + "-" + fixed_cc.slice(-1);
-      }
 
-      acc[obj.Name.trim().toLowerCase().replaceAll(/\s/g, "")] = {
+      const trimmedName = trimTeamName(obj.Name);
+      if (acc[trimmedName]) {
+        return acc;
+      }
+      acc[trimTeamName(obj.Name)] = {
         ...obj,
-        yrityksen_y_tunnus: fixed_cc
+        yrityksen_y_tunnus: fixYTunnus(company_code)
       };
       return acc;
     },
@@ -111,7 +112,7 @@ export const migrateAlmostErrything = async () => {
 
   const newCompaniesByCompanyCode: any = newCompanies.reduce(
     (acc: any, obj: any) => {
-      acc[obj.company_code] = obj;
+      acc[obj.organization_code] = obj;
       return acc;
     },
     {}
@@ -165,7 +166,7 @@ export const migrateAlmostErrything = async () => {
   console.log("Migrating teams");
   for (const team of teams) {
     const teamId = team.id;
-    const teamName = team.Name.trim().toLowerCase().replaceAll(/\s/g, "");
+    const teamName = trimTeamName(team.Name);
     const teamLeague = team.leagueID;
 
     const teamSeason = leagueSeason[String(teamLeague)];
@@ -196,25 +197,28 @@ export const migrateAlmostErrything = async () => {
       const newCompany =
         newCompaniesByCompanyCode[teamCompany.yrityksen_y_tunnus];
 
+      console.log(
+        "Found company for,",
+        teamName,
+        "company name",
+        teamCompany.Name,
+        "with y-tunnus,",
+        newCompany?.organization_code,
+        "and id,",
+        newCompany?.id
+      );
       const emailToAddForTeam =
         team.email === "noreply@kanaliiga.fi" ? teamCompany.email : team.email;
 
-      const query = `INSERT INTO Teams (id, organization_id, name, team_logo, email) VALUES ('${teamId}', ${
-        newCompany?.id ?? "NULL"
-      }, "${team.Name}", '${team_company_logo}', '${emailToAddForTeam}');`;
-      await runNewDbQuery(query);
+      const query = `INSERT INTO Teams (id, organization_id, name, team_logo, email) VALUES (?, ?, ?, ?, ?);`;
+      await runNewDbQuery(query, [
+        teamId,
+        newCompany?.id ?? null,
+        team.Name,
+        team_company_logo,
+        emailToAddForTeam
+      ]);
 
-      if (newCompany?.logo === "nologo.svg") {
-        const getNewCompany: any[] = await runNewDbQuery(
-          `SELECT * FROM Organizations WHERE organization_code = '${newCompany.company_code}'`
-        );
-        const newCompanyLogo = getNewCompany[0].logo;
-        // Update newCompany logo from team
-        if (newCompanyLogo === "nologo.svg") {
-          const query = `UPDATE Organizations SET logo='${team_company_logo}' WHERE organization_code = '${newCompany.company_code}';`;
-          await runNewDbQuery(query);
-        }
-      }
       const addTeamToSeasonQuery = `INSERT INTO SeasonTeams (season_id, team_id) VALUES (?, ?);`;
       await runNewDbQuery(addTeamToSeasonQuery, [teamSeason, teamId]);
     }
@@ -724,6 +728,55 @@ export const migrateTrades = async () => {
 //   console.log('MatchStats migrated');
 // };
 
+export const teamLogosToCompanies = async () => {
+  const teamNameOk = new Set();
+  console.log("Fixing logos for teams and companies");
+  const allTeams = await runNewDbQuery<any[]>("SELECT * FROM Teams");
+  for (const team of allTeams) {
+    if (teamNameOk.has(team.name)) {
+      console.log("Skipping team, already fixed ", team.name);
+      continue;
+    }
+    const allTeamsWithSameName = await runNewDbQuery<any[]>(
+      "SELECT * FROM Teams WHERE name = ? ORDER BY id DESC",
+      [team.name]
+    );
+    console.log(
+      "Found",
+      allTeamsWithSameName.length,
+      "teams with name",
+      team.name
+    );
+    const findLatestTeamWithLogo = allTeamsWithSameName.find((t) => {
+      const pattern = /^S\d\d/;
+      return pattern.test(t.team_logo);
+    });
+    if (findLatestTeamWithLogo) {
+      console.log(
+        "Found logo for team",
+        team.name,
+        findLatestTeamWithLogo.team_logo
+      );
+      const logo = findLatestTeamWithLogo.team_logo;
+      for (const t of allTeamsWithSameName) {
+        if (t.organization_id) {
+          console.log(
+            "This team has an organization id",
+            t.organization_id,
+            "update logo to",
+            logo
+          );
+          const updateOrgLogo = `UPDATE Organizations SET logo = ? WHERE id = ?;`;
+          await runNewDbQuery(updateOrgLogo, [logo, t.organization_id]);
+        }
+        const query = `UPDATE Teams SET team_logo = ? WHERE id = ?;`;
+        await runNewDbQuery(query, [logo, t.id]);
+      }
+    }
+    teamNameOk.add(team.name);
+  }
+};
+
 export const cleanTeamsWithCascade = async () => {
   console.log("Cleaning duplicate teams with cascade");
   // First query to find teams with duplicate names
@@ -800,13 +853,16 @@ export const experimentalTeamsIntoCompanies = async () => {
   for (const team of teams) {
     const teamNameSplit = team.name.split(" ");
     const teamName = teamNameSplit[0];
-    const likeCompanyName = `%${teamName}%`;
+
+    const likeCompanyName =
+      teamName.length < 3 ? `${teamName}%` : `%${teamName}%`;
     const query = `SELECT * FROM Organizations WHERE name LIKE ?;`;
     const companies = await runNewDbQuery<any>(query, [likeCompanyName]);
 
     if (companies.length > 0) {
       const company: any = companies[0];
       const companyId = company.id;
+      console.log("Team", team.name, "is now in company", company.name);
       const updateQuery = `UPDATE Teams SET organization_id = ? WHERE id = ?;`;
       await runNewDbQuery(updateQuery, [companyId, team.id]);
     }
