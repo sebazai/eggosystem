@@ -12,6 +12,7 @@
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",
     "migrate:down": "knex migrate:down",
+    "migrate:up": "knex migrate:up",
     "seed": "knex seed:run",
     "check-types": "tsc --noEmit"
   },
