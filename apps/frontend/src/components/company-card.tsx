@@ -14,7 +14,6 @@ import Image from "next/image";
 
 interface FlipCardProps {
   companyName: string;
-  frontDesc: string;
   backTitle: string;
   backDesc: string;
   imageSrc: string;
@@ -23,7 +22,6 @@ interface FlipCardProps {
 
 const FlipCard: React.FC<FlipCardProps> = ({
   companyName,
-  frontDesc,
   backTitle,
   backDesc,
   imageSrc,
@@ -96,7 +94,6 @@ const FlipCard: React.FC<FlipCardProps> = ({
           <Card className="w-full h-full flex flex-col">
             <CardHeader>
               <CardTitle>{companyName}</CardTitle>
-              <CardDescription>{frontDesc}</CardDescription>
             </CardHeader>
             <CardContent className="relative flex-1 m-5">
               <Image src={imageSrc} alt={companyName} fill />
