@@ -26,7 +26,7 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useLayoutEffect, useState, type JSX } from "react";
 import Link from "next/link";
 
 interface MenuItemLink {
@@ -81,7 +81,7 @@ const defaultProps: NavbarProps = {
     },
     {
       title: "Companies",
-      url: "/companies"
+      url: "/organizations"
     },
     {
       url: `https://kanaliiga.fi/`,
@@ -134,7 +134,7 @@ export const Navigation = (props: NavbarProps) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updateNavHeight = () => {
       const nav = document.getElementById("navigation");
       if (nav) {
@@ -147,7 +147,11 @@ export const Navigation = (props: NavbarProps) => {
 
     updateNavHeight(); // Run on mount
     window.addEventListener("resize", updateNavHeight); // Handle window resize
-    return () => window.removeEventListener("resize", updateNavHeight);
+    window.addEventListener("load", updateNavHeight);
+    return () => {
+      window.removeEventListener("resize", updateNavHeight);
+      window.removeEventListener("load", updateNavHeight);
+    };
   }, []);
 
   useEffect(() => {

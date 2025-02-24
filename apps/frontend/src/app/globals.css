@@ -192,6 +192,7 @@
     color: #f29209;
     font-family: var(--font-headings);
     padding-bottom: 1rem;
+    backdrop-filter: blur(4px);
   }
   h2 {
     font-size: var(--text-xl);
