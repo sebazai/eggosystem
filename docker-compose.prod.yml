@@ -8,7 +8,7 @@ services:
       - NODE_ENV=production
       - DB_HOST="eggo-prod-db"
       - DB_USER=${MARIADB_USER}
-      - DB_PASSWORD="${MARIADB_PASSWORD}""
+      - DB_PASSWORD="${MARIADB_PASSWORD}"
       - DB_NAME=${MARIADB_DATABASE}
     networks:
       - web
@@ -58,7 +58,7 @@ services:
     environment:
       - MARIADB_ROOT_PASSWORD="${MARIADB_ROOT_PASSWORD}"
       - MARIADB_USER=${MARIADB_USER}
-      - MARIADB_PASSWORD="${MARIADB_PASSWORD}""
+      - MARIADB_PASSWORD="${MARIADB_PASSWORD}"
       - MARIADB_DATABASE=${MARIADB_DATABASE}
       - MARIADB_MAX_ALLOWED_PACKET=128M
       - MARIADB_INNODB_LOG_FILE_SIZE=64M
