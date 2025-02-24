@@ -295,5 +295,5 @@ deploy:
   script: # Need to think is this ssh really safe on public repo etc
     - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
     - rsync -v ./docker-compose.prod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
-    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY""
+    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"

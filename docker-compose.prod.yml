@@ -12,40 +12,40 @@ services:
       - DB_NAME=${MARIADB_DATABASE}
     networks:
       - web
-    labels: # Set correct urls later
+    labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.khbe.entrypoints=http"
-      - "traefik.http.routers.khbe.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/khbe`)"
-      - "traefik.http.middlewares.khbe-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.khbe.middlewares=kanahub-https-redirect"
-      - "traefik.http.routers.khbe-secure.entrypoints=https"
-      - "traefik.http.routers.khbe-secure.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/khbe`)"
-      - "traefik.http.routers.khbe-secure.tls=true"
-      - "traefik.http.routers.khbe-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
-      - "traefik.http.routers.khbe-secure.tls.certresolver=http"
-      - "traefik.http.routers.khbe-secure.service=khbe"
-      - "traefik.http.services.khbe.loadbalancer.server.port=3001"
+      - "traefik.http.routers.hubbe.entrypoints=http"
+      - "traefik.http.routers.hubbe.rule=Host(`hubbe.kanaliiga.fi`)"
+      - "traefik.http.middlewares.hubbe-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hubbe.middlewares=kanahub-https-redirect"
+      - "traefik.http.routers.hubbe-secure.entrypoints=https"
+      - "traefik.http.routers.hubbe-secure.rule=Host(`hubbe.kanaliiga.fi`)"
+      - "traefik.http.routers.hubbe-secure.tls=true"
+      - "traefik.http.routers.hubbe-secure.tls.domains[0].main=hubbe.kanaliiga.fi"
+      - "traefik.http.routers.hubbe-secure.tls.certresolver=http"
+      - "traefik.http.routers.hubbe-secure.service=hubbe"
+      - "traefik.http.services.hubbe.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
 
   frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
     depends_on:
       - backend
-    environment:
+    environment: # Guess we need to also tell the frontend where the backend is. hubbe.kanaliiga.fi to somewhere!
       - NODE_ENV=production
-      - NEXT_PUBLIC_BASE_URL=http://csadmin.kanaliiga.fi/hub/
+      - NEXT_PUBLIC_BASE_URL=http://hub.kanaliiga.fi/
     networks:
       - web
-    labels: # Set correct urls later
+    labels:
       - "traefik.enable=true"
       - "traefik.http.routers.kanahub.entrypoints=http"
-      - "traefik.http.routers.kanahub.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub/`)"
+      - "traefik.http.routers.kanahub.rule=Host(`hub.kanaliiga.fi`)"
       - "traefik.http.middlewares.kanahub-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.kanahub.middlewares=kanahub-https-redirect"
       - "traefik.http.routers.kanahub-secure.entrypoints=https"
-      - "traefik.http.routers.kanahub-secure.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub/`)"
+      - "traefik.http.routers.kanahub-secure.rule=Host(`hub.kanaliiga.fi`)"
       - "traefik.http.routers.kanahub-secure.tls=true"
-      - "traefik.http.routers.kanahub-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
+      - "traefik.http.routers.kanahub-secure.tls.domains[0].main=hub.kanaliiga.fi"
       - "traefik.http.routers.kanahub-secure.tls.certresolver=http"
       - "traefik.http.routers.kanahub-secure.service=kanahub"
       - "traefik.http.services.kanahub.loadbalancer.server.port=3000"
