@@ -1,8 +1,6 @@
 services:
   backend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
-    ports:
-      - "3001:3001"
     depends_on:
       eggo-prod-db:
         condition: service_healthy
@@ -26,13 +24,11 @@ services:
       - "traefik.http.routers.khbe-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
       - "traefik.http.routers.khbe-secure.tls.certresolver=http"
       - "traefik.http.routers.khbe-secure.service=khbe"
-      - "traefik.http.services.khbe.loadbalancer.server.port=8080"
+      - "traefik.http.services.khbe.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
 
   frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
-    ports:
-      - "3000:3000"
     depends_on:
       - backend
     environment:
@@ -52,7 +48,7 @@ services:
       - "traefik.http.routers.kanahub-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
       - "traefik.http.routers.kanahub-secure.tls.certresolver=http"
       - "traefik.http.routers.kanahub-secure.service=kanahub"
-      - "traefik.http.services.kanahub.loadbalancer.server.port=8080"
+      - "traefik.http.services.kanahub.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
   # For actual use we need to set up volume & backup strategies.
