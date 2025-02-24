@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -30,6 +30,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
 
   // Detect if it's a mobile device
   useEffect(() => {
@@ -39,19 +40,41 @@ const FlipCard: React.FC<FlipCardProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  useEffect(() => {
+    if (!isMobile || !cardRef.current) return;
+
+    const handleTouchStart = () => setIsFlipped(true);
+    const handleTouchEnd = () => setIsFlipped(false);
+
+    const card = cardRef.current;
+    card.addEventListener("touchstart", handleTouchStart);
+    card.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      card.removeEventListener("touchstart", handleTouchStart);
+      card.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [isMobile]);
+
   const toggleFlip = (
     e: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>
   ) => {
     e.preventDefault();
 
-    if (isFlipped) {
-      if (isMobile || e.type === "click") {
+    if (e.type === "click") {
+      router.push(href); // Always navigate on mouse click
+    }
+
+    if (e.type === "keydown") {
+      const key = (e as React.KeyboardEvent<HTMLDivElement>).key;
+
+      if (key === " " || (key === "Enter" && !isFlipped)) {
+        setIsFlipped(true);
+      } else if (key === "Enter" && isFlipped) {
         router.push(href);
-      } else {
+      } else if (key === "Escape" && isFlipped) {
         setIsFlipped(false);
       }
-    } else {
-      setIsFlipped(true);
     }
   };
 
@@ -72,6 +95,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
 
   return (
     <div
+      ref={cardRef}
       className="group relative w-70 h-80 cursor-pointer focus-visible:ring-4 focus-visible:ring-blue-300 outline-none perspective"
       onClick={toggleFlip}
       onKeyDown={handleKeyDown}
