@@ -1,0 +1,96 @@
+services:
+  backend:
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    ports:
+      - "3001:3001"
+    depends_on:
+      eggo-prod-db:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DB_HOST="eggo-prod-db"
+      - DB_USER=${MARIADB_USER}
+      - DB_PASSWORD=${MARIADB_PASSWORD}
+      - DB_NAME=${MARIADB_DATABASE}
+    networks:
+      - web
+    labels: # Set correct urls later
+      - "traefik.enable=true"
+      - "traefik.http.routers.khbe.entrypoints=http"
+      - "traefik.http.routers.khbe.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/khbe`)"
+      - "traefik.http.middlewares.khbe-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.khbe.middlewares=kanahub-https-redirect"
+      - "traefik.http.routers.khbe-secure.entrypoints=https"
+      - "traefik.http.routers.khbe-secure.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/khbe`)"
+      - "traefik.http.routers.khbe-secure.tls=true"
+      - "traefik.http.routers.khbe-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
+      - "traefik.http.routers.khbe-secure.tls.certresolver=http"
+      - "traefik.http.routers.khbe-secure.service=khbe"
+      - "traefik.http.services.khbe.loadbalancer.server.port=8080"
+      - "traefik.docker.network=web"
+
+  frontend:
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_BASE_URL=http://csadmin.kanaliiga.fi/khbe/
+    networks:
+      - web
+    labels: # Set correct urls later
+      - "traefik.enable=true"
+      - "traefik.http.routers.kanahub.entrypoints=http"
+      - "traefik.http.routers.kanahub.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub`)"
+      - "traefik.http.middlewares.kanahub-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.kanahub.middlewares=kanahub-https-redirect"
+      - "traefik.http.routers.kanahub-secure.entrypoints=https"
+      - "traefik.http.routers.kanahub-secure.rule=Host(`csadmin.kanaliiga.fi`) && PathPrefix(`/hub`)"
+      - "traefik.http.routers.kanahub-secure.tls=true"
+      - "traefik.http.routers.kanahub-secure.tls.domains[0].main=csadmin.kanaliiga.fi"
+      - "traefik.http.routers.kanahub-secure.tls.certresolver=http"
+      - "traefik.http.routers.kanahub-secure.service=kanahub"
+      - "traefik.http.services.kanahub.loadbalancer.server.port=8080"
+      - "traefik.docker.network=web"
+
+  # For actual use we need to set up volume & backup strategies.
+  eggo-prod-db:
+    image: bitnami/mariadb:11.4.2
+    restart: always
+    environment:
+      - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_MAX_ALLOWED_PACKET=128M
+      - MARIADB_INNODB_LOG_FILE_SIZE=64M
+    networks:
+      - web
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MARIADB_ROOT_PASSWORD"
+        ]
+      timeout: 20s
+      retries: 10
+
+  # Later.
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   depends_on:
+  #     eggo-prod-db:
+  #       condition: service_healthy
+  #   restart: always
+  #   environment:
+  #     PMA_HOST: eggo-prod-db
+  #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+  #     UPLOAD_LIMIT: 1G
