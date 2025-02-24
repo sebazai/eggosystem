@@ -94,3 +94,7 @@ services:
   #     PMA_HOST: eggo-prod-db
   #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
   #     UPLOAD_LIMIT: 1G
+
+networks:
+  web:
+    external: true

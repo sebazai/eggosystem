@@ -299,7 +299,3 @@ deploy:
       docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
       docker compose -f ~/docker/eggosystem/docker-compose.yml pull
       EOF
-
-networks:
-  web:
-    external: true
