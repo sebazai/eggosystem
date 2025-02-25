@@ -187,6 +187,15 @@
     padding-bottom: 1rem;
   }
 
+  footer a {
+    color: #60a5fa; /* Equivalent to text-blue-400 */
+    text-decoration: none;
+  }
+
+  footer a:hover {
+    text-decoration: underline;
+  }
+
   h1 {
     font-size: var(--text-2xl);
     color: #f29209;
