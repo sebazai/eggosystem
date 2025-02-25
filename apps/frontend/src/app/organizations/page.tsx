@@ -1,21 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import FlipCard from "@/components/organization-card";
+import { useState } from "react";
+import OrganizationFlipCard from "@/components/organization-flip-card";
 import FadeOnScroll from "@/components/layout/fade-on-scroll";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
-import { Input } from "@/components/ui/input"; // Importing shadcn Input component
+import { SearchBar } from "@/components/search-bar";
 
 export default function AllOrganizations() {
   const { organizations, isError, isLoading } = useOrganizations();
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Scroll to top whenever searchQuery changes
-  useEffect(() => {
-    if (searchQuery.length > 0) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [searchQuery]);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading organizations</div>;
@@ -27,25 +20,17 @@ export default function AllOrganizations() {
   );
 
   return (
-    <div className="px-6 py-4">
+    <div>
       <div
         id="sticky-header"
         className="sticky top-[var(--nav-height)] z-50 text-2xl font-bold backdrop-blur-xs"
       >
         <h1>Organizations</h1>
-
-        {/* Search Input */}
-        <div className="w-full max-w-md my-4">
-          <Input
-            type="text"
-            placeholder="Search organizations..."
-            className="bg-secondary/70"
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSearchQuery(e.target.value)
-            }
-          />
-        </div>
+        <SearchBar
+          placeholder="Search organizations..."
+          value={searchQuery}
+          setValue={(newValue) => setSearchQuery(newValue)}
+        />
       </div>
 
       {/* Organization Cards */}
@@ -53,7 +38,7 @@ export default function AllOrganizations() {
         {filteredOrganizations.length > 0 ? (
           filteredOrganizations.map((org) => (
             <FadeOnScroll key={org.id}>
-              <FlipCard
+              <OrganizationFlipCard
                 id={org.id}
                 companyName={org.name}
                 href={`/organizations/${org.id}`}
@@ -62,7 +47,7 @@ export default function AllOrganizations() {
             </FadeOnScroll>
           ))
         ) : (
-          <div className="col-span-full text-center text-gray-500 dark:text-gray-400">
+          <div className="col-span-full text-center">
             No organizations found
           </div>
         )}

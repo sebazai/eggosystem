@@ -19,7 +19,11 @@ interface FlipCardProps {
   href: string;
 }
 
-const FlipCard: React.FC<FlipCardProps> = ({ companyName, imageSrc, href }) => {
+const OrganizationFlipCard: React.FC<FlipCardProps> = ({
+  companyName,
+  imageSrc,
+  href
+}) => {
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -158,4 +162,4 @@ const FlipCard: React.FC<FlipCardProps> = ({ companyName, imageSrc, href }) => {
   );
 };
 
-export default FlipCard;
+export default OrganizationFlipCard;
