@@ -32,9 +32,10 @@ services:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
     depends_on:
       - backend
-    environment: # Guess we need to also tell the frontend where the backend is. ${HUBBE_PUBLIC_URL} to somewhere!
+    environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_BASE_URL=http://${HUB_PUBLIC_URL}/
+      - NEXT_PUBLIC_API_URL=http://${HUBBE_PUBLIC_URL}/
     networks:
       - web
     labels:
