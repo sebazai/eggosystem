@@ -3,9 +3,13 @@ import { envConfig } from "../../../configs/env";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
-  // Change the filters there
+  const { searchParams } = new URL(request.url);
+  const season = searchParams.get("season") || "14";
+  const stage = searchParams.get("stage") || "any";
+  const map = searchParams.get("map") || "any";
+
   const response = await fetch(
-    `${envConfig.API_URL}/api/v1/matches/seasons/14/leagues/any/teams/any/stages/any/maps/any`
+    `${envConfig.API_URL}/api/v1/matches/seasons/${season}/leagues/any/teams/any/stages/${stage}/maps/${map}`
   );
 
   if (!response.ok) {
