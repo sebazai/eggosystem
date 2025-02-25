@@ -13,7 +13,6 @@ services:
       - DB_PORT=3306
     networks:
       - web
-    command: "pnpm --filter=backend start"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe.entrypoints=http"
@@ -38,7 +37,6 @@ services:
       - NEXT_PUBLIC_BASE_URL=http://${HUB_PUBLIC_URL}/
     networks:
       - web
-    command: "pnpm --filter=frontend start"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.kanahub.entrypoints=http"
