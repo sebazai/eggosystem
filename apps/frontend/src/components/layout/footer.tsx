@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white py-8 px-4">
+    <footer className="bg-secondary py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="border-b border-gray-700 pb-6 mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -23,7 +23,7 @@ const Footer = () => {
           {/* Column 2 - Sponsors */}
           <div>
             <h2>Sponsors</h2>
-            <div className="mt-4 space-y-6 flex flex-col items-center md:items-start lg:items-center">
+            <div className="mt-4 space-y-6 flex flex-col items-center md:items-start lg:items-center dark:invert-0 invert">
               <Image
                 src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/elisa-esports.png"
                 alt="Elisa Esports"
