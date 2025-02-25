@@ -21,11 +21,15 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --ignore-scripts 
 COPY apps/frontend/ ./apps/frontend/
 
 # Build the frontend for production
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm build --filter=frontend
 
 # Stage 2: Run Stage
 FROM base AS runner
+ARG NEXT_PUBLIC_API_URL=https://hubbe.kanaliiga.fi/
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN apt update && apt upgrade -y
 # Create and change to the app directory
 WORKDIR /usr/src/app
