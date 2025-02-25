@@ -1,5 +1,6 @@
 "use client";
 import { Input } from "@/components/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 interface SearchBarProps {
@@ -9,12 +10,39 @@ interface SearchBarProps {
 }
 
 export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const searchQuery = searchParams.get("search") || "";
   // Scroll to top whenever searchQuery changes
   useEffect(() => {
-    if (value.length > 0) {
+    if (searchQuery.length > 0) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [value]);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (searchQuery !== "") {
+      setValue(searchQuery);
+    }
+  }, [searchQuery, setValue]);
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newSearch = e.target.value;
+    const params = new URLSearchParams(searchParams);
+
+    if (newSearch) {
+      params.set("search", newSearch);
+    } else {
+      params.delete("search"); // Remove query if empty
+    }
+
+    // Update URL without full page reload
+    setValue(e.target.value);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="w-full max-w-md my-4">
@@ -23,9 +51,7 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
         placeholder={placeholder}
         className="bg-secondary/70"
         value={value}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          setValue(e.target.value)
-        }
+        onChange={handleChange}
       />
     </div>
   );
