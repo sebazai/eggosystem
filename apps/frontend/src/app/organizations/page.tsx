@@ -39,7 +39,7 @@ export default function AllOrganizations() {
           <Input
             type="text"
             placeholder="Search organizations..."
-            className="border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+            className="bg-secondary/70"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)

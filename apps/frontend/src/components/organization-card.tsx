@@ -89,7 +89,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ companyName, imageSrc, href }) => {
   return (
     <div
       ref={cardRef}
-      className="group relative w-70 h-80 cursor-pointer focus-visible:ring-4 focus-visible:ring-blue-300 outline-none perspective"
+      className="group relative w-67 h-80 cursor-pointer focus-visible:ring-4 focus-visible:ring-blue-300 outline-none perspective"
       onClick={toggleFlip}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
@@ -125,7 +125,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ companyName, imageSrc, href }) => {
           className="absolute inset-0 rotate-y-180 backface-hidden"
           aria-hidden={!isFlipped}
         >
-          <Card className="w-full h-full flex flex-col bg-secondary">
+          <Card className="w-full h-full flex flex-col">
             <CardHeader>
               <CardTitle>Well well</CardTitle>
               <CardDescription>Hello</CardDescription>
