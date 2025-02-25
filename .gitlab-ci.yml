@@ -243,7 +243,7 @@ push-dockerfile:frontend:
   extends: [.change-tracker, .main]
   variables:
     APP: frontend
-    NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL
+    NEXT_PUBLIC_API_URL: $HUBBE_PUBLIC_URL
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
