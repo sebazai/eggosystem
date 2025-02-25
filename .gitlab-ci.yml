@@ -247,7 +247,7 @@ push-dockerfile:frontend:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
+    - docker build --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
 
 # Combine artifacts job
