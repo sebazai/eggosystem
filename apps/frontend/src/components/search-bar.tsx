@@ -1,7 +1,7 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface SearchBarProps {
   placeholder: string;
@@ -15,6 +15,8 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
   const router = useRouter();
 
   const searchQuery = searchParams.get("search") || "";
+  const hasMounted = useRef(false); // Track if the component has mounted
+
   // Scroll to top whenever searchQuery changes
   useEffect(() => {
     if (searchQuery.length > 0) {
@@ -22,9 +24,11 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
     }
   }, [searchQuery]);
 
+  // Set value from searchQuery on the initial render only
   useEffect(() => {
-    if (searchQuery !== "") {
+    if (!hasMounted.current && searchQuery !== "") {
       setValue(searchQuery);
+      hasMounted.current = true; // Set flag after first call
     }
   }, [searchQuery, setValue]);
 
