@@ -83,7 +83,7 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          `bg-kana min-h-svh overscroll-none antialiased`,
+          `bg-kana min-h-svh flex flex-col overscroll-none antialiased`,
           kanaFonts.variable,
           kanaHeadingFonts.variable
         )}
@@ -95,13 +95,15 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SkipToContent />
-          <div className="flex justify-center w-full">
-            <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-              <Navigation />
-              <main id="main-content">{children}</main>
+          <div className="flex flex-col min-h-svh">
+            <div className="flex-grow flex justify-center w-full">
+              <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
+                <Navigation />
+                <main id="main-content">{children}</main>
+              </div>
             </div>
+            <Footer />
           </div>
-          <Footer />
         </ThemeProvider>
       </body>
     </html>
