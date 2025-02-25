@@ -294,6 +294,7 @@ deploy:
     - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script: # Need to think is this ssh really safe on public repo etc
+    - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
     - rsync -v ./docker-compose.prod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
     - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
