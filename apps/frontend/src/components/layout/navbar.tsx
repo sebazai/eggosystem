@@ -169,74 +169,73 @@ export const Navigation = (props: NavbarProps) => {
   }, [scrollY]);
 
   return (
-    <div
-      id="navigation"
-      className="container pt-12 pb-8 mx-auto sticky top-0 w-full backdrop-blur-xs z-50"
-    >
-      <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
-        <NavigationMenu viewport={false}>
-          <NavigationMenuList>
-            {menu?.map((item) => renderMenuItem(item, scrollY))}
-          </NavigationMenuList>
-        </NavigationMenu>
-      </div>
-      <div className="block md:hidden">
-        <div className="flex items-center justify-between">
-          {logo && (
-            <Link href={logo.url} className="flex items-center gap-2">
-              <Image src={logo.src} alt={logo.alt} width={75} height={75} />
-            </Link>
-          )}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="size-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>
-                  {logo && (
-                    <Link href={logo.url} className="flex items-center gap-2">
-                      <Image
-                        src={logo.src}
-                        alt={logo.alt}
-                        width={75}
-                        height={75}
-                      />
-                    </Link>
-                  )}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="my-6 mx-2 flex flex-col gap-6">
-                <Accordion
-                  type="single"
-                  collapsible
-                  className="flex w-full flex-col gap-4"
-                >
-                  {menu?.map(renderMobileMenuItem)}
-                </Accordion>
-                {mobileExtraLinks && (
-                  <div className="border-t py-4">
-                    <div className="grid grid-cols-2 justify-start">
-                      {mobileExtraLinks.map((link, idx) => (
-                        <Link key={idx} href={link.url}>
-                          {link.name}
-                        </Link>
-                      ))}
+    <div id="navigation" className=" sticky top-0 w-full backdrop-blur-xs z-50">
+      <div className="container pt-12 pb-8 mx-auto">
+        <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
+          <NavigationMenu viewport={false}>
+            <NavigationMenuList>
+              {menu?.map((item) => renderMenuItem(item, scrollY))}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+        <div className="block md:hidden">
+          <div className="flex items-center justify-between">
+            {logo && (
+              <Link href={logo.url} className="flex items-center gap-2">
+                <Image src={logo.src} alt={logo.alt} width={75} height={75} />
+              </Link>
+            )}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="size-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>
+                    {logo && (
+                      <Link href={logo.url} className="flex items-center gap-2">
+                        <Image
+                          src={logo.src}
+                          alt={logo.alt}
+                          width={75}
+                          height={75}
+                        />
+                      </Link>
+                    )}
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="my-6 mx-2 flex flex-col gap-6">
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="flex w-full flex-col gap-4"
+                  >
+                    {menu?.map(renderMobileMenuItem)}
+                  </Accordion>
+                  {mobileExtraLinks && (
+                    <div className="border-t py-4">
+                      <div className="grid grid-cols-2 justify-start">
+                        {mobileExtraLinks.map((link, idx) => (
+                          <Link key={idx} href={link.url}>
+                            {link.name}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {auth && (
-                  <div className="flex flex-col gap-3">
-                    <Button asChild variant="outline">
-                      <Link href={auth.login.url}>{auth.login.text}</Link>
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+                  )}
+                  {auth && (
+                    <div className="flex flex-col gap-3">
+                      <Button asChild variant="outline">
+                        <Link href={auth.login.url}>{auth.login.text}</Link>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </div>
