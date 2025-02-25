@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         port: "3000",
         pathname: "/images/**",
         search: ""
+      },
+      {
+        protocol: "https",
+        hostname: "stats.kanaliiga.fi"
       }
     ]
   }

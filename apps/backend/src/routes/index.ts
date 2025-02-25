@@ -3,6 +3,7 @@ import homeRouter from "./v1/home.routes";
 import playerRouter from "./v1/player.routes";
 import matchRouter from "./v1/match.routes";
 import leaderboardRouter from "./v1/leaderboard.routes";
+import organizationRouter from "./v1/organization.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -12,5 +13,6 @@ v1Router.use("/", homeRouter);
 v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/leaderboards", leaderboardRouter);
+v1Router.use("/organizations", organizationRouter);
 
 export default v1Router;

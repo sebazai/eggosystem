@@ -4,10 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Kanaliigan oranssi: #f29209 / 	hsl(35, 93%, 49%)
+Tummanharmaa: #161515 / 	hsl(0, 2%, 8%)
+Valkoinen: #ffffff / 	hsl(0, 0%, 100%)
+Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
+
 :root {
   --background: hsl(0 0% 100%);
   --foreground: hsl(240 10% 3.9%);
-  --card: hsl(0 0% 100%);
+  --card: hsla(0, 0%, 95%, 0.9);
   --card-foreground: hsl(240 10% 3.9%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(240 10% 3.9%);
@@ -22,8 +27,8 @@
   --destructive: hsl(0 84.2% 60.2%);
   --destructive-foreground: hsl(0 0% 98%);
   --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
-  --ring: hsl(240 10% 3.9%);
+  --input: hsl(29, 56%, 58%);
+  --ring: hsl(35, 93%, 49%);
   --chart-1: hsl(12 76% 61%);
   --chart-2: hsl(173 58% 39%);
   --chart-3: hsl(197 37% 24%);
@@ -43,7 +48,7 @@
 .dark {
   --background: hsl(240 10% 3.9%);
   --foreground: hsl(0 0% 98%);
-  --card: hsl(240 10% 3.9%);
+  --card: hsla(0, 0%, 10%, 0.7);
   --card-foreground: hsl(0 0% 98%);
   --popover: hsl(240 10% 3.9%);
   --popover-foreground: hsl(0 0% 98%);
@@ -58,8 +63,8 @@
   --destructive: hsl(0 62.8% 30.6%);
   --destructive-foreground: hsl(0 0% 98%);
   --border: hsl(240 3.7% 15.9%);
-  --input: hsl(240 3.7% 15.9%);
-  --ring: hsl(240 4.9% 83.9%);
+  --input: hsl(29, 56%, 58%);
+  --ring: hsl(35, 93%, 49%);
   --chart-1: hsl(220 70% 50%);
   --chart-2: hsl(160 60% 45%);
   --chart-3: hsl(30 80% 55%);
@@ -135,10 +140,6 @@
 }
 
 @layer base {
-  /* Kanaliigan oranssi: #f29209
-  Tummanharmaa: #161515
-  Valkoinen: #ffffff
-  Vaaleanruskea: #d09158 */
   * {
     @apply border-border outline-ring/50;
   }
@@ -151,9 +152,32 @@
   }
 
   .bg-kana {
-    background-image: url('/images/kana_background.png');
+    background-image: url("/images/kana_background_darker.png");
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    margin: 0;
+    min-height: 100vh;
+  }
+  /* Ensure backface is hidden properly */
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  /* Preserve 3D transform for smooth flipping */
+  .transform-style-preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  /* Rotation for flipping effect */
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  /* Perspective to enhance flip effect */
+  .perspective {
+    perspective: 1000px;
   }
 
   nav > * {
@@ -164,9 +188,18 @@
     padding-bottom: 1rem;
   }
 
+  footer a {
+    color: #f29209;
+    text-decoration: none;
+  }
+
+  footer a:hover {
+    text-decoration: underline;
+  }
+
   h1 {
     font-size: var(--text-2xl);
-    color: #f29209;
+    color: #f29209; /* Kanaliiga oranssi */
     font-family: var(--font-headings);
     padding-bottom: 1rem;
   }
