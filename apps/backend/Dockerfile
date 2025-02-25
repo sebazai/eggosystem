@@ -1,5 +1,6 @@
 # Base image
 FROM node:22-slim AS base
+RUN apt update && apt upgrade -y
 WORKDIR /usr/src/app
 # Copy monorepo things
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
@@ -24,9 +25,7 @@ RUN pnpm install --filter=!frontend --prod --frozen-lockfile
 # Remove the turbo cache, it is not needed in the final image and makes image leaner
 RUN rm -r node_modules/.pnpm/turbo-*
 # Finally the runner stage as final stage
-FROM node:22-slim AS runner
-WORKDIR /usr/src/app
-RUN apt update && apt upgrade -y
+FROM base AS runner
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
