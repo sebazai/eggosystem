@@ -21,6 +21,7 @@ export default function AllOrganizations() {
 
   return (
     <div>
+      <title>Organizations - Kanahub</title>
       <div
         id="sticky-header"
         className="sticky top-[var(--nav-height)] z-30 text-2xl font-bold backdrop-blur-xs"

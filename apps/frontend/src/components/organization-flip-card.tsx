@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 
-interface FlipCardProps {
+interface OrganizationFlipCardProps {
   id: number;
   companyName: string;
   imageSrc: string;
   href: string;
 }
 
-const OrganizationFlipCard: React.FC<FlipCardProps> = ({
+const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
   companyName,
   imageSrc,
   href
