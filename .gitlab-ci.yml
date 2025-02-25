@@ -285,6 +285,7 @@ deploy:
     DB_NAME: $DB_NAME
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     PROD_SERVER_IP: $PROD_SERVER_IP
+    PHPMYADMIN_AUTH_BASE64: $PHPMYADMIN_AUTH_BASE64
   before_script:
     - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
     - eval $(ssh-agent -s)
