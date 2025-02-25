@@ -77,7 +77,7 @@ const defaultProps: NavbarProps = {
     },
     {
       title: "Matches",
-      url: "#"
+      url: "/matches"
     },
     {
       title: "Companies",
