@@ -13,20 +13,13 @@ import {
 import Image from "next/image";
 
 interface FlipCardProps {
+  id: number;
   companyName: string;
-  backTitle: string;
-  backDesc: string;
   imageSrc: string;
   href: string;
 }
 
-const FlipCard: React.FC<FlipCardProps> = ({
-  companyName,
-  backTitle,
-  backDesc,
-  imageSrc,
-  href
-}) => {
+const FlipCard: React.FC<FlipCardProps> = ({ companyName, imageSrc, href }) => {
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -120,7 +113,9 @@ const FlipCard: React.FC<FlipCardProps> = ({
               <CardTitle>{companyName}</CardTitle>
             </CardHeader>
             <CardContent className="relative flex-1 m-5">
-              <Image src={imageSrc} alt={companyName} fill />
+              {!imageSrc.includes("nologo.svg") && (
+                <Image src={imageSrc} alt={companyName.concat(" logo")} fill />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -132,10 +127,13 @@ const FlipCard: React.FC<FlipCardProps> = ({
         >
           <Card className="w-full h-full flex flex-col bg-secondary">
             <CardHeader>
-              <CardTitle>{backTitle}</CardTitle>
-              <CardDescription>{backDesc}</CardDescription>
+              <CardTitle>Well well</CardTitle>
+              <CardDescription>Hello</CardDescription>
             </CardHeader>
-            <CardFooter className="flex justify-center items-center">
+            <CardContent>
+              <>Yalla</>
+            </CardContent>
+            <CardFooter className="flex justify-center items-center mt-auto">
               <p>Footer</p>
             </CardFooter>
           </Card>

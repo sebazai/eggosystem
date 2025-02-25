@@ -8,23 +8,25 @@ export default function FadeOnScroll({
   children: React.ReactNode;
 }) {
   const [opacity, setOpacity] = useState(1);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [scrollingUp, setScrollingUp] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const [navHeight, setNavHeight] = useState(0);
+  const [stickyElementBottom, setStickyElementBottom] = useState(0);
+  const [stickyElementHeight, setStickyElementHeight] = useState(0);
 
   useEffect(() => {
-    const heading = document.getElementById("heading-1");
+    const navigation = document.getElementById("navigation");
+    const heading = document.getElementById("sticky-header");
 
     const updateNavHeight = () => {
       if (heading) {
-        setNavHeight(heading.offsetHeight);
+        const boundingRect = heading.getBoundingClientRect();
+        setStickyElementBottom(boundingRect.bottom * 0.4);
+        setStickyElementHeight(boundingRect.height);
       }
     };
 
     // Observe size changes using ResizeObserver
     const observer = new ResizeObserver(() => updateNavHeight());
-    if (heading) observer.observe(heading);
+    if (navigation) observer.observe(navigation);
 
     // Initial height check
     updateNavHeight();
@@ -41,40 +43,28 @@ export default function FadeOnScroll({
       if (!ref.current) return;
 
       const elementTop = ref.current.getBoundingClientRect().top;
-      const fadeStart = navHeight + 100; // Start fading when reaching heading
-      const fadeEnd = navHeight; // Fully faded after moving past
+      const fadeStart = stickyElementBottom + 100;
+      const fadeEnd = stickyElementBottom;
       const fadeRange = fadeStart - fadeEnd;
 
-      // Detect scrolling direction
-      const currentScrollY = window.scrollY;
-      setScrollingUp(currentScrollY < lastScrollY);
-      setLastScrollY(currentScrollY);
-
-      let fadeFactor = Math.min(
+      const fadeFactor = Math.min(
         1,
         Math.max(0, (elementTop - fadeEnd) / fadeRange)
       );
-
-      // 🚀 Make elements fade in faster when scrolling up
-      if (scrollingUp && elementTop > navHeight) {
-        fadeFactor = 1;
-      }
 
       setOpacity(fadeFactor);
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [navHeight, lastScrollY, scrollingUp]);
+  }, [stickyElementBottom, stickyElementHeight]);
 
   return (
     <div
       ref={ref}
       style={{
         opacity,
-        transition: scrollingUp
-          ? "opacity 0.15s ease-in"
-          : "opacity 0.4s ease-out"
+        transition: "opacity 0.3s ease-in"
       }}
     >
       {children}
