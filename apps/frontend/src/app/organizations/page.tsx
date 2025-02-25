@@ -23,7 +23,7 @@ export default function AllOrganizations() {
     <div>
       <div
         id="sticky-header"
-        className="sticky top-[var(--nav-height)] z-50 text-2xl font-bold backdrop-blur-xs"
+        className="sticky top-[var(--nav-height)] z-30 text-2xl font-bold backdrop-blur-xs"
       >
         <h1>Organizations</h1>
         <SearchBar

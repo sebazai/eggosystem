@@ -97,12 +97,7 @@ export default function RootLayout({
           <SkipToContent />
           <div className="flex justify-center w-full">
             <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-              <div
-                className="sticky top-0 w-full backdrop-blur-xs z-100 py-4"
-                id="navigation"
-              >
-                <Navigation />
-              </div>
+              <Navigation />
               <main id="main-content">{children}</main>
             </div>
           </div>

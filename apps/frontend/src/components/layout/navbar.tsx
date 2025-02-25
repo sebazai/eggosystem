@@ -169,7 +169,10 @@ export const Navigation = (props: NavbarProps) => {
   }, [scrollY]);
 
   return (
-    <div className="container py-8 mx-auto">
+    <div
+      id="navigation"
+      className="container pt-12 pb-8 mx-auto sticky top-0 w-full backdrop-blur-xs z-50"
+    >
       <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
         <NavigationMenu viewport={false}>
           <NavigationMenuList>
