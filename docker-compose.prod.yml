@@ -5,12 +5,12 @@ services:
       eggo-prod-db:
         condition: service_healthy
     environment:
-      - NODE_ENV=production
-      - DB_HOST=eggo-prod-db
-      - DB_USER=${MARIADB_USER}
-      - DB_PASSWORD="${MARIADB_PASSWORD}"
-      - DB_NAME=${MARIADB_DATABASE}
-      - DB_PORT=3306
+      NODE_ENV: production
+      DB_HOST: eggo-prod-db
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: "${MARIADB_PASSWORD}"
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_PORT: 3306
     networks:
       - web
     labels:
@@ -33,9 +33,9 @@ services:
     depends_on:
       - backend
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_BASE_URL=http://${HUB_PUBLIC_URL}/
-      - NEXT_PUBLIC_API_URL=http://${HUBBE_PUBLIC_URL}/
+      NODE_ENV: production
+      NEXT_PUBLIC_BASE_URL: http://${HUB_PUBLIC_URL}/
+      NEXT_PUBLIC_API_URL: http://${HUBBE_PUBLIC_URL}/
     networks:
       - web
     labels:
@@ -53,17 +53,16 @@ services:
       - "traefik.http.services.kanahub.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
-  # For actual use we need to set up volume & backup strategies.
   eggo-prod-db:
     image: bitnami/mariadb:11.4.2
     restart: always
     environment:
-      - MARIADB_ROOT_PASSWORD="${MARIADB_ROOT_PASSWORD}"
-      - MARIADB_USER=${MARIADB_USER}
-      - MARIADB_PASSWORD="${MARIADB_PASSWORD}"
-      - MARIADB_DATABASE=${MARIADB_DATABASE}
-      - MARIADB_MAX_ALLOWED_PACKET=128M
-      - MARIADB_INNODB_LOG_FILE_SIZE=64M
+      MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: "${MARIADB_PASSWORD}"
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_MAX_ALLOWED_PACKET: 128M
+      MARIADB_INNODB_LOG_FILE_SIZE: 64M
     networks:
       - web
     healthcheck:
@@ -81,17 +80,35 @@ services:
       timeout: 20s
       retries: 10
 
-  # Later.
-  # phpmyadmin:
-  #   image: phpmyadmin/phpmyadmin
-  #   depends_on:
-  #     eggo-prod-db:
-  #       condition: service_healthy
-  #   restart: always
-  #   environment:
-  #     PMA_HOST: eggo-prod-db
-  #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-  #     UPLOAD_LIMIT: 1G
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      eggo-prod-db:
+        condition: service_healthy
+    restart: always
+    environment:
+      PMA_HOST: eggo-prod-db
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      UPLOAD_LIMIT: 1G
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hubphpmyadmin.entrypoints=http"
+      - "traefik.http.routers.hubphpmyadmin.rule=Host(`${HUB_PUBLIC_URL}`) && PathPrefix(`/phpmyadmin`)"
+      - "traefik.http.middlewares.hubphpmyadmin-auth.basicauth.users=$(echo ${PHPMYADMIN_AUTH} | base64 -d)"
+      - "traefik.http.middlewares.hubphpmyadmin-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.hubphpmyadmin-stripprefix.stripprefix.prefixes=/phpmyadmin"
+      - "traefik.http.routers.hubphpmyadmin.middlewares=hubphpmyadmin-https-redirect"
+      - "traefik.http.routers.hubphpmyadmin-secure.entrypoints=https"
+      - "traefik.http.routers.hubphpmyadmin-secure.rule=Host(`${HUB_PUBLIC_URL}`)"
+      - "traefik.http.routers.hubphpmyadmin-secure.tls=true"
+      - "traefik.http.routers.hubphpmyadmin-secure.tls.domains[0].main=${HUB_PUBLIC_URL} && PathPrefix(`/phpmyadmin`)"
+      - "traefik.http.routers.hubphpmyadmin-secure.middlewares=hubphpmyadmin-stripprefix,hubphpmyadmin-auth"
+      - "traefik.http.routers.hubphpmyadmin-secure.tls.certresolver=http"
+      - "traefik.http.routers.hubphpmyadmin-secure.service=hubphpmyadmin"
+      - "traefik.http.services.hubphpmyadmin.loadbalancer.server.port=3000"
+      - "traefik.docker.network=web"
 
 networks:
   web:
