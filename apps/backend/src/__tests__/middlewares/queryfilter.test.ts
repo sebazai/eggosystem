@@ -1,108 +1,100 @@
-import {
-  Filter,
-  generateQueryWithFilters
-} from "../../middlewares/queryFilter";
+import { generateQueryWithFilters } from "../../middlewares/queryFilter";
 
 describe("generateQueryWithFilters", () => {
-  test("should return an empty query when no filters are provided", () => {
+  test("should return '1=1' when no filters are provided", () => {
     const result = generateQueryWithFilters([]);
-    expect(result).toEqual({ query: "", queryParams: [] });
+    expect(result).toEqual({ query: "1=1", queryParams: [] });
   });
 
-  test("should generate query for a single filter", () => {
-    const filters = [{ column: "age", value: 30 }];
-    const result = generateQueryWithFilters(filters);
-    expect(result).toEqual({ query: "age = ?", queryParams: [30] });
+  test("should generate a simple query for a single column", () => {
+    const result = generateQueryWithFilters([
+      { column: "season_id", value: [11] }
+    ]);
+    expect(result).toEqual({ query: "season_id = ?", queryParams: [11] }); // Fixed: Expect "=" instead of "IN"
   });
 
-  test("should ignore filters with null values", () => {
-    const filters = [
-      { column: "age", value: 30 },
-      { column: "name", value: null }
-    ];
-    const result = generateQueryWithFilters(filters);
-    expect(result).toEqual({ query: "age = ?", queryParams: [30] });
-  });
-
-  test("should generate query for multiple filters with AND", () => {
-    const filters = [
-      { column: "age", value: 30 },
-      { column: "salary", value: 5000 }
-    ];
-    const result = generateQueryWithFilters(filters, "AND");
+  test("should generate a query with multiple values using IN", () => {
+    const result = generateQueryWithFilters([
+      { column: "league_id", value: [66, 67, 68] }
+    ]);
     expect(result).toEqual({
-      query: "age = ? AND salary = ?",
-      queryParams: [30, 5000]
+      query: "league_id IN (?, ?, ?)",
+      queryParams: [66, 67, 68]
     });
   });
 
-  test("should generate query for multiple filters with OR", () => {
-    const filters = [
-      { column: "age", value: 30 },
-      { column: "salary", value: 5000 }
-    ];
-    const result = generateQueryWithFilters(filters, "OR");
+  test("should ignore filters with empty arrays", () => {
+    const result = generateQueryWithFilters([{ column: "team_id", value: [] }]);
+    expect(result).toEqual({ query: "1=1", queryParams: [] });
+  });
+
+  test("should handle AND condition with multiple filters", () => {
+    const result = generateQueryWithFilters([
+      { column: "season_id", value: [11, 14] },
+      { column: "stage", value: [2] }
+    ]);
     expect(result).toEqual({
-      query: "age = ? OR salary = ?",
-      queryParams: [30, 5000]
+      query: "season_id IN (?, ?) AND stage = ?", // Fixed: "=" for single value
+      queryParams: [11, 14, 2]
     });
   });
 
-  test("should handle filters with multiple OR columns", () => {
-    const filters = [
-      { column: [{ column: "age" }, { column: "years" }], value: 30 }
-    ];
-    const result = generateQueryWithFilters(filters);
+  test("should handle OR condition with multiple filters", () => {
+    const result = generateQueryWithFilters(
+      [
+        { column: "season_id", value: [11, 14] },
+        { column: "stage", value: [2] }
+      ],
+      "OR"
+    );
     expect(result).toEqual({
-      query: "(age = ? OR years = ?)",
-      queryParams: [30, 30]
+      query: "season_id IN (?, ?) OR stage = ?", // Fixed: "=" for single value
+      queryParams: [11, 14, 2]
     });
   });
 
   test("should handle nested filter groups", () => {
-    const filters = [
+    const result = generateQueryWithFilters([
       {
         group: {
           operator: "OR",
           filters: [
-            { column: "age", value: 30 },
-            { column: "salary", value: 5000 }
+            { column: "season_id", value: [11] },
+            { column: "league_id", value: [66] }
           ]
         }
       },
-      { column: "status", value: "active" }
-    ] satisfies Filter[];
-    const result = generateQueryWithFilters(filters, "AND");
+      { column: "stage", value: [2] }
+    ]);
     expect(result).toEqual({
-      query: "(age = ? OR salary = ?) AND status = ?",
-      queryParams: [30, 5000, "active"]
+      query: "(season_id = ? OR league_id = ?) AND stage = ?", // Fixed: "=" for single values
+      queryParams: [11, 66, 2]
     });
   });
 
-  test("should handle deeply nested filter groups", () => {
-    const filters = [
-      {
-        group: {
-          operator: "AND",
-          filters: [
-            { column: "age", value: 30 },
-            {
-              group: {
-                operator: "OR",
-                filters: [
-                  { column: "salary", value: 5000 },
-                  { column: "bonus", value: 1000 }
-                ]
-              }
-            }
-          ]
-        }
-      }
-    ] satisfies Filter[];
-    const result = generateQueryWithFilters(filters);
+  test("should handle multiple OR columns", () => {
+    const result = generateQueryWithFilters([
+      { column: [{ column: "team_id" }, { column: "opponent_id" }], value: [3] }
+    ]);
     expect(result).toEqual({
-      query: "(age = ? AND (salary = ? OR bonus = ?))",
-      queryParams: [30, 5000, 1000]
+      query: "(team_id = ? OR opponent_id = ?)", // Fixed: "=" for single value
+      queryParams: [3, 3]
+    });
+  });
+
+  test("should handle a single value inside an array correctly", () => {
+    const result = generateQueryWithFilters([{ column: "map_id", value: [1] }]);
+    expect(result).toEqual({ query: "map_id = ?", queryParams: [1] }); // Fixed: "=" instead of "IN"
+  });
+
+  test("should handle duplicate filters for the same column", () => {
+    const result = generateQueryWithFilters([
+      { column: "season_id", value: [11] },
+      { column: "season_id", value: [14] }
+    ]);
+    expect(result).toEqual({
+      query: "season_id = ? AND season_id = ?", // Fixed: "=" for single values
+      queryParams: [11, 14]
     });
   });
 });

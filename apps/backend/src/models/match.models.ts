@@ -111,48 +111,56 @@ export const getTopPlayers = async (
 };
 
 export const getMatchesByFilters = async ({
-  season_id,
-  league_id,
-  team_id,
-  stage,
-  map_id
+  season_ids,
+  league_ids,
+  team_ids,
+  stages,
+  map_ids
 }: ParsedParams): Promise<MatchesByFilters[]> => {
   // Base query
   const { query, queryParams } = generateQueryWithFilters([
-    { column: "m.season_id", value: season_id },
-    { column: "m.league_id", value: league_id },
-    { column: "tms.team_id", value: team_id },
-    { column: "m.stage", value: stage },
-    { column: "mmp.map_id", value: map_id }
+    { column: "sl.season_id", value: season_ids },
+    { column: "sl.league_id", value: league_ids },
+    { column: "tms1.team_id", value: team_ids },
+    { column: "m.stage", value: stages },
+    { column: "mmp.map_id", value: map_ids }
   ]);
+
   const baseQuery = `
-      SELECT 
+      SELECT
           mmp.id AS match_played_id,
           m.match_date,
           sl.name AS league_name,
           m.stage,
           maps.name AS map_name,
 
-          -- Team info
-          t.name AS team_name,
-          t.team_logo AS team_logo,
-          tms.score AS team_score,
+          -- Team 1 (always the "lower" team ID first)
+          t1.name AS team1_name,
+          t1.team_logo AS team1_logo,
+          tms1.score AS team1_score,
           
-          -- Opponent info
-          opp.name AS opponent_name,
-          opp.team_logo AS opponent_logo,
-          opp_tms.score AS opponent_score
-      FROM TeamMapScores tms
-      JOIN MatchMapsPlayed mmp ON tms.match_maps_played_id = mmp.id
+          -- Team 2 (always the "higher" team ID second)
+          t2.name AS team2_name,
+          t2.team_logo AS team2_logo,
+          tms2.score AS team2_score
+
+      FROM MatchMapsPlayed mmp
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonLeagues sl ON m.league_id = sl.id
       JOIN Maps maps ON mmp.map_id = maps.id
-      JOIN TeamMapScores opp_tms ON tms.match_maps_played_id = opp_tms.match_maps_played_id 
-          AND tms.team_id <> opp_tms.team_id
-      JOIN Teams t ON tms.team_id = t.id
-      JOIN Teams opp ON opp_tms.team_id = opp.id
+
+      -- First team
+      JOIN TeamMapScores tms1 ON mmp.id = tms1.match_maps_played_id
+      JOIN Teams t1 ON tms1.team_id = t1.id
+
+      -- Second team, ensuring we don't swap duplicates
+      JOIN TeamMapScores tms2 ON mmp.id = tms2.match_maps_played_id 
+          AND tms1.team_id < tms2.team_id -- Ensures each match is listed only once
+      JOIN Teams t2 ON tms2.team_id = t2.id
+
       WHERE ${query}
-      ORDER BY match_played_id DESC
+
+      ORDER BY match_played_id DESC;
       `;
 
   return runQuery(baseQuery, queryParams);

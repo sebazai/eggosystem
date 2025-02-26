@@ -123,12 +123,12 @@ export default function AllMatches() {
                   {/* Left Team */}
                   <div className="flex items-center justify-end w-full pr-1 h-full min-w-0">
                     <span className="truncate text-right font-style-body-b3 cursor-pointer text-sm overflow-hidden text-ellipsis">
-                      {match.team_name}
+                      {match.team1_name}
                     </span>
                     <div className="flex items-center justify-center w-6 h-6 ml-1">
                       <Image
-                        src={`https://stats.kanaliiga.fi/img/${match.team_logo}`}
-                        alt={match.team_name}
+                        src={`https://stats.kanaliiga.fi/img/${match.team1_logo}`}
+                        alt={match.team1_name}
                         className="w-full h-full object-contain"
                         width={24}
                         height={24}
@@ -141,22 +141,22 @@ export default function AllMatches() {
                     className="flex items-center justify-center w-20 h-full rounded px-2 font-style-label-l3 whitespace-nowrap text-white text-sm shadow-md backdrop-blur-md"
                     style={{ backgroundColor: "hsla(0, 0%, 20%, 0.45)" }} // Darker with slight transparency
                   >
-                    {match.team_score} - {match.opponent_score}
+                    {match.team1_score} - {match.team2_score}
                   </div>
 
                   {/* Right Team */}
                   <div className="flex items-center justify-start w-full pl-1 h-full min-w-0">
                     <div className="flex items-center justify-center w-6 h-6 mr-1">
                       <Image
-                        src={`https://stats.kanaliiga.fi/img/${match.opponent_logo}`}
-                        alt={match.opponent_name}
+                        src={`https://stats.kanaliiga.fi/img/${match.team2_logo}`}
+                        alt={match.team2_name}
                         className="w-full h-full object-contain"
                         width={24}
                         height={24}
                       />
                     </div>
                     <span className="truncate text-left font-style-body-b3 cursor-pointer text-sm overflow-hidden text-ellipsis">
-                      {match.opponent_name}
+                      {match.team2_name}
                     </span>
                   </div>
                 </div>

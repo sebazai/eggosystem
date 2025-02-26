@@ -26,11 +26,11 @@ export const getPlayerBySteamId = async (steam_id: string) => {
 
 // ????????? Fix this, does not return Player array
 export const getPlayersByFilters = async ({
-  season_id,
-  league_id,
-  team_id,
-  stage,
-  map_id
+  season_ids,
+  league_ids,
+  team_ids,
+  stages,
+  map_ids
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: ParsedParams): Promise<any[]> => {
   // Base query
@@ -65,11 +65,11 @@ export const getPlayersByFilters = async ({
       INNER JOIN Teams t ON p.team_id = t.id
     `;
   const { query, queryParams } = generateQueryWithFilters([
-    { column: "p.team_id", value: team_id },
-    { column: "l.season_id", value: season_id },
-    { column: "l.id", value: league_id },
-    { column: "m.stage", value: stage },
-    { column: "mmp.map_id", value: map_id }
+    { column: "p.team_id", value: team_ids },
+    { column: "l.season_id", value: season_ids },
+    { column: "l.id", value: league_ids },
+    { column: "m.stage", value: stages },
+    { column: "mmp.map_id", value: map_ids }
   ]);
   const fullQuery = query + " GROUP BY p.steam_id";
   return runQuery(fullQuery, queryParams);
@@ -77,11 +77,11 @@ export const getPlayersByFilters = async ({
 
 // Fix this...
 export const getPlayerLeaderboard = async ({
-  season_id,
-  league_id,
-  team_id,
-  stage,
-  map_id,
+  season_ids,
+  league_ids,
+  team_ids,
+  stages,
+  map_ids,
   leaderboard
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: ParsedParams): Promise<any[]> => {
@@ -96,9 +96,9 @@ export const getPlayerLeaderboard = async ({
 
   const { query: subQueryWithFilters, queryParams: subQueryParams } =
     generateQueryWithFilters([
-      { column: "p.team_id", value: team_id },
-      { column: "l.season_id", value: season_id },
-      { column: "l.id", value: league_id }
+      { column: "p.team_id", value: team_ids },
+      { column: "l.season_id", value: season_ids },
+      { column: "l.id", value: league_ids }
     ]);
 
   const subQuery = `
@@ -112,11 +112,11 @@ export const getPlayerLeaderboard = async ({
 
   const { query: baseQueryFilters, queryParams: additionalParams } =
     generateQueryWithFilters([
-      { column: "p.team_id", value: team_id },
-      { column: "l.season_id", value: season_id },
-      { column: "l.id", value: league_id },
-      { column: "m.stage", value: stage },
-      { column: "mmp.map_id", value: map_id }
+      { column: "p.team_id", value: team_ids },
+      { column: "l.season_id", value: season_ids },
+      { column: "l.id", value: league_ids },
+      { column: "m.stage", value: stages },
+      { column: "mmp.map_id", value: map_ids }
     ]);
 
   const baseQuery = `
