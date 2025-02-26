@@ -121,7 +121,7 @@ export const getMatchesByFilters = async ({
   const { query, queryParams } = generateQueryWithFilters([
     { column: "sl.season_id", value: season_ids },
     { column: "sl.league_id", value: league_ids },
-    { column: "tms1.team_id", value: team_ids },
+    { column: [{ column: "t1.id" }, { column: "t2.id" }], value: team_ids },
     { column: "m.stage", value: stages },
     { column: "mmp.map_id", value: map_ids }
   ]);
