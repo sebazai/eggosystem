@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { envConfig } from "../../../configs/env";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const season = searchParams.get("season") || "14";
@@ -9,7 +8,7 @@ export async function GET(request: NextRequest) {
   const map = searchParams.get("map") || "any";
 
   const response = await fetch(
-    `${envConfig.API_URL}/api/v1/matches/seasons/${season}/leagues/any/teams/any/stages/${stage}/maps/${map}`
+    `${envConfig.API_URL}/api/v1/matches/recent?season_ids[]=${season}&stages[]=${stage}&map_ids[]=${map}`
   );
 
   if (!response.ok) {
