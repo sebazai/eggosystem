@@ -80,7 +80,7 @@ const defaultProps: NavbarProps = {
       url: "/matches"
     },
     {
-      title: "Companies",
+      title: "Organizations",
       url: "/organizations"
     },
     {

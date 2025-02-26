@@ -17,7 +17,9 @@ export default function AllOrganizations() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       >
-        <div>Loading...</div>
+        <div className="flex items-center justify-center min-h-[70vh]">
+          Loading...
+        </div>
       </OrganizationContainer>
     );
   }
@@ -27,7 +29,9 @@ export default function AllOrganizations() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       >
-        <div>Error loading organizations</div>
+        <div className="flex items-center justify-center min-h-[70vh]">
+          Error loading organizations
+        </div>
       </OrganizationContainer>
     );
   }
@@ -37,7 +41,9 @@ export default function AllOrganizations() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       >
-        <div>No organizations found</div>
+        <div className="flex items-center justify-center min-h-[70vh]">
+          No organizations found
+        </div>
       </OrganizationContainer>
     );
   }
