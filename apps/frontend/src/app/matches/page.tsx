@@ -6,7 +6,7 @@ import MatchContainer from "./match-container";
 import Image from "next/image";
 
 export default function AllMatches() {
-  const [season, setSeason] = useState("14"); // Fixme: any does not work to backend, dunno why
+  const [season, setSeason] = useState("14");
   const [stage, setStage] = useState("any");
   const [map, setMap] = useState("any");
 
@@ -62,41 +62,40 @@ export default function AllMatches() {
     <MatchContainer>
       <div className="p-6">
         <div className="mb-4 flex flex-wrap items-center">
-          <label className="mr-2 text-white">Season:</label>
+          <label className="mr-2 text-white text-sm">Season:</label>
           <select
             value={season}
             onChange={handleSeasonChange}
-            className="bg-gray-800 text-white p-2 rounded"
+            className="bg-gray-800 text-white p-2 rounded text-sm"
           >
             <option value="14">14</option>
             <option value="11">11</option>
           </select>
-          <label className="mr-2 ml-4 text-white">Stage:</label>
+          <label className="mr-2 ml-4 text-white text-sm">Stage:</label>
           <select
             value={stage}
             onChange={handleStageChange}
-            className="bg-gray-800 text-white p-2 rounded"
+            className="bg-gray-800 text-white p-2 rounded text-sm"
           >
             <option value="any">Any</option>
             <option value="1">Regular</option>
             <option value="2">Playoffs</option>
           </select>
-          <label className="mr-2 ml-4 text-white">Map:</label>
+          <label className="mr-2 ml-4 text-white text-sm">Map:</label>
           <select
             value={map}
             onChange={handleMapChange}
-            className="bg-gray-800 text-white p-2 rounded"
+            className="bg-gray-800 text-white p-2 rounded text-sm"
           >
             <option value="any">Any</option>
-            <option value="1">Mirage</option>
-            <option value="2">Inferno</option>
-            <option value="3">Dust2</option>
-            <option value="4">Overpass</option>
-            <option value="5">Nuke</option>
-            <option value="6">Train</option>
-            <option value="7">Vertigo</option>
-            <option value="8">Ancient</option>
-            <option value="9">Anubis</option>
+            <option value="de_dust2">Dust2</option>
+            <option value="de_nuke">Nuke</option>
+            <option value="de_anubis">Anubis</option>
+            <option value="de_ancient">Ancient</option>
+            <option value="de_overpass">Overpass</option>
+            <option value="de_train">Train</option>
+            <option value="de_mirage">Mirage</option>
+            <option value="de_vertigo">Vertigo</option>
           </select>
         </div>
         {matches.map((match, index) => {
@@ -107,13 +106,13 @@ export default function AllMatches() {
           return (
             <div key={index} className="mb-2">
               {showDate && (
-                <div className="text-left text-lg font-bold text-white my-2">
+                <div className="text-left text-sm font-bold text-white my-2">
                   {matchDate}
                 </div>
               )}
               <a className="text-white no-underline" href="#">
                 <div
-                  className="grid grid-cols-[1fr_auto_1fr] h-[60px] items-center gap-4 bg-background-95 px-2 transition-colors hover:bg-background-90 lg:px-4 mb-1"
+                  className="grid grid-cols-[1fr_auto_1fr] h-[60px] items-center gap-4 bg-background-95 px-2 transition-transform transform hover:scale-105 hover:bg-background-90 lg:px-4 mb-1"
                   style={{
                     backgroundColor: "hsla(0, 0%, 10%, 0.7)",
                     boxShadow: "0 3px 8px hsla(0, 0%, 0%, 0.3)",
@@ -122,7 +121,7 @@ export default function AllMatches() {
                 >
                   {/* Left Team */}
                   <div className="flex items-center justify-end w-full pr-4 h-full">
-                    <span className="truncate text-right font-style-body-b3 cursor-pointer">
+                    <span className="truncate text-right font-style-body-b3 cursor-pointer text-sm">
                       {match.team_name}
                     </span>
                     <div className="flex items-center justify-center w-8 h-8 ml-2">
@@ -137,7 +136,7 @@ export default function AllMatches() {
                   </div>
 
                   {/* Score */}
-                  <div className="flex items-center justify-center w-20 h-full rounded bg-background-100 px-2 font-style-label-l3 whitespace-nowrap text-white">
+                  <div className="flex items-center justify-center w-20 h-full rounded bg-background-100 px-2 font-style-label-l3 whitespace-nowrap text-white text-sm">
                     {match.team_score} - {match.opponent_score}
                   </div>
 
@@ -152,7 +151,7 @@ export default function AllMatches() {
                         height={32}
                       />
                     </div>
-                    <span className="truncate text-left font-style-body-b3 cursor-pointer">
+                    <span className="truncate text-left font-style-body-b3 cursor-pointer text-sm">
                       {match.opponent_name}
                     </span>
                   </div>
