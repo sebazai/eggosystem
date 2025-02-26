@@ -113,37 +113,46 @@ export default function AllMatches() {
               )}
               <a className="text-white no-underline" href="#">
                 <div
-                  className="flex h-[60px] justify-between items-center gap-4 bg-background-95 px-2 transition-colors hover:bg-background-90 lg:grid lg:grid-cols-11 lg:px-4 mb-1"
+                  className="grid grid-cols-[1fr_auto_1fr] h-[60px] items-center gap-4 bg-background-95 px-2 transition-colors hover:bg-background-90 lg:px-4 mb-1"
                   style={{
-                    backgroundColor: "hsla(0, 0%, 10%, 0.7)", // Dark but soft
-                    boxShadow: "0 3px 8px hsla(0, 0%, 0%, 0.3)", // Modern soft shadow
-                    borderRadius: "6px" // Slight round effect (not boxy)
+                    backgroundColor: "hsla(0, 0%, 10%, 0.7)",
+                    boxShadow: "0 3px 8px hsla(0, 0%, 0%, 0.3)",
+                    borderRadius: "6px"
                   }}
                 >
-                  <div className="flex items-center justify-center w-full">
-                    <span className="truncate text-center font-style-body-b3 cursor-pointer">
+                  {/* Left Team */}
+                  <div className="flex items-center justify-end w-full pr-4 h-full">
+                    <span className="truncate text-right font-style-body-b3 cursor-pointer">
                       {match.team_name}
                     </span>
-                    <Image
-                      src={`https://stats.kanaliiga.fi/img/${match.team_logo}`}
-                      alt={match.team_name}
-                      className="w-6 h-6 ml-2"
-                      width={24}
-                      height={24}
-                    />
+                    <div className="flex items-center justify-center w-8 h-8 ml-2">
+                      <Image
+                        src={`https://stats.kanaliiga.fi/img/${match.team_logo}`}
+                        alt={match.team_name}
+                        className="w-full h-full object-contain"
+                        width={32}
+                        height={32}
+                      />
+                    </div>
                   </div>
-                  <div className="flex h-8 items-center justify-center rounded bg-background-100 px-2 font-style-label-l3 whitespace-nowrap text-white lg:col-span-1 lg:h-auto lg:w-20 lg:py-1 lg:font-style-body-b1">
+
+                  {/* Score */}
+                  <div className="flex items-center justify-center w-20 h-full rounded bg-background-100 px-2 font-style-label-l3 whitespace-nowrap text-white">
                     {match.team_score} - {match.opponent_score}
                   </div>
-                  <div className="flex items-center justify-center w-full">
-                    <Image
-                      src={`https://stats.kanaliiga.fi/img/${match.opponent_logo}`}
-                      alt={match.opponent_name}
-                      className="w-6 h-6 mr-2"
-                      width={24}
-                      height={24}
-                    />
-                    <span className="truncate text-center font-style-body-b3 cursor-pointer">
+
+                  {/* Right Team */}
+                  <div className="flex items-center justify-start w-full pl-4 h-full">
+                    <div className="flex items-center justify-center w-8 h-8 mr-2">
+                      <Image
+                        src={`https://stats.kanaliiga.fi/img/${match.opponent_logo}`}
+                        alt={match.opponent_name}
+                        className="w-full h-full object-contain"
+                        width={32}
+                        height={32}
+                      />
+                    </div>
+                    <span className="truncate text-left font-style-body-b3 cursor-pointer">
                       {match.opponent_name}
                     </span>
                   </div>
