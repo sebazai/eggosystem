@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS Matches (
     league_id INT NOT NULL,
     season_id INT NOT NULL,
     stage TINYINT UNSIGNED NOT NULL DEFAULT 2,
+    best_of TINYINT UNSIGNED NOT NULL,
     match_date DATE NOT NULL,
     FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, id) ON UPDATE CASCADE ON DELETE CASCADE
 );

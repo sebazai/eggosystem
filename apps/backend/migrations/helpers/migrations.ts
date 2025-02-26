@@ -390,11 +390,12 @@ export const migrateMatchesAndReservations = async () => {
     }
 
     // Insert PARENT match that contains all bo1, bo3
-    const matchQuery = `INSERT INTO Matches (season_id, league_id, stage, match_date) VALUES (?, ?, ?, ?);`;
+    const matchQuery = `INSERT INTO Matches (season_id, league_id, stage, best_of, match_date) VALUES (?, ?, ?, ?, ?);`;
     const parentMatch = await runNewDbQuery<{ insertId: number }>(matchQuery, [
       matchSeasonId,
       match.leagueID,
       match.type,
+      match.best_of,
       match.date
     ]);
     const newParentMatchId = parentMatch.insertId;
@@ -429,13 +430,12 @@ export const migrateMatchesAndReservations = async () => {
     await migrateMatchCrazy(match, newParentMatchId, t_team_id, ct_team_id);
     matchMapsPlayedAlreadyMigratedIds.add(match.id);
 
-    if (match.type === 2) {
+    if (match.best_of === 3) {
       console.log(
-        "Match is best of, let's migrate all other matches played on the same date between the same teams"
+        "Match is best of 3, let's migrate all other matches played on the same date between the same teams"
       );
       // Select all other matches played between the teams on the same date for the same league, except this match
-      console.log("match date", match.date);
-      const allOtherBestOfMatchesQuery = `SELECT * FROM matches WHERE ((team1 = '${match.team1}' AND team2 = '${match.team2}') OR (team1 = '${match.team2}' AND team2 = '${match.team1}')) AND date = '${match.date}' AND leagueID = '${match.leagueID}' AND type = 2 AND id NOT IN (${match.id});`;
+      const allOtherBestOfMatchesQuery = `SELECT * FROM matches WHERE ((team1 = '${match.team1}' AND team2 = '${match.team2}') OR (team1 = '${match.team2}' AND team2 = '${match.team1}')) AND date = '${match.date}' AND leagueID = '${match.leagueID}' AND best_of = 3 AND id NOT IN (${match.id});`;
 
       console.log("Query", allOtherBestOfMatchesQuery);
 

@@ -22,8 +22,6 @@ services:
         condition: service_healthy
       migrations:
         condition: service_completed_successfully
-      seed:
-        condition: service_completed_successfully
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src # Mount source code for live reloading
     env_file: "dev.env"
@@ -31,6 +29,8 @@ services:
 
   seed:
     image: eggo-back
+    profiles:
+      - seed
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.dev
@@ -115,6 +115,8 @@ services:
 
   backend-test:
     image: eggo-back
+    profiles:
+      - test
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.dev
