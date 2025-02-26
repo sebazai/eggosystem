@@ -2,6 +2,8 @@
 
 import { Menu } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useRef, useState, type JSX, type RefObject } from "react";
+import Link from "next/link";
 
 import {
   Accordion,
@@ -26,8 +28,6 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
-import { useEffect, useLayoutEffect, useState, type JSX } from "react";
-import Link from "next/link";
 
 interface MenuItemLink {
   title: string;
@@ -92,20 +92,12 @@ const defaultProps: NavbarProps = {
       title: "Teams",
       url: "#",
       items: [
-        {
-          title: "Top Teams",
-          url: "#"
-        }
+        { title: "Browse Teams", url: "#" },
+        { title: "Top Teams", url: "#" }
       ]
     },
-    {
-      title: "Players",
-      url: "#"
-    },
-    {
-      title: "Leaderboards",
-      url: "#"
-    }
+    { title: "Players", url: "#" },
+    { title: "Leaderboards", url: "#" }
   ],
   mobileExtraLinks: [
     { name: "Press", url: "#" },
@@ -123,58 +115,56 @@ export const Navigation = (props: NavbarProps) => {
     Object.keys(props).length === 0 ? defaultProps : props;
   const { logo, menu, mobileExtraLinks, auth } = navigationProps;
 
-  const [scrollY, setScrollY] = useState(0);
+  const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
+  const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
+
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      setIsScrolled(window.scrollY > 0);
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useLayoutEffect(() => {
-    const updateNavHeight = () => {
-      const nav = document.getElementById("navigation");
-      if (nav) {
-        document.documentElement.style.setProperty(
-          "--nav-height",
-          `${nav.offsetHeight}px`
-        );
-      }
-    };
-
-    updateNavHeight(); // Run on mount
-    window.addEventListener("resize", updateNavHeight); // Handle window resize
-    window.addEventListener("load", updateNavHeight);
-    return () => {
-      window.removeEventListener("resize", updateNavHeight);
-      window.removeEventListener("load", updateNavHeight);
-    };
-  }, []);
-
   useEffect(() => {
+    const logoEl = logoRef.current;
+    if (!logoEl) return;
+
     const updateNavHeight = () => {
-      const nav = document.getElementById("navigation");
-      if (nav) {
+      if (navRef.current) {
+        const newHeight = navRef.current.offsetHeight;
         document.documentElement.style.setProperty(
           "--nav-height",
-          `${nav.offsetHeight}px`
+          `${newHeight}px`
         );
       }
     };
 
-    updateNavHeight(); // Update when `isScrolled` changes
-  }, [scrollY]);
+    updateNavHeight();
+
+    logoEl.addEventListener("transitionend", updateNavHeight);
+    logoEl.addEventListener("resize", updateNavHeight);
+
+    return () => {
+      logoEl.removeEventListener("transitionend", updateNavHeight);
+      logoEl.removeEventListener("resize", updateNavHeight);
+    };
+  }, [isScrolled]); // Runs when `isScrolled` changes
 
   return (
-    <div id="navigation" className=" sticky top-0 w-full backdrop-blur-xs z-50">
+    <div
+      ref={navRef}
+      id="navigation"
+      className={`sticky top-0 w-full backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
+    >
       <div className="container pt-12 pb-8 mx-auto">
         <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
           <NavigationMenu viewport={false}>
             <NavigationMenuList>
-              {menu?.map((item) => renderMenuItem(item, scrollY))}
+              {menu?.map((item) => renderMenuItem(item, isScrolled, logoRef))}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -208,7 +198,7 @@ export const Navigation = (props: NavbarProps) => {
                     )}
                   </SheetTitle>
                 </SheetHeader>
-                <div className="my-6 mx-2 flex flex-col gap-6">
+                <div id="mobile-menu" className="my-6 mx-2 flex flex-col gap-6">
                   <Accordion
                     type="single"
                     collapsible
@@ -218,7 +208,7 @@ export const Navigation = (props: NavbarProps) => {
                   </Accordion>
                   {mobileExtraLinks && (
                     <div className="border-t py-4">
-                      <div className="grid grid-cols-2 justify-start">
+                      <div className="grid grid-cols-2 gap-4 justify-start">
                         {mobileExtraLinks.map((link, idx) => (
                           <Link key={idx} href={link.url}>
                             {link.name}
@@ -244,21 +234,25 @@ export const Navigation = (props: NavbarProps) => {
   );
 };
 
-const renderMenuItem = (item: MenuItem, scrollY: number) => {
+const renderMenuItem = (
+  item: MenuItem,
+  isScrolled: boolean,
+  logoRef: RefObject<HTMLImageElement | null>
+) => {
   if ("src" in item) {
     return (
       <NavigationMenuItem key={item.alt}>
         <Link
-          key={item.alt}
           href={item.url}
-          className="flex items-center gap-2 transition-all duration-300"
+          className="flex items-center gap-2 transition-all"
         >
           <Image
+            ref={logoRef}
+            className="logo transition-all"
             src={item.src}
             alt={item.alt}
-            width={Math.max(80, 150 - scrollY)} // Shrinks dynamically
-            height={Math.max(80, 150 - scrollY)}
-            className="transition-all duration-300"
+            width={isScrolled ? 80 : 175}
+            height={isScrolled ? 80 : 175}
           />
         </Link>
       </NavigationMenuItem>
@@ -293,31 +287,29 @@ const renderMenuItem = (item: MenuItem, scrollY: number) => {
 };
 
 const renderMobileMenuItem = (item: MenuItem) => {
-  if ("src" in item) {
-    return null;
-  }
+  if ("src" in item) return null;
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">
-        <AccordionTrigger className="py-0 font-semibold hover:no-underline">
+        <AccordionTrigger className="py-0 font-semibold text-[16px] hover:no-underline">
           {item.title}
         </AccordionTrigger>
         <AccordionContent className="mt-2">
           {item.items.map((subItem) => (
-            <Link key={subItem.title} href={subItem.url}>
-              {subItem.icon}
-              <div>
-                <div className="text-sm font-semibold">{subItem.title}</div>
-              </div>
-            </Link>
+            <div className="py-2" key={subItem.title}>
+              <Link href={subItem.url}>{subItem.title}</Link>
+            </div>
           ))}
         </AccordionContent>
       </AccordionItem>
     );
   }
-
   return (
-    <Link key={item.title} href={item.url} className="font-semibold">
+    <Link
+      key={item.title}
+      href={item.url}
+      className="font-semibold font-headings"
+    >
       {item.title}
     </Link>
   );
@@ -330,7 +322,7 @@ const ListItem = ({
   return (
     <li>
       <NavigationMenuLink asChild>
-        <Link href={href} className="flex-row items-center gap-2">
+        <Link href={href} className="flex flex-row items-center gap-2">
           {title}
         </Link>
       </NavigationMenuLink>

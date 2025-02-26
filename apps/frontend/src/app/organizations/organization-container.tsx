@@ -1,7 +1,7 @@
 "use client";
 
 import { SearchBar } from "@/components/search-bar";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 export default function OrganizationContainer({
   searchQuery,
@@ -12,20 +12,46 @@ export default function OrganizationContainer({
   setSearchQuery: (newValue: string) => void;
   children: React.ReactNode;
 }) {
+  const [navHeight, setNavHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const nav = document.getElementById("navigation");
+    if (!nav) return;
+
+    const updateNavHeight = () => {
+      const newHeight = nav.offsetHeight;
+      if (newHeight !== navHeight) {
+        setNavHeight(newHeight); // Trigger re-render
+      }
+    };
+
+    // Initial set
+    updateNavHeight();
+
+    // Observe changes
+    const observer = new ResizeObserver(updateNavHeight);
+    observer.observe(nav);
+
+    return () => observer.disconnect();
+  }, [navHeight]); // Dependency ensures re-render
+
   return (
     <Suspense>
       <title>Organizations - Kanahub</title>
-      <div
-        id="sticky-header"
-        className="sticky top-[var(--nav-height)] z-30 text-2xl font-bold backdrop-blur-xs"
-      >
-        <h1>Organizations</h1>
-        <SearchBar
-          placeholder="Search organizations..."
-          value={searchQuery}
-          setValue={(newValue) => setSearchQuery(newValue)}
-        />
-      </div>
+      {navHeight !== null && ( // Ensure it renders only after we get height
+        <div
+          id="sticky-header"
+          className="sticky z-30 backdrop-blur-xs transition-[top] duration-300 ease-in-out"
+          style={{ top: `${navHeight}px` }}
+        >
+          <h1 className="pb-2">Organizations</h1>
+          <SearchBar
+            placeholder="Search organizations..."
+            value={searchQuery}
+            setValue={(newValue) => setSearchQuery(newValue)}
+          />
+        </div>
+      )}
       <div className="py-6">{children}</div>
     </Suspense>
   );

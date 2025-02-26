@@ -184,6 +184,19 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     font-family: var(--font-headings);
   }
 
+  .font-headings {
+    font-family: var(--font-headings);
+  }
+
+  .logo {
+    max-height: 175px;
+    transition: max-height 1s ease-in-out;
+  }
+
+  .scrolled .logo {
+    max-height: 80px;
+  }
+
   p {
     padding-bottom: 1rem;
   }
@@ -201,19 +214,16 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     font-size: var(--text-2xl);
     color: #f29209; /* Kanaliiga oranssi */
     font-family: var(--font-headings);
-    padding-bottom: 1rem;
   }
   h2 {
     font-size: var(--text-xl);
     color: #d09158;
     font-family: var(--font-headings);
-    padding-bottom: 0.75rem;
   }
   h3,
   h4,
   h5,
   h6 {
     font-family: var(--font-headings);
-    padding-bottom: 0.6rem;
   }
 }

@@ -19,7 +19,8 @@ export default function FadeOnScroll({
     const updateNavHeight = () => {
       if (heading) {
         const boundingRect = heading.getBoundingClientRect();
-        setStickyElementBottom(boundingRect.bottom * 0.4);
+        // Experimental.
+        setStickyElementBottom(boundingRect.bottom * 0.3);
         setStickyElementHeight(boundingRect.height);
       }
     };
