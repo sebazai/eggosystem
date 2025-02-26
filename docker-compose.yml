@@ -45,6 +45,8 @@ services:
     build:
       context: .
       dockerfile: ./apps/frontend/Dockerfile.dev
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3001
     volumes:
       - ./apps/frontend/src:/usr/src/app/apps/frontend/src # Mount source code for live reloading
       - ./apps/frontend/public:/usr/src/app/apps/frontend/public # Mount source code for live reloading
