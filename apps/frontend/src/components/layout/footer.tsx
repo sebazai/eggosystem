@@ -97,7 +97,7 @@ const Footer = () => {
                   sububobi
                 </Link>
                 {" & "}
-                <Link href="https://www.linkedin.com/in/mika-schroderus-58191b106/">
+                <Link href="https://www.linkedin.com/in/mika-schroderus/">
                   Xynte
                 </Link>
                 <div className="font-sm">
