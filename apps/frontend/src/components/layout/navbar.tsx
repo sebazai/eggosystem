@@ -195,14 +195,16 @@ export const Navigation = (props: NavbarProps) => {
                 <SheetHeader>
                   <SheetTitle>
                     {logo && (
-                      <Link href={logo.url} className="flex items-center gap-2">
-                        <Image
-                          src={logo.src}
-                          alt={logo.alt}
-                          width={75}
-                          height={75}
-                        />
-                      </Link>
+                      <span className="inline-block">
+                        <Link href={logo.url}>
+                          <Image
+                            src={logo.src}
+                            alt={logo.alt}
+                            width={75}
+                            height={75}
+                          />
+                        </Link>
+                      </span>
                     )}
                   </SheetTitle>
                 </SheetHeader>
