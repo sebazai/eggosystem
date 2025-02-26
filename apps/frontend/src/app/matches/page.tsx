@@ -116,12 +116,13 @@ export default function AllMatches() {
                   style={{
                     backgroundColor: "hsla(0, 0%, 10%, 0.7)",
                     boxShadow: "0 3px 8px hsla(0, 0%, 0%, 0.3)",
-                    borderRadius: "6px"
+                    borderRadius: "6px",
+                    minWidth: "0" // Prevents flexbox from forcing content to expand
                   }}
                 >
                   {/* Left Team */}
-                  <div className="flex items-center justify-end w-full pr-4 h-full">
-                    <span className="truncate text-right font-style-body-b3 cursor-pointer text-sm">
+                  <div className="flex items-center justify-end w-full pr-4 h-full min-w-0">
+                    <span className="truncate text-right font-style-body-b3 cursor-pointer text-sm overflow-hidden text-ellipsis">
                       {match.team_name}
                     </span>
                     <div className="flex items-center justify-center w-8 h-8 ml-2">
@@ -141,7 +142,7 @@ export default function AllMatches() {
                   </div>
 
                   {/* Right Team */}
-                  <div className="flex items-center justify-start w-full pl-4 h-full">
+                  <div className="flex items-center justify-start w-full pl-4 h-full min-w-0">
                     <div className="flex items-center justify-center w-8 h-8 mr-2">
                       <Image
                         src={`https://stats.kanaliiga.fi/img/${match.opponent_logo}`}
@@ -151,7 +152,7 @@ export default function AllMatches() {
                         height={32}
                       />
                     </div>
-                    <span className="truncate text-left font-style-body-b3 cursor-pointer text-sm">
+                    <span className="truncate text-left font-style-body-b3 cursor-pointer text-sm overflow-hidden text-ellipsis">
                       {match.opponent_name}
                     </span>
                   </div>
