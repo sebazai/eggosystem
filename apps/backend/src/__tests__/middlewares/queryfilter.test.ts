@@ -10,7 +10,7 @@ describe("generateQueryWithFilters", () => {
     const result = generateQueryWithFilters([
       { column: "season_id", value: [11] }
     ]);
-    expect(result).toEqual({ query: "season_id = ?", queryParams: [11] }); // Fixed: Expect "=" instead of "IN"
+    expect(result).toEqual({ query: "season_id = ?", queryParams: [11] });
   });
 
   test("should generate a query with multiple values using IN", () => {
@@ -34,7 +34,7 @@ describe("generateQueryWithFilters", () => {
       { column: "stage", value: [2] }
     ]);
     expect(result).toEqual({
-      query: "season_id IN (?, ?) AND stage = ?", // Fixed: "=" for single value
+      query: "season_id IN (?, ?) AND stage = ?",
       queryParams: [11, 14, 2]
     });
   });
@@ -48,7 +48,7 @@ describe("generateQueryWithFilters", () => {
       "OR"
     );
     expect(result).toEqual({
-      query: "season_id IN (?, ?) OR stage = ?", // Fixed: "=" for single value
+      query: "season_id IN (?, ?) OR stage = ?",
       queryParams: [11, 14, 2]
     });
   });
@@ -67,7 +67,7 @@ describe("generateQueryWithFilters", () => {
       { column: "stage", value: [2] }
     ]);
     expect(result).toEqual({
-      query: "(season_id = ? OR league_id = ?) AND stage = ?", // Fixed: "=" for single values
+      query: "(season_id = ? OR league_id = ?) AND stage = ?",
       queryParams: [11, 66, 2]
     });
   });
@@ -77,14 +77,14 @@ describe("generateQueryWithFilters", () => {
       { column: [{ column: "team_id" }, { column: "opponent_id" }], value: [3] }
     ]);
     expect(result).toEqual({
-      query: "(team_id = ? OR opponent_id = ?)", // Fixed: "=" for single value
+      query: "(team_id = ? OR opponent_id = ?)",
       queryParams: [3, 3]
     });
   });
 
   test("should handle a single value inside an array correctly", () => {
     const result = generateQueryWithFilters([{ column: "map_id", value: [1] }]);
-    expect(result).toEqual({ query: "map_id = ?", queryParams: [1] }); // Fixed: "=" instead of "IN"
+    expect(result).toEqual({ query: "map_id = ?", queryParams: [1] });
   });
 
   test("should handle duplicate filters for the same column", () => {
@@ -93,7 +93,7 @@ describe("generateQueryWithFilters", () => {
       { column: "season_id", value: [14] }
     ]);
     expect(result).toEqual({
-      query: "season_id = ? AND season_id = ?", // Fixed: "=" for single values
+      query: "season_id = ? AND season_id = ?",
       queryParams: [11, 14]
     });
   });

@@ -15,6 +15,7 @@ const parseParams = (req: Request, res: Response, next: NextFunction): void => {
     param: string | string[] | undefined
   ): number[] | null => {
     if (param === undefined || param === "") return null; // Treat empty string as null
+    if (param === "any") return null; // Treat "any" as null
 
     let values: string[] = [];
 
