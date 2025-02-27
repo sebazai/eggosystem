@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS Seasons (
     full_name VARCHAR(255) NOT NULL,
     start_date DATE,
     end_date DATE,
+    platform VARCHAR(20) NOT NULL,
     FOREIGN KEY (game_id) REFERENCES Games(id)
 );
 -- Table: SeasonLeagues
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS SeasonLeagueTeams (
     season_id INT NOT NULL,
     team_id INT NOT NULL,
     league_id INT NOT NULL,
+    external_platform_id VARCHAR(255),
     PRIMARY KEY (season_id, team_id, league_id),
     FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeams(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (league_id) REFERENCES SeasonLeagues(id) ON UPDATE CASCADE ON DELETE CASCADE
