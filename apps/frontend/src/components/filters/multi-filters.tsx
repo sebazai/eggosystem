@@ -1,5 +1,6 @@
 import { FancyMultiSelect } from "./fancy-multi-select";
 import clsx from "clsx";
+import { MapsFilter } from "./maps-filter";
 
 interface MultiFiltersProps {
   seasons?: number[];
@@ -41,9 +42,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
       {props.teams && props.setTeams && (
         <FancyMultiSelect placeholder="Select teams" />
       )}
-      {props.maps && props.setMaps && (
-        <FancyMultiSelect placeholder="Select maps" />
-      )}
+      {props.maps && props.setMaps && <MapsFilter />}
     </div>
   );
 };

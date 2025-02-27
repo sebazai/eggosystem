@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRecentMatches } from "@/hooks/data/useMatches";
 import MatchContainer from "./match-container";
 import Image from "next/image";
-import { MultiFilters } from "@/components/multi-filters";
+import { MultiFilters } from "@/components/filters/multi-filters";
 
 export default function AllMatches() {
   const [seasons, setSeasons] = useState<number[]>([]);
