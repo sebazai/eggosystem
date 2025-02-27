@@ -8,7 +8,6 @@ export async function seed(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM PlayerTrades");
   await knex.raw("DELETE FROM TeamRosters");
   await knex.raw("DELETE FROM Matches");
-  await knex.raw("DELETE FROM MatchReservations");
   await knex.raw("DELETE FROM Reservations");
   await knex.raw("DELETE FROM SeasonTeamPlayers");
   await knex.raw("DELETE FROM Players");
@@ -21,6 +20,8 @@ export async function seed(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM Seasons");
   await knex.raw("DELETE FROM Games");
   await knex.raw("DELETE FROM Maps");
+  await knex.raw("DELETE FROM knex_migrations");
+  await knex.raw("DELETE FROM knex_migrations_lock");
 
   const file = fs.readFileSync("./seeds/dev/kana_dev_test_seed.sql", "utf8");
   const statements = file.split(/;\n/g);

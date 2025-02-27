@@ -481,13 +481,15 @@ export const migrateMatchesAndReservations = async () => {
   console.log("Migrating reservations");
   // set ID into hashmap
   for (const reservation of allOldReservations) {
-    const query = `INSERT INTO Reservations (id, date_start, date_end, stream_url, hash) VALUES (?, ?, ?, ?, ?);`;
+    const query = `INSERT IGNORE INTO Reservations (id, date_start, date_end, stream_url, hash, team1_id, team2_id) VALUES (?, ?, ?, ?, ?, ?, ?);`;
     await runNewDbQuery(query, [
       reservation.id,
       reservation.date,
       reservation.dateEnd,
       reservation.stream,
-      reservation.hash
+      reservation.hash,
+      reservation.team1,
+      reservation.team2
     ]);
     const reservationDate = new Date(reservation.date)
       .toISOString()
