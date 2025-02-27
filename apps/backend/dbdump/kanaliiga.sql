@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS Seasons (
     full_name VARCHAR(255) NOT NULL,
     start_date DATE,
     end_date DATE,
+    platform VARCHAR(20) NOT NULL,
     FOREIGN KEY (game_id) REFERENCES Games(id)
 );
 -- Table: SeasonLeagues
