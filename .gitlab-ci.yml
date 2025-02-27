@@ -145,7 +145,13 @@ audit:
   extends: [.default, .pull-only-cache, .all-app-changes, .mr]
   allow_failure: true
   script:
-    - pnpm audit
+    - pnpm audit --json > gl-dependency-scanning-report.json || true
+    - ./scripts/audit.sh
+  artifacts:
+    reports:
+      dependency_scanning: gl-dependency-scanning.json
+    paths:
+      - gl-dependency-scanning.json
 
 secrets_scan:
   stage: security
