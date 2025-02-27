@@ -2,7 +2,11 @@
 
 phpMyAdmin -> Export
 
-Tables, remove all structure. Remove `knex_migrations` and `knex_migrations_lock` data.  
-Format specific options: Remove enclose in transaction, add disable foreign key check.
-Remove: Enclose table and column names with back-quotes (Protects column and table names formed with special characters or keywords)  
-Export it.
+- Tables, remove all structure.
+- REMOVE: Display comments (includes info such as export timestamp, PHP version, and server version)
+- REMOVE: Enclose in transaction
+- ADD: Disable foreign key check.
+- REMOVE: Enclose table and column names with back-quotes (Protects column and table names formed with special characters or keywords)
+
+- Export
+- Save to ./kana_dev_test_seed.sql
