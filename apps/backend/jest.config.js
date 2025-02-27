@@ -17,3 +17,14 @@ export const reporters = [
     { outputDirectory: "./test-results/junit", outputName: "results.xml" }
   ]
 ];
+
+// Coverage configuration
+export const collectCoverage = true;
+export const coverageReporters = ["text", "cobertura"];
+export const coverageDirectory = "coverage";
+export const coveragePathIgnorePatterns = [
+  "/node_modules/",
+  "/test-results/",
+  "/dist/"
+];
+export const coverageProvider = "v8";
