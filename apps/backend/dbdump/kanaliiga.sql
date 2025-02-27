@@ -1,14 +1,11 @@
 SET time_zone = "+00:00";
 SET GLOBAL max_allowed_packet = 134217728;
-
 -- Table: Games
 CREATE TABLE IF NOT EXISTS Games (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     abbreviation VARCHAR(255) NOT NULL
 );
-
-
 -- Table: Seasons
 CREATE TABLE IF NOT EXISTS Seasons (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -19,8 +16,6 @@ CREATE TABLE IF NOT EXISTS Seasons (
     end_date DATE,
     FOREIGN KEY (game_id) REFERENCES Games(id)
 );
-
-
 -- Table: SeasonLeagues
 CREATE TABLE IF NOT EXISTS SeasonLeagues (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -29,8 +24,6 @@ CREATE TABLE IF NOT EXISTS SeasonLeagues (
     season_id INT NOT NULL,
     FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
 -- Table: Organizations
 CREATE TABLE IF NOT EXISTS Organizations (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -41,7 +34,6 @@ CREATE TABLE IF NOT EXISTS Organizations (
     website VARCHAR(255),
     UNIQUE KEY unique_org_code (organization_code)
 );
-
 -- Table: Teams
 CREATE TABLE IF NOT EXISTS Teams (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -51,7 +43,6 @@ CREATE TABLE IF NOT EXISTS Teams (
     email VARCHAR(255) NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES Organizations(id)
 );
-
 -- Table: Players
 CREATE TABLE IF NOT EXISTS Players (
     steam_id BIGINT NOT NULL,
@@ -62,7 +53,6 @@ CREATE TABLE IF NOT EXISTS Players (
     discord VARCHAR(255),
     PRIMARY KEY (steam_id)
 );
-
 CREATE TABLE IF NOT EXISTS TeamRosters (
     id INT PRIMARY KEY AUTO_INCREMENT,
     team_id INT NOT NULL,
@@ -70,8 +60,6 @@ CREATE TABLE IF NOT EXISTS TeamRosters (
     FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
 -- Table: SeasonTeams
 CREATE TABLE IF NOT EXISTS SeasonTeams (
     season_id INT NOT NULL,
@@ -85,11 +73,11 @@ CREATE TABLE IF NOT EXISTS SeasonTeams (
     PRIMARY KEY (season_id, team_id),
     FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (captain_steam_id) REFERENCES Players(steam_id) ON DELETE SET NULL,
-    FOREIGN KEY (co_captain_steam_id) REFERENCES Players(steam_id) ON DELETE SET NULL
+    FOREIGN KEY (captain_steam_id) REFERENCES Players(steam_id) ON DELETE
+    SET NULL,
+        FOREIGN KEY (co_captain_steam_id) REFERENCES Players(steam_id) ON DELETE
+    SET NULL
 );
-
-
 -- Create SeasonLeagueTeams table
 CREATE TABLE IF NOT EXISTS SeasonLeagueTeams (
     season_id INT NOT NULL,
@@ -99,8 +87,6 @@ CREATE TABLE IF NOT EXISTS SeasonLeagueTeams (
     FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeams(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (league_id) REFERENCES SeasonLeagues(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
 -- Table: SeasonTeamPlayers
 CREATE TABLE IF NOT EXISTS SeasonTeamPlayers (
     season_id INT NOT NULL,
@@ -111,15 +97,11 @@ CREATE TABLE IF NOT EXISTS SeasonTeamPlayers (
     FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeams(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
-
 -- All maps of games by name
 CREATE TABLE IF NOT EXISTS Maps (
     id TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(30) NOT NULL UNIQUE
 );
-
 -- All matches played in the league and season
 CREATE TABLE IF NOT EXISTS Matches (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -130,42 +112,40 @@ CREATE TABLE IF NOT EXISTS Matches (
     match_date DATE NOT NULL,
     FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 -- All teams that participated in the match
 CREATE TABLE IF NOT EXISTS MatchTeams (
     match_id INT NOT NULL,
     team_id INT NOT NULL,
     season_id INT NOT NULL,
     league_id INT NOT NULL,
-
-    PRIMARY KEY (match_id, team_id), -- The same team can't be in the same match twice
+    PRIMARY KEY (match_id, team_id),
+    -- The same team can't be in the same match twice
     FOREIGN KEY (match_id) REFERENCES Matches(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (season_id, team_id, league_id) REFERENCES SeasonLeagueTeams(season_id, team_id, league_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 CREATE TABLE IF NOT EXISTS MatchTeamMapVetoes (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    match_id INT NOT NULL, 
+    match_id INT NOT NULL,
     team_id INT NOT NULL,
-    map_id TINYINT UNSIGNED NOT NULL, 
+    map_id TINYINT UNSIGNED NOT NULL,
     action ENUM('drop', 'pick', 'decider') NOT NULL,
-    veto_order TINYINT UNSIGNED NOT NULL,  -- Order in which the veto was made
+    veto_order TINYINT UNSIGNED NOT NULL,
+    -- Order in which the veto was made
     FOREIGN KEY (match_id, team_id) REFERENCES MatchTeams(match_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (map_id) REFERENCES Maps(id) ON DELETE RESTRICT,
-    UNIQUE (match_id, team_id, veto_order)  -- Ensures each team makes unique veto decisions in order
+    UNIQUE (match_id, team_id, veto_order) -- Ensures each team makes unique veto decisions in order
 );
-
 -- All maps played in the match, BO1, BO3, BO5 etc. Each BO in own row with demo
 CREATE TABLE IF NOT EXISTS MatchMapsPlayed (
     id INT PRIMARY KEY AUTO_INCREMENT,
     match_id INT NOT NULL,
     map_id TINYINT UNSIGNED NOT NULL,
-    map_order TINYINT UNSIGNED,  -- 1 = First map, 2 = Second map, 3 = Third map (if needed)
-    demofile VARCHAR(255) NOT NULL, 
+    map_order TINYINT UNSIGNED,
+    -- 1 = First map, 2 = Second map, 3 = Third map (if needed)
+    demofile VARCHAR(255) NOT NULL,
     FOREIGN KEY (match_id) REFERENCES Matches(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (map_id) REFERENCES Maps(id) ON DELETE RESTRICT
 );
-
 -- if old kana.matches.team1, starting_side is T, team2 is CT
 CREATE TABLE IF NOT EXISTS TeamMapScores(
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -179,28 +159,41 @@ CREATE TABLE IF NOT EXISTS TeamMapScores(
     FOREIGN KEY (match_id, team_id) REFERENCES MatchTeams(match_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (match_maps_played_id) REFERENCES MatchMapsPlayed(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 -- Each round of the match, who won, how many players alive, who planted the bomb, etc.
 CREATE TABLE IF NOT EXISTS MapRoundStats (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    match_maps_played_id INT NOT NULL, -- What map was played in this BOx Match
-    ct_team_id INT NOT NULL, -- Which team played CT on this round
-    t_team_id INT NOT NULL, -- Which team played T on this round
-    round_number TINYINT UNSIGNED NOT NULL, -- 1-n
-    round_end_reason_info TINYINT UNSIGNED NOT NULL, -- reason why round ended.
-    ct_t JSON, -- This needs to be parsed later, who was alive when bomb planted.
-    first_kill VARCHAR(2) NOT NULL, -- CT or T
-    plant_site CHAR(1), -- A or B
+    match_maps_played_id INT NOT NULL,
+    -- What map was played in this BOx Match
+    ct_team_id INT NOT NULL,
+    -- Which team played CT on this round
+    t_team_id INT NOT NULL,
+    -- Which team played T on this round
+    round_number TINYINT UNSIGNED NOT NULL,
+    -- 1-n
+    round_end_reason_info TINYINT UNSIGNED NOT NULL,
+    -- reason why round ended.
+    ct_t JSON,
+    -- This needs to be parsed later, who was alive when bomb planted.
+    first_kill VARCHAR(2) NOT NULL,
+    -- CT or T
+    plant_site CHAR(1),
+    -- A or B
     FOREIGN KEY (match_maps_played_id) REFERENCES MatchMapsPlayed(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (ct_team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (t_team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT unique_map_round_stats UNIQUE (match_maps_played_id, round_number), -- Each round is unique for played map in match
-    CONSTRAINT chk_ct_t_if_plant_site_not_null CHECK (plant_site IS NULL OR ct_t IS NOT NULL),
-        CONSTRAINT chk_plant_site_if_bomb_related CHECK (
-        NOT (round_end_reason_info IN (1, 2) AND plant_site IS NULL)
+    CONSTRAINT unique_map_round_stats UNIQUE (match_maps_played_id, round_number),
+    -- Each round is unique for played map in match
+    CONSTRAINT chk_ct_t_if_plant_site_not_null CHECK (
+        plant_site IS NULL
+        OR ct_t IS NOT NULL
+    ),
+    CONSTRAINT chk_plant_site_if_bomb_related CHECK (
+        NOT (
+            round_end_reason_info IN (1, 2)
+            AND plant_site IS NULL
+        )
     )
 );
-
 -- Table: PlayerStats
 CREATE TABLE IF NOT EXISTS PlayerStats (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -220,9 +213,9 @@ CREATE TABLE IF NOT EXISTS PlayerStats (
     flash_assists TINYINT UNSIGNED NOT NULL,
     flash_assists_t TINYINT UNSIGNED NOT NULL,
     flash_assists_ct TINYINT UNSIGNED NOT NULL,
-    adr DECIMAL(4,1) NOT NULL,
-    adr_t DECIMAL(4,1),
-    adr_ct DECIMAL(4,1),
+    adr DECIMAL(4, 1) NOT NULL,
+    adr_t DECIMAL(4, 1),
+    adr_ct DECIMAL(4, 1),
     hs_percent TINYINT UNSIGNED NOT NULL,
     plants TINYINT UNSIGNED NOT NULL,
     explodes TINYINT UNSIGNED NOT NULL,
@@ -265,8 +258,8 @@ CREATE TABLE IF NOT EXISTS PlayerStats (
     mates_flashed TINYINT UNSIGNED NOT NULL,
     self_flashes TINYINT UNSIGNED NOT NULL,
     first_deaths TINYINT UNSIGNED NOT NULL,
-    total_mf_duration DECIMAL(5,1) NOT NULL,
-    total_ef_duration DECIMAL(5,1) NOT NULL,
+    total_mf_duration DECIMAL(5, 1) NOT NULL,
+    total_ef_duration DECIMAL(5, 1) NOT NULL,
     one_v_one_won TINYINT UNSIGNED NOT NULL,
     one_v_one_lost TINYINT UNSIGNED NOT NULL,
     one_v_one_won_ct TINYINT UNSIGNED,
@@ -274,7 +267,7 @@ CREATE TABLE IF NOT EXISTS PlayerStats (
     one_v_one_won_t TINYINT UNSIGNED,
     one_v_one_lost_t TINYINT UNSIGNED,
     kast TINYINT UNSIGNED NOT NULL,
-    kana_rating DECIMAL(4,2) NOT NULL,
+    kana_rating DECIMAL(4, 2) NOT NULL,
     first_kills_t TINYINT UNSIGNED,
     first_kills_ct TINYINT UNSIGNED,
     first_deaths_t TINYINT UNSIGNED,
@@ -304,9 +297,9 @@ CREATE TABLE IF NOT EXISTS PlayerStats (
     mates_flashed_t TINYINT UNSIGNED,
     mates_flashed_ct TINYINT UNSIGNED,
     ttd INT,
-    crosshair_placement DECIMAL(3,1),
+    crosshair_placement DECIMAL(3, 1),
     ttf INT,
-    rws DECIMAL(4,2) NOT NULL,
+    rws DECIMAL(4, 2) NOT NULL,
     shots MEDIUMINT UNSIGNED,
     shots_hit MEDIUMINT UNSIGNED,
     total_strafing_shots MEDIUMINT UNSIGNED,
@@ -314,7 +307,6 @@ CREATE TABLE IF NOT EXISTS PlayerStats (
     FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (match_maps_played_id) REFERENCES MatchMapsPlayed(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 -- Table: Ranks
 CREATE TABLE IF NOT EXISTS SeasonPlayerRanks (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -326,18 +318,16 @@ CREATE TABLE IF NOT EXISTS SeasonPlayerRanks (
     cs_hours INT DEFAULT -1,
     faceit_level INT,
     faceit_elo INT DEFAULT 800,
-    faceit_kd DECIMAL(3,2),
+    faceit_kd DECIMAL(3, 2),
     faceit_date TIMESTAMP NULL DEFAULT '1970-01-01 10:00:00',
     kana_elo INT DEFAULT 0,
-    esportal_kd DECIMAL(4,2),
+    esportal_kd DECIMAL(4, 2),
     esportal_elo INT,
     esportal_rank INT,
     FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (steam_id, season_id)
 );
-
-
 CREATE TABLE IF NOT EXISTS PlayerTrades (
     id INT PRIMARY KEY AUTO_INCREMENT,
     match_maps_played_id INT NOT NULL,
@@ -356,15 +346,17 @@ CREATE TABLE IF NOT EXISTS PlayerTrades (
     FOREIGN KEY (victim_steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (match_maps_played_id) REFERENCES MatchMapsPlayed(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 CREATE TABLE IF NOT EXISTS Reservations (
     id INT PRIMARY KEY AUTO_INCREMENT,
     date_start DATETIME NOT NULL,
     date_end DATETIME NOT NULL,
     stream_url VARCHAR(255) NOT NULL,
-    hash VARCHAR(255) NOT NULL
+    team1_id INT NOT NULL,
+    team2_id INT NOT NULL,
+    hash VARCHAR(255) NOT NULL,
+    FOREIGN KEY (team1_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (team2_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
 -- Junction table linking Matches and Reservations
 CREATE TABLE IF NOT EXISTS MatchReservations (
     match_id INT,
@@ -373,6 +365,3 @@ CREATE TABLE IF NOT EXISTS MatchReservations (
     FOREIGN KEY (match_id) REFERENCES Matches(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (reservation_id) REFERENCES Reservations(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
-
-

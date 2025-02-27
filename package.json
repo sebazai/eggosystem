@@ -19,6 +19,7 @@
     "migrate:rollback": "turbo migrate:rollback",
     "migrate:down": "turbo migrate:down",
     "migrate:up": "turbo migrate:up",
+    "migrate:make": "turbo migrate:make --",
     "seed": "turbo seed --"
   },
   "lint-staged": {

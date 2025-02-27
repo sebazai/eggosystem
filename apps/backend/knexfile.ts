@@ -15,7 +15,12 @@ const config: { [key: string]: Knex.Config } = {
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 6666,
       user: process.env.DB_USER ?? "kanadbuser",
       password: process.env.DB_PASSWORD ?? "dev-pass",
-      database: "kanaliiga"
+      database: "kanaliiga",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      typeCast: (field: any, next: any): any => {
+        if (field.type === "DATETIME") return field.string();
+        return next();
+      }
     },
     migrations: {
       directory: "./migrations",

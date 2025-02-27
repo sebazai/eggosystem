@@ -52,6 +52,7 @@ packages/*/dist.turbo
 
 # apps/backend/
 **/dbdump/kanaclean.sql
+**/dbdump/kanaclean1.sql
 
 
 
