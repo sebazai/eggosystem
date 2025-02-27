@@ -146,6 +146,7 @@ audit:
   allow_failure: true
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
+    - apt update && apt install -y jq
     - ./scripts/audit.sh
   artifacts:
     reports:
