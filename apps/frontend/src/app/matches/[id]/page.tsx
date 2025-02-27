@@ -222,7 +222,7 @@ export default function MatchPage() {
                 <div className="text-center">ADR</div>
               </div>
 
-              {team.players.map((player, index) => (
+              {team.players.map((player) => (
                 <React.Fragment key={player.name}>
                   {/* Desktop Row */}
                   <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] py-2 border-b border-gray-800 text-xs">
