@@ -139,8 +139,6 @@ INSERT INTO SeasonLeagues (id, name, tier, season_id)
 VALUES (1, 'MKT', 3, 3),
   (2, 'Semi-pro', 2, 3),
   (3, 'Pro', 1, 3),
-  (4, 'MKT', 3, 2),
-  (5, 'pro', 2, 2),
   (6, 'Masters', 1, 4),
   (7, 'Challengers', 2, 4),
   (8, 'div2', 3, 4),
