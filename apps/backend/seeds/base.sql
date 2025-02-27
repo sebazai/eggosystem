@@ -6,7 +6,8 @@ INSERT INTO Seasons (
     name,
     full_name,
     start_date,
-    end_date
+    end_date,
+    platform
   )
 VALUES (
     2,
