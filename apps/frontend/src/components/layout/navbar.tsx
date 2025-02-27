@@ -119,21 +119,30 @@ export const Navigation = (props: NavbarProps) => {
   const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
 
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
     };
 
+    const handleResize = () => {
+      if (window.innerWidth > 768) setIsSheetOpen(false);
+    };
+
+    window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   useEffect(() => {
     const logoEl = logoRef.current;
     if (!logoEl) return;
 
-    const updateNavHeight = () => {
+    const updateNavHeightAndCheckMobile = () => {
       if (navRef.current) {
         const newHeight = navRef.current.offsetHeight;
         document.documentElement.style.setProperty(
@@ -143,14 +152,17 @@ export const Navigation = (props: NavbarProps) => {
       }
     };
 
-    updateNavHeight();
+    updateNavHeightAndCheckMobile();
 
-    logoEl.addEventListener("transitionend", updateNavHeight);
-    logoEl.addEventListener("resize", updateNavHeight);
+    logoEl.addEventListener("transitionend", updateNavHeightAndCheckMobile);
+    logoEl.addEventListener("resize", updateNavHeightAndCheckMobile);
 
     return () => {
-      logoEl.removeEventListener("transitionend", updateNavHeight);
-      logoEl.removeEventListener("resize", updateNavHeight);
+      logoEl.removeEventListener(
+        "transitionend",
+        updateNavHeightAndCheckMobile
+      );
+      logoEl.removeEventListener("resize", updateNavHeightAndCheckMobile);
     };
   }, [isScrolled]); // Runs when `isScrolled` changes
 
@@ -175,9 +187,13 @@ export const Navigation = (props: NavbarProps) => {
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
               </Link>
             )}
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsSheetOpen(true)}
+                >
                   <Menu className="size-6" />
                 </Button>
               </SheetTrigger>
@@ -186,7 +202,10 @@ export const Navigation = (props: NavbarProps) => {
                   <SheetTitle>
                     {logo && (
                       <span className="inline-block">
-                        <Link href={logo.url}>
+                        <Link
+                          href={logo.url}
+                          onClick={() => setIsSheetOpen(false)}
+                        >
                           <Image
                             src={logo.src}
                             alt={logo.alt}
@@ -204,13 +223,19 @@ export const Navigation = (props: NavbarProps) => {
                     collapsible
                     className="flex w-full flex-col gap-4"
                   >
-                    {menu?.map(renderMobileMenuItem)}
+                    {menu?.map((item) =>
+                      renderMobileMenuItem(item, () => setIsSheetOpen(false))
+                    )}
                   </Accordion>
                   {mobileExtraLinks && (
                     <div className="border-t py-4">
                       <div className="grid grid-cols-2 gap-4 justify-start">
                         {mobileExtraLinks.map((link, idx) => (
-                          <Link key={idx} href={link.url}>
+                          <Link
+                            key={idx}
+                            href={link.url}
+                            onClick={() => setIsSheetOpen(false)}
+                          >
                             {link.name}
                           </Link>
                         ))}
@@ -220,7 +245,12 @@ export const Navigation = (props: NavbarProps) => {
                   {auth && (
                     <div className="flex flex-col gap-3">
                       <Button asChild variant="outline">
-                        <Link href={auth.login.url}>{auth.login.text}</Link>
+                        <Link
+                          href={auth.login.url}
+                          onClick={() => setIsSheetOpen(false)}
+                        >
+                          {auth.login.text}
+                        </Link>
                       </Button>
                     </div>
                   )}
@@ -286,7 +316,7 @@ const renderMenuItem = (
   );
 };
 
-const renderMobileMenuItem = (item: MenuItem) => {
+const renderMobileMenuItem = (item: MenuItem, closeMenuOnClick: () => void) => {
   if ("src" in item) return null;
   if (item.items) {
     return (
@@ -297,7 +327,9 @@ const renderMobileMenuItem = (item: MenuItem) => {
         <AccordionContent className="mt-2">
           {item.items.map((subItem) => (
             <div className="py-2" key={subItem.title}>
-              <Link href={subItem.url}>{subItem.title}</Link>
+              <Link href={subItem.url} onClick={closeMenuOnClick}>
+                {subItem.title}
+              </Link>
             </div>
           ))}
         </AccordionContent>
@@ -308,6 +340,7 @@ const renderMobileMenuItem = (item: MenuItem) => {
     <Link
       key={item.title}
       href={item.url}
+      onClick={closeMenuOnClick}
       className="font-semibold font-headings"
     >
       {item.title}
