@@ -21,6 +21,7 @@ variables:
   DB_PASSWORD: "dev-pass"
   DB_NAME: "kanaliiga"
   TRIVY_VERSION: "0.59.1" # Set the Trivy version here
+  TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
 
 # Define a common anchor for the cache configuration
 .common-cache: &common-cache
@@ -83,8 +84,8 @@ variables:
     - echo "Building Docker image..."
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
     - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
-    - ./trivy image --exit-code 0 --scanners vuln --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
-    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
+    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
+    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
   artifacts:
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
