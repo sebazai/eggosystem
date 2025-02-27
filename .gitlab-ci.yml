@@ -39,11 +39,6 @@ variables:
     - npm install -g pnpm
   <<: *common-cache # Include the common cache configuration
 
-.mr-and-main:
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_MERGE_REQUEST_ID
-
 .mr:
   rules:
     - if: $CI_MERGE_REQUEST_ID
@@ -52,13 +47,32 @@ variables:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
-.change-tracker:
+.frontend-changes:
   rules:
     - changes:
-        - "apps/$APP/**"
-        - package.json
-        - pnpm-*.yaml
-        - .gitlab-ci.yml
+        - "apps/frontend/**/*"
+        - "package.json"
+        - "pnpm-*.yaml"
+        - ".gitlab-ci.yml"
+        - "packages/**/*"
+
+.backend-changes:
+  rules:
+    - changes:
+        - "apps/backend/**/*"
+        - "package.json"
+        - "pnpm-*.yaml"
+        - ".gitlab-ci.yml"
+        - "packages/**/*"
+
+.all-app-changes:
+  rules:
+    - changes:
+        - "apps/{frontend,backend}/**/*"
+        - "package.json"
+        - "pnpm-*.yaml"
+        - ".gitlab-ci.yml"
+        - "packages/**/*"
 
 # Define the pull-only cache configuration
 .pull-only-cache:
@@ -76,17 +90,18 @@ variables:
     paths:
       - .trivycache/
   before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
     - apk update && apk add jq
 
-.common-trivy-scan: &common-trivy-scan
-  script:
+.common-docker-scan: &common-docker-scan
+  script: &docker-scan-script
     - echo "Building Docker image..."
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
     - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
-  artifacts:
+  artifacts: &docker-scan-artifacts
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
       - gl-codeclimate-fs-$IMAGE_NAME.json
@@ -103,35 +118,31 @@ stages:
 
 install:
   stage: install
-  extends: [.default, .mr]
+  extends: [.default, .all-app-changes, .mr]
   script:
     - pnpm install
 
 check-types:
   stage: lint
-  extends: [.default, .pull-only-cache, .change-tracker, .mr]
+  extends: [.default, .pull-only-cache, .all-app-changes, .mr]
   script:
     - pnpm check-types
 
 lint:frontend:
   stage: lint
-  extends: [.default, .pull-only-cache, .change-tracker, .mr]
-  variables:
-    APP: frontend
+  extends: [.default, .pull-only-cache, .frontend-changes, .mr]
   script:
     - pnpm --filter=frontend lint
 
 lint:backend:
   stage: lint
-  extends: [.default, .pull-only-cache, .change-tracker, .mr]
-  variables:
-    APP: backend
+  extends: [.default, .pull-only-cache, .backend-changes, .mr]
   script:
     - pnpm --filter=backend lint
 
 audit:
   stage: security
-  extends: [.default, .pull-only-cache, .mr]
+  extends: [.default, .pull-only-cache, .all-app-changes, .mr]
   allow_failure: true
   script:
     - pnpm audit
@@ -139,7 +150,7 @@ audit:
 secrets_scan:
   stage: security
   image: python:3.9
-  extends: .mr
+  extends: [.all-app-changes, .mr]
   script:
     - pip install trufflehog
     - trufflehog --regex --entropy=False .
@@ -147,7 +158,7 @@ secrets_scan:
 
 test:backend:
   stage: test
-  extends: [.default, .pull-only-cache, .change-tracker, .mr]
+  extends: [.pull-only-cache, .backend-changes, .default, .mr]
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
@@ -158,7 +169,6 @@ test:backend:
     MARIADB_DATABASE: kanaliiga
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
-    APP: backend
   before_script:
     - npm install -g pnpm
     - export $(grep -v '^#' dev.env | xargs)
@@ -181,25 +191,19 @@ test:backend:
 
 build:frontend:
   stage: build
-  extends: [.default, .pull-only-cache, .change-tracker, .mr]
-  variables:
-    APP: frontend
+  extends: [.pull-only-cache, .frontend-changes, .default, .mr]
   script:
     - pnpm --filter=frontend build
 
 build:backend:
   stage: build
-  extends: [.default, .pull-only-cache, .change-tracker, .mr]
-  variables:
-    APP: backend
+  extends: [.pull-only-cache, .backend-changes, .default, .mr]
   script:
     - pnpm --filter=backend build
 
-# We could maybe add manual job to push the commit image to repository for
-# Some manual deployment to dev env ?
 # Backend job
 build-dockerfile:backend:
-  extends: [.change-tracker, .mr, .pull-only-cache]
+  extends: [.pull-only-cache, .backend-changes, .mr]
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-backend
@@ -209,12 +213,12 @@ build-dockerfile:backend:
     DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
-    APP: backend
-  <<: *common-trivy-scan
+  script: *docker-scan-script
+  artifacts: *docker-scan-artifacts
 
 # Frontend job
 build-dockerfile:frontend:
-  extends: [.change-tracker, .mr, .pull-only-cache]
+  extends: [.pull-only-cache, .frontend-changes, .mr]
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-frontend
@@ -224,17 +228,15 @@ build-dockerfile:frontend:
     DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
-    APP: frontend
-  <<: *common-trivy-scan
+  script: *docker-scan-script
+  artifacts: *docker-scan-artifacts
 
 push-dockerfile:backend:
   stage: build-docker
   image: docker:latest
   services:
-    - docker:dind # Docker-in-Docker service for building images
-  extends: [.change-tracker, .main]
-  variables:
-    APP: backend
+    - docker:dind
+  extends: [.backend-changes, .main]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
@@ -245,10 +247,9 @@ push-dockerfile:frontend:
   stage: build-docker
   image: docker:latest
   services:
-    - docker:dind # Docker-in-Docker service for building images
-  extends: [.change-tracker, .main]
+    - docker:dind
+  extends: [.frontend-changes, .main]
   variables:
-    APP: frontend
     NEXT_PUBLIC_API_URL: $HUBBE_PUBLIC_URL
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -260,7 +261,7 @@ push-dockerfile:frontend:
 combine-codequality-reports:
   stage: post-build
   image: alpine:latest
-  extends: .mr
+  extends: [.all-app-changes, .mr]
   needs:
     - job: build-dockerfile:backend
       artifacts: true
@@ -278,7 +279,7 @@ combine-codequality-reports:
 deploy:
   image: alpine:latest
   stage: deploy
-  extends: .main
+  extends: [.all-app-changes, .main]
   variables:
     MARIADB_ROOT_PASSWORD: $MARIADB_ROOT_PASSWORD
     MARIADB_USER: $MARIADB_USER
@@ -300,7 +301,7 @@ deploy:
     - chmod 700 ~/.ssh
     - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-  script: # Need to think is this ssh really safe on public repo etc
+  script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
     - rsync -v ./docker-compose.prod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
