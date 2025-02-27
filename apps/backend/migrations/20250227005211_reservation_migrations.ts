@@ -116,13 +116,13 @@ async function handleOneToOneReservations(knex: Knex) {
   await knex("Reservations").whereNull("match_id").del();
   await knex("Reservations").whereNot("stream_url", "like", "http%").del();
   // Drop the column date_start and date_end from Reservations
-  await knex.schema.table("Reservations", (table) => {
-    table.dropColumn("date_start");
-    table.dropColumn("date_end");
-    table.dropForeign("team1_id");
-    table.dropForeign("team2_id");
+  await knex.schema.alterTable("Reservations", (table) => {
+    table.dropForeign("team1_id", "Reservations_ibfk_1");
+    table.dropForeign("team2_id", "Reservations_ibfk_2");
     table.dropColumn("team1_id");
     table.dropColumn("team2_id");
+    table.dropColumn("date_start");
+    table.dropColumn("date_end");
   });
   // Drop table MatchReservations
   await knex.schema.dropTable("MatchReservations");
