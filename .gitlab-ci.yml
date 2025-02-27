@@ -166,13 +166,18 @@ test:backend:
     - pnpm --filter=backend seed
   script:
     - pnpm --filter=backend test
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
     reports:
       junit:
         - apps/backend/test-results/junit/results.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: apps/backend/coverage/cobertura-coverage.xml
     paths:
       - apps/backend/test-results/junit/results.xml
+      - apps/backend/coverage/cobertura-coverage.xml
 
 build:frontend:
   stage: build
