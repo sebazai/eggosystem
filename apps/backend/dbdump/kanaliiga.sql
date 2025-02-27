@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS SeasonLeagueTeams (
     season_id INT NOT NULL,
     team_id INT NOT NULL,
     league_id INT NOT NULL,
+    external_platform_id VARCHAR(255),
     PRIMARY KEY (season_id, team_id, league_id),
     FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeams(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (league_id) REFERENCES SeasonLeagues(id) ON UPDATE CASCADE ON DELETE CASCADE
