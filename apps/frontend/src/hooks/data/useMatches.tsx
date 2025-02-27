@@ -4,9 +4,21 @@ import { fetcher } from "@/lib/utils";
 import useSWR from "swr";
 import type { MatchesByFilters } from "@eggosystem/types";
 
-export const useMatches = (season = "any", stage = "any", map = "any") => {
+interface UseRecentMatchesProps {
+  seasons: number[];
+  leagues: number[];
+  stages: number[];
+  teams: number[];
+  maps: number[];
+}
+
+export const useRecentMatches = ({
+  seasons,
+  stages,
+  maps
+}: UseRecentMatchesProps) => {
   const { data, error, isValidating } = useSWR<MatchesByFilters[]>(
-    `/api/matches?season=${season}&stage=${stage}&map=${map}`,
+    `/api/matches?season=${seasons}&stage=${stages}&map=${maps}`,
     fetcher
   );
 
