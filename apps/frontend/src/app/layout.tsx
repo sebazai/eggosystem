@@ -86,7 +86,7 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          `bg-kana min-h-svh flex flex-col overscroll-none antialiased`,
+          `bg-kana min-h-svh flex flex-col overscroll-contain antialiased`,
           kanaFonts.variable,
           kanaHeadingFonts.variable
         )}
