@@ -62,7 +62,7 @@ export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1
+  maximumScale: 5
 };
 
 export default function RootLayout({
@@ -87,7 +87,7 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          `bg-kana min-h-svh flex flex-col overscroll-contain antialiased`,
+          `bg-kana min-h-svh flex flex-col antialiased`,
           kanaFonts.variable,
           kanaHeadingFonts.variable
         )}
