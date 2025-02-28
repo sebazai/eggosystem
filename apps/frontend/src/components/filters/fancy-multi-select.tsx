@@ -87,12 +87,17 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
         const stickyHeader = document.getElementById("sticky-header");
         const stickyHeaderHeight =
           stickyHeader?.getBoundingClientRect().bottom || 0;
-        const offset =
-          containerRef.current.getBoundingClientRect().top +
-          window.scrollY -
-          stickyHeaderHeight -
-          10;
-        window.scrollTo({ top: offset, behavior: "smooth" });
+
+        setTimeout(() => {
+          if (!containerRef.current) return;
+          const offset =
+            containerRef.current.getBoundingClientRect().top +
+            window.scrollY -
+            stickyHeaderHeight -
+            10;
+
+          window.scrollTo({ top: offset, behavior: "smooth" });
+        }, 100); // 300ms delay works well on iPhones
       }
     };
 
@@ -181,7 +186,7 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
       <div className="relative mt-2">
         <CommandList>
           {open && selectables.length > 0 ? (
-            <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-75 overflow-y-auto">
+            <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto">
               <CommandGroup className="h-full overflow-auto">
                 {selectables.map((framework) => {
                   return (
