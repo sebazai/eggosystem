@@ -7,7 +7,8 @@ import type { Organizations } from "@eggosystem/types";
 export const useOrganizations = () => {
   const { data, error, isValidating } = useSWR<Organizations[]>(
     "/api/organizations",
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false }
   );
 
   return {

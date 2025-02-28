@@ -19,7 +19,8 @@ export const useRecentMatches = ({
 }: UseRecentMatchesProps) => {
   const { data, error, isValidating } = useSWR<MatchesByFilters[]>(
     `/api/matches?season=${seasons}&stage=${stages}&map=${maps}`,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false }
   );
 
   return {
