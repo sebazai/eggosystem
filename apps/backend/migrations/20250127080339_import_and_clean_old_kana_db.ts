@@ -92,5 +92,5 @@ export async function up(): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   // Drop table kana if exists
-  return knex.raw("DROP DATABASE IF EXISTS kana;");
+  await knex.raw("DROP DATABASE IF EXISTS kana;");
 }

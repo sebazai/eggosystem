@@ -28,5 +28,5 @@ export async function up(): Promise<void> {
 
 export async function down(): Promise<void> {
   // return knex.raw("DROP DATABASE IF EXISTS kanaliiga;");
-  return;
+  console.log("No down migration needed");
 }

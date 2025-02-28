@@ -9,7 +9,7 @@ WHERE steam_id NOT IN (
 DELETE FROM Teams
 WHERE id NOT IN (
         SELECT team_id
-        FROM SeasonTeams
+        FROM SeasonTeamRegistrations
     );
 CREATE TABLE fake_names (
     id INT AUTO_INCREMENT PRIMARY KEY,

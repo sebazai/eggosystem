@@ -25,13 +25,21 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `name` (VARCHAR) - Short identifier (e.g., "Season 11").
   - `full_name` (VARCHAR) - Full name (e.g., "Counter-Strike Season 11").
 
+### Leagues
+
+- **Purpose**: All possible leagues.
+- **Columns**:
+  - `id` (INT, PK)
+  - `name` (VARCHAR)
+
 ### SeasonLeagues
 
 - **Purpose**: Represents different tiers within a season (e.g., Pro, Amateur).
 - **Columns**:
-  - `id` (INT, PK)
   - `season_id` (INT, FK → Seasons.id)
+  - `league_id` (INT, FK → Leagues.id)
   - `tier` (INT) - Defines ranking order, where Tier 1 is the highest level.
+  - `external_id` (VARCHAR) - Season.platform.external_id for this SeasonLeague
 
 ### Organizations
 
@@ -65,7 +73,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `steam_id` (BIGINT, PK) - Unique Steam identifier.
   - `match_maps_played_id` (INT, FK → MatchMapsPlayed.id)
 
-### SeasonTeams
+### SeasonTeamRegistrations
 
 - **Purpose**: Links teams to seasons, recording registration details.
 - **Columns**:
@@ -82,7 +90,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 
 - **Purpose**: Assigns teams to specific leagues after registration closes.
 - **Columns**:
-  - `season_team_id_fk` (INT, FK → SeasonTeams.id)
+  - `season_team_id_fk` (INT, FK → SeasonTeamRegistrations.id)
   - `season_league_id_fk` (INT, FK → SeasonLeagues.id)
 
 ### SeasonTeamPlayers

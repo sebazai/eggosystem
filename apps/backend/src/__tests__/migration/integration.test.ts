@@ -131,4 +131,24 @@ describe("Migration tests", () => {
     };
     expect(result[0]).toEqual(expectedResult);
   });
+  // There should be 12 teams in Season 11 Masters league
+  it("There should be 12 teams in Season 11 Masters league", async () => {
+    const query = `SELECT COUNT(slt.team_id) AS total_teams FROM SeasonLeagueTeams slt JOIN Leagues l ON slt.league_id = l.id WHERE slt.season_id = 11 AND l.name = 'Masters';`;
+    const result = await runQuery<[{ total_teams: number }]>(query);
+    expect(result[0].total_teams).toBe(12);
+  });
+
+  // There should be 7 leagues in Season 14
+  it("There should be 7 leagues in Season 14", async () => {
+    const query = `SELECT COUNT(DISTINCT sl.league_id) AS total_leagues FROM SeasonLeagues sl WHERE sl.season_id = 14;`;
+    const result = await runQuery<[{ total_leagues: number }]>(query);
+    expect(result[0].total_leagues).toBe(7);
+  });
+
+  // There should be 127 Maps played in Season 11 for Masters
+  it("There should be 127 Maps played in Season 11 for League 1", async () => {
+    const query = `SELECT COUNT(DISTINCT mmp.id) AS total_maps FROM MatchMapsPlayed mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 11 AND m.league_id = 1;`;
+    const result = await runQuery<[{ total_maps: number }]>(query);
+    expect(result[0].total_maps).toBe(127);
+  });
 });

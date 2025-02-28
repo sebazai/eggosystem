@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import { Match, MatchesByFilters, ParsedParams } from "@eggosystem/types";
+import type { Match, MatchesByFilters, ParsedParams } from "@eggosystem/types";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -119,8 +119,8 @@ export const getMatchesByFilters = async ({
 }: ParsedParams): Promise<MatchesByFilters[]> => {
   // Base query
   const { query, queryParams } = generateQueryWithFilters([
-    { column: "sl.season_id", value: season_ids },
-    { column: "sl.league_id", value: league_ids },
+    { column: "m.season_id", value: season_ids },
+    { column: "m.league_id", value: league_ids },
     { column: [{ column: "t1.id" }, { column: "t2.id" }], value: team_ids },
     { column: "m.stage", value: stages },
     { column: "mmp.map_id", value: map_ids }
@@ -130,7 +130,7 @@ export const getMatchesByFilters = async ({
       SELECT
           mmp.id AS match_played_id,
           m.match_date,
-          sl.name AS league_name,
+          l.name AS league_name,
           m.stage,
           maps.name AS map_name,
 
@@ -146,7 +146,7 @@ export const getMatchesByFilters = async ({
 
       FROM MatchMapsPlayed mmp
       JOIN Matches m ON mmp.match_id = m.id
-      JOIN SeasonLeagues sl ON m.league_id = sl.id
+      JOIN Leagues l ON m.league_id = l.id
       JOIN Maps maps ON mmp.map_id = maps.id
 
       -- First team

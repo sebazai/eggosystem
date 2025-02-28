@@ -62,6 +62,7 @@ export async function up(knex: Knex): Promise<void> {
   await cleanTeamsWithCascade();
   await experimentalTeamsIntoCompanies();
 
+  await knex.raw("ALTER TABLE SeasonLeagues DROP old_kana_league_id;");
   await knex.raw("DROP DATABASE kana;");
 }
 
@@ -103,9 +104,10 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM Matches");
   await knex.raw("DELETE FROM SeasonLeagueTeams");
   await knex.raw("DELETE FROM SeasonLeagues");
-  await knex.raw("DELETE FROM SeasonTeams");
+  await knex.raw("DELETE FROM SeasonTeamRegistrations");
   await knex.raw("DELETE FROM Teams");
   await knex.raw("DELETE FROM Organizations");
   await knex.raw("DELETE FROM Seasons");
-  return knex.raw("DELETE FROM Games");
+  await knex.raw("DELETE FROM Leagues");
+  await knex.raw("DELETE FROM Games");
 }
