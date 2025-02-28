@@ -189,7 +189,7 @@ export default function MatchPage() {
                 className="grid grid-cols-[2fr_repeat(7,1fr)] items-center text-xs text-gray-400 p-2"
                 style={{ backgroundColor: "hsla(25, 70%, 20%, 0.7)" }}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 overflow-hidden">
                   <Image
                     src={
                       teamIndex === 0
