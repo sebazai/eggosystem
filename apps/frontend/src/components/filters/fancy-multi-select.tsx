@@ -74,12 +74,46 @@ const FRAMEWORKS = [
   }
 ] satisfies Framework[];
 
-export function FancyMultiSelect({ placeholder = "Search" }) {
+export function FancyMultiSelect({ placeholder = "Filter" }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [open, setOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<Framework[]>([]);
   const [inputValue, setInputValue] = React.useState("");
+
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleOnScroll = () => {
+      setOpen(false);
+    };
+
+    document.addEventListener("scroll", handleOnScroll);
+    return () => {
+      document.removeEventListener("scroll", handleOnScroll);
+    };
+  }, []);
+
+  // Close if all selected
+  useEffect(() => {
+    if (selected.length === FRAMEWORKS.length) {
+      setOpen(false);
+    }
+  }, [selected]);
 
   useEffect(() => {
     const handleFocus = () => {
@@ -88,16 +122,14 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
         const stickyHeaderHeight =
           stickyHeader?.getBoundingClientRect().bottom || 0;
 
-        setTimeout(() => {
-          if (!containerRef.current) return;
-          const offset =
-            containerRef.current.getBoundingClientRect().top +
-            window.scrollY -
-            stickyHeaderHeight -
-            10;
+        if (!containerRef.current) return;
+        const offset =
+          containerRef.current.getBoundingClientRect().top +
+          window.scrollY -
+          stickyHeaderHeight -
+          10;
 
-          window.scrollTo({ top: offset, behavior: "smooth" });
-        }, 100); // 300ms delay works well on iPhones
+        window.scrollTo({ top: offset, behavior: "smooth" });
       }
     };
 
@@ -183,7 +215,7 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
           />
           <div
             onClick={() => setOpen((prev) => !prev)}
-            className="ml-2 text-muted-foreground hover:text-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center"
+            className="ml-2 text-muted-foreground hover:text-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center cursor-pointer"
           >
             {open ? (
               <ChevronUp className="h-4 w-4" />

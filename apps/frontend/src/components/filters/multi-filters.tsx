@@ -31,16 +31,16 @@ export const MultiFilters = (props: MultiFiltersProps) => {
       )}
     >
       {props.seasons && props.setSeasons && (
-        <FancyMultiSelect placeholder="Select seasons" />
+        <FancyMultiSelect placeholder="Filter seasons" />
       )}
       {props.leagues && props.setLeagues && (
-        <FancyMultiSelect placeholder="Select leagues" />
+        <FancyMultiSelect placeholder="Filter leagues" />
       )}
       {props.stages && props.setStages && (
-        <FancyMultiSelect placeholder="Select stages" />
+        <FancyMultiSelect placeholder="Filter stages" />
       )}
       {props.teams && props.setTeams && (
-        <FancyMultiSelect placeholder="Select teams" />
+        <FancyMultiSelect placeholder="Filter teams" />
       )}
       {props.maps && props.setMaps && <MapsFilter />}
     </div>

@@ -5,6 +5,7 @@ import { useRecentMatches } from "@/hooks/data/useMatches";
 import MatchContainer from "./match-container";
 import Image from "next/image";
 import { MultiFilters } from "@/components/filters/multi-filters";
+import Link from "next/link";
 
 export default function AllMatches() {
   const [seasons, setSeasons] = useState<number[]>([]);
@@ -78,9 +79,9 @@ export default function AllMatches() {
                   {matchDate}
                 </div>
               )}
-              <a className="text-white no-underline" href="#">
+              <Link className="text-white no-underline" href="#">
                 <div
-                  className="grid grid-cols-[1fr_auto_1fr] h-[60px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 mb-1 rounded-lg shadow-md"
+                  className="grid grid-cols-[1fr_auto_1fr] h-[60px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"
                   style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
                 >
                   <div className="flex items-center justify-end pr-1 min-w-0">
@@ -111,7 +112,7 @@ export default function AllMatches() {
                     </span>
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
           );
         })}
