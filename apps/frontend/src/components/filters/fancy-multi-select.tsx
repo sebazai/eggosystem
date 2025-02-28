@@ -25,7 +25,7 @@
 // Copied from https://github.com/mxkaske/mxkaske.dev/blob/main/components/craft/fancy-multi-select.tsx
 
 import * as React from "react";
-import { X } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import {
@@ -179,8 +179,18 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
             onBlur={() => setOpen(false)}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="ml-2 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+            className="ml-2 flex-1 bg-transparent min-w-[50px] outline-none placeholder:text-muted-foreground"
           />
+          <div
+            onClick={() => setOpen((prev) => !prev)}
+            className="ml-2 text-muted-foreground hover:text-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center"
+          >
+            {open ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </div>
         </div>
       </div>
       <div className="relative mt-2">
