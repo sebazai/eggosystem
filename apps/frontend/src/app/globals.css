@@ -226,4 +226,8 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   h6 {
     font-family: var(--font-headings);
   }
+
+  .animate-spin-slow {
+    animation: spin 10s linear infinite;
+  }
 }

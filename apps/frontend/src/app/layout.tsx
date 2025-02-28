@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import SkipToContent from "@/components/layout/skip-to-content";
+import { KfcRain } from "@/components/layout/kfc-rain";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -97,6 +98,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <KfcRain />
           <SkipToContent />
           <div className="flex flex-col min-h-svh">
             <div className="flex-grow flex justify-center w-full">
