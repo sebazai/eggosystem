@@ -71,12 +71,23 @@ export const migrateCompanies = async () => {
 export const migrateAlmostErrything = async () => {
   const teams: any[] = await runOldDbQuery("SELECT * FROM teams");
 
-  const leagues = await runOldDbQuery<any>("SELECT * FROM leagues");
+  const newLeagues = await runNewDbQuery<any>("SELECT * FROM SeasonLeagues");
 
-  const leagueSeason: any = leagues.reduce((acc: any, obj: any) => {
-    acc[obj.id] = obj.season;
-    return acc;
-  }, {});
+  const newLeaguesByOldKanaLeagueIdToSeasonId: any = newLeagues.reduce(
+    (acc: any, obj: any) => {
+      acc[obj.old_kana_league_id] = obj.season_id;
+      return acc;
+    },
+    {}
+  );
+
+  const newLeaguesByOldKanaLeagueIdToNewLeagueId: any = newLeagues.reduce(
+    (acc: any, obj: any) => {
+      acc[obj.old_kana_league_id] = obj.league_id;
+      return acc;
+    },
+    {}
+  );
 
   // Use these tables to fetch possible companydata.
   const queries = [
@@ -167,9 +178,9 @@ export const migrateAlmostErrything = async () => {
   for (const team of teams) {
     const teamId = team.id;
     const teamName = trimTeamName(team.Name);
-    const teamLeague = team.leagueID;
+    const teamLeague = newLeaguesByOldKanaLeagueIdToNewLeagueId[team.leagueID];
 
-    const teamSeason = leagueSeason[String(teamLeague)];
+    const teamSeason = newLeaguesByOldKanaLeagueIdToSeasonId[team.leagueID];
 
     const team_company_logo = team.logo;
 
@@ -219,7 +230,7 @@ export const migrateAlmostErrything = async () => {
         emailToAddForTeam
       ]);
 
-      const addTeamToSeasonQuery = `INSERT INTO SeasonTeams (season_id, team_id) VALUES (?, ?);`;
+      const addTeamToSeasonQuery = `INSERT INTO SeasonTeamRegistrations (season_id, team_id) VALUES (?, ?);`;
       await runNewDbQuery(addTeamToSeasonQuery, [teamSeason, teamId]);
     }
 
@@ -232,7 +243,7 @@ export const migrateAlmostErrything = async () => {
         team_company_logo,
         team.email
       ]);
-      const addTeamToSeasonQuery = `INSERT INTO SeasonTeams (season_id, team_id) VALUES ('${teamSeason}', '${teamId}');`;
+      const addTeamToSeasonQuery = `INSERT INTO SeasonTeamRegistrations (season_id, team_id) VALUES ('${teamSeason}', '${teamId}');`;
       await runNewDbQuery(addTeamToSeasonQuery);
     }
 
@@ -252,10 +263,10 @@ export const migrateAlmostErrything = async () => {
   console.log("Teams migrated");
 
   console.log("Getting capitans for season 11-14");
-  const seasonteams = await runNewDbQuery<any>(
-    "SELECT st.season_id, st.team_id, t.name FROM SeasonTeams st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14)"
+  const seasonTeamsRegistrations = await runNewDbQuery<any>(
+    "SELECT st.season_id, st.team_id, t.name FROM SeasonTeamRegistrations st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14)"
   );
-  for (const st of seasonteams) {
+  for (const st of seasonTeamsRegistrations) {
     const teamName = st.name;
     const seasonId = st.season_id;
     const registrationID = await runOldDbQuery<any>(
@@ -265,7 +276,7 @@ export const migrateAlmostErrything = async () => {
     if (registrationID.length !== 0) {
       try {
         await runNewDbQuery(
-          `UPDATE SeasonTeams SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = ${seasonId} AND team_id = ${st.team_id}`
+          `UPDATE SeasonTeamRegistrations SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = ${seasonId} AND team_id = ${st.team_id}`
         );
       } catch (errmageddon) {
         console.error(errmageddon);
@@ -285,7 +296,7 @@ export const migrateAlmostErrything = async () => {
       if (registrationID.length !== 0) {
         try {
           await runNewDbQuery(
-            `UPDATE SeasonTeams SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = 15 AND team_id = ${st.team_id}`
+            `UPDATE SeasonTeamRegistrations SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = 15 AND team_id = ${st.team_id}`
           );
         } catch (errmageddon) {
           console.error(errmageddon);
@@ -369,9 +380,17 @@ export const migrateMatchesAndReservations = async () => {
 
   const newLeagues = await runNewDbQuery<any>("SELECT * FROM SeasonLeagues");
 
-  const newLeaguesByLeagueIdToSeasonId: any = newLeagues.reduce(
+  const newLeaguesByOldKanaLeagueIdToSeasonId: any = newLeagues.reduce(
     (acc: any, obj: any) => {
-      acc[obj.id] = obj.season_id;
+      acc[obj.old_kana_league_id] = obj.season_id;
+      return acc;
+    },
+    {}
+  );
+
+  const newLeaguesByOldKanaLeagueIdToNewLeagueId: any = newLeagues.reduce(
+    (acc: any, obj: any) => {
+      acc[obj.old_kana_league_id] = obj.league_id;
       return acc;
     },
     {}
@@ -381,7 +400,9 @@ export const migrateMatchesAndReservations = async () => {
   const matchMapsPlayedAlreadyMigratedIds = new Set();
 
   for (const match of allOldMatches) {
-    const matchSeasonId = newLeaguesByLeagueIdToSeasonId[match.leagueID];
+    const matchSeasonId = newLeaguesByOldKanaLeagueIdToSeasonId[match.leagueID];
+    const matchLeagueId =
+      newLeaguesByOldKanaLeagueIdToNewLeagueId[match.leagueID];
 
     // If one old match has been migrated, we don't want to migrate it again, i.e. if one match of a BO3 has been migrated, we know that all other one the same date the matches were played has been migrated, we can skip.
     if (matchMapsPlayedAlreadyMigratedIds.has(match.id)) {
@@ -393,7 +414,7 @@ export const migrateMatchesAndReservations = async () => {
     const matchQuery = `INSERT INTO Matches (season_id, league_id, stage, best_of, match_date) VALUES (?, ?, ?, ?, ?);`;
     const parentMatch = await runNewDbQuery<{ insertId: number }>(matchQuery, [
       matchSeasonId,
-      match.leagueID,
+      matchLeagueId,
       match.type,
       match.best_of,
       match.date
@@ -407,13 +428,13 @@ export const migrateMatchesAndReservations = async () => {
       newParentMatchId,
       t_team_id,
       matchSeasonId,
-      match.leagueID
+      matchLeagueId
     ]);
     await runNewDbQuery(insertMatchteams, [
       newParentMatchId,
       ct_team_id,
       matchSeasonId,
-      match.leagueID
+      matchLeagueId
     ]);
 
     // Ensure all maps exists...
@@ -795,7 +816,7 @@ export const cleanTeamsWithCascade = async () => {
   if (results.length > 0) {
     // Update query to update team_id in SeasonTeams
     const updateQuery = `
-      UPDATE SeasonTeams st
+      UPDATE SeasonTeamRegistrations st
       JOIN Teams t_old ON st.team_id = t_old.id
       JOIN (
         SELECT MIN(id) AS oldest_id, name

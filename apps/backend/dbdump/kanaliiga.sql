@@ -17,14 +17,24 @@ CREATE TABLE IF NOT EXISTS Seasons (
     platform VARCHAR(20) NOT NULL,
     FOREIGN KEY (game_id) REFERENCES Games(id)
 );
+
+CREATE TABLE IF NOT EXISTS Leagues (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL
+);
+
 -- Table: SeasonLeagues
 CREATE TABLE IF NOT EXISTS SeasonLeagues (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
     tier INT NOT NULL,
     season_id INT NOT NULL,
-    FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE
+    league_id INT NOT NULL,
+    external_id VARCHAR(255),
+    old_kana_league_id INT NOT NULL,
+    PRIMARY KEY (season_id, league_id),
+    FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (league_id) REFERENCES Leagues(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 -- Table: Organizations
 CREATE TABLE IF NOT EXISTS Organizations (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -61,8 +71,8 @@ CREATE TABLE IF NOT EXISTS TeamRosters (
     FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
--- Table: SeasonTeams
-CREATE TABLE IF NOT EXISTS SeasonTeams (
+-- Table: SeasonTeamRegistrations
+CREATE TABLE IF NOT EXISTS SeasonTeamRegistrations (
     season_id INT NOT NULL,
     team_id INT NOT NULL,
     captain_steam_id BIGINT,
@@ -85,18 +95,20 @@ CREATE TABLE IF NOT EXISTS SeasonLeagueTeams (
     team_id INT NOT NULL,
     league_id INT NOT NULL,
     external_platform_id VARCHAR(255),
-    PRIMARY KEY (season_id, team_id, league_id),
-    FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeams(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (league_id) REFERENCES SeasonLeagues(id) ON UPDATE CASCADE ON DELETE CASCADE
+    PRIMARY KEY (season_id, league_id, team_id),
+    FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeamRegistrations(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, league_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+
 -- Table: SeasonTeamPlayers
 CREATE TABLE IF NOT EXISTS SeasonTeamPlayers (
     season_id INT NOT NULL,
     team_id INT NOT NULL,
     steam_id BIGINT NOT NULL,
+    -- Role primary allowed only once per season
     role ENUM('primary', 'substitute') NOT NULL,
     PRIMARY KEY (season_id, steam_id, team_id),
-    FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeams(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeamRegistrations(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- All maps of games by name
@@ -112,7 +124,7 @@ CREATE TABLE IF NOT EXISTS Matches (
     stage TINYINT UNSIGNED NOT NULL DEFAULT 2,
     best_of TINYINT UNSIGNED NOT NULL,
     match_date DATE NOT NULL,
-    FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, league_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- All teams that participated in the match
 CREATE TABLE IF NOT EXISTS MatchTeams (

@@ -146,7 +146,7 @@ export const getMatchesByFilters = async ({
 
       FROM MatchMapsPlayed mmp
       JOIN Matches m ON mmp.match_id = m.id
-      JOIN SeasonLeagues sl ON m.league_id = sl.id
+      JOIN SeasonLeagues sl ON m.league_id = sl.league_id
       JOIN Maps maps ON mmp.map_id = maps.id
 
       -- First team
