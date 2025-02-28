@@ -1,4 +1,4 @@
-import { Organizations } from "@eggosystem/types";
+import type { Organizations } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const getOrganizations = async () => {

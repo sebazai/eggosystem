@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import { Match, MatchesByFilters, ParsedParams } from "@eggosystem/types";
+import type { Match, MatchesByFilters, ParsedParams } from "@eggosystem/types";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");

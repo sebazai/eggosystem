@@ -1,4 +1,4 @@
-import { Map } from "@eggosystem/types";
+import type { Map } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const getMaps = async () => {

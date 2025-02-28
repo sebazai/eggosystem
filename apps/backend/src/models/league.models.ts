@@ -1,4 +1,4 @@
-import { League } from "@eggosystem/types";
+import type { League } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const getLeagues = async () => {
