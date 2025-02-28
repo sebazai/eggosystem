@@ -35,6 +35,7 @@ import {
   CommandList
 } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
+import { useEffect } from "react";
 
 type Framework = Record<"value" | "label", string>;
 
@@ -75,9 +76,37 @@ const FRAMEWORKS = [
 
 export function FancyMultiSelect({ placeholder = "Search" }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [open, setOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<Framework[]>([]);
   const [inputValue, setInputValue] = React.useState("");
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (window.innerWidth < 640 && containerRef.current) {
+        const stickyHeader = document.getElementById("sticky-header");
+        const stickyHeaderHeight =
+          stickyHeader?.getBoundingClientRect().bottom || 0;
+        const offset =
+          containerRef.current.getBoundingClientRect().top +
+          window.scrollY -
+          stickyHeaderHeight -
+          10;
+        window.scrollTo({ top: offset, behavior: "smooth" });
+      }
+    };
+
+    const input = inputRef.current;
+    if (input) {
+      input.addEventListener("focus", handleFocus);
+    }
+
+    return () => {
+      if (input) {
+        input.removeEventListener("focus", handleFocus);
+      }
+    };
+  }, []);
 
   const handleUnselect = React.useCallback((framework: Framework) => {
     setSelected((prev) => prev.filter((s) => s.value !== framework.value));
@@ -96,7 +125,6 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
             });
           }
         }
-        // This is not a default behaviour of the <input /> field
         if (e.key === "Escape") {
           input.blur();
         }
@@ -113,6 +141,7 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
     <Command
       onKeyDown={handleKeyDown}
       className="overflow-visible bg-transparent"
+      ref={containerRef}
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
@@ -138,7 +167,6 @@ export function FancyMultiSelect({ placeholder = "Search" }) {
               </Badge>
             );
           })}
-          {/* Avoid having the "Search" Icon */}
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}

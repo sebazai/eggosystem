@@ -36,7 +36,7 @@ export default function OrganizationContainer({
       {navHeight !== null && ( // Ensure it renders only after we get height
         <div
           id="sticky-header"
-          className="sticky z-30 backdrop-blur-xs transition-[top] duration-300 ease-in-out"
+          className="mb-2 sticky z-30 backdrop-blur-xs transition-[top] duration-300 ease-in-out"
           style={{ top: `${navHeight}px` }}
         >
           <h1>Recent matches</h1>
