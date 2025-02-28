@@ -20,6 +20,7 @@ import type { SeasonTeamPlayer } from "./SeasonTeamPlayer.interface";
 import type { Team } from "./Team.interface";
 import type { TeamMapScore } from "./TeamMapScore.interface";
 import type { TeamRoster } from "./TeamRoster";
+import type { League } from "./League.interface";
 
 export type {
   Game,
@@ -43,5 +44,6 @@ export type {
   SeasonTeamPlayer,
   Team,
   TeamMapScore,
-  TeamRoster
+  TeamRoster,
+  League
 };

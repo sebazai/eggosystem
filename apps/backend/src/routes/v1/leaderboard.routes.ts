@@ -5,6 +5,7 @@ import { filterPath } from "./filters";
 
 const router = Router();
 
+// Filterpath should be deprecated...
 router.get(`${filterPath}/kana-rating`, parseParams, () => {});
 router.get(`${filterPath}/average-kast`, parseParams, () => {});
 router.get(`${filterPath}/fk-per-match`, parseParams, () => {});
