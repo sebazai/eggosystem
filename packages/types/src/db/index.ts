@@ -19,8 +19,8 @@ import type { SeasonTeam } from "./SeasonTeam.interface";
 import type { SeasonTeamPlayer } from "./SeasonTeamPlayer.interface";
 import type { Team } from "./Team.interface";
 import type { TeamMapScore } from "./TeamMapScore.interface";
-import type { TeamRoster } from "./TeamRoster.interface";
 import type { League } from "./League.interface";
+import type { TeamRoster } from "./TeamRoster.interface";
 
 export type {
   Game,
