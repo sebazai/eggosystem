@@ -44,7 +44,7 @@ export default function OrganizationContainer({
           className="sticky z-30 backdrop-blur-xs transition-[top] duration-300 ease-in-out"
           style={{ top: `${navHeight}px` }}
         >
-          <h1 className="pb-2">Organizations</h1>
+          <h1>Organizations</h1>
           <SearchBar
             placeholder="Search organizations..."
             value={searchQuery}
@@ -52,7 +52,7 @@ export default function OrganizationContainer({
           />
         </div>
       )}
-      <div className="py-6">{children}</div>
+      <div>{children}</div>
     </Suspense>
   );
 }

@@ -172,7 +172,7 @@ export const Navigation = (props: NavbarProps) => {
       id="navigation"
       className={`sticky top-0 w-full backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
     >
-      <div className="container pt-12 pb-8 mx-auto">
+      <div className="container pt-6 pb-4 md:pt-10 md:pb-6 mx-auto">
         <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
           <NavigationMenu viewport={false}>
             <NavigationMenuList>

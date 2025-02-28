@@ -10,7 +10,6 @@ export default function FadeOnScroll({
   const [opacity, setOpacity] = useState(1);
   const ref = useRef<HTMLDivElement>(null);
   const [stickyElementBottom, setStickyElementBottom] = useState(0);
-  const [stickyElementHeight, setStickyElementHeight] = useState(0);
 
   useEffect(() => {
     const navigation = document.getElementById("navigation");
@@ -20,8 +19,7 @@ export default function FadeOnScroll({
       if (heading) {
         const boundingRect = heading.getBoundingClientRect();
         // Experimental.
-        setStickyElementBottom(boundingRect.bottom * 0.3);
-        setStickyElementHeight(boundingRect.height);
+        setStickyElementBottom(boundingRect.bottom * 0.2);
       }
     };
 
@@ -44,8 +42,8 @@ export default function FadeOnScroll({
       if (!ref.current) return;
 
       const elementTop = ref.current.getBoundingClientRect().top;
-      const fadeStart = stickyElementBottom + 100;
-      const fadeEnd = stickyElementBottom;
+      const fadeStart = stickyElementBottom + 20;
+      const fadeEnd = stickyElementBottom - 80;
       const fadeRange = fadeStart - fadeEnd;
 
       const fadeFactor = Math.min(
@@ -58,7 +56,7 @@ export default function FadeOnScroll({
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [stickyElementBottom, stickyElementHeight]);
+  }, [stickyElementBottom]);
 
   return (
     <div
