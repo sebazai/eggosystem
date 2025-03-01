@@ -103,7 +103,7 @@ export default function AllMatches() {
                         className="ml-1 object-contain hidden xxs:block"
                       />
                     </div>
-                    <div className="text-sm bg-secondary h-full min-w-20 px-2 items-center justify-center flex">
+                    <div className="text-sm bg-secondary h-full min-w-16 md:min-w-18 items-center justify-center flex">
                       {match.team1_score} - {match.team2_score}
                     </div>
                     <div className="flex items-center justify-start ml-1 min-w-0">
