@@ -1,2 +1,2 @@
-import baseConfig from "@eggosystem/eslint/base";
+import { config as baseConfig } from "@eggosystem/eslint/base";
 export default [...baseConfig];

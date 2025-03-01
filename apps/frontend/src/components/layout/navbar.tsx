@@ -170,7 +170,7 @@ export const Navigation = (props: NavbarProps) => {
     <div
       ref={navRef}
       id="navigation"
-      className={`sticky top-0 w-full backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
+      className={`sticky px-4 sm:px-8 lg:px-16 top-0 w-full backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""} sm:landscape:relative md:landscape:sticky`}
     >
       <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto">
         <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
