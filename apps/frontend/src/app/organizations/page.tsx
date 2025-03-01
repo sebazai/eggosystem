@@ -59,7 +59,7 @@ export default function AllOrganizations() {
       setSearchQuery={setSearchQuery}
     >
       {/* Organization Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 justify-items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 justify-items-center">
         {filteredOrganizations.length > 0 ? (
           filteredOrganizations.map((org) => (
             <FadeOnScroll key={org.id}>
