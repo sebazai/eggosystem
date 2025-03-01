@@ -39,40 +39,61 @@ variables:
     - npm install -g pnpm
   <<: *common-cache # Include the common cache configuration
 
-.mr:
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
+# Sadly gitlab changes do not support with anchors or references to make these DRY
+.frontend-changes: &frontend-changes
+  changes:
+    - "package.json"
+    - "pnpm-*.yaml"
+    - ".gitlab-ci.yml"
+    - "packages/**/*"
+    - "apps/frontend/**/*"
 
-.main:
+.backend-changes: &backend-changes
+  changes:
+    - "package.json"
+    - "pnpm-*.yaml"
+    - ".gitlab-ci.yml"
+    - "packages/**/*"
+    - "apps/backend/**/*"
+
+.all-app-changes: &all-app-changes
+  changes:
+    - "package.json"
+    - "pnpm-*.yaml"
+    - ".gitlab-ci.yml"
+    - "packages/**/*"
+    - "apps/{frontend,backend}/**/*"
+
+# These either cant be DRY because the rules are OR and not AND (the - & anchors do not work really well)
+.main-frontend:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+      <<: *frontend-changes
 
-.frontend-changes:
+.main-backend:
   rules:
-    - changes:
-        - "apps/frontend/**/*"
-        - "package.json"
-        - "pnpm-*.yaml"
-        - ".gitlab-ci.yml"
-        - "packages/**/*"
+    - if: $CI_COMMIT_BRANCH == "main"
+      <<: *backend-changes
 
-.backend-changes:
+.main-all-app:
   rules:
-    - changes:
-        - "apps/backend/**/*"
-        - "package.json"
-        - "pnpm-*.yaml"
-        - ".gitlab-ci.yml"
-        - "packages/**/*"
+    - if: $CI_COMMIT_BRANCH == "main"
+      <<: *all-app-changes
 
-.all-app-changes:
+.mr-frontend:
   rules:
-    - changes:
-        - "apps/{frontend,backend}/**/*"
-        - "package.json"
-        - "pnpm-*.yaml"
-        - ".gitlab-ci.yml"
-        - "packages/**/*"
+    - if: $CI_MERGE_REQUEST_ID
+      <<: *frontend-changes
+
+.mr-backend:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      <<: *backend-changes
+
+.mr-all-app:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      <<: *all-app-changes
 
 # Define the pull-only cache configuration
 .pull-only-cache:
@@ -118,31 +139,31 @@ stages:
 
 install:
   stage: install
-  extends: [.default, .all-app-changes, .mr]
+  extends: [.default, .mr-all-app]
   script:
     - pnpm install
 
 check-types:
   stage: lint
-  extends: [.default, .pull-only-cache, .all-app-changes, .mr]
+  extends: [.default, .pull-only-cache, .mr-all-app]
   script:
     - pnpm check-types
 
 lint:frontend:
   stage: lint
-  extends: [.default, .pull-only-cache, .frontend-changes, .mr]
+  extends: [.default, .pull-only-cache, .mr-frontend]
   script:
     - pnpm --filter=frontend lint
 
 lint:backend:
   stage: lint
-  extends: [.default, .pull-only-cache, .backend-changes, .mr]
+  extends: [.default, .pull-only-cache, .mr-backend]
   script:
     - pnpm --filter=backend lint
 
 audit:
   stage: security
-  extends: [.default, .pull-only-cache, .all-app-changes, .mr]
+  extends: [.default, .pull-only-cache, .mr-all-app]
   allow_failure: true
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
@@ -157,7 +178,7 @@ audit:
 secrets_scan:
   stage: security
   image: python:3.9
-  extends: [.all-app-changes, .mr]
+  extends: [.mr-all-app]
   script:
     - pip install trufflehog
     - trufflehog --regex --entropy=False .
@@ -165,7 +186,7 @@ secrets_scan:
 
 test:backend:
   stage: test
-  extends: [.pull-only-cache, .backend-changes, .default, .mr]
+  extends: [.pull-only-cache, .default, .mr-backend]
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
@@ -198,19 +219,19 @@ test:backend:
 
 build:frontend:
   stage: build
-  extends: [.pull-only-cache, .frontend-changes, .default, .mr]
+  extends: [.pull-only-cache, .default, .mr-frontend]
   script:
     - pnpm --filter=frontend build
 
 build:backend:
   stage: build
-  extends: [.pull-only-cache, .backend-changes, .default, .mr]
+  extends: [.pull-only-cache, .default, .mr-backend]
   script:
     - pnpm --filter=backend build
 
 # Backend job
 build-dockerfile:backend:
-  extends: [.pull-only-cache, .backend-changes, .mr]
+  extends: [.pull-only-cache, .mr-backend]
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-backend
@@ -225,7 +246,7 @@ build-dockerfile:backend:
 
 # Frontend job
 build-dockerfile:frontend:
-  extends: [.pull-only-cache, .frontend-changes, .mr]
+  extends: [.pull-only-cache, .mr-frontend]
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-frontend
@@ -243,7 +264,7 @@ push-dockerfile:backend:
   image: docker:latest
   services:
     - docker:dind
-  extends: [.backend-changes, .main]
+  extends: [.main-backend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
@@ -255,7 +276,7 @@ push-dockerfile:frontend:
   image: docker:latest
   services:
     - docker:dind
-  extends: [.frontend-changes, .main]
+  extends: [.main-frontend]
   variables:
     NEXT_PUBLIC_API_URL: $HUBBE_PUBLIC_URL
   before_script:
@@ -268,7 +289,7 @@ push-dockerfile:frontend:
 combine-codequality-reports:
   stage: post-build
   image: alpine:latest
-  extends: [.all-app-changes, .mr]
+  extends: [.mr-all-app]
   needs:
     - job: build-dockerfile:backend
       artifacts: true
@@ -286,7 +307,7 @@ combine-codequality-reports:
 deploy:
   image: alpine:latest
   stage: deploy
-  extends: [.all-app-changes, .main]
+  extends: [.main-all-app]
   variables:
     MARIADB_ROOT_PASSWORD: $MARIADB_ROOT_PASSWORD
     MARIADB_USER: $MARIADB_USER
@@ -310,8 +331,8 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
-    - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
-    - rsync -v ./docker-compose.prod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
+    - envsubst < docker-compose.mrod.yml > docker-compose.mrod.subst.yml
+    - rsync -v ./docker-compose.mrod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
     - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
