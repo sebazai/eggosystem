@@ -81,6 +81,7 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
 }
 
 @theme inline {
+  --breakpoint-xxs: 22rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

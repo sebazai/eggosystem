@@ -160,7 +160,7 @@ export const getMatchesByFilters = async ({
 
       WHERE ${query}
 
-      ORDER BY match_played_id DESC ${query === "1=1" ? "LIMIT 50" : "LIMIT 200"};
+      ORDER BY match_played_id DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 20"};
       `;
 
   return runQuery(baseQuery, queryParams);

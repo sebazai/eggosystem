@@ -50,7 +50,17 @@ export default function AllMatches() {
     );
   }
 
-  let lastDate = "";
+  const groupedMatches = matches.reduce(
+    (acc, match) => {
+      const matchDate = match.match_date;
+      if (!acc[matchDate]) {
+        acc[matchDate] = [];
+      }
+      acc[matchDate].push(match);
+      return acc;
+    },
+    {} as Record<string, typeof matches>
+  );
 
   return (
     <MatchContainer>
@@ -67,55 +77,51 @@ export default function AllMatches() {
           maps={maps}
           setMaps={(value) => setMaps(value)}
         />
-        {matches.map((match, index) => {
-          const matchDate = new Date(match.match_date).toLocaleDateString();
-          const showDate = matchDate !== lastDate;
-          lastDate = matchDate;
-
-          return (
-            <div key={index} className="mb-2">
-              {showDate && (
-                <div className="text-left text-sm font-bold text-white my-4">
-                  {matchDate}
-                </div>
-              )}
-              <Link className="text-white no-underline" href="#">
-                <div
-                  className="grid grid-cols-[1fr_auto_1fr] h-[60px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"
-                  style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
-                >
-                  <div className="flex items-center justify-end pr-1 min-w-0">
-                    <span className="truncate text-right text-sm">
-                      {match.team1_name}
-                    </span>
-                    <Image
-                      src={`https://stats.kanaliiga.fi/img/${match.team1_logo}`}
-                      alt={match.team1_name}
-                      width={24}
-                      height={24}
-                      className="ml-1 object-contain"
-                    />
-                  </div>
-                  <div className="text-sm text-white px-2">
-                    {match.team1_score} - {match.team2_score}
-                  </div>
-                  <div className="flex items-center justify-start pl-1 min-w-0">
-                    <Image
-                      src={`https://stats.kanaliiga.fi/img/${match.team2_logo}`}
-                      alt={match.team2_name}
-                      width={24}
-                      height={24}
-                      className="mr-1 object-contain"
-                    />
-                    <span className="truncate text-left text-sm">
-                      {match.team2_name}
-                    </span>
-                  </div>
-                </div>
-              </Link>
+        {Object.entries(groupedMatches).map(([date, matchesForDate]) => (
+          <div key={date}>
+            <div className="text-left text-sm font-bold text-white my-4">
+              {date}
             </div>
-          );
-        })}
+            {matchesForDate.map((match, index) => (
+              <div key={index} className="mb-2">
+                <Link className="no-underline" href="#">
+                  <div
+                    className="grid grid-cols-[1fr_auto_1fr] min-h-[60px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"
+                    style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
+                  >
+                    <div className="flex items-center justify-end min-w-0">
+                      <span className="text-right xxs:break-normal break-all text-sm mr-1">
+                        {match.team1_name}
+                      </span>
+                      <Image
+                        src={`https://stats.kanaliiga.fi/img/${match.team1_logo}`}
+                        alt={match.team1_name}
+                        width={24}
+                        height={24}
+                        className="ml-1 object-contain hidden xxs:block"
+                      />
+                    </div>
+                    <div className="text-sm bg-secondary h-full px-2 items-center justify-center flex">
+                      {match.team1_score} - {match.team2_score}
+                    </div>
+                    <div className="flex items-center justify-start ml-1 min-w-0">
+                      <Image
+                        src={`https://stats.kanaliiga.fi/img/${match.team2_logo}`}
+                        alt={match.team2_name}
+                        width={24}
+                        height={24}
+                        className="mr-1 object-contain hidden xxs:block"
+                      />
+                      <span className="text-left break-all xxs:break-normal text-sm ml-1">
+                        {match.team2_name}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </MatchContainer>
   );
