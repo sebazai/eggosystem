@@ -79,14 +79,16 @@ export default function AllMatches() {
         />
         {Object.entries(groupedMatches).map(([date, matchesForDate]) => (
           <div key={date}>
-            <div className="text-left text-sm font-bold text-white my-4">
-              {date}
-            </div>
+            <h2 className="text-left text-sm mb-4">{date}</h2>
             {matchesForDate.map((match, index) => (
               <div key={index} className="mb-2">
-                <Link className="no-underline" href="#">
+                <Link
+                  className="no-underline"
+                  href="/matches/[id]"
+                  as={`/matches/${match.match_played_id}`}
+                >
                   <div
-                    className="grid grid-cols-[1fr_auto_1fr] min-h-[60px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"
+                    className="grid grid-cols-[1fr_auto_1fr] min-h-[50px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"
                     style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
                   >
                     <div className="flex items-center justify-end min-w-0">
@@ -101,7 +103,7 @@ export default function AllMatches() {
                         className="ml-1 object-contain hidden xxs:block"
                       />
                     </div>
-                    <div className="text-sm bg-secondary h-full px-2 items-center justify-center flex">
+                    <div className="text-sm bg-secondary h-full min-w-20 px-2 items-center justify-center flex">
                       {match.team1_score} - {match.team2_score}
                     </div>
                     <div className="flex items-center justify-start ml-1 min-w-0">

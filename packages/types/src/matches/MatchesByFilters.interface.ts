@@ -1,6 +1,14 @@
-import type { Match, SeasonLeague, Map, Team, TeamMapScore } from "../index";
+import type {
+  Match,
+  SeasonLeague,
+  Map,
+  Team,
+  TeamMapScore,
+  MatchMapPlayed
+} from "../index";
 
 export interface MatchesByFilters {
+  match_played_id: MatchMapPlayed["id"];
   match_date: Match["match_date"];
   stage: Match["stage"];
   league_name: SeasonLeague["name"];

@@ -100,7 +100,7 @@ export default function RootLayout({
         >
           <KfcRain />
           <SkipToContent />
-          <div className="flex flex-col min-h-svh">
+          <div className="flex flex-col min-h-svh min-w-[200px]">
             <div className="flex-grow flex justify-center w-full">
               <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
                 <Navigation />

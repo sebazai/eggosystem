@@ -31,7 +31,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
   return (
     <div
       className={clsx(
-        `mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4`,
+        `mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-2`,
         {
           "xl:grid-cols-5": columns === 5,
           "xl:grid-cols-4": columns === 4,
