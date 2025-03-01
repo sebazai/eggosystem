@@ -134,7 +134,7 @@ stages:
   - test
   - build
   - build-docker
-  - post-build
+  # - post-build
   - deploy
 
 install:
@@ -286,23 +286,24 @@ push-dockerfile:frontend:
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
 
 # Combine artifacts job
-combine-codequality-reports:
-  stage: post-build
-  image: alpine:latest
-  extends: [.mr-all-app]
-  needs:
-    - job: build-dockerfile:backend
-      artifacts: true
-    - job: build-dockerfile:frontend
-      artifacts: true
-  script:
-    - apk add jq
-    - jq -s 'add' gl-codeclimate-image-eggo-backend.json gl-codeclimate-fs-eggo-backend.json gl-codeclimate-image-eggo-frontend.json gl-codeclimate-fs-eggo-frontend.json > gl-codeclimate.json
-  artifacts:
-    paths:
-      - gl-codeclimate.json
-    reports:
-      codequality: gl-codeclimate.json
+# Disabled for now due pipeline fixing
+# combine-codequality-reports:
+#   stage: post-build
+#   image: alpine:latest
+#   extends: [.mr-all-app]
+#   needs:
+#     - job: build-dockerfile:backend
+#       artifacts: true
+#     - job: build-dockerfile:frontend
+#       artifacts: true
+#   script:
+#     - apk add jq
+#     - jq -s 'add' gl-codeclimate-image-eggo-backend.json gl-codeclimate-fs-eggo-backend.json gl-codeclimate-image-eggo-frontend.json gl-codeclimate-fs-eggo-frontend.json > gl-codeclimate.json
+#   artifacts:
+#     paths:
+#       - gl-codeclimate.json
+#     reports:
+#       codequality: gl-codeclimate.json
 
 deploy:
   image: alpine:latest
