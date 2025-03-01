@@ -4,10 +4,7 @@ x-phpmyadmin: &phpmyadmin
     eggo-devdb:
       condition: service_healthy
   restart: always
-  environment:
-    PMA_HOST: eggo-devdb
-    MYSQL_ROOT_PASSWORD: dev-pass
-    UPLOAD_LIMIT: 1G
+  env_file: .env.base
 
 services:
   backend:
@@ -23,8 +20,8 @@ services:
       migrations:
         condition: service_completed_successfully
     volumes:
-      - ./apps/backend/src:/usr/src/app/apps/backend/src # Mount source code for live reloading
-    env_file: "dev.env"
+      - ./apps/backend/src:/usr/src/app/apps/backend/src
+    env_file: .env.base
     command: "pnpm --filter=backend dev"
 
   seed:
@@ -37,7 +34,7 @@ services:
     depends_on:
       migrations:
         condition: service_completed_successfully
-    env_file: "dev.env"
+    env_file: .env.base
     command: "pnpm --filter=backend seed"
 
   frontend:
@@ -74,13 +71,7 @@ services:
   eggo-devdb:
     image: bitnami/mariadb:11.4.2
     restart: always
-    environment:
-      - MARIADB_ROOT_PASSWORD=dev-pass
-      - MARIADB_USER=kanadbuser
-      - MARIADB_PASSWORD=dev-pass
-      - MARIADB_DATABASE=kanaliiga
-      - MARIADB_MAX_ALLOWED_PACKET=128M
-      - MARIADB_INNODB_LOG_FILE_SIZE=64M
+    env_file: .env.base
     healthcheck:
       test:
         [
@@ -104,7 +95,7 @@ services:
     depends_on:
       eggo-devdb:
         condition: service_healthy
-    env_file: "dev.env"
+    env_file: .env.base
     ports:
       - 8485:8485
     volumes:
@@ -125,9 +116,7 @@ services:
         condition: service_completed_successfully
       seed:
         condition: service_completed_successfully
-    env_file: "dev.env"
+    env_file: .env.base
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
-    # ports:
-    #   - '8283:8080'
     command: pnpm --filter=backend test

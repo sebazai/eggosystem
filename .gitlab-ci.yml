@@ -184,22 +184,25 @@ secrets_scan:
     - trufflehog --regex --entropy=False .
   allow_failure: true
 
-test:backend:
-  stage: test
-  extends: [.pull-only-cache, .default, .mr-backend]
+.test-env: &test-env
+  variables:
+    NODE_ENV: "test"
+    PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
+    TRIVY_VERSION: "0.59.1"
+    TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
+
+.db-env: &db-env
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
-  variables:
-    MARIADB_ROOT_PASSWORD: dev-pass
-    MARIADB_USER: kanadbuser
-    MARIADB_PASSWORD: dev-pass
-    MARIADB_DATABASE: kanaliiga
-    MARIADB_MAX_ALLOWED_PACKET: 128M
-    MARIADB_INNODB_LOG_FILE_SIZE: 64M
+
+test:backend:
+  stage: test
+  extends: [.pull-only-cache, .default, .mr-backend]
+  <<: *db-env
   before_script:
     - npm install -g pnpm
-    - export $(grep -v '^#' dev.env | xargs)
+    - export $(grep -v '^#' .env.base | xargs)
     - pnpm --filter=backend migrate
     - pnpm --filter=backend seed
   script:
@@ -332,8 +335,8 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
-    - envsubst < docker-compose.mrod.yml > docker-compose.mrod.subst.yml
-    - rsync -v ./docker-compose.mrod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
+    - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
+    - rsync -v ./docker-compose.prod.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem/docker-compose.yml
     - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
