@@ -15,8 +15,6 @@ services:
       service: eggo-devdb
     networks:
       - eggo-dev
-    ports:
-      - 6667:3306
 
   eggo-phpmyadmin:
     extends:

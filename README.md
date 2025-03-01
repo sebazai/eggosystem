@@ -37,6 +37,11 @@ Read [docs/database.md](docs/database.md) for understanding DB Schema.
 
 ### Migrating ebinstats prod
 
+Note: run the migrations from either (no need to expose database locally)
+
+- docker compose
+- inside devcontainer
+
 Read [docs/migration.md](docs/migration.md).
 
 ## Other
