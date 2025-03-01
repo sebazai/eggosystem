@@ -35,7 +35,7 @@ import {
   CommandList
 } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
-import { useEffect } from "react";
+import type { Nullable } from "../../../../../packages/types/src";
 
 type Framework = Record<"value" | "label", string>;
 
@@ -74,76 +74,23 @@ const FRAMEWORKS = [
   }
 ] satisfies Framework[];
 
-export function FancyMultiSelect({ placeholder = "Filter" }) {
+interface FancyMultiSelectProps {
+  filter: string;
+  placeholder?: string;
+  isOpen: boolean;
+  setOpen: (value: Nullable<string>) => void;
+}
+
+export function FancyMultiSelect({
+  filter,
+  placeholder = "Filter",
+  isOpen,
+  setOpen
+}: FancyMultiSelectProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [open, setOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<Framework[]>([]);
   const [inputValue, setInputValue] = React.useState("");
-
-  useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => {
-      document.removeEventListener("mousedown", handleMouseDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleOnScroll = () => {
-      setOpen(false);
-    };
-
-    document.addEventListener("scroll", handleOnScroll);
-    return () => {
-      document.removeEventListener("scroll", handleOnScroll);
-    };
-  }, []);
-
-  // Close if all selected
-  useEffect(() => {
-    if (selected.length === FRAMEWORKS.length) {
-      setOpen(false);
-    }
-  }, [selected]);
-
-  useEffect(() => {
-    const handleFocus = () => {
-      if (window.innerWidth < 640 && containerRef.current) {
-        const stickyHeader = document.getElementById("sticky-header");
-        const stickyHeaderHeight =
-          stickyHeader?.getBoundingClientRect().bottom || 0;
-
-        if (!containerRef.current) return;
-        const offset =
-          containerRef.current.getBoundingClientRect().top +
-          window.scrollY -
-          stickyHeaderHeight -
-          10;
-
-        window.scrollTo({ top: offset, behavior: "smooth" });
-      }
-    };
-
-    const input = inputRef.current;
-    if (input) {
-      input.addEventListener("focus", handleFocus);
-    }
-
-    return () => {
-      if (input) {
-        input.removeEventListener("focus", handleFocus);
-      }
-    };
-  }, []);
 
   const handleUnselect = React.useCallback((framework: Framework) => {
     setSelected((prev) => prev.filter((s) => s.value !== framework.value));
@@ -208,16 +155,20 @@ export function FancyMultiSelect({ placeholder = "Filter" }) {
             ref={inputRef}
             value={inputValue}
             onValueChange={setInputValue}
-            onBlur={() => setOpen(false)}
-            onFocus={() => setOpen(true)}
+            onBlur={() => setOpen(null)}
+            onFocus={() => {
+              if (!isOpen) {
+                setOpen(filter);
+              }
+            }}
             placeholder={placeholder}
             className="ml-2 flex-1 bg-transparent min-w-[50px] outline-none placeholder:text-muted-foreground"
           />
           <div
-            onClick={() => setOpen((prev) => !prev)}
+            onClick={() => (isOpen ? setOpen(null) : setOpen(filter))}
             className="ml-2 text-muted-foreground hover:text-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center cursor-pointer"
           >
-            {open ? (
+            {isOpen ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
               <ChevronDown className="h-4 w-4" />
@@ -227,7 +178,7 @@ export function FancyMultiSelect({ placeholder = "Filter" }) {
       </div>
       <div className="relative mt-2">
         <CommandList>
-          {open && selectables.length > 0 ? (
+          {isOpen && selectables.length > 0 ? (
             <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto">
               <CommandGroup className="h-full overflow-auto">
                 {selectables.map((framework) => {
