@@ -139,7 +139,7 @@ stages:
 
 install:
   stage: install
-  extends: [.default]
+  extends: [.default, .mr-all-app]
   script:
     - pnpm install
 
