@@ -100,10 +100,10 @@ export default function AllMatches() {
                         alt={match.team1_name}
                         width={24}
                         height={24}
-                        className="ml-1 object-contain hidden xxs:block"
+                        className="ml-1 object-contain hidden xs:block"
                       />
                     </div>
-                    <div className="text-sm bg-secondary h-full min-w-16 md:min-w-18 items-center justify-center flex">
+                    <div className="text-sm bg-secondary h-full min-w-15 md:min-w-18 items-center justify-center flex">
                       {match.team1_score} - {match.team2_score}
                     </div>
                     <div className="flex items-center justify-start ml-1 min-w-0">
@@ -112,9 +112,9 @@ export default function AllMatches() {
                         alt={match.team2_name}
                         width={24}
                         height={24}
-                        className="mr-1 object-contain hidden xxs:block"
+                        className="mr-1 object-contain hidden xs:block"
                       />
-                      <span className="text-left break-all xxs:break-normal text-sm ml-1">
+                      <span className="text-left xxs:break-normal break-all text-sm ml-1">
                         {match.team2_name}
                       </span>
                     </div>
