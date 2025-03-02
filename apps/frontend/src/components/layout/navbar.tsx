@@ -174,7 +174,7 @@ export const Navigation = (props: NavbarProps) => {
     >
       <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto">
         {/* Desktop Navigation - Sticky by Default */}
-        <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
+        <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex pointer-events-auto">
           <NavigationMenu viewport={false}>
             <NavigationMenuList>
               {menu?.map((item) => renderMenuItem(item, isScrolled, logoRef))}
@@ -198,6 +198,7 @@ export const Navigation = (props: NavbarProps) => {
                 <Button
                   variant="outline"
                   size="icon"
+                  className="pointer-events-auto"
                   onClick={() => setIsSheetOpen(true)}
                 >
                   <Menu className="size-6" />
