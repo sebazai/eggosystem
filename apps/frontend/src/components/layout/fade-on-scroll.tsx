@@ -53,7 +53,10 @@ export default function FadeOnScroll({
       // is landscape mobile
       const isLandscapeMobile =
         window.innerWidth <= 768 && window.innerHeight < window.innerWidth;
-      if (isLandscapeMobile) return;
+      if (isLandscapeMobile) {
+        setOpacity(1);
+        return;
+      }
 
       const elementTop = ref.current.getBoundingClientRect().top;
       const viewportHeight = window.innerHeight;
