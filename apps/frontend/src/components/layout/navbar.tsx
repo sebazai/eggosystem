@@ -170,9 +170,10 @@ export const Navigation = (props: NavbarProps) => {
     <div
       ref={navRef}
       id="navigation"
-      className={`sticky px-4 sm:px-8 lg:px-16 top-0 w-full backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""} sm:landscape:relative md:landscape:sticky`}
+      className={`sticky top-0 w-full px-4 sm:px-8 lg:px-16 backdrop-blur-none xxs:backdrop-blur-xs landscape:backdrop-blur-none landscape:md:backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
     >
       <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto">
+        {/* Desktop Navigation - Sticky by Default */}
         <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex">
           <NavigationMenu viewport={false}>
             <NavigationMenuList>
@@ -180,10 +181,15 @@ export const Navigation = (props: NavbarProps) => {
             </NavigationMenuList>
           </NavigationMenu>
         </div>
-        <div className="block md:hidden">
+
+        {/* Mobile Navigation - Sticky in Portrait Mode, Non-Sticky in Landscape */}
+        <div className="block md:hidden sm:landscape:relative sticky top-0 z-50 sm:landscape:justify-items-end">
           <div className="flex items-center justify-between">
             {logo && (
-              <Link href={logo.url} className="flex items-center gap-2">
+              <Link
+                href={logo.url}
+                className="flex items-center gap-2 landscape:hidden md:landscape:flex"
+              >
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
               </Link>
             )}
