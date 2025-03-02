@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
@@ -23,7 +23,6 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
   const searchQuery = searchParams.get("search") || "";
 
   useEffect(() => {
-    // Not landscape mobile
     const isLandscapeMobile =
       window.innerWidth <= 768 && window.innerHeight < window.innerWidth;
     if (searchQuery.length > 0 && !isLandscapeMobile) {
@@ -52,28 +51,33 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
+  const clearSearch = () => {
+    setValue("");
+    const params = new URLSearchParams(searchParams);
+    params.delete("search");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const toggleSearch = () => setShowInput((prev) => !prev);
 
+  // Close search only on mobile
   useClickOutside(searchRef, () => {
     if (window.innerWidth < 768) {
       setShowInput(false);
     }
   });
 
-  // Automatically show or hide the input depending on viewport size
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
-        setShowInput(true); // Always show input on desktop
+        setShowInput(true);
       } else {
-        setShowInput(false); // Hide input on smaller screens
+        setShowInput(false);
       }
     };
 
-    // Initial check and add listener
     handleResize();
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -91,10 +95,10 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
         <Search className="h-5 w-5 text-primary" />
       </button>
 
-      {/* Input Field */}
+      {/* Input Field with Clear Button */}
       <div
         className={cn(
-          "transition-all duration-300 overflow-hidden md:overflow-visible",
+          "relative transition-all duration-300 overflow-hidden md:overflow-visible",
           showInput
             ? "w-full opacity-100"
             : "w-0 opacity-0 pointer-events-none md:w-full md:opacity-100"
@@ -103,10 +107,19 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
         <Input
           type="text"
           placeholder={placeholder}
-          className="bg-secondary/70"
+          className="bg-secondary/70 pr-10" // Add padding for the clear button
           value={value}
           onChange={handleChange}
         />
+        {value && (
+          <button
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-primary bg-secondary rounded-full p-1 hover:bg-secondary/80 transition-all"
+            onClick={clearSearch}
+            aria-label="Clear Search"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );
