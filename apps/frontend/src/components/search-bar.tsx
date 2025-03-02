@@ -54,8 +54,11 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
 
   const toggleSearch = () => setShowInput((prev) => !prev);
 
-  // Close search when clicking outside
-  useClickOutside(searchRef, () => setShowInput(false));
+  useClickOutside(searchRef, () => {
+    if (window.innerWidth < 768) {
+      setShowInput(false);
+    }
+  });
 
   // Automatically show or hide the input depending on viewport size
   useEffect(() => {
