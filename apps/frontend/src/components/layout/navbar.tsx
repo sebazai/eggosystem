@@ -170,7 +170,7 @@ export const Navigation = (props: NavbarProps) => {
     <div
       ref={navRef}
       id="navigation"
-      className={`sticky top-0 w-full px-4 sm:px-8 lg:px-16 backdrop-blur-none xxs:backdrop-blur-xs landscape:backdrop-blur-none landscape:md:backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
+      className={`sticky top-0 w-full px-4 sm:landscape:px-4 sm:px-8 lg:px-16 backdrop-blur-none xxs:backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
     >
       <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto">
         {/* Desktop Navigation - Sticky by Default */}
@@ -183,12 +183,12 @@ export const Navigation = (props: NavbarProps) => {
         </div>
 
         {/* Mobile Navigation - Sticky in Portrait Mode, Non-Sticky in Landscape */}
-        <div className="block md:hidden sm:landscape:relative sticky top-0 z-50 sm:landscape:justify-items-end">
-          <div className="flex items-center justify-between">
+        <div className="block md:hidden sm:landscape:relative sticky top-0 z-50">
+          <div className="flex items-center justify-between xs:landscape:justify-end md:landscape:justify-between">
             {logo && (
               <Link
                 href={logo.url}
-                className="flex items-center gap-2 landscape:hidden md:landscape:flex"
+                className="flex items-center gap-2 landscape:hidden"
               >
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
               </Link>

@@ -18,7 +18,7 @@ export default function OrganizationContainer({
       <h1>Organizations</h1>
       <div
         id="sticky-header"
-        className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none sm:landscape:top-6 md:landscape:top-[var(--nav-height)]"
+        className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"
       >
         <SearchBar
           placeholder="Search organizations..."
