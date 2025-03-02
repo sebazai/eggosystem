@@ -102,6 +102,10 @@ export function FancyMultiSelect({
     setSelected((prev) => prev.filter((s) => s.value !== framework.value));
   }, []);
 
+  const handleClearAll = React.useCallback(() => {
+    setSelected([]);
+  }, []);
+
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
       const input = inputRef.current;
@@ -124,7 +128,7 @@ export function FancyMultiSelect({
   );
 
   const selectables = FRAMEWORKS.filter(
-    (framework) => !selected.includes(framework)
+    (framework) => !selected.some((s) => s.value === framework.value)
   );
 
   return (
@@ -184,30 +188,39 @@ export function FancyMultiSelect({
       </div>
       <div className="relative mt-2">
         <CommandList>
-          {isOpen && selectables.length > 0 ? (
+          {isOpen && (
             <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto">
-              <CommandGroup className="h-full overflow-auto">
-                {selectables.map((framework) => {
-                  return (
-                    <CommandItem
-                      key={framework.value}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onSelect={() => {
-                        setInputValue("");
-                        setSelected((prev) => [...prev, framework]);
-                      }}
-                      className={"cursor-pointer"}
-                    >
-                      {framework.label}
-                    </CommandItem>
-                  );
-                })}
+              <CommandGroup>
+                <CommandItem
+                  key="clear-all"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onSelect={handleClearAll}
+                  className="cursor-pointer font-semibold"
+                >
+                  Clear filters...
+                </CommandItem>
+                {selectables.map((framework) => (
+                  <CommandItem
+                    key={framework.value}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onSelect={() => {
+                      setInputValue("");
+                      setSelected((prev) => [...prev, framework]);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    {framework.label}
+                  </CommandItem>
+                ))}
               </CommandGroup>
             </div>
-          ) : null}
+          )}
         </CommandList>
       </div>
     </Command>
