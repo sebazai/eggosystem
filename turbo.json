@@ -4,7 +4,6 @@
   "tasks": {
     "build": {
       "env": [
-        "NODE_ENV",
         "DB_ROOT_USER",
         "DB_ROOT_PASSWORD",
         "DB_USER",
