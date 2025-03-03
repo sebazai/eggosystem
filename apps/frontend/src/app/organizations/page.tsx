@@ -35,7 +35,7 @@ export default function AllOrganizations() {
       </OrganizationContainer>
     );
   }
-  if (!organizations) {
+  if (!organizations || organizations.length === 0) {
     return (
       <OrganizationContainer
         searchQuery={searchQuery}
@@ -60,22 +60,16 @@ export default function AllOrganizations() {
     >
       {/* Organization Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 justify-items-center">
-        {filteredOrganizations.length > 0 ? (
-          filteredOrganizations.map((org) => (
-            <FadeOnScroll key={org.id}>
-              <OrganizationFlipCard
-                id={org.id}
-                companyName={org.name}
-                href={`/organizations/${org.id}`}
-                imageSrc={`https://stats.kanaliiga.fi/img/${org.logo}`}
-              />
-            </FadeOnScroll>
-          ))
-        ) : (
-          <div className="col-span-full text-center">
-            No organizations found
-          </div>
-        )}
+        {filteredOrganizations.map((org) => (
+          <FadeOnScroll key={org.id}>
+            <OrganizationFlipCard
+              id={org.id}
+              companyName={org.name}
+              href={`/organizations/${org.id}`}
+              imageSrc={`https://stats.kanaliiga.fi/img/${org.logo}`}
+            />
+          </FadeOnScroll>
+        ))}
       </div>
     </OrganizationContainer>
   );
