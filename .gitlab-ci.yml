@@ -184,22 +184,19 @@ secrets_scan:
     - trufflehog --regex --entropy=False .
   allow_failure: true
 
-.db-env: &db-env
-  services:
-    - name: bitnami/mariadb:11.4.2
-      alias: eggo-devdb
-      variables:
-        NODE_ENV: "development"
-        MARIADB_ROOT_PASSWORD: dev-pass
-        MARIADB_USER: kanadbuser
-        MARIADB_PASSWORD: dev-pass
-        MARIADB_DATABASE: kanaliiga
-        MARIADB_MAX_ALLOWED_PACKET: 128M
-        MARIADB_INNODB_LOG_FILE_SIZE: 64M
-
 test:backend:
   stage: test
   extends: [.pull-only-cache, .default, .mr-backend]
+  services:
+    - name: bitnami/mariadb:11.4.2
+      alias: eggo-devdb
+  variables:
+    MARIADB_ROOT_PASSWORD: dev-pass
+    MARIADB_USER: kanadbuser
+    MARIADB_PASSWORD: dev-pass
+    MARIADB_DATABASE: kanaliiga
+    MARIADB_MAX_ALLOWED_PACKET: 128M
+    MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
     - npm install -g pnpm
     - export $(grep -v '^#' .env.base | xargs)
