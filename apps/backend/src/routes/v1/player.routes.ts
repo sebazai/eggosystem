@@ -7,7 +7,7 @@ import {
   getMultipleLeaderboardsController
 } from "../../controllers/players.controllers";
 
-import parseParams from "../../middlewares/parseParams";
+import parseQueryParams from "../../middlewares/parseQueryParams";
 
 // New Router instance
 const router = Router();
@@ -17,17 +17,17 @@ router.get("/", getPlayersController);
 router.get("/:steam_id", getPlayerBySteamIdController);
 router.get(
   "/:season_id/:map_id/:league_id/:stage/:team_id/leaderboards",
-  parseParams,
+  parseQueryParams,
   getMultipleLeaderboardsController
 );
 router.get(
   "/:season_id/:map/:league_id/:stage/:team_id/:leaderboard",
-  parseParams,
+  parseQueryParams,
   getPlayerLeaderboardController
 );
 router.get(
   "/:season_id/:map/:league_id/:stage/:team_id",
-  parseParams,
+  parseQueryParams,
   getPlayersByFiltersController
 );
 

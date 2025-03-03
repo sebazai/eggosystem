@@ -1,6 +1,8 @@
-import { FancyMultiSelect } from "./fancy-multi-select";
 import clsx from "clsx";
 import { useState } from "react";
+import { ItemFilter } from "./item-filter";
+import type { League, Map, Season, Team } from "@eggosystem/types";
+import { StageFilter } from "./stage-filter";
 
 interface MultiFiltersProps {
   seasons?: number[];
@@ -41,43 +43,51 @@ export const MultiFilters = (props: MultiFiltersProps) => {
       )}
     >
       {props.seasons && props.setSeasons && (
-        <FancyMultiSelect
-          filter="seasons"
-          placeholder="Filter seasons"
-          isOpen={openFilter === "seasons"}
-          setOpen={() => handleOpen("seasons")}
+        <ItemFilter<Season>
+          filterName="seasons"
+          labelKey="full_name"
+          selectedItems={props.seasons}
+          setSelectedItems={props.setSeasons}
+          openFilter={openFilter}
+          handleOpen={handleOpen}
         />
       )}
       {props.leagues && props.setLeagues && (
-        <FancyMultiSelect
-          filter="leagues"
-          placeholder="Filter leagues"
-          isOpen={openFilter === "leagues"}
-          setOpen={() => handleOpen("leagues")}
+        <ItemFilter<League>
+          filterName="leagues"
+          labelKey="name"
+          selectedItems={props.leagues}
+          setSelectedItems={props.setLeagues}
+          openFilter={openFilter}
+          handleOpen={handleOpen}
         />
       )}
       {props.stages && props.setStages && (
-        <FancyMultiSelect
-          filter="stages"
-          placeholder="Filter stages"
-          isOpen={openFilter === "stages"}
-          setOpen={() => handleOpen("stages")}
+        <StageFilter
+          selectedStages={props.stages}
+          setSelectedStageIds={props.setStages}
+          openFilter={openFilter}
+          handleOpen={handleOpen}
         />
       )}
       {props.teams && props.setTeams && (
-        <FancyMultiSelect
-          filter="teams"
-          placeholder="Filter teams"
-          isOpen={openFilter === "teams"}
-          setOpen={() => handleOpen("teams")}
+        <ItemFilter<Team>
+          filterName="teams"
+          labelKey="name"
+          selectedItems={props.teams}
+          setSelectedItems={props.setTeams}
+          openFilter={openFilter}
+          handleOpen={handleOpen}
         />
       )}
       {props.maps && props.setMaps && (
-        <FancyMultiSelect
-          filter="maps"
-          placeholder="Filter maps"
-          isOpen={openFilter === "maps"}
-          setOpen={() => handleOpen("maps")}
+        <ItemFilter<Map>
+          filterName="maps"
+          labelKey="name"
+          selectedItems={props.maps}
+          setSelectedItems={props.setMaps}
+          openFilter={openFilter}
+          handleOpen={handleOpen}
         />
       )}
     </div>

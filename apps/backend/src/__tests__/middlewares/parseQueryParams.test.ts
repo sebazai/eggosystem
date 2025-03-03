@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, NextFunction } from "express";
-import parseParams from "../../middlewares/parseParams";
+import parseQueryParams from "../../middlewares/parseQueryParams";
 
 describe("parseParams Middleware", () => {
   let req: Partial<Request>;
@@ -26,7 +26,7 @@ describe("parseParams Middleware", () => {
     };
     req.params = { leaderboard: "top" };
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: [1, 2],
@@ -45,7 +45,7 @@ describe("parseParams Middleware", () => {
       league_ids: ["13", "14"]
     };
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: [11, 12],
@@ -61,7 +61,7 @@ describe("parseParams Middleware", () => {
   it('should handle "any" values correctly by setting them to null', () => {
     req.params = { leaderboard: "any" };
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: null,
@@ -77,7 +77,7 @@ describe("parseParams Middleware", () => {
   it("should return null for missing params instead of NaN", () => {
     req.query = {}; // No params provided
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: null,
@@ -97,7 +97,7 @@ describe("parseParams Middleware", () => {
     };
     req.params = { leaderboard: "any" };
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: [1],
@@ -116,7 +116,7 @@ describe("parseParams Middleware", () => {
       league_ids: ""
     };
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: null,
@@ -135,7 +135,7 @@ describe("parseParams Middleware", () => {
       league_ids: ""
     };
 
-    parseParams(req as Request, res as Response, next);
+    parseQueryParams(req as Request, res as Response, next);
 
     expect(req.parsedParams).toEqual({
       season_ids: [1, 2],

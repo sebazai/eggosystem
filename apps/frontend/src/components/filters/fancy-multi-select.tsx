@@ -36,46 +36,13 @@ import {
 } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
 import type { Nullable } from "../../../../../packages/types/src";
-
-type Framework = Record<"value" | "label", string>;
-
-const FRAMEWORKS = [
-  {
-    value: "next.js",
-    label: "Next.js"
-  },
-  {
-    value: "sveltekit",
-    label: "SvelteKit"
-  },
-  {
-    value: "nuxt.js",
-    label: "Nuxt.js"
-  },
-  {
-    value: "remix",
-    label: "Remix"
-  },
-  {
-    value: "astro",
-    label: "Astro"
-  },
-  {
-    value: "wordpress",
-    label: "WordPress"
-  },
-  {
-    value: "express.js",
-    label: "Express.js"
-  },
-  {
-    value: "nest.js",
-    label: "Nest.js"
-  }
-] satisfies Framework[];
+import type { MultiSelect } from "@/types/MultiSelectType";
 
 interface FancyMultiSelectProps {
   filter: string;
+  selectable?: MultiSelect[];
+  currentSelection?: MultiSelect[];
+  onSelectChange: (value: MultiSelect[]) => void;
   placeholder?: string;
   isOpen: boolean;
   setOpen: (value: Nullable<string>) => void;
@@ -83,13 +50,15 @@ interface FancyMultiSelectProps {
 
 export function FancyMultiSelect({
   filter,
+  selectable,
+  onSelectChange,
+  currentSelection = [],
   placeholder = "Filter",
   isOpen,
   setOpen
 }: FancyMultiSelectProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const [selected, setSelected] = React.useState<Framework[]>([]);
   const [inputValue, setInputValue] = React.useState("");
 
   React.useEffect(() => {
@@ -98,13 +67,25 @@ export function FancyMultiSelect({
     }
   }, [isOpen]);
 
-  const handleUnselect = React.useCallback((framework: Framework) => {
-    setSelected((prev) => prev.filter((s) => s.value !== framework.value));
-  }, []);
+  const handleSelected = React.useCallback(
+    (framework: MultiSelect) => {
+      onSelectChange([...currentSelection, framework]);
+    },
+    [onSelectChange, currentSelection]
+  );
+
+  const handleUnselect = React.useCallback(
+    (framework: MultiSelect) => {
+      onSelectChange(
+        currentSelection.filter((s) => s.value !== framework.value)
+      );
+    },
+    [currentSelection, onSelectChange]
+  );
 
   const handleClearAll = React.useCallback(() => {
-    setSelected([]);
-  }, []);
+    onSelectChange([]);
+  }, [onSelectChange]);
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -112,11 +93,10 @@ export function FancyMultiSelect({
       if (input) {
         if (e.key === "Delete" || e.key === "Backspace") {
           if (input.value === "") {
-            setSelected((prev) => {
-              const newSelected = [...prev];
-              newSelected.pop();
-              return newSelected;
-            });
+            const remove = currentSelection.pop();
+            if (remove) {
+              handleUnselect(remove);
+            }
           }
         }
         if (e.key === "Escape") {
@@ -124,11 +104,11 @@ export function FancyMultiSelect({
         }
       }
     },
-    []
+    [handleUnselect, currentSelection]
   );
 
-  const selectables = FRAMEWORKS.filter(
-    (framework) => !selected.some((s) => s.value === framework.value)
+  const selectables = selectable?.filter(
+    (framework) => !currentSelection.some((s) => s.value === framework.value)
   );
 
   return (
@@ -139,7 +119,7 @@ export function FancyMultiSelect({
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
-          {selected.map((framework) => {
+          {currentSelection.map((framework) => {
             return (
               <Badge key={framework.value} variant="secondary">
                 {framework.label}
@@ -202,7 +182,7 @@ export function FancyMultiSelect({
                 >
                   Clear filters...
                 </CommandItem>
-                {selectables.map((framework) => (
+                {selectables?.map((framework) => (
                   <CommandItem
                     key={framework.value}
                     onMouseDown={(e) => {
@@ -211,7 +191,7 @@ export function FancyMultiSelect({
                     }}
                     onSelect={() => {
                       setInputValue("");
-                      setSelected((prev) => [...prev, framework]);
+                      handleSelected(framework);
                     }}
                     className="cursor-pointer"
                   >

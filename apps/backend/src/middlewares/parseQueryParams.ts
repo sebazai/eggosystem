@@ -10,7 +10,11 @@ import type { ParsedParams } from "@eggosystem/types";
  * - Ensures `null` for missing required params.
  * - Leaves optional params as `undefined`.
  */
-const parseParams = (req: Request, res: Response, next: NextFunction): void => {
+const parseQueryParams = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   const parseArray = (
     param: string | string[] | undefined
   ): number[] | null => {
@@ -54,4 +58,4 @@ const parseParams = (req: Request, res: Response, next: NextFunction): void => {
   next();
 };
 
-export default parseParams;
+export default parseQueryParams;

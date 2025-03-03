@@ -7,11 +7,11 @@ import {
   getTopPlayersController
 } from "../../controllers/matches.controllers";
 
-import parseParams from "../../middlewares/parseParams";
+import parseQueryParams from "../../middlewares/parseQueryParams";
 // New Router instance
 const router = Router();
 
-router.get("/recent", parseParams, getMatchesByFiltersController);
+router.get("/recent", parseQueryParams, getMatchesByFiltersController);
 router.get("/:match_id/playerstats", getMatchPlayerStatsController);
 router.get("/:match_id/teamstats", getMatchTeamStatsController);
 router.get("/:match_id/topplayers", getTopPlayersController);
