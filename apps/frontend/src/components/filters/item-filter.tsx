@@ -5,8 +5,8 @@ import { FancyMultiSelect } from "./fancy-multi-select";
 import { fetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
-import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import _ from "lodash";
+import { useState } from "react";
 
 interface ItemFilterProps<T> {
   filterName: string;
@@ -14,35 +14,30 @@ interface ItemFilterProps<T> {
   selectableIds?: number[];
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
+  handleSetSearchParams: (key: string, values: number[]) => void;
   selectedItems: number[];
   setSelectedItems: (items: number[]) => void;
 }
 
-// Function to update search params
-const updateSearchParams = (
-  searchParams: ReadonlyURLSearchParams,
-  key: string,
-  value: number[]
-) => {
-  const params = new URLSearchParams(searchParams.toString());
-
-  params.delete(key);
-  value.forEach((v) => params.append(key, v.toString()));
-
-  window.history.pushState(null, "", `?${params.toString()}`);
-};
-
 export const ItemFilter = <T extends { id: number }>(
   props: ItemFilterProps<T>
 ) => {
-  const searchParams = useSearchParams();
+  const [selectedItems, setSelectedItems] = useState<number[]>(
+    props.selectedItems
+  );
+
   const { data, isLoading } = useSWR<T[]>(`/api/${props.filterName}`, fetcher, {
     revalidateOnFocus: false
   });
 
-  if (isLoading || !data) return <div>Loading...</div>;
+  if (isLoading || !data)
+    return (
+      <div className="flex justify-center items-center h-10">
+        <div className="w-6 h-6 border-4 border-t-4 border-gray-300 border-t-ring rounded-full animate-spin"></div>
+      </div>
+    );
 
-  const selectedIdsToSelectables = props.selectedItems.map((id) => {
+  const selectedIdsToSelectables = selectedItems.map((id) => {
     const label =
       data.find((item) => item.id === id)?.[props.labelKey as keyof T] ??
       "Unknown item";
@@ -60,8 +55,8 @@ export const ItemFilter = <T extends { id: number }>(
 
   const handleSelectedItems = (selectedItems: MultiSelect[]) => {
     const selectedValues = selectedItems.map((item) => item.value);
-    updateSearchParams(searchParams, props.filterName, selectedValues);
-    props.setSelectedItems(selectedValues);
+    props.handleSetSearchParams(props.filterName, selectedValues);
+    setSelectedItems(selectedValues);
   };
 
   return (
@@ -75,7 +70,7 @@ export const ItemFilter = <T extends { id: number }>(
       currentSelection={selectedIdsToSelectables}
       placeholder={`Filter ${props.filterName}`}
       isOpen={props.openFilter === props.filterName}
-      setOpen={() => props.handleOpen(props.filterName)}
+      setOpen={(value) => props.handleOpen(value)}
     />
   );
 };

@@ -6,8 +6,9 @@ interface StageFilterProps {
   selectableStages?: number[];
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
+  handleSetSearchParams: (key: string, values: number[]) => void;
   selectedStages: number[];
-  setSelectedStageIds: (leagues: number[]) => void;
+  setSelectedStageIds: (stages: number[]) => void;
 }
 
 const allStages = [
@@ -42,9 +43,11 @@ export const StageFilter = (props: StageFilterProps) => {
         value: stage.id,
         label: stage.name
       }))}
-      onSelectChange={(stages) =>
-        props.setSelectedStageIds(stages.map((item) => item.value))
-      }
+      onSelectChange={(stages) => {
+        const newStages = stages.map((item) => item.value);
+        props.setSelectedStageIds(newStages);
+        props.handleSetSearchParams(filterName, newStages);
+      }}
       currentSelection={selectedIdsToSelectables}
       placeholder="Filter stages"
       isOpen={props.openFilter === filterName}
