@@ -203,7 +203,11 @@ test:backend:
   <<: [*db-env]
   before_script:
     - npm install -g pnpm
-    - ./scripts/setup-env.sh
+    - export $(grep -v '^#' .env.base | xargs
+    - envsubst < .env.base > .env.resolved
+    - export $(grep -v '^#' .env.resolved | xargs)
+    - pnpm --filter=backend migrate
+    - pnpm --filter=backend seed
   script:
     - pnpm --filter=backend test
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
