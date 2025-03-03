@@ -35,11 +35,15 @@
     "add-shadcn-component": {
       "cache": false
     },
-    "migrate": {},
+    "migrate": {
+      "env": ["NODE_ENV"]
+    },
     "migrate:rollback": {},
     "migrate:down": {},
     "migrate:up": {},
     "migrate:make": {},
-    "seed": {}
+    "seed": {
+      "env": ["NODE_ENV"]
+    }
   }
 }
