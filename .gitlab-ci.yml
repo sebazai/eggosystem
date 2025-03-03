@@ -184,15 +184,12 @@ secrets_scan:
     - trufflehog --regex --entropy=False .
   allow_failure: true
 
-.test-env: &test-env
-  variables:
-    NODE_ENV: "test"
-
 .db-env: &db-env
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
       variables:
+        NODE_ENV: "development"
         MARIADB_ROOT_PASSWORD: dev-pass
         MARIADB_USER: kanadbuser
         MARIADB_PASSWORD: dev-pass
@@ -203,7 +200,7 @@ secrets_scan:
 test:backend:
   stage: test
   extends: [.pull-only-cache, .default, .mr-backend]
-  <<: [*db-env, *test-env]
+  <<: [*db-env]
   before_script:
     - npm install -g pnpm
     - ./scripts/setup-env.sh
