@@ -34,8 +34,8 @@ services:
       - backend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_BASE_URL: http://${HUB_PUBLIC_URL}/
-      NEXT_PUBLIC_API_URL: http://${HUBBE_PUBLIC_URL}/
+      NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}/
+      NEXT_PUBLIC_API_URL: https://${HUBBE_PUBLIC_URL}/
     networks:
       - web
     labels:
