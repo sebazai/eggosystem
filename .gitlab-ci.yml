@@ -59,6 +59,7 @@ variables:
 .all-app-changes: &all-app-changes
   changes:
     - "package.json"
+    - "turbo.json"
     - "pnpm-*.yaml"
     - ".gitlab-ci.yml"
     - "packages/**/*"
