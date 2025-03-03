@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import MatchContainer from "./match-container";
@@ -25,23 +25,11 @@ export default function AllMatches() {
       teams: getParamArray(searchParams, "teams"),
       maps: getParamArray(searchParams, "maps")
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [] // Only run once.
+    [searchParams]
   );
 
-  const [seasons, setSeasons] = useState<number[]>(initialParams.seasons);
-  const [leagues, setLeagues] = useState<number[]>(initialParams.leagues);
-  const [stages, setStages] = useState<number[]>(initialParams.stages);
-  const [teams, setTeams] = useState<number[]>(initialParams.teams);
-  const [maps, setMaps] = useState<number[]>(initialParams.maps);
-
-  const { matches, isError, isLoading, isValidating } = useRecentMatches({
-    seasons,
-    leagues,
-    stages,
-    teams,
-    maps
-  });
+  const { matches, isError, isLoading, isValidating } =
+    useRecentMatches(initialParams);
 
   if (isError) {
     return (
@@ -57,16 +45,11 @@ export default function AllMatches() {
     <MatchContainer>
       <div className="p-0">
         <MultiFilters
-          seasons={seasons}
-          setSeasons={(value) => setSeasons(value)}
-          leagues={leagues}
-          setLeagues={(value) => setLeagues(value)}
-          stages={stages}
-          setStages={(value) => setStages(value)}
-          teams={teams}
-          setTeams={(value) => setTeams(value)}
-          maps={maps}
-          setMaps={(value) => setMaps(value)}
+          seasons={initialParams.seasons}
+          leagues={initialParams.leagues}
+          stages={initialParams.stages}
+          teams={initialParams.teams}
+          maps={initialParams.maps}
         />
 
         <FilteredMatchesList

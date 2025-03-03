@@ -3,22 +3,32 @@ import { useState } from "react";
 import { ItemFilter } from "./item-filter";
 import type { League, Map, Season, Team } from "@eggosystem/types";
 import { StageFilter } from "./stage-filter";
+import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
 
 interface MultiFiltersProps {
-  seasons?: number[];
-  setSeasons?: (seasons: number[]) => void;
-  leagues?: number[];
-  setLeagues?: (leagues: number[]) => void;
-  stages?: number[];
-  setStages?: (stages: number[]) => void;
-  teams?: number[];
-  setTeams?: (teams: number[]) => void;
-  maps?: number[];
-  setMaps?: (maps: number[]) => void;
+  seasons: number[];
+  leagues: number[];
+  stages: number[];
+  teams: number[];
+  maps: number[];
 }
 
 export const MultiFilters = (props: MultiFiltersProps) => {
+  const [seasons, setSeasons] = useState(props.seasons);
+  const [leagues, setLeagues] = useState(props.leagues);
+  const [stages, setStages] = useState(props.stages);
+  const [teams, setTeams] = useState(props.teams);
+  const [maps, setMaps] = useState(props.maps);
+
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  const { filterData } = useMultiFilterSelectables({
+    seasons,
+    leagues,
+    stages,
+    teams,
+    maps
+  });
 
   const handleOpen = (filter: string | null) => {
     if (filter === null) {
@@ -42,50 +52,50 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         }
       )}
     >
-      {props.seasons && props.setSeasons && (
+      {props.seasons && (
         <ItemFilter<Season>
           filterName="seasons"
           labelKey="full_name"
-          selectedItems={props.seasons}
-          setSelectedItems={props.setSeasons}
+          selectedItems={seasons}
+          setSelectedItems={setSeasons}
           openFilter={openFilter}
           handleOpen={handleOpen}
         />
       )}
-      {props.leagues && props.setLeagues && (
+      {props.leagues && (
         <ItemFilter<League>
           filterName="leagues"
           labelKey="name"
-          selectedItems={props.leagues}
-          setSelectedItems={props.setLeagues}
+          selectedItems={leagues}
+          setSelectedItems={setLeagues}
           openFilter={openFilter}
           handleOpen={handleOpen}
         />
       )}
-      {props.stages && props.setStages && (
+      {props.stages && (
         <StageFilter
-          selectedStages={props.stages}
-          setSelectedStageIds={props.setStages}
+          selectedStages={stages}
+          setSelectedStageIds={setStages}
           openFilter={openFilter}
           handleOpen={handleOpen}
         />
       )}
-      {props.teams && props.setTeams && (
+      {props.teams && (
         <ItemFilter<Team>
           filterName="teams"
           labelKey="name"
-          selectedItems={props.teams}
-          setSelectedItems={props.setTeams}
+          selectedItems={teams}
+          setSelectedItems={setTeams}
           openFilter={openFilter}
           handleOpen={handleOpen}
         />
       )}
-      {props.maps && props.setMaps && (
+      {props.maps && (
         <ItemFilter<Map>
           filterName="maps"
           labelKey="name"
-          selectedItems={props.maps}
-          setSelectedItems={props.setMaps}
+          selectedItems={maps}
+          setSelectedItems={setMaps}
           openFilter={openFilter}
           handleOpen={handleOpen}
         />

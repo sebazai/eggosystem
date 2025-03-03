@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { envConfig } from "../../../../configs/env";
+import { envConfig } from "@/configs/env";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
