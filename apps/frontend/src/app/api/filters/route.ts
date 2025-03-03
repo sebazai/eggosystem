@@ -63,10 +63,10 @@ export async function GET(request: NextRequest) {
   );
 
   const stage_ids = _.intersection(
-    withSeasonsParam.stage_ids,
-    withLeaguesParam.stage_ids,
-    withTeamsParam.stage_ids,
-    withMapsParam.stage_ids
+    withSeasonsParam.stages,
+    withLeaguesParam.stages,
+    withTeamsParam.stages,
+    withMapsParam.stages
   );
 
   const team_ids = _.intersection(

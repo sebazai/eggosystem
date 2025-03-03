@@ -1,9 +1,9 @@
 import { FancyMultiSelect } from "./fancy-multi-select";
 import type { Nullable } from "@eggosystem/types";
-import type { MultiSelect } from "@/types/MultiSelectType";
+import _ from "lodash";
 
 interface StageFilterProps {
-  selectable?: MultiSelect[];
+  selectableStages?: number[];
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
   selectedStages: number[];
@@ -29,12 +29,18 @@ export const StageFilter = (props: StageFilterProps) => {
     label: allStages.find((stage) => stage.id === id)?.name ?? "Unknown"
   }));
 
+  const selectableStages = _.intersectionWith(
+    allStages,
+    props.selectableStages ?? [],
+    (a, b) => a.id === b
+  );
+
   return (
     <FancyMultiSelect
       filter={filterName}
-      selectable={allStages.map((item) => ({
-        value: item.id,
-        label: item.name
+      selectable={selectableStages.map((stage) => ({
+        value: stage.id,
+        label: stage.name
       }))}
       onSelectChange={(stages) =>
         props.setSelectedStageIds(stages.map((item) => item.value))

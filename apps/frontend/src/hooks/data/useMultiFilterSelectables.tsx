@@ -2,7 +2,7 @@
 
 import { fetcher } from "@/lib/utils";
 import useSWR from "swr";
-import type { MatchesByFilters } from "@eggosystem/types";
+import type { MultiFilterSelectableIds } from "@eggosystem/types";
 
 interface UseMultiFilterSelectablesProps {
   seasons: number[];
@@ -36,7 +36,7 @@ export const useMultiFilterSelectables = ({
     .map(([key, value]) => `${key}=${value}`)
     .join("&");
 
-  const { data, error, isValidating } = useSWR<MatchesByFilters[]>(
+  const { data, error, isValidating } = useSWR<MultiFilterSelectableIds>(
     `/api/filters?${sortedQuery}`,
     fetcher,
     { revalidateOnFocus: false }

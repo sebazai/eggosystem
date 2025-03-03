@@ -1,14 +1,17 @@
+"use client";
+
 import useSWR from "swr";
 import { FancyMultiSelect } from "./fancy-multi-select";
 import { fetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
+import _ from "lodash";
 
 interface ItemFilterProps<T> {
   filterName: string;
   labelKey: keyof T;
-  selectable?: MultiSelect[];
+  selectableIds?: number[];
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
   selectedItems: number[];
@@ -49,6 +52,12 @@ export const ItemFilter = <T extends { id: number }>(
     };
   });
 
+  const selectableIdsIntersection = _.intersectionWith(
+    data,
+    props.selectableIds ?? [],
+    (a, b) => a.id === b
+  );
+
   const handleSelectedItems = (selectedItems: MultiSelect[]) => {
     const selectedValues = selectedItems.map((item) => item.value);
     updateSearchParams(searchParams, props.filterName, selectedValues);
@@ -58,12 +67,10 @@ export const ItemFilter = <T extends { id: number }>(
   return (
     <FancyMultiSelect
       filter={props.filterName}
-      selectable={data.map((item) => {
-        return {
-          value: item.id,
-          label: String(item[props.labelKey as keyof T])
-        };
-      })}
+      selectable={selectableIdsIntersection.map((item) => ({
+        value: item.id,
+        label: String(item[props.labelKey])
+      }))}
       onSelectChange={handleSelectedItems}
       currentSelection={selectedIdsToSelectables}
       placeholder={`Filter ${props.filterName}`}
