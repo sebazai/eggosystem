@@ -200,10 +200,9 @@ secrets_scan:
 test:backend:
   stage: test
   extends: [.pull-only-cache, .default, .mr-backend]
-  <<: [*db-env]
   before_script:
     - npm install -g pnpm
-    - export $(grep -v '^#' .env.base | sed 's/${\([^}]*\)}/$\1/g' | xargs)
+    - export $(grep -v '^#' .env.base | xargs)
     - pnpm --filter=backend migrate
     - pnpm --filter=backend seed
   script:
