@@ -1,7 +1,6 @@
 "use client";
 
 import { SearchBar } from "@/components/search-bar";
-import { Suspense } from "react";
 
 export default function OrganizationContainer({
   searchQuery,
@@ -13,7 +12,7 @@ export default function OrganizationContainer({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense>
+    <div>
       <title>Organizations - Kanahub</title>
       <h1>Organizations</h1>
       <div
@@ -27,6 +26,6 @@ export default function OrganizationContainer({
         />
       </div>
       <div>{children}</div>
-    </Suspense>
+    </div>
   );
 }

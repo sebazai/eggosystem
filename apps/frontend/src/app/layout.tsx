@@ -9,6 +9,7 @@ import Footer from "@/components/layout/footer";
 import SkipToContent from "@/components/layout/skip-to-content";
 import { KfcRain } from "@/components/layout/kfc-rain";
 import ScrollToTop from "@/components/layout/scroll-to-top";
+import { Suspense } from "react";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -106,7 +107,9 @@ export default function RootLayout({
             <Navigation />
             <div className="flex-grow flex justify-center w-full">
               <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-                <main id="main-content">{children}</main>
+                <Suspense>
+                  <main id="main-content">{children}</main>
+                </Suspense>
               </div>
             </div>
             <Footer />
