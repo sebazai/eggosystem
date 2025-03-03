@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import MatchContainer from "./match-container";
@@ -43,20 +43,22 @@ export default function AllMatches() {
 
   return (
     <MatchContainer>
-      <div className="p-0">
-        <MultiFilters
-          seasons={initialParams.seasons}
-          leagues={initialParams.leagues}
-          stages={initialParams.stages}
-          teams={initialParams.teams}
-          maps={initialParams.maps}
-        />
+      <Suspense>
+        <div className="p-0">
+          <MultiFilters
+            seasons={initialParams.seasons}
+            leagues={initialParams.leagues}
+            stages={initialParams.stages}
+            teams={initialParams.teams}
+            maps={initialParams.maps}
+          />
 
-        <FilteredMatchesList
-          matches={matches}
-          isLoading={isLoading || isValidating}
-        />
-      </div>
+          <FilteredMatchesList
+            matches={matches}
+            isLoading={isLoading || isValidating}
+          />
+        </div>
+      </Suspense>
     </MatchContainer>
   );
 }
