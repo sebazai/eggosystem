@@ -310,6 +310,9 @@ deploy:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
+  environment:
+    name: production # This enables GitLab Environments
+    url: https://${HUB_PUBLIC_URL}
   variables:
     MARIADB_ROOT_PASSWORD: $MARIADB_ROOT_PASSWORD
     MARIADB_USER: $MARIADB_USER
