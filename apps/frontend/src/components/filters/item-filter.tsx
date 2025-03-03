@@ -16,7 +16,7 @@ interface ItemFilterProps<T> {
   handleOpen: (filter: Nullable<string>) => void;
   handleSetSearchParams: (key: string, values: number[]) => void;
   selectedItems: number[];
-  setSelectedItems: (items: number[]) => void;
+  setFilterParams: (value: number[]) => void;
 }
 
 export const ItemFilter = <T extends { id: number }>(
@@ -70,7 +70,12 @@ export const ItemFilter = <T extends { id: number }>(
       currentSelection={selectedIdsToSelectables}
       placeholder={`Filter ${props.filterName}`}
       isOpen={props.openFilter === props.filterName}
-      setOpen={(value) => props.handleOpen(value)}
+      setOpen={(value) => {
+        if (value === null) {
+          props.setFilterParams(selectedItems);
+        }
+        props.handleOpen(value);
+      }}
     />
   );
 };

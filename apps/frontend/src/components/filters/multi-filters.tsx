@@ -32,21 +32,18 @@ const updateSearchParams = (
 
 export const MultiFilters = (props: MultiFiltersProps) => {
   const searchParams = useSearchParams();
-  const [seasons, setSeasons] = useState(props.seasons);
-  const [leagues, setLeagues] = useState(props.leagues);
-  const [stages, setStages] = useState(props.stages);
-  const [teams, setTeams] = useState(props.teams);
-  const [maps, setMaps] = useState(props.maps);
+  const [filterParams, setFilterParams] = useState({
+    seasons: props.seasons,
+    leagues: props.leagues,
+    stages: props.stages,
+    teams: props.teams,
+    maps: props.maps
+  });
 
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
-  const { filterData } = useMultiFilterSelectables({
-    seasons,
-    leagues,
-    stages,
-    teams,
-    maps
-  });
+  const { filterData: multiFilterSelectData } =
+    useMultiFilterSelectables(filterParams);
 
   const handleOpen = (filter: string | null) => {
     if (filter === null) {
@@ -78,9 +75,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         <ItemFilter<Season>
           filterName="seasons"
           labelKey="full_name"
-          selectedItems={seasons}
-          selectableIds={filterData?.season_ids}
-          setSelectedItems={setSeasons}
+          selectedItems={filterParams.seasons}
+          setFilterParams={(newParams) =>
+            setFilterParams({ ...filterParams, seasons: newParams })
+          }
+          selectableIds={multiFilterSelectData?.season_ids}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -90,9 +89,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         <ItemFilter<League>
           filterName="leagues"
           labelKey="name"
-          selectedItems={leagues}
-          selectableIds={filterData?.league_ids}
-          setSelectedItems={setLeagues}
+          selectedItems={filterParams.leagues}
+          setFilterParams={(newParams) =>
+            setFilterParams({ ...filterParams, leagues: newParams })
+          }
+          selectableIds={multiFilterSelectData?.league_ids}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -100,9 +101,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
       )}
       {props.stages && (
         <StageFilter
-          selectedStages={stages}
-          setSelectedStageIds={setStages}
-          selectableStages={filterData?.stages}
+          selectedStages={filterParams.stages}
+          selectableStages={multiFilterSelectData?.stages}
+          setFilterParams={(newParams) =>
+            setFilterParams({ ...filterParams, stages: newParams })
+          }
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -112,9 +115,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         <ItemFilter<Team>
           filterName="teams"
           labelKey="name"
-          selectedItems={teams}
-          selectableIds={filterData?.team_ids}
-          setSelectedItems={setTeams}
+          selectedItems={filterParams.teams}
+          setFilterParams={(newParams) =>
+            setFilterParams({ ...filterParams, teams: newParams })
+          }
+          selectableIds={multiFilterSelectData?.team_ids}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -124,9 +129,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         <ItemFilter<Map>
           filterName="maps"
           labelKey="name"
-          selectedItems={maps}
-          selectableIds={filterData?.map_ids}
-          setSelectedItems={setMaps}
+          selectedItems={filterParams.maps}
+          setFilterParams={(newParams) =>
+            setFilterParams({ ...filterParams, maps: newParams })
+          }
+          selectableIds={multiFilterSelectData?.map_ids}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}

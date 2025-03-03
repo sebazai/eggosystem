@@ -1,14 +1,16 @@
+import type { MultiSelect } from "@/types/MultiSelectType";
 import { FancyMultiSelect } from "./fancy-multi-select";
 import type { Nullable } from "@eggosystem/types";
 import _ from "lodash";
+import { useState } from "react";
 
 interface StageFilterProps {
   selectableStages?: number[];
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
   handleSetSearchParams: (key: string, values: number[]) => void;
+  setFilterParams: (value: number[]) => void;
   selectedStages: number[];
-  setSelectedStageIds: (stages: number[]) => void;
 }
 
 const allStages = [
@@ -24,8 +26,11 @@ const allStages = [
 
 export const StageFilter = (props: StageFilterProps) => {
   const filterName = "stages";
+  const [selectedItems, setSelectedItems] = useState<number[]>(
+    props.selectedStages
+  );
 
-  const selectedIdsToSelectables = props.selectedStages.map((id) => ({
+  const selectedIdsToSelectables = selectedItems.map((id) => ({
     value: id,
     label: allStages.find((stage) => stage.id === id)?.name ?? "Unknown"
   }));
@@ -36,6 +41,12 @@ export const StageFilter = (props: StageFilterProps) => {
     (a, b) => a.id === b
   );
 
+  const handleSelectedItems = (selectedItems: MultiSelect[]) => {
+    const selectedValues = selectedItems.map((item) => item.value);
+    props.handleSetSearchParams(filterName, selectedValues);
+    setSelectedItems(selectedValues);
+  };
+
   return (
     <FancyMultiSelect
       filter={filterName}
@@ -43,15 +54,16 @@ export const StageFilter = (props: StageFilterProps) => {
         value: stage.id,
         label: stage.name
       }))}
-      onSelectChange={(stages) => {
-        const newStages = stages.map((item) => item.value);
-        props.setSelectedStageIds(newStages);
-        props.handleSetSearchParams(filterName, newStages);
-      }}
+      onSelectChange={handleSelectedItems}
       currentSelection={selectedIdsToSelectables}
       placeholder="Filter stages"
       isOpen={props.openFilter === filterName}
-      setOpen={() => props.handleOpen(filterName)}
+      setOpen={(value) => {
+        if (value === null) {
+          props.setFilterParams(selectedItems);
+        }
+        props.handleOpen(value);
+      }}
     />
   );
 };
