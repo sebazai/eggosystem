@@ -71,13 +71,7 @@ services:
   eggo-devdb:
     image: bitnami/mariadb:11.4.2
     restart: always
-    environment:
-      - MARIADB_ROOT_PASSWORD=dev-pass
-      - MARIADB_USER=kanadbuser
-      - MARIADB_PASSWORD=dev-pass
-      - MARIADB_DATABASE=kanaliiga
-      - MARIADB_MAX_ALLOWED_PACKET=128M
-      - MARIADB_INNODB_LOG_FILE_SIZE=64M
+    env_file: .env.base
     healthcheck:
       test:
         [
