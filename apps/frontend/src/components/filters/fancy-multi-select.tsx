@@ -145,7 +145,15 @@ export function FancyMultiSelect({
             ref={inputRef}
             value={inputValue}
             onValueChange={setInputValue}
-            onBlur={() => setOpen(null)}
+            onBlur={(e) => {
+              if (
+                containerRef.current &&
+                containerRef.current.contains(e.relatedTarget as Node)
+              ) {
+                return; // If user selects scrollbar, do nothing
+              }
+              setOpen(null);
+            }}
             onFocus={() => {
               if (!isOpen) {
                 setOpen(filter);
