@@ -25,5 +25,12 @@ services:
     ports:
       - 8083:80
 
+  eggo-redis:
+    extends:
+      file: ../docker-compose.yml
+      service: eggo-redis
+    networks:
+      - eggo-dev
+
 networks:
   eggo-dev:

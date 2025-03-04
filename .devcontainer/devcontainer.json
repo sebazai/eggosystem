@@ -27,6 +27,11 @@
       "onAutoForward": "notify"
     }
   },
-  "runServices": ["devcontainer", "eggo-devdb", "eggo-phpmyadmin"],
+  "runServices": [
+    "devcontainer",
+    "eggo-devdb",
+    "eggo-phpmyadmin",
+    "eggo-redis"
+  ],
   "overrideCommand": false
 }
