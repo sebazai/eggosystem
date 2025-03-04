@@ -17,6 +17,7 @@ interface ItemFilterProps<T> {
   handleSetSearchParams: (key: string, values: number[]) => void;
   selectedItems: number[];
   setFilterParams: (value: number[]) => void;
+  sorter?: (a: T, b: T) => number;
 }
 
 export const ItemFilter = <T extends { id: number }>(
@@ -47,11 +48,13 @@ export const ItemFilter = <T extends { id: number }>(
     };
   });
 
-  const selectableIdsIntersection = _.intersectionWith(
+  const selectableIdsIntersection: T[] = _.intersectionWith(
     data,
     props.selectableIds ?? [],
-    (a, b) => a.id === b
+    (a: T, b: number) => a.id === b
   );
+
+  if (props.sorter) selectableIdsIntersection.sort(props.sorter);
 
   const handleSelectedItems = (selectedItems: MultiSelect[]) => {
     const selectedValues = selectedItems.map((item) => item.value);

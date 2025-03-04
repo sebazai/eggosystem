@@ -77,12 +77,13 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           labelKey="full_name"
           selectedItems={filterParams.seasons}
           setFilterParams={(newParams) =>
-            setFilterParams({ ...filterParams, seasons: newParams })
+            setFilterParams((prev) => ({ ...prev, seasons: newParams }))
           }
           selectableIds={multiFilterSelectData?.season_ids}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
+          sorter={(a, b) => b.id - a.id}
         />
       )}
       {props.leagues && (
@@ -91,7 +92,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           labelKey="name"
           selectedItems={filterParams.leagues}
           setFilterParams={(newParams) =>
-            setFilterParams({ ...filterParams, leagues: newParams })
+            setFilterParams((prev) => ({ ...prev, leagues: newParams }))
           }
           selectableIds={multiFilterSelectData?.league_ids}
           handleSetSearchParams={handleSetSearchParams}
@@ -104,7 +105,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           selectedStages={filterParams.stages}
           selectableStages={multiFilterSelectData?.stages}
           setFilterParams={(newParams) =>
-            setFilterParams({ ...filterParams, stages: newParams })
+            setFilterParams((prev) => ({ ...prev, stages: newParams }))
           }
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
@@ -117,12 +118,13 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           labelKey="name"
           selectedItems={filterParams.teams}
           setFilterParams={(newParams) =>
-            setFilterParams({ ...filterParams, teams: newParams })
+            setFilterParams((prev) => ({ ...prev, teams: newParams }))
           }
           selectableIds={multiFilterSelectData?.team_ids}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
+          sorter={(a, b) => a.name.localeCompare(b.name)}
         />
       )}
       {props.maps && (
@@ -131,7 +133,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           labelKey="name"
           selectedItems={filterParams.maps}
           setFilterParams={(newParams) =>
-            setFilterParams({ ...filterParams, maps: newParams })
+            setFilterParams((prev) => ({ ...prev, maps: newParams }))
           }
           selectableIds={multiFilterSelectData?.map_ids}
           handleSetSearchParams={handleSetSearchParams}
