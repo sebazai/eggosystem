@@ -53,15 +53,15 @@ export const FilteredMatchesList = ({
                   style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
                 >
                   <div className="flex items-center justify-end min-w-0">
-                    <span className="text-right xxs:break-normal break-all text-sm mr-1">
+                    <div className="min-w-0 text-right xs:break-normal break-words text-sm sm:text-base mr-1">
                       {match.team1_name}
-                    </span>
+                    </div>
                     <Image
                       src={`https://stats.kanaliiga.fi/img/${match.team1_logo}`}
                       alt={match.team1_name}
                       width={24}
                       height={24}
-                      className="ml-1 object-contain hidden xs:block"
+                      className="ml-1 object-contain hidden xxs:block"
                     />
                   </div>
                   <div className="text-sm bg-secondary h-full min-w-15 md:min-w-18 items-center justify-center flex">
@@ -73,11 +73,11 @@ export const FilteredMatchesList = ({
                       alt={match.team2_name}
                       width={24}
                       height={24}
-                      className="mr-1 object-contain hidden xs:block"
+                      className="mr-1 object-contain hidden xxs:block"
                     />
-                    <span className="text-left xxs:break-normal break-all text-sm ml-1">
+                    <div className="min-w-0 text-left xs:break-normal break-words text-sm sm:text-base ml-1">
                       {match.team2_name}
-                    </span>
+                    </div>
                   </div>
                 </div>
               </Link>
