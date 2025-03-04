@@ -6,6 +6,7 @@ import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import MatchContainer from "./match-container";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { FilteredMatchesList } from "./filtered-matches-list";
+import { envConfig } from "@/configs/env";
 
 const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
   searchParams
@@ -16,6 +17,7 @@ const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
 
 export default function AllMatches() {
   const searchParams = useSearchParams();
+  const activeSeason = envConfig.ACTIVE_SEASON;
 
   const initialParams = useMemo(
     () => ({
@@ -27,6 +29,10 @@ export default function AllMatches() {
     }),
     [searchParams]
   );
+
+  if (initialParams.seasons.length === 0) {
+    initialParams.seasons = [activeSeason];
+  }
 
   const { matches, isError, isLoading, isValidating } =
     useRecentMatches(initialParams);
