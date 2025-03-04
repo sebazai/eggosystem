@@ -1,8 +1,8 @@
 import { createPool } from "mysql2/promise";
-import { envConfig } from "../configs/env";
+import { dbEnvConfig } from "../configs/db-env";
 
 const newDbPool = createPool({
-  ...envConfig,
+  ...dbEnvConfig,
   connectionLimit: 10, // Adjust based on load
   dateStrings: true
 });
