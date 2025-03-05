@@ -1,19 +1,7 @@
 import { UserPayload } from "@eggosystem/types";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { createClient } from "redis";
-
-const redisClient = createClient({
-  socket: {
-    host: process.env.REDIS_HOST ?? "eggo-redis",
-    port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379
-  }
-});
-
-(async () => {
-  await redisClient.connect();
-  console.log("Redis connected");
-})();
+import redisClient from "../utils/redisClient";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const JWT_REFRESH_SECRET =
@@ -31,7 +19,7 @@ export const generateTokens = (user: jwt.JwtPayload) => {
   return { accessToken, refreshToken };
 };
 
-export const login = (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).json({ message: "Authentication failed" });
     return;
@@ -41,7 +29,7 @@ export const login = (req: Request, res: Response) => {
   console.log("User", user);
   const { accessToken, refreshToken } = generateTokens(user);
 
-  redisClient.set(user.steamId, refreshToken, { EX: 7 * 24 * 60 * 60 });
+  await redisClient.set(user.steamId, refreshToken, { EX: 7 * 24 * 60 * 60 });
 
   res.cookie("access_token", accessToken, {
     httpOnly: true,
@@ -120,7 +108,7 @@ export const logout = async (req: Request, res: Response) => {
       const decoded = <jwt.JwtPayload>(
         jwt.verify(refreshToken, JWT_REFRESH_SECRET)
       );
-      redisClient.del(decoded.steamId);
+      await redisClient.del(decoded.steamId);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       // NO-op
