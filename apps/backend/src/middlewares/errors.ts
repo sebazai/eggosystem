@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { UnauthorizedError } from "express-jwt";
 
 export const errorHandler = (
   err: Error,
@@ -7,6 +8,10 @@ export const errorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ) => {
-  console.error(err);
+  if (err instanceof UnauthorizedError) {
+    res.status(err.status).json({ errors: [{ message: err.message }] });
+    return;
+  }
+
   res.status(500).json({ errors: [{ message: "Something went wrong" }] });
 };

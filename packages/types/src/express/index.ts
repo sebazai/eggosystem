@@ -8,3 +8,8 @@ export interface ParsedParams {
   map_ids: Nullable<number[]>;
   leaderboard?: Nullable<string>;
 }
+
+export interface UserPayload {
+  steamId: string;
+  displayName: string;
+}

@@ -32,30 +32,37 @@ declare global {
   }
 }
 
+declare module "jsonwebtoken" {
+  export interface JwtPayload {
+    steamId: string;
+    displayName: string;
+  }
+}
+
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:3000" // Next.js frontend URL
-];
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-    credentials: true
-  })
-);
-app.use(express.json());
 app.use(cookieParser());
+
+const frontendUrl = process.env.FRONTEND_URL;
+const allowList = [frontendUrl];
+
+const corsOptions = {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
+    if (allowList.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+} satisfies cors.CorsOptions;
+
+app.use(cors(corsOptions));
+
+app.use(express.json());
 
 app.use(helmet());
 app.use(morgan("dev"));

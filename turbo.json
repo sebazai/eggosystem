@@ -16,7 +16,10 @@
         "JWT_SECRET",
         "JWT_REFRESH_SECRET",
         "JWT_EXPIRES_IN",
-        "JWT_REFRESH_EXPIRES_IN"
+        "JWT_REFRESH_EXPIRES_IN",
+        "REDIS_HOST",
+        "REDIS_PORT",
+        "FRONTEND_URL"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

@@ -1,6 +1,16 @@
+"use client";
+
+import { LogOut } from "@/components/logout";
+import { SteamLoginButton } from "@/components/steam-login";
+import useSession from "@/hooks/useSession";
+
 export default function Home() {
+  const user = useSession();
   return (
     <section>
+      <SteamLoginButton />
+      {user ? <div>Logged in as {user.displayName}</div> : <p>Not logged in</p>}
+      <LogOut />
       <h1>Kanaliiga</h1>
       <p>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam a
