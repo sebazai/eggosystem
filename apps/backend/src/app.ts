@@ -3,10 +3,12 @@ import dotenv from "dotenv";
 import * as fs from "fs";
 
 // Update with your config settings.
-if (process.env.NODE_ENV === "development") {
-  dotenv.config({ path: ".env" });
-  if (fs.existsSync(`.env.development`)) {
-    dotenv.config({ path: `.env.development` });
+if (process.env.NODE_ENV) {
+  if (process.env.NODE_ENV === "development") {
+    dotenv.config({ path: ".env" });
+  }
+  if (fs.existsSync(`.env.${process.env.NODE_ENV}`)) {
+    dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
   }
 }
 
