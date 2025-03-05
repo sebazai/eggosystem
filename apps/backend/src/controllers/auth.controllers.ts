@@ -3,11 +3,12 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import redisClient from "../utils/redisClient";
 
+const expireIn7Days = 7 * 24 * 60 * 60;
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret";
 const JWT_EXPIRES_IN = "20m";
-const JWT_REFRESH_EXPIRES_IN = "7d";
+const JWT_REFRESH_EXPIRES_IN = expireIn7Days;
 
 export const generateTokens = (user: jwt.JwtPayload) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -28,7 +29,7 @@ export const login = async (req: Request, res: Response) => {
   const user = req.user as UserPayload;
   const { accessToken, refreshToken } = generateTokens(user);
 
-  await redisClient.set(user.steamId, refreshToken, { EX: 7 * 24 * 60 * 60 });
+  await redisClient.set(user.steamId, refreshToken, { EX: expireIn7Days });
 
   res.cookie("access_token", accessToken, {
     httpOnly: true,
@@ -65,7 +66,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     );
     const storedToken = await redisClient.get(decoded.steamId);
 
-    if (!storedToken || storedToken === refreshToken) {
+    if (!storedToken || storedToken !== refreshToken) {
       res.status(403).json({ message: "Invalid refresh token" });
       return;
     }
@@ -73,7 +74,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const { accessToken, refreshToken: newRefreshToken } =
       generateTokens(decoded);
     await redisClient.set(decoded.steamId, newRefreshToken, {
-      EX: 7 * 24 * 60 * 60
+      EX: expireIn7Days
     });
 
     res.cookie("access_token", accessToken, {
