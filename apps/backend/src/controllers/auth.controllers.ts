@@ -26,7 +26,6 @@ export const login = async (req: Request, res: Response) => {
   }
 
   const user = req.user as UserPayload;
-  console.log("User", user);
   const { accessToken, refreshToken } = generateTokens(user);
 
   await redisClient.set(user.steamId, refreshToken, { EX: 7 * 24 * 60 * 60 });
