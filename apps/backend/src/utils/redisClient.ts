@@ -1,14 +1,12 @@
 import { createClient } from "redis";
 
+console.log("REDIS_HOST", process.env.REDIS_HOST);
+console.log("REDIS_PORT", process.env.REDIS_PORT);
 const redisClient = createClient({
   socket: {
     host: process.env.REDIS_HOST ?? "eggo-redis",
-    port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT, 10) : 6379
+    port: parseInt(process.env.REDIS_PORT ?? "6379", 10)
   }
-});
-
-redisClient.on("connect", () => {
-  console.log("Redis connected");
 });
 
 redisClient.on("error", (err) => {
@@ -26,7 +24,6 @@ redisClient.on("error", (err) => {
 export const closeRedis = async () => {
   if (redisClient.isOpen) {
     await redisClient.quit();
-    console.log("🔌 Redis connection closed");
   }
 };
 
