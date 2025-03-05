@@ -9,7 +9,7 @@ const redisClient = createClient({
   }
 });
 
-redisClient.on("error", (err) => {
+redisClient.on("error", (err: Error) => {
   console.error("Redis connection error:", err);
 });
 
@@ -24,6 +24,9 @@ redisClient.on("error", (err) => {
 export const closeRedis = async () => {
   if (redisClient.isOpen) {
     await redisClient.quit();
+    // redis.quit() creates a thread to close the connection.
+    // We wait until all threads have been run once to ensure the connection closes.
+    await new Promise((resolve) => setImmediate(resolve));
   }
 };
 
