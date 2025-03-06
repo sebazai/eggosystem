@@ -108,7 +108,9 @@ export default function RootLayout({
             <div className="flex flex-grow justify-center w-full">
               <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
                 <Suspense>
-                  <main id="main-content">{children}</main>
+                  <main className="md:py-6 py-4" id="main-content">
+                    {children}
+                  </main>
                 </Suspense>
               </div>
             </div>

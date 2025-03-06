@@ -29,6 +29,7 @@ import {
   SheetTrigger
 } from "@/components/ui/sheet";
 import UserMenuDropdown from "./user-menu-dropdown";
+import { MobileUserMenu } from "./mobile/user-menu";
 
 interface MenuItemLink {
   title: string;
@@ -50,12 +51,6 @@ interface NavbarProps {
     name: string;
     url: string;
   }[];
-  auth?: {
-    login: {
-      text: string;
-      url: string;
-    };
-  };
 }
 
 const defaultProps: NavbarProps = {
@@ -93,16 +88,13 @@ const defaultProps: NavbarProps = {
     { name: "Contact", url: "#" },
     { name: "Imprint", url: "#" },
     { name: "Sitemap", url: "#" }
-  ],
-  auth: {
-    login: { text: "Log in", url: "#" }
-  }
+  ]
 };
 
 export const Navigation = (props: NavbarProps) => {
   const navigationProps =
     Object.keys(props).length === 0 ? defaultProps : props;
-  const { logo, menu, mobileExtraLinks, auth } = navigationProps;
+  const { logo, menu, mobileExtraLinks } = navigationProps;
 
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
   const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
@@ -180,7 +172,7 @@ export const Navigation = (props: NavbarProps) => {
             <NavigationMenuList>{menu?.map(renderMenuItem)}</NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto">
-            <UserMenuDropdown></UserMenuDropdown>
+            <UserMenuDropdown />
           </div>
         </div>
 
@@ -251,18 +243,7 @@ export const Navigation = (props: NavbarProps) => {
                       </div>
                     </div>
                   )}
-                  {auth && (
-                    <div className="flex flex-col gap-3">
-                      <Button asChild variant="outline">
-                        <Link
-                          href={auth.login.url}
-                          onClick={() => setIsSheetOpen(false)}
-                        >
-                          {auth.login.text}
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
+                  <MobileUserMenu />
                 </div>
               </SheetContent>
             </Sheet>
@@ -303,7 +284,6 @@ const renderMenuItem = (item: MenuItem) => {
 };
 
 const renderMobileMenuItem = (item: MenuItem, closeMenuOnClick: () => void) => {
-  if ("src" in item) return null;
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">

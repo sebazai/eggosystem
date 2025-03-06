@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Settings2Icon, UserIcon } from "lucide-react";
+import { Settings2Icon, UserCheckIcon, UserIcon } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import useSession from "@/hooks/useSession";
@@ -21,7 +21,7 @@ export default function UserDropdown() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
-          <UserIcon className="h-8 w-8 text-foreground" />
+          {user ? <UserCheckIcon /> : <UserIcon />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
