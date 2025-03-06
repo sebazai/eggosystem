@@ -12,6 +12,7 @@ services:
       DB_NAME: kanaliiga
       DB_PORT: 3306
       FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}
+      BACKEND_BASE_URL: https://${HUBBEDEV_PUBLIC_URL}
       REDIS_HOST: eggo-redis
       REDIS_PORT: 6379
     networks:
