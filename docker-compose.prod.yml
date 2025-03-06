@@ -80,35 +80,35 @@ services:
       timeout: 20s
       retries: 10
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    depends_on:
-      eggo-prod-db:
-        condition: service_healthy
-    restart: always
-    environment:
-      PMA_HOST: eggo-prod-db
-      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      UPLOAD_LIMIT: 1G
-    networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hubphpmyadmin.entrypoints=http"
-      - "traefik.http.routers.hubphpmyadmin.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/phpmyadmin`)"
-      - "traefik.http.middlewares.hubphpmyadmin-auth.basicauth.users=${PHPMYADMIN_AUTH}"
-      - "traefik.http.middlewares.hubphpmyadmin-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.hubphpmyadmin-stripprefix.stripprefix.prefixes=/phpmyadmin"
-      - "traefik.http.routers.hubphpmyadmin.middlewares=hubphpmyadmin-https-redirect"
-      - "traefik.http.routers.hubphpmyadmin-secure.entrypoints=https"
-      - "traefik.http.routers.hubphpmyadmin-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
-      - "traefik.http.routers.hubphpmyadmin-secure.tls=true"
-      - "traefik.http.routers.hubphpmyadmin-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
-      - "traefik.http.routers.hubphpmyadmin-secure.middlewares=hubphpmyadmin-stripprefix,hubphpmyadmin-auth"
-      - "traefik.http.routers.hubphpmyadmin-secure.tls.certresolver=http"
-      - "traefik.http.routers.hubphpmyadmin-secure.service=hubphpmyadmin"
-      - "traefik.http.services.hubphpmyadmin.loadbalancer.server.port=80"
-      - "traefik.docker.network=web"
+  # phpmyadmin:
+  #   image: phpmyadmin/phpmyadmin
+  #   depends_on:
+  #     eggo-prod-db:
+  #       condition: service_healthy
+  #   restart: always
+  #   environment:
+  #     PMA_HOST: eggo-prod-db
+  #     MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+  #     UPLOAD_LIMIT: 1G
+  #   networks:
+  #     - web
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.hubphpmyadmin.entrypoints=http"
+  #     - "traefik.http.routers.hubphpmyadmin.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/phpmyadmin`)"
+  #     - "traefik.http.middlewares.hubphpmyadmin-auth.basicauth.users=${PHPMYADMIN_AUTH}"
+  #     - "traefik.http.middlewares.hubphpmyadmin-https-redirect.redirectscheme.scheme=https"
+  #     - "traefik.http.middlewares.hubphpmyadmin-stripprefix.stripprefix.prefixes=/phpmyadmin"
+  #     - "traefik.http.routers.hubphpmyadmin.middlewares=hubphpmyadmin-https-redirect"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.entrypoints=https"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.tls=true"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.middlewares=hubphpmyadmin-stripprefix,hubphpmyadmin-auth"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.tls.certresolver=http"
+  #     - "traefik.http.routers.hubphpmyadmin-secure.service=hubphpmyadmin"
+  #     - "traefik.http.services.hubphpmyadmin.loadbalancer.server.port=80"
+  #     - "traefik.docker.network=web"
 
 networks:
   web:
