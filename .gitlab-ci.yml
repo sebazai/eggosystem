@@ -315,7 +315,7 @@ push-dockerfile:frontend:dev:
     - if: $CI_MERGE_REQUEST_ID
       when: manual
   variables:
-    NEXT_PUBLIC_API_URL: $HUBBE_DEV_PUBLIC_URL
+    NEXT_PUBLIC_API_URL: $HUBBEDEV_PUBLIC_URL
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
