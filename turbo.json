@@ -19,7 +19,8 @@
         "JWT_REFRESH_EXPIRES_IN",
         "REDIS_HOST",
         "REDIS_PORT",
-        "FRONTEND_URL"
+        "FRONTEND_URL",
+        "BACKEND_BASE_URL"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
