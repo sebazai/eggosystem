@@ -286,6 +286,39 @@ push-dockerfile:frontend:
     - docker build --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
 
+# Manual jobs for merge requests
+push-dockerfile:backend:dev:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev . -f apps/backend/Dockerfile
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev
+    - docker build -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:devseed . -f apps/backend/Dockerfile.dev
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:devseed
+
+push-dockerfile:frontend:dev:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+  variables:
+    NEXT_PUBLIC_API_URL: $HUBBE_DEV_PUBLIC_URL
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev . -f apps/frontend/Dockerfile
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
+
 # Combine artifacts job
 # Disabled for now due pipeline fixing
 # combine-codequality-reports:
@@ -341,3 +374,58 @@ deploy:
     - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
+
+deploy-dev:
+  image: alpine:latest
+  stage: deploy
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+  needs:
+    - job: push-dockerfile:frontend:dev
+    - job: push-dockerfile:backend:dev
+  environment:
+    name: development
+    url: https://${HUB_DEV_PUBLIC_URL}
+  variables:
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
+    PROD_SERVER_IP: $PROD_SERVER_IP
+  before_script:
+    - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - envsubst < docker-compose.dev.yml > docker-compose.dev.subst.yml
+    - rsync -v ./docker-compose.dev.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-dev/docker-compose.yml
+    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml pull"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml up -d"
+
+seed-dev:
+  image: alpine:latest
+  stage: deploy
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual
+  needs:
+    - job: push-dockerfile:backend:dev
+  variables:
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
+    PROD_SERVER_IP: $PROD_SERVER_IP
+  before_script:
+    - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml pull"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml --profile migrate up -d"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml --profile seed up -d"
