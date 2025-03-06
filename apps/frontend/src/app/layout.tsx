@@ -105,7 +105,7 @@ export default function RootLayout({
           <ScrollToTop />
           <div className="flex flex-col min-h-svh min-w-[200px]">
             <Navigation />
-            <div className="flex-grow flex justify-center w-full">
+            <div className="flex flex-grow justify-center w-full">
               <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
                 <Suspense>
                   <main id="main-content">{children}</main>

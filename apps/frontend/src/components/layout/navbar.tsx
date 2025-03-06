@@ -2,7 +2,7 @@
 
 import { Menu } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState, type JSX, type RefObject } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import Link from "next/link";
 
 import {
@@ -28,6 +28,7 @@ import {
   SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
+import UserMenuDropdown from "./user-menu-dropdown";
 
 interface MenuItemLink {
   title: string;
@@ -35,20 +36,14 @@ interface MenuItemLink {
   icon?: JSX.Element;
   items?: MenuItemLink[];
 }
-interface MenuItemLogo {
-  src: string;
-  url: string;
-  alt: string;
-}
 
-type MenuItem = MenuItemLink | MenuItemLogo;
+type MenuItem = MenuItemLink;
 
 interface NavbarProps {
   logo?: {
     url: string;
     src: string;
     alt: string;
-    title: string;
   };
   menu?: MenuItem[];
   mobileExtraLinks?: {
@@ -65,10 +60,9 @@ interface NavbarProps {
 
 const defaultProps: NavbarProps = {
   logo: {
-    url: `https://kanaliiga.fi/`,
-    src: `/images/kanaliiga-logo-1800px.png`,
-    alt: "Kanaliiga logo",
-    title: "Kanaliiga"
+    url: "https://kanaliiga.fi/",
+    src: "/images/kanaliiga-logo-1800px.png",
+    alt: "Kanaliiga logo"
   },
   menu: [
     {
@@ -82,11 +76,6 @@ const defaultProps: NavbarProps = {
     {
       title: "Organizations",
       url: "/organizations"
-    },
-    {
-      url: `https://kanaliiga.fi/`,
-      src: `/images/kanaliiga-logo-1800px.png`,
-      alt: "Kanaliiga logo"
     },
     {
       title: "Teams",
@@ -172,14 +161,27 @@ export const Navigation = (props: NavbarProps) => {
       id="navigation"
       className={`pointer-events-none sticky top-0 w-full px-4 sm:landscape:px-4 sm:px-8 lg:px-16 backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
     >
-      <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto">
+      <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto max-w-screen-xl">
         {/* Desktop Navigation - Sticky by Default */}
-        <div className="hidden w-full flex-col items-center justify-center gap-6 md:flex pointer-events-auto">
+        <div className="hidden w-full items-center justify-center gap-6 md:flex pointer-events-auto">
+          {logo && (
+            <Link href={logo.url}>
+              <Image
+                ref={logoRef}
+                className="logo transition-all"
+                src={logo.src}
+                alt={logo.alt}
+                width={isScrolled ? 80 : 175}
+                height={isScrolled ? 80 : 175}
+              />
+            </Link>
+          )}
           <NavigationMenu viewport={false}>
-            <NavigationMenuList>
-              {menu?.map((item) => renderMenuItem(item, isScrolled, logoRef))}
-            </NavigationMenuList>
+            <NavigationMenuList>{menu?.map(renderMenuItem)}</NavigationMenuList>
           </NavigationMenu>
+          <div className="ml-auto">
+            <UserMenuDropdown></UserMenuDropdown>
+          </div>
         </div>
 
         {/* Mobile Navigation - Sticky in Portrait Mode, Non-Sticky in Landscape */}
@@ -271,30 +273,7 @@ export const Navigation = (props: NavbarProps) => {
   );
 };
 
-const renderMenuItem = (
-  item: MenuItem,
-  isScrolled: boolean,
-  logoRef: RefObject<HTMLImageElement | null>
-) => {
-  if ("src" in item) {
-    return (
-      <NavigationMenuItem key={item.alt}>
-        <Link
-          href={item.url}
-          className="flex items-center gap-2 transition-all"
-        >
-          <Image
-            ref={logoRef}
-            className="logo transition-all"
-            src={item.src}
-            alt={item.alt}
-            width={isScrolled ? 80 : 175}
-            height={isScrolled ? 80 : 175}
-          />
-        </Link>
-      </NavigationMenuItem>
-    );
-  }
+const renderMenuItem = (item: MenuItem) => {
   if (item.items) {
     return (
       <NavigationMenuItem key={item.title}>

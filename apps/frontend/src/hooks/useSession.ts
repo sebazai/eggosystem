@@ -13,5 +13,5 @@ export default function useSession() {
     });
   }, []);
 
-  return user;
+  return { user, setUser };
 }
