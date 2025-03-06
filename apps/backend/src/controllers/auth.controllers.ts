@@ -50,7 +50,7 @@ export const login = async (req: Request, res: Response) => {
     path: "/api/v1/auth/logout"
   });
 
-  res.redirect(`http://localhost:3000/login-success`);
+  res.redirect(`${process.env.FRONTEND_URL}/login-success`);
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
