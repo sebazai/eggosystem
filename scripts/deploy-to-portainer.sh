@@ -101,99 +101,46 @@ if [ -z "$STACK_ID" ] || [ "$STACK_ID" = "null" ]; then
   # Stack doesn't exist, create a new one
   echo "Stack doesn't exist. Creating new stack..."
   
-  # Create a new stack using the compose endpoint
-  if [ "$VERBOSE" = true ]; then
-    debug "Creating stack with endpoint ID: $ENDPOINT_ID"
-    debug "Stack name: eggosystem-${ENV_ID}"
-  fi
-  
   # Create a temporary file with properly escaped content
   TMP_COMPOSE_FILE=$(mktemp)
   echo "$COMPOSE_CONTENT" > "$TMP_COMPOSE_FILE"
   
-  # Try method 1: Using the direct file upload with form data
-  echo "Trying creation method 1 (file upload)..."
-  CREATE_RESPONSE=$(curl -s -X POST "${PORTAINER_URL}/api/stacks/create/standalone/file?endpointId=${ENDPOINT_ID}" \
+  # Create new stack using string content endpoint (method 2)
+  echo "Creating new stack using string content..."
+  
+  # Properly escape the compose content for JSON
+  COMPOSE_CONTENT_ESCAPED=$(echo "$COMPOSE_CONTENT" | jq -Rs .)
+  
+  CREATE_RESPONSE=$(curl -s -X POST "${PORTAINER_URL}/api/stacks/create/standalone/string?endpointId=${ENDPOINT_ID}" \
     -H "X-API-Key: ${PORTAINER_TOKEN}" \
-    -F "file=@${TMP_COMPOSE_FILE}" \
-    -F "name=eggosystem-${ENV_ID}")
+    -H "Content-Type: application/json" \
+    -d "{
+      \"name\": \"eggosystem-${ENV_ID}\",
+      \"stackFileContent\": ${COMPOSE_CONTENT_ESCAPED}
+    }")
   
   CREATE_STATUS=$?
   if [ "$VERBOSE" = true ]; then
-    debug "Method 1 create stack status code: $CREATE_STATUS"
-    debug "Method 1 create stack response: $(echo "$CREATE_RESPONSE" | jq 2>/dev/null || echo "$CREATE_RESPONSE")"
+    debug "Create stack status code: $CREATE_STATUS"
+    debug "Create stack response: $(echo "$CREATE_RESPONSE" | jq 2>/dev/null || echo "$CREATE_RESPONSE")"
   fi
   
   # Extract the stack ID from the response
   STACK_ID=$(echo "$CREATE_RESPONSE" | jq -r '.Id // empty' 2>/dev/null || echo "")
   
   if [ $CREATE_STATUS -ne 0 ] || [ -z "$STACK_ID" ] || [ "$STACK_ID" = "null" ]; then
-    echo "Method 1 failed. Trying method 2 (string content)..."
+    echo "Stack creation failed."
+    echo "Error response from Portainer: $(echo "$CREATE_RESPONSE" | jq -r '.message // .err // empty' 2>/dev/null || echo "$CREATE_RESPONSE")"
     
-    # Try method 2: Using the string content endpoint
-    # Properly escape the compose content for JSON
-    COMPOSE_CONTENT_ESCAPED=$(echo "$COMPOSE_CONTENT" | jq -Rs .)
-    
-    CREATE_RESPONSE=$(curl -s -X POST "${PORTAINER_URL}/api/stacks/create/standalone/string?endpointId=${ENDPOINT_ID}" \
-      -H "X-API-Key: ${PORTAINER_TOKEN}" \
-      -H "Content-Type: application/json" \
-      -d "{
-        \"name\": \"eggosystem-${ENV_ID}\",
-        \"stackFileContent\": ${COMPOSE_CONTENT_ESCAPED}
-      }")
-    
-    CREATE_STATUS=$?
-    if [ "$VERBOSE" = true ]; then
-      debug "Method 2 create stack status code: $CREATE_STATUS"
-      debug "Method 2 create stack response: $(echo "$CREATE_RESPONSE" | jq 2>/dev/null || echo "$CREATE_RESPONSE")"
+    # Clean up temporary file
+    rm -f "$TMP_COMPOSE_FILE"
+    if [ "$KEEP_FAILED_STACK" = false ]; then
+      echo "Removing failed stack..."
+      curl -s -X DELETE "${PORTAINER_URL}/api/stacks/${STACK_ID}" -H "X-API-Key: ${PORTAINER_TOKEN}"
     fi
-    
-    # Extract the stack ID from the response
-    STACK_ID=$(echo "$CREATE_RESPONSE" | jq -r '.Id // empty' 2>/dev/null || echo "")
-    
-    if [ $CREATE_STATUS -ne 0 ] || [ -z "$STACK_ID" ] || [ "$STACK_ID" = "null" ]; then
-      echo "Method 2 failed. Trying method 3 (legacy API)..."
-      
-      # Try method 3: Using the legacy API endpoint
-      CREATE_RESPONSE=$(curl -s -X POST "${PORTAINER_URL}/api/stacks" \
-        -H "X-API-Key: ${PORTAINER_TOKEN}" \
-        -H "Content-Type: application/json" \
-        -d "{
-          \"name\": \"eggosystem-${ENV_ID}\",
-          \"stackFileContent\": ${COMPOSE_CONTENT_ESCAPED},
-          \"env\": [],
-          \"endpointId\": ${ENDPOINT_ID},
-          \"type\": 1
-        }")
-      
-      CREATE_STATUS=$?
-      if [ "$VERBOSE" = true ]; then
-        debug "Method 3 create stack status code: $CREATE_STATUS"
-        debug "Method 3 create stack response: $(echo "$CREATE_RESPONSE" | jq 2>/dev/null || echo "$CREATE_RESPONSE")"
-      fi
-      
-      # Extract the stack ID from the response
-      STACK_ID=$(echo "$CREATE_RESPONSE" | jq -r '.Id // empty' 2>/dev/null || echo "")
-      
-      if [ $CREATE_STATUS -ne 0 ] || [ -z "$STACK_ID" ] || [ "$STACK_ID" = "null" ]; then
-        echo "All stack creation methods failed."
-        echo "Error response from Portainer: $(echo "$CREATE_RESPONSE" | jq -r '.message // .err // empty' 2>/dev/null || echo "$CREATE_RESPONSE")"
-        
-        # Clean up temporary file
-        rm -f "$TMP_COMPOSE_FILE"
-        if [ "$KEEP_FAILED_STACK" = false ]; then
-          echo "Removing failed stack..."
-          curl -s -X DELETE "${PORTAINER_URL}/api/stacks/${STACK_ID}" -H "X-API-Key: ${PORTAINER_TOKEN}"
-        fi
-        exit 1
-      else
-        echo "Stack created successfully with ID: $STACK_ID (method 3)"
-      fi
-    else
-      echo "Stack created successfully with ID: $STACK_ID (method 2)"
-    fi
+    exit 1
   else
-    echo "Stack created successfully with ID: $STACK_ID (method 1)"
+    echo "Stack created successfully with ID: $STACK_ID"
   fi
   
   # Clean up temporary file
