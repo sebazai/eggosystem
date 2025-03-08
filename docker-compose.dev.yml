@@ -1,5 +1,5 @@
 services:
-  backend:
+  dev-backend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
     depends_on:
       eggo-dev-db:
@@ -13,7 +13,7 @@ services:
       DB_PORT: 3306
       FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}
       BACKEND_BASE_URL: https://${HUBBEDEV_PUBLIC_URL}
-      REDIS_HOST: eggo-redis
+      REDIS_HOST: eggo-dev-redis
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
     networks:
@@ -33,10 +33,10 @@ services:
       - "traefik.http.services.hubbedev.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
 
-  frontend:
+  dev-frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
     depends_on:
-      - backend
+      - dev-backend
     environment:
       NODE_ENV: pubdev
       NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/
@@ -91,14 +91,14 @@ services:
       - web
     restart: always
 
-  phpmyadmin-hub:
+  phpmyadmin-hubdev:
     depends_on:
       - eggo-dev-db
     image: phpmyadmin/phpmyadmin
     restart: always
     environment:
       PMA_HOST: eggo-dev-db
-      PMA_ABSOLUTE_URI: https://${HUBBEDEV_PUBLIC_URL}/mysadmin/
+      PMA_ABSOLUTE_URI: https://${HUBDEV_PUBLIC_URL}/mysadmin/
       UPLOAD_LIMIT: 1G
     networks:
       - web
