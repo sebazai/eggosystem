@@ -31,7 +31,8 @@ variables:
   REDIS_HOST: eggo-redis
   REDIS_PORT: 6379
 
-.deploy-variables: &deploy-variables # DEV & PROD
+.deploy-variables: &deploy-variables
+  # DEV & PROD
   #THE MARIADB VARIABLES ARE SET IN CI/CD VARIABLES ON GITLAB
   DB_USER: $MARIADB_USER
   DB_PASSWORD: $MARIADB_PASSWORD
@@ -49,6 +50,7 @@ variables:
     - "pnpm-*.yaml"
     - ".gitlab-ci.yml"
     - "packages/**/*"
+    - "scripts/*portainer*.sh"
     - "apps/frontend/**/*"
 
 .backend-changes: &backend-changes
@@ -57,6 +59,7 @@ variables:
     - "pnpm-*.yaml"
     - ".gitlab-ci.yml"
     - "packages/**/*"
+    - "scripts/*portainer*.sh"
     - "apps/backend/**/*"
 
 .all-app-changes: &all-app-changes
@@ -66,6 +69,7 @@ variables:
     - "pnpm-*.yaml"
     - ".gitlab-ci.yml"
     - "packages/**/*"
+    - "scripts/*portainer*.sh"
     - "apps/{frontend,backend}/**/*"
 
 # These either cant be DRY because the rules are OR and not AND (the - & anchors do not work really well)
@@ -277,7 +281,7 @@ build-dockerfile:frontend:
   script:
     - echo "Building Docker image..."
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID} 
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
     # Save the images to tar files for later use
@@ -420,7 +424,9 @@ deploy-ondemand:
     auto_stop_in: 2 hours
   rules:
     - if: $CI_MERGE_REQUEST_ID
+      <<: *all-app-changes
       when: manual
+
   tags:
     - shell
 
@@ -441,5 +447,5 @@ stop-ondemand:
     name: review/mr-$CI_MERGE_REQUEST_IID
     action: stop
   rules:
-    - if: $CI_MERGE_REQUEST_ID 
+    - if: $CI_MERGE_REQUEST_ID
       when: manual
