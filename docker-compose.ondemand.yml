@@ -10,7 +10,7 @@ services:
       NODE_ENV: ondemand
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
-      DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
+      DB_PASSWORD: "${DB_PASSWORD}"
       DB_NAME: kanaliiga
       DB_PORT: 3306
       BASE_PATH: "/${ENV_ID}"
@@ -71,9 +71,9 @@ services:
     restart: always
     container_name: eggo-devdb-${ENV_ID}
     environment:
-      MARIADB_ROOT_PASSWORD: "${DB_ONDEMAND_ROOT_PASSWORD}"
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MARIADB_USER: "ondemand_${ENV_ID}"
-      MARIADB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
       MARIADB_DATABASE: kanaliiga
       MARIADB_MAX_ALLOWED_PACKET: 128M
       MARIADB_INNODB_LOG_FILE_SIZE: 64M
@@ -110,9 +110,9 @@ services:
       NODE_ENV: development
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
-      DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
+      DB_PASSWORD: "${DB_PASSWORD}"
       DB_NAME: kanaliiga
-      DB_ROOT_PASSWORD: "${DB_ONDEMAND_ROOT_PASSWORD}"
+      DB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       DB_PORT: 3306
     command: pnpm --filter=backend migrate
     networks:
@@ -127,8 +127,8 @@ services:
       NODE_ENV: development
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
-      DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
-      DB_ROOT_PASSWORD: "${DB_ONDEMAND_ROOT_PASSWORD}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       DB_NAME: "kanaliiga"
       DB_PORT: 3306
     command: pnpm --filter=backend seed
@@ -145,7 +145,7 @@ services:
       PMA_HOST: eggo-devdb-${ENV_ID}
       PMA_PORT: 3306
       PMA_USER: root
-      PMA_PASSWORD: "${DB_ONDEMAND_ROOT_PASSWORD}"
+      PMA_PASSWORD: "${DB_ROOT_PASSWORD}"
       PMA_ABSOLUTE_URI: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}/phpmyadmin/
     networks:
       - web

@@ -4,11 +4,6 @@ variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
-  DB_HOST: "eggo-devdb"
-  DB_PORT: 3306
-  DB_USER: "kanadbuser"
-  DB_PASSWORD: "dev-pass"
-  DB_NAME: "kanaliiga"
   TRIVY_VERSION: "0.59.1" # Set the Trivy version here
   TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
 
@@ -24,27 +19,23 @@ variables:
       - apps/backend/node_modules/
 
 # Define on-demand environment variables
-.ondemand-variables: &ondemand-variables
+.overwrite-variables: &overwrite-variables
   ENV_ID: mr-${CI_MERGE_REQUEST_IID}
-  PORTAINER_URL: "https://portainer.kanaliiga.fi"
-  PORTAINER_TOKEN: ${PORTAINER_TOKEN}
-  HUBDEV_PUBLIC_URL: ${HUBDEV_PUBLIC_URL}
-  HUBBEDEV_PUBLIC_URL: ${HUBBEDEV_PUBLIC_URL}
   MARIADB_ROOT_PASSWORD: dev-pass
   MARIADB_USER: kanadbuser
   MARIADB_PASSWORD: dev-pass
   MARIADB_DATABASE: kanaliiga
-  STEAM_API_KEY: ${STEAM_API_KEY}
-  DB_ONDEMAND_ROOT_PASSWORD: dev-pass
-  DB_ONDEMAND_PASSWORD: dev-pass
-  PHPMYADMIN_AUTH: ${PHPMYADMIN_AUTH}
+  DB_ROOT_PASSWORD: dev-pass
+  DB_PASSWORD: dev-pass
+  DB_USER: kanadbuser
+  REDIS_HOST: eggo-redis
+  REDIS_PORT: 6379
 
-# Define on-demand base configuration
-.on-demand-base:
-  variables:
-    <<: *ondemand-variables
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
+.deploy-variables: &deploy-variables # DEV & PROD
+  #THE MARIADB VARIABLES ARE SET IN CI/CD VARIABLES ON GITLAB
+  DB_USER: $MARIADB_USER
+  DB_PASSWORD: $MARIADB_PASSWORD
+  DB_NAME: $MARIADB_DATABASE
 
 .default:
   before_script:
@@ -208,14 +199,9 @@ test:backend:
     - name: redis:7-alpine
       alias: eggo-redis
   variables:
-    MARIADB_ROOT_PASSWORD: dev-pass
-    MARIADB_USER: kanadbuser
-    MARIADB_PASSWORD: dev-pass
-    MARIADB_DATABASE: kanaliiga
+    <<: *overwrite-variables
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
-    REDIS_HOST: eggo-redis
-    REDIS_PORT: 6379
   before_script:
     - npm install -g pnpm@10.3.0
     - export $(grep -v '^#' .env.base | xargs)
@@ -329,27 +315,16 @@ push-dockerfile:frontend:
     - docker build --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
 
-deploy:
+deploy-prod:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
+  when: manual
   environment:
-    name: production # This enables GitLab Environments
+    name: production
     url: https://${HUB_PUBLIC_URL}
   variables:
-    MARIADB_ROOT_PASSWORD: $MARIADB_ROOT_PASSWORD
-    MARIADB_USER: $MARIADB_USER
-    MARIADB_PASSWORD: $MARIADB_PASSWORD
-    MARIADB_DATABASE: $MARIADB_DATABASE
-    DB_HOST: $DB_HOST
-    DB_PORT: $DB_PORT
-    DB_USER: $DB_USER
-    DB_PASSWORD: $DB_PASSWORD
-    DB_NAME: $DB_NAME
-    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
-    PROD_SERVER_IP: $PROD_SERVER_IP
-    STEAM_API_KEY: $STEAM_API_KEY
-    PHPMYADMIN_AUTH_BASE64: $PHPMYADMIN_AUTH_BASE64
+    <<: *deploy-variables
   before_script:
     - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
     - eval $(ssh-agent -s)
@@ -366,6 +341,35 @@ deploy:
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
 
+deploy-dev:
+  image: docker:latest
+  stage: deploy
+  extends: [.main-all-app]
+  environment:
+    name: development
+    url: https://${HUBDEV_PUBLIC_URL}
+  variables:
+    <<: *deploy-variables
+    DB_PASSWORD: dev-pass
+  before_script:
+    - apk add --no-cache gettext curl jq bash
+  script:
+    - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
+    - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
+    - envsubst < docker-compose.dev.yml > docker-compose.yml
+    - echo "Deploying stack eggosystem-dev"
+    - bash "$(pwd)/scripts/deploy-to-portainer.sh" --verbose docker-compose.yml
+    - |
+      echo ""
+      echo "=============================================="
+      echo "🚀 DEPLOYMENT SUCCESSFUL!"
+      echo "=============================================="
+      echo "📱 Frontend: https://${HUBDEV_PUBLIC_URL}"
+      echo "🔌 API: https://${HUBBEDEV_PUBLIC_URL}"
+      echo "🗄️ phpMyAdmin: https://${HUBDEV_PUBLIC_URL}/mysadmin/"
+      echo "🐳 Portainer: ${PORTAINER_URL}/#/stacks"
+      echo "=============================================="
+
 deploy-ondemand:
   image: docker:latest
   stage: on-demand-env
@@ -378,9 +382,7 @@ deploy-ondemand:
   services:
     - docker:dind
   variables:
-    <<: *ondemand-variables
-    NEXT_PUBLIC_API_URL: $HUBBEDEV_PUBLIC_URL/${ENV_ID}
-    PHPMYADMIN_AUTH: ${PHPMYADMIN_AUTH_BASE64}
+    <<: *overwrite-variables
   before_script:
     - apk add --no-cache gettext curl jq bash
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -423,7 +425,6 @@ deploy-ondemand:
     - shell
 
 stop-ondemand:
-  extends: [.on-demand-base]
   stage: cleanup
   image: docker:latest
   allow_failure: true # Make on-demand jobs optional for merge requests
@@ -440,5 +441,5 @@ stop-ondemand:
     name: review/mr-$CI_MERGE_REQUEST_IID
     action: stop
   rules:
-    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_MERGE_REQUEST_ID 
       when: manual

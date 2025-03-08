@@ -2,17 +2,17 @@ services:
   backend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
     depends_on:
-      eggo-prod-db:
+      eggo-dev-db:
         condition: service_healthy
     environment:
-      NODE_ENV: production
-      DB_HOST: eggo-prod-db
+      NODE_ENV: pubdev
+      DB_HOST: eggo-dev-db
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: "${MARIADB_PASSWORD}"
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
-      FRONTEND_URL: https://${HUB_PUBLIC_URL}
-      BACKEND_BASE_URL: https://${HUBBE_PUBLIC_URL}
+      FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}
+      BACKEND_BASE_URL: https://${HUBBEDEV_PUBLIC_URL}
       REDIS_HOST: eggo-redis
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
@@ -21,13 +21,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe.entrypoints=http"
-      - "traefik.http.routers.hubbe.rule=Host(`${HUBBE_PUBLIC_URL}`)"
+      - "traefik.http.routers.hubbe.rule=Host(`${HUBBEDEV_PUBLIC_URL}`)"
       - "traefik.http.middlewares.hubbe-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.hubbe.middlewares=kanahub-https-redirect"
       - "traefik.http.routers.hubbe-secure.entrypoints=https"
-      - "traefik.http.routers.hubbe-secure.rule=Host(`${HUBBE_PUBLIC_URL}`)"
+      - "traefik.http.routers.hubbe-secure.rule=Host(`${HUBBEDEV_PUBLIC_URL}`)"
       - "traefik.http.routers.hubbe-secure.tls=true"
-      - "traefik.http.routers.hubbe-secure.tls.domains[0].main=${HUBBE_PUBLIC_URL}"
+      - "traefik.http.routers.hubbe-secure.tls.domains[0].main=${HUBBEDEV_PUBLIC_URL}"
       - "traefik.http.routers.hubbe-secure.tls.certresolver=http"
       - "traefik.http.routers.hubbe-secure.service=hubbe"
       - "traefik.http.services.hubbe.loadbalancer.server.port=3001"
@@ -38,27 +38,27 @@ services:
     depends_on:
       - backend
     environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}/
-      NEXT_PUBLIC_API_URL: https://${HUBBE_PUBLIC_URL}/
+      NODE_ENV: pubdev
+      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/
+      NEXT_PUBLIC_API_URL: https://${HUBBEDEV_PUBLIC_URL}/
     networks:
       - web
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.kanahub.entrypoints=http"
-      - "traefik.http.routers.kanahub.rule=Host(`${HUB_PUBLIC_URL}`)"
+      - "traefik.http.routers.kanahub.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
       - "traefik.http.middlewares.kanahub-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.kanahub.middlewares=kanahub-https-redirect"
       - "traefik.http.routers.kanahub-secure.entrypoints=https"
-      - "traefik.http.routers.kanahub-secure.rule=Host(`${HUB_PUBLIC_URL}`)"
+      - "traefik.http.routers.kanahub-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
       - "traefik.http.routers.kanahub-secure.tls=true"
-      - "traefik.http.routers.kanahub-secure.tls.domains[0].main=${HUB_PUBLIC_URL}"
+      - "traefik.http.routers.kanahub-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
       - "traefik.http.routers.kanahub-secure.tls.certresolver=http"
       - "traefik.http.routers.kanahub-secure.service=kanahub"
       - "traefik.http.services.kanahub.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
-  eggo-prod-db:
+  eggo-dev-db:
     image: bitnami/mariadb:11.4.2
     restart: always
     environment:
@@ -85,7 +85,7 @@ services:
       timeout: 20s
       retries: 10
 
-  eggo-prod-redis:
+  eggo-dev-redis:
     image: redis:7-alpine
     networks:
       - web
@@ -93,34 +93,33 @@ services:
 
   phpmyadmin-hub:
     depends_on:
-      - eggo-prod-db
+      - eggo-dev-db
     image: phpmyadmin/phpmyadmin
     restart: always
     environment:
-      PMA_HOST: eggo-prod-db
-      PMA_ABSOLUTE_URI: https://${HUB_PUBLIC_URL}/mysadmin/
+      PMA_HOST: eggo-dev-db
+      PMA_ABSOLUTE_URI: https://${HUBBEDEV_PUBLIC_URL}/mysadmin/
       UPLOAD_LIMIT: 1G
     networks:
       - web
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.phpmyadmin-hub.entrypoints=http"
-      - "traefik.http.routers.phpmyadmin-hub.rule=Host(`hub.kanaliiga.fi`) && PathPrefix(`/mysadmin/`)"
+      - "traefik.http.routers.phpmyadmin-hub.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
       - "traefik.http.middlewares.phpmyadmin-hub-stripprefix.stripprefix.prefixes=/mysadmin"
       - "traefik.http.middlewares.phpmyadmin-hub-auth.basicauth.users=kana:$$2y$$10$$UUV0c4qd6OUqhs.w8DoWr.OkNOLHh9RkVGsZBCE6b5cHLK1rj/WFm"
       - "traefik.http.middlewares.phpmyadmin-hub-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.phpmyadmin-hub.middlewares=phpmyadmin-hub-https-redirect"
       - "traefik.http.routers.phpmyadmin-hub-secure.entrypoints=https"
-      - "traefik.http.routers.phpmyadmin-hub-secure.rule=Host(`hub.kanaliiga.fi`) && PathPrefix(`/mysadmin/`)"
+      - "traefik.http.routers.phpmyadmin-hub-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
       - "traefik.http.routers.phpmyadmin-hub-secure.tls=true"
-      - "traefik.http.routers.phpmyadmin-hub-secure.tls.domains[0].main=hub.kanaliiga.fi"
+      - "traefik.http.routers.phpmyadmin-hub-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
       - "traefik.http.routers.phpmyadmin-hub-secure.tls.certresolver=http"
       - "traefik.http.routers.phpmyadmin-hub-secure.service=phpmyadmin-hub"
-      - "traefik.http.routers.phpmyadmin-hub-secure.middlew ares=phpmyadmin-hub-stripprefix,phpmyadmin-hub-auth"
+      - "traefik.http.routers.phpmyadmin-hub-secure.middlewares=phpmyadmin-hub-stripprefix,phpmyadmin-hub-auth"
       - "traefik.http.services.phpmyadmin-hub.loadbalancer.server.port=80"
       - "traefik.docker.network=web"
 
-
 networks:
   web:
-    external: true
+    external: true 
