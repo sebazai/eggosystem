@@ -37,6 +37,8 @@ variables:
   DB_USER: $MARIADB_USER
   DB_PASSWORD: $MARIADB_PASSWORD
   DB_NAME: $MARIADB_DATABASE
+  PORTAINER_URL: $PORTAINER_URL
+  PORTAINER_TOKEN: $PORTAINER_TOKEN
 
 .default:
   before_script:
@@ -355,6 +357,7 @@ deploy-dev:
   variables:
     <<: *deploy-variables
     DB_PASSWORD: dev-pass
+    ENV_ID: dev
   before_script:
     - apk add --no-cache gettext curl jq bash
   script:
