@@ -1,14 +1,4 @@
 image: node:22-slim
-##############
-# Use =>
-#   stage:
-#   image:
-#   services:
-#   needs:
-#   extends:
-#   before_script:
-#   script:
-#   after_script:
 
 variables:
   DOCKER_HOST: tcp://docker:2375
@@ -33,9 +23,32 @@ variables:
       - apps/frontend/node_modules/
       - apps/backend/node_modules/
 
+# Define on-demand environment variables
+.ondemand-variables: &ondemand-variables
+  ENV_ID: mr-${CI_MERGE_REQUEST_IID}
+  PORTAINER_URL: "https://portainer.kanaliiga.fi"
+  PORTAINER_TOKEN: ${PORTAINER_TOKEN}
+  HUBDEV_PUBLIC_URL: ${HUBDEV_PUBLIC_URL}
+  HUBBEDEV_PUBLIC_URL: ${HUBBEDEV_PUBLIC_URL}
+  MARIADB_ROOT_PASSWORD: dev-pass
+  MARIADB_USER: kanadbuser
+  MARIADB_PASSWORD: dev-pass
+  MARIADB_DATABASE: kanaliiga
+  STEAM_API_KEY: ${STEAM_API_KEY}
+  DB_ONDEMAND_ROOT_PASSWORD: dev-pass
+  DB_ONDEMAND_PASSWORD: dev-pass
+  PHPMYADMIN_AUTH: ${PHPMYADMIN_AUTH}
+
+# Define on-demand base configuration
+.on-demand-base:
+  variables:
+    <<: *ondemand-variables
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+
 .default:
   before_script:
-    - npm install -g pnpm
+    - npm install -g pnpm@10.3.0
   <<: *common-cache # Include the common cache configuration
 
 # Sadly gitlab changes do not support with anchors or references to make these DRY
@@ -135,6 +148,8 @@ stages:
   - build
   - build-docker
   # - post-build
+  - on-demand-env
+  - cleanup
   - deploy
 
 install:
@@ -202,7 +217,7 @@ test:backend:
     REDIS_HOST: eggo-redis
     REDIS_PORT: 6379
   before_script:
-    - npm install -g pnpm
+    - npm install -g pnpm@10.3.0
     - export $(grep -v '^#' .env.base | xargs)
     - pnpm --filter=backend migrate
     - pnpm --filter=backend seed
@@ -245,8 +260,21 @@ build-dockerfile:backend:
     DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
-  script: *docker-scan-script
-  artifacts: *docker-scan-artifacts
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
+    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
+    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
+    # Save the images to tar files for later use
+    - mkdir -p docker-images
+    - docker save $IMAGE_NAME:$CI_COMMIT_SHORT_SHA > docker-images/$IMAGE_NAME-dev.tar
+    - docker save $CI_REGISTRY/$IMAGE_NAME > docker-images/$IMAGE_NAME.tar
+  artifacts:
+    paths:
+      - gl-codeclimate-image-$IMAGE_NAME.json
+      - gl-codeclimate-fs-$IMAGE_NAME.json
+      - docker-images/
 
 # Frontend job
 build-dockerfile:frontend:
@@ -260,8 +288,20 @@ build-dockerfile:frontend:
     DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
-  script: *docker-scan-script
-  artifacts: *docker-scan-artifacts
+  script:
+    - echo "Building Docker image..."
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID} 
+    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
+    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
+    # Save the images to tar files for later use
+    - mkdir -p docker-images
+    - docker save $CI_REGISTRY/$IMAGE_NAME > docker-images/$IMAGE_NAME.tar
+  artifacts:
+    paths:
+      - gl-codeclimate-image-$IMAGE_NAME.json
+      - gl-codeclimate-fs-$IMAGE_NAME.json
+      - docker-images/
 
 push-dockerfile:backend:
   stage: build-docker
@@ -288,59 +328,6 @@ push-dockerfile:frontend:
   script:
     - docker build --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
-
-# Manual jobs for merge requests
-push-dockerfile:backend:dev:
-  stage: deploy
-  image: docker:latest
-  services:
-    - docker:dind
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: manual
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script:
-    - docker build -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev . -f apps/backend/Dockerfile
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev
-    - docker build -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:devseed . -f apps/backend/Dockerfile.dev
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:devseed
-
-push-dockerfile:frontend:dev:
-  stage: deploy
-  image: docker:latest
-  services:
-    - docker:dind
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: manual
-  variables:
-    NEXT_PUBLIC_API_URL: $HUBBEDEV_PUBLIC_URL
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-  script:
-    - docker build --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev . -f apps/frontend/Dockerfile
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
-
-# Combine artifacts job
-# Disabled for now due pipeline fixing
-# combine-codequality-reports:
-#   stage: post-build
-#   image: alpine:latest
-#   extends: [.mr-all-app]
-#   needs:
-#     - job: build-dockerfile:backend
-#       artifacts: true
-#     - job: build-dockerfile:frontend
-#       artifacts: true
-#   script:
-#     - apk add jq
-#     - jq -s 'add' gl-codeclimate-image-eggo-backend.json gl-codeclimate-fs-eggo-backend.json gl-codeclimate-image-eggo-frontend.json gl-codeclimate-fs-eggo-frontend.json > gl-codeclimate.json
-#   artifacts:
-#     paths:
-#       - gl-codeclimate.json
-#     reports:
-#       codequality: gl-codeclimate.json
 
 deploy:
   image: alpine:latest
@@ -379,58 +366,79 @@ deploy:
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
 
-deploy-dev:
-  image: alpine:latest
-  stage: deploy
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-      when: manual
+deploy-ondemand:
+  image: docker:latest
+  stage: on-demand-env
   needs:
-    - job: push-dockerfile:frontend:dev
-    - job: push-dockerfile:backend:dev
+    - job: build-dockerfile:backend
+      artifacts: true
+    - job: build-dockerfile:frontend
+      artifacts: true
+  allow_failure: true # Make on-demand jobs optional for merge requests
+  services:
+    - docker:dind
+  variables:
+    <<: *ondemand-variables
+    NEXT_PUBLIC_API_URL: $HUBBEDEV_PUBLIC_URL/${ENV_ID}
+    PHPMYADMIN_AUTH: ${PHPMYADMIN_AUTH_BASE64}
+  before_script:
+    - apk add --no-cache gettext curl jq bash
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker load -i docker-images/eggo-backend.tar
+    - docker load -i docker-images/eggo-backend-dev.tar
+    - docker load -i docker-images/eggo-frontend.tar
+    - docker tag $CI_REGISTRY/eggo-backend $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:${ENV_ID}
+    - docker tag eggo-backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
+    - docker tag $CI_REGISTRY/eggo-frontend $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${ENV_ID}
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:${ENV_ID}
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${ENV_ID}
+  script:
+    - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
+    - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
+    - envsubst < docker-compose.ondemand.yml > docker-compose.yml
+    - echo "Deploying stack eggosystem-${ENV_ID} to Portainer at ${PORTAINER_URL}"
+    - bash "$(pwd)/scripts/deploy-to-portainer.sh" --verbose docker-compose.yml
+    - |
+      echo ""
+      echo "=============================================="
+      echo "🚀 DEPLOYMENT SUCCESSFUL!"
+      echo "=============================================="
+      echo "📱 Frontend: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}"
+      echo "🔌 API: https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}"
+      echo "🗄️ phpMyAdmin: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}/phpmyadmin/"
+      echo "🐳 Portainer: ${PORTAINER_URL}/#/stacks"
+      echo "=============================================="
+      echo "Environment will be available for 2 hours"
+      echo "=============================================="
   environment:
-    name: development
-    url: https://${HUB_DEV_PUBLIC_URL}
-  variables:
-    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
-    PROD_SERVER_IP: $PROD_SERVER_IP
-    STEAM_API_KEY: $STEAM_API_KEY
-  before_script:
-    - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-  script:
-    - envsubst < docker-compose.dev.yml > docker-compose.dev.subst.yml
-    - rsync -v ./docker-compose.dev.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-dev/docker-compose.yml
-    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml pull"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml up -d"
-
-seed-dev:
-  image: alpine:latest
-  stage: deploy
+    name: review/mr-$CI_MERGE_REQUEST_IID
+    url: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
+    on_stop: stop-ondemand
+    auto_stop_in: 2 hours
   rules:
     - if: $CI_MERGE_REQUEST_ID
       when: manual
-  needs:
-    - job: push-dockerfile:backend:dev
-  variables:
-    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
-    PROD_SERVER_IP: $PROD_SERVER_IP
-  before_script:
-    - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
+  tags:
+    - shell
+
+stop-ondemand:
+  extends: [.on-demand-base]
+  stage: cleanup
+  image: docker:latest
+  allow_failure: true # Make on-demand jobs optional for merge requests
+  tags:
+    - shell
   script:
-    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml pull"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml --profile migrate up -d"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml --profile seed up -d"
+    - apk add --no-cache gettext curl jq bash
+    - echo "Cleaning up stack eggosystem-${ENV_ID} from Portainer at ${PORTAINER_URL}"
+    - bash "$(pwd)/scripts/cleanup-portainer-stack.sh"
+    # TODO: Uncomment this when we have a way to cleanup the registry images and GitLab environment
+    #- echo "Cleaning up registry images and GitLab environment"
+    #- bash "$(pwd)/scripts/cleanup-registry-and-environment.sh"
+  environment:
+    name: review/mr-$CI_MERGE_REQUEST_IID
+    action: stop
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+      when: manual

@@ -44,14 +44,14 @@
       "cache": false
     },
     "migrate": {
-      "env": ["NODE_ENV"]
+      "env": ["NODE_ENV","DB_HOST","DB_USER","DB_PASSWORD","DB_NAME", "DB_ROOT_PASSWORD"]
     },
     "migrate:rollback": {},
     "migrate:down": {},
     "migrate:up": {},
     "migrate:make": {},
     "seed": {
-      "env": ["NODE_ENV"]
+      "env": ["NODE_ENV","DB_HOST","DB_USER","DB_PASSWORD","DB_NAME", "DB_ROOT_PASSWORD"]
     }
   }
 }
