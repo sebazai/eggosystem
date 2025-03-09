@@ -8,9 +8,25 @@ export function cn(...inputs: ClassValue[]) {
 export const fetcher = async <T>(
   ...args: [RequestInfo, RequestInit?]
 ): Promise<T> => {
-  const res = await fetch(...args);
+  // eslint-disable-next-line prefer-const
+  let [url, options] = args;
+
+  // Prepend NEXT_PUBLIC_BASE_PATH if defined
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  if (typeof url === "string" && basePath) {
+    url = `${basePath}${url}`;
+  }
+
+  const res = await fetch(url, options);
   if (!res.ok) {
     throw new Error("Network response was not ok");
   }
   return res.json();
+};
+
+export const createNextImageUrl = (url: string) => {
+  if (process.env.NEXT_PUBLIC_BASE_PATH) {
+    return `${process.env.NEXT_PUBLIC_BASE_PATH}${url}`;
+  }
+  return url;
 };

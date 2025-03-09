@@ -67,10 +67,9 @@ export const refreshToken = async (req: Request, res: Response) => {
     const storedToken = await redisClient.get(decoded.steamId);
 
     if (!storedToken || storedToken !== refreshToken) {
-      // // Clear cookies?
-      // res.clearCookie("access_token");
-      // res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
-      // res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
+      res.clearCookie("access_token");
+      res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
+      res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
       res.status(403).json({ message: "Invalid refresh token" });
       return;
     }
@@ -101,10 +100,9 @@ export const refreshToken = async (req: Request, res: Response) => {
     res.json({ message: "Token refreshed" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
-    // Should we clear cookies?
-    // res.clearCookie("access_token");
-    // res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
-    // res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
+    res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
     res.status(403).json({ message: "Invalid refresh token" });
   }
 };

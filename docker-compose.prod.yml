@@ -41,6 +41,7 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}/
       NEXT_PUBLIC_API_URL: https://${HUBBE_PUBLIC_URL}/
+      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBBE_PUBLIC_URL}/
     networks:
       - web
     labels:
@@ -119,7 +120,6 @@ services:
       - "traefik.http.routers.phpmyadmin-hub-secure.middlew ares=phpmyadmin-hub-stripprefix,phpmyadmin-hub-auth"
       - "traefik.http.services.phpmyadmin-hub.loadbalancer.server.port=80"
       - "traefik.docker.network=web"
-
 
 networks:
   web:

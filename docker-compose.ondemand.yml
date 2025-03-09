@@ -1,6 +1,7 @@
 services:
   backend-${ENV_ID}:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:${ENV_ID}
+    pull_policy: always
     depends_on:
       seed-${ENV_ID}:
         condition: service_completed_successfully
@@ -15,6 +16,7 @@ services:
       DB_PORT: 3306
       BASE_PATH: "/${ENV_ID}"
       FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
+      BACKEND_BASE_URL: https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}
       REDIS_HOST: eggo-redis-${ENV_ID}
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
@@ -40,11 +42,13 @@ services:
 
   frontend-${ENV_ID}:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${ENV_ID}
+    pull_policy: always
     depends_on:
       - backend-${ENV_ID}
     environment:
       NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_API_URL: https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}
+      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_BASE_PATH: /${ENV_ID}
     networks:
       web:
@@ -54,11 +58,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.kanahub-${ENV_ID}.entrypoints=http"
       - "traefik.http.routers.kanahub-${ENV_ID}.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}`)"
-      - "traefik.http.middlewares.kanahub-${ENV_ID}-strip.stripprefix.prefixes=/${ENV_ID}"
-      - "traefik.http.routers.kanahub-${ENV_ID}.middlewares=kanahub-${ENV_ID}-strip"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.entrypoints=https"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}`)"
-      - "traefik.http.routers.kanahub-${ENV_ID}-secure.middlewares=kanahub-${ENV_ID}-strip"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls=true"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls.certresolver=http"
@@ -103,6 +104,7 @@ services:
 
   migrations-${ENV_ID}:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
+    pull_policy: always
     depends_on:
       eggo-ondemand-db-${ENV_ID}:
         condition: service_healthy
@@ -120,6 +122,7 @@ services:
 
   seed-${ENV_ID}:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
+    pull_policy: always
     depends_on:
       migrations-${ENV_ID}:
         condition: service_completed_successfully

@@ -17,10 +17,13 @@ export const apiFetch = async <T>(url: string): Promise<T> => {
     isRefreshing = true;
 
     try {
-      const response = await fetch(`${envConfig.API_URL}/api/v1/auth/refresh`, {
-        method: "POST",
-        credentials: "include"
-      });
+      const response = await fetch(
+        `${envConfig.CLIENT_API_URL}/api/v1/auth/refresh`,
+        {
+          method: "POST",
+          credentials: "include"
+        }
+      );
 
       if (response.ok) {
         onTokenRefreshed(); // Notify all waiting requests
@@ -43,7 +46,7 @@ export const apiFetch = async <T>(url: string): Promise<T> => {
     }
   };
   const fetchWithRetry = async (): Promise<T> => {
-    const response = await fetch(`${envConfig.API_URL}/api/v1${url}`, {
+    const response = await fetch(`${envConfig.CLIENT_API_URL}/api/v1${url}`, {
       credentials: "include"
     });
 

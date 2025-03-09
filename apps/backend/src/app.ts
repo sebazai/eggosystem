@@ -45,15 +45,22 @@ const app = express();
 
 app.use(cookieParser());
 
-const frontendUrl = process.env.FRONTEND_URL;
-const allowList = [frontendUrl];
+const frontendUrlEnv = process.env.FRONTEND_URL;
+
+if (!frontendUrlEnv) {
+  throw new Error("FRONTEND_URL is not defined");
+}
+
+const frontendUrl = new URL(frontendUrlEnv);
+const frontendUrlOrigin = `${frontendUrl.protocol}//${frontendUrl.host}`;
+const allowList = [frontendUrlOrigin];
 
 const corsOptions = {
   origin: (
     origin: string | undefined,
     callback: (err: Error | null, allow?: boolean) => void
   ) => {
-    if (allowList.includes(origin) || !origin) {
+    if (!origin || allowList.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
