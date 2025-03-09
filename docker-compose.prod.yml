@@ -23,7 +23,7 @@ services:
       - "traefik.http.routers.hubbe.entrypoints=http"
       - "traefik.http.routers.hubbe.rule=Host(`${HUBBE_PUBLIC_URL}`)"
       - "traefik.http.middlewares.hubbe-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.hubbe.middlewares=kanahub-https-redirect"
+      - "traefik.http.routers.hubbe.middlewares=hubbe-https-redirect"
       - "traefik.http.routers.hubbe-secure.entrypoints=https"
       - "traefik.http.routers.hubbe-secure.rule=Host(`${HUBBE_PUBLIC_URL}`)"
       - "traefik.http.routers.hubbe-secure.tls=true"
