@@ -116,10 +116,9 @@ services:
       - "traefik.http.routers.phpmyadmin-hub-secure.tls.domains[0].main=hub.kanaliiga.fi"
       - "traefik.http.routers.phpmyadmin-hub-secure.tls.certresolver=http"
       - "traefik.http.routers.phpmyadmin-hub-secure.service=phpmyadmin-hub"
-      - "traefik.http.routers.phpmyadmin-hub-secure.middlew ares=phpmyadmin-hub-stripprefix,phpmyadmin-hub-auth"
+      - "traefik.http.routers.phpmyadmin-hub-secure.middlewares=phpmyadmin-hub-stripprefix,phpmyadmin-hub-auth"
       - "traefik.http.services.phpmyadmin-hub.loadbalancer.server.port=80"
       - "traefik.docker.network=web"
-
 
 networks:
   web:
