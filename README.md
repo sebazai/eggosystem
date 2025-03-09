@@ -1,6 +1,6 @@
 # Eggosystem
 
-This is the Egg o system for Kanaliiga hub
+This is the Egg-o-system for Kanaliiga hubstat
 
 ## Development environment
 

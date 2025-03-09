@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import UserMenuDropdown from "./user-menu-dropdown";
 import { MobileUserMenu } from "./mobile/user-menu";
+import { createNextImageUrl } from "@/lib/utils";
 
 interface MenuItemLink {
   title: string;
@@ -56,7 +57,7 @@ interface NavbarProps {
 const defaultProps: NavbarProps = {
   logo: {
     url: "https://kanaliiga.fi/",
-    src: "/images/kanaliiga-logo-1800px.png",
+    src: createNextImageUrl("/images/kanaliiga-logo-1800px.png"),
     alt: "Kanaliiga logo"
   },
   menu: [

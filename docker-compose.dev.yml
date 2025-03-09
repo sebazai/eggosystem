@@ -39,8 +39,9 @@ services:
       - dev-backend
     environment:
       NODE_ENV: pubdev
-      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/
-      NEXT_PUBLIC_API_URL: https://${HUBBEDEV_PUBLIC_URL}/
+      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}
+      NEXT_PUBLIC_API_URL: https://${HUBBEDEV_PUBLIC_URL}
+      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBBEDEV_PUBLIC_URL}
     networks:
       - web
     labels:

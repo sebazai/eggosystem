@@ -1,4 +1,6 @@
 export const envConfig = {
   API_URL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+  CLIENT_API_URL:
+    process.env.NEXT_PUBLIC_CLIENT_API_URL || "http://localhost:3001",
   ACTIVE_SEASON: 14
 };
