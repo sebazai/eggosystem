@@ -1,6 +1,7 @@
 services:
   dev-backend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    pull_policy: always
     depends_on:
       eggo-dev-db:
         condition: service_healthy
@@ -37,6 +38,7 @@ services:
 
   dev-frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
+    pull_policy: always
     depends_on:
       - dev-backend
     environment:
