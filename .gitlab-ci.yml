@@ -249,6 +249,7 @@ build-dockerfile:backend:
       <<: *all-app-changes
     - if: $CI_PIPELINE_SOURCE == "web"
       when: manual
+    - when: manual
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-backend
@@ -282,6 +283,7 @@ build-dockerfile:frontend:
       <<: *all-app-changes
     - if: $CI_PIPELINE_SOURCE == "web"
       when: manual
+    - when: manual
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-frontend
