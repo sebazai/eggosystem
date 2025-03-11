@@ -1,31 +1,32 @@
-# Stage 1: Build Stage
+# Base image
 FROM node:22-slim AS base
-
-FROM base AS builder
-
-# Install pnpm globally
+RUN apt update && apt upgrade -y
+WORKDIR /usr/src/app
+# Install pnpm globally - do this first as it changes least often
 RUN npm install -g pnpm
 
-# Create and change to the app directory
-WORKDIR /usr/src/app
-
-# Copy monorepo configurations
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json ./
+# Copy dependency files first - these change less frequently
+COPY pnpm-workspace.yaml turbo.json ./
+COPY pnpm-lock.yaml ./
+COPY package.json ./
 COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/*/package.json ./packages/
+
+# Builder stage
+FROM base AS builder
+# Install dependencies first
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+# Copy source code - these change more frequently
 COPY packages/ ./packages/
-
-# Install dependencies
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --ignore-scripts --frozen-lockfile
-
-# Copy frontend source code
 COPY apps/frontend/ ./apps/frontend/
 
 # Build the frontend for production
 ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ARG NEXT_PUBLIC_CLIENT_API_URL
-ENV NEXT_PUBLIC_CLIENT_API_URL=${NEXT_PUBLIC_CLIENT_API_URL}
 ARG NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_CLIENT_API_URL=${NEXT_PUBLIC_CLIENT_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 RUN pnpm build --filter=frontend
 
@@ -39,13 +40,10 @@ ENV NODE_ENV=production
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_CLIENT_API_URL=${NEXT_PUBLIC_CLIENT_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
-RUN apt update && apt upgrade -y
-# Create and change to the app directory
-WORKDIR /usr/src/app
 
 # Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Copy only the built Next.js standalone output
 COPY --from=builder --chown=nextjs:nodejs /usr/src/app/apps/frontend/.next/standalone ./
@@ -54,9 +52,7 @@ COPY --from=builder --chown=nextjs:nodejs /usr/src/app/apps/frontend/public ./ap
 
 USER nextjs
 
-# Expose the port
 EXPOSE 3000
 ENV PORT=3000
 
-# Start Next.js server
 CMD ["node", "./apps/frontend/server.js"]
