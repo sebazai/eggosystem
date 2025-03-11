@@ -1,15 +1,53 @@
 import { UserPayload } from "@eggosystem/types";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import redisClient from "../utils/redisClient";
+import { redisClient } from "../utils/redisClient";
 import { getPath } from "../utils/path";
+import { v4 as uuid } from "uuid";
 
-const expireIn7Days = 7 * 24 * 60 * 60;
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
-const JWT_REFRESH_SECRET =
-  process.env.JWT_REFRESH_SECRET || "your_refresh_secret";
-const JWT_EXPIRES_IN = "20m";
-const JWT_REFRESH_EXPIRES_IN = expireIn7Days;
+const setJWTValues = () => {
+  const expireIn7Days = 7 * 24 * 60 * 60;
+  const expireIn20m = 20 * 60;
+  const JWT_EXPIRES_IN_AS_NUM = isNaN(Number(process.env.JWT_EXPIRES_IN))
+    ? expireIn20m
+    : Number(process.env.JWT_EXPIRES_IN);
+
+  const JWT_REFRESH_EXPIRES_IN_AS_NUM = isNaN(
+    Number(process.env.JWT_REFRESH_EXPIRES_IN)
+  )
+    ? expireIn7Days
+    : Number(process.env.JWT_REFRESH_EXPIRES_IN);
+
+  if (process.env.NODE_ENV === "production") {
+    const JWT_SECRET = process.env.JWT_SECRET!;
+    const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
+    const JWT_EXPIRES_IN = JWT_EXPIRES_IN_AS_NUM;
+    const JWT_REFRESH_EXPIRES_IN = JWT_REFRESH_EXPIRES_IN_AS_NUM;
+    return {
+      JWT_SECRET,
+      JWT_REFRESH_SECRET,
+      JWT_EXPIRES_IN,
+      JWT_REFRESH_EXPIRES_IN
+    };
+  }
+  const JWT_SECRET = process.env.JWT_SECRET ?? "your_jwt_secret";
+  const JWT_REFRESH_SECRET =
+    process.env.JWT_REFRESH_SECRET ?? "your_refresh_secret";
+
+  return {
+    JWT_SECRET,
+    JWT_REFRESH_SECRET,
+    JWT_EXPIRES_IN: expireIn20m,
+    JWT_REFRESH_EXPIRES_IN: expireIn7Days
+  };
+};
+
+const {
+  JWT_SECRET,
+  JWT_REFRESH_SECRET,
+  JWT_EXPIRES_IN,
+  JWT_REFRESH_EXPIRES_IN
+} = setJWTValues();
 
 const setCookies = (
   res: Response,
@@ -38,17 +76,22 @@ const setCookies = (
 
 const clearCookies = (res: Response) => {
   res.clearCookie("access_token");
-  res.clearCookie("refresh_token", { path: getPath("/api/v1/auth/refresh") });
+  res.clearCookie("refresh_token", {
+    path: getPath("/api/v1/auth/refresh")
+  });
   res.clearCookie("refresh_token", {
     path: getPath("/api/v1/auth/logout")
   });
 };
 
-export const generateTokens = (user: jwt.JwtPayload) => {
+export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { exp, iat, ...rest } = user;
-  const accessToken = jwt.sign(rest, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-  const refreshToken = jwt.sign(rest, JWT_REFRESH_SECRET, {
+  const withJwtId = jti ? { ...rest, jti } : rest;
+  const accessToken = jwt.sign(withJwtId, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN
+  });
+  const refreshToken = jwt.sign(withJwtId, JWT_REFRESH_SECRET, {
     expiresIn: JWT_REFRESH_EXPIRES_IN
   });
   return { accessToken, refreshToken };
@@ -61,9 +104,10 @@ export const login = async (req: Request, res: Response) => {
   }
 
   const user = req.user as UserPayload;
-  const { accessToken, refreshToken } = generateTokens(user);
+  const jti = uuid();
+  const { accessToken, refreshToken } = generateTokens(user, jti);
 
-  await redisClient.set(user.steamId, refreshToken, { EX: expireIn7Days });
+  await redisClient.set(jti, refreshToken, "EX", JWT_REFRESH_EXPIRES_IN);
 
   setCookies(res, accessToken, refreshToken);
 
@@ -81,7 +125,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const decoded = <jwt.JwtPayload>(
       jwt.verify(refreshToken, JWT_REFRESH_SECRET)
     );
-    const storedToken = await redisClient.get(decoded.steamId);
+    const storedToken = await redisClient.get(decoded.jti!);
 
     if (!storedToken || storedToken !== refreshToken) {
       clearCookies(res);
@@ -91,9 +135,13 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     const { accessToken, refreshToken: newRefreshToken } =
       generateTokens(decoded);
-    await redisClient.set(decoded.steamId, newRefreshToken, {
-      EX: expireIn7Days
-    });
+
+    await redisClient.set(
+      decoded.jti!,
+      newRefreshToken,
+      "EX",
+      JWT_REFRESH_EXPIRES_IN
+    );
 
     setCookies(res, accessToken, newRefreshToken);
     res.json({ message: "Token refreshed" });
@@ -111,7 +159,7 @@ export const logout = async (req: Request, res: Response) => {
       const decoded = <jwt.JwtPayload>(
         jwt.verify(refreshToken, JWT_REFRESH_SECRET)
       );
-      await redisClient.del(decoded.steamId);
+      await redisClient.del(decoded.jti!);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       // NO-op

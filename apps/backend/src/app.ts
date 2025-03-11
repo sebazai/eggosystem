@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import dotenv from "dotenv";
 
+if (!process.env.NODE_ENV) {
+  throw new Error("NODE_ENV is not defined");
+}
+
 // Update with your config settings.
-if (process.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
   dotenv.config({ path: ".env" });
   dotenv.config({ path: ".env.development" });
 }
 
-if (process.env.NODE_ENV !== "development") {
+if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
   if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
     throw new Error("No JWT_SECRET or JWT_REFRESH_SECRET found in env");
   }
