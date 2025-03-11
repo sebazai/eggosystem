@@ -276,14 +276,14 @@ build-dockerfile:backend:
     - echo "Building Docker image..."
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID || true
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest || true
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest  -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t eggo-backend:migrations. -f $DOCKERFILE_DEV
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest  -t eggo-backend . -f $DOCKERFILE
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
     # Save the images to tar files for later use
     - mkdir -p docker-images
-    - docker save $IMAGE_NAME:$CI_COMMIT_SHORT_SHA > docker-images/$IMAGE_NAME-dev.tar
-    - docker save $CI_REGISTRY/$IMAGE_NAME > docker-images/$IMAGE_NAME.tar
+    - docker save eggo-backend:migrations > docker-images/$IMAGE_NAME-dev.tar
+    - docker save eggo-backend > docker-images/$IMAGE_NAME.tar
   artifacts:
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
@@ -309,14 +309,14 @@ build-dockerfile:frontend:
     - echo "Building Docker image..."
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest || true
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t eggo-frontend. -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
     # Run Trivy scans in parallel using background processes
     - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME &
     - ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
     - wait
     # Save the images to tar files for later use
     - mkdir -p docker-images
-    - docker save $CI_REGISTRY/$IMAGE_NAME > docker-images/$IMAGE_NAME.tar
+    - docker save eggo-frontend > docker-images/$IMAGE_NAME.tar
   artifacts:
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
@@ -331,10 +331,11 @@ push-dockerfile:backend:
   extends: [.main-backend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend || true
   script:
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend . -f apps/backend/Dockerfile
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t eggo-backend . -f apps/backend/Dockerfile
+    - docker tag eggo-backend $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest
 
 push-dockerfile:frontend:
   stage: build-docker
@@ -344,12 +345,14 @@ push-dockerfile:frontend:
   extends: [.main-frontend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest || true
   script:
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev . -f apps/frontend/Dockerfile
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL -t eggo-frontend:dev . -f apps/frontend/Dockerfile
+    - docker tag eggo-frontend:dev $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUB_PUBLIC_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t eggo-frontend . -f apps/frontend/Dockerfile
+    - docker tag eggo-frontend $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest
+    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest
 
 deploy-prod:
   image: alpine:latest
