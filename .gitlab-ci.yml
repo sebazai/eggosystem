@@ -264,6 +264,7 @@ build:backend:
 # Backend job
 build-dockerfile:backend:
   <<: *common-docker-build
+  dependencies: []
   variables:
     IMAGE_NAME: eggo-backend
     DOCKERFILE_DEV: apps/backend/Dockerfile.dev
@@ -276,7 +277,7 @@ build-dockerfile:backend:
     - echo "Building Docker image..."
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID || true
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest || true
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t eggo-backend:migrations. -f $DOCKERFILE_DEV
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t eggo-backend:migrations . -f $DOCKERFILE_DEV
     - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest  -t eggo-backend . -f $DOCKERFILE
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
@@ -293,6 +294,7 @@ build-dockerfile:backend:
 # Frontend job
 build-dockerfile:frontend:
   <<: *common-docker-build
+  dependencies: []
   variables:
     IMAGE_NAME: eggo-frontend
     DOCKERFILE_DEV: apps/frontend/Dockerfile.dev
@@ -309,7 +311,7 @@ build-dockerfile:frontend:
     - echo "Building Docker image..."
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest || true
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t eggo-frontend. -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t eggo-frontend . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
     # Run Trivy scans in parallel using background processes
     - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME &
     - ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
