@@ -37,7 +37,7 @@ services:
       - "traefik.docker.network=web"
 
   dev-frontend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
     pull_policy: always
     depends_on:
       - dev-backend
