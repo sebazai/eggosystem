@@ -274,17 +274,17 @@ build-dockerfile:backend:
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
   script:
-    - echo "Building Docker image..."
-    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID || true
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:latest || true
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest || true
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t eggo-backend:migrations . -f $DOCKERFILE_DEV
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest  -t eggo-backend . -f $DOCKERFILE
-    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
+    - docker tag $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest eggo-backend:cache
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:latest --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t eggo-backend:migrations . -f $DOCKERFILE_DEV
+    - docker build --cache-from eggo-backend:cache -t eggo-backend:latest . -f $DOCKERFILE
+    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
     # Save the images to tar files for later use
     - mkdir -p docker-images
     - docker save eggo-backend:migrations > docker-images/$IMAGE_NAME-dev.tar
-    - docker save eggo-backend > docker-images/$IMAGE_NAME.tar
+    - docker save eggo-backend:latest > docker-images/$IMAGE_NAME.tar
   artifacts:
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
@@ -310,10 +310,11 @@ build-dockerfile:frontend:
   script:
     - echo "Building Docker image..."
     - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest || true
+    - docker tag $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest eggo-frontend:cache
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t eggo-frontend . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+    - docker build --cache-from eggo-frontend:cache -t eggo-frontend . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
     # Run Trivy scans in parallel using background processes
-    - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME &
+    - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
     - ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
     - wait
     # Save the images to tar files for later use
