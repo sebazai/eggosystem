@@ -1,6 +1,9 @@
 # Dependency directories
 **/node_modules
 
+# Devcontainer initializations
+.devcontainer/init/
+
 # Output of build tools
 dist/
 build/
