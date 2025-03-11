@@ -111,11 +111,19 @@ variables:
   <<: *common-cache # Merge the common cache configuration
   cache:
     policy: pull # Add the pull policy
+  tags:
+    - cache
 
 # Define common configurations using anchors
 .common-docker-build: &common-docker-build
   stage: build-docker
   image: docker:stable
+  needs: []
+  rules:
+    - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
+      <<: *all-app-changes
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
   services:
     - docker:dind
   cache:
@@ -152,6 +160,8 @@ stages:
 
 install:
   stage: install
+  tags:
+    - cache
   extends: [.default, .mr-all-app]
   script:
     - pnpm install
@@ -243,14 +253,6 @@ build:backend:
 
 # Backend job
 build-dockerfile:backend:
-  extends: [.pull-only-cache]
-  needs: []
-  rules:
-    - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
-      <<: *all-app-changes
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: manual
-    - when: manual
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-backend
@@ -278,14 +280,6 @@ build-dockerfile:backend:
 
 # Frontend job
 build-dockerfile:frontend:
-  extends: [.pull-only-cache]
-  needs: []
-  rules:
-    - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
-      <<: *all-app-changes
-    - if: $CI_PIPELINE_SOURCE == "web"
-      when: manual
-    - when: manual
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-frontend
@@ -448,9 +442,6 @@ deploy-ondemand:
       <<: *all-app-changes
       when: manual
 
-  tags:
-    - shell
-
 stop-ondemand:
   stage: cleanup
   image: docker:latest
@@ -459,8 +450,6 @@ stop-ondemand:
     PORTAINER_URL: $PORTAINER_URL
     PORTAINER_TOKEN: $PORTAINER_TOKEN
     ENV_ID: mr-${CI_MERGE_REQUEST_IID}
-  tags:
-    - shell
   script:
     - apk add --no-cache gettext curl jq bash
     - echo "Cleaning up stack eggosystem-${ENV_ID} from Portainer at ${PORTAINER_URL}"
