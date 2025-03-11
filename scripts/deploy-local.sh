@@ -29,7 +29,6 @@ fi
 export ENV_ID="mr-local"
 export PORTAINER_URL="https://portainer.kanaliiga.fi"
 export HUBDEV_PUBLIC_URL="hubdev.kanaliiga.fi"
-export HUBBEDEV_PUBLIC_URL="hubbedev.kanaliiga.fi"
 export DB_ONDEMAND_ROOT_PASSWORD="dev-pass"
 export DB_ONDEMAND_PASSWORD="dev-pass"
 export STEAM_API_KEY="your_steam_api_key"  # Replace with actual key if needed
@@ -51,7 +50,7 @@ services:
     depends_on:
       - eggo-redis-${ENV_ID}
     environment:
-      NODE_ENV: ondemand
+      NODE_ENV: production
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
       DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
@@ -69,14 +68,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe-${ENV_ID}.entrypoints=http"
-      - "traefik.http.routers.hubbe-${ENV_ID}.rule=Host(\`${HUBBEDEV_PUBLIC_URL}\`) && PathPrefix(\`/${ENV_ID}\`)"
+      - "traefik.http.routers.hubbe-${ENV_ID}.rule=Host(\`${HUBDEV_PUBLIC_URL}\`) && PathPrefix(\`/${ENV_ID}\`)"
       - "traefik.http.middlewares.hubbe-${ENV_ID}-strip.stripprefix.prefixes=/${ENV_ID}"
       - "traefik.http.routers.hubbe-${ENV_ID}.middlewares=hubbe-${ENV_ID}-strip"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.entrypoints=https"
-      - "traefik.http.routers.hubbe-${ENV_ID}-secure.rule=Host(\`${HUBBEDEV_PUBLIC_URL}\`) && PathPrefix(\`/${ENV_ID}\`)"
+      - "traefik.http.routers.hubbe-${ENV_ID}-secure.rule=Host(\`${HUBDEV_PUBLIC_URL}\`) && PathPrefix(\`/${ENV_ID}\`)"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.middlewares=hubbe-${ENV_ID}-strip"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls=true"
-      - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls.domains[0].main=${HUBBEDEV_PUBLIC_URL}"
+      - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls.certresolver=http"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.service=hubbe-${ENV_ID}"
       - "traefik.http.services.hubbe-${ENV_ID}.loadbalancer.server.port=3001"
@@ -88,8 +87,8 @@ services:
       - backend-${ENV_ID}
     environment:
       NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
-      NEXT_PUBLIC_API_URL: https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}
-      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBBEDEV_PUBLIC_URL}/${ENV_ID}
+      NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
+      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_BASE_PATH: /${ENV_ID}
     networks:
       web:
@@ -141,7 +140,7 @@ services:
     depends_on:
       - eggo-ondemand-db-${ENV_ID}
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
       DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
@@ -157,7 +156,7 @@ services:
     depends_on:
       - migrations-${ENV_ID}
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
       DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"

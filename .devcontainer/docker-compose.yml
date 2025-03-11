@@ -4,7 +4,7 @@ services:
     container_name: devcontainer
     volumes:
       - ..:/workspace
-    env_file: "../.env.base"
+    env_file: "../.env.development"
     command: sleep infinity
     networks:
       - eggo-dev

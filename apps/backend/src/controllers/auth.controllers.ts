@@ -2,6 +2,7 @@ import { UserPayload } from "@eggosystem/types";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import redisClient from "../utils/redisClient";
+import { getPath } from "../utils/path";
 
 const expireIn7Days = 7 * 24 * 60 * 60;
 const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
@@ -9,6 +10,39 @@ const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your_refresh_secret";
 const JWT_EXPIRES_IN = "20m";
 const JWT_REFRESH_EXPIRES_IN = expireIn7Days;
+
+const setCookies = (
+  res: Response,
+  accessToken: string,
+  refreshToken: string
+) => {
+  res.cookie("access_token", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict"
+  });
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: getPath("/api/v1/auth/refresh")
+  });
+
+  res.cookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: getPath("/api/v1/auth/logout")
+  });
+};
+
+const clearCookies = (res: Response) => {
+  res.clearCookie("access_token");
+  res.clearCookie("refresh_token", { path: getPath("/api/v1/auth/refresh") });
+  res.clearCookie("refresh_token", {
+    path: getPath("/api/v1/auth/logout")
+  });
+};
 
 export const generateTokens = (user: jwt.JwtPayload) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -31,24 +65,7 @@ export const login = async (req: Request, res: Response) => {
 
   await redisClient.set(user.steamId, refreshToken, { EX: expireIn7Days });
 
-  res.cookie("access_token", accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict"
-  });
-  res.cookie("refresh_token", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/api/v1/auth/refresh"
-  });
-
-  res.cookie("refresh_token", refreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/api/v1/auth/logout"
-  });
+  setCookies(res, accessToken, refreshToken);
 
   res.redirect(`${process.env.FRONTEND_URL}/login-success`);
 };
@@ -67,9 +84,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const storedToken = await redisClient.get(decoded.steamId);
 
     if (!storedToken || storedToken !== refreshToken) {
-      res.clearCookie("access_token");
-      res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
-      res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
+      clearCookies(res);
       res.status(403).json({ message: "Invalid refresh token" });
       return;
     }
@@ -80,29 +95,11 @@ export const refreshToken = async (req: Request, res: Response) => {
       EX: expireIn7Days
     });
 
-    res.cookie("access_token", accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict"
-    });
-    res.cookie("refresh_token", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/api/v1/auth/refresh"
-    });
-    res.cookie("refresh_token", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/api/v1/auth/logout"
-    });
+    setCookies(res, accessToken, newRefreshToken);
     res.json({ message: "Token refreshed" });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
-    res.clearCookie("access_token");
-    res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
-    res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
+    clearCookies(res);
     res.status(403).json({ message: "Invalid refresh token" });
   }
 };
@@ -120,8 +117,6 @@ export const logout = async (req: Request, res: Response) => {
       // NO-op
     }
   }
-  res.clearCookie("access_token");
-  res.clearCookie("refresh_token", { path: "/api/v1/auth/refresh" });
-  res.clearCookie("refresh_token", { path: "/api/v1/auth/logout" });
+  clearCookies(res);
   res.json({ message: "Logged out" });
 };

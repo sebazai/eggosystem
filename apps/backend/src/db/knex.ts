@@ -5,12 +5,12 @@ import { dbEnvConfig } from "../configs/db-env";
 dotenv.config();
 
 const db = knex({
-  client: "mysql2", // or "mysql"
+  client: "mysql2",
   connection: {
     ...dbEnvConfig
   },
-  pool: { min: 0, max: 10 }, // Optional connection pool settings
-  debug: process.env.NODE_ENV === "development" // Enable query debugging in development
+  pool: { min: 0, max: 10 },
+  debug: process.env.NODE_ENV === "development"
 });
 
 export { db as knex };

@@ -4,7 +4,7 @@ x-phpmyadmin: &phpmyadmin
     eggo-devdb:
       condition: service_healthy
   restart: always
-  env_file: .env.base
+  env_file: .env.development
 
 services:
   backend:
@@ -21,7 +21,7 @@ services:
         condition: service_completed_successfully
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
-    env_file: .env.base
+    env_file: .env.development
     command: "pnpm --filter=backend dev"
 
   seed:
@@ -34,7 +34,7 @@ services:
     depends_on:
       migrations:
         condition: service_completed_successfully
-    env_file: .env.base
+    env_file: .env.development
     command: "pnpm --filter=backend seed"
 
   frontend:
@@ -102,7 +102,7 @@ services:
     depends_on:
       eggo-devdb:
         condition: service_healthy
-    env_file: .env.base
+    env_file: .env.development
     ports:
       - 8485:8485
     volumes:
@@ -123,7 +123,7 @@ services:
         condition: service_completed_successfully
       seed:
         condition: service_completed_successfully
-    env_file: .env.base
+    env_file: .env.development
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
     command: pnpm --filter=backend test

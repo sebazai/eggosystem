@@ -1,21 +1,14 @@
 import type { Knex } from "knex";
-import { config as dotEnvConfig } from "dotenv";
-import * as fs from "fs";
-
-// Update with your config settings.
-if (fs.existsSync(`.env.${process.env.NODE_ENV}`)) {
-  dotEnvConfig({ path: `.env.${process.env.NODE_ENV}` });
-}
 
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: "mysql2",
     connection: {
-      host: process.env.DB_HOST ?? "localhost",
+      host: process.env.DB_HOST ?? "eggo-devdb",
       port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 6666,
       user: process.env.DB_USER ?? "kanadbuser",
       password: process.env.DB_PASSWORD ?? "dev-pass",
-      database: "kanaliiga",
+      database: process.env.DB_NAME ?? "kanaliiga",
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       typeCast: (field: any, next: any): any => {
         if (field.type === "DATETIME") return field.string();
@@ -28,6 +21,25 @@ const config: { [key: string]: Knex.Config } = {
     },
     seeds: {
       directory: "./seeds",
+      extension: "ts"
+    }
+  },
+  production: {
+    client: "mysql2",
+    connection: {
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT ?? "0", 10),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      typeCast: (field: any, next: any): any => {
+        if (field.type === "DATETIME") return field.string();
+        return next();
+      }
+    },
+    migrations: {
+      directory: "./migrations",
       extension: "ts"
     }
   }

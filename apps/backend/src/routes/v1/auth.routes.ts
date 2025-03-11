@@ -14,8 +14,8 @@ const router = Router();
 passport.use(
   new steam.Strategy(
     {
-      returnURL: `${process.env.BACKEND_BASE_URL}/api/v1/auth/steam/return`,
-      realm: `${process.env.BACKEND_BASE_URL}/`,
+      returnURL: `${process.env.BACKEND_URL}/api/v1/auth/steam/return`,
+      realm: `${process.env.BACKEND_URL}/`,
       apiKey: process.env.STEAM_API_KEY || ""
     },
     (identifier, profile, done) => {

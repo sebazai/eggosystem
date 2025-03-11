@@ -20,7 +20,8 @@
         "REDIS_HOST",
         "REDIS_PORT",
         "FRONTEND_URL",
-        "BACKEND_BASE_URL"
+        "BACKEND_URL",
+        "BASE_PATH"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

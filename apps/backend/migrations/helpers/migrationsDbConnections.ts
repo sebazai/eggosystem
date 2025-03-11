@@ -4,10 +4,10 @@ import mysql from "mysql2/promise";
 import type { RowDataPacket } from "mysql2/promise";
 
 export const envConnection = {
-  host: process.env.DB_HOST ?? "localhost",
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 6666,
-  user: process.env.DB_USER ?? "kanadbuser",
-  password: process.env.DB_PASSWORD ?? "dev-pass"
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD
 };
 
 type dbDefaults = RowDataPacket[] | RowDataPacket[][];

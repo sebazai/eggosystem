@@ -10,6 +10,8 @@
     "eslint.config.mjs",
     "server.ts",
     "migrations/**/*.ts",
-    "seeds/**/*.ts"
+    "seeds/**/*.ts",
+    "knexfile.ts",
+    "jest.setup.ts"
   ]
 }

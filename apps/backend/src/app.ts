@@ -1,14 +1,26 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import dotenv from "dotenv";
-import * as fs from "fs";
 
 // Update with your config settings.
-if (process.env.NODE_ENV) {
-  if (process.env.NODE_ENV === "development") {
-    dotenv.config({ path: ".env" });
+if (process.env.NODE_ENV === "development") {
+  dotenv.config({ path: ".env" });
+  dotenv.config({ path: ".env.development" });
+}
+
+if (process.env.NODE_ENV !== "development") {
+  if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
+    throw new Error("No JWT_SECRET or JWT_REFRESH_SECRET found in env");
   }
-  if (fs.existsSync(`.env.${process.env.NODE_ENV}`)) {
-    dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
+  if (
+    !process.env.DB_HOST ||
+    !process.env.DB_PORT ||
+    !process.env.DB_USER ||
+    !process.env.DB_PASSWORD ||
+    !process.env.DB_NAME
+  ) {
+    throw new Error(
+      "No DB_HOST, DB_PORT, DB_USER, DB_PASSWORD or DB_NAME found in env"
+    );
   }
 }
 

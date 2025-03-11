@@ -56,10 +56,10 @@ export async function up(): Promise<void> {
 
       const execPromise = promisify(exec);
 
-      const command = `mysql -h ${process.env.DB_HOST ?? "localhost"} -P ${
-        process.env.DB_PORT ?? "6666"
+      const command = `mysql -h ${process.env.DB_HOST} -P ${
+        process.env.DB_PORT
       } -u ${process.env.DB_ROOT_USER ?? "root"} -p${
-        process.env.DB_ROOT_PASSWORD ?? "dev-pass"
+        process.env.DB_ROOT_PASSWORD
       } kana < ./dbdump/kanaclean.sql`;
 
       try {

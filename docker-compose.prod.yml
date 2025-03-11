@@ -12,22 +12,24 @@ services:
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
       FRONTEND_URL: https://${HUB_PUBLIC_URL}
-      BACKEND_BASE_URL: https://${HUBBE_PUBLIC_URL}
+      BACKEND_URL: https://${HUB_PUBLIC_URL}
       REDIS_HOST: eggo-redis
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
+      JWT_SECRET: $JWT_SECRET
+      JWT_REFRESH_SECRET: $JWT_REFRESH_SECRET
     networks:
       - web
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe.entrypoints=http"
-      - "traefik.http.routers.hubbe.rule=Host(`${HUBBE_PUBLIC_URL}`)"
+      - "traefik.http.routers.hubbe.rule=Host(`${HUB_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.middlewares.hubbe-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.hubbe.middlewares=hubbe-https-redirect"
       - "traefik.http.routers.hubbe-secure.entrypoints=https"
-      - "traefik.http.routers.hubbe-secure.rule=Host(`${HUBBE_PUBLIC_URL}`)"
+      - "traefik.http.routers.hubbe-secure.rule=Host(`${HUB_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
       - "traefik.http.routers.hubbe-secure.tls=true"
-      - "traefik.http.routers.hubbe-secure.tls.domains[0].main=${HUBBE_PUBLIC_URL}"
+      - "traefik.http.routers.hubbe-secure.tls.domains[0].main=${HUB_PUBLIC_URL}"
       - "traefik.http.routers.hubbe-secure.tls.certresolver=http"
       - "traefik.http.routers.hubbe-secure.service=hubbe"
       - "traefik.http.services.hubbe.loadbalancer.server.port=3001"
@@ -40,8 +42,8 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}/
-      NEXT_PUBLIC_API_URL: https://${HUBBE_PUBLIC_URL}/
-      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBBE_PUBLIC_URL}/
+      NEXT_PUBLIC_API_URL: https://${HUB_PUBLIC_URL}/
+      NEXT_PUBLIC_CLIENT_API_URL: https://${HUB_PUBLIC_URL}/
     networks:
       - web
     labels:
