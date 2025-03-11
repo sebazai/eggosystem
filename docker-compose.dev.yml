@@ -58,7 +58,7 @@ services:
       - "traefik.http.routers.kanahubdev-secure.tls=true"
       - "traefik.http.routers.kanahubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
       - "traefik.http.routers.kanahubdev-secure.tls.certresolver=http"
-      - "traefik.http.routers.kanahubdev-secure.service=kanahub"
+      - "traefik.http.routers.kanahubdev-secure.service=kanahubdev"
       - "traefik.http.services.kanahubdev.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
