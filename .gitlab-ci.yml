@@ -284,12 +284,11 @@ build-dockerfile:frontend:
     ENV_ID: mr-${CI_MERGE_REQUEST_IID}
     NEXT_PUBLIC_API_URL: $HUBDEV_PUBLIC_URL
     NEXT_PUBLIC_CLIENT_API_URL: $HUBDEV_PUBLIC_URL
-    NEXT_PUBLIC_BASE_URL: $HUBDEV_PUBLIC_URL
     NEXT_PUBLIC_BASE_PATH: /$ENV_ID
   script:
     - echo "Building Docker image..."
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH --build-arg NEXT_PUBLIC_BASE_URL=https://$NEXT_PUBLIC_BASE_URL/$ENV_ID
+    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
     # Save the images to tar files for later use
