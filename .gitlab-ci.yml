@@ -264,8 +264,10 @@ build-dockerfile:backend:
     TRIVY_CACHE_DIR: ".trivycache/"
   script:
     - echo "Building Docker image..."
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID || true
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest || true
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:$ENV_ID --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest  -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
     # Save the images to tar files for later use
@@ -295,10 +297,13 @@ build-dockerfile:frontend:
     NEXT_PUBLIC_BASE_PATH: /$ENV_ID
   script:
     - echo "Building Docker image..."
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest || true
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
-    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
-    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+    # Run Trivy scans in parallel using background processes
+    - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME &
+    - ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
+    - wait
     # Save the images to tar files for later use
     - mkdir -p docker-images
     - docker save $CI_REGISTRY/$IMAGE_NAME > docker-images/$IMAGE_NAME.tar
