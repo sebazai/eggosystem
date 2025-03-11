@@ -7,8 +7,8 @@ if (!process.env.NODE_ENV) {
 
 // Update with your config settings.
 if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
-  dotenv.config({ path: ".env" });
   dotenv.config({ path: ".env.development" });
+  dotenv.config({ path: ".env" });
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {

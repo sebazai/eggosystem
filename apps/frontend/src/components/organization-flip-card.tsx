@@ -11,23 +11,22 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import Image from "next/image";
+import type { Organizations } from "@eggosystem/types";
 
 interface OrganizationFlipCardProps {
-  id: number;
-  companyName: string;
-  imageSrc: string;
-  href: string;
+  organization: Organizations;
 }
 
 const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
-  companyName,
-  imageSrc,
-  href
+  organization
 }) => {
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
+  const companyName = organization.name;
+  const imageSrc = `https://stats.kanaliiga.fi/img/${organization.logo}`;
+  const orgPage = `/organizations/${organization.id}`;
 
   // Detect if it's a mobile device
   useEffect(() => {
@@ -59,7 +58,7 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
     e.preventDefault();
 
     if (e.type === "click") {
-      router.push(href); // Always navigate on mouse click
+      router.push(orgPage); // Always navigate on mouse click
     }
 
     if (e.type === "keydown") {
@@ -68,7 +67,7 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
       if (key === " " || (key === "Enter" && !isFlipped)) {
         setIsFlipped(true);
       } else if (key === "Enter" && isFlipped) {
-        router.push(href);
+        router.push(orgPage);
       } else if (key === "Escape" && isFlipped) {
         setIsFlipped(false);
       }
@@ -80,7 +79,7 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
       e.preventDefault();
       toggleFlip(e);
     } else if (e.key === "Enter" && isFlipped) {
-      router.push(href);
+      router.push(orgPage);
     } else if (e.key === "Escape" && isFlipped) {
       setIsFlipped(false); // Allow Escape key to unflip the card
     }
@@ -131,14 +130,14 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
         >
           <Card className="w-full h-full flex flex-col">
             <CardHeader>
-              <CardTitle>Well well</CardTitle>
-              <CardDescription>Hello</CardDescription>
+              <CardTitle>{companyName}</CardTitle>
+              <CardDescription>
+                {organization.organization_code}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <>Yalla</>
-            </CardContent>
-            <CardFooter className="flex justify-center items-center mt-auto">
-              <p>Footer</p>
+            <CardContent></CardContent>
+            <CardFooter className="flex justify-center items-center mt-auto text-xs">
+              {organization.website}
             </CardFooter>
           </Card>
         </div>
