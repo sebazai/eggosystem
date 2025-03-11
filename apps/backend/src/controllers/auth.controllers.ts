@@ -57,7 +57,8 @@ const setCookies = (
   res.cookie("access_token", accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict"
+    sameSite: "strict",
+    path: getPath("/")
   });
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
@@ -75,7 +76,7 @@ const setCookies = (
 };
 
 const clearCookies = (res: Response) => {
-  res.clearCookie("access_token");
+  res.clearCookie("access_token", { path: getPath("/") });
   res.clearCookie("refresh_token", {
     path: getPath("/api/v1/auth/refresh")
   });
@@ -148,7 +149,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     clearCookies(res);
-    res.status(403).json({ message: "Invalid refresh token" });
+    res.status(403).json({ message: "Error while updating refresh token" });
   }
 };
 

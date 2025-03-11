@@ -141,7 +141,9 @@ describe("AuthControllers", () => {
       await authControllers.logout(req, res);
       expect(redisClient.del as jest.Mock).toHaveBeenCalledWith("123123");
       expect(res.clearCookie).toHaveBeenCalledTimes(3);
-      expect(res.clearCookie).toHaveBeenNthCalledWith(1, "access_token");
+      expect(res.clearCookie).toHaveBeenNthCalledWith(1, "access_token", {
+        path: "/"
+      });
       expect(res.clearCookie).toHaveBeenNthCalledWith(2, "refresh_token", {
         path: "/api/v1/auth/refresh"
       });
@@ -185,7 +187,9 @@ describe("AuthControllers", () => {
 
       await authControllers.refreshToken(req, res);
 
-      expect(res.clearCookie).toHaveBeenCalledWith("access_token");
+      expect(res.clearCookie).toHaveBeenCalledWith("access_token", {
+        path: "/"
+      });
       expect(res.clearCookie).toHaveBeenCalledWith("refresh_token", {
         path: "/api/v1/auth/refresh"
       });
@@ -194,7 +198,7 @@ describe("AuthControllers", () => {
       });
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        message: "Invalid refresh token"
+        message: "Error while updating refresh token"
       });
     });
 
@@ -205,7 +209,9 @@ describe("AuthControllers", () => {
 
       await authControllers.refreshToken(req, res);
 
-      expect(res.clearCookie).toHaveBeenCalledWith("access_token");
+      expect(res.clearCookie).toHaveBeenCalledWith("access_token", {
+        path: "/"
+      });
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
         message: "Invalid refresh token"
