@@ -331,8 +331,9 @@ push-dockerfile:backend:
   extends: [.main-backend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend
   script:
-    - docker build -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend . -f apps/backend/Dockerfile
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:latest -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend . -f apps/backend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend
 
 push-dockerfile:frontend:
@@ -343,10 +344,11 @@ push-dockerfile:frontend:
   extends: [.main-frontend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest
   script:
-    - docker build --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev . -f apps/frontend/Dockerfile
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
-    - docker build --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUB_PUBLIC_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
+    - docker build --cache-from $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:latest --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUB_PUBLIC_URL -t $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend . -f apps/frontend/Dockerfile
     - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend
 
 deploy-prod:
@@ -434,7 +436,7 @@ deploy-ondemand:
     - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
     - envsubst < docker-compose.ondemand.yml > docker-compose.yml
     - echo "Deploying stack eggosystem-${ENV_ID} to Portainer at ${PORTAINER_URL}"
-    - bash "$(pwd)/scripts/deploy-to-portainer.sh" --verbose docker-compose.yml
+    - bash "$(pwd)/scripts/deploy-to-portainer.sh" docker-compose.yml
     - |
       echo ""
       echo "=============================================="
@@ -461,6 +463,8 @@ stop-ondemand:
   stage: cleanup
   image: docker:latest
   allow_failure: true # Make on-demand jobs optional for merge requests
+  needs: [deploy-ondemand]
+  dependencies: []
   variables:
     PORTAINER_URL: $PORTAINER_URL
     PORTAINER_TOKEN: $PORTAINER_TOKEN
