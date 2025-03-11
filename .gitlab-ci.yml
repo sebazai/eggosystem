@@ -3,6 +3,7 @@ image: node:22-slim
 variables:
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
   TRIVY_VERSION: "0.59.1" # Set the Trivy version here
   TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
@@ -269,6 +270,7 @@ build-dockerfile:backend:
     IMAGE_NAME: eggo-backend
     DOCKERFILE_DEV: apps/backend/Dockerfile.dev
     DOCKERFILE: apps/backend/Dockerfile
+    DOCKER_DRIVER: overlay2
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
@@ -300,6 +302,7 @@ build-dockerfile:frontend:
     DOCKERFILE_DEV: apps/frontend/Dockerfile.dev
     DOCKERFILE: apps/frontend/Dockerfile
     DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
