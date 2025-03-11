@@ -73,6 +73,7 @@ variables:
     - "packages/**/*"
     - "scripts/*portainer*.sh"
     - "apps/{frontend,backend}/**/*"
+    - "docker-compose.*.yml"
 
 # These either cant be DRY because the rules are OR and not AND (the - & anchors do not work really well)
 .main-frontend:
