@@ -28,7 +28,7 @@ ARG NEXT_PUBLIC_BASE_PATH
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_CLIENT_API_URL=${NEXT_PUBLIC_CLIENT_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
-RUN pnpm build --filter=frontend
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm build --filter=frontend
 
 # Stage 2: Run Stage
 FROM base AS runner
