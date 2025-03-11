@@ -5,6 +5,8 @@ services:
     volumes:
       - ..:/workspace
     env_file: "../.env.development"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001 # Override frontend API URL
     command: sleep infinity
     networks:
       - eggo-dev
