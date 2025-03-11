@@ -12,7 +12,10 @@ COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/*/package.json ./packages/
 
 # Install dependencies with cache mount
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --filter=!backend --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    --mount=type=cache,id=next,target=/usr/src/app/apps/frontend/.next \
+    --mount=type=cache,id=turbo,target=/usr/src/app/.turbo \
+    pnpm install --filter=!backend --frozen-lockfile
 
 # Copy source code after dependency installation
 COPY packages/ ./packages/

@@ -242,6 +242,17 @@ test:backend:
 build:frontend:
   stage: build
   extends: [.pull-only-cache, .default, .mr-frontend]
+  cache:
+    - key: ${CI_COMMIT_REF_SLUG}
+      paths:
+        - .pnpm-store
+        - node_modules/
+        - packages/
+        - apps/frontend/node_modules/
+    - key: ${CI_COMMIT_REF_SLUG}-frontend-build
+      paths:
+        - apps/frontend/.next/cache
+        - .turbo
   script:
     - pnpm --filter=frontend build
 
