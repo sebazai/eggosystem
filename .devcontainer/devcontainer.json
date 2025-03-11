@@ -17,7 +17,6 @@
     }
   },
   "postCreateCommand": "pnpm install",
-  "postStartCommand": "CONTAINER_ID=$(cat /etc/hostname) && MARKER_FILE=/workspace/.devcontainer/init/initialized_$CONTAINER_ID && if [ ! -f $MARKER_FILE ]; then pnpm install && ./scripts/setup-env.sh && mkdir -p /workspace/.devcontainer/init && touch $MARKER_FILE; fi",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [3000],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.

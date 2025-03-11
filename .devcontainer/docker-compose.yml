@@ -34,5 +34,21 @@ services:
     networks:
       - eggo-dev
 
+  seed:
+    extends:
+      file: ../docker-compose.yml
+      service: seed
+    profiles: []
+    networks:
+      - eggo-dev
+
+  migrations:
+    extends:
+      file: ../docker-compose.yml
+      service: migrations
+    profiles: []
+    networks:
+      - eggo-dev
+
 networks:
   eggo-dev:
