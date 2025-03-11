@@ -243,7 +243,12 @@ build:backend:
 
 # Backend job
 build-dockerfile:backend:
-  extends: [.pull-only-cache, .mr-all-app]
+  extends: [.pull-only-cache]
+  rules:
+    - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
+      <<: *all-app-changes
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-backend
@@ -271,7 +276,12 @@ build-dockerfile:backend:
 
 # Frontend job
 build-dockerfile:frontend:
-  extends: [.pull-only-cache, .mr-all-app]
+  extends: [.pull-only-cache]
+  rules:
+    - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
+      <<: *all-app-changes
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
   <<: *common-docker-build
   variables:
     IMAGE_NAME: eggo-frontend
