@@ -106,30 +106,12 @@ services:
     networks:
       - web
 
-  migrations-${ENV_ID}:
+  seed-${ENV_ID}:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
     pull_policy: always
     depends_on:
       eggo-ondemand-db-${ENV_ID}:
         condition: service_healthy
-    environment:
-      NODE_ENV: production
-      DB_HOST: eggo-devdb-${ENV_ID}
-      DB_USER: "ondemand_${ENV_ID}"
-      DB_PASSWORD: "${DB_PASSWORD}"
-      DB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
-      DB_NAME: kanaliiga
-      DB_PORT: 3306
-    command: pnpm --filter=backend migrate
-    networks:
-      - web
-
-  seed-${ENV_ID}:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
-    pull_policy: always
-    depends_on:
-      migrations-${ENV_ID}:
-        condition: service_completed_successfully
     environment:
       NODE_ENV: production
       DB_HOST: eggo-devdb-${ENV_ID}
