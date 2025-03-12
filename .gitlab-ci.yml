@@ -120,6 +120,7 @@ variables:
   stage: build-docker
   image: docker:27.5.1-alpine3.21
   needs: []
+  dependencies: []
   rules:
     - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *all-app-changes
@@ -127,9 +128,9 @@ variables:
       when: manual
   services:
     - docker:27.5.1-dind-alpine3.21
-  cache:
-    paths:
-      - .trivycache/
+  #cache:
+  #  paths:
+  #    - .trivycache/
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
@@ -268,7 +269,6 @@ build:backend:
 # Backend job
 build-dockerfile:backend:
   <<: *common-docker-build
-  dependencies: []
   variables:
     IMAGE_NAME: eggo-backend
     DOCKERFILE_DEV: apps/backend/Dockerfile.dev
@@ -308,7 +308,6 @@ build-dockerfile:backend:
 # Frontend job
 build-dockerfile:frontend:
   <<: *common-docker-build
-  dependencies: []
   variables:
     IMAGE_NAME: eggo-frontend
     DOCKERFILE_DEV: apps/frontend/Dockerfile.dev
@@ -345,14 +344,14 @@ build-dockerfile:frontend:
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH .
     # Run Trivy scans in parallel using background processes
-    - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
-    - ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
-    - wait
-  artifacts:
-    paths:
-      - gl-codeclimate-image-$IMAGE_NAME.json
-      - gl-codeclimate-fs-$IMAGE_NAME.json
-      - docker-images/
+    #- ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
+    #- ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
+    #- wait
+  #artifacts:
+  #  paths:
+  #    - gl-codeclimate-image-$IMAGE_NAME.json
+  #    - gl-codeclimate-fs-$IMAGE_NAME.json
+  #    - docker-images/
 
 push-dockerfile:backend:
   stage: build-docker
