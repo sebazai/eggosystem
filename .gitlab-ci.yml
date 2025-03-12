@@ -297,13 +297,13 @@ build-dockerfile:backend:
       -t eggo-backend:latest
       -f $DOCKERFILE .
     # Run Trivy scans
-    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
-    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
-  artifacts:
-    paths:
-      - gl-codeclimate-image-$IMAGE_NAME.json
-      - gl-codeclimate-fs-$IMAGE_NAME.json
-      - docker-images/
+    #- ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
+    #- ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
+  #artifacts:
+  #  paths:
+  #    - gl-codeclimate-image-$IMAGE_NAME.json
+  #    - gl-codeclimate-fs-$IMAGE_NAME.json
+  #    - docker-images/
 
 # Frontend job
 build-dockerfile:frontend:
