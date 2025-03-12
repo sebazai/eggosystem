@@ -332,16 +332,13 @@ build-dockerfile:frontend:
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
       -t $REGISTRY/eggo-frontend:cache
       -f $DOCKERFILE_DEV .
-    # Build production image with environment variables
+    # Build production image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
       -t eggo-frontend
-      -f $DOCKERFILE
-      --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID
-      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID
-      --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH .
+      -f $DOCKERFILE .
     # Run Trivy scans in parallel using background processes
     #- ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
     #- ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
