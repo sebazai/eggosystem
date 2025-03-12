@@ -368,7 +368,7 @@ build-dockerfile:frontend:
 
 push-dockerfile:backend:
   stage: build-docker
-  tag:
+  tags:
     - shell
   image: docker:27.5.1-alpine3.21
   services:
@@ -398,7 +398,7 @@ push-dockerfile:backend:
 push-dockerfile:frontend:
   stage: build-docker
   image: docker:27.5.1-alpine3.21
-  tag:
+  tags:
     - shell
   services:
     - docker:27.5.1-dind-alpine3.21
