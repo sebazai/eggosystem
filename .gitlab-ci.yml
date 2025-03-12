@@ -222,7 +222,6 @@ test:backend:
   before_script:
     - npm install -g pnpm@10.3.0
     - export $(grep -v '^#' .env.development | xargs)
-    - pnpm --filter=backend migrate
     - pnpm --filter=backend seed
   script:
     - pnpm --filter=backend test

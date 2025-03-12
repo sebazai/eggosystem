@@ -35,18 +35,15 @@ services:
       - eggo-dev
 
   seed:
-    extends:
-      file: ../docker-compose.yml
-      service: seed
-    profiles: []
-    networks:
-      - eggo-dev
-
-  migrations:
-    extends:
-      file: ../docker-compose.yml
-      service: migrations
-    profiles: []
+    image: eggo-back
+    build:
+      context: ../
+      dockerfile: ./apps/backend/Dockerfile.dev
+    depends_on:
+      eggo-devdb:
+        condition: service_healthy
+    env_file: ../.env.development
+    command: "pnpm --filter=backend seed"
     networks:
       - eggo-dev
 

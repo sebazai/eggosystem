@@ -31,7 +31,8 @@
     "devcontainer",
     "eggo-devdb",
     "eggo-phpmyadmin",
-    "eggo-redis"
+    "eggo-redis",
+    "seed"
   ],
   "overrideCommand": false
 }

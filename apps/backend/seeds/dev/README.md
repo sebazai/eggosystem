@@ -2,7 +2,6 @@
 
 phpMyAdmin -> Export
 
-- Tables, remove all structure, remove knex migration data.
 - REMOVE: Display comments (includes info such as export timestamp, PHP version, and server version)
 - REMOVE: Enclose in transaction
 - ADD: Disable foreign key check.
