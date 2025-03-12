@@ -326,18 +326,17 @@ build-dockerfile:frontend:
   script:
     # Build dev image
     - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
-      --load
-      -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+      -t $REGISTRY/eggo-frontend:cache
       -f $DOCKERFILE_DEV .
     # Build production image with environment variables
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
-      --load
       -t eggo-frontend
       -f $DOCKERFILE
       --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID
