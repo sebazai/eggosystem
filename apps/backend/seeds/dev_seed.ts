@@ -2,7 +2,7 @@ import { Knex } from "knex";
 import * as fs from "fs";
 
 export async function seed(knex: Knex): Promise<void> {
-  const file = fs.readFileSync("./seeds/dev/kana_dev_seed.sql", "utf8");
+  const file = fs.readFileSync("./seeds/dev/kana_dev_test_seed.sql", "utf8");
   const splittableLines = file
     .replaceAll(/DELIMITER \$\$/g, "")
     .replaceAll(/DELIMITER ;/g, "")
