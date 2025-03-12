@@ -54,6 +54,7 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_BASE_PATH: /${ENV_ID}
+      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
     networks:
       web:
         aliases:
@@ -108,7 +109,6 @@ services:
 
   seed-${ENV_ID}:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
-    pull_policy: always
     depends_on:
       eggo-ondemand-db-${ENV_ID}:
         condition: service_healthy

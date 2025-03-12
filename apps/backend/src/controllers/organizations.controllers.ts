@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import { getOrganizations } from "../models/organization.models";
 
 export const fetchOrganizations = async (req: Request, res: Response) => {

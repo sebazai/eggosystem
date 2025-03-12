@@ -1,5 +1,6 @@
 "use client";
 
+import { TheContainer } from "@/components/layout/the-container";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -8,5 +9,5 @@ export default function LoginSuccess() {
   useEffect(() => {
     router.push("/");
   }, [router]);
-  return <div>Logging in...</div>;
+  return <TheContainer>Logging in...</TheContainer>;
 }

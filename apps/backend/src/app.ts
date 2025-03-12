@@ -37,9 +37,9 @@ import "express-async-errors";
 
 import v1Router from "./routes";
 import { errorHandler } from "./middlewares/errors";
-import { ParsedParams } from "@eggosystem/types";
+import { type ParsedParams } from "@eggosystem/types";
 import cookieParser from "cookie-parser";
-import { JwtPayload } from "jsonwebtoken";
+import { type JwtPayload } from "jsonwebtoken";
 
 declare global {
   namespace Express {

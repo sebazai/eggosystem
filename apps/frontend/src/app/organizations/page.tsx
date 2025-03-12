@@ -5,6 +5,7 @@ import OrganizationFlipCard from "@/components/organization-flip-card";
 import FadeOnScroll from "@/components/layout/fade-on-scroll";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 import OrganizationContainer from "./organization-container";
+import { TheContainer } from "@/components/layout/the-container";
 
 export default function AllOrganizations() {
   const { organizations, isError, isLoading, isValidating } =
@@ -17,9 +18,7 @@ export default function AllOrganizations() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       >
-        <div className="flex items-center justify-center min-h-[70vh]">
-          Loading...
-        </div>
+        <TheContainer>Loading...</TheContainer>
       </OrganizationContainer>
     );
   }
@@ -29,9 +28,7 @@ export default function AllOrganizations() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       >
-        <div className="flex items-center justify-center min-h-[70vh]">
-          Error loading organizations
-        </div>
+        <TheContainer>Error loading organizations</TheContainer>
       </OrganizationContainer>
     );
   }
@@ -41,9 +38,7 @@ export default function AllOrganizations() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       >
-        <div className="flex items-center justify-center min-h-[70vh]">
-          No organizations found
-        </div>
+        <TheContainer>No organizations found</TheContainer>
       </OrganizationContainer>
     );
   }

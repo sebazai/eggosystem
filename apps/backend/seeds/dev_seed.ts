@@ -1,4 +1,4 @@
-import { Knex } from "knex";
+import { type Knex } from "knex";
 import * as fs from "fs";
 
 export async function seed(knex: Knex): Promise<void> {

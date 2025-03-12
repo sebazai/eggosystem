@@ -56,7 +56,7 @@ const kanaFonts = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Eggosystem",
+  title: { default: "Eggosystem", template: "%s | Eggosystem" },
   description: "Kanahub statistics and analytics"
 };
 

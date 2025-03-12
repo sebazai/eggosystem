@@ -19,7 +19,8 @@ export const fetcher = async <T>(
 
   const res = await fetch(url, options);
   if (!res.ok) {
-    throw new Error("Network response was not ok");
+    const resultJson = await res.json();
+    throw new Error(resultJson.error ?? "An error occurred");
   }
   return res.json();
 };

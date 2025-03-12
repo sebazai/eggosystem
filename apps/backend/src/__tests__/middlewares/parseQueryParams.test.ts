@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response, NextFunction } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import parseQueryParams from "../../middlewares/parseQueryParams";
 
 describe("parseParams Middleware", () => {

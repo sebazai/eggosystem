@@ -89,6 +89,7 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
       NEXT_PUBLIC_BASE_PATH: /${ENV_ID}
+      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
     networks:
       web:
         aliases:

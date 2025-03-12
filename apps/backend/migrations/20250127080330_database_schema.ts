@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-require-imports */
 import * as fs from "fs";
 import { envConnection } from "./helpers/migrationsDbConnections";

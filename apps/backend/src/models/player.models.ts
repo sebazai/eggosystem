@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
 import type { ParsedParams, Player } from "@eggosystem/types";
@@ -34,7 +33,7 @@ export const getPlayersByFilters = async ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: ParsedParams): Promise<any[]> => {
   // Base query
-  const baseQuery = `
+  const _baseQuery = `
       SELECT p.name, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
       ${[
         "kills",

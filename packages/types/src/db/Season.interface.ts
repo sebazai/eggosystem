@@ -3,6 +3,9 @@ export interface Season {
   game_id: number;
   name: string;
   full_name: string;
-  start_date?: string | null; // DATE stored as string (ISO format)
-  end_date?: string | null;
+  signup_start_date: string | null;
+  signup_end_date: string | null;
+  platform: string;
+  start_date: string; // DATE stored as string (ISO format)
+  end_date: string | null;
 }

@@ -3,8 +3,7 @@ import tseslint from "typescript-eslint";
 
 import { config as baseConfig } from "./base.js";
 
-/** @type {import("eslint").Linter.Config[]} */
-export default [
+export const config = [
   ...baseConfig,
   {
     languageOptions: {
@@ -14,7 +13,8 @@ export default [
       },
       parserOptions: {
         ecmaVersion: "latest",
-        sourceType: "module"
+        sourceType: "module",
+        project: "./tsconfig.eslint.json"
       }
     },
     plugins: {
@@ -43,10 +43,12 @@ export default [
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_"
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          ignoreRestSiblings: true
         }
       ],
 
@@ -74,5 +76,8 @@ export default [
         }
       }
     }
+  },
+  {
+    ignores: ["coverage/**", "eslint.config.mjs", "jest.config.js"]
   }
 ];

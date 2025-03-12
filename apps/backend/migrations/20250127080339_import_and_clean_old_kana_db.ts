@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-require-imports */
 import type { Knex } from "knex";
 import { envConnection } from "./helpers/migrationsDbConnections";

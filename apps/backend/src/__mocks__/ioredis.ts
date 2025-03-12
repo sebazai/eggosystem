@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const IORedis = jest.createMockFromModule("ioredis");
-(IORedis as any).prototype.get.mockImplementation((key: any, callback: any) => {
+(IORedis as any).prototype.get.mockImplementation((key: any) => {
   if (key === "123123") {
     return "mockRefreshToken";
   }

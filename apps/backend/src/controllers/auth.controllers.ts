@@ -1,5 +1,5 @@
-import { UserPayload } from "@eggosystem/types";
-import { Request, Response } from "express";
+import { type UserPayload } from "@eggosystem/types";
+import { type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
 import { redisClient } from "../utils/redisClient";
 import { getPath } from "../utils/path";
@@ -86,7 +86,6 @@ const clearCookies = (res: Response) => {
 };
 
 export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { exp, iat, ...rest } = user;
   const withJwtId = jti ? { ...rest, jti } : rest;
   const accessToken = jwt.sign(withJwtId, JWT_SECRET, {
@@ -146,8 +145,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     setCookies(res, accessToken, newRefreshToken);
     res.json({ message: "Token refreshed" });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (err) {
+  } catch (_err) {
     clearCookies(res);
     res.status(403).json({ message: "Error while updating refresh token" });
   }
@@ -161,8 +159,7 @@ export const logout = async (req: Request, res: Response) => {
         jwt.verify(refreshToken, JWT_REFRESH_SECRET)
       );
       await redisClient.del(decoded.jti!);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (_err) {
       // NO-op
     }
   }

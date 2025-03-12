@@ -45,6 +45,7 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:3001
       - NEXT_PUBLIC_CLIENT_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_BASE_URL=http://localhost:3000
     volumes:
       - ./apps/frontend/src:/usr/src/app/apps/frontend/src # Mount source code for live reloading
       - ./apps/frontend/public:/usr/src/app/apps/frontend/public # Mount source code for live reloading

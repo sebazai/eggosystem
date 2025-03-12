@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { envConfig } from "../../../configs/env";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const response = await fetch(`${envConfig.API_URL}/api/v1/leagues`);
 
   if (!response.ok) {

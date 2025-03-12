@@ -1,12 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { UnauthorizedError } from "express-jwt";
 
 export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
+  _next: NextFunction
 ) => {
   if (err instanceof UnauthorizedError) {
     res.status(err.status).json({ errors: [{ message: err.message }] });

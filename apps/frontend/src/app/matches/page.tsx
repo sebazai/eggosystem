@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
-import MatchContainer from "./match-container";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { FilteredMatchesList } from "./filtered-matches-list";
 import { envConfig } from "@/configs/env";
+import { TheContainer } from "@/components/layout/the-container";
 
 const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
   searchParams
@@ -38,31 +38,23 @@ export default function AllMatches() {
     useRecentMatches(initialParams);
 
   if (isError) {
-    return (
-      <MatchContainer>
-        <div className="flex items-center justify-center min-h-[70vh]">
-          Error loading Matches
-        </div>
-      </MatchContainer>
-    );
+    return <TheContainer>Error loading Matches</TheContainer>;
   }
 
   return (
-    <MatchContainer>
-      <div className="p-0">
-        <MultiFilters
-          seasons={initialParams.seasons}
-          leagues={initialParams.leagues}
-          stages={initialParams.stages}
-          teams={initialParams.teams}
-          maps={initialParams.maps}
-        />
+    <div className="p-0">
+      <MultiFilters
+        seasons={initialParams.seasons}
+        leagues={initialParams.leagues}
+        stages={initialParams.stages}
+        teams={initialParams.teams}
+        maps={initialParams.maps}
+      />
 
-        <FilteredMatchesList
-          matches={matches}
-          isLoading={isLoading || isValidating}
-        />
-      </div>
-    </MatchContainer>
+      <FilteredMatchesList
+        matches={matches}
+        isLoading={isLoading || isValidating}
+      />
+    </div>
   );
 }

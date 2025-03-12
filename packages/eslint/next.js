@@ -45,7 +45,16 @@ export const config = [
       ...pluginReactHooks.configs.recommended.rules,
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
-      "react/prop-types": "off"
+      "react/prop-types": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_", // Ignore unused function arguments
+          varsIgnorePattern: "^_", // Ignore unused variables
+          caughtErrorsIgnorePattern: "^_", // Ignore unused catch clause parameters
+          ignoreRestSiblings: true //  Ignore unused properties when using object destructuring
+        }
+      ]
     }
   }
 ];

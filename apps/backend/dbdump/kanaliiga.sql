@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS Seasons (
     game_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     full_name VARCHAR(255) NOT NULL,
-    start_date DATE,
+    signup_start_date DATETIME,
+    signup_end_date DATETIME,
+    start_date DATE NOT NULL,
     end_date DATE,
     platform VARCHAR(20) NOT NULL,
     FOREIGN KEY (game_id) REFERENCES Games(id)

@@ -1,5 +1,3 @@
-"use client";
-
 import { SearchBar } from "@/components/search-bar";
 
 export default function OrganizationContainer({
@@ -13,8 +11,6 @@ export default function OrganizationContainer({
 }) {
   return (
     <div>
-      <title>Organizations - Kanahub</title>
-      <h1>Organizations</h1>
       <div
         id="sticky-header"
         className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"

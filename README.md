@@ -13,13 +13,15 @@ It will also start the devdb and phpmyadmin from [docker-compose.yml](docker-com
 
 `docker compose up`
 
-This will start everything you need (dev database with test seed, backend & frontend, redis, phpmyadmin and will run tests)
+This will start everything you need (dev database, backend & frontend, redis, phpmyadmin and will run tests)
 
-- docker compose up
+- docker compose --profile seed up
 
 Backend can be accessed from localhost:3001 and frontend from localhost:3000 via browser
 
 ## Running tests on devcontainer
+
+- Yes
 
 ### Backend
 

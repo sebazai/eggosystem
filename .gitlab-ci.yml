@@ -318,9 +318,6 @@ build-dockerfile:frontend:
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
     ENV_ID: mr-${CI_MERGE_REQUEST_IID}
-    NEXT_PUBLIC_API_URL: $HUBDEV_PUBLIC_URL
-    NEXT_PUBLIC_CLIENT_API_URL: $HUBDEV_PUBLIC_URL
-    NEXT_PUBLIC_BASE_PATH: /$ENV_ID
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
@@ -339,6 +336,7 @@ build-dockerfile:frontend:
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
       -t eggo-frontend
       -f $DOCKERFILE .
+
     # Run Trivy scans in parallel using background processes
     #- ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
     #- ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
@@ -504,9 +502,10 @@ deploy-ondemand:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
-      --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID
-      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID
-      --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+      --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
+      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
+      --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
+      --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --push
       -t $REGISTRY/eggo-frontend:${ENV_ID}
       -f apps/frontend/Dockerfile .
