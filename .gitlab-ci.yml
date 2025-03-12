@@ -134,6 +134,9 @@ variables:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
     - apk update && apk add jq
+    - docker buildx create --name mybuilder
+    - docker buildx use mybuilder
+    - docker buildx inspect --bootstrap
 
 .common-docker-scan: &common-docker-scan
   script: &docker-scan-script
@@ -278,25 +281,22 @@ build-dockerfile:backend:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
-    - docker buildx inspect --bootstrap
     # Build migrations image with shared & MR-specific cache
-    - docker buildx build \
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest \
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG} \
-      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG},mode=max \
-      --load \
-      -t eggo-backend:migrations \
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG}
+      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG},mode=max
+      --load
+      -t eggo-backend:migrations
       -f $DOCKERFILE_DEV .
 
       # Build backend image with shared & MR-specific cache
-    - docker buildx build \
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG} \
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG},mode=max \
-      --load \
-      -t eggo-backend:latest \
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG}
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG},mode=max
+      --load
+      -t eggo-backend:latest
       -f $DOCKERFILE .
     # Run Trivy scans
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
@@ -331,9 +331,6 @@ build-dockerfile:frontend:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
-    - docker buildx inspect --bootstrap
     # Build dev image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev
