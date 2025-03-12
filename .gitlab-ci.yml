@@ -286,7 +286,6 @@ build-dockerfile:backend:
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG},mode=max
-      --load
       -t eggo-backend:migrations
       -f $DOCKERFILE_DEV .
 
@@ -295,16 +294,11 @@ build-dockerfile:backend:
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG},mode=max
-      --load
       -t eggo-backend:latest
       -f $DOCKERFILE .
     # Run Trivy scans
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
     - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
-    # Save the images to tar files for later use
-    - mkdir -p docker-images
-    - docker save eggo-backend:migrations > docker-images/$IMAGE_NAME-dev.tar
-    - docker save eggo-backend:latest > docker-images/$IMAGE_NAME.tar
   artifacts:
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
@@ -354,9 +348,6 @@ build-dockerfile:frontend:
     - ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
     - ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
     - wait
-    # Save the images to tar files for later use
-    - mkdir -p docker-images
-    - docker save eggo-frontend > docker-images/$IMAGE_NAME.tar
   artifacts:
     paths:
       - gl-codeclimate-image-$IMAGE_NAME.json
@@ -485,26 +476,44 @@ deploy-ondemand:
   stage: on-demand-env
   needs:
     - job: build-dockerfile:backend
-      artifacts: true
+      artifacts: false
     - job: build-dockerfile:frontend
-      artifacts: true
+      artifacts: false
   allow_failure: true # Make on-demand jobs optional for merge requests
   services:
     - docker:27.5.1-dind-alpine3.21
   variables:
     <<: *overwrite-variables
+    REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
   before_script:
     - apk add --no-cache gettext curl jq bash
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker load -i docker-images/eggo-backend.tar
-    - docker load -i docker-images/eggo-backend-dev.tar
-    - docker load -i docker-images/eggo-frontend.tar
-    - docker tag $CI_REGISTRY/eggo-backend $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:${ENV_ID}
-    - docker tag eggo-backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
-    - docker tag $CI_REGISTRY/eggo-frontend $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${ENV_ID}
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-backend:${ENV_ID}
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
-    - docker push $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${ENV_ID}
+    - docker buildx create --name mybuilder
+    - docker buildx use mybuilder
+    # Build backend mr-id image
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG}
+      --push
+      -t $REGISTRY/eggo-backend:${ENV_ID}
+      -f $DOCKERFILE .
+    # Build migrations mr-id image
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG}
+      --push
+      -t $REGISTRY/eggo-migrations:${ENV_ID}
+      -f $DOCKERFILE_DEV .
+    # Build frontend mr-id image
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
+      --push
+      -t $REGISTRY/eggo-frontend:${ENV_ID}
+      -f $DOCKERFILE
+      --build-arg NEXT_PUBLIC_API_URL=https://$NEXT_PUBLIC_API_URL/$ENV_ID
+      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$NEXT_PUBLIC_CLIENT_API_URL/$ENV_ID
+      --build-arg NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH .
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
