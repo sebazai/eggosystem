@@ -276,23 +276,27 @@ build-dockerfile:backend:
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
+    CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
     - docker buildx create --name mybuilder
     - docker buildx use mybuilder
     - docker buildx inspect --bootstrap
-    # Build migrations image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache
-      --load
-      -t eggo-backend:migrations
+    # Build migrations image with shared & MR-specific cache
+    - docker buildx build \
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest \
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG} \
+      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG},mode=max \
+      --load \
+      -t eggo-backend:migrations \
       -f $DOCKERFILE_DEV .
-    # Build backend image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
-      --load
-      -t eggo-backend:latest
+
+      # Build backend image with shared & MR-specific cache
+    - docker buildx build \
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG} \
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG},mode=max \
+      --load \
+      -t eggo-backend:latest \
       -f $DOCKERFILE .
     # Run Trivy scans
     - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
@@ -325,6 +329,7 @@ build-dockerfile:frontend:
     NEXT_PUBLIC_CLIENT_API_URL: $HUBDEV_PUBLIC_URL
     NEXT_PUBLIC_BASE_PATH: /$ENV_ID
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
+    CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
     - docker buildx create --name mybuilder
     - docker buildx use mybuilder
@@ -332,14 +337,16 @@ build-dockerfile:frontend:
     # Build dev image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
       --load
       -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
       -f $DOCKERFILE_DEV .
     # Build production image with environment variables
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
       --load
       -t eggo-frontend
       -f $DOCKERFILE
