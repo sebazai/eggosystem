@@ -118,7 +118,7 @@ variables:
 # Define common configurations using anchors
 .common-docker-build: &common-docker-build
   stage: build-docker
-  image: docker:stable
+  image: docker:27.5.1-alpine3.21
   needs: []
   rules:
     - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -126,7 +126,7 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "web"
       when: manual
   services:
-    - docker:dind
+    - docker:27.5.1-dind-alpine3.21
   cache:
     paths:
       - .trivycache/
@@ -331,9 +331,9 @@ build-dockerfile:frontend:
 
 push-dockerfile:backend:
   stage: build-docker
-  image: docker:latest
+  image: docker:27.5.1-alpine3.21
   services:
-    - docker:dind
+    - docker:27.5.1-dind-alpine3.21
   extends: [.main-backend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -345,9 +345,9 @@ push-dockerfile:backend:
 
 push-dockerfile:frontend:
   stage: build-docker
-  image: docker:latest
+  image: docker:27.5.1-alpine3.21
   services:
-    - docker:dind
+    - docker:27.5.1-dind-alpine3.21
   extends: [.main-frontend]
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -387,7 +387,7 @@ deploy-prod:
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
 
 deploy-dev:
-  image: docker:latest
+  image: docker:27.5.1-alpine3.21
   stage: deploy
   extends: [.main-all-app]
   environment:
@@ -416,7 +416,7 @@ deploy-dev:
       echo "=============================================="
 
 deploy-ondemand:
-  image: docker:latest
+  image: docker:27.5.1-alpine3.21
   stage: on-demand-env
   needs:
     - job: build-dockerfile:backend
@@ -425,7 +425,7 @@ deploy-ondemand:
       artifacts: true
   allow_failure: true # Make on-demand jobs optional for merge requests
   services:
-    - docker:dind
+    - docker:27.5.1-dind-alpine3.21
   variables:
     <<: *overwrite-variables
   before_script:
@@ -470,7 +470,7 @@ deploy-ondemand:
 
 stop-ondemand:
   stage: cleanup
-  image: docker:latest
+  image: docker:27.5.1-alpine3.21
   allow_failure: true # Make on-demand jobs optional for merge requests
   needs: [deploy-ondemand]
   dependencies: []
