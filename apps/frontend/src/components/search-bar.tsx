@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
-import { Spinner } from "@/components/icons"; // Ensure you have this in your project
+import { Spinner } from "@/components/icons";
 
 export function SearchBar({ placeholder }: { placeholder: string }) {
   const router = useRouter();
@@ -15,6 +15,13 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
   const [showInput, setShowInput] = useState(false);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isPending && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isPending]);
 
   // Sync state when search params change
   useEffect(() => {
@@ -107,11 +114,13 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
       >
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
+          ref={inputRef}
           type="text"
           placeholder={placeholder}
           className="pl-8 pr-10 bg-secondary/70"
           value={searchValue}
           onChange={handleChange}
+          disabled={isPending}
         />
 
         {isPending && (

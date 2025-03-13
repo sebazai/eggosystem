@@ -4,9 +4,13 @@ import { envConfig } from "../../../configs/env";
 export async function GET(request: NextRequest) {
   const searchQuery = request.nextUrl.searchParams.get("q");
 
-  const response = await fetch(
-    `${envConfig.API_URL}/api/v1/organizations${searchQuery ? "?q=${searchQuery}" : ""}`
-  );
+  const buildUrl = new URL(envConfig.API_URL);
+  buildUrl.pathname = "/api/v1/organizations";
+  if (searchQuery) {
+    buildUrl.searchParams.set("q", searchQuery);
+  }
+
+  const response = await fetch(buildUrl);
 
   if (!response.ok) {
     return NextResponse.json(
