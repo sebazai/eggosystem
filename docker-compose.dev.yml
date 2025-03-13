@@ -112,7 +112,7 @@ services:
       - "traefik.http.routers.phpmyadmin-hubdev.entrypoints=http"
       - "traefik.http.routers.phpmyadmin-hubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
       - "traefik.http.middlewares.phpmyadmin-hubdev-stripprefix.stripprefix.prefixes=/mysadmin"
-      - "traefik.http.middlewares.phpmyadmin-hubdev-auth.basicauth.users=kana:$$2y$$10$$UUV0c4qd6OUqhs.w8DoWr.OkNOLHh9RkVGsZBCE6b5cHLK1rj/WFm"
+      - "traefik.http.middlewares.phpmyadmin-hubdev-auth.basicauth.users=${PHPMYADMIN_AUTH}"
       - "traefik.http.middlewares.phpmyadmin-hubdev-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.phpmyadmin-hubdev.middlewares=phpmyadmin-hubdev-https-redirect"
       - "traefik.http.routers.phpmyadmin-hubdev-secure.entrypoints=https"
