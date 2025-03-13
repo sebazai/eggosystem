@@ -485,7 +485,7 @@ deploy-dev:
     - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
     - envsubst < docker-compose.dev.yml > docker-compose.yml
     - echo "Deploying stack eggosystem-dev"
-    - bash "$(pwd)/scripts/deploy-to-portainer.sh" --verbose docker-compose.yml
+    - bash "$(pwd)/scripts/deploy-to-portainer.sh" docker-compose.yml
     - |
       echo ""
       echo "=============================================="
