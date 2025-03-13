@@ -284,7 +284,7 @@ build-dockerfile:backend:
   script:
     # Build backend dev image with shared & MR-specific cache
     - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
       --cache-from type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG},mode=max
       -t eggo-backend:dev
@@ -324,6 +324,7 @@ build-dockerfile:frontend:
   script:
     # Build dev image
     - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-dev
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-dev-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-dev-${CACHE_TAG},mode=max
       -t $REGISTRY/eggo-frontend:cache
