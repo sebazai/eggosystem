@@ -281,12 +281,12 @@ build-dockerfile:backend:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
-    # Build migrations image with shared & MR-specific cache
+    # Build backend dev image with shared & MR-specific cache
     - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG}
-      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG},mode=max
-      -t eggo-backend:migrations
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG}
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG},mode=max
+      -t eggo-backend:dev
       -f $DOCKERFILE_DEV .
 
       # Build backend image with shared & MR-specific cache
@@ -373,10 +373,39 @@ push-dockerfile:backend:
       -t $REGISTRY/eggo-backend:latest
       -f apps/backend/Dockerfile .
     - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev
+      --push
+      -t $REGISTRY/eggo-backend:dev
+      -f apps/backend/Dockerfile.dev .
+
+push-dockerfile:migrations:
+  stage: build-docker
+  tags:
+    - shell
+  image: docker:27.5.1-alpine3.21
+  services:
+    - docker:27.5.1-dind-alpine3.21
+  extends: [.main-backend]
+  variables:
+    REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker buildx create --name mybuilder
+    - docker buildx use mybuilder
+    - docker buildx inspect --bootstrap
+  script:
+    - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
       --push
       -t $REGISTRY/eggo-migrations:latest
-      -f apps/backend/Dockerfile.dev .
+      -f apps/backend/Dockerfile.migrations .
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+      --push
+      -t $REGISTRY/eggo-migrations:dev
+      -f apps/backend/Dockerfile.migrations.dev .
 
 push-dockerfile:frontend:
   stage: build-docker
@@ -496,8 +525,8 @@ deploy-ondemand:
       -f apps/backend/Dockerfile .
     # Build migrations mr-id image
     - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache-${CACHE_TAG}
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG}
       --push
       -t $REGISTRY/eggo-migrations:${ENV_ID}
       -f apps/backend/Dockerfile.dev .

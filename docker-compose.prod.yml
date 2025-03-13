@@ -96,6 +96,23 @@ services:
       - web
     restart: always
 
+  migrations:
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations
+    depends_on:
+      eggo-prod-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: eggo-prod-db
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: "${MARIADB_PASSWORD}"
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_PORT: 3306
+      WAIT_FOR_DB: ${KANA}
+    entrypoint: ["scripts/wait-for-kanadb.sh"]
+    command: "npx knex migrate:latest"
+    networks:
+      - web
+
   phpmyadmin-hub:
     depends_on:
       - eggo-prod-db

@@ -1,6 +1,6 @@
 services:
   dev-backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev
     pull_policy: always
     depends_on:
       eggo-dev-db:
@@ -126,19 +126,19 @@ services:
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
     depends_on:
-      eggo-dev-db:
+      eggo-prod-db:
         condition: service_healthy
     environment:
-      NODE_ENV: production
-      DB_HOST: eggo-dev-db
+      DB_HOST: eggo-prod-db
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: "${MARIADB_PASSWORD}"
-      DB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
-    command: pnpm --filter=backend migrate
+      WAIT_FOR_DB: ${KANA}
+    entrypoint: ["scripts/wait-for-kanadb.sh"]
+    command: "npx knex migrate:latest"
     networks:
       - web
 
