@@ -1,66 +1,41 @@
-"use client";
-
-import { useState } from "react";
 import OrganizationFlipCard from "@/components/organization-flip-card";
 import FadeOnScroll from "@/components/layout/fade-on-scroll";
-import { useOrganizations } from "@/hooks/data/useOrganizations";
-import OrganizationContainer from "./organization-container";
-import { TheContainer } from "@/components/layout/the-container";
+import { envConfig } from "@/configs/env";
+import type { Organizations } from "@eggosystem/types";
+import { SearchBar } from "@/components/search-bar";
+import { Suspense } from "react";
+import { Spinner } from "@/components/icons";
 
-export default function AllOrganizations() {
-  const { organizations, isError, isLoading, isValidating } =
-    useOrganizations();
-  const [searchQuery, setSearchQuery] = useState("");
-
-  if (isLoading || isValidating) {
-    return (
-      <OrganizationContainer
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      >
-        <TheContainer>Loading...</TheContainer>
-      </OrganizationContainer>
-    );
-  }
-  if (isError) {
-    return (
-      <OrganizationContainer
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      >
-        <TheContainer>Error loading organizations</TheContainer>
-      </OrganizationContainer>
-    );
-  }
-  if (!organizations || organizations.length === 0) {
-    return (
-      <OrganizationContainer
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      >
-        <TheContainer>No organizations found</TheContainer>
-      </OrganizationContainer>
-    );
-  }
-
-  // Filter organizations based on search query
-  const filteredOrganizations = organizations.filter((org) =>
-    org.name.toLowerCase().includes(searchQuery.toLowerCase())
+export default async function AllOrganizations(props: {
+  searchParams: Promise<{ q: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const search = searchParams.q || "";
+  const orgs = await fetch(
+    `${envConfig.BASE_URL}/api/organizations?q=${search}`
   );
+  const organizations: Organizations[] = await orgs.json();
 
   return (
-    <OrganizationContainer
-      searchQuery={searchQuery}
-      setSearchQuery={setSearchQuery}
-    >
-      {/* Organization Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 justify-items-center">
-        {filteredOrganizations.map((org) => (
-          <FadeOnScroll key={org.id}>
-            <OrganizationFlipCard organization={org} />
-          </FadeOnScroll>
-        ))}
+    <div>
+      <div
+        id="sticky-header"
+        className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"
+      >
+        <Suspense fallback={<Spinner />}>
+          <SearchBar placeholder={"Search organizations..."} />
+        </Suspense>
       </div>
-    </OrganizationContainer>
+      <div>
+        {/* Organization Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 justify-items-center">
+          {organizations.map((org) => (
+            <FadeOnScroll key={org.id}>
+              <OrganizationFlipCard organization={org} />
+            </FadeOnScroll>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

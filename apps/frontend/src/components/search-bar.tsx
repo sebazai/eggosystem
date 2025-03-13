@@ -1,79 +1,81 @@
 "use client";
+
 import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useClickOutside } from "@/hooks/useClickOutside";
+import { Spinner } from "@/components/icons"; // Ensure you have this in your project
 
-interface SearchBarProps {
-  placeholder: string;
-  value: string;
-  setValue: (value: string) => void;
-}
-
-export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+export function SearchBar({ placeholder }: { placeholder: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [searchValue, setSearchValue] = useState(searchParams.get("q") || "");
+  const [isPending, startTransition] = useTransition();
   const [showInput, setShowInput] = useState(false);
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-  const hasMounted = useRef(false);
 
-  const searchQuery = searchParams.get("search") || "";
-
+  // Sync state when search params change
   useEffect(() => {
-    const isLandscapeMobile =
-      window.innerWidth <= 768 && window.innerHeight < window.innerWidth;
-    if (searchQuery.length > 0 && !isLandscapeMobile) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, [searchQuery]);
+    setSearchValue(searchParams.get("q") || "");
+  }, [searchParams]);
 
-  useEffect(() => {
-    if (!hasMounted.current && searchQuery !== "") {
-      setValue(searchQuery);
-      hasMounted.current = true;
-    }
-  }, [searchQuery, setValue]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSearch = e.target.value;
+  // Update the query parameters
+  const updateSearchQuery = (newQuery: string) => {
     const params = new URLSearchParams(searchParams);
-
-    if (newSearch) {
-      params.set("search", newSearch);
+    if (newQuery) {
+      params.set("q", newQuery);
     } else {
-      params.delete("search");
+      params.delete("q");
     }
 
-    setValue(newSearch);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      router.refresh(); // Re-fetch server-side data
+    });
   };
 
+  // Handle input change with debounce
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setSearchValue(newQuery);
+
+    if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    debounceTimeout.current = setTimeout(() => {
+      updateSearchQuery(newQuery);
+    }, 500); // Debounce input
+  };
+
+  // Clear search
   const clearSearch = () => {
-    setValue("");
-    const params = new URLSearchParams(searchParams);
-    params.delete("search");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    setSearchValue("");
+    updateSearchQuery("");
   };
 
+  // Toggle mobile search input
   const toggleSearch = () => setShowInput((prev) => !prev);
 
-  // Close search only on mobile
-  useClickOutside(searchRef, () => {
-    if (window.innerWidth < 768) {
-      setShowInput(false);
-    }
-  });
-
+  // Close search on outside click (mobile only)
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setShowInput(true);
-      } else {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node) &&
+        window.innerWidth < 768
+      ) {
         setShowInput(false);
       }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Handle screen resize
+  useEffect(() => {
+    const handleResize = () => {
+      setShowInput(window.innerWidth >= 768);
     };
 
     handleResize();
@@ -83,7 +85,7 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
 
   return (
     <div
-      className="relative w-full max-w-md my-4 flex items-center gap-2"
+      className="relative flex items-center w-full max-w-md gap-2"
       ref={searchRef}
     >
       {/* Search Icon (Only visible on mobile) */}
@@ -97,23 +99,31 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
 
       {/* Input Field with Clear Button */}
       <div
-        className={cn(
-          "relative transition-all duration-300 overflow-hidden md:overflow-visible",
+        className={`relative transition-all duration-300 overflow-hidden md:overflow-visible ${
           showInput
             ? "w-full opacity-100"
             : "w-0 opacity-0 pointer-events-none md:w-full md:opacity-100"
-        )}
+        }`}
       >
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder={placeholder}
-          className="bg-secondary/70 pr-10" // Add padding for the clear button
-          value={value}
+          className="pl-8 pr-10 bg-secondary/70"
+          value={searchValue}
           onChange={handleChange}
         />
-        {value && (
+
+        {isPending && (
+          <div className="absolute right-8 top-1/2 -translate-y-1/2">
+            <Spinner />
+          </div>
+        )}
+
+        {/* Clear Button */}
+        {searchValue && (
           <button
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-primary bg-secondary rounded-full p-1 hover:bg-secondary/80 transition-all"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-primary bg-secondary rounded-full p-1 hover:bg-secondary/80 transition-all"
             onClick={clearSearch}
             aria-label="Clear Search"
           >
@@ -123,4 +133,4 @@ export const SearchBar = ({ placeholder, value, setValue }: SearchBarProps) => {
       </div>
     </div>
   );
-};
+}

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { envConfig } from "../../../configs/env";
 
-export async function GET(_request: NextRequest) {
-  const response = await fetch(`${envConfig.API_URL}/api/v1/organizations`);
+export async function GET(request: NextRequest) {
+  const searchQuery = request.nextUrl.searchParams.get("q");
+  console.log("searchQuery", searchQuery);
+  const response = await fetch(
+    `${envConfig.API_URL}/api/v1/organizations?q=${searchQuery}`
+  );
 
   if (!response.ok) {
     return NextResponse.json(
