@@ -324,9 +324,9 @@ build-dockerfile:frontend:
     # Build dev image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-dev-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-dev-${CACHE_TAG},mode=max
       -t $REGISTRY/eggo-frontend:cache
       -f $DOCKERFILE_DEV .
     # Build production image
