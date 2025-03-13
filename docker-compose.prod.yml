@@ -129,7 +129,7 @@ services:
       - "traefik.http.routers.phpmyadmin-hub.entrypoints=http"
       - "traefik.http.routers.phpmyadmin-hub.rule=Host(`hub.kanaliiga.fi`) && PathPrefix(`/mysadmin/`)"
       - "traefik.http.middlewares.phpmyadmin-hub-stripprefix.stripprefix.prefixes=/mysadmin"
-      - "traefik.http.middlewares.phpmyadmin-hub-auth.basicauth.users=kana:$$2y$$10$$UUV0c4qd6OUqhs.w8DoWr.OkNOLHh9RkVGsZBCE6b5cHLK1rj/WFm"
+      - "traefik.http.middlewares.phpmyadmin-hub-auth.basicauth.users=${PHPMYADMIN_AUTH}"
       - "traefik.http.middlewares.phpmyadmin-hub-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.phpmyadmin-hub.middlewares=phpmyadmin-hub-https-redirect"
       - "traefik.http.routers.phpmyadmin-hub-secure.entrypoints=https"
