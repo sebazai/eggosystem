@@ -401,6 +401,7 @@ push-dockerfile:frontend:
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL
+      --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL
       --push
       -t $REGISTRY/eggo-frontend:dev
       -f apps/frontend/Dockerfile .

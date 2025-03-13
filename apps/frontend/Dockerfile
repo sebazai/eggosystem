@@ -36,7 +36,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm build --filter=frontend
 FROM base AS runner
 ARG NEXT_PUBLIC_API_URL=https://hub.kanaliiga.fi
 ARG NEXT_PUBLIC_CLIENT_API_URL=https://hub.kanaliiga.fi
-ARG NEXT_PUBLIC_BASE_PATH=''
+ARG NEXT_PUBLIC_BASE_PATH
 ARG NEXT_PUBLIC_BASE_URL=https://hub.kanaliiga.fi
 
 ENV NODE_ENV=production
