@@ -7,13 +7,14 @@ import { Suspense } from "react";
 import { Spinner } from "@/components/icons";
 
 export default async function AllOrganizations(props: {
-  searchParams: Promise<{ q: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
   const searchParams = await props.searchParams;
-  const search = searchParams.q || "";
-  const orgs = await fetch(
-    `${envConfig.BASE_URL}/api/organizations?q=${search}`
-  );
+  const search = searchParams.q;
+  const url = search
+    ? `${envConfig.BASE_URL}/api/organizations?q=${search}`
+    : `${envConfig.BASE_URL}/api/organizations`;
+  const orgs = await fetch(url);
   const organizations: Organizations[] = await orgs.json();
 
   return (

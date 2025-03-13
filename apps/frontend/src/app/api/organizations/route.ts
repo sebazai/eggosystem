@@ -3,10 +3,11 @@ import { envConfig } from "../../../configs/env";
 
 export async function GET(request: NextRequest) {
   const searchQuery = request.nextUrl.searchParams.get("q");
+  const backendUrl = searchQuery
+    ? `${envConfig.API_URL}/api/v1/organizations?q=${searchQuery}`
+    : `${envConfig.API_URL}/api/v1/organizations`;
 
-  const response = await fetch(
-    `${envConfig.API_URL}/api/v1/organizations?q=${searchQuery}`
-  );
+  const response = await fetch(backendUrl);
 
   if (!response.ok) {
     return NextResponse.json(
