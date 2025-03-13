@@ -1,11 +1,41 @@
-# How to migrate ebinstats kana table
+# How to migrate ebinstats kana
 
-Migrate ebinstats prod database to your dev env is optional.
+## Locally
 
-- Export latest kana database from production `https://csadmin.kanaliiga.fi/phpmyadmin/`
+### Docker compose
 
-- Rename and place it into `apps/backend/dbdump/kanaclean.sql`.
+Migrate ebinstats prod database to your env.
 
-- `docker compose up` - migrations container should migrate all data to the new
+1. Export latest kana database from production `https://csadmin.kanaliiga.fi/phpmyadmin/`
 
-- Remove `apps/backend/dbdump/kanaclean.sql`
+2. Run `KANA=true docker compose --profile migrations up`
+
+3. Wait for `migrations` container to start
+
+4. Go to environment phpMyAdmin
+
+   - Create database `kana`
+   - Grant `kanadbuser` same privileges as for `kanaliiga` table
+   - Import the `kana.sql` table
+
+5. Watch migrations run.
+
+### Devcontainer
+
+???
+
+## Gitlab CI
+
+1. Export latest kana database from production `https://csadmin.kanaliiga.fi/phpmyadmin/`
+
+2. Ensure CI/CD variable `KANA`=true
+
+3. Wait for `migrations` container to start in portainer.
+
+4. Go to environment phpMyAdmin
+
+   - Create database `kana`
+   - Grant `kanadbuser` same privileges as for `kanaliiga` table
+   - Import the `kana.sql` table
+
+5. Watch migrations run.
