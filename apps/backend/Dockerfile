@@ -41,6 +41,15 @@ COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
 # Copy app dist
 COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./
+#Opentelemetry configuration
+ENV OTEL_TRACES_EXPORTER="otlp"
+ENV OTEL_METRICS_EXPORTER="otlp"
+ENV OTEL_LOGS_EXPORTER="otlp"
+ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
+ENV OTEL_RESOURCE_ATTRIBUTES="service.instance.id=eggosystem-backend"
+ENV OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="http://alloy:4318"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
 # Do not run as root
 USER node
 
