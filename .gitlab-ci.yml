@@ -26,7 +26,6 @@ variables:
   MARIADB_USER: kanadbuser
   MARIADB_PASSWORD: dev-pass
   MARIADB_DATABASE: kanaliiga
-  DB_ROOT_PASSWORD: dev-pass
   DB_PASSWORD: dev-pass
   DB_USER: kanadbuser
   REDIS_HOST: eggo-redis
@@ -38,6 +37,8 @@ variables:
   DB_USER: $MARIADB_USER
   DB_PASSWORD: $MARIADB_PASSWORD
   DB_NAME: $MARIADB_DATABASE
+  # If true, migrations container will wait for old kana data to exist in db
+  KANA: $KANA
   PORTAINER_URL: $PORTAINER_URL
   PORTAINER_TOKEN: $PORTAINER_TOKEN
 

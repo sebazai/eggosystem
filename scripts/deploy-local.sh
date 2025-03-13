@@ -145,7 +145,6 @@ services:
       DB_USER: "ondemand_${ENV_ID}"
       DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
       DB_NAME: kanaliiga
-      DB_ROOT_PASSWORD: "${DB_ONDEMAND_ROOT_PASSWORD}"
       DB_PORT: 3306
     command: pnpm --filter=backend migrate
     networks:
@@ -160,7 +159,6 @@ services:
       DB_HOST: eggo-devdb-${ENV_ID}
       DB_USER: "ondemand_${ENV_ID}"
       DB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
-      DB_ROOT_PASSWORD: "${DB_ONDEMAND_ROOT_PASSWORD}"
       DB_NAME: kanaliiga
       DB_PORT: 3306
     command: pnpm -filter=backend seed

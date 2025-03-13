@@ -5,7 +5,6 @@
     "build": {
       "env": [
         "DB_ROOT_USER",
-        "DB_ROOT_PASSWORD",
         "DB_USER",
         "DB_PASSWORD",
         "DB_NAME",
@@ -45,28 +44,14 @@
       "cache": false
     },
     "migrate": {
-      "env": [
-        "NODE_ENV",
-        "DB_HOST",
-        "DB_USER",
-        "DB_PASSWORD",
-        "DB_NAME",
-        "DB_ROOT_PASSWORD"
-      ]
+      "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"]
     },
     "migrate:rollback": {},
     "migrate:down": {},
     "migrate:up": {},
     "migrate:make": {},
     "seed": {
-      "env": [
-        "NODE_ENV",
-        "DB_HOST",
-        "DB_USER",
-        "DB_PASSWORD",
-        "DB_NAME",
-        "DB_ROOT_PASSWORD"
-      ]
+      "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"]
     }
   }
 }

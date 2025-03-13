@@ -1,27 +1,8 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-import { envConnection } from "./helpers/migrationsDbConnections";
 import { type Knex } from "knex";
 
 export const config = { transaction: false };
 
-// Import Games, Leagues, and Seasons tables
-export async function up(): Promise<void> {
-  const baseDbConfig = {
-    client: "mysql2",
-    connection: {
-      ...envConnection,
-      user: process.env.DB_ROOT_USER ?? "root",
-      password: process.env.DB_ROOT_PASSWORD ?? "dev-pass",
-      database: "kanaliiga"
-    }
-  };
-  const knexi = require("knex");
-  const knex = knexi(baseDbConfig);
-  // const base = fs.readFileSync("./dbdump/kanaliiga.sql", "utf8");
-  // const baseStatements = base.split(/;/).filter((stmt) => stmt.trim()); // Split SQL into individual statements
-
-  await knex.raw('SET time_zone = "+00:00"');
-  await knex.raw("SET GLOBAL max_allowed_packet = 134217728");
+export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable("Games", (table: Knex.TableBuilder) => {
     table.increments("id").primary();
     table.string("name", 255).notNullable();
