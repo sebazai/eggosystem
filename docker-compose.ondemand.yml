@@ -1,11 +1,11 @@
 services:
-  backend-${ENV_ID}:
+  backend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:${ENV_ID}
     pull_policy: always
     depends_on:
-      seed-${ENV_ID}:
+      seed:
         condition: service_completed_successfully
-      eggo-redis-${ENV_ID}:
+      eggo-redis:
         condition: service_started
     environment:
       NODE_ENV: production
@@ -24,6 +24,7 @@ services:
       JWT_REFRESH_SECRET: $JWT_REFRESH_SECRET_ONDEMAND
       JWT_EXPIRES_IN: $JWT_EXPIRES_IN
       JWT_REFRESH_EXPIRES_IN: $JWT_REFRESH_EXPIRES_IN
+      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=backend-${ENV_ID}"
     networks:
       web:
         aliases:
@@ -44,11 +45,11 @@ services:
       - "traefik.http.services.hubbe-${ENV_ID}.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
 
-  frontend-${ENV_ID}:
+  frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${ENV_ID}
     pull_policy: always
     depends_on:
-      - backend-${ENV_ID}
+      - backend
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
@@ -72,7 +73,7 @@ services:
       - "traefik.http.services.kanahub-${ENV_ID}.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
-  eggo-ondemand-db-${ENV_ID}:
+  eggo-devdb-${ENV_ID}:
     image: bitnami/mariadb:11.4.2
     restart: always
     container_name: eggo-devdb-${ENV_ID}
@@ -100,17 +101,17 @@ services:
       timeout: 20s
       retries: 10
 
-  eggo-redis-${ENV_ID}:
+  eggo-redis:
     image: redis:7-alpine
     restart: always
     container_name: eggo-redis-${ENV_ID}
     networks:
       - web
 
-  seed-${ENV_ID}:
+  seed:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${ENV_ID}
     depends_on:
-      eggo-ondemand-db-${ENV_ID}:
+      eggo-devdb-${ENV_ID}:
         condition: service_healthy
     environment:
       NODE_ENV: production
@@ -123,11 +124,10 @@ services:
     networks:
       - web
 
-  phpmyadmin-${ENV_ID}:
+  phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
-    container_name: phpmyadmin-${ENV_ID}
     depends_on:
-      eggo-ondemand-db-${ENV_ID}:
+      eggo-devdb-${ENV_ID}:
         condition: service_healthy
     environment:
       PMA_HOST: eggo-devdb-${ENV_ID}
