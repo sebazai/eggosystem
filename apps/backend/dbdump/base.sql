@@ -14,8 +14,8 @@ VALUES (
     1,
     'Season 2',
     'CS:GO Season 2',
-    NULL,
-    NULL,
+    '2019-01-01',
+    '2019-06-01',
     "popflash"
   ),
   (
@@ -135,7 +135,6 @@ VALUES (
     NULL,
     "faceit"
   );
-
 INSERT INTO Leagues (id, name)
 VALUES (1, 'Masters'),
   (2, 'Challengers'),
@@ -154,7 +153,6 @@ VALUES (1, 'Masters'),
   (15, 'Semi-pro'),
   (16, 'Pro'),
   (17, 'MKT');
-
 INSERT INTO SeasonLeagues (old_kana_league_id, league_id, tier, season_id)
 VALUES (1, 17, 3, 3),
   (2, 15, 2, 3),

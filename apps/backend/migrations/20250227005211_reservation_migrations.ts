@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Knex } from "knex";
 
+export const config = { transaction: false };
+
 async function getMatchesWithoutReservation(knex: Knex) {
   const matches = await knex("Matches")
     .leftJoin("MatchReservations", "Matches.id", "MatchReservations.match_id")
@@ -117,8 +119,8 @@ async function handleOneToOneReservations(knex: Knex) {
   await knex("Reservations").whereNot("stream_url", "like", "http%").del();
   // Drop the column date_start and date_end from Reservations
   await knex.schema.alterTable("Reservations", (table) => {
-    table.dropForeign("team1_id", "Reservations_ibfk_1");
-    table.dropForeign("team2_id", "Reservations_ibfk_2");
+    table.dropForeign("team1_id", "reservations_team1_id_foreign");
+    table.dropForeign("team2_id", "reservations_team2_id_foreign");
     table.dropColumn("team1_id");
     table.dropColumn("team2_id");
     table.dropColumn("date_start");
@@ -133,7 +135,7 @@ async function handleOneToOneReservations(knex: Knex) {
   });
   // Set Reservations match_id to be not nullable
   await knex.schema.table("Reservations", (table) => {
-    table.integer("match_id").notNullable().alter();
+    table.integer("match_id").unsigned().notNullable().alter();
   });
 }
 
@@ -143,7 +145,7 @@ export async function up(knex: Knex): Promise<void> {
     table.time("end_time").nullable();
   });
   await knex.schema.table("Reservations", (table) => {
-    table.integer("match_id").nullable();
+    table.integer("match_id").unsigned().nullable();
     table
       .foreign("match_id")
       .references("Matches.id")

@@ -17,8 +17,6 @@ services:
     depends_on:
       eggo-devdb:
         condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
     env_file: .env.development
@@ -28,12 +26,10 @@ services:
     image: eggo-back
     profiles:
       - seed
+      - test
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.dev
-    depends_on:
-      migrations:
-        condition: service_completed_successfully
     env_file: .env.development
     command: "pnpm --filter=backend seed"
 
@@ -100,14 +96,12 @@ services:
     build:
       context: .
       dockerfile: ./apps/backend/Dockerfile.migrations.dev
+    profiles:
+      - migrations
     depends_on:
       eggo-devdb:
         condition: service_healthy
     env_file: .env.development
-    ports:
-      - 8485:8485
-    volumes:
-      - ./apps/backend/dbdump:/usr/src/app/dbdump
     command: "npx knex migrate:latest"
 
   backend-test:
@@ -120,8 +114,6 @@ services:
     depends_on:
       eggo-devdb:
         condition: service_healthy
-      migrations:
-        condition: service_completed_successfully
       seed:
         condition: service_completed_successfully
     env_file: .env.development
