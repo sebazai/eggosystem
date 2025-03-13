@@ -332,6 +332,10 @@ build-dockerfile:frontend:
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
       --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
+      --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
+      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
+      --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
+      --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       -t eggo-frontend
       -f $DOCKERFILE .
 
