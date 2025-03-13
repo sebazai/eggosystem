@@ -101,7 +101,10 @@ services:
     depends_on:
       eggo-devdb:
         condition: service_healthy
+    environment:
+      WAIT_FOR_DB: ${KANA}
     env_file: .env.development
+    entrypoint: ["scripts/wait-for-kanadb.sh"]
     command: "npx knex migrate:latest"
 
   backend-test:

@@ -2,14 +2,16 @@
 FROM node:22-slim AS base
 RUN apt-get update && apt-get install -y default-mysql-client
 
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
+COPY scripts/wait-for-kanadb.sh ./scripts/wait-for-kanadb.sh
+RUN chmod +x ./scripts/wait-for-kanadb.sh
 COPY apps/backend/knexfile.ts ./knexfile.ts
 COPY apps/backend/migrations/ ./migrations/
 COPY apps/backend/seeds/ ./seeds/
 COPY apps/backend/migrations/migrations_tsconfig.json ./tsconfig.json
 
-RUN npm install ts-node knex dotenv mysql2
+RUN npm install ts-node knex mysql2
 
 CMD [ "node", "node_modules/.bin/knex", "migrate:latest" ]
