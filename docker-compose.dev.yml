@@ -125,6 +125,23 @@ services:
       - "traefik.http.services.phpmyadmin-hubdev.loadbalancer.server.port=80"
       - "traefik.docker.network=web"
 
+  eggo-migrations:
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    depends_on:
+      eggo-dev-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_HOST: eggo-dev-db
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: "${MARIADB_PASSWORD}"
+      DB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_PORT: 3306
+    command: pnpm --filter=backend migrate
+    networks:
+      - web
+
 networks:
   web:
     external: true
