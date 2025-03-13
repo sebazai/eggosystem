@@ -291,7 +291,6 @@ export async function up(knex: Knex): Promise<void> {
     const [rows] = await tempDb.raw("SHOW DATABASES LIKE 'kana';");
 
     if (rows.length === 0) {
-      console.log("Database 'kana' does not exist. Skipping migration.");
       return; // Exit early to skip migration
     }
 

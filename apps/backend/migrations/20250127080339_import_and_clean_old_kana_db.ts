@@ -454,11 +454,9 @@ function getCleanDatabaseQueries() {
 
 // This will only run if dbdump/kanaclean.sql exists, used only to import old data
 export async function up(knex: Knex): Promise<void> {
-  console.log("Checking if 'kana' database exists...");
   // Check if the 'kana' database exists
   const [rows] = await knex.raw("SHOW DATABASES LIKE 'kana';");
   if (rows.length === 0) {
-    console.log("Database 'kana' does not exist. Skipping kana migration...");
     return;
   }
   console.log("Database 'kana' exists. Proceeding with migration.");
