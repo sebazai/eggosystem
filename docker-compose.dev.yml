@@ -128,10 +128,10 @@ services:
   eggo-migrations:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
     depends_on:
-      eggo-prod-db:
+      eggo-dev-db:
         condition: service_healthy
     environment:
-      DB_HOST: eggo-prod-db
+      DB_HOST: eggo-dev-db
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: "${MARIADB_PASSWORD}"
       DB_NAME: ${MARIADB_DATABASE}
