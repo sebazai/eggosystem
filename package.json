@@ -32,7 +32,9 @@
     "eggosystem"
   ],
   "dependencies": {
-    "turbo": "2.4.4"
+    "turbo": "2.4.4",
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "0.56.1"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
