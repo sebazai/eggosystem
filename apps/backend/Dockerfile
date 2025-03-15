@@ -43,10 +43,13 @@ ENV OTEL_LOGS_EXPORTER="otlp"
 ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 # OTEL Configs
 ENV OTEL_SERVICE_NAME="eggosystem"
+ENV OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT=4095
+ENV OTEL_EXPORTER_OTLP_COMPRESSION=gzip
+ENV OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE=delta
 ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=eggosystem-backend"
 ENV OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
-ENV OTEL_EXPORTER_OTLP_ENDPOINT="http://172.17.0.1:4317"
-ENV OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT="https://otlp.eu01.nr-data.net"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules

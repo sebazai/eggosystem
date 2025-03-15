@@ -20,6 +20,7 @@ services:
       JWT_SECRET: $JWT_SECRET
       JWT_REFRESH_SECRET: $JWT_REFRESH_SECRET
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=backend"
+      OTEL_EXPORTER_OTLP_HEADERS: "api-key=${NEWRELIC_API_KEY}"
     networks:
       - web
     labels:

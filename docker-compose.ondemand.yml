@@ -25,6 +25,7 @@ services:
       JWT_EXPIRES_IN: $JWT_EXPIRES_IN
       JWT_REFRESH_EXPIRES_IN: $JWT_REFRESH_EXPIRES_IN
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=ondemand,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=backend-${ENV_ID}"
+      OTEL_EXPORTER_OTLP_HEADERS: "api-key=${NEWRELIC_API_KEY}"
     networks:
       web:
         aliases:
