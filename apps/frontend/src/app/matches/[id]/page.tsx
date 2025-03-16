@@ -1,5 +1,6 @@
 import Image from "next/image";
 import React from "react";
+import { MatchHeader } from "@/components/layout/match-header";
 
 interface MapPickBan {
   map: string;
@@ -215,11 +216,43 @@ export default function MatchPage() {
     { award: "Most flash assists", player: "Sparks", team: 0, score: 4 }
   ];
 
+  // Calculate total score for each team from mapPickBans
+  const totalScore = mapPickBans
+    .filter((map) => map.type === "PICK" || map.type === "DECIDER")
+    .reduce(
+      (acc, map) => {
+        if (map.score) {
+          if (map.score.team1 > map.score.team2) acc.team1++;
+          if (map.score.team2 > map.score.team1) acc.team2++;
+        }
+        return acc;
+      },
+      { team1: 0, team2: 0 }
+    );
+
+  const matchHeaderProps = {
+    team1: {
+      name: teams[0]?.name ?? "Team 1",
+      logo: "https://stats.kanaliiga.fi/img/S14_1997.png",
+      score: totalScore.team1,
+      rank: 9
+    },
+    team2: {
+      name: teams[1]?.name ?? "Team 2",
+      logo: "https://stats.kanaliiga.fi/img/S14_1999.png",
+      score: totalScore.team2,
+      rank: 1
+    },
+    matchTime: "21:00",
+    matchDate: "25TH JAN"
+  };
+
   return (
     <div
       className="min-h-fit pb-8"
       style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
     >
+      <MatchHeader {...matchHeaderProps} />
       <div className="max-w-[1400px] mx-auto p-2">
         {/* Maps Container */}
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mb-4">
@@ -469,33 +502,40 @@ export default function MatchPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 max-h-[600px] overflow-y-auto">
+        {/* Player Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
           {teams.map((team, teamIndex) => (
             <div
               key={team.name}
               className={`flex flex-col ${teamIndex === 0 ? "mb-4 md:mb-0" : ""}`}
             >
-              {/* Team header with stats columns */}
+              {/* Team name bar */}
               <div
-                className="grid grid-cols-[2fr_repeat(7,1fr)] items-center text-xs text-gray-400 py-1 px-2 sticky top-0"
+                className="flex items-center gap-2 p-3 mb-[1px]"
                 style={{ backgroundColor: "hsla(25, 70%, 20%, 0.7)" }}
               >
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <Image
-                    src={
-                      teamIndex === 0
-                        ? "https://stats.kanaliiga.fi/img/S14_1997.png"
-                        : "https://stats.kanaliiga.fi/img/S14_1999.png"
-                    }
-                    alt={team.name}
-                    className="w-4 h-4 flex-shrink-0"
-                    width={16}
-                    height={16}
-                  />
-                  <h2 className="text-sm font-bold text-orange-400 truncate">
-                    {team.name}
-                  </h2>
-                </div>
+                <Image
+                  src={
+                    teamIndex === 0
+                      ? "https://stats.kanaliiga.fi/img/S14_1997.png"
+                      : "https://stats.kanaliiga.fi/img/S14_1999.png"
+                  }
+                  alt={team.name}
+                  className="w-6 h-6"
+                  width={24}
+                  height={24}
+                />
+                <h2 className="text-base font-bold text-orange-400">
+                  {team.name}
+                </h2>
+              </div>
+
+              {/* Stats header */}
+              <div
+                className="grid grid-cols-[2fr_repeat(7,1fr)] items-center text-xs text-gray-400 py-2 px-3 sticky top-0"
+                style={{ backgroundColor: "hsla(25, 70%, 20%, 0.7)" }}
+              >
+                <div className="text-left">PLAYER</div>
                 <div className="text-center">K</div>
                 <div className="text-center">D</div>
                 <div className="text-center">+/-</div>
@@ -506,7 +546,10 @@ export default function MatchPage() {
               </div>
 
               {/* Mobile Headers - only player columns */}
-              <div className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] text-xs text-gray-400 p-2">
+              <div
+                className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] text-xs text-gray-400 p-2"
+                style={{ backgroundColor: "hsla(25, 70%, 20%, 0.7)" }}
+              >
                 <div>PLAYER</div>
                 <div className="text-center">K</div>
                 <div className="text-center">D</div>
@@ -516,10 +559,8 @@ export default function MatchPage() {
               {team.players.map((player) => (
                 <React.Fragment key={player.name}>
                   {/* Desktop Row */}
-                  <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] py-2 border-b border-gray-800 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{player.name}</span>
-                    </div>
+                  <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
+                    <div className="text-left font-bold">{player.name}</div>
                     <div className="text-center">{player.kills}</div>
                     <div className="text-center">{player.deaths}</div>
                     <div
@@ -542,10 +583,8 @@ export default function MatchPage() {
                   </div>
 
                   {/* Mobile Row */}
-                  <div className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] py-2 border-b border-gray-800 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{player.name}</span>
-                    </div>
+                  <div className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
+                    <div className="text-left font-bold">{player.name}</div>
                     <div className="text-center">{player.kills}</div>
                     <div className="text-center">{player.deaths}</div>
                     <div className="text-center">{player.adr}</div>
@@ -557,17 +596,15 @@ export default function MatchPage() {
         </div>
 
         {/* Top Players */}
-        <div className="mt-8">
+        <div className="mt-8 max-w-[600px]">
           <h2 className="text-xl font-bold text-orange-400 mb-4">
-            Top players
+            TOP PLAYERS
           </h2>
-          <div className="bg-[#1a1a1a]">
-            <div className="grid grid-cols-[1fr_1fr_auto] gap-4 p-4">
-              <div className="text-gray-300 font-medium text-sm">Award</div>
-              <div className="text-gray-300 font-medium text-sm">Player</div>
-              <div className="text-gray-300 font-medium text-sm text-right">
-                Score
-              </div>
+          <div className="bg-[#1a1a1a] rounded-sm">
+            <div className="grid grid-cols-[1.5fr_1fr_auto] gap-4 p-4">
+              <div className="text-gray-400 text-sm">Award</div>
+              <div className="text-gray-400 text-sm">Player</div>
+              <div className="text-gray-400 text-sm text-right">Score</div>
               {topPlayers.map((award, index) => (
                 <React.Fragment key={index}>
                   <div className="text-gray-400 text-sm">{award.award}</div>
