@@ -466,7 +466,7 @@ deploy-prod:
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
 
 deploy-staging:
-  image: docker:27.5.1-alpine3.21
+  image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
   environment:
