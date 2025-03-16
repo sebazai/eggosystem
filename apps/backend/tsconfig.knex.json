@@ -5,5 +5,5 @@
     "moduleResolution": "Node10",
     "outDir": "./dist"
   },
-  "include": ["knexfile.ts"]
+  "include": ["knexfile.ts", "migrations/**/*.ts"]
 }
