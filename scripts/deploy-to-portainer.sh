@@ -54,6 +54,18 @@ fi
 # Read the compose file content
 COMPOSE_CONTENT=$(cat "$COMPOSE_FILE_PATH")
 
+# Extract all image names from the compose file
+IMAGES=$(yq eval '.services[].image' "$COMPOSE_CONTENT")
+
+# Pull each image via Portainer API
+for IMAGE in $IMAGES; do
+  echo "Pulling image: $IMAGE"
+  curl -X POST -H "X-API-Key: ${PORTAINER_TOKEN}" \
+       -H "Content-Type: application/json" \
+       -d "{\"fromImage\": \"${IMAGE}\"}" \
+       "${PORTAINER_URL}/api/endpoints/${ENDPOINT_ID}/docker/images/create"
+done
+
 # Base64 encode the compose file for API calls that need it
 COMPOSE_FILE_BASE64=$(cat "$COMPOSE_FILE_PATH" | base64 -w 0)
 
@@ -156,10 +168,10 @@ else
     -H "X-API-Key: ${PORTAINER_TOKEN}" \
     -H "Content-Type: application/json" \
     -d "{
-      \"stackFileContent\": ${COMPOSE_CONTENT_ESCAPED},
       \"env\": [],
       \"prune\": true,
-      \"pullImage\": true
+      \"pullImage\": true,
+      \"stackFileContent\": ${COMPOSE_CONTENT_ESCAPED}  
     }")
   
   UPDATE_STATUS=$?
