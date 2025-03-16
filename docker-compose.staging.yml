@@ -140,6 +140,7 @@ services:
       DB_PORT: 3306
       WAIT_FOR_DB: ${KANA}
     entrypoint: ["scripts/wait-for-kanadb.sh"]
+    command: ["npx", "knex", "migrate:latest", "--knexfile=dist/knexfile.js"]
     networks:
       - web
 
