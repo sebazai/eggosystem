@@ -217,7 +217,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   }, [setValue, steamIds]);
 
   const onSubmit = (data: FormValues) => {
-    console.log("Submitted Data:", data);
+    console.log("Submitted:", data);
   };
 
   const {
