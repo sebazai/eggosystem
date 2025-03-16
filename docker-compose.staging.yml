@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:staging
     pull_policy: always
     depends_on:
       eggo-staging-db:
@@ -128,7 +128,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:staging
     depends_on:
       eggo-staging-db:
         condition: service_healthy
