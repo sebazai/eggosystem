@@ -21,8 +21,6 @@ const setJWTValues = () => {
   if (process.env.NODE_ENV === "production") {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
-    // const JWT_EXPIRES_IN = JWT_EXPIRES_IN_AS_NUM;
-    // const JWT_REFRESH_EXPIRES_IN = JWT_REFRESH_EXPIRES_IN_AS_NUM;
     return {
       JWT_SECRET,
       JWT_REFRESH_SECRET,
@@ -33,12 +31,14 @@ const setJWTValues = () => {
   const JWT_SECRET = process.env.JWT_SECRET ?? "your_jwt_secret";
   const JWT_REFRESH_SECRET =
     process.env.JWT_REFRESH_SECRET ?? "your_refresh_secret";
+  const JWT_EXPIRES_IN = JWT_EXPIRES_IN_AS_NUM;
+  const JWT_REFRESH_EXPIRES_IN = JWT_REFRESH_EXPIRES_IN_AS_NUM;
 
   return {
     JWT_SECRET,
     JWT_REFRESH_SECRET,
-    JWT_EXPIRES_IN: 30,
-    JWT_REFRESH_EXPIRES_IN: 120
+    JWT_EXPIRES_IN,
+    JWT_REFRESH_EXPIRES_IN
   };
 };
 
@@ -88,8 +88,6 @@ const clearCookies = (res: Response) => {
 export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {
   const { exp, iat, ...rest } = user;
   const withJwtId = jti ? { ...rest, jti } : rest;
-  console.log("JWT_EXPIRES_IN", JWT_EXPIRES_IN);
-  console.log("JWT_REFRESH_EXPIRES_IN", JWT_REFRESH_EXPIRES_IN);
   const accessToken = jwt.sign(withJwtId, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN
   });

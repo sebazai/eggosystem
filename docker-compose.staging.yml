@@ -1,20 +1,20 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
     pull_policy: always
     depends_on:
-      eggo-dev-db:
+      eggo-staging-db:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      DB_HOST: eggo-dev-db
+      DB_HOST: eggo-staging-db
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: "${MARIADB_PASSWORD}"
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
       FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}
       BACKEND_URL: https://${HUBDEV_PUBLIC_URL}
-      REDIS_HOST: eggo-dev-redis
+      REDIS_HOST: eggo-staging-redis
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
       JWT_SECRET: $JWT_SECRET_STAGING
@@ -39,7 +39,7 @@ services:
       - "traefik.docker.network=web"
 
   frontend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:staging
     pull_policy: always
     depends_on:
       - dev-backend
@@ -65,7 +65,7 @@ services:
       - "traefik.http.services.kanahubdev.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
-  eggo-dev-db:
+  eggo-staging-db:
     image: bitnami/mariadb:11.4.2
     restart: always
     environment:
@@ -92,7 +92,7 @@ services:
       timeout: 20s
       retries: 10
 
-  eggo-dev-redis:
+  eggo-staging-redis:
     image: redis:7-alpine
     networks:
       - web
@@ -100,11 +100,11 @@ services:
 
   phpmyadmin-hubdev:
     depends_on:
-      - eggo-dev-db
+      - eggo-staging-db
     image: phpmyadmin/phpmyadmin
     restart: always
     environment:
-      PMA_HOST: eggo-dev-db
+      PMA_HOST: eggo-staging-db
       PMA_ABSOLUTE_URI: https://${HUBDEV_PUBLIC_URL}/mysadmin/
       UPLOAD_LIMIT: 1G
     networks:
@@ -128,12 +128,12 @@ services:
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations
     depends_on:
-      eggo-dev-db:
+      eggo-staging-db:
         condition: service_healthy
     environment:
-      DB_HOST: eggo-dev-db
+      DB_HOST: eggo-staging-db
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: "${MARIADB_PASSWORD}"
       DB_NAME: ${MARIADB_DATABASE}
