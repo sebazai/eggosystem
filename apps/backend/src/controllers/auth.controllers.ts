@@ -9,25 +9,25 @@ const setJWTValues = () => {
   const expireIn7Days = 7 * 24 * 60 * 60;
   const expireIn20m = 20 * 60;
   const JWT_EXPIRES_IN_AS_NUM = isNaN(Number(process.env.JWT_EXPIRES_IN))
-    ? 30
+    ? expireIn20m
     : Number(process.env.JWT_EXPIRES_IN);
 
   const JWT_REFRESH_EXPIRES_IN_AS_NUM = isNaN(
     Number(process.env.JWT_REFRESH_EXPIRES_IN)
   )
-    ? 120
+    ? expireIn7Days
     : Number(process.env.JWT_REFRESH_EXPIRES_IN);
 
   if (process.env.NODE_ENV === "production") {
     const JWT_SECRET = process.env.JWT_SECRET!;
     const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
-    const JWT_EXPIRES_IN = JWT_EXPIRES_IN_AS_NUM;
-    const JWT_REFRESH_EXPIRES_IN = JWT_REFRESH_EXPIRES_IN_AS_NUM;
+    // const JWT_EXPIRES_IN = JWT_EXPIRES_IN_AS_NUM;
+    // const JWT_REFRESH_EXPIRES_IN = JWT_REFRESH_EXPIRES_IN_AS_NUM;
     return {
       JWT_SECRET,
       JWT_REFRESH_SECRET,
-      JWT_EXPIRES_IN,
-      JWT_REFRESH_EXPIRES_IN
+      JWT_EXPIRES_IN: 30,
+      JWT_REFRESH_EXPIRES_IN: 120
     };
   }
   const JWT_SECRET = process.env.JWT_SECRET ?? "your_jwt_secret";
