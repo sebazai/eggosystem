@@ -42,7 +42,7 @@ services:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:staging
     pull_policy: always
     depends_on:
-      - staging-backend
+      - backend
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}
