@@ -374,7 +374,6 @@ push-dockerfile:backend:
       --cache-to type=registry,ref=$REGISTRY/eggo-backend:latest
       --push
       -t $REGISTRY/eggo-backend:latest
-      -t $REGISTRY/eggo-backend:staging
       -f apps/backend/Dockerfile .
 
 push-dockerfile:migrations:
@@ -400,7 +399,6 @@ push-dockerfile:migrations:
       --cache-to type=registry,ref=$REGISTRY/eggo-migrations:latest
       --push
       -t $REGISTRY/eggo-migrations:latest
-      -t $REGISTRY/eggo-migrations:staging
       -f apps/backend/Dockerfile.migrations .
 
 push-dockerfile:frontend:
@@ -474,7 +472,7 @@ deploy-staging:
     url: https://${HUBDEV_PUBLIC_URL}
   variables:
     <<: *deploy-variables
-    ENV_ID: dev
+    ENV_ID: staging
   before_script:
     - apk add --no-cache gettext curl jq bash yq
   script:
