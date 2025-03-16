@@ -37,8 +37,8 @@ const setJWTValues = () => {
   return {
     JWT_SECRET,
     JWT_REFRESH_SECRET,
-    JWT_EXPIRES_IN: expireIn20m,
-    JWT_REFRESH_EXPIRES_IN: expireIn7Days
+    JWT_EXPIRES_IN: 30,
+    JWT_REFRESH_EXPIRES_IN: 120
   };
 };
 
