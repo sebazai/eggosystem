@@ -1,16 +1,12 @@
 import { LogOut } from "@/components/logout";
 import { SteamLoginButton } from "@/components/steam-login";
-import useSession from "@/hooks/useSession";
+import { useAuth } from "@/context/AuthContext";
 
 export const MobileUserMenu = () => {
-  const { user, setUser } = useSession();
+  const { user, logout } = useAuth();
   return (
     <div>
-      {user ? (
-        <LogOut logOutUser={() => setUser(null)} />
-      ) : (
-        <SteamLoginButton />
-      )}
+      {user ? <LogOut logOutUser={() => logout()} /> : <SteamLoginButton />}
     </div>
   );
 };

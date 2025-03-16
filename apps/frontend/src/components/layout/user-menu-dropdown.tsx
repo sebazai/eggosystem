@@ -10,12 +10,12 @@ import {
 import { Settings2Icon, UserCheckIcon, UserIcon } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import useSession from "@/hooks/useSession";
 import { SteamLoginButton } from "../steam-login";
 import { LogOut } from "../logout";
+import { useAuth } from "@/context/AuthContext";
 
 export default function UserDropdown() {
-  const { user, setUser } = useSession();
+  const { user, logout } = useAuth();
 
   return (
     <DropdownMenu>
@@ -43,7 +43,7 @@ export default function UserDropdown() {
           )}
           <DropdownMenuItem>
             {user ? (
-              <LogOut logOutUser={() => setUser(null)} />
+              <LogOut logOutUser={() => logout()} />
             ) : (
               <SteamLoginButton />
             )}

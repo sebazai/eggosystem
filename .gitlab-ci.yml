@@ -544,7 +544,7 @@ deploy-ondemand:
       -t $REGISTRY/eggo-frontend:${ENV_ID}
       -f apps/frontend/Dockerfile .
   script:
-    - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
+    - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64_ONDEMAND | base64 -d)
     - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
     - envsubst < docker-compose.ondemand.yml > docker-compose.yml
     - echo "Deploying stack eggosystem-${ENV_ID} to Portainer at ${PORTAINER_URL}"

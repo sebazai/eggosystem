@@ -1,8 +1,20 @@
+import { cn } from "@/lib/utils";
 import type React from "react";
 
-export const TheContainer = ({ children }: { children: React.ReactNode }) => {
+export const TheContainer = ({
+  children,
+  classNames
+}: {
+  children: React.ReactNode;
+  classNames?: string;
+}) => {
   return (
-    <div className="flex items-center justify-center min-h-[70vh]">
+    <div
+      className={cn(
+        "flex items-center justify-center min-h-[70vh]",
+        classNames
+      )}
+    >
       {children}
     </div>
   );

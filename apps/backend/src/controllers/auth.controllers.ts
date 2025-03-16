@@ -110,8 +110,6 @@ export const login = async (req: Request, res: Response) => {
   await redisClient.set(jti, refreshToken, "EX", JWT_REFRESH_EXPIRES_IN);
 
   setCookies(res, accessToken, refreshToken);
-
-  res.redirect(`${process.env.FRONTEND_URL}/login-success`);
 };
 
 export const refreshToken = async (req: Request, res: Response) => {

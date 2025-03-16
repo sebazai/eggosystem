@@ -32,8 +32,7 @@ export const apiFetch = async <T>(url: string): Promise<T> => {
 
       if (response.status === 401) {
         console.warn("No refresh token available or session expired.");
-        refreshSubscribers = [];
-        return;
+        throw new Error("No refresh token available or session expired.");
       }
 
       throw new Error("Token refresh failed");

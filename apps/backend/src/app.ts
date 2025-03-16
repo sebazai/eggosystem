@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-namespace */
 import dotenv from "dotenv";
 
 if (!process.env.NODE_ENV) {
@@ -7,8 +6,10 @@ if (!process.env.NODE_ENV) {
 
 // Update with your config settings.
 if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
-  dotenv.config({ path: ".env.development" });
+  // eslint-disable-next-line no-console
+  console.log("Loading .env.development & .env file");
   dotenv.config({ path: ".env" });
+  dotenv.config({ path: ".env.development" });
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
@@ -42,6 +43,7 @@ import cookieParser from "cookie-parser";
 import { type JwtPayload } from "jsonwebtoken";
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       parsedParams: ParsedParams; // Add the parsedParams property to the Request type

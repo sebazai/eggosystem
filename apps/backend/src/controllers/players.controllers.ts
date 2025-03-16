@@ -26,7 +26,7 @@ export const getPlayerBySteamIdController = async (
     return;
   }
 
-  res.status(200).json({ player });
+  res.status(200).json(player);
 };
 
 export const getPlayersByFiltersController = async (

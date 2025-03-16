@@ -1,7 +1,9 @@
 "use client";
 
 import { TheContainer } from "@/components/layout/the-container";
+import { SteamLoginButton } from "@/components/steam-login";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 import { useSeason } from "@/hooks/data/useSeason";
 import { useServerTime } from "@/hooks/useNow";
 import Link from "next/link";
@@ -12,9 +14,10 @@ interface SignupWelcomeProps {
 
 export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   const { season, isLoading, isError, isValidating } = useSeason(seasonId);
+  const { user, loading } = useAuth();
   const serverTime = useServerTime();
 
-  if (isLoading || isValidating) {
+  if (isLoading || isValidating || loading) {
     return <TheContainer>Loading...</TheContainer>;
   }
   if (isError || !season) {
@@ -129,13 +132,23 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
       </div>
       <div className="text-center text-xl pb-6">
         <div className="pb-10">GL & HF and See You on the Server! 💥</div>
-        <Button
-          asChild
-          variant="outline"
-          className="h-22 w-52 text-lg focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          <Link href={`/signup/${seasonId}/register`}>Register team!</Link>
-        </Button>
+
+        {!user ? (
+          <div className="flex justify-center">
+            <SteamLoginButton returnUrl={`/signup/${seasonId}/registration`}>
+              Login and register team!
+            </SteamLoginButton>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            className="h-22 w-52 text-lg focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <Link href={`/signup/${seasonId}/registration`}>
+              Register team!
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );

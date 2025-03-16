@@ -41,14 +41,14 @@ export const StageFilter = (props: StageFilterProps) => {
     (a, b) => a.id === b
   );
 
-  const handleSelectedItems = (selectedItems: MultiSelect[]) => {
+  const handleSelectedItems = (selectedItems: MultiSelect<number>[]) => {
     const selectedValues = selectedItems.map((item) => item.value);
     props.handleSetSearchParams(filterName, selectedValues);
     setSelectedItems(selectedValues);
   };
 
   return (
-    <FancyMultiSelect
+    <FancyMultiSelect<number>
       filter={filterName}
       selectable={selectableStages.map((stage) => ({
         value: stage.id,

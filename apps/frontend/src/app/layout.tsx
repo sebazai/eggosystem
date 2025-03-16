@@ -10,6 +10,7 @@ import SkipToContent from "@/components/layout/skip-to-content";
 import { KfcRain } from "@/components/layout/kfc-rain";
 import ScrollToTop from "@/components/layout/scroll-to-top";
 import { Suspense } from "react";
+import { AuthProvider } from "@/context/AuthContext";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -94,29 +95,31 @@ export default function RootLayout({
           kanaHeadingFonts.variable
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SkipToContent />
-          <KfcRain />
-          <ScrollToTop />
-          <div className="flex flex-col min-h-svh min-w-[200px]">
-            <Navigation />
-            <div className="flex flex-grow justify-center w-full">
-              <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-                <Suspense>
-                  <main className="md:py-6 py-4" id="main-content">
-                    {children}
-                  </main>
-                </Suspense>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <SkipToContent />
+            <KfcRain />
+            <ScrollToTop />
+            <div className="flex flex-col min-h-svh min-w-[200px]">
+              <Navigation />
+              <div className="flex flex-grow justify-center w-full">
+                <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
+                  <Suspense>
+                    <main className="md:py-6 py-4" id="main-content">
+                      {children}
+                    </main>
+                  </Suspense>
+                </div>
               </div>
+              <Footer />
             </div>
-            <Footer />
-          </div>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

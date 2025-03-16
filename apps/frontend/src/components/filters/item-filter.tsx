@@ -56,14 +56,14 @@ export const ItemFilter = <T extends { id: number }>(
 
   if (props.sorter) selectableIdsIntersection.sort(props.sorter);
 
-  const handleSelectedItems = (selectedItems: MultiSelect[]) => {
-    const selectedValues = selectedItems.map((item) => item.value);
+  const handleSelectedItems = (value: MultiSelect<number>[]) => {
+    const selectedValues = value.map((item) => item.value);
     props.handleSetSearchParams(props.filterName, selectedValues);
     setSelectedItems(selectedValues);
   };
 
   return (
-    <FancyMultiSelect
+    <FancyMultiSelect<number>
       filter={props.filterName}
       selectable={selectableIdsIntersection.map((item) => ({
         value: item.id,

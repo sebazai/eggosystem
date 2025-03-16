@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const response = await fetch(backendUrl);
 
   if (!response.ok) {
-    return NextResponse.json(
+    throw NextResponse.json(
       { error: "Failed to fetch organizations" },
       { status: 500 }
     );

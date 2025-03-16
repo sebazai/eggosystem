@@ -23,10 +23,8 @@
 // SOFTWARE.
 
 // Copied from https://github.com/mxkaske/mxkaske.dev/blob/main/components/craft/fancy-multi-select.tsx
-
 import * as React from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
-
 import { Badge } from "@/components/ui/badge";
 import {
   Command,
@@ -35,28 +33,29 @@ import {
   CommandList
 } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
-import type { Nullable } from "../../../../../packages/types/src";
 import type { MultiSelect } from "@/types/MultiSelectType";
 
-interface FancyMultiSelectProps {
+interface FancyMultiSelectProps<T> {
   filter: string;
-  selectable?: MultiSelect[];
-  currentSelection?: MultiSelect[];
-  onSelectChange: (value: MultiSelect[]) => void;
+  selectable: MultiSelect<T>[];
+  currentSelection: MultiSelect<T>[];
+  onSelectChange: (value: MultiSelect<T>[]) => void;
   placeholder?: string;
   isOpen: boolean;
-  setOpen: (value: Nullable<string>) => void;
+  setOpen: (value: string | null) => void;
+  isMulti?: boolean; // New prop to toggle between single and multi-select
 }
 
-export function FancyMultiSelect({
+export function FancyMultiSelect<T>({
   filter,
-  selectable,
+  selectable = [],
   onSelectChange,
   currentSelection = [],
   placeholder = "Filter",
   isOpen,
-  setOpen
-}: FancyMultiSelectProps) {
+  setOpen,
+  isMulti = true // Default is multi-select
+}: FancyMultiSelectProps<T>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = React.useState("");
@@ -68,17 +67,20 @@ export function FancyMultiSelect({
   }, [isOpen]);
 
   const handleSelected = React.useCallback(
-    (framework: MultiSelect) => {
-      onSelectChange([...currentSelection, framework]);
+    (item: MultiSelect<T>) => {
+      if (isMulti) {
+        onSelectChange([...currentSelection, item]);
+      } else {
+        onSelectChange([item]); // Single selection mode replaces selection
+        setOpen(null); // Close dropdown after selecting in single mode
+      }
     },
-    [onSelectChange, currentSelection]
+    [onSelectChange, currentSelection, isMulti, setOpen]
   );
 
   const handleUnselect = React.useCallback(
-    (framework: MultiSelect) => {
-      onSelectChange(
-        currentSelection.filter((s) => s.value !== framework.value)
-      );
+    (item: MultiSelect<T>) => {
+      onSelectChange(currentSelection.filter((s) => s.value !== item.value));
     },
     [currentSelection, onSelectChange]
   );
@@ -89,26 +91,37 @@ export function FancyMultiSelect({
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const input = inputRef.current;
-      if (input) {
-        if (e.key === "Delete" || e.key === "Backspace") {
-          if (input.value === "") {
-            const remove = currentSelection.pop();
-            if (remove) {
-              handleUnselect(remove);
+      if (inputRef.current) {
+        if (
+          (e.key === "Delete" || e.key === "Backspace") &&
+          inputValue === ""
+        ) {
+          if (isMulti && currentSelection.length > 0) {
+            const lastSelected = currentSelection[currentSelection.length - 1];
+            if (lastSelected) {
+              handleUnselect(lastSelected);
             }
+          } else {
+            onSelectChange([]);
           }
         }
         if (e.key === "Escape") {
-          input.blur();
+          setOpen(null);
         }
       }
     },
-    [handleUnselect, currentSelection]
+    [
+      inputValue,
+      isMulti,
+      currentSelection,
+      handleUnselect,
+      setOpen,
+      onSelectChange
+    ]
   );
 
-  const selectables = selectable?.filter(
-    (framework) => !currentSelection.some((s) => s.value === framework.value)
+  const selectables = selectable.filter(
+    (item) => !currentSelection.some((s) => s.value === item.value)
   );
 
   return (
@@ -119,28 +132,29 @@ export function FancyMultiSelect({
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
-          {currentSelection.map((framework) => {
-            return (
-              <Badge key={framework.value} variant="secondary">
-                {framework.label}
-                <button
-                  className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleUnselect(framework);
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={() => handleUnselect(framework)}
-                >
-                  <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                </button>
-              </Badge>
-            );
-          })}
+          {isMulti
+            ? currentSelection.map((item, index) => (
+                <Badge key={`${item.label}-${index}`} variant="secondary">
+                  {item.label}
+                  <button
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    onClick={() => handleUnselect(item)}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  </button>
+                </Badge>
+              ))
+            : currentSelection.length > 0 && (
+                <Badge variant="secondary">
+                  {currentSelection[0]?.label}
+                  <button
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    onClick={handleClearAll}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  </button>
+                </Badge>
+              )}
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
@@ -159,7 +173,12 @@ export function FancyMultiSelect({
                 setOpen(filter);
               }
             }}
-            placeholder={placeholder}
+            placeholder={
+              (!isMulti && currentSelection.length > 0) ||
+              currentSelection.length === selectable.length
+                ? ""
+                : placeholder
+            }
             className="ml-2 flex-1 bg-transparent min-w-[50px] outline-none placeholder:text-muted-foreground"
           />
           <div
@@ -179,31 +198,34 @@ export function FancyMultiSelect({
           {isOpen && (
             <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto">
               <CommandGroup>
-                <CommandItem
-                  key="clear-all"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onSelect={handleClearAll}
-                  className="cursor-pointer font-semibold"
-                >
-                  Clear filters...
-                </CommandItem>
-                {selectables?.map((framework) => (
+                {isMulti && currentSelection.length > 0 && (
                   <CommandItem
-                    key={framework.value}
+                    key="clear-all"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onSelect={handleClearAll}
+                    className="cursor-pointer font-semibold"
+                  >
+                    Clear filters...
+                  </CommandItem>
+                )}
+
+                {selectables.map((item, index) => (
+                  <CommandItem
+                    key={`${item.label}-${index}`}
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                     }}
                     onSelect={() => {
                       setInputValue("");
-                      handleSelected(framework);
+                      handleSelected(item);
                     }}
                     className="cursor-pointer"
                   >
-                    {framework.label}
+                    {item.label}
                   </CommandItem>
                 ))}
               </CommandGroup>
