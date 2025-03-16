@@ -51,11 +51,8 @@ if [ "$KEEP_FAILED_STACK" = true ]; then
   echo "Keep failed stack option is enabled. Failed stacks will not be removed."
 fi
 
-# Read the compose file content
-COMPOSE_CONTENT=$(cat "$COMPOSE_FILE_PATH")
-
 # Extract all image names from the compose file
-IMAGES=$(yq eval '.services[].image' "$COMPOSE_CONTENT")
+IMAGES=$(yq eval '.services[].image' "$COMPOSE_FILE_PATH")
 
 # Pull each image via Portainer API
 for IMAGE in $IMAGES; do
@@ -65,6 +62,10 @@ for IMAGE in $IMAGES; do
        -d "{\"fromImage\": \"${IMAGE}\"}" \
        "${PORTAINER_URL}/api/endpoints/${ENDPOINT_ID}/docker/images/create"
 done
+
+# Read the compose file content
+COMPOSE_CONTENT=$(cat "$COMPOSE_FILE_PATH")
+
 
 # Base64 encode the compose file for API calls that need it
 COMPOSE_FILE_BASE64=$(cat "$COMPOSE_FILE_PATH" | base64 -w 0)
