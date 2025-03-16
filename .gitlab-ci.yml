@@ -485,10 +485,11 @@ deploy-staging:
     - chmod 644 ~/.ssh/known_hosts
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
-    - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
-    - envsubst < docker-compose.staging.yml > docker-compose.yml
-    - echo "Deploying stack eggosystem-staging"
-    - bash "$(pwd)/scripts/deploy-to-portainer.sh" docker-compose.yml
+    - envsubst < docker-compose.staging.yml > docker-compose.staging.subst.yml
+    - rsync -v ./docker-compose.staging.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-staging/docker-compose.yml
+    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml pull"
+    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml up -d"
     - |
       echo ""
       echo "=============================================="
