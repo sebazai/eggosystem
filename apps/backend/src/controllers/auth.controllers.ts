@@ -9,13 +9,13 @@ const setJWTValues = () => {
   const expireIn7Days = 7 * 24 * 60 * 60;
   const expireIn20m = 20 * 60;
   const JWT_EXPIRES_IN_AS_NUM = isNaN(Number(process.env.JWT_EXPIRES_IN))
-    ? expireIn20m
+    ? 30
     : Number(process.env.JWT_EXPIRES_IN);
 
   const JWT_REFRESH_EXPIRES_IN_AS_NUM = isNaN(
     Number(process.env.JWT_REFRESH_EXPIRES_IN)
   )
-    ? expireIn7Days
+    ? 120
     : Number(process.env.JWT_REFRESH_EXPIRES_IN);
 
   if (process.env.NODE_ENV === "production") {

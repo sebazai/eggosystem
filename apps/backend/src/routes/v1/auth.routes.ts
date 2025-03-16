@@ -46,9 +46,9 @@ const isValidReturnUrl = (returnUrl: string) => {
 
 router.get("/steam", (req, res, next) => {
   const { returnUrl } = req.query;
-  const returnUrlString = returnUrl as string;
+  const returnUrlString = decodeURIComponent(returnUrl as string);
 
-  if (returnUrl && isValidReturnUrl(returnUrlString)) {
+  if (returnUrlString && isValidReturnUrl(returnUrlString)) {
     res.cookie("steam_returnUrl", returnUrlString, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
