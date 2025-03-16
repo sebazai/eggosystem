@@ -749,7 +749,6 @@ export const migrateTrades = async () => {
 //     round.Site,
 //   ]);
 // }
-//   console.log('MatchStats migrated');
 // };
 
 export const teamLogosToCompanies = async () => {
