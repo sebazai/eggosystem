@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:staging
     pull_policy: always
     depends_on:
       eggo-staging-db:
@@ -27,14 +27,14 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbedev.entrypoints=http"
       - "traefik.http.routers.hubbedev.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.middlewares.hubbedev-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.hubbedev.middlewares=hubbedev-https-redirect"
-      - "traefik.http.routers.hubbedev-secure.entrypoints=https"
-      - "traefik.http.routers.hubbedev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.hubbedev-secure.tls=true"
-      - "traefik.http.routers.hubbedev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
-      - "traefik.http.routers.hubbedev-secure.tls.certresolver=http"
-      - "traefik.http.routers.hubbedev-secure.service=hubbedev"
+      - "traefik.http.middlewares.hubbestaging-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hubbedev.middlewares=hubbestaging-https-redirect"
+      - "traefik.http.routers.hubbestaging-secure.entrypoints=https"
+      - "traefik.http.routers.hubbestaging-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.hubbestaging-secure.tls=true"
+      - "traefik.http.routers.hubbestaging-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.hubbestaging-secure.tls.certresolver=http"
+      - "traefik.http.routers.hubbestaging-secure.service=hubbedev"
       - "traefik.http.services.hubbedev.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
 
@@ -42,7 +42,7 @@ services:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:staging
     pull_policy: always
     depends_on:
-      - backend
+      - staging-backend
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}
@@ -54,14 +54,14 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.kanahubdev.entrypoints=http"
       - "traefik.http.routers.kanahubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
-      - "traefik.http.middlewares.kanahubdev-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.kanahubdev.middlewares=kanahubdev-https-redirect"
-      - "traefik.http.routers.kanahubdev-secure.entrypoints=https"
-      - "traefik.http.routers.kanahubdev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
-      - "traefik.http.routers.kanahubdev-secure.tls=true"
-      - "traefik.http.routers.kanahubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
-      - "traefik.http.routers.kanahubdev-secure.tls.certresolver=http"
-      - "traefik.http.routers.kanahubdev-secure.service=kanahubdev"
+      - "traefik.http.middlewares.kanahubstaging-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.kanahubdev.middlewares=kanahubstaging-https-redirect"
+      - "traefik.http.routers.kanahubstaging-secure.entrypoints=https"
+      - "traefik.http.routers.kanahubstaging-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
+      - "traefik.http.routers.kanahubstaging-secure.tls=true"
+      - "traefik.http.routers.kanahubstaging-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.kanahubstaging-secure.tls.certresolver=http"
+      - "traefik.http.routers.kanahubstaging-secure.service=kanahubdev"
       - "traefik.http.services.kanahubdev.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
 
@@ -113,22 +113,22 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.phpmyadmin-hubdev.entrypoints=http"
       - "traefik.http.routers.phpmyadmin-hubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
-      - "traefik.http.middlewares.phpmyadmin-hubdev-stripprefix.stripprefix.prefixes=/mysadmin"
-      - "traefik.http.middlewares.phpmyadmin-hubdev-auth.basicauth.users=${PHPMYADMIN_AUTH}"
-      - "traefik.http.middlewares.phpmyadmin-hubdev-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.phpmyadmin-hubdev.middlewares=phpmyadmin-hubdev-https-redirect"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.entrypoints=https"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.tls=true"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.tls.certresolver=http"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.service=phpmyadmin-hubdev"
-      - "traefik.http.routers.phpmyadmin-hubdev-secure.middlewares=phpmyadmin-hubdev-stripprefix,phpmyadmin-hubdev-auth"
+      - "traefik.http.middlewares.phpmyadmin-hubstaging-stripprefix.stripprefix.prefixes=/mysadmin"
+      - "traefik.http.middlewares.phpmyadmin-hubstaging-auth.basicauth.users=${PHPMYADMIN_AUTH}"
+      - "traefik.http.middlewares.phpmyadmin-hubstaging-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.phpmyadmin-hubdev.middlewares=phpmyadmin-hubstaging-https-redirect"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.entrypoints=https"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.tls=true"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.tls.certresolver=http"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.service=phpmyadmin-hubdev"
+      - "traefik.http.routers.phpmyadmin-hubstaging-secure.middlewares=phpmyadmin-hubstaging-stripprefix,phpmyadmin-hubstaging-auth"
       - "traefik.http.services.phpmyadmin-hubdev.loadbalancer.server.port=80"
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:staging
     depends_on:
       eggo-staging-db:
         condition: service_healthy
