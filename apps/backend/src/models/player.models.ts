@@ -12,12 +12,36 @@ const leaderboardExpressions: { [key: string]: string } = {
 };
 
 export const getPlayers = () => {
-  return runQuery<Player[]>("SELECT * FROM Players");
+  return runQuery<Player[]>(
+    `SELECT
+    steam_id, 
+    name, 
+    discord, 
+    CASE 
+        WHEN work_email IS NULL THEN NULL
+        WHEN work_email LIKE '%@%' THEN 
+            CONCAT(LEFT(work_email, 2), '***@', SUBSTRING_INDEX(work_email, '@', -1)) 
+        ELSE 
+                '*****' 
+        END AS work_email 
+    FROM Players;`
+  );
 };
 
 export const getPlayerBySteamId = async (steam_id: string) => {
   const results = await runQuery<Player[]>(
-    `SELECT * FROM Players WHERE steam_id = ?`,
+    `SELECT
+    steam_id, 
+    name, 
+    discord, 
+    CASE 
+        WHEN work_email IS NULL THEN NULL
+        WHEN work_email LIKE '%@%' THEN 
+            CONCAT(LEFT(work_email, 2), '***@', SUBSTRING_INDEX(work_email, '@', -1)) 
+        ELSE 
+            '*****' 
+        END AS work_email 
+    FROM Players WHERE steam_id = ?`,
     [steam_id]
   );
   return results.length > 0 ? results[0] : undefined;
