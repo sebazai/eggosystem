@@ -394,12 +394,13 @@ push-dockerfile:migrations:
     - docker buildx use mybuilder
     - docker buildx inspect --bootstrap
   script:
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
-      --push
-      -t $REGISTRY/eggo-migrations:latest
-      -t $REGISTRY/eggo-migrations:staging
-      -f apps/backend/Dockerfile.migrations .
+    # TODO:
+    # - docker buildx build
+    #   --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
+    #   --push
+    #   -t $REGISTRY/eggo-migrations:latest
+    #   -t $REGISTRY/eggo-migrations:staging
+    #   -f apps/backend/Dockerfile.migrations .
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
       --push
