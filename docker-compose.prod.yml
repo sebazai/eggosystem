@@ -99,7 +99,7 @@ services:
     restart: always
 
   migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
     depends_on:
       eggo-prod-db:
         condition: service_healthy

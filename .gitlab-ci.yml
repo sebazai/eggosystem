@@ -400,6 +400,11 @@ push-dockerfile:migrations:
       -t $REGISTRY/eggo-migrations:latest
       -t $REGISTRY/eggo-migrations:staging
       -f apps/backend/Dockerfile.migrations .
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+      --push
+      -t $REGISTRY/eggo-migrations:dev
+      -f apps/backend/Dockerfile.migrations.dev .
 
 push-dockerfile:frontend:
   stage: build-docker

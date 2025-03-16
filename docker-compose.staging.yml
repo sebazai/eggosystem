@@ -128,7 +128,8 @@ services:
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:staging
+    # TODO: Run with staging image
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
     depends_on:
       eggo-staging-db:
         condition: service_healthy
@@ -140,7 +141,7 @@ services:
       DB_PORT: 3306
       WAIT_FOR_DB: ${KANA}
     entrypoint: ["scripts/wait-for-kanadb.sh"]
-    command: ["npx", "knex", "migrate:latest", "--knexfile=knexfile.js"]
+    command: "npx knex migrate:latest"
     networks:
       - web
 

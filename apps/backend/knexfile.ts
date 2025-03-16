@@ -40,9 +40,9 @@ const config: { [key: string]: Knex.Config } = {
     },
     migrations: {
       directory: "./migrations",
-      extension: "js"
+      extension: "ts"
     }
   }
 };
 
-export = config;
+module.exports = config;
