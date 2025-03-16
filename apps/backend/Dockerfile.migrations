@@ -8,7 +8,6 @@ WORKDIR /usr/src/app
 COPY apps/backend/knexfile.ts ./knexfile.ts
 COPY apps/backend/migrations/ ./migrations/
 COPY apps/backend/seeds/ ./seeds/
-COPY apps/backend/migrations/migrations_tsconfig.json ./tsconfig.json
 COPY apps/backend/tsconfig.knex.json ./tsconfig.knex.json
 
 # Install dependencies
