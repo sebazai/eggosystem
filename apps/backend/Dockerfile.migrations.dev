@@ -9,8 +9,7 @@ COPY scripts/wait-for-kanadb.sh ./scripts/wait-for-kanadb.sh
 RUN chmod +x ./scripts/wait-for-kanadb.sh
 COPY apps/backend/knexfile.ts ./knexfile.ts
 COPY apps/backend/migrations/ ./migrations/
-COPY apps/backend/seeds/ ./seeds/
-COPY apps/backend/migrations/migrations_tsconfig.json ./tsconfig.json
+COPY apps/backend/migrations/tsconfig.knex.json ./tsconfig.json
 
 RUN npm install ts-node knex mysql2
 
