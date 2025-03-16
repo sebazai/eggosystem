@@ -374,6 +374,7 @@ push-dockerfile:backend:
       --cache-to type=registry,ref=$REGISTRY/eggo-backend:latest
       --push
       -t $REGISTRY/eggo-backend:latest
+      -t $REGISTRY/eggo-backend:staging
       -f apps/backend/Dockerfile .
 
 push-dockerfile:migrations:
@@ -399,6 +400,7 @@ push-dockerfile:migrations:
       --cache-to type=registry,ref=$REGISTRY/eggo-migrations:latest
       --push
       -t $REGISTRY/eggo-migrations:latest
+      -t $REGISTRY/eggo-migrations:staging
       -f apps/backend/Dockerfile.migrations .
 
 push-dockerfile:frontend:
