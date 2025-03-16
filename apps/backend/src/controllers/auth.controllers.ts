@@ -88,6 +88,8 @@ const clearCookies = (res: Response) => {
 export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {
   const { exp, iat, ...rest } = user;
   const withJwtId = jti ? { ...rest, jti } : rest;
+  console.log("JWT_EXPIRES_IN", JWT_EXPIRES_IN);
+  console.log("JWT_REFRESH_EXPIRES_IN", JWT_REFRESH_EXPIRES_IN);
   const accessToken = jwt.sign(withJwtId, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN
   });
