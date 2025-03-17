@@ -16,7 +16,6 @@ export const getPlayers = () => {
     `SELECT
     steam_id, 
     name, 
-    discord, 
     CASE 
         WHEN work_email IS NULL THEN NULL
         WHEN work_email LIKE '%@%' THEN 
@@ -33,7 +32,6 @@ export const getPlayerBySteamId = async (steam_id: string) => {
     `SELECT
     steam_id, 
     name, 
-    discord, 
     CASE 
         WHEN work_email IS NULL THEN NULL
         WHEN work_email LIKE '%@%' THEN 

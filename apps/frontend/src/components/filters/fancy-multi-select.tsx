@@ -44,6 +44,7 @@ interface FancyMultiSelectProps<T> {
   isOpen: boolean;
   setOpen: (value: string | null) => void;
   isMulti?: boolean; // New prop to toggle between single and multi-select
+  allowOther?: boolean;
 }
 
 export function FancyMultiSelect<T>({
@@ -54,17 +55,48 @@ export function FancyMultiSelect<T>({
   placeholder = "Filter",
   isOpen,
   setOpen,
-  isMulti = true // Default is multi-select
+  isMulti = true, // Default is multi-select
+  allowOther = false
 }: FancyMultiSelectProps<T>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = React.useState("");
+
+  const selectables = React.useMemo(
+    () =>
+      selectable
+        .filter(
+          (item) =>
+            !currentSelection.some((s) => s.value === item.value) &&
+            (item.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+              item.searchTerms?.some((term) =>
+                term.toLowerCase().includes(inputValue.toLowerCase())
+              ))
+        )
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [selectable, currentSelection, inputValue]
+  );
 
   React.useEffect(() => {
     if (inputRef.current && isOpen) {
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  const resetScroll = () => {
+    if (scrollContainerRef.current) {
+      requestAnimationFrame(() => {
+        scrollContainerRef.current!.scrollTop = 0;
+      });
+    }
+  };
+
+  React.useEffect(() => {
+    if (scrollContainerRef.current && isOpen) {
+      resetScroll();
+    }
+  }, [inputValue, isOpen]);
 
   const handleSelected = React.useCallback(
     (item: MultiSelect<T>) => {
@@ -120,15 +152,12 @@ export function FancyMultiSelect<T>({
     ]
   );
 
-  const selectables = selectable.filter(
-    (item) => !currentSelection.some((s) => s.value === item.value)
-  );
-
   return (
     <Command
       onKeyDown={handleKeyDown}
       className="overflow-visible bg-transparent"
       ref={containerRef}
+      shouldFilter={false}
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
@@ -162,8 +191,11 @@ export function FancyMultiSelect<T>({
             onBlur={(e) => {
               if (
                 containerRef.current &&
-                containerRef.current.contains(e.relatedTarget as Node)
+                containerRef.current.contains(e.relatedTarget as Node) &&
+                e.relatedTarget !== inputRef.current &&
+                inputRef.current
               ) {
+                inputRef.current.focus();
                 return; // If user selects scrollbar, do nothing
               }
               setOpen(null);
@@ -196,8 +228,11 @@ export function FancyMultiSelect<T>({
       <div className="relative mt-2">
         <CommandList>
           {isOpen && (
-            <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto">
-              <CommandGroup>
+            <div
+              ref={scrollContainerRef}
+              className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto"
+            >
+              <CommandGroup title="Select an option">
                 {isMulti && currentSelection.length > 0 && (
                   <CommandItem
                     key="clear-all"
@@ -209,6 +244,22 @@ export function FancyMultiSelect<T>({
                     className="cursor-pointer font-semibold"
                   >
                     Clear filters...
+                  </CommandItem>
+                )}
+                {allowOther && (
+                  <CommandItem
+                    key="other"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onSelect={() => {
+                      setInputValue("");
+                      handleSelected({ label: "Other", value: -1 as T });
+                    }}
+                    className="cursor-pointer"
+                  >
+                    Other...
                   </CommandItem>
                 )}
 
