@@ -75,14 +75,20 @@ const defaultProps: NavbarProps = {
     },
     {
       title: "Teams",
-      url: "#",
+      url: "/teams",
       items: [
-        { title: "Browse Teams", url: "#" },
-        { title: "Top Teams", url: "#" }
+        { title: "Browse Teams", url: "/teams" },
+        { title: "Top Teams", url: "/topteams" }
       ]
     },
-    { title: "Players", url: "#" },
-    { title: "Leaderboards", url: "/leaderboards" }
+    {
+      title: "Players",
+      url: "#"
+    },
+    {
+      title: "Leaderboards",
+      url: "/leaderboards"
+    }
   ],
   mobileExtraLinks: [
     { name: "Press", url: "#" },
