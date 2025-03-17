@@ -36,6 +36,7 @@ import { Command as CommandPrimitive } from "cmdk";
 import type { MultiSelect } from "@/types/MultiSelectType";
 
 type FancyMultiSelectProps<T> = {
+  isMulti: true;
   filter: string;
   selectable: MultiSelect<T>[];
   currentSelection: MultiSelect<T>[];
@@ -43,19 +44,18 @@ type FancyMultiSelectProps<T> = {
   placeholder?: string;
   isOpen: boolean;
   setOpen: (value: string | null) => void;
-  isMulti: true;
   allowOther?: false;
 };
 
 type FancySelectProps<T> = {
+  isMulti: false;
   filter: string;
   selectable: MultiSelect<T>[];
   currentSelection: MultiSelect<T>[];
-  onSelectChange: (value: MultiSelect<T>[]) => void;
+  onSelectChange: (value: MultiSelect<T> | undefined) => void;
   placeholder?: string;
   isOpen: boolean;
   setOpen: (value: string | null) => void;
-  isMulti: false;
   allowOther?: boolean;
 };
 
@@ -106,11 +106,11 @@ export function FancySelect<T>({
   }, [isOpen]);
 
   const resetScroll = () => {
-    if (scrollContainerRef.current) {
-      requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (scrollContainerRef.current) {
         scrollContainerRef.current!.scrollTop = 0;
-      });
-    }
+      }
+    });
   };
 
   React.useEffect(() => {
@@ -124,7 +124,7 @@ export function FancySelect<T>({
       if (isMulti) {
         onSelectChange([...currentSelection, item]);
       } else {
-        onSelectChange([item]); // Single selection mode replaces selection
+        onSelectChange(item); // Single selection mode replaces selection
         setOpen(null); // Close dropdown after selecting in single mode
       }
     },
@@ -133,14 +133,22 @@ export function FancySelect<T>({
 
   const handleUnselect = React.useCallback(
     (item: MultiSelect<T>) => {
+      if (!isMulti) {
+        onSelectChange(undefined);
+        return;
+      }
       onSelectChange(currentSelection.filter((s) => s.value !== item.value));
     },
-    [currentSelection, onSelectChange]
+    [currentSelection, isMulti, onSelectChange]
   );
 
   const handleClearAll = React.useCallback(() => {
-    onSelectChange([]);
-  }, [onSelectChange]);
+    if (isMulti) {
+      onSelectChange([]);
+      return;
+    }
+    onSelectChange(undefined);
+  }, [isMulti, onSelectChange]);
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -155,7 +163,11 @@ export function FancySelect<T>({
               handleUnselect(lastSelected);
             }
           } else {
-            onSelectChange([]);
+            if (isMulti) {
+              onSelectChange([]);
+            } else {
+              onSelectChange(undefined);
+            }
           }
         }
         if (e.key === "Escape") {
@@ -208,7 +220,12 @@ export function FancySelect<T>({
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
-            onValueChange={setInputValue}
+            onValueChange={(search) => {
+              if (!isOpen) {
+                setOpen(filter);
+              }
+              setInputValue(search);
+            }}
             onBlur={(e) => {
               if (
                 containerRef.current &&
