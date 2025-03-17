@@ -58,20 +58,23 @@ const setCookies = (
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: getPath("/")
+    path: getPath("/"),
+    maxAge: JWT_EXPIRES_IN * 1000
   });
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: getPath("/api/v1/auth/refresh")
+    path: getPath("/api/v1/auth/refresh"),
+    maxAge: JWT_REFRESH_EXPIRES_IN * 1000
   });
 
   res.cookie("refresh_token", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: getPath("/api/v1/auth/logout")
+    path: getPath("/api/v1/auth/logout"),
+    maxAge: JWT_REFRESH_EXPIRES_IN * 1000
   });
 };
 

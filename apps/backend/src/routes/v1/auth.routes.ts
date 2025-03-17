@@ -27,7 +27,6 @@ passport.use(
     }
   )
 );
-router.use(passport.initialize());
 
 const isValidReturnUrl = (returnUrl: string) => {
   try {
