@@ -47,7 +47,7 @@ export const getTopTeams = async (
       team_logo,
       league_name,
       matches_played,
-      CAST(ROUND(avg_kana_rating, 3) AS DECIMAL(10,3)) as kana,
+      ROUND(avg_kana_rating, 3) as kana,
       rank
     FROM TeamAverages
     WHERE rank <= 5
@@ -61,5 +61,14 @@ export const getTopTeams = async (
     ...(mapId !== undefined ? [mapId] : [])
   ];
 
-  return runQuery<TopTeamStats[]>(baseQuery, params);
+  const results = await runQuery<TopTeamStats[]>(baseQuery, params);
+
+  // Ensure numeric fields are returned as numbers
+  return results.map((team) => ({
+    ...team,
+    team_id: Number(team.team_id),
+    matches_played: Number(team.matches_played),
+    kana: Number(team.kana),
+    rank: Number(team.rank)
+  }));
 };
