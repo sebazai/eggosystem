@@ -202,7 +202,6 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         steam_id !== prevWatchedSteamIds.current[index] &&
         !prevWatchedSteamIds.current.includes(steam_id)
       ) {
-        console.log("Fetching player data for:", steam_id);
         setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
         fetch(`/api/players/${steam_id}`)
