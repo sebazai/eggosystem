@@ -10,6 +10,7 @@ import filtersRouter from "./v1/filter.routes";
 import teamsRouter from "./v1/team.routes";
 import seasonsRouter from "./v1/season.routes";
 import leaguesRouter from "./v1/league.routes";
+import topteamsRouter from "./v1/topteams.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -26,5 +27,5 @@ v1Router.use("/maps", mapsRouter);
 v1Router.use("/teams", teamsRouter);
 v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/leagues", leaguesRouter);
-
+v1Router.use("/topteams", topteamsRouter);
 export default v1Router;
