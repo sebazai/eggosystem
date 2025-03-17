@@ -35,7 +35,7 @@ import {
 import { Command as CommandPrimitive } from "cmdk";
 import type { MultiSelect } from "@/types/MultiSelectType";
 
-interface FancyMultiSelectProps<T> {
+type FancyMultiSelectProps<T> = {
   filter: string;
   selectable: MultiSelect<T>[];
   currentSelection: MultiSelect<T>[];
@@ -43,11 +43,32 @@ interface FancyMultiSelectProps<T> {
   placeholder?: string;
   isOpen: boolean;
   setOpen: (value: string | null) => void;
-  isMulti?: boolean; // New prop to toggle between single and multi-select
-  allowOther?: boolean;
-}
+  isMulti: true;
+  allowOther?: false;
+};
 
-export function FancyMultiSelect<T>({
+type FancySelectProps<T> = {
+  filter: string;
+  selectable: MultiSelect<T>[];
+  currentSelection: MultiSelect<T>[];
+  onSelectChange: (value: MultiSelect<T>[]) => void;
+  placeholder?: string;
+  isOpen: boolean;
+  setOpen: (value: string | null) => void;
+  isMulti: false;
+  allowOther?: boolean;
+};
+
+type FancyCombinedProps<T> = FancyMultiSelectProps<T> | FancySelectProps<T>;
+
+// Function overloads
+export function FancySelect<T>(
+  props: FancyMultiSelectProps<T>
+): React.JSX.Element;
+export function FancySelect<T>(props: FancySelectProps<T>): React.JSX.Element;
+
+// Function implementation
+export function FancySelect<T>({
   filter,
   selectable = [],
   onSelectChange,
@@ -55,9 +76,9 @@ export function FancyMultiSelect<T>({
   placeholder = "Filter",
   isOpen,
   setOpen,
-  isMulti = true, // Default is multi-select
+  isMulti,
   allowOther = false
-}: FancyMultiSelectProps<T>) {
+}: FancyCombinedProps<T>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);

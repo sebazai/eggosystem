@@ -25,7 +25,7 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
-import { FancyMultiSelect } from "@/components/filters/fancy-multi-select";
+import { FancySelect } from "@/components/filters/fancy-multi-select";
 import { useTeams } from "@/hooks/data/useTeams";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -313,16 +313,18 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                       <FormItem>
                         <FormLabel>Organization</FormLabel>
                         <FormControl>
-                          <FancyMultiSelect<number>
+                          <FancySelect<number>
                             isMulti={false}
                             allowOther={true}
                             filter={"organizations"}
                             selectable={selectableOrganizations ?? []}
                             placeholder="Search by name or business id"
                             currentSelection={
-                              selectableOrganizations?.filter(
-                                (org) => org.value === watchOrgId
-                              ) ?? []
+                              watchOrgId === -1
+                                ? [{ value: -1, label: "Other" }]
+                                : selectableOrganizations.filter(
+                                    (team) => team.value === watchTeamId
+                                  )
                             }
                             onSelectChange={(selectedItem) =>
                               field.onChange(selectedItem[0]?.value ?? null)
@@ -392,15 +394,18 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                       <FormItem>
                         <FormLabel>Team</FormLabel>
                         <FormControl>
-                          <FancyMultiSelect<number>
+                          <FancySelect<number>
                             isMulti={false}
+                            allowOther={true}
                             filter={"teams"}
                             selectable={selectableTeams ?? []}
                             placeholder="Select team"
                             currentSelection={
-                              selectableTeams?.filter(
-                                (team) => team.value === watchTeamId
-                              ) ?? []
+                              watchTeamId === -1
+                                ? [{ value: -1, label: "Other" }]
+                                : selectableTeams.filter(
+                                    (team) => team.value === watchTeamId
+                                  )
                             }
                             onSelectChange={(selectedItem) =>
                               field.onChange(selectedItem[0]?.value ?? null)

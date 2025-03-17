@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { FancyMultiSelect } from "./fancy-multi-select";
+import { FancySelect } from "./fancy-multi-select";
 import { fetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
@@ -63,7 +63,8 @@ export const ItemFilter = <T extends { id: number }>(
   };
 
   return (
-    <FancyMultiSelect<number>
+    <FancySelect<number>
+      isMulti={true}
       filter={props.filterName}
       selectable={selectableIdsIntersection.map((item) => ({
         value: item.id,

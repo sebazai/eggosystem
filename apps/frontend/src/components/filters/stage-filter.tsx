@@ -1,5 +1,5 @@
 import type { MultiSelect } from "@/types/MultiSelectType";
-import { FancyMultiSelect } from "./fancy-multi-select";
+import { FancySelect } from "./fancy-multi-select";
 import type { Nullable } from "@eggosystem/types";
 import _ from "lodash";
 import { useState } from "react";
@@ -48,7 +48,8 @@ export const StageFilter = (props: StageFilterProps) => {
   };
 
   return (
-    <FancyMultiSelect<number>
+    <FancySelect<number>
+      isMulti={true}
       filter={filterName}
       selectable={selectableStages.map((stage) => ({
         value: stage.id,
