@@ -530,6 +530,14 @@ deploy-ondemand:
       --push
       -t $REGISTRY/eggo-backend:${ENV_ID}
       -f apps/backend/Dockerfile .
+    # Build backend mr-id migrations image for seeding
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG}
+      --push
+      -t $REGISTRY/eggo-migrations:${ENV_ID}
+      -f apps/backend/Dockerfile.dev .
     # Build frontend mr-id image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
