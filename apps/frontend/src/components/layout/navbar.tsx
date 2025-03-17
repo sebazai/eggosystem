@@ -82,7 +82,7 @@ const defaultProps: NavbarProps = {
       ]
     },
     { title: "Players", url: "#" },
-    { title: "Leaderboards", url: "#" }
+    { title: "Leaderboards", url: "/leaderboards" }
   ],
   mobileExtraLinks: [
     { name: "Press", url: "#" },
