@@ -26,7 +26,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 import { FancySelect } from "@/components/filters/fancy-multi-select";
-import { useTeams } from "@/hooks/data/useTeams";
+import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { MultiSelect } from "@/types/MultiSelectType";
@@ -107,20 +107,6 @@ type FormValues = z.infer<typeof formSchema>;
 export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
-  const { season, isLoading, isError, isValidating } = useSeason(seasonId);
-  const {
-    organizations,
-    isLoading: loadingOrgs,
-    isError: isErrorOrg,
-    isValidating: isValidatingOrgs
-  } = useOrganizations();
-
-  const {
-    teams,
-    isLoading: loadingTeams,
-    isError: isErrorTeams,
-    isValidating: isValidatingTeams
-  } = useTeams();
   const { user, loading: loadingUser } = useAuth();
   const [validPlayers, setValidPlayers] = useState<
     Record<number, boolean | null>
@@ -156,6 +142,21 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const watchNewOrg = useWatch({ control, name: "newOrganization" });
   const watchTeamId = useWatch({ control, name: "teamId" });
   const watchNewTeam = useWatch({ control, name: "newTeam" });
+
+  const { season, isLoading, isError, isValidating } = useSeason(seasonId);
+  const {
+    organizations,
+    isLoading: loadingOrgs,
+    isError: isErrorOrg,
+    isValidating: isValidatingOrgs
+  } = useOrganizations();
+  const {
+    teams,
+    isLoading: loadingTeams,
+    isError: isErrorTeams,
+    isValidating: isValidatingTeams
+  } = useOrganizationTeams(form.getValues("organizationId"));
+
   const validOrgId = useMemo(
     () =>
       baseFormSchema

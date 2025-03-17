@@ -4,9 +4,9 @@ import { fetcher } from "@/lib/utils";
 import useSWR from "swr";
 import type { Organizations } from "@eggosystem/types";
 
-export const useOrganizations = () => {
+export const useOrganizations = (organizationId?: string) => {
   const { data, error, isValidating } = useSWR<Organizations[], Error>(
-    "/api/organizations",
+    `/api/organizations${organizationId ? `/${organizationId}` : ""}`,
     fetcher,
     { revalidateOnFocus: false }
   );
