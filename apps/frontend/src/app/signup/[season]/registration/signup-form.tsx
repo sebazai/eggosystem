@@ -108,9 +108,6 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const { user, loading: loadingUser } = useAuth();
-  const [validPlayers, setValidPlayers] = useState<
-    Record<number, boolean | null>
-  >({});
 
   const [openItems, setOpenItems] = useState<string[]>([]);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -142,6 +139,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const watchNewOrg = useWatch({ control, name: "newOrganization" });
   const watchTeamId = useWatch({ control, name: "teamId" });
   const watchNewTeam = useWatch({ control, name: "newTeam" });
+  const watchPlayers = useWatch({ control, name: "players" });
 
   const { season, isLoading, isError, isValidating } = useSeason(seasonId);
   const {
@@ -194,8 +192,14 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         .safeParse({ newTeam: watchNewTeam }),
     [watchNewTeam]
   );
-  const prevWatchedSteamIds = useRef(steamIds);
+  const validPlayers = useMemo(() => {
+    return watchPlayers.map((player) => ({
+      player,
+      result: playerSchema.safeParse(player)
+    }));
+  }, [watchPlayers]);
 
+  const prevWatchedSteamIds = useRef(steamIds);
   useEffect(() => {
     steamIds.forEach((steam_id, index) => {
       if (
@@ -218,16 +222,12 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                 shouldValidate: false
               });
 
-            if (data.name && data.work_email) {
-              setValidPlayers((prev) => ({ ...prev, [index]: true }));
-            } else {
+            if (!data.name || !data.work_email) {
               setOpenItems((prev) => [...prev, `player-${index}`]);
-              setValidPlayers((prev) => ({ ...prev, [index]: false }));
             }
           })
           .catch((error) => {
             console.error("Error fetching player data:", error);
-            setValidPlayers((prev) => ({ ...prev, [index]: false }));
             setValue(`players.${index}.name`, "");
             setValue(`players.${index}.work_email`, "");
           })
@@ -552,12 +552,12 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                               "border-2 p-4 w-full rounded-lg flex items-center",
                               loadingStates[index] &&
                                 "border-yellow-500 animate-pulse",
-                              validPlayers[index] === false
-                                ? "border-red-500" // User not found
-                                : validPlayers[index] === true
-                                  ? "border-green-500" // User found
-                                  : form.formState.errors.players?.[index]
-                                      ?.steam_id && "border-red-500" // Normal validation
+                              validPlayers[index]?.result.success === true &&
+                                "border-green-500",
+                              validPlayers[index]?.result.success === false &&
+                                validPlayers[index]?.player.steam_id.length ===
+                                  17 &&
+                                "border-red-500"
                             )}
                           >
                             <FormField
@@ -571,15 +571,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                                       {...field}
                                       className="w-full"
                                       onClick={(e) => e.stopPropagation()}
-                                      onChange={(e) => {
-                                        field.onChange(e);
-                                        if (e.target.value.length !== 17) {
-                                          setValidPlayers((prev) => ({
-                                            ...prev,
-                                            [index]: null
-                                          }));
-                                        }
-                                      }}
+                                      onChange={(e) => field.onChange(e)}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -624,25 +616,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
                             <Button
                               variant="destructive"
-                              onClick={() => {
-                                setValidPlayers((prev) => {
-                                  const newValidPlayers: Record<
-                                    number,
-                                    boolean | null
-                                  > = {};
-
-                                  Object.keys(prev)
-                                    .map(Number) // Convert keys to numbers
-                                    .filter((i) => i !== index) // Remove the deleted index
-                                    .forEach((i) => {
-                                      newValidPlayers[i < index ? i : i - 1] =
-                                        prev[i] ?? null; // Shift indices down
-                                    });
-
-                                  return newValidPlayers;
-                                });
-                                remove(index);
-                              }}
+                              onClick={() => remove(index)}
                               type="button"
                               className="w-full"
                               disabled={fields.length <= 5} // Disable if less than 5 players
