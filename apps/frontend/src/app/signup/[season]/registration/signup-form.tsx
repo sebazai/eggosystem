@@ -24,12 +24,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FancySelect } from "@/components/filters/fancy-multi-select";
-import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import type { MultiSelect } from "@/types/MultiSelectType";
 import { TabOrganization } from "./signup-tab-organizations";
+import { TabTeam } from "./signup-tab-team";
 
 interface SignupFormProps {
   seasonId: string;
@@ -106,7 +104,6 @@ export type FormValues = z.infer<typeof formSchema>;
 
 export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
-  const [openFilter, setOpenFilter] = useState<string | null>(null);
   const { user, loading: loadingUser } = useAuth();
 
   const [openItems, setOpenItems] = useState<string[]>([]);
@@ -142,13 +139,6 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const watchPlayers = useWatch({ control, name: "players" });
 
   const { season, isLoading, isError, isValidating } = useSeason(seasonId);
-
-  const {
-    teams,
-    isLoading: loadingTeams,
-    isError: isErrorTeams,
-    isValidating: isValidatingTeams
-  } = useOrganizationTeams(form.getValues("organizationId"));
 
   const validOrgId = useMemo(
     () =>
@@ -242,43 +232,20 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     console.log("Submitted:", data);
   };
 
-  if (
-    isLoading ||
-    isValidating ||
-    loadingTeams ||
-    isValidatingTeams ||
-    loadingUser
-  ) {
+  if (isLoading || isValidating || loadingUser) {
     return <TheContainer>Loading...</TheContainer>;
   }
   if (!user) {
     return <RequiresSteamLogin />;
   }
 
-  if (isError || isErrorTeams || !season || !teams) {
+  if (isError || !season) {
     return (
       <TheContainer>
         {isError?.message ?? "Something went wrong..."}
       </TheContainer>
     );
   }
-
-  const selectableTeams = teams
-    .map((team) => ({
-      value: team.id,
-      label: team.name
-    }))
-    .sort((a, b) =>
-      a.label.localeCompare(b.label)
-    ) satisfies MultiSelect<number>[];
-
-  const handleOpen = (filter: string | null) => {
-    if (filter === null) {
-      setOpenFilter(null);
-      return;
-    }
-    setOpenFilter((prev: string | null) => (prev === filter ? null : filter));
-  };
 
   const onNext = (value: string) => {
     setActiveTab(value);
@@ -326,95 +293,15 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                   watchOrgId={watchOrgId}
                 />
 
-                <TabsContent value="team">
-                  <FormField
-                    control={control}
-                    name="teamId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Team</FormLabel>
-                        <FormControl>
-                          <FancySelect<number>
-                            isMulti={false}
-                            allowOther={true}
-                            filter={"teams"}
-                            selectable={selectableTeams ?? []}
-                            placeholder="Select team"
-                            currentSelection={
-                              watchTeamId === -1
-                                ? [{ value: -1, label: "Other" }]
-                                : selectableTeams.filter(
-                                    (team) => team.value === watchTeamId
-                                  )
-                            }
-                            onSelectChange={(selectedItem) => {
-                              if (!selectedItem) {
-                                form.reset({
-                                  teamId: undefined,
-                                  newTeam: undefined,
-                                  players: Array(5).fill({
-                                    steam_id: "",
-                                    name: "",
-                                    work_email: ""
-                                  })
-                                });
-                              }
-                              field.onChange(selectedItem?.value);
-                            }}
-                            isOpen={openFilter === "teams"}
-                            setOpen={handleOpen}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <TabTeam
+                  organizationId={watchOrgId}
+                  control={control}
+                  reset={reset}
+                  onNext={onNext}
+                  validTeamSelection={validTeamSelection}
+                  watchTeamId={watchTeamId}
+                />
 
-                  {/* Custom Team Input (Only if "Other" is selected) */}
-                  {watchTeamId === -1 && (
-                    <div className="pt-4 space-y-4">
-                      <FormField
-                        control={control}
-                        name="newTeam.name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Team name</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Insert team name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={control}
-                        name="newTeam.email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Team email</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Insert team email"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-                  <Button
-                    className="mt-5"
-                    disabled={!validTeamSelection}
-                    onClick={() => onNext("players")}
-                  >
-                    Next
-                  </Button>
-                </TabsContent>
                 <TabsContent value="players">
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Players</h3>
