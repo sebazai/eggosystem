@@ -24,12 +24,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useOrganizations } from "@/hooks/data/useOrganizations";
 import { FancySelect } from "@/components/filters/fancy-multi-select";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import type { MultiSelect } from "@/types/MultiSelectType";
+import { TabOrganization } from "./signup-tab-organizations";
 
 interface SignupFormProps {
   seasonId: string;
@@ -102,7 +102,7 @@ const formSchema = baseFormSchema
     }
   );
 
-type FormValues = z.infer<typeof formSchema>;
+export type FormValues = z.infer<typeof formSchema>;
 
 export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
@@ -123,7 +123,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     }
   });
 
-  const { control, setValue } = form;
+  const { control, setValue, reset } = form;
   const { fields, append, remove } = useFieldArray({
     control,
     name: "players"
@@ -142,12 +142,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const watchPlayers = useWatch({ control, name: "players" });
 
   const { season, isLoading, isError, isValidating } = useSeason(seasonId);
-  const {
-    organizations,
-    isLoading: loadingOrgs,
-    isError: isErrorOrg,
-    isValidating: isValidatingOrgs
-  } = useOrganizations();
+
   const {
     teams,
     isLoading: loadingTeams,
@@ -250,8 +245,6 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   if (
     isLoading ||
     isValidating ||
-    loadingOrgs ||
-    isValidatingOrgs ||
     loadingTeams ||
     isValidatingTeams ||
     loadingUser
@@ -262,30 +255,13 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     return <RequiresSteamLogin />;
   }
 
-  if (
-    isError ||
-    isErrorOrg ||
-    isErrorTeams ||
-    !season ||
-    !organizations ||
-    !teams
-  ) {
+  if (isError || isErrorTeams || !season || !teams) {
     return (
       <TheContainer>
-        {isError?.message ?? isErrorOrg?.message ?? "Something went wrong..."}
+        {isError?.message ?? "Something went wrong..."}
       </TheContainer>
     );
   }
-
-  const selectableOrganizations = organizations
-    .map((org) => ({
-      value: org.id,
-      label: org.name,
-      searchTerms: [org.organization_code?.toLowerCase() ?? ""]
-    }))
-    .sort((a, b) =>
-      a.label.localeCompare(b.label)
-    ) satisfies MultiSelect<number>[];
 
   const selectableTeams = teams
     .map((team) => ({
@@ -304,12 +280,8 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     setOpenFilter((prev: string | null) => (prev === filter ? null : filter));
   };
 
-  const onNext = () => {
-    if (activeTab === "organization") {
-      setActiveTab("team");
-    } else if (activeTab === "team") {
-      setActiveTab("players");
-    }
+  const onNext = (value: string) => {
+    setActiveTab(value);
   };
 
   const validOrganizationSelection =
@@ -346,111 +318,14 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="organization">
-                  <FormField
-                    control={control}
-                    name="organizationId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization</FormLabel>
-                        <FormControl>
-                          <FancySelect<number>
-                            isMulti={false}
-                            allowOther={true}
-                            filter={"organizations"}
-                            selectable={selectableOrganizations ?? []}
-                            placeholder="Search by name or business id"
-                            currentSelection={
-                              watchOrgId === -1
-                                ? [{ value: -1, label: "Other" }]
-                                : selectableOrganizations.filter(
-                                    (org) => org.value === watchOrgId
-                                  )
-                            }
-                            onSelectChange={(selectedItem) => {
-                              if (!selectedItem) {
-                                // Clear newTeam fields
-                                form.reset({
-                                  organizationId: undefined,
-                                  newOrganization: undefined,
-                                  teamId: undefined,
-                                  newTeam: undefined,
-                                  players: Array(5).fill({
-                                    steam_id: "",
-                                    name: "",
-                                    work_email: ""
-                                  })
-                                });
-                              }
-                              field.onChange(selectedItem?.value);
-                            }}
-                            isOpen={openFilter === "organizations"}
-                            setOpen={handleOpen}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <TabOrganization
+                  control={control}
+                  reset={reset}
+                  onNext={onNext}
+                  validOrganizationSelection={validOrganizationSelection}
+                  watchOrgId={watchOrgId}
+                />
 
-                  {/* Custom Organization Input (Only if "Other" is selected) */}
-                  {watchOrgId === -1 && (
-                    <div className="pt-4 space-y-4">
-                      <FormField
-                        control={control}
-                        name="newOrganization.name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Organization name</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Insert organization name"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={control}
-                        name="newOrganization.company_code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Business ID</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Insert y-tunnus" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={control}
-                        name="newOrganization.website"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Website</FormLabel>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                placeholder="Example: https://kanaliiga.fi/"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-                  <Button
-                    className="mt-5"
-                    disabled={!validOrganizationSelection}
-                    onClick={onNext}
-                  >
-                    Next
-                  </Button>
-                </TabsContent>
                 <TabsContent value="team">
                   <FormField
                     control={control}
@@ -535,7 +410,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                   <Button
                     className="mt-5"
                     disabled={!validTeamSelection}
-                    onClick={onNext}
+                    onClick={() => onNext("players")}
                   >
                     Next
                   </Button>
