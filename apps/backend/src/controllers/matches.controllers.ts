@@ -4,7 +4,8 @@ import {
   getMatchPlayerStats,
   getMatchTeamStats,
   getTopPlayers,
-  getMatchesByFilters
+  getMatchesByFilters,
+  getMatchMapsPlayed
 } from "../models/match.models";
 
 export const getMatchesController = async (req: Request, res: Response) => {
@@ -23,8 +24,8 @@ export const getMatchesByFiltersController = async (
 };
 
 export const getTopPlayersController = async (req: Request, res: Response) => {
-  const matchid: number = parseInt(req.params.matchid, 10);
-  const topplayers = await getTopPlayers(matchid);
+  const match_played_id: number = parseInt(req.params.match_played_id, 10);
+  const topplayers = await getTopPlayers(match_played_id);
 
   res.json(topplayers);
 };
@@ -33,8 +34,8 @@ export const getMatchPlayerStatsController = async (
   req: Request,
   res: Response
 ) => {
-  const matchid: number = parseInt(req.params.matchid, 10);
-  const playerstats = await getMatchPlayerStats(matchid);
+  const match_played_id: number = parseInt(req.params.match_played_id, 10);
+  const playerstats = await getMatchPlayerStats(match_played_id);
 
   res.json(playerstats);
 };
@@ -43,8 +44,18 @@ export const getMatchTeamStatsController = async (
   req: Request,
   res: Response
 ) => {
-  const matchid: number = parseInt(req.params.matchid, 10);
-  const teamstats = await getMatchTeamStats(matchid);
+  const match_played_id: number = parseInt(req.params.match_played_id, 10);
+  const teamstats = await getMatchTeamStats(match_played_id);
 
   res.json(teamstats);
+};
+
+export const getMatchMapsPlayedController = async (
+  req: Request,
+  res: Response
+) => {
+  const match_id: number = parseInt(req.params.match_id, 10);
+  const mapsPlayed = await getMatchMapsPlayed(match_id);
+
+  res.json(mapsPlayed);
 };

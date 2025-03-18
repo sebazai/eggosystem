@@ -1,5 +1,5 @@
 export interface Match {
-  id: number;
+  match_played_id: number;
   league_id: number;
   season_id: number;
   stage: number; // TINYINT UNSIGNED, stored as number

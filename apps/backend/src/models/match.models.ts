@@ -8,7 +8,7 @@ export const getMatches = (): Promise<Match[]> => {
 };
 
 export const getMatchPlayerStats = async (
-  id: number
+  match_played_id: number
 ): Promise<Match | undefined> => {
   const query = `SELECT 
         p.name,
@@ -25,35 +25,45 @@ export const getMatchPlayerStats = async (
         kana_rating 
       FROM PlayerStats ps 
       INNER JOIN Players p ON p.steam_id = ps.steam_id 
-      WHERE match_id=? 
+      WHERE match_maps_played_id=? 
       ORDER BY team,kills DESC;`;
 
-  const result = await runQuery<Match[]>(query, [id]);
-  return result.length > 0 ? result[0] : undefined;
+  return runQuery(query, [match_played_id]);
 };
 
 export const getMatchTeamStats = async (
-  id: number
+  match_played_id: number
 ): Promise<Match | undefined> => {
-  const query = `SELECT 
-        if(ps.team=1,team1_ht_score,team2_ht_score) as team_ht_score,
-        if(ps.team=1, team1_score-team1_ht_score,team2_score-team2_ht_score) as team_score,
-        if(ps.team=1, team1_score,team2_score) as team_score_total,
+  const query = `
+    SELECT 
+        tms.team_id,
         t.name,
-        sum(first_kills) as first_kills,
-        sum(clutches_won) as clutches_won,
-        sum(plants) as plants,
-        sum(trades) as trades,
-        demofile,
-        map
-      FROM PlayerStats ps
-      INNER JOIN Match m on m.id = ps.match_id
-      INNER JOIN Teams t ON t.id = if(ps.team=1,m.team1_id,m.team2_id)
-      WHERE match_id=? 
-      GROUP BY team;`;
-
-  const result = await runQuery<Match[]>(query, [id]);
-  return result.length > 0 ? result[0] : undefined;
+        tms.score,
+        tms.halftime_score as team_ht_score,
+        maps.name as map,
+        mmp.demofile,
+        SUM(ps.first_kills) as first_kills,
+        SUM(ps.clutches_won) as clutches_won,
+        SUM(ps.plants) as plants,
+        SUM(ps.trades) as trades
+    FROM MatchMapsPlayed mmp
+    JOIN Maps maps ON maps.id = mmp.map_id
+    JOIN TeamMapScores tms ON tms.match_maps_played_id = mmp.id
+    JOIN Teams t ON t.id = tms.team_id
+    LEFT JOIN PlayerStats ps ON ps.match_maps_played_id = mmp.id 
+        AND ((ps.team = 1 AND tms.team_id = (
+            SELECT team_id FROM TeamMapScores 
+            WHERE match_maps_played_id = mmp.id 
+            ORDER BY team_id ASC LIMIT 1
+        )) OR (ps.team = 2 AND tms.team_id = (
+            SELECT team_id FROM TeamMapScores 
+            WHERE match_maps_played_id = mmp.id 
+            ORDER BY team_id DESC LIMIT 1
+        )))
+    WHERE mmp.id = ?
+    GROUP BY tms.team_id, t.name, tms.score, tms.halftime_score, maps.name, mmp.demofile
+    ORDER BY tms.team_id`;
+  return runQuery(query, [match_played_id]);
 };
 
 export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
@@ -65,7 +75,7 @@ export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
 };
 
 export const getTopPlayers = async (
-  id: number
+  match_played_id: number
 ): Promise<Record<string, any>> => {
   const stats = [
     { key: "most_kills", column: "kills" },
@@ -84,15 +94,15 @@ export const getTopPlayers = async (
     column: string;
   }) => {
     const query = `
-      SELECT name, ${column} 
+      SELECT p.name, ps.${column} as value
       FROM PlayerStats ps 
-      INNER JOIN p ON p.steam_id = ps.steam_id 
-      WHERE match_id=? 
-      ORDER BY ${column} DESC 
+      JOIN Players p ON p.steam_id = ps.steam_id 
+      WHERE ps.match_maps_played_id = ? 
+      ORDER BY ps.${column} DESC 
       LIMIT 1;
     `;
 
-    const queryResults = await runQuery<any>(query, [id]);
+    const queryResults = await runQuery<any>(query, [match_played_id]);
     return { key, value: queryResults[0] || null };
   };
 
@@ -165,4 +175,18 @@ export const getMatchesByFilters = async ({
       ORDER BY 
           m.match_date DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
   return runQuery(baseQuery, queryParams);
+};
+
+export const getMatchMapsPlayed = async (match_id: number): Promise<any[]> => {
+  const query = `
+    SELECT 
+      mmp.id,
+      maps.name as map_name,
+      mmp.demofile
+    FROM MatchMapsPlayed mmp
+    JOIN Maps maps ON maps.id = mmp.map_id
+    WHERE mmp.match_id = ?
+    ORDER BY mmp.map_order ASC`;
+
+  return runQuery(query, [match_id]);
 };
