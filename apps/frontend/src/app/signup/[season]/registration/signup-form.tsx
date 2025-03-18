@@ -200,11 +200,11 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   }, [watchPlayers]);
 
   const prevWatchedSteamIds = useRef(steamIds);
+  const fetchedValidSteamIds = useRef(new Set<string>());
   useEffect(() => {
     steamIds.forEach((steam_id, index) => {
       if (
         steam_id.length === 17 &&
-        steam_id !== prevWatchedSteamIds.current[index] &&
         !prevWatchedSteamIds.current.includes(steam_id)
       ) {
         setLoadingStates((prev) => ({ ...prev, [index]: true }));
@@ -224,12 +224,15 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
             if (!data.name || !data.work_email) {
               setOpenItems((prev) => [...prev, `player-${index}`]);
+            } else {
+              fetchedValidSteamIds.current.add(steam_id);
             }
           })
           .catch((error) => {
             console.error("Error fetching player data:", error);
             setValue(`players.${index}.name`, "");
             setValue(`players.${index}.work_email`, "");
+            setOpenItems((prev) => [...prev, `player-${index}`]);
           })
           .finally(() => {
             setLoadingStates((prev) => ({ ...prev, [index]: false }));
@@ -583,35 +586,52 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                             <FormField
                               control={control}
                               name={`players.${index}.name`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>TV-friendly nickname</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                              render={({ field }) => {
+                                const steamId = form.watch(
+                                  `players.${index}.steam_id`
+                                );
+
+                                return (
+                                  <FormItem>
+                                    <FormLabel>TV-friendly nickname</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        onClick={(e) => e.stopPropagation()}
+                                        disabled={fetchedValidSteamIds.current.has(
+                                          steamId
+                                        )}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                );
+                              }}
                             />
 
                             <FormField
                               control={control}
                               name={`players.${index}.work_email`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Work email</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                              render={({ field }) => {
+                                const steamId = form.watch(
+                                  `players.${index}.steam_id`
+                                );
+                                return (
+                                  <FormItem>
+                                    <FormLabel>Work email</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        onClick={(e) => e.stopPropagation()}
+                                        disabled={fetchedValidSteamIds.current.has(
+                                          steamId
+                                        )}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                );
+                              }}
                             />
 
                             <Button
