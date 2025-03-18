@@ -127,41 +127,43 @@ export const getMatchesByFilters = async ({
   ]);
 
   const baseQuery = `
-      SELECT
-          mmp.id AS match_played_id,
+      SELECT 
+          m.id AS match_id,
           m.match_date,
           l.name AS league_name,
           m.stage,
-          maps.name AS map_name,
-
-          -- Team 1 (always the "lower" team ID first)
           t1.name AS team1_name,
           t1.team_logo AS team1_logo,
-          tms1.score AS team1_score,
-          
-          -- Team 2 (always the "higher" team ID second)
           t2.name AS team2_name,
           t2.team_logo AS team2_logo,
-          tms2.score AS team2_score
-
-      FROM MatchMapsPlayed mmp
-      JOIN Matches m ON mmp.match_id = m.id
-      JOIN Leagues l ON m.league_id = l.id
-      JOIN Maps maps ON mmp.map_id = maps.id
-
-      -- First team
-      JOIN TeamMapScores tms1 ON mmp.id = tms1.match_maps_played_id
-      JOIN Teams t1 ON tms1.team_id = t1.id
-
-      -- Second team, ensuring we don't swap duplicates
-      JOIN TeamMapScores tms2 ON mmp.id = tms2.match_maps_played_id 
-          AND tms1.team_id < tms2.team_id -- Ensures each match is listed only once
-      JOIN Teams t2 ON tms2.team_id = t2.id
-
-      WHERE ${query}
-
-      ORDER BY match_played_id DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"};
-      `;
-
+          CASE 
+              WHEN m.best_of = 3 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+              ELSE tms1.score
+          END AS team1_score,
+          CASE 
+              WHEN m.best_of = 3 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+              ELSE tms2.score
+          END AS team2_score
+      FROM 
+          Matches m
+      JOIN 
+          MatchMapsPlayed mmp ON m.id = mmp.match_id
+      JOIN 
+          Leagues l ON m.league_id = l.id
+      JOIN 
+          TeamMapScores tms1 ON mmp.id = tms1.match_maps_played_id
+      JOIN 
+          Teams t1 ON tms1.team_id = t1.id
+      JOIN 
+          TeamMapScores tms2 ON mmp.id = tms2.match_maps_played_id AND tms1.team_id < tms2.team_id
+      JOIN 
+          Teams t2 ON tms2.team_id = t2.id
+      WHERE 
+          m.best_of IN (1, 3) AND ${query}
+      GROUP BY 
+          m.id, m.match_date, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo
+      ORDER BY 
+          m.match_date DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
+  console.log(baseQuery);
   return runQuery(baseQuery, queryParams);
 };
