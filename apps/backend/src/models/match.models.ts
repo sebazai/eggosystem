@@ -128,7 +128,7 @@ export const getMatchesByFilters = async ({
 
   const baseQuery = `
       SELECT 
-          m.id AS match_id,
+          m.id AS match_played_id,
           m.match_date,
           l.name AS league_name,
           m.stage,
@@ -164,6 +164,5 @@ export const getMatchesByFilters = async ({
           m.id, m.match_date, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo
       ORDER BY 
           m.match_date DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
-  console.log(baseQuery);
   return runQuery(baseQuery, queryParams);
 };
