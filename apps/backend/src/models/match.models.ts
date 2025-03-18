@@ -40,14 +40,11 @@ export const getMatchTeamStats = async (
         t.name,
         tms.score,
         tms.halftime_score as team_ht_score,
-        maps.name as map,
-        mmp.demofile,
         SUM(ps.first_kills) as first_kills,
         SUM(ps.clutches_won) as clutches_won,
         SUM(ps.plants) as plants,
         SUM(ps.trades) as trades
     FROM MatchMapsPlayed mmp
-    JOIN Maps maps ON maps.id = mmp.map_id
     JOIN TeamMapScores tms ON tms.match_maps_played_id = mmp.id
     JOIN Teams t ON t.id = tms.team_id
     LEFT JOIN PlayerStats ps ON ps.match_maps_played_id = mmp.id 
@@ -61,7 +58,7 @@ export const getMatchTeamStats = async (
             ORDER BY team_id DESC LIMIT 1
         )))
     WHERE mmp.id = ?
-    GROUP BY tms.team_id, t.name, tms.score, tms.halftime_score, maps.name, mmp.demofile
+    GROUP BY tms.team_id, t.name, tms.score, tms.halftime_score
     ORDER BY tms.team_id`;
   return runQuery(query, [match_played_id]);
 };
