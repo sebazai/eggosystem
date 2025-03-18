@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
-import { SignupForm } from "./signup-form";
+import { SignupForm } from "@/components/signup/signup-form";
 
 type Props = {
   params: Promise<{ season: string }>;

@@ -12,8 +12,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./signup-tab-organizations";
-import { TabTeam } from "./signup-tab-team";
 import { TabPlayers } from "./signup-tab-players";
+import { TabTeam } from "./signup-tab-team";
 
 interface SignupFormProps {
   seasonId: string;

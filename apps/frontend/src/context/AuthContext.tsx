@@ -2,7 +2,7 @@
 
 import { apiFetch } from "@/lib/apiClient";
 import { createContext, useContext, useEffect, useState } from "react";
-import type { UserPayload } from "../../../../packages/types/src";
+import type { UserPayload } from "@eggosystem/types";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {

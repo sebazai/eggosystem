@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { envConfig } from "../../../configs/env";
+import { envConfig } from "@/configs/env";
 
 export async function GET(_request: NextRequest) {
   const response = await fetch(`${envConfig.API_URL}/api/v1/leagues`);
