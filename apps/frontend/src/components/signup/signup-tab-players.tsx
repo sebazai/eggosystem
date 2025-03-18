@@ -16,7 +16,7 @@ import {
   type UseFormWatch
 } from "react-hook-form";
 import type { PlayerSchemaType, SignupFormValues } from "./signup-form";
-import { cn } from "@/lib/utils";
+import { cn, createNextImageUrl } from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -25,6 +25,10 @@ import {
 } from "@/components/ui/accordion";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { Checkbox } from "../ui/checkbox";
+import type { CheckedState } from "@radix-ui/react-checkbox";
+import Image from "next/image";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -39,6 +43,19 @@ export const TabPlayers = ({
   setValue,
   watch
 }: TabPlayersProps) => {
+  const auth = useAuth();
+  useEffect(() => {
+    setValue("players", [
+      {
+        steam_id: auth.user?.steamId ?? "",
+        name: "",
+        work_email: "",
+        discord: "",
+        captain: true,
+        co_captain: false
+      }
+    ]);
+  }, [auth.user, setValue]);
   const watchPlayers = useWatch({ control, name: "players" });
 
   const steamIds = useWatch({ control, name: "players" }).map(
@@ -82,7 +99,12 @@ export const TabPlayers = ({
                 shouldValidate: false
               });
 
-            if (!data.name || !data.work_email) {
+            if (data.discord)
+              setValue(`players.${index}.discord`, data.discord, {
+                shouldValidate: false
+              });
+
+            if (!data.name || !data.work_email || !data.discord) {
               setOpenItems((prev) => [...prev, `player-${index}`]);
             } else {
               fetchedValidSteamIds.current.add(steam_id);
@@ -102,10 +124,39 @@ export const TabPlayers = ({
 
     prevWatchedSteamIds.current = steamIds;
   }, [setValue, steamIds]);
+
+  const onCapitanChange = (
+    checked: CheckedState,
+    index: number,
+    capitanType: "captain" | "co_captain"
+  ) => {
+    const isOtherCapitan = watch(
+      `players.${index}.${capitanType === "captain" ? "co_captain" : "captain"}`
+    );
+    if (checked) {
+      if (isOtherCapitan) {
+        setValue(
+          `players.${index}.${capitanType === "captain" ? "co_captain" : "captain"}`,
+          false
+        );
+      }
+      // Uncheck other captains
+      watchPlayers.forEach((_, i) => {
+        if (i !== index) setValue(`players.${i}.${capitanType}`, false);
+      });
+      setValue(`players.${index}.${capitanType}`, true);
+    } else {
+      setValue(`players.${index}.${capitanType}`, false);
+    }
+  };
+
   return (
     <TabsContent value="players">
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Players</h3>
+        <p>
+          By default you are the captain, please remember to select co-captain.
+        </p>
         <Accordion
           type="multiple"
           value={openItems}
@@ -142,8 +193,66 @@ export const TabPlayers = ({
                     </FormItem>
                   )}
                 />
+
+                {watch(`players.${index}.captain`) && (
+                  <Image
+                    src={createNextImageUrl("/images/captain.png")}
+                    alt="Captain"
+                    width={30}
+                    height={23}
+                  />
+                )}
+                {watch(`players.${index}.co_captain`) && (
+                  <Image
+                    src={createNextImageUrl("/images/co-captain.png")}
+                    alt="Co-Captain"
+                    width={30}
+                    height={23}
+                  />
+                )}
               </AccordionTrigger>
               <AccordionContent className="w-full p-4 border-t space-y-3">
+                <div className="flex items-center gap-4">
+                  <FormField
+                    control={control}
+                    name={`players.${index}.captain`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) =>
+                              onCapitanChange(checked, index, "captain")
+                            }
+                          />
+                        </FormControl>
+                        <FormLabel className="cursor-pointer">
+                          Captain
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={control}
+                    name={`players.${index}.co_captain`}
+                    render={({ field }) => (
+                      <FormItem className="flex items-center gap-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={(checked) =>
+                              onCapitanChange(checked, index, "co_captain")
+                            }
+                          />
+                        </FormControl>
+                        <FormLabel className="cursor-pointer">
+                          Co-Captain
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={control}
                   name={`players.${index}.name`}
@@ -187,6 +296,24 @@ export const TabPlayers = ({
                   }}
                 />
 
+                {/* If players.index.captain is checked, render discord field */}
+                {(watch(`players.${index}.captain`) ||
+                  watch(`players.${index}.co_captain`)) && (
+                  <FormField
+                    control={control}
+                    name={`players.${index}.discord`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Discord</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <Button
                   variant="destructive"
                   onClick={() => remove(index)}
@@ -207,11 +334,14 @@ export const TabPlayers = ({
               append({
                 steam_id: "",
                 name: "",
-                work_email: ""
+                work_email: "",
+                discord: "",
+                captain: false,
+                co_captain: false
               });
             }}
             className="w-full"
-            variant={"secondary"}
+            variant={"default"}
           >
             Add Player
           </Button>

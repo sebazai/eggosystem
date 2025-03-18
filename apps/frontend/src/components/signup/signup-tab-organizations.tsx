@@ -157,11 +157,11 @@ export const TabOrganization = ({
         </div>
       )}
       <Button
-        className="mt-5"
+        className="mt-5 w-full"
         disabled={!validOrganizationSelection}
         onClick={() => onNext("team")}
       >
-        Next
+        Team selection
       </Button>
     </TabsContent>
   );

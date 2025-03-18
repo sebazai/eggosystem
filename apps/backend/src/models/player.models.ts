@@ -15,7 +15,8 @@ export const getPlayers = () => {
   return runQuery<Player[]>(
     `SELECT
     steam_id, 
-    name, 
+    name,
+    discord,
     CASE 
         WHEN work_email IS NULL THEN NULL
         WHEN work_email LIKE '%@%' THEN 
@@ -31,7 +32,8 @@ export const getPlayerBySteamId = async (steam_id: string) => {
   const results = await runQuery<Player[]>(
     `SELECT
     steam_id, 
-    name, 
+    name,
+    discord,
     CASE 
         WHEN work_email IS NULL THEN NULL
         WHEN work_email LIKE '%@%' THEN 

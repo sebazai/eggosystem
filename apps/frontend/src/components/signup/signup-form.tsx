@@ -14,6 +14,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./signup-tab-organizations";
 import { TabPlayers } from "./signup-tab-players";
 import { TabTeam } from "./signup-tab-team";
+import { CheckCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ErrorMessage } from "@hookform/error-message";
 
 interface SignupFormProps {
   seasonId: string;
@@ -22,19 +25,32 @@ interface SignupFormProps {
 const maskedEmailRegex =
   /^[a-zA-Z0-9._%+-]{2,}\*+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-const playerSchema = z.object({
-  steam_id: z.string().length(17),
-  name: z.string().min(2).max(50),
-  work_email: z
-    .string()
-    .refine(
-      (val) =>
-        z.string().email().safeParse(val).success || maskedEmailRegex.test(val),
-      {
-        message: "Invalid email format."
-      }
-    )
-});
+const playerSchema = z
+  .object({
+    steam_id: z.string().length(17),
+    name: z.string().min(2).max(50),
+    work_email: z
+      .string()
+      .refine(
+        (val) =>
+          z.string().email().safeParse(val).success ||
+          maskedEmailRegex.test(val),
+        {
+          message: "Invalid email format."
+        }
+      ),
+    discord: z.string().optional(),
+    captain: z.boolean().optional(),
+    co_captain: z.boolean().optional()
+  })
+  .refine(
+    (player) =>
+      !(player.captain || player.co_captain) || !!player.discord?.trim(),
+    {
+      message: "Captains and co-captains must provide a Discord username.",
+      path: ["discord"]
+    }
+  );
 
 const newOrganizationSchema = z.object({
   name: z.string().min(2).max(50),
@@ -52,7 +68,20 @@ const baseFormSchema = z.object({
   newOrganization: newOrganizationSchema.optional(),
   teamId: z.number(),
   newTeam: newTeamSchema.optional(),
-  players: z.array(playerSchema).min(5).max(9)
+  players: z
+    .array(playerSchema)
+    .min(5)
+    .max(9)
+    .refine(
+      (players) => {
+        const captains = players.filter((p) => p.captain === true);
+        const coCaptains = players.filter((p) => p.co_captain === true);
+        return captains.length === 1 && coCaptains.length === 1;
+      },
+      {
+        message: "There must be exactly one captain and one co-captain."
+      }
+    )
 });
 
 const formSchema = baseFormSchema
@@ -101,7 +130,10 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
       players: Array(5).fill({
         steam_id: "",
         name: "",
-        work_email: ""
+        work_email: "",
+        discord: "",
+        captain: false,
+        co_captain: false
       })
     }
   });
@@ -112,6 +144,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const watchNewOrg = useWatch({ control, name: "newOrganization" });
   const watchTeamId = useWatch({ control, name: "teamId" });
   const watchNewTeam = useWatch({ control, name: "newTeam" });
+  const watchPlayers = useWatch({ control, name: "players" });
 
   const { season, isLoading, isError, isValidating } = useSeason(seasonId);
 
@@ -152,13 +185,22 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         .safeParse({ newTeam: watchNewTeam }),
     [watchNewTeam]
   );
+  const validPlayers = useMemo(
+    () =>
+      baseFormSchema
+        .pick({
+          players: true
+        })
+        .safeParse({ players: watchPlayers }),
+    [watchPlayers]
+  );
 
   const onSubmit = (data: SignupFormValues) => {
     console.log("Submitted:", data);
   };
 
   if (isLoading || isValidating || loadingUser) {
-    return <TheContainer>Loading...</TheContainer>;
+    return <TheContainer classNames="w-full">Loading...</TheContainer>;
   }
   if (!user) {
     return <RequiresSteamLogin />;
@@ -176,14 +218,23 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     setActiveTab(value);
   };
 
-  const validOrganizationSelection =
+  console.log(validOrg, validOrgId);
+
+  const validOrganizationSelection = Boolean(
     (validOrgId.success !== false && validOrgId.data.organizationId !== -1) ||
-    (validOrg.success !== false && validOrgId.data?.organizationId === -1);
+      (validOrg.success !== false &&
+        validOrgId.data?.organizationId === -1 &&
+        validOrg.data.newOrganization)
+  );
 
-  const validTeamSelection =
+  const validTeamSelection = Boolean(
     (validTeamId.success !== false && validTeamId.data.teamId !== -1) ||
-    (validTeam.success !== false && validTeamId.data?.teamId === -1);
+      (validTeam.success !== false &&
+        validTeamId.data?.teamId === -1 &&
+        validTeam.data.newTeam)
+  );
 
+  console.log(form.formState.errors);
   return (
     <div className="min-w-xs sm:min-w-xl space-y-6">
       <Form {...form}>
@@ -198,15 +249,38 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                 className="space-y-6"
               >
                 <TabsList className="flex space-x-2">
-                  <TabsTrigger value="organization">Organization</TabsTrigger>
+                  <TabsTrigger value="organization">
+                    Organization{" "}
+                    {validOrganizationSelection && (
+                      <CheckCheck
+                        className={cn(
+                          validOrganizationSelection && "text-green-500"
+                        )}
+                      />
+                    )}
+                  </TabsTrigger>
                   <TabsTrigger
                     value="team"
                     disabled={!validOrganizationSelection}
                   >
-                    Team
+                    Team{" "}
+                    {validTeamSelection && (
+                      <CheckCheck
+                        className={cn(
+                          validOrganizationSelection && "text-green-500"
+                        )}
+                      />
+                    )}
                   </TabsTrigger>
                   <TabsTrigger value="players" disabled={!validTeamSelection}>
-                    Players
+                    Players{" "}
+                    {validPlayers.success && (
+                      <CheckCheck
+                        className={cn(
+                          validOrganizationSelection && "text-green-500"
+                        )}
+                      />
+                    )}
                   </TabsTrigger>
                 </TabsList>
 
@@ -235,6 +309,15 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                   watch={watch}
                 />
               </Tabs>
+
+              <ErrorMessage
+                errors={form.formState.errors}
+                name="players.root"
+                render={({ message }) => (
+                  <p className="text-red-500">{message}</p>
+                )}
+              />
+
               <Button type="submit" variant="outline" className="w-full">
                 Submit
               </Button>

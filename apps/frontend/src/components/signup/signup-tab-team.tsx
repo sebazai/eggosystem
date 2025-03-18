@@ -139,11 +139,11 @@ export const TabTeam = ({
         </div>
       )}
       <Button
-        className="mt-5"
+        className="mt-5 w-full"
         disabled={!validTeamSelection}
         onClick={() => onNext("players")}
       >
-        Next
+        Go to lineup
       </Button>
     </TabsContent>
   );

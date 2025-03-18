@@ -3,7 +3,7 @@ export const SignupInfo = () => {
     <div className="max-w-xs sm:max-w-md">
       <h2 className="pb-3">Signup Info</h2>
       <p>
-        Heads up! We&apos;ve migrated from our old data structure to the new
+        Heads up! We&apos;ve migrated from our old data structure to the new{" "}
         <strong>hub.kanaliiga.fi</strong> system.
       </p>
       <p>
