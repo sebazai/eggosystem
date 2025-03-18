@@ -14,12 +14,12 @@ import { useOrganizations } from "@/hooks/data/useOrganizations";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import { useState } from "react";
 import type { Control, UseFormReset } from "react-hook-form";
-import type { FormValues } from "./signup-form";
+import type { SignupFormValues } from "./signup-form";
 
 interface TabOrganizationProps {
   watchOrgId: number;
-  control: Control<FormValues>;
-  reset: UseFormReset<FormValues>;
+  control: Control<SignupFormValues>;
+  reset: UseFormReset<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
 }

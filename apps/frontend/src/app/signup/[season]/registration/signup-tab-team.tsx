@@ -13,14 +13,14 @@ import { TabsContent } from "@/components/ui/tabs";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import { useState } from "react";
 import type { Control, UseFormReset } from "react-hook-form";
-import type { FormValues } from "./signup-form";
+import type { SignupFormValues } from "./signup-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 
 interface TabTeamProps {
   watchTeamId: number;
   organizationId: number;
-  control: Control<FormValues>;
-  reset: UseFormReset<FormValues>;
+  control: Control<SignupFormValues>;
+  reset: UseFormReset<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
 }
