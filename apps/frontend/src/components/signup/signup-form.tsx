@@ -185,7 +185,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     (validTeam.success !== false && validTeamId.data?.teamId === -1);
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="min-w-xs sm:min-w-xl space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
@@ -220,6 +220,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
                 <TabTeam
                   organizationId={watchOrgId}
+                  newOrganization={watchNewOrg}
                   control={control}
                   reset={reset}
                   onNext={onNext}

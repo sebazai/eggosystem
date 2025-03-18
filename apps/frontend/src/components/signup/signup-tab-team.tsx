@@ -19,6 +19,7 @@ import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 interface TabTeamProps {
   watchTeamId: number;
   organizationId: number;
+  newOrganization: SignupFormValues["newOrganization"];
   control: Control<SignupFormValues>;
   reset: UseFormReset<SignupFormValues>;
   validTeamSelection: boolean;
@@ -28,6 +29,7 @@ interface TabTeamProps {
 export const TabTeam = ({
   watchTeamId,
   organizationId,
+  newOrganization,
   control,
   reset,
   validTeamSelection,
@@ -83,6 +85,8 @@ export const TabTeam = ({
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
                     reset({
+                      organizationId,
+                      newOrganization,
                       teamId: undefined,
                       newTeam: undefined,
                       players: Array(5).fill({

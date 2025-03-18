@@ -1,6 +1,7 @@
 import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
 import { SignupForm } from "@/components/signup/signup-form";
+import { SignupInfo } from "@/components/signup/signup-info";
 
 type Props = {
   params: Promise<{ season: string }>;
@@ -28,7 +29,10 @@ export default async function SignupPage({ params }: Props) {
   return (
     <div>
       <h1 className="pb-4">Season Signup</h1>
-      <SignupForm seasonId={season} />
+      <div className="flex flex-col md:flex-row gap-y-4 md:gap-x-6">
+        <SignupForm seasonId={season} />
+        <SignupInfo />
+      </div>
     </div>
   );
 }

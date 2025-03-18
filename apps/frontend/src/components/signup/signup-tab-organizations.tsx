@@ -75,7 +75,7 @@ export const TabOrganization = ({
                 allowOther={true}
                 filter={"organizations"}
                 selectable={selectableOrganizations ?? []}
-                placeholder="Search by name or business id"
+                placeholder="Name or Business ID..."
                 currentSelection={
                   watchOrgId === -1
                     ? [{ value: -1, label: "Other" }]
