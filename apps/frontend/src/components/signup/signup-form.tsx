@@ -218,8 +218,6 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     setActiveTab(value);
   };
 
-  console.log(validOrg, validOrgId);
-
   const validOrganizationSelection = Boolean(
     (validOrgId.success !== false && validOrgId.data.organizationId !== -1) ||
       (validOrg.success !== false &&
@@ -234,7 +232,6 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         validTeam.data.newTeam)
   );
 
-  console.log(form.formState.errors);
   return (
     <div className="min-w-xs sm:min-w-xl space-y-6">
       <Form {...form}>

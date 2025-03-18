@@ -3,7 +3,6 @@
 import { apiFetch } from "@/lib/apiClient";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { UserPayload } from "@eggosystem/types";
-import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: UserPayload | null;
@@ -17,7 +16,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserPayload | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   const checkAuth = async () => {
     try {
@@ -37,7 +35,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Logout failed:", error);
     } finally {
       setUser(null);
-      router.push("/"); // Redirect to login page after logout
     }
   };
 
