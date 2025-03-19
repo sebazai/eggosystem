@@ -51,7 +51,7 @@ describe("Match Routes", () => {
     });
   });
 
-  describe("GET /matches/:match_played_id/topplayers", () => {
+  describe("GET /matches/:game_id/topplayers", () => {
     it("should return top players for match id 10340", async () => {
       const expectedTopPlayers = {
         most_kills: {
@@ -132,7 +132,7 @@ describe("Match Routes", () => {
     });
   });
 
-  describe("GET /matches/:match_played_id/teamstats", () => {
+  describe("GET /matches/:game_id/teamstats", () => {
     it("should return team stats for match id 10340", async () => {
       const expectedTeamStats = [
         {

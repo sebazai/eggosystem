@@ -244,53 +244,53 @@ export async function up(knex: Knex): Promise<void> {
       table.unique(["match_id", "team_id", "veto_order"]);
     }
   );
+  await knex.schema.createTable("MatchGames", (table: Knex.TableBuilder) => {
+    table.increments("id").primary();
+    table.integer("match_id").unsigned().notNullable();
+    table.specificType("map_id", "TINYINT UNSIGNED").notNullable();
+    table.specificType("map_order", "TINYINT UNSIGNED");
+    table.string("demofile", 255).notNullable();
+    table
+      .foreign("match_id")
+      .references("id")
+      .inTable("Matches")
+      .onUpdate("CASCADE")
+      .onDelete("CASCADE");
+    table
+      .foreign("map_id")
+      .references("id")
+      .inTable("Maps")
+      .onDelete("RESTRICT");
+  });
+
   await knex.schema.createTable(
-    "MatchMapsPlayed",
+    "TeamGameScores",
     (table: Knex.TableBuilder) => {
       table.increments("id").primary();
       table.integer("match_id").unsigned().notNullable();
-      table.specificType("map_id", "TINYINT UNSIGNED").notNullable();
-      table.specificType("map_order", "TINYINT UNSIGNED");
-      table.string("demofile", 255).notNullable();
+      table.integer("team_id").unsigned().notNullable();
+      table.integer("game_id").unsigned().notNullable();
+      table.enum("starting_side", ["CT", "T"]).notNullable();
+      table.specificType("score", "TINYINT UNSIGNED").notNullable();
+      table.specificType("halftime_score", "TINYINT UNSIGNED").notNullable();
+      table.specificType("overtime_score", "TINYINT UNSIGNED").defaultTo(0);
       table
-        .foreign("match_id")
-        .references("id")
-        .inTable("Matches")
+        .foreign(["match_id", "team_id"])
+        .references(["match_id", "team_id"])
+        .inTable("MatchTeams")
         .onUpdate("CASCADE")
         .onDelete("CASCADE");
       table
-        .foreign("map_id")
+        .foreign("game_id")
         .references("id")
-        .inTable("Maps")
-        .onDelete("RESTRICT");
+        .inTable("MatchGames")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE");
     }
   );
-
-  await knex.schema.createTable("TeamMapScores", (table: Knex.TableBuilder) => {
-    table.increments("id").primary();
-    table.integer("match_id").unsigned().notNullable();
-    table.integer("team_id").unsigned().notNullable();
-    table.integer("match_maps_played_id").unsigned().notNullable();
-    table.enum("starting_side", ["CT", "T"]).notNullable();
-    table.specificType("score", "TINYINT UNSIGNED").notNullable();
-    table.specificType("halftime_score", "TINYINT UNSIGNED").notNullable();
-    table.specificType("overtime_score", "TINYINT UNSIGNED").defaultTo(0);
-    table
-      .foreign(["match_id", "team_id"])
-      .references(["match_id", "team_id"])
-      .inTable("MatchTeams")
-      .onUpdate("CASCADE")
-      .onDelete("CASCADE");
-    table
-      .foreign("match_maps_played_id")
-      .references("id")
-      .inTable("MatchMapsPlayed")
-      .onUpdate("CASCADE")
-      .onDelete("CASCADE");
-  });
   await knex.schema.createTable("MapRoundStats", (table: Knex.TableBuilder) => {
     table.increments("id").primary();
-    table.integer("match_maps_played_id").unsigned().notNullable();
+    table.integer("game_id").unsigned().notNullable();
     table.integer("ct_team_id").unsigned().notNullable();
     table.integer("t_team_id").unsigned().notNullable();
     table.specificType("round_number", "TINYINT UNSIGNED").notNullable();
@@ -302,9 +302,9 @@ export async function up(knex: Knex): Promise<void> {
     table.specificType("plant_site", "CHAR(1)");
 
     table
-      .foreign("match_maps_played_id")
+      .foreign("game_id")
       .references("id")
-      .inTable("MatchMapsPlayed")
+      .inTable("MatchGames")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
@@ -320,7 +320,7 @@ export async function up(knex: Knex): Promise<void> {
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
 
-    table.unique(["match_maps_played_id", "round_number"]);
+    table.unique(["game_id", "round_number"]);
   });
 
   // Add check constraints via raw SQL
@@ -335,7 +335,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable("PlayerStats", (table: Knex.TableBuilder) => {
     table.increments("id").primary();
     table.bigInteger("steam_id").notNullable();
-    table.integer("match_maps_played_id").unsigned().notNullable();
+    table.integer("game_id").unsigned().notNullable();
     table.integer("team").notNullable();
     table.tinyint("kills").unsigned().notNullable();
     table.tinyint("deaths").unsigned().notNullable();
@@ -451,8 +451,8 @@ export async function up(knex: Knex): Promise<void> {
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
-      .foreign("match_maps_played_id")
-      .references("MatchMapsPlayed.id")
+      .foreign("game_id")
+      .references("MatchGames.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
   });
@@ -492,7 +492,7 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable("PlayerTrades", (table: Knex.TableBuilder) => {
     table.increments("id").primary();
-    table.integer("match_maps_played_id").unsigned().notNullable();
+    table.integer("game_id").unsigned().notNullable();
     table.bigInteger("trader_steam_id").notNullable();
     table.bigInteger("killer_steam_id").notNullable();
     table.bigInteger("victim_steam_id").notNullable();
@@ -520,8 +520,8 @@ export async function up(knex: Knex): Promise<void> {
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
-      .foreign("match_maps_played_id")
-      .references("MatchMapsPlayed.id")
+      .foreign("game_id")
+      .references("MatchGames.id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
   });
@@ -584,8 +584,8 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists("MatchTeams");
   await knex.schema.dropTableIfExists("Matches");
   await knex.schema.dropTableIfExists("Maps");
-  await knex.schema.dropTableIfExists("TeamMapScores");
-  await knex.schema.dropTableIfExists("MatchMapsPlayed");
+  await knex.schema.dropTableIfExists("TeamGameScores");
+  await knex.schema.dropTableIfExists("MatchGames");
   await knex.schema.dropTableIfExists("MapRoundStats");
   await knex.schema.dropTableIfExists("PlayerStats");
   await knex.schema.dropTableIfExists("SeasonPlayerRanks");

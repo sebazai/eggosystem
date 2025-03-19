@@ -164,7 +164,7 @@
         <mxCell id="RhKQtKuIfPp6kLwdB-H_-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="PAoucXeDEAnXjQcnjG_c-6" target="RhKQtKuIfPp6kLwdB-H_-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="PAoucXeDEAnXjQcnjG_c-6" value="MatchMapsPlayed" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="PAoucXeDEAnXjQcnjG_c-6" value="MatchGames" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="320" y="640" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="PAoucXeDEAnXjQcnjG_c-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PAoucXeDEAnXjQcnjG_c-9" target="PAoucXeDEAnXjQcnjG_c-11" edge="1">
@@ -186,7 +186,7 @@
         <mxCell id="PAoucXeDEAnXjQcnjG_c-14" value="MapRoundStats" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="320" y="740" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="PAoucXeDEAnXjQcnjG_c-17" value="TeamMapScores" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+        <mxCell id="PAoucXeDEAnXjQcnjG_c-17" value="TeamGameScores" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="460" y="520" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="RhKQtKuIfPp6kLwdB-H_-2" value="PlayerTrades" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">

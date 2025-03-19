@@ -1,7 +1,7 @@
 export interface PlayerStats {
   id: number;
   steam_id: string;
-  match_maps_played_id: number;
+  game_id: number;
   team: number;
   kills: number;
   deaths: number;

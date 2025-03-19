@@ -322,7 +322,7 @@ const migrateMatchCrazy = async (
   const mapId = await runNewDbQuery<any>("SELECT id FROM Maps WHERE name = ?", [
     match.map
   ]);
-  const matchMapPlayedQuery = `INSERT INTO MatchMapsPlayed (id, match_id, map_id, demofile) VALUES (?, ?, ?, ?);`;
+  const matchMapPlayedQuery = `INSERT INTO MatchGames (id, match_id, map_id, demofile) VALUES (?, ?, ?, ?);`;
   await runNewDbQuery(matchMapPlayedQuery, [
     match.id,
     newParentMatchId,
@@ -330,8 +330,8 @@ const migrateMatchCrazy = async (
     match.demofile
   ]);
 
-  const MatchTeamMapScoresInsert = `INSERT INTO TeamMapScores (match_id, team_id, match_maps_played_id, score, halftime_score, overtime_score, starting_side) VALUES (?, ?, ?, ?, ?, ?, ?);`;
-  await runNewDbQuery(MatchTeamMapScoresInsert, [
+  const MatchTeamGameScoresInsert = `INSERT INTO TeamGameScores (match_id, team_id, game_id, score, halftime_score, overtime_score, starting_side) VALUES (?, ?, ?, ?, ?, ?, ?);`;
+  await runNewDbQuery(MatchTeamGameScoresInsert, [
     newParentMatchId,
     t_team_id,
     match.id,
@@ -340,7 +340,7 @@ const migrateMatchCrazy = async (
     match.team1OTScore,
     "T"
   ]);
-  await runNewDbQuery(MatchTeamMapScoresInsert, [
+  await runNewDbQuery(MatchTeamGameScoresInsert, [
     newParentMatchId,
     ct_team_id,
     match.id,
@@ -354,7 +354,7 @@ const migrateMatchCrazy = async (
     "SELECT * FROM afterplant WHERE matchID = ?",
     [match.id]
   );
-  const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (id, match_maps_played_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+  const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (id, game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
   for (const round of allOldMatchStats) {
     const plantSite =
       round.Site === "A" ? "A" : round.Site === "B" ? "B" : null;
@@ -577,7 +577,7 @@ export const migratePlayerStats = async () => {
 
   for (const playerStat of oldPlayerStats) {
     const newPlayerStatsInsertQuery =
-      "INSERT INTO PlayerStats(`id`, `steam_id`, `match_maps_played_id`, `team`, `kills`, `deaths`, `assists`, `assists_ct`, `assists_t`, `mvps`, `total_damage`, `total_damage_ct`, `total_damage_t`, `headshots`, `flash_assists`, `flash_assists_t`, `flash_assists_ct`, `adr`, `adr_t`, `adr_ct`, `hs_percent`, `plants`, `explodes`, `defuses`, `first_kills`, `kills_1`, `kills_2`, `kills_3`, `kills_4`, `kills_5`, `trades`, `traded`, `clutches_won`, `clutches`, `awp_kills`, `utility_damage`, `utility_damage_t`, `utility_damage_ct`, `molotov_damage`, `molotov_damage_ct`, `molotov_damage_t`, `he_damage`, `he_damage_ct`, `he_damage_t`, `trade_attempts`, `trade_attempts_ct`, `trade_attempts_t`, `kills_through_walls`, `first_death_trade_attempts`, `first_death_trade_attempts_ct`, `first_death_trade_attempts_t`, `first_death_trade_opportunities`, `first_death_trade_opportunities_ct`, `first_death_trade_opportunities_t`, `trade_opportunities`, `trade_opportunities_t`, `trade_opportunities_ct`, `flashes_thrown`, `enemies_flashed`, `mates_flashed`, `self_flashes`, `first_deaths`, `total_mf_duration`, `total_ef_duration`, `one_v_one_won`, `one_v_one_lost`, `one_v_one_won_ct`, `one_v_one_lost_ct`, `one_v_one_won_t`, `one_v_one_lost_t`, `kast`, `kana_rating`, `first_kills_t`, `first_kills_ct`, `first_deaths_t`, `first_deaths_ct`, `first_death_trades`, `first_death_traded`, `first_death_trades_ct`, `first_death_traded_ct`, `first_death_trades_t`, `first_death_traded_t`, `flashes_thrown_t`, `flashes_thrown_ct`, `enemies_flashed_t`, `enemies_flashed_ct`, `kills_t`, `kills_ct`, `deaths_t`, `deaths_ct`, `trades_t`, `trades_ct`, `traded_t`, `traded_ct`, `total_ef_duration_ct`, `total_ef_duration_t`, `total_mf_duration_t`, `total_mf_duration_ct`, `mates_flashed_t`, `mates_flashed_ct`, `ttd`, `crosshair_placement`, `ttf`, `rws`, `shots`, `shots_hit`, `total_strafing_shots`, `good_strafing_shots`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+      "INSERT INTO PlayerStats(`id`, `steam_id`, `game_id`, `team`, `kills`, `deaths`, `assists`, `assists_ct`, `assists_t`, `mvps`, `total_damage`, `total_damage_ct`, `total_damage_t`, `headshots`, `flash_assists`, `flash_assists_t`, `flash_assists_ct`, `adr`, `adr_t`, `adr_ct`, `hs_percent`, `plants`, `explodes`, `defuses`, `first_kills`, `kills_1`, `kills_2`, `kills_3`, `kills_4`, `kills_5`, `trades`, `traded`, `clutches_won`, `clutches`, `awp_kills`, `utility_damage`, `utility_damage_t`, `utility_damage_ct`, `molotov_damage`, `molotov_damage_ct`, `molotov_damage_t`, `he_damage`, `he_damage_ct`, `he_damage_t`, `trade_attempts`, `trade_attempts_ct`, `trade_attempts_t`, `kills_through_walls`, `first_death_trade_attempts`, `first_death_trade_attempts_ct`, `first_death_trade_attempts_t`, `first_death_trade_opportunities`, `first_death_trade_opportunities_ct`, `first_death_trade_opportunities_t`, `trade_opportunities`, `trade_opportunities_t`, `trade_opportunities_ct`, `flashes_thrown`, `enemies_flashed`, `mates_flashed`, `self_flashes`, `first_deaths`, `total_mf_duration`, `total_ef_duration`, `one_v_one_won`, `one_v_one_lost`, `one_v_one_won_ct`, `one_v_one_lost_ct`, `one_v_one_won_t`, `one_v_one_lost_t`, `kast`, `kana_rating`, `first_kills_t`, `first_kills_ct`, `first_deaths_t`, `first_deaths_ct`, `first_death_trades`, `first_death_traded`, `first_death_trades_ct`, `first_death_traded_ct`, `first_death_trades_t`, `first_death_traded_t`, `flashes_thrown_t`, `flashes_thrown_ct`, `enemies_flashed_t`, `enemies_flashed_ct`, `kills_t`, `kills_ct`, `deaths_t`, `deaths_ct`, `trades_t`, `trades_ct`, `traded_t`, `traded_ct`, `total_ef_duration_ct`, `total_ef_duration_t`, `total_mf_duration_t`, `total_mf_duration_ct`, `mates_flashed_t`, `mates_flashed_ct`, `ttd`, `crosshair_placement`, `ttf`, `rws`, `shots`, `shots_hit`, `total_strafing_shots`, `good_strafing_shots`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     await runNewDbQuery(newPlayerStatsInsertQuery, [
       playerStat.id,
       playerStat.steamID,
@@ -702,7 +702,7 @@ export const migrateTrades = async () => {
   // INSERT INTO `Trades`(`id`, `match_id`, `trader_steam_id`, `killer_steam_id`, `victim_steam_id`, `round_number`, `first_death`, `traded`, `attempted`, `time`, `trade_time`, `death_time`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]','[value-11]','[value-12]')
 
   for (const trade of allOldTrades) {
-    const query = `INSERT INTO PlayerTrades (id, match_maps_played_id, trader_steam_id, killer_steam_id, victim_steam_id, round_number, first_death, traded, attempted, time, trade_time, death_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+    const query = `INSERT INTO PlayerTrades (id, game_id, trader_steam_id, killer_steam_id, victim_steam_id, round_number, first_death, traded, attempted, time, trade_time, death_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
     await runNewDbQuery(query, [
       trade.id,
       trade.matchID,
@@ -729,10 +729,10 @@ export const migrateTrades = async () => {
 //   // INSERT INTO `MatchStats`(`id`, `match_id`, `round_number`, `ct_t`, `ct_team`, `t_team`, `first_kill`, `winner`, `plant_site`, `round_info`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]')
 //   console.log('Migrating MatchStats, just sit back and relax...');
 // const allOldMatchStats: any[] = await runOldDbQuery('SELECT * FROM afterplant');
-// const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (match_maps_played_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, winner, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+// const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, winner, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
 // for (const round of allOldMatchStats) {
 //   // const matchMapPlayed = await runNewDbQuery<any>(
-//   //   'SELECT  FROM MatchMapsPlayed mmp JOIN MatchTeams mt ON mt.match_id = mmp.match_id WHERE id = ?',
+//   //   'SELECT  FROM MatchGames mmp JOIN MatchTeams mt ON mt.match_id = mmp.match_id WHERE id = ?',
 //   //   [round.matchID]
 //   // );
 //   await runNewDbQuery(MatchMapRoundStatsInsert, [

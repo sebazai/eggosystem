@@ -46,7 +46,7 @@ export const FilteredMatchesList = ({
               <Link
                 className="no-underline"
                 href="/matches/[id]"
-                as={`/matches/${match.match_played_id}`}
+                as={`/matches/${match.game_id}`}
               >
                 <div
                   className="grid grid-cols-[1fr_auto_1fr] min-h-[50px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"

@@ -4,11 +4,11 @@ import type {
   Map,
   Team,
   TeamMapScore,
-  MatchMapPlayed
+  MatchGame
 } from "../index";
 
 export interface MatchesByFilters {
-  match_played_id: MatchMapPlayed["id"];
+  game_id: MatchGame["id"];
   match_date: Match["match_date"];
   stage: Match["stage"];
   league_name: SeasonLeague["name"];

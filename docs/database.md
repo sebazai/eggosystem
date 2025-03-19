@@ -71,7 +71,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 - **Purpose**: Stores Steam users statistics for each played map.
 - **Columns**:
   - `steam_id` (BIGINT, PK) - Unique Steam identifier.
-  - `match_maps_played_id` (INT, FK → MatchMapsPlayed.id)
+  - `game_id` (INT, FK → MatchGames.id)
 
 ### SeasonTeamRegistrations
 
@@ -108,7 +108,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 
 ### Matches
 
-- **Purpose**: Parent match. A match can have multiple MatchMapsPlayed. BO1, BO3, BO5 etc.
+- **Purpose**: Parent match. A match can have multiple MatchGames. BO1, BO3, BO5 etc.
 - **Columns**:
   - `stage` 1 = regular, 2 = playoff
   - `match_date`
@@ -120,7 +120,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `match_id` (INT, FK → Matches.id)
   - `season_id` / `league_id` (INT, FK → SeasonLeagues)
 
-### TeamMapScores
+### TeamGameScores
 
 - **Purpose**: Records scores for each team in a match.
 - **Columns**:
@@ -133,9 +133,9 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 
 **Business Rule:**
 
-- Could be derived from MapRoundStats. However, for historical reasons, TeamMapScores is saved separately.
+- Could be derived from MapRoundStats. However, for historical reasons, TeamGameScores is saved separately.
 
-### MatchMapsPlayed
+### MatchGames
 
 - **Purpose**: Tracks individual maps played within a match.
 - **Columns**:
@@ -153,7 +153,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 - **Columns**:
   - `ct_team_id` (INT) - Which team played CT side on this round.
   - `t_team_id` (INT) - Which team played T side on this round.
-  - `round_number` (TINYINT UNSIGNED) - Unique round_number for MatchMapsPlayed.id.
+  - `round_number` (TINYINT UNSIGNED) - Unique round_number for MatchGames.id.
   - `round_end_reason_info`(TINYINT UNSIGNED) - Number 1-5, why the round ended.
   - `first_kill` (VARCHAR) - CT or T.
   - `plant_site` (CHAR) - A or B bombsite.

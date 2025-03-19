@@ -3,7 +3,7 @@ import type { Organizations } from "./Organization.interface";
 import type { Map } from "./Map.interface";
 import type { MapRoundStat } from "./MapRoundStat.interface";
 import type { Match } from "./Match.interface";
-import type { MatchMapPlayed } from "./MatchMapsPlayed.interface";
+import type { MatchGame } from "./MatchGame.interface";
 import type { MatchReservation } from "./MatchReservation.interface";
 import type { MatchTeam } from "./MatchTeam.interface";
 import type { MatchTeamMapVeto } from "./MatchTeamMapVeto.interface";
@@ -28,7 +28,7 @@ export type {
   Map,
   MapRoundStat,
   Match,
-  MatchMapPlayed,
+  MatchGame,
   MatchReservation,
   MatchTeam,
   MatchTeamMapVeto,

@@ -4,7 +4,7 @@ describe("Migration tests", () => {
   it("Find enzoj maps played on season 11", async () => {
     const query = `SELECT COUNT(DISTINCT mmp.id) AS total_maps_played
       FROM PlayerStats ps
-      JOIN MatchMapsPlayed mmp ON ps.match_maps_played_id = mmp.id
+      JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN MatchTeams mt ON m.id = mt.match_id
       JOIN SeasonTeamPlayers stp ON mt.team_id = stp.team_id AND m.season_id = stp.season_id
@@ -16,7 +16,7 @@ describe("Migration tests", () => {
   it("Test enzoj Kills on Season 11", async () => {
     const query = `SELECT SUM(ps.kills) AS total_kills
       FROM PlayerStats ps
-      JOIN MatchMapsPlayed mmp ON ps.match_maps_played_id = mmp.id
+      JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561197967885016'
       AND m.season_id = 11;`;
@@ -26,7 +26,7 @@ describe("Migration tests", () => {
   it("Test meppi Assists on Season 14", async () => {
     const query = `SELECT SUM(ps.assists) AS total_assists
       FROM PlayerStats ps
-      JOIN MatchMapsPlayed mmp ON ps.match_maps_played_id = mmp.id
+      JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561198001857963'
       AND m.season_id = 14;`;
@@ -36,7 +36,7 @@ describe("Migration tests", () => {
   it("Test enzoj flashAssists on Season 14 in de_mirage", async () => {
     const query = `SELECT SUM(ps.flash_assists) as total_flash_assists
       FROM PlayerStats ps
-      JOIN MatchMapsPlayed mmp ON ps.match_maps_played_id = mmp.id
+      JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Maps mp ON mmp.map_id = mp.id
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561197967885016'
@@ -69,12 +69,12 @@ describe("Migration tests", () => {
   });
 
   it("There should be 1798 matches on season 11 ", async () => {
-    const query = `SELECT COUNT(mmp.id) AS total_matches FROM MatchMapsPlayed mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 11;`;
+    const query = `SELECT COUNT(mmp.id) AS total_matches FROM MatchGames mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 11;`;
     const result = await runQuery<[{ total_matches: number }]>(query);
     expect(result[0].total_matches).toBe(1798);
   });
   it("There should be 1124 matches on season 14 ", async () => {
-    const query = `SELECT COUNT(mmp.id) AS total_matches FROM MatchMapsPlayed mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 14;`;
+    const query = `SELECT COUNT(mmp.id) AS total_matches FROM MatchGames mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 14;`;
     const result = await runQuery<[{ total_matches: number }]>(query);
     expect(result[0].total_matches).toBe(1124);
   });
@@ -83,7 +83,7 @@ describe("Migration tests", () => {
     const query = `select p.name, t.name as team_name, sum(ps.mates_flashed) as mates_flashed
       from PlayerStats ps 
       JOIN Players p ON p.steam_id = ps.steam_id
-      JOIN MatchMapsPlayed mmp ON ps.match_maps_played_id = mmp.id
+      JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id
       JOIN Teams t ON stp.team_id = t.id
@@ -112,7 +112,7 @@ describe("Migration tests", () => {
     const query = `select p.name as nick, t.name as team_name, round(avg(ps.kana_rating),2) as kana_rating
       from PlayerStats ps
       JOIN Players p ON p.steam_id = ps.steam_id
-      JOIN MatchMapsPlayed mmp ON ps.match_maps_played_id = mmp.id
+      JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id
       JOIN Teams t ON stp.team_id = t.id
@@ -147,7 +147,7 @@ describe("Migration tests", () => {
 
   // There should be 127 Maps played in Season 11 for Masters
   it("There should be 127 Maps played in Season 11 for League 1", async () => {
-    const query = `SELECT COUNT(DISTINCT mmp.id) AS total_maps FROM MatchMapsPlayed mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 11 AND m.league_id = 1;`;
+    const query = `SELECT COUNT(DISTINCT mmp.id) AS total_maps FROM MatchGames mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 11 AND m.league_id = 1;`;
     const result = await runQuery<[{ total_maps: number }]>(query);
     expect(result[0].total_maps).toBe(127);
   });

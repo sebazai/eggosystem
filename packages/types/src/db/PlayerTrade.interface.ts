@@ -1,6 +1,6 @@
 export interface PlayerTrade {
   id: number;
-  match_maps_played_id: number;
+  game_id: number;
   trader_steam_id: string; // steam_id as string
   killer_steam_id: string; // steam_id as string
   victim_steam_id: string; // steam_id as string

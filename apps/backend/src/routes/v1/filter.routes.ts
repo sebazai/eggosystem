@@ -24,7 +24,7 @@ router.get("/", parseQueryParams, async (req, res) => {
       knex.raw("GROUP_CONCAT(DISTINCT MP.map_id ORDER BY MP.map_id) as map_ids")
     )
     .join("MatchTeams as MT", "M.id", "MT.match_id")
-    .join("MatchMapsPlayed as MP", "M.id", "MP.match_id");
+    .join("MatchGames as MP", "M.id", "MP.match_id");
 
   if (season_ids?.length) {
     query = query.whereIn("M.season_id", season_ids);

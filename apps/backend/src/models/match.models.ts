@@ -8,7 +8,7 @@ export const getMatches = (): Promise<Match[]> => {
 };
 
 export const getMatchPlayerStats = async (
-  match_played_id: number
+  game_id: number
 ): Promise<Match | undefined> => {
   const query = `SELECT 
         p.name,
@@ -25,14 +25,14 @@ export const getMatchPlayerStats = async (
         kana_rating 
       FROM PlayerStats ps 
       INNER JOIN Players p ON p.steam_id = ps.steam_id 
-      WHERE match_maps_played_id=? 
+      WHERE game_id=? 
       ORDER BY team,kills DESC;`;
 
-  return runQuery(query, [match_played_id]);
+  return runQuery(query, [game_id]);
 };
 
 export const getMatchTeamStats = async (
-  match_played_id: number
+  game_id: number
 ): Promise<Match | undefined> => {
   const query = `
     SELECT 
@@ -44,23 +44,23 @@ export const getMatchTeamStats = async (
         SUM(ps.clutches_won) as clutches_won,
         SUM(ps.plants) as plants,
         SUM(ps.trades) as trades
-    FROM MatchMapsPlayed mmp
-    JOIN TeamMapScores tms ON tms.match_maps_played_id = mmp.id
+    FROM MatchGames mmp
+    JOIN TeamGameScores tms ON tms.game_id = mmp.id
     JOIN Teams t ON t.id = tms.team_id
-    LEFT JOIN PlayerStats ps ON ps.match_maps_played_id = mmp.id 
+    LEFT JOIN PlayerStats ps ON ps.game_id = mmp.id 
         AND ((ps.team = 1 AND tms.team_id = (
-            SELECT team_id FROM TeamMapScores 
-            WHERE match_maps_played_id = mmp.id 
+            SELECT team_id FROM TeamGameScores 
+            WHERE game_id = mmp.id 
             ORDER BY team_id ASC LIMIT 1
         )) OR (ps.team = 2 AND tms.team_id = (
-            SELECT team_id FROM TeamMapScores 
-            WHERE match_maps_played_id = mmp.id 
+            SELECT team_id FROM TeamGameScores 
+            WHERE game_id = mmp.id 
             ORDER BY team_id DESC LIMIT 1
         )))
     WHERE mmp.id = ?
     GROUP BY tms.team_id, t.name, tms.score, tms.halftime_score
     ORDER BY tms.team_id`;
-  return runQuery(query, [match_played_id]);
+  return runQuery(query, [game_id]);
 };
 
 export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
@@ -72,7 +72,7 @@ export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
 };
 
 export const getTopPlayers = async (
-  match_played_id: number
+  game_id: number
 ): Promise<Record<string, any>> => {
   const stats = [
     { key: "most_kills", column: "kills" },
@@ -94,12 +94,12 @@ export const getTopPlayers = async (
       SELECT p.name, ps.${column} as value
       FROM PlayerStats ps 
       JOIN Players p ON p.steam_id = ps.steam_id 
-      WHERE ps.match_maps_played_id = ? 
+      WHERE ps.game_id = ? 
       ORDER BY ps.${column} DESC 
       LIMIT 1;
     `;
 
-    const queryResults = await runQuery<any>(query, [match_played_id]);
+    const queryResults = await runQuery<any>(query, [game_id]);
     return { key, value: queryResults[0] || null };
   };
 
@@ -135,7 +135,7 @@ export const getMatchesByFilters = async ({
 
   const baseQuery = `
       SELECT 
-          m.id AS match_played_id,
+          m.id AS game_id,
           m.match_date,
           l.name AS league_name,
           m.stage,
@@ -154,15 +154,15 @@ export const getMatchesByFilters = async ({
       FROM 
           Matches m
       JOIN 
-          MatchMapsPlayed mmp ON m.id = mmp.match_id
+          MatchGames mmp ON m.id = mmp.match_id
       JOIN 
           Leagues l ON m.league_id = l.id
       JOIN 
-          TeamMapScores tms1 ON mmp.id = tms1.match_maps_played_id
+          TeamGameScores tms1 ON mmp.id = tms1.game_id
       JOIN 
           Teams t1 ON tms1.team_id = t1.id
       JOIN 
-          TeamMapScores tms2 ON mmp.id = tms2.match_maps_played_id AND tms1.team_id < tms2.team_id
+          TeamGameScores tms2 ON mmp.id = tms2.game_id AND tms1.team_id < tms2.team_id
       JOIN 
           Teams t2 ON tms2.team_id = t2.id
       WHERE 
@@ -174,13 +174,13 @@ export const getMatchesByFilters = async ({
   return runQuery(baseQuery, queryParams);
 };
 
-export const getMatchMapsPlayed = async (match_id: number): Promise<any[]> => {
+export const getMatchGames = async (match_id: number): Promise<any[]> => {
   const query = `
     SELECT 
       mmp.id,
       maps.name as map_name,
       mmp.demofile
-    FROM MatchMapsPlayed mmp
+    FROM MatchGames mmp
     JOIN Maps maps ON maps.id = mmp.map_id
     WHERE mmp.match_id = ?
     ORDER BY mmp.map_order ASC`;

@@ -1,4 +1,4 @@
-export interface MatchMapPlayed {
+export interface MatchGame {
   id: number;
   match_id: number;
   map_id: number; // TINYINT UNSIGNED stored as number

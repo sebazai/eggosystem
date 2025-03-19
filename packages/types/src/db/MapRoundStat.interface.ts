@@ -1,6 +1,6 @@
 export interface MapRoundStat {
   id: number;
-  match_maps_played_id: number;
+  game_id: number;
   ct_team_id: number;
   t_team_id: number;
   round_number: number; // TINYINT UNSIGNED stored as number
