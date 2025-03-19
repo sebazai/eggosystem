@@ -45,16 +45,16 @@ export const TabPlayers = ({
 }: TabPlayersProps) => {
   const auth = useAuth();
   useEffect(() => {
-    setValue("players", [
-      {
-        steam_id: auth.user?.steamId ?? "",
+    if (auth.user?.steamId) {
+      setValue("players.0", {
+        steam_id: auth.user.steamId,
         name: "",
         work_email: "",
         discord: "",
         captain: true,
         co_captain: false
-      }
-    ]);
+      });
+    }
   }, [auth.user, setValue]);
   const watchPlayers = useWatch({ control, name: "players" });
 
@@ -104,7 +104,12 @@ export const TabPlayers = ({
                 shouldValidate: false
               });
 
-            if (!data.name || !data.work_email || !data.discord) {
+            if (
+              playerSchema.safeParse({
+                ...data,
+                steam_id: String(data.steam_id)
+              }).success === false
+            ) {
               setOpenItems((prev) => [...prev, `player-${index}`]);
             } else {
               fetchedValidSteamIds.current.add(steam_id);
