@@ -81,7 +81,8 @@ const baseFormSchema = z.object({
       {
         message: "There must be exactly one captain and one co-captain."
       }
-    )
+    ),
+  defects: z.string().max(255).optional()
 });
 
 const formSchema = baseFormSchema
@@ -233,100 +234,98 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   );
 
   return (
-    <div className="min-w-xs sm:min-w-xl space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          <Card>
-            <CardContent className="p-6 space-y-6">
-              <h2 className="text-xl font-semibold">Signup Form</h2>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Card>
+          <CardContent className="p-6 space-y-6">
+            <h2 className="text-xl font-semibold">Signup Form</h2>
 
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="space-y-6"
-              >
-                <TabsList className="flex space-x-2">
-                  <TabsTrigger value="organization">
-                    Organization{" "}
-                    {validOrganizationSelection && (
-                      <CheckCheck
-                        className={cn(
-                          validOrganizationSelection && "text-green-500"
-                        )}
-                      />
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="team"
-                    disabled={!validOrganizationSelection}
-                  >
-                    Team{" "}
-                    {validTeamSelection && (
-                      <CheckCheck
-                        className={cn(
-                          validOrganizationSelection && "text-green-500"
-                        )}
-                      />
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="players" disabled={!validTeamSelection}>
-                    Players{" "}
-                    {validPlayers.success && (
-                      <CheckCheck
-                        className={cn(
-                          validOrganizationSelection && "text-green-500"
-                        )}
-                      />
-                    )}
-                  </TabsTrigger>
-                </TabsList>
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-6"
+            >
+              <TabsList className="flex space-x-2">
+                <TabsTrigger value="organization">
+                  Organization{" "}
+                  {validOrganizationSelection && (
+                    <CheckCheck
+                      className={cn(
+                        validOrganizationSelection && "text-green-500"
+                      )}
+                    />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="team"
+                  disabled={!validOrganizationSelection}
+                >
+                  Team{" "}
+                  {validTeamSelection && (
+                    <CheckCheck
+                      className={cn(
+                        validOrganizationSelection && "text-green-500"
+                      )}
+                    />
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="players" disabled={!validTeamSelection}>
+                  Players{" "}
+                  {validPlayers.success && (
+                    <CheckCheck
+                      className={cn(
+                        validOrganizationSelection && "text-green-500"
+                      )}
+                    />
+                  )}
+                </TabsTrigger>
+              </TabsList>
 
-                <TabOrganization
-                  control={control}
-                  reset={reset}
-                  onNext={onNext}
-                  validOrganizationSelection={validOrganizationSelection}
-                  watchOrgId={watchOrgId}
-                />
-
-                <TabTeam
-                  organizationId={watchOrgId}
-                  newOrganization={watchNewOrg}
-                  control={control}
-                  reset={reset}
-                  onNext={onNext}
-                  validTeamSelection={validTeamSelection}
-                  watchTeamId={watchTeamId}
-                />
-
-                <TabPlayers
-                  control={control}
-                  playerSchema={playerSchema}
-                  setValue={setValue}
-                  watch={watch}
-                  playerErrorIndices={
-                    form.formState.errors.players
-                      ? Object.keys(form.formState.errors.players)
-                      : []
-                  }
-                />
-              </Tabs>
-
-              <ErrorMessage
-                errors={form.formState.errors}
-                name="players.root"
-                render={({ message }) => (
-                  <p className="text-destructive">{message}</p>
-                )}
+              <TabOrganization
+                control={control}
+                reset={reset}
+                onNext={onNext}
+                validOrganizationSelection={validOrganizationSelection}
+                watchOrgId={watchOrgId}
               />
 
-              <Button type="submit" variant="outline" className="w-full">
-                Submit
-              </Button>
-            </CardContent>
-          </Card>
-        </form>
-      </Form>
-    </div>
+              <TabTeam
+                organizationId={watchOrgId}
+                newOrganization={watchNewOrg}
+                control={control}
+                reset={reset}
+                onNext={onNext}
+                validTeamSelection={validTeamSelection}
+                watchTeamId={watchTeamId}
+              />
+
+              <TabPlayers
+                control={control}
+                playerSchema={playerSchema}
+                setValue={setValue}
+                watch={watch}
+                playerErrorIndices={
+                  form.formState.errors.players
+                    ? Object.keys(form.formState.errors.players)
+                    : []
+                }
+              />
+            </Tabs>
+
+            <ErrorMessage
+              errors={form.formState.errors}
+              name="players.root"
+              render={({ message }) => (
+                <p className="text-destructive">{message}</p>
+              )}
+            />
+
+            <Button type="submit" variant="outline" className="w-full">
+              Submit
+            </Button>
+          </CardContent>
+        </Card>
+      </form>
+    </Form>
   );
 };

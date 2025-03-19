@@ -29,9 +29,14 @@ export default async function SignupPage({ params }: Props) {
   return (
     <div>
       <h1 className="pb-4">Season Signup</h1>
-      <div className="flex flex-col md:flex-row gap-y-4 md:gap-x-6">
-        <SignupForm seasonId={season} />
-        <SignupInfo />
+      <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-6">
+        <div className="min-w-xs md:min-w-md space-y-6">
+          <SignupForm seasonId={season} />
+        </div>
+
+        <div className="min-w-xs md:min-w-md space-y-6">
+          <SignupInfo />
+        </div>
       </div>
     </div>
   );

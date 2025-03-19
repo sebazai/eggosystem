@@ -5,7 +5,7 @@ interface LogOutProps {
 }
 export const LogOut = ({ logOutUser }: LogOutProps) => {
   const handleLogout = async () => {
-    await apiFetch(`/auth/logout`);
+    await apiFetch({ url: `/auth/logout` });
     logOutUser();
   };
 

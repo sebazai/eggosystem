@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkAuth = async () => {
     try {
-      const res = await apiFetch<{ user: UserPayload }>("/auth/me");
+      const res = await apiFetch<{ user: UserPayload }>({ url: "/auth/me" });
       setUser(res.user);
     } catch (_error) {
       setUser(null);
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiFetch("/auth/logout");
+      await apiFetch({ url: "/auth/logout" });
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {

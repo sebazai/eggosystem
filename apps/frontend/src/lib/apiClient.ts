@@ -11,7 +11,15 @@ const addRefreshSubscriber = (callback: () => void) => {
   refreshSubscribers.push(callback);
 };
 
-export const apiFetch = async <T>(url: string): Promise<T> => {
+interface ApiFetch {
+  url: string;
+  method?: string;
+}
+
+export const apiFetch = async <T>({
+  url,
+  method = "GET"
+}: ApiFetch): Promise<T> => {
   const refreshAccessToken = async () => {
     if (isRefreshing) return;
     isRefreshing = true;
@@ -46,6 +54,7 @@ export const apiFetch = async <T>(url: string): Promise<T> => {
   };
   const fetchWithRetry = async (): Promise<T> => {
     const response = await fetch(`${envConfig.CLIENT_API_URL}/api/v1${url}`, {
+      method,
       credentials: "include"
     });
 

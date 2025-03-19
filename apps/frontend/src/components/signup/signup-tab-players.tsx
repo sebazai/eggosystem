@@ -26,9 +26,10 @@ import {
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Checkbox } from "../ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -136,7 +137,7 @@ export const TabPlayers = ({
     });
 
     prevWatchedSteamIds.current = steamIds;
-  }, [setValue, steamIds]);
+  }, [playerSchema, setValue, steamIds]);
 
   const onCapitanChange = (
     checked: CheckedState,
@@ -176,10 +177,14 @@ export const TabPlayers = ({
           onValueChange={setOpenItems}
         >
           {fields.map((field, index) => (
-            <AccordionItem key={field.id} value={`player-${index}`}>
+            <AccordionItem
+              className="space-y-2 border-b-0"
+              key={field.id}
+              value={`player-${index}`}
+            >
               <AccordionTrigger
                 className={cn(
-                  "border-2 p-4 w-full rounded-lg flex items-center",
+                  "border-1 p-4 w-full rounded-lg flex items-center",
                   loadingStates[index] && "border-yellow-500 animate-pulse",
                   validPlayers[index]?.result.success === true &&
                     "border-green-500",
@@ -359,6 +364,19 @@ export const TabPlayers = ({
             Add Player
           </Button>
         )}
+        <FormField
+          control={control}
+          name="defects"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Defects</FormLabel>
+              <FormControl>
+                <Textarea {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
     </TabsContent>
   );
