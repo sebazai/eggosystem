@@ -245,8 +245,11 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
               onValueChange={setActiveTab}
               className="space-y-6"
             >
-              <TabsList className="flex space-x-2">
-                <TabsTrigger value="organization">
+              <TabsList className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 h-full w-full">
+                <TabsTrigger
+                  value="organization"
+                  className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
+                >
                   Organization{" "}
                   {validOrganizationSelection && (
                     <CheckCheck
@@ -258,6 +261,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                 </TabsTrigger>
                 <TabsTrigger
                   value="team"
+                  className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
                   disabled={!validOrganizationSelection}
                 >
                   Team{" "}
@@ -269,7 +273,11 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                     />
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="players" disabled={!validTeamSelection}>
+                <TabsTrigger
+                  value="players"
+                  className="w-full sm:w-auto border border-transparent hover:bg-gray-200 rounded-md transition"
+                  disabled={!validTeamSelection}
+                >
                   Players{" "}
                   {validPlayers.success && (
                     <CheckCheck

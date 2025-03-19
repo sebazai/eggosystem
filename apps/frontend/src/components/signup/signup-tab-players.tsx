@@ -216,6 +216,7 @@ export const TabPlayers = ({
                   <Image
                     src={createNextImageUrl("/images/captain.png")}
                     alt="Captain"
+                    className="hidden xxs:block"
                     width={30}
                     height={23}
                   />
@@ -224,6 +225,7 @@ export const TabPlayers = ({
                   <Image
                     src={createNextImageUrl("/images/co-captain.png")}
                     alt="Co-Captain"
+                    className="hidden xxs:block"
                     width={30}
                     height={23}
                   />
