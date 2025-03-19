@@ -35,27 +35,35 @@ interface TabPlayersProps {
   playerSchema: PlayerSchemaType;
   setValue: UseFormSetValue<SignupFormValues>;
   watch: UseFormWatch<SignupFormValues>;
+  playerErrorIndices: string[];
 }
 
 export const TabPlayers = ({
   control,
   playerSchema,
   setValue,
-  watch
+  watch,
+  playerErrorIndices
 }: TabPlayersProps) => {
   const auth = useAuth();
   useEffect(() => {
     if (auth.user?.steamId) {
-      setValue("players.0", {
-        steam_id: auth.user.steamId,
-        name: "",
-        work_email: "",
-        discord: "",
-        captain: true,
-        co_captain: false
-      });
+      setValue("players.0.steam_id", auth.user.steamId);
+      setValue("players.0.captain", true);
     }
   }, [auth.user, setValue]);
+
+  useEffect(() => {
+    const playerErrorIndicesAsNumber = playerErrorIndices
+      .map(Number)
+      .filter((index) => !isNaN(index));
+    if (playerErrorIndicesAsNumber.length > 0) {
+      setOpenItems(
+        playerErrorIndicesAsNumber.map((index) => `player-${index}`)
+      );
+    }
+  }, [playerErrorIndices]);
+
   const watchPlayers = useWatch({ control, name: "players" });
 
   const steamIds = useWatch({ control, name: "players" }).map(

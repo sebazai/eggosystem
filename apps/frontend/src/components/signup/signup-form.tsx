@@ -304,6 +304,11 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                   playerSchema={playerSchema}
                   setValue={setValue}
                   watch={watch}
+                  playerErrorIndices={
+                    form.formState.errors.players
+                      ? Object.keys(form.formState.errors.players)
+                      : []
+                  }
                 />
               </Tabs>
 
@@ -311,7 +316,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
                 errors={form.formState.errors}
                 name="players.root"
                 render={({ message }) => (
-                  <p className="text-red-500">{message}</p>
+                  <p className="text-destructive">{message}</p>
                 )}
               />
 
