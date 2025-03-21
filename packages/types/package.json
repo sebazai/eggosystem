@@ -4,7 +4,8 @@
   "description": "",
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "build": "tsc"
   },
   "types": "./src/index.ts",
   "keywords": [],

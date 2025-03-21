@@ -1,8 +1,20 @@
 {
   "extends": "@eggosystem/tsconfig/types.json",
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src", // Source directory for TypeScript
+    "outDir": "./dist", // Output directory for compiled JavaScript and type definitions
+    "declaration": true, // Ensure type declaration files are generated
+    "moduleResolution": "node", // Ensure module resolution works as expected
+    "module": "ESNext", // Use ES module syntax
+    "target": "ESNext", // ESNext allows modern JavaScript features
+    "esModuleInterop": true, // Allows default imports for CommonJS modules
+    "skipLibCheck": true,
+    "strict": true, // TypeScript's strict mode for better type safety
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@eggosystem/types": ["./src"]
+    }
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts"], // Include all TypeScript files
+  "exclude": ["node_modules"] // Exclude node_modules from compilation
 }
