@@ -11,6 +11,9 @@ export async function GET(
   const response = await fetch(backendUrl);
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return NextResponse.json({ error: "Player not found" }, { status: 404 });
+    }
     throw NextResponse.json(
       { error: "Failed to fetch player" },
       { status: 500 }

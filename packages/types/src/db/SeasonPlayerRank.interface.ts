@@ -1,7 +1,9 @@
+import type { Player, Season } from "@eggosystem/types";
+
 export interface SeasonPlayerRank {
   id: number;
-  steam_id: string; // Updated to string for steam_id
-  season_id: number;
+  steam_id: Player["steam_id"]; // Updated to string for steam_id
+  season_id: Season["id"];
   kukko_date: string | null; // TIMESTAMP, can be null
   csgo_rank: number; // Default -1 if not provided
   cs2_rank: number | null; // Can be null

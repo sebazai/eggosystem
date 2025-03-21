@@ -1,5 +1,7 @@
+import type { Player, Team } from "@eggosystem/types";
+
 export interface TeamRoster {
   id: number;
-  team_id: number;
-  steam_id: string;
+  team_id: Team["id"];
+  steam_id: Player["steam_id"];
 }

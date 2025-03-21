@@ -1,49 +1,22 @@
-import type { Game } from "./Game.interface";
-import type { Organizations } from "./Organization.interface";
-import type { Map } from "./Map.interface";
-import type { MapRoundStat } from "./MapRoundStat.interface";
-import type { Match } from "./Match.interface";
-import type { MatchGame } from "./MatchGame.interface";
-import type { MatchReservation } from "./MatchReservation.interface";
-import type { MatchTeam } from "./MatchTeam.interface";
-import type { MatchTeamMapVeto } from "./MatchTeamMapVeto.interface";
-import type { Player } from "./Player.interface";
-import type { PlayerStats } from "./PlayerStat.interface";
-import type { PlayerTrade } from "./PlayerTrade.interface";
-import type { Reservation } from "./Reservation.interface";
-import type { Season } from "./Season.interface";
-import type { SeasonLeague } from "./SeasonLeague.interface";
-import type { SeasonLeagueTeam } from "./SeasonLeagueTeam.interface";
-import type { SeasonPlayerRank } from "./SeasonPlayerRank.interface";
-import type { SeasonTeam } from "./SeasonTeam.interface";
-import type { SeasonTeamPlayer } from "./SeasonTeamPlayer.interface";
-import type { Team } from "./Team.interface";
-import type { TeamMapScore } from "./TeamMapScore.interface";
-import type { League } from "./League.interface";
-import type { TeamRoster } from "./TeamRoster.interface";
-
-export type {
-  Game,
-  Organizations,
-  Map,
-  MapRoundStat,
-  Match,
-  MatchGame,
-  MatchReservation,
-  MatchTeam,
-  MatchTeamMapVeto,
-  Player,
-  PlayerStats,
-  PlayerTrade,
-  Reservation,
-  Season,
-  SeasonLeague,
-  SeasonLeagueTeam,
-  SeasonPlayerRank,
-  SeasonTeam,
-  SeasonTeamPlayer,
-  Team,
-  TeamMapScore,
-  TeamRoster,
-  League
-};
+export * from "./Game.interface";
+export * from "./League.interface";
+export * from "./Map.interface";
+export * from "./MapRoundStat.interface";
+export * from "./Match.interface";
+export * from "./MatchGame.interface";
+export * from "./MatchTeam.interface";
+export * from "./MatchTeamMapVeto.interface";
+export * from "./Organization.interface";
+export * from "./Player.interface";
+export * from "./PlayerStat.interface";
+export * from "./PlayerTrade.interface";
+export * from "./Reservation.interface";
+export * from "./Season.interface";
+export * from "./SeasonLeague.interface";
+export * from "./SeasonLeagueTeam.interface";
+export * from "./SeasonPlayerRank.interface";
+export * from "./SeasonTeamPlayer.interface";
+export * from "./SeasonTeamRegistration.interface";
+export * from "./Team.interface";
+export * from "./TeamGameScore.interface";
+export * from "./TeamRoster.interface";

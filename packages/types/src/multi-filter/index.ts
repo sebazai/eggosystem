@@ -1,2 +1,1 @@
-import type { MultiFilterSelectableIds } from "./MultiFilterSelectableIds";
-export type { MultiFilterSelectableIds };
+export * from "./MultiFilterSelectableIds";

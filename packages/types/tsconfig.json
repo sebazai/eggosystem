@@ -1,5 +1,8 @@
 {
   "extends": "@eggosystem/tsconfig/types.json",
-  "include": ["**/*.ts", "eslint.config.mjs"],
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "include": ["**/*.ts"],
   "exclude": ["node_modules"]
 }

@@ -12,14 +12,14 @@ import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 import type { MultiSelect } from "@/types/MultiSelectType";
+import type { SignupFormValues } from "@eggosystem/types";
 import { useState } from "react";
-import type { Control, UseFormReset } from "react-hook-form";
-import type { SignupFormValues } from "./signup-form";
+import type { Control, UseFormResetField } from "react-hook-form";
 
 interface TabOrganizationProps {
   watchOrgId: number;
   control: Control<SignupFormValues>;
-  reset: UseFormReset<SignupFormValues>;
+  resetField: UseFormResetField<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
 }
@@ -27,7 +27,7 @@ interface TabOrganizationProps {
 export const TabOrganization = ({
   watchOrgId,
   control,
-  reset,
+  resetField,
   validOrganizationSelection,
   onNext
 }: TabOrganizationProps) => {
@@ -73,6 +73,7 @@ export const TabOrganization = ({
               <FancySelect<number>
                 isMulti={false}
                 allowOther={true}
+                allowOtherText="Add new..."
                 filter={"organizations"}
                 selectable={selectableOrganizations ?? []}
                 placeholder="Name or Business ID..."
@@ -86,17 +87,10 @@ export const TabOrganization = ({
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
                     // Clear newTeam fields
-                    reset({
-                      organizationId: undefined,
-                      newOrganization: undefined,
-                      teamId: undefined,
-                      newTeam: undefined,
-                      players: Array(5).fill({
-                        steam_id: "",
-                        name: "",
-                        work_email: ""
-                      })
-                    });
+                    resetField("organizationId");
+                    resetField("newOrganization");
+                    resetField("teamId");
+                    resetField("newTeam");
                   }
                   field.onChange(selectedItem?.value);
                 }}
@@ -127,7 +121,7 @@ export const TabOrganization = ({
           />
           <FormField
             control={control}
-            name="newOrganization.company_code"
+            name="newOrganization.organization_code"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Business ID</FormLabel>

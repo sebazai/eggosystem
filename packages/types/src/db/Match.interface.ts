@@ -1,7 +1,9 @@
+import type { League, Season } from "@eggosystem/types";
+
 export interface Match {
-  game_id: number;
-  league_id: number;
-  season_id: number;
+  id: number;
+  league_id: League["id"];
+  season_id: Season["id"];
   stage: number; // TINYINT UNSIGNED, stored as number
   match_date: string; // DATE, represented as string (ISO format)
 }

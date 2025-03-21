@@ -1,8 +1,10 @@
+import type { Nullable } from "@eggosystem/types";
+
 export interface Player {
-  steam_id: string; // Typically represented as a string in TypeScript due to size
+  steam_id: string;
   name: string;
-  email?: string | null;
-  player_name?: string | null;
-  work_email?: string | null;
-  discord?: string | null;
+  email?: Nullable<string>;
+  player_name?: Nullable<string>;
+  work_email?: Nullable<string>;
+  discord?: Nullable<string>;
 }

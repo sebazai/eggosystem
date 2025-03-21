@@ -45,6 +45,7 @@ type FancyMultiSelectProps<T> = {
   isOpen: boolean;
   setOpen: (value: string | null) => void;
   allowOther?: false;
+  allowOtherText?: string;
 };
 
 type FancySelectProps<T> = {
@@ -57,6 +58,7 @@ type FancySelectProps<T> = {
   isOpen: boolean;
   setOpen: (value: string | null) => void;
   allowOther?: boolean;
+  allowOtherText?: string;
 };
 
 type FancyCombinedProps<T> = FancyMultiSelectProps<T> | FancySelectProps<T>;
@@ -77,7 +79,8 @@ export function FancySelect<T>({
   isOpen,
   setOpen,
   isMulti,
-  allowOther = false
+  allowOther = false,
+  allowOtherText = "Other..."
 }: FancyCombinedProps<T>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -297,7 +300,7 @@ export function FancySelect<T>({
                     }}
                     className="cursor-pointer"
                   >
-                    Other...
+                    {allowOtherText}
                   </CommandItem>
                 )}
 

@@ -1,6 +1,8 @@
+import type { Player, Season, Team } from "@eggosystem/types";
+
 export interface SeasonTeamPlayer {
-  season_id: number;
-  team_id: number;
-  steam_id: string; // BIGINT stored as string to prevent precision loss
+  season_id: Season["id"];
+  team_id: Team["id"];
+  steam_id: Player["steam_id"];
   role: "primary" | "substitute";
 }

@@ -1,6 +1,12 @@
 import { generateQueryWithFilters } from "../middlewares/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import type { ParsedParams, Player } from "@eggosystem/types";
+import type {
+  UpsertPlayer,
+  ParsedParams,
+  PlayerBySteamId
+} from "@eggosystem/types";
+import type { PoolConnection } from "mysql2/promise";
+import { buildInsertQueryParts } from "../db/utils";
 
 const leaderboardExpressions: { [key: string]: string } = {
   Kills: "sum(ps.kills)",
@@ -12,7 +18,7 @@ const leaderboardExpressions: { [key: string]: string } = {
 };
 
 export const getPlayers = () => {
-  return runQuery<Player[]>(
+  return runQuery<Omit<PlayerBySteamId, "is_valid_full_name">[]>(
     `SELECT
     steam_id, 
     name,
@@ -28,8 +34,26 @@ export const getPlayers = () => {
   );
 };
 
+export const upsertPlayer = async (
+  data: UpsertPlayer,
+  connection?: PoolConnection
+) => {
+  const { columns, placeholders, values } = buildInsertQueryParts(data);
+  const results = await runQuery<{ insertId: number; affectedRows: number }>(
+    `INSERT INTO Players (${columns.join(", ")})
+    VALUES (${placeholders})
+    ON DUPLICATE KEY UPDATE
+      discord = COALESCE(VALUES(discord), discord),
+      work_email = COALESCE(VALUES(work_email), work_email),
+      player_name = COALESCE(VALUES(player_name), player_name);`,
+    values,
+    connection
+  );
+  return String(results.insertId) || data.steam_id;
+};
+
 export const getPlayerBySteamId = async (steam_id: string) => {
-  const results = await runQuery<Player[]>(
+  const results = await runQuery<PlayerBySteamId[]>(
     `SELECT
     steam_id, 
     name,
@@ -40,7 +64,11 @@ export const getPlayerBySteamId = async (steam_id: string) => {
             CONCAT(LEFT(work_email, 2), '***@', SUBSTRING_INDEX(work_email, '@', -1)) 
         ELSE 
             '*****' 
-        END AS work_email 
+        END AS work_email,
+    CASE 
+        WHEN player_name REGEXP '^[A-Za-z]+ [A-Za-z]+$' THEN TRUE 
+        ELSE FALSE 
+    END AS is_valid_full_name
     FROM Players WHERE steam_id = ?`,
     [steam_id]
   );

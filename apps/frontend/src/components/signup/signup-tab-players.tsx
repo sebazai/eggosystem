@@ -12,10 +12,10 @@ import {
   useFieldArray,
   useWatch,
   type Control,
+  type UseFormResetField,
   type UseFormSetValue,
   type UseFormWatch
 } from "react-hook-form";
-import type { PlayerSchemaType, SignupFormValues } from "./signup-form";
 import { cn, createNextImageUrl } from "@/lib/utils";
 import {
   Accordion,
@@ -30,10 +30,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/textarea";
+import type { PlayerBySteamId, SignupFormValues } from "@eggosystem/types";
+import { playerSchema } from "@eggosystem/types";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
-  playerSchema: PlayerSchemaType;
+  resetField: UseFormResetField<SignupFormValues>;
   setValue: UseFormSetValue<SignupFormValues>;
   watch: UseFormWatch<SignupFormValues>;
   playerErrorIndices: string[];
@@ -41,10 +43,10 @@ interface TabPlayersProps {
 
 export const TabPlayers = ({
   control,
-  playerSchema,
   setValue,
   watch,
-  playerErrorIndices
+  playerErrorIndices,
+  resetField
 }: TabPlayersProps) => {
   const auth = useAuth();
   useEffect(() => {
@@ -83,7 +85,7 @@ export const TabPlayers = ({
       player,
       result: playerSchema.safeParse(player)
     }));
-  }, [playerSchema, watchPlayers]);
+  }, [watchPlayers]);
 
   const prevWatchedSteamIds = useRef(steamIds);
   const fetchedValidSteamIds = useRef(new Set<string>());
@@ -97,16 +99,18 @@ export const TabPlayers = ({
 
         fetch(`/api/players/${steam_id}`)
           .then((res) => res.json())
-          .then((data) => {
+          .then((data: PlayerBySteamId) => {
             if (data.name)
               setValue(`players.${index}.name`, data.name, {
                 shouldValidate: true
               });
+            setValue(
+              `players.${index}.has_valid_full_name_in_db`,
+              !!data.is_valid_full_name
+            );
 
             if (data.work_email)
-              setValue(`players.${index}.work_email`, data.work_email, {
-                shouldValidate: false
-              });
+              setValue(`players.${index}.work_email`, data.work_email);
 
             if (data.discord)
               setValue(`players.${index}.discord`, data.discord, {
@@ -117,7 +121,8 @@ export const TabPlayers = ({
               playerSchema.safeParse({
                 ...data,
                 steam_id: String(data.steam_id)
-              }).success === false
+              }).success === false ||
+              !data.is_valid_full_name
             ) {
               setOpenItems((prev) => [...prev, `player-${index}`]);
             } else {
@@ -137,7 +142,7 @@ export const TabPlayers = ({
     });
 
     prevWatchedSteamIds.current = steamIds;
-  }, [playerSchema, setValue, steamIds]);
+  }, [setValue, steamIds]);
 
   const onCapitanChange = (
     checked: CheckedState,
@@ -204,7 +209,22 @@ export const TabPlayers = ({
                           {...field}
                           className="w-full"
                           onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => field.onChange(e)}
+                          onChange={(e) => {
+                            const newValue = e.target.value;
+                            const oldValue = field.value;
+                            if (oldValue.length === 17) {
+                              fetchedValidSteamIds.current.delete(oldValue);
+                            }
+                            if (newValue !== oldValue) {
+                              resetField(`players.${index}.name`);
+                              resetField(`players.${index}.work_email`);
+                              resetField(`players.${index}.discord`);
+                              resetField(
+                                `players.${index}.has_valid_full_name_in_db`
+                              );
+                            }
+                            field.onChange(e);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -276,24 +296,44 @@ export const TabPlayers = ({
                 <FormField
                   control={control}
                   name={`players.${index}.name`}
-                  render={({ field }) => {
-                    const steamId = watch(`players.${index}.steam_id`);
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Steam nickname</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={fetchedValidSteamIds.current.has(
+                            watch(`players.${index}.steam_id`)
+                          )}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    return (
+                {!watch(`players.${index}.has_valid_full_name_in_db`) && (
+                  <FormField
+                    control={control}
+                    name={`players.${index}.full_name`}
+                    render={({ field }) => (
                       <FormItem>
-                        <FormLabel>TV-friendly nickname</FormLabel>
+                        <FormLabel>Full name</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             onClick={(e) => e.stopPropagation()}
-                            disabled={fetchedValidSteamIds.current.has(steamId)}
+                            disabled={fetchedValidSteamIds.current.has(
+                              watch(`players.${index}.steam_id`)
+                            )}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    );
-                  }}
-                />
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={control}

@@ -1,4 +1,4 @@
-import type { RowDataPacket } from "mysql2/promise";
+import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 import { getConnection } from "./mysqlConnection";
 
 type QueryParam =
@@ -16,20 +16,18 @@ type dbQuery<T> = T & dbDefaults;
 
 export const runQuery = async <T>(
   query: string,
-  queryParams: QueryParams = []
+  queryParams: QueryParams = [],
+  trx?: PoolConnection
 ): Promise<T> => {
-  const connection = await getConnection();
+  const connection = trx ?? (await getConnection());
 
   try {
-    await connection.beginTransaction();
     const [rows] = await connection.execute<dbQuery<T>>(query, queryParams);
-    await connection.commit();
     return rows;
   } catch (error) {
     console.error("Database Error:", error);
-    await connection.rollback();
     throw error;
   } finally {
-    connection.release();
+    if (!trx) connection.release();
   }
 };

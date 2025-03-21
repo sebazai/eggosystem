@@ -11,15 +11,25 @@ const addRefreshSubscriber = (callback: () => void) => {
   refreshSubscribers.push(callback);
 };
 
-interface ApiFetch {
+interface ApiFetchGet {
   url: string;
-  method?: string;
+  method?: "GET";
 }
 
-export const apiFetch = async <T>({
+interface ApiFetchPost {
+  url: string;
+  method: "POST";
+  body: Record<string, unknown>;
+}
+
+type ApiFetch = ApiFetchGet | ApiFetchPost;
+export async function apiFetch<T>({
   url,
-  method = "GET"
-}: ApiFetch): Promise<T> => {
+  method,
+  body
+}: ApiFetchPost): Promise<T>;
+export async function apiFetch<T>({ url, method }: ApiFetchGet): Promise<T>;
+export async function apiFetch<T>(params: ApiFetch): Promise<T> {
   const refreshAccessToken = async () => {
     if (isRefreshing) return;
     isRefreshing = true;
@@ -53,10 +63,17 @@ export const apiFetch = async <T>({
     }
   };
   const fetchWithRetry = async (): Promise<T> => {
-    const response = await fetch(`${envConfig.CLIENT_API_URL}/api/v1${url}`, {
-      method,
-      credentials: "include"
-    });
+    const response = await fetch(
+      `${envConfig.CLIENT_API_URL}/api/v1${params.url}`,
+      {
+        method: params.method ?? "GET",
+        ...(params.method === "POST" && {
+          body: JSON.stringify(params.body),
+          headers: { "Content-Type": "application/json" }
+        }),
+        credentials: "include"
+      }
+    );
 
     if (response.status === 401) {
       return new Promise((resolve, reject) => {
@@ -96,4 +113,4 @@ export const apiFetch = async <T>({
   }
 
   return fetchWithRetry();
-};
+}

@@ -81,6 +81,9 @@ importers:
       knex:
         specifier: 3.1.0
         version: 3.1.0(mysql2@3.13.0)
+      lodash:
+        specifier: 4.17.21
+        version: 4.17.21
       morgan:
         specifier: 1.10.0
         version: 1.10.0
@@ -99,6 +102,9 @@ importers:
       uuid:
         specifier: 11.1.0
         version: 11.1.0
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
     devDependencies:
       '@eggosystem/eslint':
         specifier: workspace:*
@@ -145,6 +151,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: 9.0.9
         version: 9.0.9
+      '@types/lodash':
+        specifier: 4.17.16
+        version: 4.17.16
       '@types/morgan':
         specifier: 1.9.9
         version: 1.9.9
@@ -372,6 +381,10 @@ importers:
   packages/tsconfig: {}
 
   packages/types:
+    dependencies:
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
     devDependencies:
       '@eggosystem/eslint':
         specifier: workspace:*
@@ -379,6 +392,9 @@ importers:
       '@eggosystem/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@types/express':
+        specifier: 5.0.0
+        version: 5.0.0
 
 packages:
 

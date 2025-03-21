@@ -39,7 +39,9 @@
     "mysql2": "3.13.0",
     "passport": "0.7.0",
     "passport-steam": "1.0.18",
-    "uuid": "11.1.0"
+    "uuid": "11.1.0",
+    "zod": "3.24.2",
+    "lodash": "4.17.21"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
@@ -55,6 +57,7 @@
     "@types/express": "5.0.0",
     "@types/ioredis": "5.0.0",
     "@types/ioredis-mock": "8.2.5",
+    "@types/lodash": "4.17.16",
     "@types/jest": "29.5.14",
     "@types/jsonwebtoken": "9.0.9",
     "@types/morgan": "1.9.9",

@@ -161,6 +161,3 @@ WHERE player_name IS NOT NULL
     AND player_name LIKE '% %';
 -- UPDATE Players
 -- SET discord = name;
-UPDATE Teams
-SET email = 'noreply@kanaliiga.fi';
-DROP TABLE fake_names;

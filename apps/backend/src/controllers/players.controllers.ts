@@ -7,7 +7,7 @@ import {
 } from "../models/player.models";
 
 export const getPlayersController = async (
-  req: Request,
+  _req: Request,
   res: Response
 ): Promise<void> => {
   const players = await getPlayers();

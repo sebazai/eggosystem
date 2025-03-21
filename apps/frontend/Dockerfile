@@ -13,6 +13,7 @@ COPY pnpm-lock.yaml ./
 COPY package.json ./
 COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/*/package.json ./packages/
+COPY packages/types/package.json ./packages/types/
 
 # Builder stage
 FROM base AS builder

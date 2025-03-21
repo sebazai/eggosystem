@@ -1,4 +1,5 @@
 import type { Nullable } from "../utils";
+import type { Request } from "express";
 
 export interface ParsedParams {
   season_ids: Nullable<number[]>;
@@ -13,3 +14,5 @@ export interface UserPayload {
   steamId: string;
   displayName: string;
 }
+
+export type RequestWithParamsAndBody<P, B> = Request<P, unknown, B>;

@@ -51,13 +51,33 @@ export const migrateCompanies = async () => {
       )
   );
 
+  const cleanWWWPage = (url: string) => {
+    const trimmedUrl = url.trim().toLowerCase();
+    if (trimmedUrl.startsWith("www")) {
+      // Remove www. and add https://
+      const newUrl = trimmedUrl.replace("www.", "https://");
+      return newUrl;
+    }
+    // if trimmed url starts with http://www. or https://www. remove www. return
+    if (
+      trimmedUrl.startsWith("http://www.") ||
+      trimmedUrl.startsWith("https://www.")
+    ) {
+      return trimmedUrl.replace("www.", "");
+    }
+    if (trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://")) {
+      return trimmedUrl;
+    }
+    return `https://${trimmedUrl}`;
+  };
+
   const insertUniqueCompaniesQueries = uniqueCompaniesByYtunnus.map(
     (company: any) => {
       if (company.yrityksen_y_tunnus === "-") {
         return null;
       }
 
-      return `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.svg', '${company.yrityksen_internet_sivut}');`;
+      return `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.svg', '${cleanWWWPage(company.yrityksen_internet_sivut)}');`;
     }
   );
 

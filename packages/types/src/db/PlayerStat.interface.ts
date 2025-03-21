@@ -1,7 +1,9 @@
+import type { Player, MatchGame } from "@eggosystem/types";
+
 export interface PlayerStats {
   id: number;
-  steam_id: string;
-  game_id: number;
+  steam_id: Player["steam_id"];
+  game_id: MatchGame["id"];
   team: number;
   kills: number;
   deaths: number;

@@ -12,29 +12,30 @@ import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import { useState } from "react";
-import type { Control, UseFormReset } from "react-hook-form";
-import type { SignupFormValues } from "./signup-form";
+import type { Control, UseFormResetField } from "react-hook-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
+import type { SignupFormValues } from "@eggosystem/types";
 
 interface TabTeamProps {
   watchTeamId: number;
   organizationId: number;
-  newOrganization: SignupFormValues["newOrganization"];
   control: Control<SignupFormValues>;
-  reset: UseFormReset<SignupFormValues>;
+  resetField: UseFormResetField<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
+  platform: string;
 }
 
 export const TabTeam = ({
   watchTeamId,
   organizationId,
-  newOrganization,
   control,
-  reset,
+  resetField,
   validTeamSelection,
-  onNext
+  onNext,
+  platform
 }: TabTeamProps) => {
+  const Platform = platform.charAt(0).toUpperCase() + platform.slice(1);
   const { teams, isLoading, isError, isValidating } =
     useOrganizationTeams(organizationId);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export const TabTeam = ({
     setOpenFilter((prev: string | null) => (prev === filter ? null : filter));
   };
   return (
-    <TabsContent value="team">
+    <TabsContent className="space-y-2" value="team">
       <FormField
         control={control}
         name="teamId"
@@ -72,6 +73,7 @@ export const TabTeam = ({
               <FancySelect<number>
                 isMulti={false}
                 allowOther={true}
+                allowOtherText="Add new..."
                 filter={"teams"}
                 selectable={selectableTeams ?? []}
                 placeholder="Select team"
@@ -84,23 +86,28 @@ export const TabTeam = ({
                 }
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
-                    reset({
-                      organizationId,
-                      newOrganization,
-                      teamId: undefined,
-                      newTeam: undefined,
-                      players: Array(5).fill({
-                        steam_id: "",
-                        name: "",
-                        work_email: ""
-                      })
-                    });
+                    resetField("teamId");
+                    resetField("newTeam");
                   }
                   field.onChange(selectedItem?.value);
                 }}
                 isOpen={openFilter === "teams"}
                 setOpen={handleOpen}
               />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="teamExternalId"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>{`Team ${Platform} id`}</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder={`Team ${Platform} id`} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -118,19 +125,6 @@ export const TabTeam = ({
                 <FormLabel>Team name</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Insert team name" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="newTeam.email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Team email</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Insert team email" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

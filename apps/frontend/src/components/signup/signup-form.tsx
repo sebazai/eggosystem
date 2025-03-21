@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useSeason } from "@/hooks/data/useSeason";
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./signup-tab-organizations";
@@ -17,133 +16,51 @@ import { TabTeam } from "./signup-tab-team";
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ErrorMessage } from "@hookform/error-message";
+import { apiFetch } from "@/lib/apiClient";
+import type { SignupFormValues } from "@eggosystem/types";
+import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 
 interface SignupFormProps {
   seasonId: string;
 }
 
-const maskedEmailRegex =
-  /^[a-zA-Z0-9._%+-]{2,}\*+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-const playerSchema = z
-  .object({
-    steam_id: z.string().length(17),
-    name: z.string().min(2).max(50),
-    work_email: z
-      .string()
-      .refine(
-        (val) =>
-          z.string().email().safeParse(val).success ||
-          maskedEmailRegex.test(val),
-        {
-          message: "Invalid email format."
-        }
-      ),
-    discord: z.string().optional(),
-    captain: z.boolean().optional(),
-    co_captain: z.boolean().optional()
-  })
-  .refine(
-    (player) =>
-      !(player.captain || player.co_captain) || !!player.discord?.trim(),
-    {
-      message: "Captains and co-captains must provide a Discord username.",
-      path: ["discord"]
-    }
-  );
-
-const newOrganizationSchema = z.object({
-  name: z.string().min(2).max(50),
-  company_code: z.string().min(2).max(50),
-  website: z.string().url()
-});
-
-const newTeamSchema = z.object({
-  name: z.string().min(2).max(50),
-  email: z.string().email()
-});
-
-const baseFormSchema = z.object({
-  organizationId: z.number(),
-  newOrganization: newOrganizationSchema.optional(),
-  teamId: z.number(),
-  newTeam: newTeamSchema.optional(),
-  players: z
-    .array(playerSchema)
-    .min(5)
-    .max(9)
-    .refine(
-      (players) => {
-        const captains = players.filter((p) => p.captain === true);
-        const coCaptains = players.filter((p) => p.co_captain === true);
-        return captains.length === 1 && coCaptains.length === 1;
-      },
-      {
-        message: "There must be exactly one captain and one co-captain."
-      }
-    ),
-  defects: z.string().max(255).optional()
-});
-
-const formSchema = baseFormSchema
-  .refine(
-    (data) => {
-      if (data.organizationId === -1) {
-        return (
-          !!data.newOrganization?.name &&
-          !!data.newOrganization?.company_code &&
-          !!data.newOrganization?.website
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "New organization details are required when 'Other...' is selected.",
-      path: ["newOrganization"]
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.teamId === -1) {
-        return !!data.newTeam?.name && !!data.newTeam?.email;
-      }
-      return true;
-    },
-    {
-      message: "New team details are required when 'Other...' is selected.",
-      path: ["newTeam"]
-    }
-  );
-
-export type SignupFormValues = z.infer<typeof formSchema>;
-export type PlayerSchemaType = typeof playerSchema;
-
 export const SignupForm = ({ seasonId }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
   const { user, loading: loadingUser } = useAuth();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupFormSchema),
     defaultValues: {
       organizationId: undefined,
       teamId: undefined,
+      newOrganization: {
+        name: "",
+        organization_code: "",
+        website: ""
+      },
+      newTeam: {
+        name: ""
+      },
+      teamExternalId: "",
       players: Array(5).fill({
         steam_id: "",
         name: "",
         work_email: "",
         discord: "",
+        full_name: "",
         captain: false,
         co_captain: false
-      })
+      }),
+      defects: ""
     }
   });
 
-  const { control, setValue, reset, watch } = form;
+  const { control, setValue, resetField, watch } = form;
 
   const watchOrgId = useWatch({ control, name: "organizationId" });
   const watchNewOrg = useWatch({ control, name: "newOrganization" });
   const watchTeamId = useWatch({ control, name: "teamId" });
+  const watchExternalTeamId = useWatch({ control, name: "teamExternalId" });
   const watchNewTeam = useWatch({ control, name: "newTeam" });
   const watchPlayers = useWatch({ control, name: "players" });
 
@@ -151,7 +68,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
   const validOrgId = useMemo(
     () =>
-      baseFormSchema
+      baseSignupFormSchema
         .pick({
           organizationId: true
         })
@@ -161,7 +78,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   );
   const validOrg = useMemo(
     () =>
-      baseFormSchema
+      baseSignupFormSchema
         .pick({
           newOrganization: true
         })
@@ -170,7 +87,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   );
   const validTeamId = useMemo(
     () =>
-      baseFormSchema
+      baseSignupFormSchema
         .pick({
           teamId: true
         })
@@ -179,16 +96,23 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
   );
   const validTeam = useMemo(
     () =>
-      baseFormSchema
+      baseSignupFormSchema
         .pick({
           newTeam: true
         })
         .safeParse({ newTeam: watchNewTeam }),
     [watchNewTeam]
   );
+  const validTeamExternalId = useMemo(
+    () =>
+      baseSignupFormSchema
+        .pick({ teamExternalId: true })
+        .safeParse({ teamExternalId: watchExternalTeamId }),
+    [watchExternalTeamId]
+  );
   const validPlayers = useMemo(
     () =>
-      baseFormSchema
+      baseSignupFormSchema
         .pick({
           players: true
         })
@@ -196,15 +120,16 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
     [watchPlayers]
   );
 
-  const onSubmit = (data: SignupFormValues) => {
-    console.log("Submitted:", data);
+  const onSubmit = async (data: SignupFormValues) => {
+    await apiFetch({
+      url: `/seasons/${seasonId}/signup`,
+      method: "POST",
+      body: data
+    });
   };
 
   if (isLoading || isValidating || loadingUser) {
     return <TheContainer classNames="w-full">Loading...</TheContainer>;
-  }
-  if (!user) {
-    return <RequiresSteamLogin />;
   }
 
   if (isError || !season) {
@@ -213,6 +138,10 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         {isError?.message ?? "Something went wrong..."}
       </TheContainer>
     );
+  }
+
+  if (!user) {
+    return <RequiresSteamLogin />;
   }
 
   const onNext = (value: string) => {
@@ -226,19 +155,20 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         validOrg.data.newOrganization)
   );
 
-  const validTeamSelection = Boolean(
-    (validTeamId.success !== false && validTeamId.data.teamId !== -1) ||
-      (validTeam.success !== false &&
-        validTeamId.data?.teamId === -1 &&
-        validTeam.data.newTeam)
-  );
+  const validTeamSelection =
+    Boolean(
+      (validTeamId.success !== false && validTeamId.data.teamId !== -1) ||
+        (validTeam.success !== false &&
+          validTeamId.data?.teamId === -1 &&
+          validTeam.data.newTeam)
+    ) && validTeamExternalId.success;
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardContent className="p-6 space-y-6">
-            <h2 className="text-xl font-semibold">Signup Form</h2>
+            <h2 className="text-xl font-semibold">Sign up Form</h2>
 
             <Tabs
               value={activeTab}
@@ -291,7 +221,7 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
               <TabOrganization
                 control={control}
-                reset={reset}
+                resetField={resetField}
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
@@ -299,17 +229,17 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
               <TabTeam
                 organizationId={watchOrgId}
-                newOrganization={watchNewOrg}
                 control={control}
-                reset={reset}
+                resetField={resetField}
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}
+                platform={season.platform}
               />
 
               <TabPlayers
                 control={control}
-                playerSchema={playerSchema}
+                resetField={resetField}
                 setValue={setValue}
                 watch={watch}
                 playerErrorIndices={

@@ -9,9 +9,13 @@
   "types": "./src/index.ts",
   "keywords": [],
   "author": "",
+  "dependencies": {
+    "zod": "3.24.2"
+  },
   "devDependencies": {
     "@eggosystem/tsconfig": "workspace:*",
-    "@eggosystem/eslint": "workspace:*"
+    "@eggosystem/eslint": "workspace:*",
+    "@types/express": "5.0.0"
   },
   "exports": {
     ".": "./src/index.ts"

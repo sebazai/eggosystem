@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   const data = await result.json();
   return {
-    title: `Signup for ${data.full_name}`
+    title: `Sign up for ${data.full_name}`
   };
 }
 
@@ -27,7 +27,7 @@ export default async function SignupPage({ params }: Props) {
   const { season } = await params;
   return (
     <div>
-      <h1 className="pb-4">Season Signup</h1>
+      <h1 className="pb-4">Season registration</h1>
       <SignupWelcome seasonId={season} />
     </div>
   );

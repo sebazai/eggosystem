@@ -3,7 +3,7 @@ import type {
   SeasonLeague,
   Map,
   Team,
-  TeamMapScore,
+  TeamGameScore,
   MatchGame
 } from "../index";
 
@@ -17,6 +17,6 @@ export interface MatchesByFilters {
   team2_name: Team["name"];
   team1_logo: Team["team_logo"];
   team2_logo: Team["team_logo"];
-  team1_score: TeamMapScore["score"];
-  team2_score: TeamMapScore["score"];
+  team1_score: TeamGameScore["score"];
+  team2_score: TeamGameScore["score"];
 }
