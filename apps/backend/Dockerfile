@@ -10,8 +10,8 @@ COPY pnpm-workspace.yaml turbo.json ./
 COPY pnpm-lock.yaml ./
 COPY package.json ./
 COPY apps/backend/package.json ./apps/backend/
-COPY packages/*/package.json ./packages/
-COPY packages/types/package.json ./packages/types/
+COPY packages/ ./packages/
+
 
 # Builder stage
 FROM base AS builder
