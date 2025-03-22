@@ -247,60 +247,77 @@ test.describe("Signup Form", () => {
 
     // If we found the field, proceed with testing
     if (await faceitIdField.isVisible()) {
-      // Test 1: Empty field
-      await faceitIdField.fill("");
-      await page.screenshot({ path: "test-results/faceit-id-empty.png" });
+      // Define test cases with different input formats
+      const testCases = [
+        {
+          description: "Empty field",
+          input: "",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-empty.png"
+        },
+        {
+          description: "Input with spaces",
+          input: "77dd9104 d2f1 4f50 ba80 d58457cff5a9",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-spaces.png"
+        },
+        {
+          description: "Input without hyphens",
+          input: "77dd9104d2f14f50ba80d58457cff5a9",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-no-hyphens.png"
+        },
+        {
+          description: "Input with HTTP prefix",
+          input: "http://77dd9104-d2f1-4f50-ba80-d58457cff5a9",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-http-prefix.png"
+        },
+        {
+          description: "Input with colons",
+          input: "77dd9104:d2f1:4f50:ba80:d58457cff5a9",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-colons.png"
+        },
+        {
+          description: "Input too short",
+          input: "77dd9104-d2f1",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-too-short.png"
+        },
+        {
+          description: "Input with special characters",
+          input: "77dd9104-d2f1-4f50-ba80-d58457cff5a9!@#",
+          expected: true, // Button should be disabled
+          screenshotName: "faceit-id-special-chars.png"
+        },
+        {
+          description: "Valid UUID format",
+          input: "77dd9104-d2f1-4f50-ba80-d58457cff5a9",
+          expected: false, // Button should be enabled
+          screenshotName: "faceit-id-valid.png"
+        }
+      ];
 
-      // Check if the button is disabled with empty field
-      const isDisabledEmpty = await goToLineupButton.isDisabled();
-      console.log("Button disabled with empty field:", isDisabledEmpty);
-      expect(isDisabledEmpty).toBe(true);
+      // Run through each test case
+      for (const testCase of testCases) {
+        console.log(`Testing: ${testCase.description}`);
+        await faceitIdField.fill(testCase.input);
+        await page.screenshot({
+          path: `test-results/${testCase.screenshotName}`
+        });
 
-      // Test 2: Invalid format (spaces)
-      await faceitIdField.fill("spaces are not valid");
-      await page.screenshot({ path: "test-results/faceit-id-spaces.png" });
+        // Wait for validation to complete
+        await page.waitForTimeout(500);
 
-      // Check if the button is disabled with spaces
-      const isDisabledSpaces = await goToLineupButton.isDisabled();
-      console.log("Button disabled with spaces:", isDisabledSpaces);
-      expect(isDisabledSpaces).toBe(true);
+        // Check if button is disabled as expected
+        const isDisabled = await goToLineupButton.isDisabled();
+        console.log(`Button disabled (${testCase.description}):`, isDisabled);
+        expect(isDisabled).toBe(testCase.expected);
+      }
 
-      // Test 3: Invalid format (wrong characters)
-      await faceitIdField.fill("invalid-chars-!");
-      await page.screenshot({
-        path: "test-results/faceit-id-invalid-chars.png"
-      });
-
-      // Check if the button is disabled with invalid characters
-      const isDisabledInvalidChars = await goToLineupButton.isDisabled();
-      console.log(
-        "Button disabled with invalid characters:",
-        isDisabledInvalidChars
-      );
-      expect(isDisabledInvalidChars).toBe(true);
-
-      // Test 4: Invalid format (too short)
-      await faceitIdField.fill("abc123");
-      await page.screenshot({ path: "test-results/faceit-id-too-short.png" });
-
-      // Check if the button is disabled with too short ID
-      const isDisabledTooShort = await goToLineupButton.isDisabled();
-      console.log("Button disabled with too short ID:", isDisabledTooShort);
-      expect(isDisabledTooShort).toBe(true);
-
-      // Test 5: Valid UUID format
-      const validUuid = "77dd9104-d2f1-4f50-ba80-d58457cff5a9";
-      await faceitIdField.fill(validUuid);
-      await page.screenshot({ path: "test-results/faceit-id-valid.png" });
-
-      // Check if the button is enabled with valid UUID
-      await page.waitForTimeout(500); // Give time for validation to complete
-      const isDisabledValid = await goToLineupButton.isDisabled();
-      console.log("Button disabled with valid UUID:", isDisabledValid);
-      expect(isDisabledValid).toBe(false);
-
-      // Now clicking Go to Lineup should work
-      if (!isDisabledValid) {
+      // Now try to navigate with valid UUID
+      if (!(await goToLineupButton.isDisabled())) {
         await goToLineupButton.click();
         console.log("Clicked Go to Lineup with valid Faceit ID");
 
@@ -329,6 +346,221 @@ test.describe("Signup Form", () => {
       await page.screenshot({
         path: "test-results/faceit-id-field-not-found.png"
       });
+    }
+  });
+
+  test("should validate Steam ID format requirements", async ({ page }) => {
+    // Navigate to the signup page
+    await page.goto("/signup/16/registration");
+    await page.waitForLoadState("networkidle");
+
+    // Take a screenshot of the initial form
+    await page.screenshot({ path: "test-results/steamid-initial-form.png" });
+
+    // Follow the navigation path to reach the Players section
+
+    // 1. First verify we're on the organization selection screen
+    const orgHeading = page.getByText("SIGN UP FORM");
+    await expect(orgHeading).toBeVisible({ timeout: 5000 });
+    console.log("Found sign up form heading");
+
+    // 2. Select organization
+    const orgSelector = page.locator("select").first();
+    if (await orgSelector.isVisible()) {
+      await orgSelector.selectOption({ index: 1 });
+      console.log("Selected existing organization from dropdown");
+    }
+
+    // 3. Navigate to Team section
+    const teamSelectionButton = page.getByText("team selection", {
+      exact: false
+    });
+    if (await teamSelectionButton.isVisible()) {
+      await teamSelectionButton.click();
+      console.log("Clicked 'Team selection' button");
+    }
+
+    // 4. Select team and input valid Faceit ID
+    await page.waitForTimeout(1000);
+    const teamSelector = page.locator("select").first();
+    if (await teamSelector.isVisible()) {
+      await teamSelector.selectOption({ index: 1 });
+      console.log("Selected team from dropdown");
+    }
+
+    // 5. Enter valid Faceit ID to proceed
+    let faceitIdField = page.getByLabel("Team Faceit id", { exact: false });
+    if (!(await faceitIdField.isVisible())) {
+      // Try alternative selectors if the label method doesn't work
+      const faceitInputByFieldPath = page.locator('input[name*="faceit" i]');
+      if (await faceitInputByFieldPath.isVisible()) {
+        faceitIdField = faceitInputByFieldPath;
+      }
+    }
+
+    if (await faceitIdField.isVisible()) {
+      // Enter valid UUID format
+      await faceitIdField.fill("77dd9104-d2f1-4f50-ba80-d58457cff5a9");
+      console.log("Filled valid Faceit ID");
+
+      // 6. Click Go to lineup button
+      const goToLineupButton = page.getByRole("button", {
+        name: /go to lineup/i,
+        exact: false
+      });
+      if (!(await goToLineupButton.isDisabled())) {
+        await goToLineupButton.click();
+        console.log("Clicked Go to Lineup with valid Faceit ID");
+      }
+
+      // 7. Verify we're on the Players section
+      await page.waitForTimeout(1000);
+      await page.screenshot({
+        path: "test-results/steamid-players-section.png"
+      });
+
+      const playersHeading = page.getByText("Players", { exact: true });
+      await expect(playersHeading).toBeVisible({ timeout: 5000 });
+      console.log("Successfully navigated to Players section");
+
+      // Now test the Steam ID field
+      // Find the Steam ID field
+      let steamIdField = page.getByLabel("STEAM ID", { exact: false });
+      if (!(await steamIdField.isVisible())) {
+        // Instead of assigning potentially undefined value, create a new definite locator
+        steamIdField = page.locator("input").first();
+        console.log("Using first input field as Steam ID field");
+      }
+
+      await page.screenshot({ path: "test-results/steamid-field-located.png" });
+
+      // Verify we found the Steam ID field
+      if (await steamIdField.isVisible()) {
+        console.log("Found Steam ID field");
+
+        // Define test cases for invalid Steam ID formats
+        const steamIdTestCases = [
+          {
+            description: "Space in front",
+            input: " 76561198160889809",
+            expected: true, // Should show error
+            helperTextExpected: true,
+            screenshotName: "steamid-space-front.png"
+          },
+          {
+            description: "Space at the end",
+            input: "76561198160889809 ",
+            expected: true, // Should show error
+            helperTextExpected: true,
+            screenshotName: "steamid-space-end.png"
+          },
+          {
+            description: "Space in the middle",
+            input: "765611 98160889809",
+            expected: true, // Should show error
+            helperTextExpected: true,
+            screenshotName: "steamid-space-middle.png"
+          },
+          {
+            description: "Text characters only",
+            input: "xxdkqskd",
+            expected: true, // Should show error
+            helperTextExpected: true,
+            screenshotName: "steamid-text-only.png"
+          },
+          {
+            description: "Mixed text and numbers",
+            input: "123test",
+            expected: true, // Should show error
+            helperTextExpected: true,
+            screenshotName: "steamid-mixed.png"
+          },
+          {
+            description: "Valid format (numbers only)",
+            input: "76561198160889809",
+            expected: false, // Should not show error
+            helperTextExpected: false,
+            screenshotName: "steamid-valid.png"
+          }
+        ];
+
+        // Get the continue button or submit button
+        const continueButton = page.getByRole("button", {
+          name: /continue|submit|next/i,
+          exact: false
+        });
+
+        // Run through each test case
+        for (const testCase of steamIdTestCases) {
+          console.log(`Testing Steam ID: ${testCase.description}`);
+
+          // Clear field and fill with test value
+          await steamIdField.clear();
+          await steamIdField.fill(testCase.input);
+          await page.waitForTimeout(500); // Give time for validation
+
+          // Take screenshot of current state
+          await page.screenshot({
+            path: `test-results/${testCase.screenshotName}`
+          });
+
+          // Look for error helper text
+          const helperText = page
+            .locator(".steam-helper, [class*='helper'], [class*='error']")
+            .or(page.locator("text='Only numbers are allowed'"))
+            .or(page.locator("text=/spaces are not allowed/i"));
+
+          const hasHelperText = await helperText.isVisible();
+          console.log(
+            `Helper text visible (${testCase.description}):`,
+            hasHelperText
+          );
+
+          // Check if helper text appears as expected
+          expect(hasHelperText).toBe(testCase.helperTextExpected);
+
+          // Check if button is disabled with invalid input
+          const isButtonDisabled = await continueButton.isDisabled();
+          console.log(
+            `Button disabled (${testCase.description}):`,
+            isButtonDisabled
+          );
+
+          // Button should be disabled for invalid formats
+          expect(isButtonDisabled).toBe(testCase.expected);
+        }
+
+        // Verify we can proceed with valid Steam ID
+        await steamIdField.clear();
+        await steamIdField.fill("76561198160889809");
+        await page.waitForTimeout(500);
+
+        const isButtonEnabled = !(await continueButton.isDisabled());
+        console.log("Button enabled with valid Steam ID:", isButtonEnabled);
+        expect(isButtonEnabled).toBe(true);
+
+        // Verify we can proceed to the next step
+        if (isButtonEnabled) {
+          await continueButton.click();
+          console.log("Clicked continue with valid Steam ID");
+          await page.waitForTimeout(1000);
+          await page.screenshot({
+            path: "test-results/steamid-after-valid-submission.png"
+          });
+        }
+      } else {
+        console.log("Could not locate Steam ID field");
+        await page.screenshot({
+          path: "test-results/steamid-field-not-found.png"
+        });
+        throw new Error("Steam ID field not found");
+      }
+    } else {
+      console.log("Could not locate Faceit ID field");
+      await page.screenshot({
+        path: "test-results/faceit-id-field-not-found-steamid-test.png"
+      });
+      throw new Error("Faceit ID field not found");
     }
   });
 });
