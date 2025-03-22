@@ -27,6 +27,7 @@ export const SteamLoginButton = ({
       className="flex flex-col cursor-pointer"
       variant="link"
       onClick={handleLogin}
+      data-testid="steam-login-button"
     >
       <Image
         src={createNextImageUrl("/images/sits_01.png")}

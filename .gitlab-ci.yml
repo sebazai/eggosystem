@@ -247,6 +247,7 @@ test:backend:
       - apps/backend/coverage/cobertura-coverage.xml
 
 test:frontend:
+  image: node:22
   stage: test
   extends: [.pull-only-cache, .default, .mr-frontend]
   services:
@@ -263,8 +264,11 @@ test:frontend:
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm --filter=backend seed
     - pnpm --filter=backend dev &
+    - pnpm --filter="@eggosystem/types" build
+    - cd apps/frontend && npx playwright install --with-deps chromium
   script:
-    - pnpm --filter=frontend test
+    - unset NODE_ENV
+    - pnpm --filter=frontend test:e2e
   allow_failure: true
   artifacts:
     when: always

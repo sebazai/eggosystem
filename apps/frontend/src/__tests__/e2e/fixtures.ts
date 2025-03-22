@@ -1,4 +1,5 @@
 import { test as base, expect } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 
 // Define our custom fixtures
 type CustomFixtures = {
@@ -9,16 +10,16 @@ type CustomFixtures = {
 export const test = base.extend<CustomFixtures>({
   // Mock authentication
   authenticated: [
-    async ({ page }, use) => {
+    async ({ page }: { page: Page }, use: (arg: boolean) => Promise<void>) => {
       // Set up debugging for network requests to see what calls are being made
-      page.on("request", (request) => {
+      page.on("request", (request: { url: () => string }) => {
         if (request.url().includes("/auth/")) {
           console.log("Request URL:", request.url());
         }
       });
 
       // The AuthContext uses this specific path
-      await page.route("**/api/v1/auth/me", async (route) => {
+      await page.route("**/api/v1/auth/me", async (route: Route) => {
         console.log("Intercepted /api/v1/auth/me request!");
         await route.fulfill({
           status: 200,
@@ -36,7 +37,7 @@ export const test = base.extend<CustomFixtures>({
       });
 
       // Also intercept the session endpoint
-      await page.route("**/api/v1/auth/session", async (route) => {
+      await page.route("**/api/v1/auth/session", async (route: Route) => {
         console.log("Intercepted /api/v1/auth/session request!");
         await route.fulfill({
           status: 200,

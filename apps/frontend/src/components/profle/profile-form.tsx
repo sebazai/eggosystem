@@ -120,7 +120,12 @@ export default function ProfileForm() {
         className="space-y-4 max-w-md"
       >
         {successMessage && (
-          <div className="text-green-500 font-semibold">{successMessage}</div>
+          <div
+            className="text-green-500 font-semibold"
+            data-testid="profile-success-message"
+          >
+            {successMessage}
+          </div>
         )}
         {errorMessage && (
           <div className="text-red-500 font-semibold">{errorMessage}</div>
@@ -190,6 +195,7 @@ export default function ProfileForm() {
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
+                  data-testid="privacy-policy-checkbox"
                 />
               </FormControl>
               <Label className="flex flex-wrap items-center gap-2">
