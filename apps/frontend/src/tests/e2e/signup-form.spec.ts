@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 test.describe("Signup Form", () => {
   test("should navigate to the signup page and show proper title", async ({
@@ -188,4 +189,80 @@ test.describe("Signup Form", () => {
     await expect(page.locator("#players-section")).toBeVisible();
     await expect(errorMessage).toBeVisible();
   });
+
+  test("should show validation error when Steam ID has leading space", async ({
+    page
+  }) => {
+    await page.goto("/signup/test-season/registration");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Navigate to the players tab
+    await navigateToPlayersTab(page);
+
+    // Enter a Steam ID with a leading space
+    await page.fill("#player-0-steam", " 76561197967885016");
+
+    // Verify the error message is displayed
+    const errorMessage = page.locator("#steam-error");
+    await expect(errorMessage).toBeVisible();
+    await expect(errorMessage).toHaveText("Invalid Steam ID format");
+  });
+
+  test("should show validation error when Steam ID has trailing space", async ({
+    page
+  }) => {
+    await page.goto("/signup/test-season/registration");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Navigate to the players tab
+    await navigateToPlayersTab(page);
+
+    // Enter a Steam ID with a trailing space
+    await page.fill("#player-0-steam", "76561197967885016 ");
+
+    // Verify the error message is displayed
+    const errorMessage = page.locator("#steam-error");
+    await expect(errorMessage).toBeVisible();
+    await expect(errorMessage).toHaveText("Invalid Steam ID format");
+  });
+
+  test("should show validation error when Steam ID has middle space", async ({
+    page
+  }) => {
+    await page.goto("/signup/test-season/registration");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Navigate to the players tab
+    await navigateToPlayersTab(page);
+
+    // Enter a Steam ID with a space in the middle
+    await page.fill("#player-0-steam", "765611 97967885016");
+
+    // Verify the error message is displayed
+    const errorMessage = page.locator("#steam-error");
+    await expect(errorMessage).toBeVisible();
+    await expect(errorMessage).toHaveText("Invalid Steam ID format");
+  });
 });
+
+// Helper function to navigate to players tab
+async function navigateToPlayersTab(page: Page) {
+  // Organization tab
+  await page.selectOption("#organization", "-1");
+  await page.fill("#org-name", "Test Organization");
+  await page.fill("#org-code", "TORG");
+  await page.fill("#website", "https://test-org.com");
+  await page.click("#org-next-btn");
+
+  // Wait for team tab to be visible
+  await page.waitForSelector("#team-section:visible");
+
+  // Team tab
+  await page.selectOption("#team", "-1");
+  await page.fill("#team-name", "Test Team");
+  await page.fill("#team-external-id", "TEST123");
+  await page.click("#team-next-btn");
+
+  // Wait for players tab to be visible
+  await page.waitForSelector("#players-section:visible");
+}
