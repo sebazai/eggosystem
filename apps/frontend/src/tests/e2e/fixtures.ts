@@ -154,6 +154,10 @@ async function mockSignupPage(route: Route) {
               }
             });
           </script>
+          <style>
+            .text-red-500 { color: red; }
+            .hidden { display: none; }
+          </style>
       </head>
       <body>
           <div>
@@ -203,6 +207,7 @@ async function mockSignupPage(route: Route) {
                                       <input id="player-0-name" />
                                       <label for="player-0-steam">Steam ID</label>
                                       <input id="player-0-steam" />
+                                      <span id="steam-error" class="text-red-500 hidden">Invalid Steam ID format</span>
                                       <label for="player-0-email">Email</label>
                                       <input id="player-0-email" />
                                       <label for="player-0-captain">
@@ -241,6 +246,31 @@ async function mockSignupPage(route: Route) {
                 document.getElementById('team-tab').setAttribute('aria-selected', 'false');
                 document.getElementById('players-tab').setAttribute('aria-selected', 'true');
                 document.getElementById('players-tab').removeAttribute('disabled');
+              });
+              
+              // Validate Steam ID
+              document.getElementById('player-0-steam').addEventListener('input', function(e) {
+                const steamIdInput = e.target;
+                const errorElement = document.getElementById('steam-error');
+                const steamIdRegex = /^[0-9]{17}$/;
+                
+                if (steamIdInput.value && !steamIdRegex.test(steamIdInput.value)) {
+                  errorElement.classList.remove('hidden');
+                } else {
+                  errorElement.classList.add('hidden');
+                }
+              });
+              
+              // Submit form validation
+              document.getElementById('submit-btn').addEventListener('click', function(e) {
+                const steamIdInput = document.getElementById('player-0-steam');
+                const errorElement = document.getElementById('steam-error');
+                const steamIdRegex = /^[0-9]{17}$/;
+                
+                if (steamIdInput.value && !steamIdRegex.test(steamIdInput.value)) {
+                  errorElement.classList.remove('hidden');
+                  e.preventDefault();
+                }
               });
             });
           </script>

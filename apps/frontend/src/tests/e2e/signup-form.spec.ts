@@ -108,4 +108,84 @@ test.describe("Signup Form", () => {
     await expect(page.locator("#players-section")).toBeVisible();
     await expect(page.locator('h3:text("Player Information")')).toBeVisible();
   });
+
+  test("should allow filling in the first player's Steam ID", async ({
+    page
+  }) => {
+    await page.goto("/signup/test-season/registration");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Navigate through all tabs to reach the players tab
+    // Organization tab
+    await page.selectOption("#organization", "-1");
+    await page.fill("#org-name", "Test Organization");
+    await page.fill("#org-code", "TORG");
+    await page.fill("#website", "https://test-org.com");
+    await page.click("#org-next-btn");
+
+    // Team tab
+    await page.waitForSelector("#team-section:visible");
+    await page.selectOption("#team", "-1");
+    await page.fill("#team-name", "Test Team");
+    await page.fill("#team-external-id", "TEST123");
+    await page.click("#team-next-btn");
+
+    // Wait for players tab to be visible
+    await page.waitForSelector("#players-section:visible");
+
+    // Fill in the Steam ID for the first player
+    await page.fill("#player-0-steam", "76561197967885016");
+
+    // Verify the Steam ID was entered correctly
+    const steamIdInput = page.locator("#player-0-steam");
+    expect(await steamIdInput.inputValue()).toBe("76561197967885016");
+
+    // Fill in other player details
+    await page.fill("#player-0-name", "Player One");
+    await page.fill("#player-0-email", "player@example.com");
+
+    // Check the captain checkbox
+    await page.check("#player-0-captain");
+    expect(await page.locator("#player-0-captain").isChecked()).toBeTruthy();
+  });
+
+  test("should show validation error when entering invalid Steam ID", async ({
+    page
+  }) => {
+    await page.goto("/signup/test-season/registration");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Navigate through all tabs to reach the players tab
+    // Organization tab
+    await page.selectOption("#organization", "-1");
+    await page.fill("#org-name", "Test Organization");
+    await page.fill("#org-code", "TORG");
+    await page.fill("#website", "https://test-org.com");
+    await page.click("#org-next-btn");
+
+    // Team tab
+    await page.waitForSelector("#team-section:visible");
+    await page.selectOption("#team", "-1");
+    await page.fill("#team-name", "Test Team");
+    await page.fill("#team-external-id", "TEST123");
+    await page.click("#team-next-btn");
+
+    // Wait for players tab to be visible
+    await page.waitForSelector("#players-section:visible");
+
+    // Enter an invalid Steam ID
+    await page.fill("#player-0-steam", "12345invalid");
+
+    // Verify the error message is displayed
+    const errorMessage = page.locator("#steam-error");
+    await expect(errorMessage).toBeVisible();
+    await expect(errorMessage).toHaveText("Invalid Steam ID format");
+
+    // Try to submit the form (should not allow submission)
+    await page.click("#submit-btn");
+
+    // Verify we're still on the players tab (error prevented submission)
+    await expect(page.locator("#players-section")).toBeVisible();
+    await expect(errorMessage).toBeVisible();
+  });
 });
