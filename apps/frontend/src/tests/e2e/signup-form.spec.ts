@@ -529,6 +529,290 @@ test.describe("Signup Form", () => {
     });
   });
 
+  // Setup for Steam ID API mock tests
+  test.describe("Steam ID API Response Validation", () => {
+    test.beforeEach(async ({ page }) => {
+      // Navigate to the form
+      await page.goto("/signup/16/registration");
+      await page.waitForLoadState("networkidle");
+
+      // Verify we're on the signup form
+      await expect(page.getByText("SIGN UP FORM")).toBeVisible();
+
+      // Complete organization selection
+      const orgSelector = page.locator("select").first();
+      await orgSelector.selectOption({ index: 1 });
+
+      // Navigate to team section
+      const teamSelectionButton = page.getByText("team selection", {
+        exact: false
+      });
+      await teamSelectionButton.click();
+
+      // Select team
+      await page.waitForTimeout(500);
+      const teamSelector = page.locator("select").first();
+      await teamSelector.selectOption({ index: 1 });
+
+      // Fill valid Faceit ID and navigate to players section
+      const faceitIdField = page
+        .getByLabel("Team Faceit id", { exact: false })
+        .or(page.getByPlaceholder("Faceit", { exact: false }))
+        .or(page.locator('input[name*="faceit" i]'));
+      await faceitIdField.fill("77dd9104-d2f1-4f50-ba80-d58457cff5a9");
+
+      // Click Go to lineup button
+      const goToLineupButton = page.getByRole("button", {
+        name: /go to lineup/i,
+        exact: false
+      });
+      await goToLineupButton.click();
+
+      // Verify we're on the Players section
+      await expect(page.getByText("Players", { exact: true })).toBeVisible();
+    });
+
+    test("should show error for non-public Steam profile", async ({ page }) => {
+      // Find the Steam ID field using multiple strategies
+      const steamIdField = page
+        .getByLabel("STEAM ID", { exact: false })
+        .or(page.locator('input[name*="steam" i]'))
+        .or(page.locator("input").first());
+
+      // Verify field is found
+      await expect(steamIdField).toBeVisible();
+
+      // Set up mock API response for non-public profile
+      await page.route("**/api/players/76561198160889800", async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({
+            message: "Steam profile must be public!",
+            statusCode: 400
+          })
+        });
+      });
+
+      // Fill the Steam ID field with the ID that will trigger the mocked response
+      await steamIdField.fill("76561198160889800");
+
+      // Wait for API response to be processed
+      await page.waitForTimeout(500);
+
+      // Verify error message appears in the helper text
+      await expect(page.locator('[data-testid="steamHelper"]')).toContainText(
+        "⚠️ Steam profile must be public!"
+      );
+
+      // Verify the continue button is disabled
+      const continueButton = page.getByRole("button", {
+        name: /continue|submit|next/i,
+        exact: false
+      });
+      expect(await continueButton.isDisabled()).toBeTruthy();
+    });
+
+    test("should show error for invalid Steam ID", async ({ page }) => {
+      // Find the Steam ID field
+      const steamIdField = page
+        .getByLabel("STEAM ID", { exact: false })
+        .or(page.locator('input[name*="steam" i]'))
+        .or(page.locator("input").first());
+
+      // Set up mock API response for invalid Steam ID
+      await page.route("**/api/players/12345678901234567", async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({
+            message: "SteamID64 is invalid!",
+            statusCode: 400
+          })
+        });
+      });
+
+      // Fill the Steam ID field with the ID that will trigger the mocked response
+      await steamIdField.fill("12345678901234567");
+
+      // Wait for API response to be processed
+      await page.waitForTimeout(500);
+
+      // Verify error message appears in the helper text
+      await expect(page.locator('[data-testid="steamHelper"]')).toContainText(
+        "⚠️ SteamID64 is invalid!"
+      );
+
+      // Verify the continue button is disabled
+      const continueButton = page.getByRole("button", {
+        name: /continue|submit|next/i,
+        exact: false
+      });
+      expect(await continueButton.isDisabled()).toBeTruthy();
+    });
+
+    test("should show error for CS hours not readable", async ({ page }) => {
+      // Find the Steam ID field
+      const steamIdField = page
+        .getByLabel("STEAM ID", { exact: false })
+        .or(page.locator('input[name*="steam" i]'))
+        .or(page.locator("input").first());
+
+      // Set up mock API response for CS hours not readable
+      await page.route("**/api/players/76561198160889801", async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({
+            message:
+              "Could not read CS hours, ask player to set steam profile as public",
+            statusCode: 400
+          })
+        });
+      });
+
+      // Fill the Steam ID field with the ID that will trigger the mocked response
+      await steamIdField.fill("76561198160889801");
+
+      // Wait for API response to be processed
+      await page.waitForTimeout(500);
+
+      // Verify error message appears in the helper text
+      await expect(page.locator('[data-testid="steamHelper"]')).toContainText(
+        "⚠️ Could not read CS hours, ask player to set steam profile as public"
+      );
+
+      // Verify the continue button is disabled
+      const continueButton = page.getByRole("button", {
+        name: /continue|submit|next/i,
+        exact: false
+      });
+      expect(await continueButton.isDisabled()).toBeTruthy();
+    });
+
+    test("should show error for high hours low rank", async ({ page }) => {
+      // Find the Steam ID field
+      const steamIdField = page
+        .getByLabel("STEAM ID", { exact: false })
+        .or(page.locator('input[name*="steam" i]'))
+        .or(page.locator("input").first());
+
+      // Set up mock API response for high hours low rank
+      await page.route("**/api/players/76561198160889802", async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({
+            message:
+              "Contact support about this player rank (high hours low rank)",
+            statusCode: 400
+          })
+        });
+      });
+
+      // Fill the Steam ID field with the ID that will trigger the mocked response
+      await steamIdField.fill("76561198160889802");
+
+      // Wait for API response to be processed
+      await page.waitForTimeout(500);
+
+      // Verify error message appears in the helper text
+      await expect(page.locator('[data-testid="steamHelper"]')).toContainText(
+        "⚠️ Contact support about this player rank (high hours low rank)"
+      );
+
+      // Verify the continue button is disabled
+      const continueButton = page.getByRole("button", {
+        name: /continue|submit|next/i,
+        exact: false
+      });
+      expect(await continueButton.isDisabled()).toBeTruthy();
+    });
+
+    test("should show success for valid Steam profile", async ({ page }) => {
+      // Find the Steam ID field
+      const steamIdField = page
+        .getByLabel("STEAM ID", { exact: false })
+        .or(page.locator('input[name*="steam" i]'))
+        .or(page.locator("input").first());
+
+      // Set up mock API response for valid Steam profile
+      await page.route("**/api/players/76561198160889809", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            steamId: "76561198160889809",
+            nickname: "TestPlayer",
+            avatarUrl: "https://example.com/avatar.jpg",
+            profileUrl: "https://steamcommunity.com/profiles/76561198160889809",
+            hours: 2500,
+            rank: "Global Elite"
+          })
+        });
+      });
+
+      // Fill the Steam ID field with the ID that will trigger the mocked response
+      await steamIdField.fill("76561198160889809");
+
+      // Wait for API response to be processed
+      await page.waitForTimeout(500);
+
+      // Verify no error message appears in the helper text
+      await expect(
+        page.locator('[data-testid="steamHelper"]')
+      ).not.toContainText("⚠️");
+
+      // Verify the continue button is enabled
+      const continueButton = page.getByRole("button", {
+        name: /continue|submit|next/i,
+        exact: false
+      });
+      expect(await continueButton.isDisabled()).toBeFalsy();
+    });
+
+    test("should show error for rank decay without CS2 rank", async ({
+      page
+    }) => {
+      // Find the Steam ID field
+      const steamIdField = page
+        .getByLabel("STEAM ID", { exact: false })
+        .or(page.locator('input[name*="steam" i]'))
+        .or(page.locator("input").first());
+
+      // Set up mock API response for player without CS2 rank (rank decay)
+      await page.route("**/api/players/76561198160889803", async (route) => {
+        await route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({
+            message:
+              "Contact support, rank decay when player does not have cs2rank",
+            statusCode: 400
+          })
+        });
+      });
+
+      // Fill the Steam ID field with the ID that will trigger the mocked response
+      await steamIdField.fill("76561198160889803");
+
+      // Wait for API response to be processed
+      await page.waitForTimeout(500);
+
+      // Verify error message appears in the helper text
+      await expect(page.locator('[data-testid="steamHelper"]')).toContainText(
+        "⚠️ Contact support, rank decay when player does not have cs2rank"
+      );
+
+      // Verify the continue button is disabled
+      const continueButton = page.getByRole("button", {
+        name: /continue|submit|next/i,
+        exact: false
+      });
+      expect(await continueButton.isDisabled()).toBeTruthy();
+    });
+  });
+
   // Keep original Steam ID test intact but commented out
   /* Original test
   test("should validate Steam ID format requirements", async ({ page }) => {
