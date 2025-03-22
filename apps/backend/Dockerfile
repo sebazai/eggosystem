@@ -17,6 +17,8 @@ COPY packages/ ./packages/
 FROM base AS builder
 # Install dependencies first - this layer will be cached if package.json files haven't changed
 RUN pnpm install --frozen-lockfile
+# Build types first
+RUN pnpm build --filter=@eggosystem/types
 # Now copy source code - these change more frequently
 COPY apps/backend/ ./apps/backend/
 RUN pnpm build --filter=backend
@@ -47,10 +49,17 @@ ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
+# Copy the types package and its dist folder
+COPY --from=builder --chown=node:node /usr/src/app/packages/types/dist ./packages/types/dist
+COPY --from=builder --chown=node:node /usr/src/app/packages/types/package.json ./packages/types/
+# Explicitly make zod available to the types package
+RUN npm install -g zod@3.24.2
+RUN mkdir -p ./packages/types/node_modules
+RUN ln -s /usr/local/lib/node_modules/zod ./packages/types/node_modules/zod
 # Copy app dist
-COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./
+COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./apps/backend/dist
 # Do not run as root
 USER node
 
 EXPOSE 3001
-CMD [ "node", "apps/backend/server.js" ]
+CMD [ "node", "apps/backend/dist/server.js" ]

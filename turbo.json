@@ -26,6 +26,19 @@
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "dist/**/*.d.ts"]
     },
+    "@eggosystem/types#build": {
+      "dependsOn": [],
+      "outputs": [
+        "dist/**",
+        "dist/**/*.js",
+        "dist/**/*.d.ts",
+        "node_modules/**"
+      ]
+    },
+    "backend#build": {
+      "dependsOn": ["@eggosystem/types#build"],
+      "outputs": ["dist/**", "node_modules/**"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

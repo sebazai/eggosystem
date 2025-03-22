@@ -1,13 +1,15 @@
 {
   "name": "@eggosystem/types",
   "version": "1.0.0",
-  "description": "",
+  "description": "Shared TypeScript types for the Eggosystem project",
   "scripts": {
     "lint": "eslint .",
     "check-types": "tsc --noEmit",
     "build": "tsc"
   },
-  "types": "./src/index.ts",
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "keywords": [],
   "author": "",
   "dependencies": {
@@ -19,6 +21,9 @@
     "@types/express": "5.0.0"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }

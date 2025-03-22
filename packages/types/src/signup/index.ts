@@ -3,7 +3,7 @@ import { z } from "zod";
 const maskedEmailRegex =
   /^[a-zA-Z0-9._%+-]{2,}\*+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-export const playerSchema = z
+const playerSchema = z
   .object({
     steam_id: z.string().length(17),
     name: z.string().min(1).max(50),
@@ -81,7 +81,7 @@ const newTeamSchema = z.preprocess(
     .optional()
 );
 
-export const baseSignupFormSchema = z.object({
+const baseSignupFormSchema = z.object({
   organizationId: z.number(),
   newOrganization: newOrganizationSchema.optional(),
   teamId: z.number(),
@@ -114,7 +114,7 @@ export const baseSignupFormSchema = z.object({
   defects: z.string().max(255).optional()
 });
 
-export const signupFormSchema = baseSignupFormSchema
+const signupFormSchema = baseSignupFormSchema
   .refine(
     (data) => {
       if (data.organizationId === -1) {
@@ -145,5 +145,15 @@ export const signupFormSchema = baseSignupFormSchema
     }
   );
 
+// Define the type and export it properly
 export type SignupFormValues = z.infer<typeof signupFormSchema>;
 export type PlayerSchemaType = typeof playerSchema;
+
+export {
+  playerSchema,
+  maskedEmailRegex,
+  newOrganizationSchema,
+  newTeamSchema,
+  baseSignupFormSchema,
+  signupFormSchema
+};
