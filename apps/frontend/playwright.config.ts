@@ -8,7 +8,6 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    // Using a dummy base URL since we're mocking all requests
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
@@ -19,11 +18,11 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] }
     }
-  ]
-  // Disabling webServer as we'll mock all API responses
-  // webServer: {
-  //   command: 'pnpm run dev',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  ],
+  // Run the frontend server as part of the test
+  webServer: {
+    command: "pnpm run dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI
+  }
 });
