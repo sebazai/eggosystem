@@ -6,7 +6,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  // Configure multiple reporters for CI environment
+  reporter: process.env.CI
+    ? [
+        ["html", { outputFolder: "playwright-report" }], // HTML report
+        ["junit", { outputFile: "test-results/junit-report.xml" }], // JUnit XML for GitLab
+        ["list"] // Console output
+      ]
+    : "html",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",

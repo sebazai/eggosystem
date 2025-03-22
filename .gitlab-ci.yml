@@ -246,6 +246,34 @@ test:backend:
       - apps/backend/test-results/junit/results.xml
       - apps/backend/coverage/cobertura-coverage.xml
 
+test:frontend:
+  stage: test
+  extends: [.pull-only-cache, .default, .mr-backend]
+  services:
+    - name: bitnami/mariadb:11.4.2
+      alias: eggo-devdb
+    - name: redis:7-alpine
+      alias: eggo-redis
+  variables:
+    <<: *overwrite-variables
+    MARIADB_MAX_ALLOWED_PACKET: 128M
+    MARIADB_INNODB_LOG_FILE_SIZE: 64M
+  before_script:
+    - npm install -g pnpm@10.3.0
+    - export $(grep -v '^#' .env.development | xargs)
+    - pnpm --filter=backend seed
+    - pnpm --filter=backend dev &
+  script:
+    - pnpm --filter=frontend test
+  allow_failure: true
+  artifacts:
+    when: always
+    paths:
+      - apps/frontend/playwright-report/
+      - apps/frontend/test-results/
+    reports:
+      junit: apps/frontend/test-results/junit-report.xml
+
 build:frontend:
   stage: build
   extends: [.pull-only-cache, .default, .mr-frontend]
