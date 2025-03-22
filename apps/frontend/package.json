@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:container": "PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright test --browser=chromium"
   },
   "dependencies": {
     "@eggosystem/types": "workspace:*",
@@ -46,6 +50,7 @@
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
+    "@playwright/test": "^1.51.1",
     "@types/js-cookie": "3.0.6",
     "@types/lodash": "4.17.16",
     "@types/node": "22.13.10",
