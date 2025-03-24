@@ -39,6 +39,10 @@
       "dependsOn": ["@eggosystem/types#build"],
       "outputs": ["dist/**", "node_modules/**"]
     },
+    "backend#dev": {
+      "dependsOn": ["@eggosystem/types#build"],
+      "persistent": true
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },
