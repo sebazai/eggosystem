@@ -55,7 +55,7 @@
       "persistent": true
     },
     "test": {
-      "dependsOn": ["@eggosystem/types#build"],
+      "dependsOn": ["^test", "@eggosystem/types#build"],
       "cache": false
     },
     "add-shadcn-component": {
