@@ -230,6 +230,7 @@ test:backend:
     - npm install -g pnpm@10.3.0
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm --filter=backend seed
+    - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=backend test
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
