@@ -3,7 +3,7 @@ export const testEnvironment = "node";
 export const moduleFileExtensions = ["ts", "tsx", "js", "jsx", "json", "node"];
 export const setupFilesAfterEnv = ["<rootDir>/jest.setup.ts"];
 export const transform = {
-  "^.+\\.(js|jsx|ts|tsx)$": "ts-jest"
+  "^.+\\.(ts|tsx)$": "ts-jest"
 };
 export const openHandlesTimeout = 2 * 1000;
 export const testMatch = [
@@ -29,5 +29,5 @@ export const coveragePathIgnorePatterns = [
 ];
 export const coverageProvider = "v8";
 export const moduleNameMapper = {
-  "^@eggosystem/types$": "<rootDir>/../../packages/types/index.js"
+  "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js"
 };

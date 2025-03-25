@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "paths": {
-      "@eggosystem/types": ["../../packages/types/src/index"]
+      "@eggosystem/types": ["../../packages/types/dist/index"]
     }
   },
   "include": [
