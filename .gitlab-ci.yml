@@ -261,6 +261,7 @@ build:frontend:
         - apps/frontend/.next/cache
         - .turbo
   before_script:
+    - npm install -g pnpm@10.3.0
     - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=frontend build
@@ -269,6 +270,7 @@ build:backend:
   stage: build
   extends: [.pull-only-cache, .default, .mr-backend]
   before_script:
+    - npm install -g pnpm@10.3.0
     - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=backend build
