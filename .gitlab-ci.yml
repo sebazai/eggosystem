@@ -260,12 +260,16 @@ build:frontend:
       paths:
         - apps/frontend/.next/cache
         - .turbo
+  before_script:
+    - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=frontend build
 
 build:backend:
   stage: build
   extends: [.pull-only-cache, .default, .mr-backend]
+  before_script:
+    - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=backend build
 
