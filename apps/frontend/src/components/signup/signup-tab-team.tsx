@@ -14,7 +14,7 @@ import type { MultiSelect } from "@/types/MultiSelectType";
 import { useState } from "react";
 import type { Control, UseFormResetField } from "react-hook-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
-import type { SignupFormValues } from "@eggosystem/types";
+import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 
 interface TabTeamProps {
   watchTeamId: number;
@@ -100,19 +100,21 @@ export const TabTeam = ({
         )}
       />
 
-      <FormField
-        control={control}
-        name="teamExternalId"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>{`Team ${Platform} id`}</FormLabel>
-            <FormControl>
-              <Input {...field} placeholder={`Team ${Platform} id`} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {platform !== SeasonPlatform.Kanaliiga && (
+        <FormField
+          control={control}
+          name="teamExternalId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{`Team ${Platform} id`}</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder={`Team ${Platform} id`} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
 
       {/* Custom Team Input (Only if "Other" is selected) */}
       {watchTeamId === -1 && (

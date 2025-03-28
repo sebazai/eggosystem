@@ -39,10 +39,6 @@
       "dependsOn": ["@eggosystem/types#build"],
       "outputs": ["dist/**", "node_modules/**"]
     },
-    "backend#dev": {
-      "dependsOn": ["@eggosystem/types#build"],
-      "persistent": true
-    },
     "lint": {
       "dependsOn": ["^lint"]
     },
@@ -51,11 +47,12 @@
       "cache": false
     },
     "dev": {
+      "dependsOn": ["@eggosystem/types#build"],
       "cache": false,
       "persistent": true
     },
     "test": {
-      "dependsOn": ["^test", "@eggosystem/types#build"],
+      "dependsOn": ["@eggosystem/types#build"],
       "cache": false
     },
     "add-shadcn-component": {

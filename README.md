@@ -1,13 +1,16 @@
-# Eggosystem
+# Kanahub
 
-This is the Egg-o-system for Kanaliiga hubstat
+This is the Eggosystem for Kanaliiga hubstat
 
-## Development environment
+## Development environment (VSCode)
 
-Open devcontainer, it should run pnpm install automatically so you get the tools too if you need
-to install some new packages etc and no need to install npm or anything on your own machine.
+Open devcontainer (Dev Containers: Open Folder in Container...), it should run pnpm install automatically.
 
-It will also start the devdb and phpmyadmin from [docker-compose.yml](docker-compose.yml)
+It will also start the devdb and phpmyadmin from [docker-compose.yml](docker-compose.yml). In addition, the dev seed will be ran.
+
+When adding new migrations, rebuild container to run the migrations. Remember to [update the dev/test seed](docs/update_dev_seed.md) when migrations have completed successfully.
+
+Start development env: `pnpm dev` - builds `packages/types` automatically
 
 ### Other way
 
@@ -21,21 +24,21 @@ Backend can be accessed from localhost:3001 and frontend from localhost:3000 via
 
 ## Running tests on devcontainer
 
-- Yes
+Run all tests:
 
-### Backend
+- pnpm test
 
-Run all tests
+Run specific test, example run players tests:
+
+- pnpm test players
+
+Run backend tests:
 
 - pnpm --filter=backend test
 
-Run specific test, example run players tests
-
-- pnpm --filter=backend test players
-
 ## Database
 
-Read [docs/database.md](docs/database.md) for understanding DB Schema.
+Read [docs/database.md](docs/database.md) for better understanding of the DB Schema.
 
 ### Migrating ebinstats prod
 
@@ -48,4 +51,7 @@ Read [docs/migration.md](docs/migration.md).
 
 ## Other
 
-- Phpmyadmin runs as default with docker compose up, on port :8081 so just open http://localhost:8081 to access db (check passwords etc from [dev.env](dev.env))
+- With `docker compose up`, Phpmyadmin runs on port localhost:8082
+- With `devcontainer`, Phpmyadmin runs on port localhost:8083
+
+root / dev-pass

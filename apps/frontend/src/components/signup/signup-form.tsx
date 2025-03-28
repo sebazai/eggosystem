@@ -17,19 +17,22 @@ import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ErrorMessage } from "@hookform/error-message";
 import { apiFetch } from "@/lib/apiClient";
-import type { SignupFormValues } from "@eggosystem/types";
+import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 
 interface SignupFormProps {
   seasonId: string;
+  platform: SeasonPlatform;
 }
 
-export const SignupForm = ({ seasonId }: SignupFormProps) => {
+export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
   const { user, loading: loadingUser } = useAuth();
+  const schema = signupFormSchema({ platform });
+  const baseSchema = baseSignupFormSchema({ platform })._def.schema;
 
   const form = useForm<SignupFormValues>({
-    resolver: zodResolver(signupFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       organizationId: undefined,
       teamId: undefined,
@@ -68,56 +71,56 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
 
   const validOrgId = useMemo(
     () =>
-      baseSignupFormSchema
+      baseSchema
         .pick({
           organizationId: true
         })
         .safeParse({ organizationId: watchOrgId }),
 
-    [watchOrgId]
+    [watchOrgId, baseSchema]
   );
   const validOrg = useMemo(
     () =>
-      baseSignupFormSchema
+      baseSchema
         .pick({
           newOrganization: true
         })
         .safeParse({ newOrganization: watchNewOrg }),
-    [watchNewOrg]
+    [watchNewOrg, baseSchema]
   );
   const validTeamId = useMemo(
     () =>
-      baseSignupFormSchema
+      baseSchema
         .pick({
           teamId: true
         })
         .safeParse({ teamId: watchTeamId }),
-    [watchTeamId]
+    [watchTeamId, baseSchema]
   );
   const validTeam = useMemo(
     () =>
-      baseSignupFormSchema
+      baseSchema
         .pick({
           newTeam: true
         })
         .safeParse({ newTeam: watchNewTeam }),
-    [watchNewTeam]
+    [watchNewTeam, baseSchema]
   );
   const validTeamExternalId = useMemo(
     () =>
-      baseSignupFormSchema
+      baseSchema
         .pick({ teamExternalId: true })
         .safeParse({ teamExternalId: watchExternalTeamId }),
-    [watchExternalTeamId]
+    [watchExternalTeamId, baseSchema]
   );
   const validPlayers = useMemo(
     () =>
-      baseSignupFormSchema
+      baseSchema
         .pick({
           players: true
         })
         .safeParse({ players: watchPlayers }),
-    [watchPlayers]
+    [watchPlayers, baseSchema]
   );
 
   const onSubmit = async (data: SignupFormValues) => {
@@ -161,7 +164,8 @@ export const SignupForm = ({ seasonId }: SignupFormProps) => {
         (validTeam.success !== false &&
           validTeamId.data?.teamId === -1 &&
           validTeam.data.newTeam)
-    ) && validTeamExternalId.success;
+    ) &&
+    (platform === SeasonPlatform.Kanaliiga || validTeamExternalId.success);
 
   return (
     <Form {...form}>

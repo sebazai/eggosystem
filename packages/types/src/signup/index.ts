@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SeasonPlatform } from "@eggosystem/types";
 
 const maskedEmailRegex =
   /^[a-zA-Z0-9._%+-]{2,}\*+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -81,72 +82,86 @@ const newTeamSchema = z.preprocess(
     .optional()
 );
 
-const baseSignupFormSchema = z.object({
-  organizationId: z.number(),
-  newOrganization: newOrganizationSchema.optional(),
-  teamId: z.number(),
-  teamExternalId: z.string().min(2).max(50),
-  newTeam: newTeamSchema.optional(),
-  players: z
-    .array(playerSchema)
-    .min(5)
-    .max(9)
+const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
+  z
+    .object({
+      organizationId: z.number(),
+      newOrganization: newOrganizationSchema.optional(),
+      teamId: z.number(),
+      teamExternalId: z.string().min(2).max(50).optional(),
+      newTeam: newTeamSchema.optional(),
+      players: z
+        .array(playerSchema)
+        .min(5)
+        .max(9)
+        .refine(
+          (players) => {
+            const captains = players.filter((p) => p.captain === true);
+            const coCaptains = players.filter((p) => p.co_captain === true);
+            return captains.length === 1 && coCaptains.length === 1;
+          },
+          {
+            message: "There must be exactly one captain and one co-captain."
+          }
+        )
+        .refine(
+          (players) => {
+            const steamIds = new Set(players.map((p) => p.steam_id));
+            return steamIds.size === players.length;
+          },
+          {
+            message: "Each player must have a unique Steam ID.",
+            path: ["players"]
+          }
+        ),
+      defects: z.string().max(255).optional()
+    })
     .refine(
-      (players) => {
-        const captains = players.filter((p) => p.captain === true);
-        const coCaptains = players.filter((p) => p.co_captain === true);
-        return captains.length === 1 && coCaptains.length === 1;
+      (data) => {
+        if (context.platform !== SeasonPlatform.Kanaliiga) {
+          return !!data.teamExternalId;
+        }
+        return true;
       },
       {
-        message: "There must be exactly one captain and one co-captain."
+        message: "Team external id is required for this platform.",
+        path: ["teamExternalId"]
+      }
+    );
+
+const signupFormSchema = (context: { platform: SeasonPlatform }) =>
+  baseSignupFormSchema(context)
+    .refine(
+      (data) => {
+        if (data.organizationId === -1) {
+          return (
+            !!data.newOrganization?.name &&
+            !!data.newOrganization?.organization_code &&
+            !!data.newOrganization?.website
+          );
+        }
+        return true;
+      },
+      {
+        message:
+          "New organization details are required when 'Add new...' is selected.",
+        path: ["newOrganization"]
       }
     )
     .refine(
-      (players) => {
-        const steamIds = new Set(players.map((p) => p.steam_id));
-        return steamIds.size === players.length;
+      (data) => {
+        if (data.teamId === -1) {
+          return !!data.newTeam?.name;
+        }
+        return true;
       },
       {
-        message: "Each player must have a unique Steam ID.",
-        path: ["players"]
+        message: "New team details are required when 'Add new...' is selected.",
+        path: ["newTeam"]
       }
-    ),
-  defects: z.string().max(255).optional()
-});
+    );
 
-const signupFormSchema = baseSignupFormSchema
-  .refine(
-    (data) => {
-      if (data.organizationId === -1) {
-        return (
-          !!data.newOrganization?.name &&
-          !!data.newOrganization?.organization_code &&
-          !!data.newOrganization?.website
-        );
-      }
-      return true;
-    },
-    {
-      message:
-        "New organization details are required when 'Add new...' is selected.",
-      path: ["newOrganization"]
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.teamId === -1) {
-        return !!data.newTeam?.name;
-      }
-      return true;
-    },
-    {
-      message: "New team details are required when 'Add new...' is selected.",
-      path: ["newTeam"]
-    }
-  );
-
-// Define the type and export it properly
-export type SignupFormValues = z.infer<typeof signupFormSchema>;
+export type SignupFormValues = z.infer<ReturnType<typeof signupFormSchema>>;
 export type PlayerSchemaType = typeof playerSchema;
 
 export {

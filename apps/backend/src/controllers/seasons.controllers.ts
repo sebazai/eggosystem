@@ -69,7 +69,7 @@ export const addSignupForSeason = async (
   const formData = req.body;
 
   try {
-    signupFormSchema.parse(formData);
+    signupFormSchema({ platform: season.platform }).parse(formData);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       res.status(400).json({

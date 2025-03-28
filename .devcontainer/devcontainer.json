@@ -31,7 +31,8 @@
     "eggo-devdb",
     "eggo-phpmyadmin",
     "eggo-redis",
-    "seed"
+    "seed",
+    "migrate"
   ],
   "overrideCommand": false
 }

@@ -47,5 +47,22 @@ services:
     networks:
       - eggo-dev
 
+  migrate:
+    image: eggo-back
+    profiles:
+      - migrate
+    build:
+      context: ../
+      dockerfile: ./apps/backend/Dockerfile.dev
+    depends_on:
+      eggo-devdb:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    env_file: ../.env.development
+    command: "pnpm --filter=backend migrate"
+    networks:
+      - eggo-dev
+
 networks:
   eggo-dev:

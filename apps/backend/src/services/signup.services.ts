@@ -11,7 +11,7 @@ export const signUpTeamForSeason = async (
       is_co_captain?: boolean;
       is_captain?: boolean;
     }[];
-    teamExternalId: string;
+    teamExternalId?: string;
     defects?: string;
   },
   connection?: PoolConnection
