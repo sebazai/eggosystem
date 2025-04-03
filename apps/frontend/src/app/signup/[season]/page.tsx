@@ -10,7 +10,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { season } = await params;
 
-  const result = await fetch(`${envConfig.BASE_URL}/api/seasons/${season}`);
+  const result = await fetch(`${envConfig.API_URL}/api/v1/seasons/${season}`);
 
   if (!result.ok) {
     return {

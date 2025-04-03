@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { FancySelect } from "./fancy-multi-select";
-import { fetcher } from "@/lib/utils";
+import { expressFetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import _ from "lodash";
@@ -27,9 +27,13 @@ export const ItemFilter = <T extends { id: number }>(
     props.selectedItems
   );
 
-  const { data, isLoading } = useSWR<T[]>(`/api/${props.filterName}`, fetcher, {
-    revalidateOnFocus: false
-  });
+  const { data, isLoading } = useSWR<T[]>(
+    `/api/v1/${props.filterName}`,
+    expressFetcher,
+    {
+      revalidateOnFocus: false
+    }
+  );
 
   if (isLoading || !data)
     return (

@@ -1,8 +1,8 @@
 "use client";
 
-import { fetcher } from "@/lib/utils";
 import useSWR from "swr";
 import type { MultiFilterSelectableIds } from "@eggosystem/types";
+import { nextFetcher } from "@/lib/utils";
 
 interface UseMultiFilterSelectablesProps {
   seasons: number[];
@@ -38,7 +38,7 @@ export const useMultiFilterSelectables = ({
 
   const { data, error, isValidating } = useSWR<MultiFilterSelectableIds>(
     `/api/filters?${sortedQuery}`,
-    fetcher,
+    nextFetcher,
     { revalidateOnFocus: false }
   );
 

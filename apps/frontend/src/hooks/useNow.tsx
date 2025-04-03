@@ -1,3 +1,4 @@
+import { expressFetcher } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
 export function useServerTime() {
@@ -6,9 +7,10 @@ export function useServerTime() {
   useEffect(() => {
     const fetchTime = async () => {
       try {
-        const res = await fetch("/api/now");
-        const data = await res.json();
-        setServerTime(data);
+        const res = await expressFetcher<{
+          now: number;
+        }>("/api/v1/now");
+        setServerTime(res.now);
       } catch (error) {
         console.error("Error fetching server time:", error);
       }

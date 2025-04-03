@@ -1,13 +1,13 @@
 "use client";
 
-import { fetcher } from "@/lib/utils";
+import { expressFetcher } from "@/lib/utils";
 import useSWR from "swr";
 import type { Team } from "@eggosystem/types";
 
-export const useOrganizationTeams = (organizationId?: number) => {
+export const useOrganizationTeams = (organizationId: number) => {
   const { data, error, isValidating } = useSWR<Team[], Error>(
-    `/api/organizations/${organizationId}/teams`,
-    fetcher,
+    `/api/v1/organizations/${organizationId}/teams`,
+    expressFetcher,
     { revalidateOnFocus: false }
   );
 

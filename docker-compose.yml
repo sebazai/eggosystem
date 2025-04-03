@@ -19,6 +19,7 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
+      - ./packages/types:/usr/src/app/packages/types
     env_file: .env.development
     command: "pnpm --filter=backend dev"
 
@@ -46,6 +47,7 @@ services:
       - ./apps/frontend/src:/usr/src/app/apps/frontend/src # Mount source code for live reloading
       - ./apps/frontend/public:/usr/src/app/apps/frontend/public # Mount source code for live reloading
       - ./apps/frontend/node_modules:/usr/src/app/apps/frontend/node_modules # Mount source code for live reloading
+      - ./packages/types:/usr/src/app/packages/types
     ports:
       - "3000:3000"
     depends_on:

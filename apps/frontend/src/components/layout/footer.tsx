@@ -28,29 +28,29 @@ const Footer = () => {
                 src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/elisa-esports.png"
                 alt="Elisa Esports"
                 width={200}
-                height={100}
+                height={119}
               />
 
-              <div className="flex space-x-6">
+              <div className="flex space-x-3">
                 <Image
                   src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/polar_squad.png"
                   alt="Polar Squad"
                   width={100}
-                  height={50}
+                  height={36}
                 />
                 <Image
                   src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/tnnet.png"
                   alt="TNNet"
                   width={100}
-                  height={50}
+                  height={19}
                 />
               </div>
 
               <Image
                 src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/atflow.png"
                 alt="Atflow"
-                width={100}
-                height={50}
+                width={120}
+                height={30}
               />
             </div>
           </div>
@@ -118,7 +118,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="text-center text-sm text-gray-400 mt-6">
+        <div className="text-center text-sm text-muted-foreground mt-6">
           <p>Kanaliiga Ry / hub.kanaliiga.fi</p>
           <p>
             Source:{" "}

@@ -229,7 +229,7 @@ export default function TopTeamsPage() {
         }
 
         if (maps.length > 0) {
-          maps.forEach((mapId) => params.append("maps", mapId.toString()));
+          maps.forEach((gameId) => params.append("maps", gameId.toString()));
         }
 
         // Add available leagues to params
@@ -268,7 +268,7 @@ export default function TopTeamsPage() {
           style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
         >
           <div className="max-w-[1400px] mx-auto">
-            <h1 className="text-3xl font-bold text-orange-400 py-8">
+            <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
               Top Teams
             </h1>
             <div className="text-white text-center">Loading...</div>
@@ -293,19 +293,18 @@ export default function TopTeamsPage() {
         style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
       >
         <div className="max-w-[1400px] mx-auto">
-          <h1 className="text-3xl font-bold text-orange-400 py-8">Top Teams</h1>
+          <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
+            Top Teams
+          </h1>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {divisions.map((division, index) => (
-              <div
-                key={index}
-                className="bg-[#1a1a1a] rounded-sm overflow-hidden"
-              >
+              <div key={index} className="bg-card rounded-sm overflow-hidden">
                 <div className="bg-[#2a1810] p-4">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{division.emoji}</span>
                     <div>
-                      <h2 className="text-orange-400 text-xl font-bold">
+                      <h2 className="text-kanaliiga-orange text-xl font-bold">
                         {division.title}
                       </h2>
                     </div>
@@ -326,10 +325,10 @@ export default function TopTeamsPage() {
                             teamIndex === 0
                               ? "text-yellow-400 font-bold"
                               : teamIndex === 1
-                                ? "text-gray-400 font-bold"
+                                ? "text-muted-foreground font-bold"
                                 : teamIndex === 2
                                   ? "text-amber-700 font-bold"
-                                  : "text-gray-500"
+                                  : "text-muted-foreground"
                           }`}
                         >
                           {teamIndex === 0
@@ -356,7 +355,7 @@ export default function TopTeamsPage() {
                               className={`${
                                 teamIndex < 3
                                   ? "font-bold text-white"
-                                  : "text-gray-300"
+                                  : "text-muted-foreground"
                               }`}
                             >
                               {team.name}
@@ -366,14 +365,14 @@ export default function TopTeamsPage() {
                       </div>
 
                       <div className="flex items-center gap-4 flex-shrink-0">
-                        <span className="text-gray-400 text-sm hidden sm:inline">
+                        <span className="text-muted-foreground text-sm hidden sm:inline">
                           {team.matches} matches
                         </span>
                         <span
                           className={`w-16 text-right ${
                             teamIndex < 3
                               ? "font-bold text-white"
-                              : "text-gray-300"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {team.kana.toFixed(2)}

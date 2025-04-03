@@ -12,8 +12,8 @@ export default async function AllOrganizations(props: {
   const searchParams = await props.searchParams;
   const search = searchParams.q;
   const url = search
-    ? `${envConfig.BASE_URL}/api/organizations?q=${search}`
-    : `${envConfig.BASE_URL}/api/organizations`;
+    ? `${envConfig.API_URL}/api/v1/organizations?q=${search}`
+    : `${envConfig.API_URL}/api/v1/organizations`;
   const orgs = await fetch(url);
   const organizations: Organizations[] = await orgs.json();
 

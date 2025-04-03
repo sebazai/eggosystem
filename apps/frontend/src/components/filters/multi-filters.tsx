@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { useState } from "react";
 import { ItemFilter } from "./item-filter";
-import type { League, Map, Season, Team } from "@eggosystem/types";
+import type { League, Season, Team } from "@eggosystem/types";
 import { StageFilter } from "./stage-filter";
 import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
 import { useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
@@ -127,7 +127,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={(a, b) => a.name.localeCompare(b.name)}
         />
       )}
-      {props.maps && (
+      {/* {props.maps && (
         <ItemFilter<Map>
           filterName="maps"
           labelKey="name"
@@ -140,7 +140,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           openFilter={openFilter}
           handleOpen={handleOpen}
         />
-      )}
+      )} */}
     </div>
   );
 };

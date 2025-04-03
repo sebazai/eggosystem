@@ -16,7 +16,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch
 } from "react-hook-form";
-import { cn, createNextImageUrl } from "@/lib/utils";
+import { cn, createNextImageUrl, expressFetcher } from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -97,9 +97,8 @@ export const TabPlayers = ({
       ) {
         setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-        fetch(`/api/players/${steam_id}`)
-          .then((res) => res.json())
-          .then((data: PlayerBySteamId) => {
+        expressFetcher<PlayerBySteamId>(`/api/v1/players/${steam_id}`)
+          .then((data) => {
             if (data.name)
               setValue(`players.${index}.name`, data.name, {
                 shouldValidate: true

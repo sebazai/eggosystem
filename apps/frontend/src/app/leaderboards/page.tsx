@@ -250,18 +250,15 @@ export default function LeaderboardsPage() {
         style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
       >
         <div className="max-w-[1400px] mx-auto">
-          <h1 className="text-3xl font-bold text-orange-400 py-8">
+          <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
             Leaderboards
           </h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {leaderboardCategories.map((category, index) => (
-              <div
-                key={index}
-                className="bg-[#1a1a1a] rounded-sm overflow-hidden"
-              >
+              <div key={index} className="bg-card rounded-sm overflow-hidden">
                 <div className="bg-[#2a1810] p-4">
-                  <h2 className="text-xl font-bold text-orange-400">
+                  <h2 className="text-xl font-bold text-kanaliiga-orange">
                     {category.title}
                   </h2>
                 </div>
@@ -280,10 +277,10 @@ export default function LeaderboardsPage() {
                             playerIndex === 0
                               ? "text-yellow-400 font-bold"
                               : playerIndex === 1
-                                ? "text-gray-400 font-bold"
+                                ? "text-muted-foreground font-bold"
                                 : playerIndex === 2
                                   ? "text-amber-700 font-bold"
-                                  : "text-gray-500"
+                                  : "text-muted-foreground"
                           }`}
                         >
                           {playerIndex === 0
@@ -310,12 +307,12 @@ export default function LeaderboardsPage() {
                               className={`${
                                 playerIndex < 3
                                   ? "font-bold text-white"
-                                  : "text-gray-300"
+                                  : "text-muted-foreground"
                               }`}
                             >
                               {player.name}
                             </span>
-                            <span className="text-gray-500 text-sm ml-2">
+                            <span className="text-muted-foreground text-sm ml-2">
                               {player.team}
                             </span>
                           </div>
@@ -323,14 +320,14 @@ export default function LeaderboardsPage() {
                       </div>
 
                       <div className="flex items-center gap-4">
-                        <span className="text-gray-400 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           {player.matches} matches
                         </span>
                         <span
                           className={`w-16 text-right ${
                             playerIndex < 3
                               ? "font-bold text-white"
-                              : "text-gray-300"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {player.value.toFixed(category.unit === "%" ? 1 : 2)}

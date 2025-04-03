@@ -100,7 +100,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
         <ul className="list-disc list-inside p-4">
           <li className="text-lg font-semibold">
             Normal Fee <span>150€</span>{" "}
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="text-sm text-gray-600 dark:text-muted-foreground">
               (tax included)
             </span>
           </li>

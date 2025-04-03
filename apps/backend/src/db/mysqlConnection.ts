@@ -1,16 +1,17 @@
 import { createPool } from "mysql2/promise";
 import { dbEnvConfig } from "../configs/db-env";
 
-const newDbPool = createPool({
+const dbPool = createPool({
   ...dbEnvConfig,
   connectionLimit: 10, // Adjust based on load
-  dateStrings: true
+  dateStrings: true,
+  decimalNumbers: true
 });
 
 export const getConnection = () => {
-  return newDbPool.getConnection();
+  return dbPool.getConnection();
 };
 
 export const endDbConnection = async () => {
-  return newDbPool.end();
+  return dbPool.end();
 };

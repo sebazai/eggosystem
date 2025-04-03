@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { FilteredMatchesList } from "./filtered-matches-list";
+import { FilteredMatchesList } from "@/components/match/filtered-matches-list";
 import { envConfig } from "@/configs/env";
 import { TheContainer } from "@/components/layout/the-container";
 
@@ -25,7 +25,7 @@ export default function AllMatches() {
       leagues: getParamArray(searchParams, "leagues"),
       stages: getParamArray(searchParams, "stages"),
       teams: getParamArray(searchParams, "teams"),
-      maps: getParamArray(searchParams, "maps")
+      maps: []
     }),
     [searchParams]
   );
@@ -43,13 +43,16 @@ export default function AllMatches() {
 
   return (
     <div className="p-0">
-      <MultiFilters
-        seasons={initialParams.seasons}
-        leagues={initialParams.leagues}
-        stages={initialParams.stages}
-        teams={initialParams.teams}
-        maps={initialParams.maps}
-      />
+      <h1>Recent matches</h1>
+      <div className="py-2">
+        <MultiFilters
+          seasons={initialParams.seasons}
+          leagues={initialParams.leagues}
+          stages={initialParams.stages}
+          teams={initialParams.teams}
+          maps={initialParams.maps}
+        />
+      </div>
 
       <FilteredMatchesList
         matches={matches}

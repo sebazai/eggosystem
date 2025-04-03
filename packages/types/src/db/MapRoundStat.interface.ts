@@ -1,4 +1,4 @@
-import type { MatchGame, Team } from "@eggosystem/types";
+import type { MatchGame, RoundEndReasonInfo, Team } from "@eggosystem/types";
 
 export interface MapRoundStat {
   id: number;
@@ -6,7 +6,7 @@ export interface MapRoundStat {
   ct_team_id: Team["id"];
   t_team_id: Team["id"];
   round_number: number; // TINYINT UNSIGNED stored as number
-  round_end_reason_info: number; // TINYINT UNSIGNED stored as number
+  round_end_reason_info: RoundEndReasonInfo; // TINYINT UNSIGNED stored as number
   ct_t?: {
     T: number[]; // Array of player steam IDs on the T side
     CT: number[]; // Array of player steam IDs on the CT side

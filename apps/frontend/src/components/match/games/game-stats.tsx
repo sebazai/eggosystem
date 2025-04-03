@@ -1,0 +1,60 @@
+"use client";
+
+import React from "react";
+
+import { useRouter } from "next/navigation";
+import type { MatchInfo } from "@eggosystem/types";
+import { useMatchGamePlayerStats } from "@/hooks/data/useMatchGamePlayerStats";
+import { MatchMapPicks } from "../map-picks";
+import { TeamStatistics } from "../statistics/team-statistics";
+import { useMatchGameTeamStats } from "@/hooks/data/useMatchGameTeamStats";
+import { useMatchGameRoundInfo } from "@/hooks/data/useMatchGameRoundInfo";
+import { RoundInfo } from "../round-info";
+import { PlayerStatistics } from "../statistics/player-stats-grid";
+import { TopPlayers } from "../top-players";
+import { useMatchGameTopPlayers } from "@/hooks/data/useMatchGameTopPlayers";
+
+interface MatchStatsProps {
+  matchId: string;
+  gameId: string;
+  teams: MatchInfo["teams"];
+}
+
+export const GameStats = ({ matchId, gameId, teams }: MatchStatsProps) => {
+  const router = useRouter();
+
+  const handleMapSelect = (gameId: string | undefined) => {
+    // Generate the new URL based on the selected gameId
+    const newUrl = gameId
+      ? `/matches/${matchId}/games/${gameId}`
+      : `/matches/${matchId}`;
+
+    // Use router.push or router.replace to navigate without reloading the page
+    router.push(newUrl, { scroll: false });
+  };
+
+  const { teamStats } = useMatchGameTeamStats(matchId, gameId);
+  const { playerStats } = useMatchGamePlayerStats(matchId, gameId);
+  const { topPlayers } = useMatchGameTopPlayers(matchId, gameId);
+  const { roundInfo } = useMatchGameRoundInfo(matchId, gameId);
+
+  return (
+    <>
+      <MatchMapPicks
+        gameId={gameId}
+        matchId={matchId}
+        handleMapSelect={handleMapSelect}
+      />
+      {teamStats && <TeamStatistics teamStats={teamStats} />}
+      {/* Round Score */}
+      {roundInfo && <RoundInfo roundInfo={roundInfo} />}
+
+      {/* Player Stats Grid */}
+      {playerStats && (
+        <PlayerStatistics playerStats={playerStats} teams={teams} />
+      )}
+      {/* Top Players */}
+      {topPlayers && <TopPlayers topPlayers={topPlayers} teams={teams} />}
+    </>
+  );
+};

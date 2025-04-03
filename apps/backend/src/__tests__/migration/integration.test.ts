@@ -20,8 +20,8 @@ describe("Migration tests", () => {
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561197967885016'
       AND m.season_id = 11;`;
-    const result = await runQuery<[{ total_kills: string }]>(query);
-    expect(result[0].total_kills).toBe("438");
+    const result = await runQuery<[{ total_kills: number }]>(query);
+    expect(result[0].total_kills).toBe(438);
   });
   it("Test meppi Assists on Season 14", async () => {
     const query = `SELECT SUM(ps.assists) AS total_assists
@@ -30,8 +30,8 @@ describe("Migration tests", () => {
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561198001857963'
       AND m.season_id = 14;`;
-    const result = await runQuery<[{ total_assists: string }]>(query);
-    expect(result[0].total_assists).toBe("66");
+    const result = await runQuery<[{ total_assists: number }]>(query);
+    expect(result[0].total_assists).toBe(66);
   });
   it("Test enzoj flashAssists on Season 14 in de_mirage", async () => {
     const query = `SELECT SUM(ps.flash_assists) as total_flash_assists
@@ -43,7 +43,7 @@ describe("Migration tests", () => {
       AND m.season_id = 14
       AND mp.name = 'de_mirage';`;
     const result = await runQuery<[{ total_flash_assists: string }]>(query);
-    expect(result[0].total_flash_assists).toBe("1");
+    expect(result[0].total_flash_assists).toBe(1);
   });
 
   it("There should be 1335 players on season 11", async () => {
@@ -96,11 +96,11 @@ describe("Migration tests", () => {
       >(query);
     expect(result.length).toBeGreaterThanOrEqual(5);
     const expectedResults = [
-      { name: "hebe", team_name: "Avant Tecno", mates_flashed: "568" },
-      { name: "tiMMyd", team_name: "Evitec Esports", mates_flashed: "465" },
-      { name: "Miqu", team_name: "K-Auto Marmoripojat", mates_flashed: "461" },
-      { name: "ville1", team_name: "Frendy Fire", mates_flashed: "453" },
-      { name: "havukr", team_name: "Janla eSports", mates_flashed: "430" }
+      { name: "hebe", team_name: "Avant Tecno", mates_flashed: 568 },
+      { name: "tiMMyd", team_name: "Evitec Esports", mates_flashed: 465 },
+      { name: "Miqu", team_name: "K-Auto Marmoripojat", mates_flashed: 461 },
+      { name: "ville1", team_name: "Frendy Fire", mates_flashed: 453 },
+      { name: "havukr", team_name: "Janla eSports", mates_flashed: 430 }
     ];
 
     expectedResults.forEach((expected, index) => {
@@ -127,7 +127,7 @@ describe("Migration tests", () => {
     const expectedResult = {
       nick: "BEHUNAMIÄS",
       team_name: "Hoxhunt e-urheilu",
-      kana_rating: "1.35"
+      kana_rating: 1.35
     };
     expect(result[0]).toEqual(expectedResult);
   });
