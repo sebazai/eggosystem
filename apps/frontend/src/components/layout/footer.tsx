@@ -128,6 +128,9 @@ const Footer = () => {
               Gitlab
             </Link>
           </p>
+          <p>
+            <Link href={"/privacy-policy"}>Privacy Policy</Link>
+          </p>
         </div>
       </div>
     </footer>

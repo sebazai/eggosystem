@@ -63,7 +63,7 @@ const defaultProps: NavbarProps = {
   menu: [
     {
       title: "Home",
-      url: "#"
+      url: "/"
     },
     {
       title: "Matches",
