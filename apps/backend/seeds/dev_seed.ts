@@ -13,6 +13,7 @@ export async function seed(knex: Knex): Promise<void> {
     .replaceAll(/\/;/g, "/;#!#")
     .replaceAll('";', '";#!#')
     .replaceAll(/END\n/g, "END;#!#")
+    .replaceAll(/NOW\(\)/g, "NOW();#!#")
     .replace(/(\d);\n/g, (match, p1) => `${p1};#!#`)
     .replace(/(\w{4,});/g, (match, p1) => `${p1};#!#`);
 

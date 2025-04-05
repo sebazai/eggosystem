@@ -105,8 +105,7 @@ export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {
 
 export const login = async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ message: "Authentication failed" });
-    return;
+    throw new Error("No user");
   }
 
   const user = req.user as UserPayload;

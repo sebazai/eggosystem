@@ -20,21 +20,16 @@ router.get(
     req: Request<unknown, unknown, unknown, TopTeamsQuery>,
     res: Response
   ): Promise<void> => {
-    try {
-      const { league_id, season_id, stage, map_id } = req.query;
+    const { league_id, season_id, stage, map_id } = req.query;
 
-      const topTeams = await getTopTeams(
-        Number(league_id),
-        Number(season_id),
-        stage ? Number(stage) : undefined,
-        map_id ? Number(map_id) : undefined
-      );
+    const topTeams = await getTopTeams(
+      Number(league_id),
+      Number(season_id),
+      stage ? Number(stage) : undefined,
+      map_id ? Number(map_id) : undefined
+    );
 
-      res.json(topTeams);
-    } catch (error) {
-      console.error("Error fetching top teams:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
+    res.json(topTeams);
   }
 );
 

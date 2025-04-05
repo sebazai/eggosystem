@@ -1,6 +1,5 @@
 import { Router } from "express";
 import authRouter from "./v1/auth.routes";
-import homeRouter from "./v1/home.routes";
 import playerRouter from "./v1/player.routes";
 import matchRouter from "./v1/match.routes";
 import leaderboardRouter from "./v1/leaderboard.routes";
@@ -12,12 +11,13 @@ import seasonsRouter from "./v1/season.routes";
 import leaguesRouter from "./v1/league.routes";
 import topteamsRouter from "./v1/topteams.routes";
 import nowRouter from "./v1/now.routes";
+import profileRouter from "./v1/profile.routes";
+import { authenticateJWT } from "../middlewares/auth.middleware";
 
 // Create a new Router instance
 const v1Router = Router();
 
 // Mount the routers
-v1Router.use("/", homeRouter);
 v1Router.use("/auth", authRouter);
 v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
@@ -30,4 +30,5 @@ v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/leagues", leaguesRouter);
 v1Router.use("/topteams", topteamsRouter);
 v1Router.use("/now", nowRouter);
+v1Router.use("/profiles", authenticateJWT, profileRouter);
 export default v1Router;

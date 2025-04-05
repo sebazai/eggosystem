@@ -56,7 +56,7 @@ interface NavbarProps {
 
 const defaultProps: NavbarProps = {
   logo: {
-    url: "https://kanaliiga.fi/",
+    url: "/",
     src: createNextImageUrl("/images/kanaliiga-logo-1800px.png"),
     alt: "Kanaliiga logo"
   },
@@ -250,7 +250,7 @@ export const Navigation = (props: NavbarProps) => {
                       </div>
                     </div>
                   )}
-                  <MobileUserMenu />
+                  <MobileUserMenu setIsSheetOpen={setIsSheetOpen} />
                 </div>
               </SheetContent>
             </Sheet>

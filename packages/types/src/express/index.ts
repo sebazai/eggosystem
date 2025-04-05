@@ -1,4 +1,4 @@
-import type { Nullable } from "../utils";
+import type { Player, Nullable } from "@eggosystem/types";
 import type { Request } from "express";
 
 export interface ParsedParams {
@@ -11,10 +11,19 @@ export interface ParsedParams {
 }
 
 export interface UserPayload {
-  steamId: string;
-  displayName: string;
+  steamId: Player["steam_id"];
+  displayName: Player["name"];
+}
+
+export interface UserFullPayload extends UserPayload {
+  fullName: Player["player_name"];
+  workEmail: Player["work_email"];
+  discord: Player["discord"];
+  acceptedPrivacyPolicy: boolean;
+  acceptedMarketing: boolean;
 }
 
 export type RequestWithParams<P> = Request<P>;
+export type RequestWithBody<B> = Request<unknown, unknown, B>;
 export type RequestWithParamsAndBody<P, B> = Request<P, unknown, B>;
 export type RequestWithParamsAndQuery<P, Q> = Request<P, unknown, unknown, Q>;

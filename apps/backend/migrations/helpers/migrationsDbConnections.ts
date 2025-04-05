@@ -39,7 +39,6 @@ export const runOldDbQuery = async <T>(
     await connection.commit();
     return rows;
   } catch (error) {
-    console.error("Database Error:", error);
     await connection.rollback();
     throw error;
   } finally {
@@ -59,7 +58,6 @@ export const runNewDbQuery = async <T>(
     await connection.commit();
     return rows;
   } catch (error) {
-    console.error("Database Error:", error);
     await connection.rollback();
     throw error;
   } finally {

@@ -1,5 +1,7 @@
 import request from "supertest";
-import { app } from "../../app";
+import express from "express";
+import matchRouter from "../../routes/v1/match.routes";
+
 import type {
   MatchMapsPlayed,
   MatchTeamStats,
@@ -7,6 +9,9 @@ import type {
 } from "@eggosystem/types";
 
 describe("Match Routes", () => {
+  const app = express();
+  app.use(express.json());
+  app.use(matchRouter);
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -38,7 +43,7 @@ describe("Match Routes", () => {
       ] satisfies MatchMapsPlayed[];
 
       const response = await request(app)
-        .get("/api/v1/matches/7750/mapsplayed")
+        .get("/7750/mapsplayed")
         .expect("Content-Type", /json/)
         .expect(200);
 
@@ -47,7 +52,7 @@ describe("Match Routes", () => {
 
     it("should handle non-existent match id", async () => {
       const response = await request(app)
-        .get("/api/v1/matches/99999/mapsplayed")
+        .get("/99999/mapsplayed")
         .expect("Content-Type", /json/)
         .expect(200);
 
@@ -55,7 +60,7 @@ describe("Match Routes", () => {
     });
   });
 
-  describe("GET /matches/:match_id/games/:game_idtopplayers", () => {
+  describe("GET /matches/:match_id/games/:game_id/topplayers", () => {
     it("should return top players for match 7750 and game id 10340", async () => {
       const expectedTopPlayers = {
         most_kills: {
@@ -101,7 +106,7 @@ describe("Match Routes", () => {
       } satisfies MatchTopPlayerAwards;
 
       const response = await request(app)
-        .get("/api/v1/matches/7750/games/10340/topplayers")
+        .get("/7750/games/10340/topplayers")
         .expect("Content-Type", /json/)
         .expect(200);
 
@@ -110,11 +115,11 @@ describe("Match Routes", () => {
 
     it("should handle non-existent match id", async () => {
       const response = await request(app)
-        .get("/api/v1/matches/99999/topplayers")
+        .get("/99999/topplayers")
         .expect("Content-Type", /json/)
-        .expect(500);
+        .expect(400);
       expect(response.body).toEqual({
-        errors: [{ message: "Something went wrong" }]
+        message: "Could not find season for match id"
       });
     });
   });
@@ -147,7 +152,7 @@ describe("Match Routes", () => {
       ] satisfies MatchTeamStats[];
 
       const response = await request(app)
-        .get("/api/v1/matches/7750/games/10340/teamstats")
+        .get("/7750/games/10340/teamstats")
         .expect("Content-Type", /json/)
         .expect(200);
 
@@ -156,7 +161,7 @@ describe("Match Routes", () => {
 
     it("should handle non-existent match id", async () => {
       const response = await request(app)
-        .get("/api/v1/matches/99999/teamstats")
+        .get("/99999/teamstats")
         .expect("Content-Type", /json/)
         .expect(200);
 

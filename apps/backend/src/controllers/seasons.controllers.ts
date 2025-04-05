@@ -78,11 +78,7 @@ export const addSignupForSeason = async (
       });
       return;
     }
-    res.status(500).json({
-      message: "Internal server error",
-      error: (error as Error).message
-    });
-    return;
+    throw error;
   }
 
   const connection = await getConnection();
@@ -221,8 +217,7 @@ export const addSignupForSeason = async (
     await connection.commit();
   } catch (error) {
     await connection.rollback();
-    console.error("Transaction failed for Signup:", error);
-    res.status(500).json({ message: "Internal server error" });
+    throw error;
   } finally {
     connection.release();
   }

@@ -103,14 +103,14 @@ describe("AuthControllers", () => {
       );
     });
     // Should return error when no req.user
-    it("should return error when no req.user", async () => {
+    it("should throw error when no req.user", async () => {
       res = mockResponse();
       req.user = undefined;
-      await authControllers.login(req, res);
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Authentication failed"
-      });
+      try {
+        await authControllers.login(req, res);
+      } catch (error: unknown) {
+        expect((error as Error).message).toBe("No user");
+      }
     });
   });
 

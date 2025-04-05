@@ -33,6 +33,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import passport from "./configs/passport";
 
 import "express-async-errors";
 
@@ -93,6 +94,7 @@ app.use(express.json());
 
 app.use(helmet());
 app.use(morgan("dev"));
+app.use(passport.initialize());
 
 app.use("/api/v1", v1Router);
 

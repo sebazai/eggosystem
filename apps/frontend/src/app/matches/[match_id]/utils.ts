@@ -11,11 +11,7 @@ export async function getMatchInfo<T>(matchId: string): Promise<T> {
 
   const result = await res.json();
   if (typeof result.teams === "string") {
-    try {
-      result.teams = JSON.parse(result.teams);
-    } catch (error) {
-      console.error("Failed to parse teams JSON:", error);
-    }
+    result.teams = JSON.parse(result.teams);
   }
   return result;
 }

@@ -55,7 +55,6 @@ export async function apiFetch<T>(params: ApiFetch): Promise<T> {
 
       throw new Error("Token refresh failed");
     } catch (error) {
-      console.error("Refresh failed:", error);
       refreshSubscribers = [];
       throw error;
     } finally {

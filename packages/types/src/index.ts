@@ -9,3 +9,4 @@ export * from "./seasonteamregistrations/index";
 export * from "./seasonteamplayer/index";
 export * from "./organizations/index";
 export * from "./enums/index";
+export * from "./profile/index";

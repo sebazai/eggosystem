@@ -5,7 +5,9 @@ const dbPool = createPool({
   ...dbEnvConfig,
   connectionLimit: 10, // Adjust based on load
   dateStrings: true,
-  decimalNumbers: true
+  decimalNumbers: true,
+  supportBigNumbers: true,
+  bigNumberStrings: false
 });
 
 export const getConnection = () => {

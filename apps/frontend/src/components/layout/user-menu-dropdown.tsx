@@ -11,8 +11,9 @@ import { Settings2Icon, UserCheckIcon, UserIcon } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { SteamLoginButton } from "@/components/steam-login";
-import { LogOut } from "@/components/logout";
+import { DesktopLogOut } from "@/components/logout";
 import { useAuth } from "@/context/AuthContext";
+import Link from "next/link";
 
 export default function UserDropdown() {
   const { user, logout } = useAuth();
@@ -27,8 +28,10 @@ export default function UserDropdown() {
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Account</DropdownMenuLabel>
-          <DropdownMenuItem>
-            <UserIcon /> Profile
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Link href="/profile">
+              <UserIcon /> <span>Profile</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings2Icon /> Settings
@@ -41,13 +44,14 @@ export default function UserDropdown() {
               <div>User: {user.displayName}</div>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem>
-            {user ? (
-              <LogOut logOutUser={() => logout()} />
-            ) : (
+
+          {user ? (
+            <DesktopLogOut logOutUser={() => logout()} />
+          ) : (
+            <DropdownMenuItem>
               <SteamLoginButton />
-            )}
-          </DropdownMenuItem>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

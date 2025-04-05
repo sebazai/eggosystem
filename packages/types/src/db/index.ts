@@ -20,3 +20,4 @@ export * from "./SeasonTeamRegistration.interface";
 export * from "./Team.interface";
 export * from "./TeamGameScore.interface";
 export * from "./TeamRoster.interface";
+export * from "./UserPolicyAcceptances.interface";

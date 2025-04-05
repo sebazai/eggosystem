@@ -21,6 +21,7 @@ services:
       JWT_REFRESH_SECRET: $JWT_REFRESH_SECRET_STAGING
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=backend"
       OTEL_EXPORTER_OTLP_HEADERS: "api-key=${NEWRELIC_API_KEY}"
+      PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
     networks:
       - web
     labels:

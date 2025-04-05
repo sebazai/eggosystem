@@ -1,5 +1,7 @@
 import request from "supertest";
-import { app } from "../../app";
+
+import express from "express";
+import topTeams from "../../routes/v1/topteams.routes";
 
 interface TopTeamResponse {
   team_id: number;
@@ -12,9 +14,12 @@ interface TopTeamResponse {
 }
 
 describe("GET /api/v1/topteams", () => {
+  const app = express();
+  app.use(express.json());
+  app.use(topTeams);
   // Test required parameters
   it("should return 400 when league_id is missing", async () => {
-    const response = await request(app).get("/api/v1/topteams?season_id=11");
+    const response = await request(app).get("/?season_id=11");
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
       "Missing required parameters: league_id and season_id are required"
@@ -22,7 +27,7 @@ describe("GET /api/v1/topteams", () => {
   });
 
   it("should return 400 when season_id is missing", async () => {
-    const response = await request(app).get("/api/v1/topteams?league_id=1");
+    const response = await request(app).get("/?league_id=1");
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
       "Missing required parameters: league_id and season_id are required"
@@ -31,9 +36,7 @@ describe("GET /api/v1/topteams", () => {
 
   // Test invalid parameter types
   it("should return 400 when league_id is not a number", async () => {
-    const response = await request(app).get(
-      "/api/v1/topteams?league_id=abc&season_id=11"
-    );
+    const response = await request(app).get("/?league_id=abc&season_id=11");
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
       "Invalid parameter types: parameters must be numbers"
@@ -41,9 +44,7 @@ describe("GET /api/v1/topteams", () => {
   });
 
   it("should return 400 when season_id is not a number", async () => {
-    const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=abc"
-    );
+    const response = await request(app).get("/?league_id=1&season_id=abc");
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
       "Invalid parameter types: parameters must be numbers"
@@ -52,7 +53,7 @@ describe("GET /api/v1/topteams", () => {
 
   it("should return 400 when stage is not a number", async () => {
     const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11&stage=abc"
+      "/?league_id=1&season_id=11&stage=abc"
     );
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
@@ -62,7 +63,7 @@ describe("GET /api/v1/topteams", () => {
 
   it("should return 400 when map_id is not a number", async () => {
     const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11&map_id=abc"
+      "/?league_id=1&season_id=11&map_id=abc"
     );
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
@@ -72,9 +73,7 @@ describe("GET /api/v1/topteams", () => {
 
   // Test successful responses
   it("should return top teams for Masters league in season 11", async () => {
-    const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11"
-    );
+    const response = await request(app).get("/?league_id=1&season_id=11");
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
 
@@ -105,7 +104,7 @@ describe("GET /api/v1/topteams", () => {
 
   it("should return top teams for Masters league playoffs in season 11", async () => {
     const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11&stage=2"
+      "/?league_id=1&season_id=11&stage=2"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -114,7 +113,7 @@ describe("GET /api/v1/topteams", () => {
 
   it("should return top teams for specific map in Masters league", async () => {
     const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11&map_id=1"
+      "/?league_id=1&season_id=11&map_id=1"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -123,9 +122,7 @@ describe("GET /api/v1/topteams", () => {
 
   // Test sorting and ranking
   it("should return teams sorted by kana rating in descending order", async () => {
-    const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11"
-    );
+    const response = await request(app).get("/?league_id=1&season_id=11");
     expect(response.status).toBe(200);
 
     if (response.body.length > 1) {
@@ -138,9 +135,7 @@ describe("GET /api/v1/topteams", () => {
   });
 
   it("should assign ranks correctly from 1 to 5", async () => {
-    const response = await request(app).get(
-      "/api/v1/topteams?league_id=1&season_id=11"
-    );
+    const response = await request(app).get("/?league_id=1&season_id=11");
     expect(response.status).toBe(200);
 
     if (response.body.length > 0) {

@@ -57,8 +57,9 @@ const kanaFonts = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Eggosystem", template: "%s | Eggosystem" },
-  description: "Kanahub statistics and analytics"
+  title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
+  description: "Kanahub Statistics and Analytics",
+  applicationName: "Kanahub"
 };
 
 export const viewport: Viewport = {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - Kanahub"
+  title: "Privacy Policy"
 };
 
 export default function PrivacyPolicy() {
@@ -62,8 +62,8 @@ export default function PrivacyPolicy() {
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
           <strong>
-            Steam ID, Nickname, Team or Organization Association & Performance
-            Data:
+            Steam ID, Nickname, Team and/or Organization Association &
+            Performance Data:
           </strong>{" "}
           Permanently stored for ranking history and statistical purposes.
         </li>

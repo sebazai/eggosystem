@@ -6,14 +6,10 @@ export function useServerTime() {
 
   useEffect(() => {
     const fetchTime = async () => {
-      try {
-        const res = await expressFetcher<{
-          now: number;
-        }>("/api/v1/now");
-        setServerTime(res.now);
-      } catch (error) {
-        console.error("Error fetching server time:", error);
-      }
+      const res = await expressFetcher<{
+        now: number;
+      }>("/api/v1/now");
+      setServerTime(res.now);
     };
 
     fetchTime();

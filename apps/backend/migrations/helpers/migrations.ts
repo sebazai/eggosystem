@@ -299,8 +299,7 @@ export const migrateAlmostErrything = async () => {
         await runNewDbQuery(
           `UPDATE SeasonTeamRegistrations SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = ${seasonId} AND team_id = ${st.team_id}`
         );
-      } catch (errmageddon) {
-        console.error(errmageddon);
+      } catch (_error) {
         console.log(
           "Error updating captain for team",
           teamName,
@@ -319,8 +318,7 @@ export const migrateAlmostErrything = async () => {
           await runNewDbQuery(
             `UPDATE SeasonTeamRegistrations SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = 15 AND team_id = ${st.team_id}`
           );
-        } catch (errmageddon) {
-          console.error(errmageddon);
+        } catch (_error) {
           console.log(
             "Error updating captain for team",
             teamName,

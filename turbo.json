@@ -20,7 +20,8 @@
         "REDIS_PORT",
         "FRONTEND_URL",
         "BACKEND_URL",
-        "BASE_PATH"
+        "BASE_PATH",
+        "PRIVACY_POLICY_VERSION"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -66,7 +67,8 @@
     "migrate:up": {},
     "migrate:make": {},
     "seed": {
-      "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"]
+      "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"],
+      "cache": false
     }
   }
 }

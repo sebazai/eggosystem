@@ -22,6 +22,7 @@ export const reporters = [
 export const collectCoverage = true;
 export const coverageReporters = ["text", "cobertura"];
 export const coverageDirectory = "coverage";
+export const collectCoverageFrom = ["src/**/*.{js,jsx,ts,tsx}"];
 export const coveragePathIgnorePatterns = [
   "/node_modules/",
   "/test-results/",

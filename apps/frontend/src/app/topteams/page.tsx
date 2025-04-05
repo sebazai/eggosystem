@@ -188,14 +188,10 @@ export default function TopTeamsPage() {
   // Fetch available leagues on component mount
   useEffect(() => {
     const fetchAvailableLeagues = async () => {
-      try {
-        const response = await fetch(`${envConfig.API_URL}/api/v1/leagues`);
-        if (!response.ok) throw new Error("Failed to fetch leagues");
-        const data = (await response.json()) as League[];
-        setAvailableLeagues(data.map((league) => league.id));
-      } catch (error) {
-        console.error("Error fetching available leagues:", error);
-      }
+      const response = await fetch(`${envConfig.API_URL}/api/v1/leagues`);
+      if (!response.ok) throw new Error("Failed to fetch leagues");
+      const data = (await response.json()) as League[];
+      setAvailableLeagues(data.map((league) => league.id));
     };
 
     fetchAvailableLeagues();
@@ -243,8 +239,6 @@ export default function TopTeamsPage() {
         const data = await response.json();
         const transformedData = transformBackendData(data);
         setDivisions(transformedData);
-      } catch (error) {
-        console.error("Error fetching top teams:", error);
       } finally {
         setIsLoading(false);
       }

@@ -128,8 +128,7 @@ export const TabPlayers = ({
               fetchedValidSteamIds.current.add(steam_id);
             }
           })
-          .catch((error) => {
-            console.error("Error fetching player data:", error);
+          .catch((_error) => {
             setValue(`players.${index}.name`, "");
             setValue(`players.${index}.work_email`, "");
             setOpenItems((prev) => [...prev, `player-${index}`]);

@@ -12,7 +12,7 @@ export const errorHandler = (
     return;
   }
 
-  console.error(err);
+  console.error("Express Error Handler:", err);
 
   res.status(500).json({ errors: [{ message: "Something went wrong" }] });
 };
