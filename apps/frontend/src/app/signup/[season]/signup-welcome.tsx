@@ -140,14 +140,14 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
             </SteamLoginButton>
           </div>
         ) : (
-          <Button
-            variant="outline"
-            className="h-22 w-52 text-lg focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            <Link href={`/signup/${seasonId}/registration`}>
+          <Link href={`/signup/${seasonId}/registration`}>
+            <Button
+              variant="outline"
+              className="h-22 w-52 text-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+            >
               Register team!
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         )}
       </div>
     </div>

@@ -55,7 +55,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
       organizationId: z.number(),
       newOrganization: newOrganizationSchema.optional(),
       teamId: z.number(),
-      teamExternalId: z.string().min(2).max(50).optional(),
+      teamExternalId: z.string().optional(),
       newTeam: newTeamSchema.optional(),
       players: z
         .array(playerSchema)

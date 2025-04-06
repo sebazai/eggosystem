@@ -2,6 +2,7 @@ import { type Request, type Response } from "express";
 import { getSeasons, getSeasonById } from "../models/season.models";
 import {
   signupFormSchema,
+  UpsertPlayer,
   type RequestWithParamsAndBody,
   type SignupFormValues
 } from "@eggosystem/types";
@@ -90,16 +91,18 @@ export const addSignupForSeason = async (
       const parameters = {
         ...(formDataPlayer.captain || formDataPlayer.co_captain
           ? { discord: formDataPlayer.discord }
-          : {}),
-        ...(!playerExists ? { name: formDataPlayer.name } : {})
+          : {})
       };
 
-      if (!_.isEmpty(parameters))
+      if (!_.isEmpty(parameters) || !playerExists)
         await upsertPlayer(
           {
             steam_id: formDataPlayer.steam_id,
+            ...(!playerExists
+              ? { name: formDataPlayer.name }
+              : { name: playerExists.name }),
             ...parameters
-          },
+          } satisfies UpsertPlayer,
           connection
         );
     }

@@ -30,6 +30,8 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   const { user, loading: loadingUser } = useAuth();
   const schema = signupFormSchema({ platform });
   const baseSchema = baseSignupFormSchema({ platform })._def.schema;
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(schema),
@@ -49,6 +51,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
         steam_id: "",
         name: "",
         discord: "",
+        has_valid_data: undefined,
         captain: false,
         co_captain: false
       }),
@@ -122,11 +125,20 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   );
 
   const onSubmit = async (data: SignupFormValues) => {
-    await apiFetch({
-      url: `/seasons/${seasonId}/signup`,
-      method: "POST",
-      body: data
-    });
+    setSuccessMessage(null);
+    setErrorMessage(null);
+    try {
+      await apiFetch({
+        url: `/seasons/${seasonId}/signup`,
+        method: "POST",
+        body: data
+      });
+      setSuccessMessage(
+        "Team registered succesfully, please remember to pay participation fee."
+      );
+    } catch (_error) {
+      setErrorMessage("Something went wrong... Please contact organizer.");
+    }
   };
 
   if (isLoading || isValidating || loadingUser) {
@@ -260,7 +272,21 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
               )}
             />
 
-            <Button type="submit" variant="outline" className="w-full">
+            {successMessage && (
+              <div className="text-green-500 font-semibold">
+                {successMessage}
+              </div>
+            )}
+            {errorMessage && (
+              <div className="text-red-500 font-semibold">{errorMessage}</div>
+            )}
+
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full"
+              disabled={!!successMessage}
+            >
               Submit
             </Button>
           </CardContent>

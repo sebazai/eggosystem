@@ -215,7 +215,10 @@ export const TabPlayers = ({
                             if (newValue !== oldValue) {
                               resetField(`players.${index}.name`);
                               resetField(`players.${index}.discord`);
-                              resetField(`players.${index}.has_valid_data`);
+                              setValue(
+                                `players.${index}.has_valid_data`,
+                                undefined
+                              );
                             }
                             field.onChange(e);
                           }}
@@ -322,7 +325,7 @@ export const TabPlayers = ({
                   />
                 )}
 
-                {!watch(`players.${index}.has_valid_data`) && (
+                {watch(`players.${index}.has_valid_data`) === false && (
                   <div className="text-yellow-500 text-xs flex gap-2 items-center">
                     <TriangleAlert className="h-4 w-4" /> Player needs to fill
                     in details in their Kanahub profile.

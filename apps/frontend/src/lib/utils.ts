@@ -20,7 +20,7 @@ export const expressFetcher = async <T>(
   const res = await fetch(url, options);
   if (!res.ok) {
     const resultJson = await res.json();
-    throw new Error(resultJson.error ?? "An error occurred");
+    throw new Error(resultJson.message ?? "An error occurred");
   }
   return res.json();
 };
