@@ -10,7 +10,6 @@ import { insertOrganization } from "../models/organization.models";
 import { getConnection } from "../db/mysqlConnection";
 import { insertTeam } from "../models/team.models";
 import { upsertPlayer } from "../models/player.models";
-import { isValidEmail } from "../utils";
 import { signUpTeamForSeason } from "../services/signup.services";
 import { isTeamPartOfOrganization } from "../services/team.services";
 import { getFullPlayerDetails } from "../services/player.services";
@@ -89,17 +88,8 @@ export const addSignupForSeason = async (
     for (const formDataPlayer of formData.players) {
       const playerExists = await getFullPlayerDetails(formDataPlayer.steam_id);
       const parameters = {
-        ...(playerExists &&
-        playerExists.player_name &&
-        playerExists.player_name.split(" ").length > 1
-          ? {}
-          : { player_name: formDataPlayer.full_name }),
         ...(formDataPlayer.captain || formDataPlayer.co_captain
           ? { discord: formDataPlayer.discord }
-          : {}),
-        ...(isValidEmail(formDataPlayer.work_email) &&
-        (!playerExists || !isValidEmail(playerExists.work_email))
-          ? { work_email: formDataPlayer.work_email }
           : {}),
         ...(!playerExists ? { name: formDataPlayer.name } : {})
       };

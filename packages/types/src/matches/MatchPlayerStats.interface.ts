@@ -1,7 +1,7 @@
 import { Player, PlayerStats, Team } from "../db";
 
 export interface MatchPlayerStats {
-  player_name: Player["name"];
+  player_nickname: Player["name"];
   team_id: Team["id"];
   kills: PlayerStats["kills"];
   headshots: PlayerStats["headshots"];

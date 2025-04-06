@@ -1,36 +1,11 @@
 import { z } from "zod";
 import { SeasonPlatform } from "@eggosystem/types";
 
-const maskedEmailRegex =
-  /^[a-zA-Z0-9._%+-]{2,}\*+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
 const playerSchema = z
   .object({
     steam_id: z.string().length(17),
     name: z.string().min(1).max(50),
-    has_valid_full_name_in_db: z.boolean().optional(),
-    full_name: z.preprocess(
-      (val) => (val === "" ? undefined : val),
-      z
-        .string()
-        .min(2)
-        .max(50)
-        .optional()
-        .refine((val) => !val || /^[A-Za-z]+ [A-Za-z]+$/.test(val), {
-          message:
-            "Full name must contain a first name and a last name, separated by a space."
-        })
-    ),
-    work_email: z
-      .string()
-      .refine(
-        (val) =>
-          z.string().email().safeParse(val).success ||
-          maskedEmailRegex.test(val),
-        {
-          message: "Invalid email format."
-        }
-      ),
+    has_valid_data: z.boolean().optional(),
     discord: z.string().optional(),
     captain: z.boolean().optional(),
     co_captain: z.boolean().optional()
@@ -41,14 +16,6 @@ const playerSchema = z
     {
       message: "Captains and co-captains must provide a Discord username.",
       path: ["discord"]
-    }
-  )
-  .refine(
-    (player) =>
-      player.has_valid_full_name_in_db !== false || !!player.full_name?.trim(),
-    {
-      message: "Full name missing or invalid for user.",
-      path: ["full_name"]
     }
   );
 
@@ -166,7 +133,6 @@ export type PlayerSchemaType = typeof playerSchema;
 
 export {
   playerSchema,
-  maskedEmailRegex,
   newOrganizationSchema,
   newTeamSchema,
   baseSignupFormSchema,

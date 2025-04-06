@@ -14,31 +14,26 @@ const validSignupData = {
     {
       steam_id: "12345678901234567",
       name: "Player One",
-      work_email: "pl***@example.com",
       discord: "playerOne#1234",
       captain: true
     },
     {
       steam_id: "12345678901234568",
       name: "Player Two",
-      work_email: "player.two@example.com",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
       steam_id: "12345678901234569",
-      name: "Player three",
-      work_email: "player.three@example.com"
+      name: "Player three"
     },
     {
       steam_id: "12345678901234570",
-      name: "Player Four",
-      work_email: "player.four@example.com"
+      name: "Player Four"
     },
     {
       steam_id: "12345678901234571",
-      name: "Player Five",
-      work_email: "player.five@example.com"
+      name: "Player Five"
     }
   ]
 };
@@ -51,31 +46,25 @@ const invalidSignupData = {
     {
       steam_id: "12345678901234567",
       name: "Player One",
-      full_name: "Player One",
-      work_email: "player.one@example.com",
       captain: true
     },
     {
       steam_id: "12345678901234568",
       name: "Player Two",
-      work_email: "player.two@example.com",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
       steam_id: "12345678901234569",
-      name: "Player three",
-      work_email: "player.three@example.com"
+      name: "Player three"
     },
     {
       steam_id: "12345678901234570",
-      name: "Player Four",
-      work_email: "player.four@example.com"
+      name: "Player Four"
     },
     {
       steam_id: "12345678901234571",
-      name: "Player Five",
-      work_email: "player.five@example.com"
+      name: "Player Five"
     }
   ]
 };
@@ -186,33 +175,18 @@ describe("POST /:id/signup", () => {
         "New team details are required when 'Add new...' is selected."
       ]);
     });
-    it("should return 400 if player full name incorrect and missing discord for captain", async () => {
+    it("should return 400 if missing discord for captain", async () => {
       jest
         .spyOn(seasonModels, "getSeasonById")
         .mockResolvedValue([
           { signup_start_date: "2024-01-01T00:00:00Z" } as Season
         ]);
-      invalidSignupData.players[0].full_name = "InvalidName";
       const res = await agent.post("/123/signup").send(invalidSignupData);
       expect(res.status).toBe(400);
 
       expect(res.body.errors.fieldErrors.players).toEqual([
-        "Full name must contain a first name and a last name, separated by a space.",
         "Captains and co-captains must provide a Discord username."
       ]);
-    });
-    it("should return 400 if player email incorrect", async () => {
-      jest
-        .spyOn(seasonModels, "getSeasonById")
-        .mockResolvedValue([
-          { signup_start_date: "2024-01-01T00:00:00Z" } as Season
-        ]);
-      invalidSignupData.players[0].work_email = "invalid-email";
-      const res = await agent.post("/123/signup").send(invalidSignupData);
-      expect(res.status).toBe(400);
-      expect(res.body.errors.fieldErrors.players).toContain(
-        "Invalid email format."
-      );
     });
     it("should return 400 if duplicate steam_id", async () => {
       jest

@@ -7,13 +7,25 @@ describe("GET /players", () => {
   app.use(express.json());
   app.use(playerRouter);
 
-  it("should return 200", async () => {
-    const response = await request(app).get("/");
+  beforeEach(() => {
+    process.env.PRIVACY_POLICY_VERSION = "1";
+  });
+
+  it("/:steam_id/details", async () => {
+    const response = await request(app).get("/76561198049745649/details");
     expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({
+      steam_id: "76561198049745649",
+      name: "sububobi",
+      discord: "Michael#862",
+      is_valid_work_email: 1,
+      is_valid_full_name: 1,
+      has_accepted_latest_privacy_policy: 1
+    });
   });
 
   it("should return 404 when steam_id not found", async () => {
-    const response = await request(app).get(`/123123123`);
+    const response = await request(app).get(`/123123123/details`);
     expect(response.status).toBe(404);
   });
 });

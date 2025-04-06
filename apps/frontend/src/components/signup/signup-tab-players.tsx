@@ -30,8 +30,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/textarea";
-import type { PlayerBySteamId, SignupFormValues } from "@eggosystem/types";
+import type {
+  PlayerDetailsBySteamId,
+  SignupFormValues
+} from "@eggosystem/types";
 import { playerSchema } from "@eggosystem/types";
+import { TriangleAlert } from "lucide-react";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -88,7 +92,6 @@ export const TabPlayers = ({
   }, [watchPlayers]);
 
   const prevWatchedSteamIds = useRef(steamIds);
-  const fetchedValidSteamIds = useRef(new Set<string>());
   useEffect(() => {
     steamIds.forEach((steam_id, index) => {
       if (
@@ -97,19 +100,21 @@ export const TabPlayers = ({
       ) {
         setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-        expressFetcher<PlayerBySteamId>(`/api/v1/players/${steam_id}`)
+        expressFetcher<PlayerDetailsBySteamId>(
+          `/api/v1/players/${steam_id}/details`
+        )
           .then((data) => {
             if (data.name)
               setValue(`players.${index}.name`, data.name, {
                 shouldValidate: true
               });
-            setValue(
-              `players.${index}.has_valid_full_name_in_db`,
-              !!data.is_valid_full_name
-            );
 
-            if (data.work_email)
-              setValue(`players.${index}.work_email`, data.work_email);
+            const has_valid_data = Boolean(
+              data.is_valid_full_name &&
+                data.is_valid_work_email &&
+                data.has_accepted_latest_privacy_policy
+            );
+            setValue(`players.${index}.has_valid_data`, has_valid_data);
 
             if (data.discord)
               setValue(`players.${index}.discord`, data.discord, {
@@ -117,20 +122,14 @@ export const TabPlayers = ({
               });
 
             if (
-              playerSchema.safeParse({
-                ...data,
-                steam_id: String(data.steam_id)
-              }).success === false ||
-              !data.is_valid_full_name
+              playerSchema.safeParse(data).success === false ||
+              !has_valid_data
             ) {
               setOpenItems((prev) => [...prev, `player-${index}`]);
-            } else {
-              fetchedValidSteamIds.current.add(steam_id);
             }
           })
           .catch((_error) => {
             setValue(`players.${index}.name`, "");
-            setValue(`players.${index}.work_email`, "");
             setOpenItems((prev) => [...prev, `player-${index}`]);
           })
           .finally(() => {
@@ -189,7 +188,10 @@ export const TabPlayers = ({
                 className={cn(
                   "border-1 p-4 w-full rounded-lg flex items-center",
                   loadingStates[index] && "border-yellow-500 animate-pulse",
+                  validPlayers[index]?.player.has_valid_data === false &&
+                    "border-yellow-500",
                   validPlayers[index]?.result.success === true &&
+                    validPlayers[index]?.player.has_valid_data &&
                     "border-green-500",
                   validPlayers[index]?.result.success === false &&
                     validPlayers[index]?.player.steam_id.length === 17 &&
@@ -210,16 +212,10 @@ export const TabPlayers = ({
                           onChange={(e) => {
                             const newValue = e.target.value;
                             const oldValue = field.value;
-                            if (oldValue.length === 17) {
-                              fetchedValidSteamIds.current.delete(oldValue);
-                            }
                             if (newValue !== oldValue) {
                               resetField(`players.${index}.name`);
-                              resetField(`players.${index}.work_email`);
                               resetField(`players.${index}.discord`);
-                              resetField(
-                                `players.${index}.has_valid_full_name_in_db`
-                              );
+                              resetField(`players.${index}.has_valid_data`);
                             }
                             field.onChange(e);
                           }}
@@ -301,57 +297,11 @@ export const TabPlayers = ({
                         <Input
                           {...field}
                           onClick={(e) => e.stopPropagation()}
-                          disabled={fetchedValidSteamIds.current.has(
-                            watch(`players.${index}.steam_id`)
-                          )}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-
-                {!watch(`players.${index}.has_valid_full_name_in_db`) && (
-                  <FormField
-                    control={control}
-                    name={`players.${index}.full_name`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full name</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            onClick={(e) => e.stopPropagation()}
-                            disabled={fetchedValidSteamIds.current.has(
-                              watch(`players.${index}.steam_id`)
-                            )}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                <FormField
-                  control={control}
-                  name={`players.${index}.work_email`}
-                  render={({ field }) => {
-                    const steamId = watch(`players.${index}.steam_id`);
-                    return (
-                      <FormItem>
-                        <FormLabel>Work email</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            onClick={(e) => e.stopPropagation()}
-                            disabled={fetchedValidSteamIds.current.has(steamId)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
                 />
 
                 {/* If players.index.captain is checked, render discord field */}
@@ -370,6 +320,13 @@ export const TabPlayers = ({
                       </FormItem>
                     )}
                   />
+                )}
+
+                {!watch(`players.${index}.has_valid_data`) && (
+                  <div className="text-yellow-500 text-xs flex gap-2 items-center">
+                    <TriangleAlert className="h-4 w-4" /> Player needs to fill
+                    in details in their Kanahub profile.
+                  </div>
                 )}
 
                 <Button
@@ -392,7 +349,6 @@ export const TabPlayers = ({
               append({
                 steam_id: "",
                 name: "",
-                work_email: "",
                 discord: "",
                 captain: false,
                 co_captain: false

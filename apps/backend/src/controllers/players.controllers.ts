@@ -1,25 +1,16 @@
 import { type Request, type Response } from "express";
 import {
-  getPlayers,
-  getPlayerBySteamId,
+  getPlayerDetailsBySteamId,
   getPlayersByFilters,
   getPlayerLeaderboard
 } from "../models/player.models";
-
-export const getPlayersController = async (
-  _req: Request,
-  res: Response
-): Promise<void> => {
-  const players = await getPlayers();
-  res.status(200).json({ players });
-};
 
 export const getPlayerBySteamIdController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   const steam_id = req.params.steam_id;
-  const player = await getPlayerBySteamId(steam_id);
+  const player = await getPlayerDetailsBySteamId(steam_id);
 
   if (!player) {
     res.status(404).json({ message: "User not found" });

@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean("accepted_marketing").notNullable().defaultTo(false);
     table.timestamp("created_at").notNullable().defaultTo(knex.fn.now());
     table.timestamp("updated_at").notNullable().defaultTo(knex.fn.now());
-    table.string("privacy_policy_version").notNullable().defaultTo("1.0");
+    table.string("privacy_policy_version").notNullable().defaultTo("1");
     table
       .foreign("steam_id")
       .references("steam_id")

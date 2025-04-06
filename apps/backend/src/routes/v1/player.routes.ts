@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  getPlayersController,
   getPlayerBySteamIdController
   // getPlayersByFiltersController,
   // getPlayerLeaderboardController,
@@ -13,8 +12,7 @@ import {
 const router = Router();
 
 // Player routes
-router.get("/", getPlayersController);
-router.get("/:steam_id", getPlayerBySteamIdController);
+router.get("/:steam_id/details", getPlayerBySteamIdController);
 // router.get(
 //   "/:season_id/:map_id/:league_id/:stage/:team_id/leaderboards",
 //   parseQueryParams,

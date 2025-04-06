@@ -3,7 +3,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import type {
   UpsertPlayer,
   ParsedParams,
-  PlayerBySteamId
+  PlayerDetailsBySteamId
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
@@ -15,23 +15,6 @@ const leaderboardExpressions: { [key: string]: string } = {
   KAST: "avg(ps.kast)",
   KD: "sum(ps.kills) - sum(ps.deaths)",
   flashAssists: "sum(ps.flash_assists)"
-};
-
-export const getPlayers = () => {
-  return runQuery<Omit<PlayerBySteamId, "is_valid_full_name">[]>(
-    `SELECT
-    steam_id, 
-    name,
-    discord,
-    CASE 
-        WHEN work_email IS NULL THEN NULL
-        WHEN work_email LIKE '%@%' THEN 
-            CONCAT(LEFT(work_email, 2), '***@', SUBSTRING_INDEX(work_email, '@', -1)) 
-        ELSE 
-                '*****' 
-        END AS work_email 
-    FROM Players;`
-  );
 };
 
 export const upsertPlayer = async (
@@ -52,26 +35,31 @@ export const upsertPlayer = async (
   return String(results.insertId) || data.steam_id;
 };
 
-export const getPlayerBySteamId = async (steam_id: string) => {
-  const results = await runQuery<PlayerBySteamId[]>(
+export const getPlayerDetailsBySteamId = async (steam_id: string) => {
+  const results = await runQuery<PlayerDetailsBySteamId[]>(
     `SELECT
-    steam_id, 
-    name,
-    discord,
-    CASE 
-        WHEN work_email IS NULL THEN NULL
-        WHEN work_email LIKE '%@%' THEN 
-            CONCAT(LEFT(work_email, 2), '***@', SUBSTRING_INDEX(work_email, '@', -1)) 
-        ELSE 
-            '*****' 
-        END AS work_email,
-    CASE 
-        WHEN player_name REGEXP '^[A-Za-z]+ [A-Za-z]+$' THEN TRUE 
-        ELSE FALSE 
-    END AS is_valid_full_name
-    FROM Players WHERE steam_id = ?`,
-    [steam_id]
+      p.steam_id, 
+      p.name,
+      p.discord,
+      CASE 
+          WHEN work_email IS NULL THEN FALSE
+          WHEN work_email LIKE '%@%' THEN TRUE
+          ELSE FALSE
+      END AS is_valid_work_email,
+      CASE 
+          WHEN player_name REGEXP '^[A-Za-z]+ [A-Za-z]+$' THEN TRUE 
+          ELSE FALSE 
+      END AS is_valid_full_name,
+      CASE 
+          WHEN upa.accepted_privacy_policy = TRUE AND upa.privacy_policy_version = ? THEN TRUE 
+          ELSE FALSE 
+      END AS has_accepted_latest_privacy_policy
+    FROM Players p 
+    LEFT JOIN UserPolicyAcceptances upa ON upa.steam_id = p.steam_id
+    WHERE p.steam_id = ?`,
+    [process.env.PRIVACY_POLICY_VERSION!, steam_id]
   );
+
   return results.length > 0 ? results[0] : undefined;
 };
 

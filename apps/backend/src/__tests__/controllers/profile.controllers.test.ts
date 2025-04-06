@@ -35,7 +35,7 @@ describe("updateProfile Controller", () => {
       auth: { steamId: "12345", displayName: "hehe" },
       body: {
         name: "Test User",
-        player_name: "TestPlayer",
+        player_name: "Test Player",
         work_email: "test@example.com",
         discord: "testDiscord",
         acceptPrivacyPolicy: true,
@@ -54,7 +54,7 @@ describe("updateProfile Controller", () => {
       release: jest.fn()
     };
     (getConnection as jest.Mock).mockResolvedValue(connection);
-    process.env.PRIVACY_POLICY_VERSION = "1.0";
+    process.env.PRIVACY_POLICY_VERSION = "1";
   });
 
   afterEach(() => {

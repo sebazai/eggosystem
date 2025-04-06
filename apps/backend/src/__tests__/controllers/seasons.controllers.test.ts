@@ -27,31 +27,26 @@ const validSignupData = {
     {
       steam_id: "12345678901234567",
       name: "Player One",
-      work_email: "pl***@example.com",
       discord: "playerOne#1234",
       captain: true
     },
     {
       steam_id: "12345678901234568",
       name: "Player Two",
-      work_email: "player.two@example.com",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
       steam_id: "12345678901234569",
-      name: "Player three",
-      work_email: "player.three@example.com"
+      name: "Player three"
     },
     {
       steam_id: "12345678901234570",
-      name: "Player Four",
-      work_email: "player.four@example.com"
+      name: "Player Four"
     },
     {
       steam_id: "12345678901234571",
-      name: "Player Five",
-      work_email: "player.five@example.com"
+      name: "Player Five"
     }
   ]
 };
@@ -295,14 +290,11 @@ describe("addSignupForSeason - Try Catch Block", () => {
     });
   });
   it("should not call upsertPlayer if player exists, is not captain or co-captain and data is ok in db", async () => {
-    req.body.players[0].work_email = "new.doe@example.com";
     req.body.players[0].captain = false;
     req.body.players[2].captain = true;
     req.body.players[2].discord = "Nakki";
     jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      name: "JohnnyTheKiller",
-      work_email: "john.doe@example.com",
-      player_name: "John Doe"
+      name: "JohnnyTheKiller"
     } as unknown as Player);
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -322,14 +314,10 @@ describe("addSignupForSeason - Try Catch Block", () => {
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
       .mockResolvedValue({
-        name: "JohnnyTheKiller",
-        work_email: "john.doe@example.com",
-        player_name: "John Doe"
+        name: "JohnnyTheKiller"
       } as unknown as Player)
       .mockResolvedValue({
-        name: "JaneTheSlayer",
-        work_email: "jane.doe@example.com",
-        player_name: "Jane Doe"
+        name: "JaneTheSlayer"
       } as unknown as Player);
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -360,96 +348,6 @@ describe("addSignupForSeason - Try Catch Block", () => {
     );
   });
 
-  it("should update email for player that has a bogus work_email in database", async () => {
-    req.body.players[0].work_email = "new.doe@example.com";
-    jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      name: "JohnnyTheKiller",
-      work_email: "hokkuspokkus",
-      player_name: "John Doe"
-    } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234567",
-        work_email: "new.doe@example.com",
-        discord: "playerOne#1234"
-      },
-      mockConnection
-    );
-  });
-  it("should update email for player that has a null work_email in database", async () => {
-    req.body.players[0].work_email = "new.doe@example.com";
-    jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      name: "JohnnyTheKiller",
-      work_email: null,
-      player_name: "John Doe"
-    } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234567",
-        work_email: "new.doe@example.com",
-        discord: "playerOne#1234"
-      },
-      mockConnection
-    );
-  });
-  it("Should update player_name in db if player_name is not valid", async () => {
-    req.body.players[2].full_name = "Nakki Kauppias";
-    jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      name: "NakkiKauppias",
-      work_email: "test.email@example.com",
-      player_name: "Tero"
-    } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234569",
-        player_name: "Nakki Kauppias"
-      },
-      mockConnection
-    );
-  });
-  it("Should update player_name in db if player_name is null", async () => {
-    req.body.players[2].full_name = "Nakki Kauppias";
-    jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      name: "NakkiKauppias",
-      work_email: "test.email@example.com",
-      player_name: null
-    } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234569",
-        player_name: "Nakki Kauppias"
-      },
-      mockConnection
-    );
-  });
   it("should add new player to database if it does not exist", async () => {
     const signupData = {
       ..._.cloneDeep(validSignupData),
@@ -458,11 +356,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
         {
           steam_id: "12345678901234572",
           name: "Player6",
-          work_email: "playerSix@gmail.com",
           discord: "playerSix#1234",
           captain: false,
-          co_captain: true,
-          full_name: "Player Six"
+          co_captain: true
         }
       ]
     };
@@ -482,9 +378,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
         }
         return Promise.resolve({
           name: "NakkiKauppias",
-          discord: "Nakki#1234",
-          work_email: "test.email@example.com",
-          player_name: "Tero Nero"
+          discord: "Nakki#1234"
         } as unknown as Player);
       });
     await addSignupForSeason(req, res);
@@ -492,9 +386,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       {
         discord: "playerSix#1234",
         name: "Player6",
-        player_name: "Player Six",
-        steam_id: "12345678901234572",
-        work_email: "playerSix@gmail.com"
+        steam_id: "12345678901234572"
       },
       mockConnection
     );

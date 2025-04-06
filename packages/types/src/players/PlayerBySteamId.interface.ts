@@ -1,9 +1,11 @@
 import type { Nullable } from "../utils";
 
-export interface PlayerBySteamId {
+export interface PlayerDetailsBySteamId {
   steam_id: number;
   name: string;
   discord: Nullable<string>;
   work_email: Nullable<string>;
   is_valid_full_name: boolean;
+  is_valid_work_email: boolean;
+  has_accepted_latest_privacy_policy: boolean;
 }
