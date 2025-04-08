@@ -22,7 +22,15 @@ Migrate ebinstats prod database to your env.
 
 ### Devcontainer
 
-???
+1. Export latest kana database from production `https://csadmin.kanaliiga.fi/phpmyadmin/`
+
+2. Check that localhost:8083/kanaliiga table is empty but exists, and permissions ok.
+
+3. Create kana table in phpmyadmin, copy permissions from kanaliiga table.
+
+4. Import the export to `kana` table.
+
+5. Run `KANA=true pnpm migrate`
 
 ## Gitlab CI
 
