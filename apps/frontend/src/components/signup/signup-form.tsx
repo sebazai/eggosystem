@@ -52,6 +52,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
         name: "",
         discord: "",
         has_valid_data: undefined,
+        is_profile_public: undefined,
         captain: false,
         co_captain: false
       }),

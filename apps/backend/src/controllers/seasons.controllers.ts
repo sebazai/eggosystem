@@ -13,7 +13,10 @@ import { insertTeam } from "../models/team.models";
 import { upsertPlayer } from "../models/player.models";
 import { signUpTeamForSeason } from "../services/signup.services";
 import { isTeamPartOfOrganization } from "../services/team.services";
-import { getFullPlayerDetails } from "../services/player.services";
+import {
+  areSteamProfilesPublic,
+  getFullPlayerDetails
+} from "../services/player.services";
 import _ from "lodash";
 
 export const fetchSeasons = async (_req: Request, res: Response) => {
@@ -81,6 +84,13 @@ export const addSignupForSeason = async (
     throw error;
   }
 
+  const steamIds = formData.players.map((p) => p.steam_id);
+  const areProfilePublic = await areSteamProfilesPublic(steamIds);
+  if (!areProfilePublic.is_all_public) {
+    throw new Error(
+      `Steam IDs ${areProfilePublic.not_public.join(", ")} are not public.`
+    );
+  }
   const connection = await getConnection();
 
   try {

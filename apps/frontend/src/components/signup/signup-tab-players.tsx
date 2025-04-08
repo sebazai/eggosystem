@@ -76,9 +76,27 @@ export const TabPlayers = ({
   const steamIds = useWatch({ control, name: "players" }).map(
     (p) => p.steam_id
   );
+
   const [loadingStates, setLoadingStates] = useState<Record<number, boolean>>(
     {}
   );
+  // Open accordions if any errors
+  useEffect(() => {
+    const errorIndices: string[] = [];
+    for (const [index, player] of watchPlayers.entries()) {
+      if (
+        !loadingStates[index] &&
+        player.steam_id.length === 17 &&
+        (playerSchema.safeParse(player).success === false ||
+          !player.has_valid_data ||
+          !player.is_profile_public)
+      ) {
+        errorIndices.push(`player-${index}`);
+      }
+    }
+    setOpenItems(errorIndices);
+  }, [loadingStates, watchPlayers]);
+
   const [openItems, setOpenItems] = useState<string[]>([]);
   const { fields, append, remove } = useFieldArray({
     control,
@@ -93,17 +111,23 @@ export const TabPlayers = ({
 
   const prevWatchedSteamIds = useRef(steamIds);
   useEffect(() => {
-    steamIds.forEach((steam_id, index) => {
-      if (
-        steam_id.length === 17 &&
-        !prevWatchedSteamIds.current.includes(steam_id)
-      ) {
-        setLoadingStates((prev) => ({ ...prev, [index]: true }));
+    const checkPlayers = async (steamIds: string[]) => {
+      for (const [index, steam_id] of steamIds.entries()) {
+        if (
+          steam_id.length === 17 &&
+          !prevWatchedSteamIds.current.includes(steam_id)
+        ) {
+          setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-        expressFetcher<PlayerDetailsBySteamId>(
-          `/api/v1/players/${steam_id}/details`
-        )
-          .then((data) => {
+          try {
+            const publicStatus = await expressFetcher<{ public: boolean }>(
+              `/api/v1/players/${steam_id}/public`
+            );
+            setValue(`players.${index}.is_profile_public`, publicStatus.public);
+            const data = await expressFetcher<PlayerDetailsBySteamId>(
+              `/api/v1/players/${steam_id}/details`
+            );
+
             if (data.name)
               setValue(`players.${index}.name`, data.name, {
                 shouldValidate: true
@@ -120,24 +144,17 @@ export const TabPlayers = ({
               setValue(`players.${index}.discord`, data.discord, {
                 shouldValidate: false
               });
-
-            if (
-              playerSchema.safeParse(data).success === false ||
-              !has_valid_data
-            ) {
-              setOpenItems((prev) => [...prev, `player-${index}`]);
-            }
-          })
-          .catch((_error) => {
+          } catch (_error) {
             setValue(`players.${index}.name`, "");
             setOpenItems((prev) => [...prev, `player-${index}`]);
-          })
-          .finally(() => {
+          } finally {
             setLoadingStates((prev) => ({ ...prev, [index]: false }));
-          });
+          }
+        }
       }
-    });
+    };
 
+    checkPlayers(steamIds);
     prevWatchedSteamIds.current = steamIds;
   }, [setValue, steamIds]);
 
@@ -178,172 +195,193 @@ export const TabPlayers = ({
           value={openItems}
           onValueChange={setOpenItems}
         >
-          {fields.map((field, index) => (
-            <AccordionItem
-              className="space-y-2 border-b-0"
-              key={field.id}
-              value={`player-${index}`}
-            >
-              <AccordionTrigger
-                className={cn(
-                  "border-1 p-4 w-full rounded-lg flex items-center",
-                  loadingStates[index] && "border-yellow-500 animate-pulse",
-                  validPlayers[index]?.player.has_valid_data === false &&
-                    "border-yellow-500",
-                  validPlayers[index]?.result.success === true &&
-                    validPlayers[index]?.player.has_valid_data &&
-                    "border-green-500",
-                  validPlayers[index]?.result.success === false &&
-                    validPlayers[index]?.player.steam_id.length === 17 &&
-                    "border-red-500"
-                )}
+          {fields.map((field, index) => {
+            const playerOk =
+              validPlayers[index]?.player.steam_id.length === 17 &&
+              validPlayers[index]?.result.success === true &&
+              validPlayers[index]?.player.has_valid_data &&
+              validPlayers[index]?.player.is_profile_public;
+            return (
+              <AccordionItem
+                className="space-y-2 border-b-0"
+                key={field.id}
+                value={`player-${index}`}
               >
-                <FormField
-                  control={control}
-                  name={`players.${index}.steam_id`}
-                  render={({ field }) => (
-                    <FormItem className="w-100">
-                      <FormLabel>Steam ID</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="w-full"
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            const newValue = e.target.value;
-                            const oldValue = field.value;
-                            if (newValue !== oldValue) {
-                              resetField(`players.${index}.name`);
-                              resetField(`players.${index}.discord`);
-                              setValue(
-                                `players.${index}.has_valid_data`,
-                                undefined
-                              );
-                            }
-                            field.onChange(e);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <AccordionTrigger
+                  className={cn(
+                    "border-1 p-4 w-full rounded-lg flex items-center",
+                    loadingStates[index] && "border-yellow-500 animate-pulse",
+                    playerOk && "border-green-500",
+                    !playerOk && "border-red-500"
                   )}
-                />
-
-                {watch(`players.${index}.captain`) && (
-                  <Image
-                    src={createNextImageUrl("/images/captain.png")}
-                    alt="Captain"
-                    className="hidden xxs:block"
-                    width={30}
-                    height={23}
-                  />
-                )}
-                {watch(`players.${index}.co_captain`) && (
-                  <Image
-                    src={createNextImageUrl("/images/co-captain.png")}
-                    alt="Co-Captain"
-                    className="hidden xxs:block"
-                    width={30}
-                    height={23}
-                  />
-                )}
-              </AccordionTrigger>
-              <AccordionContent className="w-full p-4 border-t space-y-3">
-                <div className="flex items-center gap-4">
+                >
                   <FormField
                     control={control}
-                    name={`players.${index}.captain`}
+                    name={`players.${index}.steam_id`}
                     render={({ field }) => (
-                      <FormItem className="flex items-center gap-2">
+                      <FormItem className="w-100">
+                        <FormLabel>Steam ID</FormLabel>
                         <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={(checked) =>
-                              onCapitanChange(checked, index, "captain")
-                            }
+                          <Input
+                            {...field}
+                            className="w-full"
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              const oldValue = field.value;
+                              if (newValue !== oldValue) {
+                                resetField(`players.${index}.name`);
+                                resetField(`players.${index}.discord`);
+                                setValue(
+                                  `players.${index}.has_valid_data`,
+                                  undefined
+                                );
+                                setValue(
+                                  `players.${index}.is_profile_public`,
+                                  undefined
+                                );
+                              }
+                              field.onChange(e);
+                            }}
                           />
-                        </FormControl>
-                        <FormLabel className="cursor-pointer">
-                          Captain
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={control}
-                    name={`players.${index}.co_captain`}
-                    render={({ field }) => (
-                      <FormItem className="flex items-center gap-2">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={(checked) =>
-                              onCapitanChange(checked, index, "co_captain")
-                            }
-                          />
-                        </FormControl>
-                        <FormLabel className="cursor-pointer">
-                          Co-Captain
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={control}
-                  name={`players.${index}.name`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Steam nickname</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* If players.index.captain is checked, render discord field */}
-                {(watch(`players.${index}.captain`) ||
-                  watch(`players.${index}.co_captain`)) && (
-                  <FormField
-                    control={control}
-                    name={`players.${index}.discord`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Discord</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
 
-                {watch(`players.${index}.has_valid_data`) === false && (
-                  <div className="text-yellow-500 text-xs flex gap-2 items-center">
-                    <TriangleAlert className="h-4 w-4" /> Player needs to fill
-                    in details in their Kanahub profile.
+                  {watch(`players.${index}.captain`) && (
+                    <Image
+                      src={createNextImageUrl("/images/captain.png")}
+                      alt="Captain"
+                      className="hidden xxs:block"
+                      width={30}
+                      height={23}
+                    />
+                  )}
+                  {watch(`players.${index}.co_captain`) && (
+                    <Image
+                      src={createNextImageUrl("/images/co-captain.png")}
+                      alt="Co-Captain"
+                      className="hidden xxs:block"
+                      width={30}
+                      height={23}
+                    />
+                  )}
+                </AccordionTrigger>
+                <AccordionContent className="w-full p-4 border-t space-y-3">
+                  <div className="flex items-center gap-4">
+                    <FormField
+                      control={control}
+                      name={`players.${index}.captain`}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) =>
+                                onCapitanChange(checked, index, "captain")
+                              }
+                            />
+                          </FormControl>
+                          <FormLabel className="cursor-pointer">
+                            Captain
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={control}
+                      name={`players.${index}.co_captain`}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center gap-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) =>
+                                onCapitanChange(checked, index, "co_captain")
+                              }
+                            />
+                          </FormControl>
+                          <FormLabel className="cursor-pointer">
+                            Co-Captain
+                          </FormLabel>
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                )}
 
-                <Button
-                  variant="destructive"
-                  onClick={() => remove(index)}
-                  type="button"
-                  className="w-full"
-                  disabled={fields.length <= 5} // Disable if less than 5 players
-                >
-                  Remove Player
-                </Button>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
+                  <FormField
+                    control={control}
+                    name={`players.${index}.name`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Steam nickname</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* If players.index.captain is checked, render discord field */}
+                  {(watch(`players.${index}.captain`) ||
+                    watch(`players.${index}.co_captain`)) && (
+                    <FormField
+                      control={control}
+                      name={`players.${index}.discord`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Discord</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {watch(`players.${index}.has_valid_data`) === false && (
+                    <div className="text-red-500 text-xs flex gap-2 items-center">
+                      <TriangleAlert className="h-4 w-4" /> Ask player to login
+                      to Kanahub and fill in their personal details.
+                    </div>
+                  )}
+
+                  {watch(`players.${index}.is_profile_public`) === false && (
+                    <div className="text-red-500 text-xs flex gap-2 items-center">
+                      <TriangleAlert className="h-4 w-4" /> Player steam profile
+                      is not public
+                    </div>
+                  )}
+
+                  {prevWatchedSteamIds.current.filter(
+                    (id) => !!id && id === watch(`players.${index}.steam_id`)
+                  ).length > 1 && (
+                    <div className="text-yellow-500 text-xs flex gap-2 items-center">
+                      <TriangleAlert className="h-4 w-4" /> Duplicate steam id
+                      detected
+                    </div>
+                  )}
+
+                  <Button
+                    variant="destructive"
+                    onClick={() => remove(index)}
+                    type="button"
+                    className="w-full"
+                    disabled={fields.length <= 5} // Disable if less than 5 players
+                  >
+                    Remove Player
+                  </Button>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
         </Accordion>
         {fields.length < 9 && (
           <Button

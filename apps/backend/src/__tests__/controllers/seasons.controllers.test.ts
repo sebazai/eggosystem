@@ -86,6 +86,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
         signup_end_date: tomorrow
       } as unknown as Season
     ]);
+    jest
+      .spyOn(playerServices, "areSteamProfilesPublic")
+      .mockResolvedValue({ is_all_public: true });
   });
 
   afterEach(() => {

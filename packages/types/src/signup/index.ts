@@ -6,6 +6,7 @@ const playerSchema = z
     steam_id: z.string().length(17),
     name: z.string().min(1).max(50),
     has_valid_data: z.boolean().optional(),
+    is_profile_public: z.boolean().optional(),
     discord: z.string().optional(),
     captain: z.boolean().optional(),
     co_captain: z.boolean().optional()

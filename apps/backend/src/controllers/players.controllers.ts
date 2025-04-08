@@ -4,6 +4,7 @@ import {
   getPlayersByFilters,
   getPlayerLeaderboard
 } from "../models/player.models";
+import { isSteamProfilePublic } from "../services/player.services";
 
 export const getPlayerBySteamIdController = async (
   req: Request,
@@ -18,6 +19,12 @@ export const getPlayerBySteamIdController = async (
   }
 
   res.status(200).json(player);
+};
+
+export const getIsPlayerProfilePublic = async (req: Request, res: Response) => {
+  const steam_id = req.params.steam_id;
+  const isPublic = await isSteamProfilePublic(steam_id);
+  res.status(200).json({ public: isPublic });
 };
 
 export const getPlayersByFiltersController = async (
