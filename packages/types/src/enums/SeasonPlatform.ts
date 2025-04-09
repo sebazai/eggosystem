@@ -4,3 +4,7 @@ export enum SeasonPlatform {
   Esportal = "esportal",
   PopFlash = "popflash"
 }
+
+export const isSeasonPlatform = (value: unknown): value is SeasonPlatform => {
+  return Object.values(SeasonPlatform).includes(value as SeasonPlatform);
+};

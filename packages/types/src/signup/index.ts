@@ -7,6 +7,9 @@ const playerSchema = z
     name: z.string().min(1).max(50),
     has_valid_data: z.boolean().optional(),
     is_profile_public: z.boolean().optional(),
+    hours: z.number().optional(),
+    rank: z.number().optional(),
+    external_rank: z.number().optional(),
     discord: z.string().optional(),
     captain: z.boolean().optional(),
     co_captain: z.boolean().optional()
@@ -18,6 +21,11 @@ const playerSchema = z
       message: "Captains and co-captains must provide a Discord username.",
       path: ["discord"]
     }
+  )
+  .refine(
+    (player) =>
+      !isNaN(Number(player.steam_id)) && player.steam_id.length === 17,
+    { message: "Invalid SteamID", path: ["steam_id"] }
   );
 
 const newOrganizationSchema = z.preprocess(

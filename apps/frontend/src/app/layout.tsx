@@ -56,6 +56,23 @@ const kanaFonts = localFont({
   variable: "--font-body"
 });
 
+const poppinsFont = localFont({
+  fallback: ["system-ui", "arial"],
+  src: [
+    {
+      path: "../../public/fonts/poppins/Poppins-Regular.ttf",
+      weight: "400",
+      style: "normal"
+    },
+    {
+      path: "../../public/fonts/poppins/Poppins-Bold.ttf",
+      weight: "700",
+      style: "normal"
+    }
+  ],
+  variable: "--font-poppins"
+});
+
 export const metadata: Metadata = {
   title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
   description: "Kanahub Statistics and Analytics",
@@ -93,23 +110,24 @@ export default function RootLayout({
         className={cn(
           `bg-kana min-h-svh flex flex-col antialiased`,
           kanaFonts.variable,
-          kanaHeadingFonts.variable
+          kanaHeadingFonts.variable,
+          poppinsFont.variable
         )}
       >
         <AuthProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
-            enableSystem
+            // enableSystem
             disableTransitionOnChange
           >
             <SkipToContent />
             <KfcRain />
             <ScrollToTop />
-            <div className="flex flex-col min-h-svh min-w-[200px]">
+            <div className="flex flex-col min-h-svh min-w-[200px] w-full">
               <Navigation />
               <div className="flex flex-grow justify-center w-full">
-                <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
+                <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
                   <Suspense>
                     <main className="md:py-6 py-4" id="main-content">
                       {children}

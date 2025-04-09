@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
-import { useSeason } from "@/hooks/data/useSeason";
+import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,10 +51,13 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
         steam_id: "",
         name: "",
         discord: "",
+        captain: false,
+        co_captain: false,
         has_valid_data: undefined,
         is_profile_public: undefined,
-        captain: false,
-        co_captain: false
+        hours: undefined,
+        rank: undefined,
+        external_rank: undefined
       }),
       defects: ""
     }
@@ -69,7 +72,8 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   const watchNewTeam = useWatch({ control, name: "newTeam" });
   const watchPlayers = useWatch({ control, name: "players" });
 
-  const { season, isLoading, isError, isValidating } = useSeason(seasonId);
+  const { seasonDetails, isLoading, isError, isValidating } =
+    useSeasonDetails(seasonId);
 
   const validOrgId = useMemo(
     () =>
@@ -146,7 +150,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
     return <TheContainer classNames="w-full">Loading...</TheContainer>;
   }
 
-  if (isError || !season) {
+  if (isError || !seasonDetails) {
     return (
       <TheContainer>
         {isError?.message ?? "Something went wrong..."}
@@ -249,7 +253,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}
-                platform={season.platform}
+                platform={seasonDetails.platform}
               />
 
               <TabPlayers
@@ -262,6 +266,9 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                     ? Object.keys(form.formState.errors.players)
                     : []
                 }
+                seasonSteamAppId={seasonDetails.steam_app_id}
+                platform={seasonDetails.platform}
+                seasonId={seasonId}
               />
             </Tabs>
 

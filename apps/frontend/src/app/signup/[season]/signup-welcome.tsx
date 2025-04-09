@@ -4,7 +4,7 @@ import { TheContainer } from "@/components/layout/the-container";
 import { SteamLoginButton } from "@/components/steam-login";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useSeason } from "@/hooks/data/useSeason";
+import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { useServerTime } from "@/hooks/useNow";
 import Link from "next/link";
 
@@ -13,20 +13,21 @@ interface SignupWelcomeProps {
 }
 
 export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
-  const { season, isLoading, isError, isValidating } = useSeason(seasonId);
+  const { seasonDetails, isLoading, isError, isValidating } =
+    useSeasonDetails(seasonId);
   const { user, loading } = useAuth();
   const serverTime = useServerTime();
 
   if (isLoading || isValidating || loading) {
     return <TheContainer>Loading...</TheContainer>;
   }
-  if (isError || !season) {
+  if (isError || !seasonDetails) {
     return (
       <TheContainer>{isError?.message ?? "Season does not exist"}</TheContainer>
     );
   }
 
-  if (!season.signup_start_date || !season.signup_end_date) {
+  if (!seasonDetails.signup_start_date || !seasonDetails.signup_end_date) {
     return (
       <TheContainer>
         Season sign up dates are not set. Please come back later.
@@ -34,7 +35,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
     );
   }
 
-  if (new Date(season.signup_start_date).getTime() > serverTime) {
+  if (new Date(seasonDetails.signup_start_date).getTime() > serverTime) {
     return (
       <TheContainer>
         Season sign up has not started yet. Please come back later.
@@ -42,7 +43,7 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
     );
   }
 
-  if (new Date(season.signup_end_date).getTime() < serverTime) {
+  if (new Date(seasonDetails.signup_end_date).getTime() < serverTime) {
     return (
       <TheContainer>
         Season sign up has ended. Please wait for the next season.
@@ -53,18 +54,19 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   return (
     <div>
       <div className="text-lg pb-4 font-semibold">
-        👋 Welcome to Kanaliiga {season.full_name} Sign Up! Season starts on{" "}
-        {new Date(season.start_date).toLocaleDateString()}{" "}
-        {season.end_date && (
+        👋 Welcome to Kanaliiga {seasonDetails.full_name} Sign Up! Season starts
+        on {new Date(seasonDetails.start_date).toLocaleDateString()}{" "}
+        {seasonDetails.end_date && (
           <span>
             and ends approximately on{" "}
-            {new Date(season.end_date).toLocaleDateString()}
+            {new Date(seasonDetails.end_date).toLocaleDateString()}
           </span>
         )}
-        {season.platform && (
+        {seasonDetails.platform && (
           <span>
             {" "}
-            on the {season.platform.toLocaleUpperCase()} esports platform.
+            on the {seasonDetails.platform.toLocaleUpperCase()} esports
+            platform.
           </span>
         )}
       </div>

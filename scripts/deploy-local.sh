@@ -32,6 +32,7 @@ export HUBDEV_PUBLIC_URL="hubdev.kanaliiga.fi"
 export DB_ONDEMAND_ROOT_PASSWORD="dev-pass"
 export DB_ONDEMAND_PASSWORD="dev-pass"
 export STEAM_API_KEY="your_steam_api_key"  # Replace with actual key if needed
+export FACEIT_API_EKY="your_faceit_api_key" # Replace with actual key if needed
 
 # Check if PHPMYADMIN_AUTH is set, if not, create a default one
 if [ -z "$PHPMYADMIN_AUTH" ]; then
@@ -61,6 +62,7 @@ services:
       REDIS_HOST: eggo-redis-${ENV_ID}
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
+      FACEIT_API_KEY: $FACEIT_API_KEY
     networks:
       web:
         aliases:

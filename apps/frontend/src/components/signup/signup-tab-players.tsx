@@ -16,7 +16,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch
 } from "react-hook-form";
-import { cn, createNextImageUrl, expressFetcher } from "@/lib/utils";
+import { cn, createNextImageUrl } from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -24,18 +24,25 @@ import {
   AccordionContent
 } from "@/components/ui/accordion";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import { Textarea } from "@/components/ui/textarea";
 import type {
+  FaceITCSRank,
+  Game,
   PlayerDetailsBySteamId,
   SignupFormValues
 } from "@eggosystem/types";
+import { SeasonPlatform } from "@eggosystem/types";
 import { playerSchema } from "@eggosystem/types";
 import { TriangleAlert } from "lucide-react";
+import { ApiError, apiFetch } from "@/lib/apiClient";
+import { SignupPlayerNotification } from "./signup-player-alert";
+import { FaceITLevelIcon } from "../profle/faceit-level";
+import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -43,6 +50,9 @@ interface TabPlayersProps {
   setValue: UseFormSetValue<SignupFormValues>;
   watch: UseFormWatch<SignupFormValues>;
   playerErrorIndices: string[];
+  seasonSteamAppId: Game["steam_app_id"];
+  platform: SeasonPlatform;
+  seasonId: string;
 }
 
 export const TabPlayers = ({
@@ -50,8 +60,12 @@ export const TabPlayers = ({
   setValue,
   watch,
   playerErrorIndices,
-  resetField
+  resetField,
+  seasonSteamAppId,
+  platform,
+  seasonId
 }: TabPlayersProps) => {
+  const [newPlayers, setNewPlayers] = useState<string[]>([]);
   const auth = useAuth();
   useEffect(() => {
     if (auth.user?.steamId) {
@@ -89,7 +103,9 @@ export const TabPlayers = ({
         player.steam_id.length === 17 &&
         (playerSchema.safeParse(player).success === false ||
           !player.has_valid_data ||
-          !player.is_profile_public)
+          !player.is_profile_public ||
+          player.hours === -1 ||
+          player.rank === -1)
       ) {
         errorIndices.push(`player-${index}`);
       }
@@ -102,12 +118,6 @@ export const TabPlayers = ({
     control,
     name: "players"
   });
-  const validPlayers = useMemo(() => {
-    return watchPlayers.map((player) => ({
-      player,
-      result: playerSchema.safeParse(player)
-    }));
-  }, [watchPlayers]);
 
   const prevWatchedSteamIds = useRef(steamIds);
   useEffect(() => {
@@ -115,48 +125,93 @@ export const TabPlayers = ({
       for (const [index, steam_id] of steamIds.entries()) {
         if (
           steam_id.length === 17 &&
+          !isNaN(Number(steam_id)) &&
           !prevWatchedSteamIds.current.includes(steam_id)
         ) {
           setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-          try {
-            const publicStatus = await expressFetcher<{ public: boolean }>(
-              `/api/v1/players/${steam_id}/public`
-            );
-            setValue(`players.${index}.is_profile_public`, publicStatus.public);
-            const data = await expressFetcher<PlayerDetailsBySteamId>(
-              `/api/v1/players/${steam_id}/details`
-            );
+          // Fetch player hours, rank and platform rank first, as they should not return error
+          const [
+            hoursData,
+            rankData,
+            externalRankData,
+            publicStatus,
+            playerData
+          ] = await Promise.allSettled([
+            apiFetch<{
+              hours: number;
+            }>({
+              url: `/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
+            }),
+            apiFetch<{ rank: number }>({
+              url: `/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
+            }),
+            apiFetch<unknown>({
+              url: `/players/${steam_id}/platform/${platform}/rank`
+            }),
+            apiFetch<{ public: boolean }>({
+              url: `/players/${steam_id}/public`
+            }),
+            apiFetch<PlayerDetailsBySteamId>({
+              url: `/players/${steam_id}/details`
+            })
+          ]);
 
-            if (data.name)
-              setValue(`players.${index}.name`, data.name, {
-                shouldValidate: true
-              });
+          // Only set values if the promises were fulfilled
+          if (publicStatus.status === "fulfilled") {
+            setValue(
+              `players.${index}.is_profile_public`,
+              publicStatus.value.public
+            );
+          }
 
+          if (hoursData.status === "fulfilled") {
+            setValue(`players.${index}.hours`, hoursData.value.hours);
+          }
+
+          if (rankData.status === "fulfilled") {
+            setValue(`players.${index}.rank`, rankData.value.rank);
+          }
+
+          if (externalRankData.status === "fulfilled") {
+            switch (platform) {
+              case SeasonPlatform.FACEIT:
+                setValue(
+                  `players.${index}.external_rank`,
+                  (externalRankData.value as FaceITCSRank).faceit_level
+                );
+            }
+          }
+          if (playerData.status === "fulfilled") {
+            const data = playerData.value;
             const has_valid_data = Boolean(
               data.is_valid_full_name &&
                 data.is_valid_work_email &&
                 data.has_accepted_latest_privacy_policy
             );
             setValue(`players.${index}.has_valid_data`, has_valid_data);
-
+            if (data.name)
+              setValue(`players.${index}.name`, data.name, {
+                shouldValidate: true
+              });
             if (data.discord)
               setValue(`players.${index}.discord`, data.discord, {
                 shouldValidate: false
               });
-          } catch (_error) {
-            setValue(`players.${index}.name`, "");
-            setOpenItems((prev) => [...prev, `player-${index}`]);
-          } finally {
-            setLoadingStates((prev) => ({ ...prev, [index]: false }));
+          } else {
+            if (playerData.reason instanceof ApiError) {
+              if (playerData.reason.status === 404)
+                setNewPlayers((prev) => [...prev, steam_id]);
+            }
           }
+          setLoadingStates((prev) => ({ ...prev, [index]: false }));
         }
       }
     };
 
     checkPlayers(steamIds);
     prevWatchedSteamIds.current = steamIds;
-  }, [setValue, steamIds]);
+  }, [platform, seasonSteamAppId, setValue, steamIds]);
 
   const onCapitanChange = (
     checked: CheckedState,
@@ -196,11 +251,13 @@ export const TabPlayers = ({
           onValueChange={setOpenItems}
         >
           {fields.map((field, index) => {
+            const player = watch(`players.${index}`);
+
             const playerOk =
-              validPlayers[index]?.player.steam_id.length === 17 &&
-              validPlayers[index]?.result.success === true &&
-              validPlayers[index]?.player.has_valid_data &&
-              validPlayers[index]?.player.is_profile_public;
+              player.steam_id.length === 17 &&
+              playerSchema.safeParse(player).success &&
+              player.has_valid_data &&
+              player.is_profile_public;
             return (
               <AccordionItem
                 className="space-y-2 border-b-0"
@@ -209,23 +266,27 @@ export const TabPlayers = ({
               >
                 <AccordionTrigger
                   className={cn(
-                    "border-1 p-4 w-full rounded-lg flex items-center",
-                    loadingStates[index] && "border-yellow-500 animate-pulse",
+                    "border-1 p-4 w-full rounded-lg flex flex-col items-center xs:flex-row",
+                    loadingStates[index] && "border-yellow-400 animate-pulse",
                     playerOk && "border-green-500",
-                    !playerOk && "border-red-500"
+                    !playerOk &&
+                      player.steam_id.length === 17 &&
+                      !loadingStates[index] &&
+                      "border-red-500"
                   )}
                 >
                   <FormField
                     control={control}
                     name={`players.${index}.steam_id`}
                     render={({ field }) => (
-                      <FormItem className="w-100">
+                      <FormItem className="w-full">
                         <FormLabel>Steam ID</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             className="w-full"
                             onClick={(e) => e.stopPropagation()}
+                            disabled={loadingStates[index]}
                             onChange={(e) => {
                               const newValue = e.target.value;
                               const oldValue = field.value;
@@ -240,6 +301,12 @@ export const TabPlayers = ({
                                   `players.${index}.is_profile_public`,
                                   undefined
                                 );
+                                setValue(`players.${index}.hours`, undefined);
+                                setValue(`players.${index}.rank`, undefined);
+                                setValue(
+                                  `players.${index}.external_rank`,
+                                  undefined
+                                );
                               }
                               field.onChange(e);
                             }}
@@ -250,24 +317,32 @@ export const TabPlayers = ({
                     )}
                   />
 
-                  {watch(`players.${index}.captain`) && (
-                    <Image
-                      src={createNextImageUrl("/images/captain.png")}
-                      alt="Captain"
-                      className="hidden xxs:block"
-                      width={30}
-                      height={23}
-                    />
-                  )}
-                  {watch(`players.${index}.co_captain`) && (
-                    <Image
-                      src={createNextImageUrl("/images/co-captain.png")}
-                      alt="Co-Captain"
-                      className="hidden xxs:block"
-                      width={30}
-                      height={23}
-                    />
-                  )}
+                  <div className="flex flex-row w-full items-center justify-around gap-2">
+                    {player.external_rank && (
+                      <FaceITLevelIcon level={player.external_rank} />
+                    )}
+
+                    {player.rank && (
+                      <CS2PremierRankBadge rankScore={player.rank} />
+                    )}
+
+                    {player.captain && (
+                      <Image
+                        src={createNextImageUrl("/images/captain.png")}
+                        alt="Captain"
+                        width={30}
+                        height={23}
+                      />
+                    )}
+                    {player.co_captain && (
+                      <Image
+                        src={createNextImageUrl("/images/co-captain.png")}
+                        alt="Co-Captain"
+                        width={30}
+                        height={23}
+                      />
+                    )}
+                  </div>
                 </AccordionTrigger>
                 <AccordionContent className="w-full p-4 border-t space-y-3">
                   <div className="flex items-center gap-4">
@@ -282,6 +357,10 @@ export const TabPlayers = ({
                               onCheckedChange={(checked) =>
                                 onCapitanChange(checked, index, "captain")
                               }
+                              disabled={
+                                player.has_valid_data === undefined &&
+                                newPlayers.includes(player.steam_id)
+                              }
                             />
                           </FormControl>
                           <FormLabel className="cursor-pointer">
@@ -294,12 +373,16 @@ export const TabPlayers = ({
                       control={control}
                       name={`players.${index}.co_captain`}
                       render={({ field }) => (
-                        <FormItem className="flex items-center gap-2">
+                        <FormItem className="flex items-center gap-2 py-1 sm:py-2">
                           <FormControl>
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={(checked) =>
                                 onCapitanChange(checked, index, "co_captain")
+                              }
+                              disabled={
+                                player.has_valid_data === undefined &&
+                                newPlayers.includes(player.steam_id)
                               }
                             />
                           </FormControl>
@@ -315,12 +398,16 @@ export const TabPlayers = ({
                     control={control}
                     name={`players.${index}.name`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="py-1 sm:py-2">
                         <FormLabel>Steam nickname</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             onClick={(e) => e.stopPropagation()}
+                            disabled={
+                              player.has_valid_data === undefined &&
+                              newPlayers.includes(player.steam_id)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -329,13 +416,12 @@ export const TabPlayers = ({
                   />
 
                   {/* If players.index.captain is checked, render discord field */}
-                  {(watch(`players.${index}.captain`) ||
-                    watch(`players.${index}.co_captain`)) && (
+                  {(player.captain || player.co_captain) && (
                     <FormField
                       control={control}
                       name={`players.${index}.discord`}
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="py-1 sm:py-2">
                           <FormLabel>Discord</FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -346,24 +432,46 @@ export const TabPlayers = ({
                     />
                   )}
 
-                  {watch(`players.${index}.has_valid_data`) === false && (
-                    <div className="text-red-500 text-xs flex gap-2 items-center">
-                      <TriangleAlert className="h-4 w-4" /> Ask player to login
-                      to Kanahub and fill in their personal details.
-                    </div>
+                  {player.has_valid_data === undefined &&
+                    newPlayers.includes(player.steam_id) && (
+                      <SignupPlayerNotification type="warning">
+                        A new player, perhaps. To Kanahub, login you must.
+                      </SignupPlayerNotification>
+                    )}
+
+                  {player.has_valid_data === false && (
+                    <SignupPlayerNotification>
+                      Ask player to login to Kanahub and fill in their personal
+                      details.
+                    </SignupPlayerNotification>
                   )}
 
-                  {watch(`players.${index}.is_profile_public`) === false && (
-                    <div className="text-red-500 text-xs flex gap-2 items-center">
-                      <TriangleAlert className="h-4 w-4" /> Player steam profile
-                      is not public
-                    </div>
+                  {player.is_profile_public === false && (
+                    <SignupPlayerNotification>
+                      Player steam profile is not public
+                    </SignupPlayerNotification>
                   )}
+
+                  {player.hours === -1 && (
+                    <SignupPlayerNotification>
+                      Could not detect the hours for the player. Please open a
+                      ticket in the Kanaliiga Discord.
+                    </SignupPlayerNotification>
+                  )}
+
+                  {player.rank === -1 &&
+                    player.external_rank === -1 &&
+                    platform !== SeasonPlatform.Kanaliiga && (
+                      <SignupPlayerNotification>
+                        {`Could not detect external ${platform.toLocaleUpperCase()} or game internal rank for the player. Please open a
+                      ticket in the Kanaliiga Discord.`}
+                      </SignupPlayerNotification>
+                    )}
 
                   {prevWatchedSteamIds.current.filter(
-                    (id) => !!id && id === watch(`players.${index}.steam_id`)
+                    (id) => !!id && id === player.steam_id
                   ).length > 1 && (
-                    <div className="text-yellow-500 text-xs flex gap-2 items-center">
+                    <div className="text-yellow-500 text-xs flex gap-2 items-center py-1">
                       <TriangleAlert className="h-4 w-4" /> Duplicate steam id
                       detected
                     </div>
@@ -373,7 +481,7 @@ export const TabPlayers = ({
                     variant="destructive"
                     onClick={() => remove(index)}
                     type="button"
-                    className="w-full"
+                    className="w-full mt-1 sm:mt-4"
                     disabled={fields.length <= 5} // Disable if less than 5 players
                   >
                     Remove Player
@@ -395,7 +503,7 @@ export const TabPlayers = ({
                 co_captain: false
               });
             }}
-            className="w-full"
+            className="w-full my-2 sm:my-4"
             variant={"default"}
           >
             Add Player
@@ -405,7 +513,7 @@ export const TabPlayers = ({
           control={control}
           name="defects"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="my-2 sm:my-4">
               <FormLabel>Defects</FormLabel>
               <FormControl>
                 <Textarea {...field} />

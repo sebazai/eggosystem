@@ -160,7 +160,7 @@ export const Navigation = (props: NavbarProps) => {
       id="navigation"
       className={`pointer-events-none sticky top-0 w-full px-4 sm:landscape:px-4 sm:px-8 lg:px-16 backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
     >
-      <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto max-w-screen-xl">
+      <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto max-w-screen-2xl">
         {/* Desktop Navigation - Sticky by Default */}
         <div className="hidden w-full items-center justify-center gap-6 md:flex pointer-events-auto">
           {logo && (

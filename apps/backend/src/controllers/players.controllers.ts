@@ -5,6 +5,12 @@ import {
   getPlayerLeaderboard
 } from "../models/player.models";
 import { isSteamProfilePublic } from "../services/player.services";
+import {
+  getPlayerHoursForSteamAppId,
+  getPlayerAppIdRank,
+  getPlayerRankForPlatform
+} from "../services/player-ranks.services";
+import { isSeasonPlatform } from "@eggosystem/types";
 
 export const getPlayerBySteamIdController = async (
   req: Request,
@@ -25,6 +31,44 @@ export const getIsPlayerProfilePublic = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
   const isPublic = await isSteamProfilePublic(steam_id);
   res.status(200).json({ public: isPublic });
+};
+
+/**
+ * @param res Return hours = -1 if hours cannot be determined
+ */
+export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
+  const steam_id = req.params.steam_id;
+  const steam_app_id = req.params.steam_app_id;
+  const season_id = req.query.season_id?.toString();
+  const hours = await getPlayerHoursForSteamAppId(
+    steam_id,
+    steam_app_id,
+    season_id
+  );
+  res.status(200).json(hours);
+};
+
+/**
+ * @param res Return cs2_rank = -1 if rank cannot be determined
+ */
+export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
+  const steam_id = req.params.steam_id;
+  const steam_app_id = req.params.steam_app_id;
+  const season_id = req.query.season_id?.toString();
+  const rank = await getPlayerAppIdRank(steam_id, steam_app_id, season_id);
+  res.status(200).json(rank);
+};
+
+export const getPlayerPlatformRank = async (req: Request, res: Response) => {
+  const steam_id = req.params.steam_id;
+  const platform = req.params.platform;
+  const isSeasonPlatformEnum = isSeasonPlatform(platform);
+  if (isSeasonPlatformEnum) {
+    const platform_rank = await getPlayerRankForPlatform(steam_id, platform);
+    res.status(200).json(platform_rank);
+    return;
+  }
+  res.status(400).json({ message: "Unknown platform enum" });
 };
 
 export const getPlayersByFiltersController = async (

@@ -1,7 +1,10 @@
 import { Router } from "express";
 import {
   getPlayerBySteamIdController,
-  getIsPlayerProfilePublic
+  getIsPlayerProfilePublic,
+  getPlayerSteamAppIdHours,
+  getPlayerSteamAppIdRank,
+  getPlayerPlatformRank
   // getPlayersByFiltersController,
   // getPlayerLeaderboardController,
   // getMultipleLeaderboardsController
@@ -15,6 +18,9 @@ const router = Router();
 // Player routes
 router.get("/:steam_id/details", getPlayerBySteamIdController);
 router.get("/:steam_id/public", getIsPlayerProfilePublic);
+router.get("/:steam_id/app/:steam_app_id/hours", getPlayerSteamAppIdHours);
+router.get("/:steam_id/app/:steam_app_id/rank", getPlayerSteamAppIdRank);
+router.get("/:steam_id/platform/:platform/rank", getPlayerPlatformRank);
 // router.get(
 //   "/:season_id/:map_id/:league_id/:stage/:team_id/leaderboards",
 //   parseQueryParams,

@@ -2,6 +2,7 @@ import passport from "passport";
 import steam from "passport-steam";
 
 import { getAuthUserBySteamId, createSteamPlayer } from "../models/auth.models";
+import { clearPossibleRedisCacheForNewUser } from "../services/redis.services";
 import type { UserPayload } from "@eggosystem/types";
 
 passport.use(
@@ -21,6 +22,7 @@ passport.use(
             steamDisplayName: profile.displayName,
             steamRealname: profile._json.realname
           });
+          await clearPossibleRedisCacheForNewUser(profile.id);
           return done(null, {
             steamId: profile.id,
             displayName: profile.displayName

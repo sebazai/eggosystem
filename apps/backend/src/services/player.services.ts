@@ -25,7 +25,7 @@ export const isSteamProfilePublic = async (steam_id: string) => {
   const result = await fetch(steamUrl);
   const data: ISteamUserResponse = await result.json();
   if (data.response.players.length === 0) {
-    throw new Error("Invalid steam id");
+    throw new Error("Invalid steam id or profile not found");
   }
   return data.response.players[0].communityvisibilitystate === 3;
 };

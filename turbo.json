@@ -12,6 +12,7 @@
         "DB_HOST",
         "DB_PORT",
         "STEAM_API_KEY",
+        "FACEIT_API_KEY",
         "JWT_SECRET",
         "JWT_REFRESH_SECRET",
         "JWT_EXPIRES_IN",

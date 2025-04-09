@@ -11,6 +11,15 @@ const addRefreshSubscriber = (callback: () => void) => {
   refreshSubscribers.push(callback);
 };
 
+export class ApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
 interface ApiFetchGet {
   url: string;
   method?: "GET";
@@ -92,6 +101,16 @@ export async function apiFetch<T>(params: ApiFetch): Promise<T> {
     }
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error:", errorData);
+      if (
+        errorData &&
+        typeof errorData === "object" &&
+        "message" in errorData &&
+        typeof errorData.message === "string"
+      ) {
+        throw new ApiError(errorData.message, response.status);
+      }
       throw new Error(`Request failed with status ${response.status}`);
     }
 

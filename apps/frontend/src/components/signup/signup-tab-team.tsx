@@ -67,7 +67,7 @@ export const TabTeam = ({
         control={control}
         name="teamId"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="mb-2 sm:mb-4">
             <FormLabel>Team</FormLabel>
             <FormControl>
               <FancySelect<number>
@@ -105,7 +105,7 @@ export const TabTeam = ({
           control={control}
           name="teamExternalId"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="mb-2 sm:mb-4">
               <FormLabel>{`Team ${Platform} id`}</FormLabel>
               <FormControl>
                 <Input {...field} placeholder={`Team ${Platform} id`} />

@@ -10,3 +10,5 @@ export * from "./seasonteamplayer/index";
 export * from "./organizations/index";
 export * from "./enums/index";
 export * from "./profile/index";
+export * from "./seasons/index";
+export * from "./player-ranks/index";

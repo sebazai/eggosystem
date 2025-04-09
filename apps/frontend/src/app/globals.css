@@ -252,4 +252,8 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   h3 {
     margin: 0.5rem 0;
   }
+
+  .cs-premier-rank {
+    font-family: var(--font-poppins);
+  }
 }
