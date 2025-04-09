@@ -1,13 +1,5 @@
 import { test, expect } from "./fixtures";
 import type { Page, Route, TestInfo } from "@playwright/test";
-import * as fs from "fs";
-import * as path from "path";
-
-// Ensure test-results directory exists
-const testResultsDir = path.resolve(process.cwd(), "test-results");
-if (!fs.existsSync(testResultsDir)) {
-  fs.mkdirSync(testResultsDir, { recursive: true });
-}
 
 // A helper function to retry navigation when pages are being compiled
 async function navigateWithRetry(
@@ -409,26 +401,5 @@ test.describe("Profile Form", () => {
 
   test.skip("should show success message after successful submission", () => {
     // Test implementation remains the same
-  });
-});
-
-// These tests should be run with a real backend instance
-test.describe("Profile Form E2E", () => {
-  test.skip("should allow user to submit profile form and accept privacy policy", async ({
-    page
-  }) => {
-    // TODO: Implement a true E2E test here
-    // 1. Navigate to login page
-    // 2. Log in with a test user (real auth flow)
-    // 3. Go to profile page
-    // 4. Fill out the form
-    // 5. Accept privacy policy
-    // 6. Submit the form
-    // 7. Verify changes were saved in the database
-
-    // This is just a placeholder to show the structure
-    await navigateWithRetry(page, "/profile");
-    await page.waitForSelector("form", { timeout: 20000 });
-    expect(page.url()).toContain("profile");
   });
 });

@@ -262,13 +262,13 @@ test:frontend:
   before_script:
     - npm install -g pnpm@10.3.0
     - export $(grep -v '^#' .env.development | xargs)
-    - pnpm --filter=backend seed
-    - pnpm --filter=backend dev &
+    #- pnpm --filter=backend seed
+    #- pnpm --filter=backend dev &
     - pnpm --filter="@eggosystem/types" build
     - cd apps/frontend && npx playwright install --with-deps chromium
   script:
     - unset NODE_ENV
-    - pnpm --filter=frontend test:e2e
+    - pnpm --filter=frontend test:integration
   allow_failure: true
   artifacts:
     when: always
