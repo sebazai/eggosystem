@@ -91,6 +91,7 @@ export const TabOrganization = ({
                     resetField("newOrganization");
                     resetField("teamId");
                     resetField("newTeam");
+                    resetField("teamExternalId");
                   }
                   field.onChange(selectedItem?.value);
                 }}

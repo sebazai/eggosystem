@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,13 +17,29 @@ import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ErrorMessage } from "@hookform/error-message";
 import { apiFetch } from "@/lib/apiClient";
-import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
+import {
+  SeasonPlatform,
+  type FaceITTeamDetails,
+  type SignupFormValues
+} from "@eggosystem/types";
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 
 interface SignupFormProps {
   seasonId: string;
   platform: SeasonPlatform;
 }
+
+const validateExternalPlaformId = async (
+  platform: SeasonPlatform,
+  externalId: string
+) => {
+  if (platform === SeasonPlatform.FACEIT) {
+    const data = await apiFetch<FaceITTeamDetails>({
+      url: `/faceit/teams/${externalId}`
+    });
+    return data;
+  }
+};
 
 export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
@@ -32,6 +48,10 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   const baseSchema = baseSignupFormSchema({ platform })._def.schema;
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fetchingExternalData, setFetchingExternalData] = useState(false);
+  const [validExternalTeamId, setValidExternalTeamId] = useState(
+    platform !== SeasonPlatform.Kanaliiga ? null : true
+  );
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(schema),
@@ -129,6 +149,32 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
     [watchPlayers, baseSchema]
   );
 
+  useEffect(() => {
+    const validateExternalId = async () => {
+      if (
+        validTeamExternalId.success &&
+        validTeamExternalId.data.teamExternalId &&
+        !fetchingExternalData &&
+        !validExternalTeamId
+      ) {
+        setFetchingExternalData(true);
+        const id = validTeamExternalId.data.teamExternalId;
+        const data = await validateExternalPlaformId(platform, id);
+        setValidExternalTeamId(!!data);
+        setFetchingExternalData(false);
+      }
+      if (!validTeamExternalId.success) {
+        setValidExternalTeamId(false);
+      }
+    };
+    validateExternalId();
+  }, [
+    validTeamExternalId,
+    platform,
+    fetchingExternalData,
+    validExternalTeamId
+  ]);
+
   const onSubmit = async (data: SignupFormValues) => {
     setSuccessMessage(null);
     setErrorMessage(null);
@@ -167,20 +213,35 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
   };
 
   const validOrganizationSelection = Boolean(
-    (validOrgId.success !== false && validOrgId.data.organizationId !== -1) ||
-      (validOrg.success !== false &&
+    (validOrgId.success && validOrgId.data.organizationId !== -1) ||
+      (validOrg.success &&
         validOrgId.data?.organizationId === -1 &&
         validOrg.data.newOrganization)
   );
 
   const validTeamSelection =
     Boolean(
-      (validTeamId.success !== false && validTeamId.data.teamId !== -1) ||
-        (validTeam.success !== false &&
+      (validTeamId.success && validTeamId.data.teamId !== -1) ||
+        (validTeam.success &&
           validTeamId.data?.teamId === -1 &&
           validTeam.data.newTeam)
     ) &&
-    (platform === SeasonPlatform.Kanaliiga || validTeamExternalId.success);
+    validTeamExternalId.success &&
+    !!validExternalTeamId;
+
+  const validPlayerSelection =
+    validPlayers &&
+    watchPlayers.every(
+      (p) =>
+        p.has_valid_data &&
+        p.is_profile_public &&
+        p.rank !== -1 &&
+        p.external_rank !== -1 &&
+        p.hours !== -1
+    );
+
+  const canSubmit =
+    validOrganizationSelection && validTeamSelection && validPlayerSelection;
 
   return (
     <Form {...form}>
@@ -228,7 +289,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                   disabled={!validTeamSelection}
                 >
                   Players{" "}
-                  {validPlayers.success && (
+                  {validPlayerSelection && (
                     <CheckCheck
                       className={cn(
                         validOrganizationSelection && "text-green-500"
@@ -254,6 +315,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}
                 platform={seasonDetails.platform}
+                fetchingExternalData={fetchingExternalData}
               />
 
               <TabPlayers
@@ -293,7 +355,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
               type="submit"
               variant="outline"
               className="w-full"
-              disabled={!!successMessage}
+              disabled={!!successMessage || !canSubmit}
             >
               Submit
             </Button>

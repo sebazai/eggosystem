@@ -10,11 +10,12 @@ import * as organizationModels from "../../models/organization.models";
 import * as seasonTeamRegistrationModels from "../../models/seasonteamregistration.models";
 import * as seasonTeamPlayersModels from "../../models/seasonteamplayers.models";
 import type { Response } from "express";
-import type {
-  SignupFormValues,
-  RequestWithParamsAndBody,
-  Season,
-  Player
+import {
+  type SignupFormValues,
+  type RequestWithParamsAndBody,
+  type Season,
+  type Player,
+  SeasonPlatform
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
@@ -78,14 +79,17 @@ describe("addSignupForSeason - Try Catch Block", () => {
     jest
       .spyOn(db, "getConnection")
       .mockResolvedValue(mockConnection as unknown as PoolConnection);
-    jest.spyOn(seasonModels, "getSeasonById").mockResolvedValue([
-      {
-        id: 1,
-        name: "Test Season",
-        signup_start_date: yesterday,
-        signup_end_date: tomorrow
-      } as unknown as Season
-    ]);
+    jest.spyOn(seasonModels, "getSeasonById").mockResolvedValue({
+      id: 1,
+      name: "Test Season",
+      signup_start_date: String(yesterday),
+      signup_end_date: String(tomorrow),
+      platform: SeasonPlatform.Kanaliiga,
+      game_id: 0,
+      full_name: "CS2 Test Season",
+      start_date: "String(tomorrow)",
+      end_date: null
+    } satisfies Season);
     jest
       .spyOn(playerServices, "areSteamProfilesPublic")
       .mockResolvedValue({ is_all_public: true });

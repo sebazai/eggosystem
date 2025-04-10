@@ -12,3 +12,4 @@ export * from "./enums/index";
 export * from "./profile/index";
 export * from "./seasons/index";
 export * from "./player-ranks/index";
+export * from "./faceit/index";

@@ -6,12 +6,17 @@ export const getSeasons = async () => {
 };
 
 export const getSeasonById = async (id: string) => {
-  return runQuery<Season[]>("SELECT * FROM Seasons WHERE id = ?", [id]);
+  const [data] = await runQuery<[Season | undefined]>(
+    "SELECT * FROM Seasons WHERE id = ?",
+    [id]
+  );
+  return data;
 };
 
 export const getSeasonDetailsById = async (id: string) => {
-  return runQuery<Array<SeasonDetails>>(
+  const [data] = await runQuery<Array<SeasonDetails | undefined>>(
     "SELECT s.*, g.steam_app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
     [id]
   );
+  return data;
 };

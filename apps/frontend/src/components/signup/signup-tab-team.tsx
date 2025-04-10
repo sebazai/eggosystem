@@ -24,6 +24,7 @@ interface TabTeamProps {
   validTeamSelection: boolean;
   onNext: (value: string) => void;
   platform: string;
+  fetchingExternalData: boolean;
 }
 
 export const TabTeam = ({
@@ -33,7 +34,8 @@ export const TabTeam = ({
   resetField,
   validTeamSelection,
   onNext,
-  platform
+  platform,
+  fetchingExternalData
 }: TabTeamProps) => {
   const Platform = platform.charAt(0).toUpperCase() + platform.slice(1);
   const { teams, isLoading, isError, isValidating } =
@@ -100,25 +102,9 @@ export const TabTeam = ({
         )}
       />
 
-      {platform !== SeasonPlatform.Kanaliiga && (
-        <FormField
-          control={control}
-          name="teamExternalId"
-          render={({ field }) => (
-            <FormItem className="mb-2 sm:mb-4">
-              <FormLabel>{`Team ${Platform} id`}</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder={`Team ${Platform} id`} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      )}
-
       {/* Custom Team Input (Only if "Other" is selected) */}
       {watchTeamId === -1 && (
-        <div className="pt-4 space-y-4">
+        <div className="pt-2 space-y-4">
           <FormField
             control={control}
             name="newTeam.name"
@@ -134,8 +120,37 @@ export const TabTeam = ({
           />
         </div>
       )}
+
+      {platform !== SeasonPlatform.Kanaliiga && (
+        <FormField
+          control={control}
+          name="teamExternalId"
+          render={({ field }) => (
+            <FormItem className="pt-2">
+              <FormLabel>{`Team ${Platform} id`}</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input
+                    {...field}
+                    placeholder={`Team ${Platform} id`}
+                    className="pr-10"
+                  />
+                  {fetchingExternalData && (
+                    <div className="absolute inset-y-0 right-2 flex items-center">
+                      <Spinner />
+                    </div>
+                  )}
+                </div>
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+
       <Button
-        className="mt-5 w-full"
+        className="mt-6 w-full"
         disabled={!validTeamSelection}
         onClick={() => onNext("players")}
       >

@@ -58,13 +58,20 @@ const newTeamSchema = z.preprocess(
     .optional()
 );
 
+const teamExternalIdSchema = (platform: SeasonPlatform) => {
+  if (platform === SeasonPlatform.FACEIT) {
+    return z.string().uuid();
+  }
+  return z.string().optional();
+};
+
 const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
   z
     .object({
       organizationId: z.number(),
       newOrganization: newOrganizationSchema.optional(),
       teamId: z.number(),
-      teamExternalId: z.string().optional(),
+      teamExternalId: teamExternalIdSchema(context.platform),
       newTeam: newTeamSchema.optional(),
       players: z
         .array(playerSchema)
@@ -95,12 +102,16 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
     .refine(
       (data) => {
         if (context.platform !== SeasonPlatform.Kanaliiga) {
-          return !!data.teamExternalId;
+          return (
+            typeof data.teamExternalId === "string" &&
+            data.teamExternalId.length >= 2 &&
+            data.teamExternalId.length <= 50
+          );
         }
         return true;
       },
       {
-        message: "Team external id is required for this platform.",
+        message: `Team external ID must be between 2 and 50 characters for platform ${context.platform.toLocaleUpperCase()}.`,
         path: ["teamExternalId"]
       }
     );
