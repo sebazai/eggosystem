@@ -254,7 +254,7 @@ export default function TopTeamsPage() {
           seasons={initialParams.seasons}
           leagues={initialParams.leagues}
           stages={initialParams.stages}
-          teams={[]}
+          teams={null}
           maps={initialParams.maps}
         />
         <div

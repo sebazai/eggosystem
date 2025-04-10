@@ -9,15 +9,13 @@ interface UseRecentMatchesProps {
   leagues: number[];
   stages: number[];
   teams: number[];
-  maps: number[];
 }
 
 export const useRecentMatches = ({
   seasons,
   leagues,
   stages,
-  teams,
-  maps
+  teams
 }: UseRecentMatchesProps) => {
   const params = new URLSearchParams();
 
@@ -29,8 +27,6 @@ export const useRecentMatches = ({
     stages.forEach((stage) => params.append("stages[]", String(stage)));
   if (teams.length)
     teams.forEach((team) => params.append("team_ids[]", String(team)));
-  if (maps.length)
-    maps.forEach((map) => params.append("map_ids[]", String(map)));
 
   const sortedQuery = Array.from(params.entries())
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))

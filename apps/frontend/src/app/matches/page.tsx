@@ -5,7 +5,6 @@ import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { FilteredMatchesList } from "@/components/matches/filtered-matches-list";
-import { envConfig } from "@/configs/env";
 import { TheContainer } from "@/components/layout/the-container";
 
 const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
@@ -17,7 +16,6 @@ const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
 
 export default function AllMatches() {
   const searchParams = useSearchParams();
-  const activeSeason = envConfig.ACTIVE_SEASON;
 
   const initialParams = useMemo(
     () => ({
@@ -25,14 +23,10 @@ export default function AllMatches() {
       leagues: getParamArray(searchParams, "leagues"),
       stages: getParamArray(searchParams, "stages"),
       teams: getParamArray(searchParams, "teams"),
-      maps: []
+      maps: null
     }),
     [searchParams]
   );
-
-  if (initialParams.seasons.length === 0) {
-    initialParams.seasons = [activeSeason];
-  }
 
   const { matches, isError, isLoading, isValidating } =
     useRecentMatches(initialParams);

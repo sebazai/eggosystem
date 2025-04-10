@@ -4,7 +4,6 @@ import Image from "next/image";
 import React, { useMemo } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { envConfig } from "@/configs/env";
 
 interface LeaderboardPlayer {
   name: string;
@@ -30,7 +29,6 @@ const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
 
 export default function LeaderboardsPage() {
   const searchParams = useSearchParams();
-  const activeSeason = envConfig.ACTIVE_SEASON;
 
   const initialParams = useMemo(
     () => ({
@@ -42,10 +40,6 @@ export default function LeaderboardsPage() {
     }),
     [searchParams]
   );
-
-  if (initialParams.seasons.length === 0) {
-    initialParams.seasons = [activeSeason];
-  }
 
   // Dummy data that can be replaced with backend data later
   const leaderboardCategories: LeaderboardCategory[] = [

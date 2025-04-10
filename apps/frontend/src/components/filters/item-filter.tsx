@@ -6,7 +6,7 @@ import { expressFetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import _ from "lodash";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface ItemFilterProps<T> {
   filterName: string;
@@ -26,6 +26,7 @@ export const ItemFilter = <T extends { id: number }>(
   const [selectedItems, setSelectedItems] = useState<number[]>(
     props.selectedItems
   );
+  const [selectableIds, setSelectableIds] = useState<T[]>([]);
 
   const { data, isLoading } = useSWR<T[]>(
     `/api/v1/${props.filterName}`,
@@ -34,6 +35,16 @@ export const ItemFilter = <T extends { id: number }>(
       revalidateOnFocus: false
     }
   );
+
+  useEffect(() => {
+    const selectableIdsIntersection: T[] = _.intersectionWith(
+      data,
+      props.selectableIds ?? [],
+      (a: T, b: number) => a.id === b
+    );
+    if (props.sorter) selectableIdsIntersection.sort(props.sorter);
+    setSelectableIds(selectableIdsIntersection);
+  }, [data, props.selectableIds, props.sorter]);
 
   if (isLoading || !data)
     return (
@@ -52,14 +63,6 @@ export const ItemFilter = <T extends { id: number }>(
     };
   });
 
-  const selectableIdsIntersection: T[] = _.intersectionWith(
-    data,
-    props.selectableIds ?? [],
-    (a: T, b: number) => a.id === b
-  );
-
-  if (props.sorter) selectableIdsIntersection.sort(props.sorter);
-
   const handleSelectedItems = (value: MultiSelect<number>[]) => {
     const selectedValues = value.map((item) => item.value);
     props.handleSetSearchParams(props.filterName, selectedValues);
@@ -70,7 +73,7 @@ export const ItemFilter = <T extends { id: number }>(
     <FancySelect<number>
       isMulti={true}
       filter={props.filterName}
-      selectable={selectableIdsIntersection.map((item) => ({
+      selectable={selectableIds.map((item) => ({
         value: item.id,
         label: String(item[props.labelKey])
       }))}
@@ -78,12 +81,7 @@ export const ItemFilter = <T extends { id: number }>(
       currentSelection={selectedIdsToSelectables}
       placeholder={`Filter ${props.filterName}`}
       isOpen={props.openFilter === props.filterName}
-      setOpen={(value) => {
-        if (value === null) {
-          props.setFilterParams(selectedItems);
-        }
-        props.handleOpen(value);
-      }}
+      setOpen={props.handleOpen}
     />
   );
 };

@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
 
   // If no leagues selected, fetch all available leagues
   const leaguesToQuery = leagues.length > 0 ? leagues : availableLeagues;
-  const seasonsToQuery =
-    seasons.length > 0 ? seasons : [envConfig.ACTIVE_SEASON.toString()];
+  const seasonsToQuery = seasons.length > 0 ? seasons : [];
 
   // If no stages selected, default to regular season (stage 1)
   const stagesToQuery = stages.length > 0 ? stages : ["1"];

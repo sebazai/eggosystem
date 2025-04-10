@@ -89,16 +89,14 @@ export function FancySelect<T>({
 
   const selectables = React.useMemo(
     () =>
-      selectable
-        .filter(
-          (item) =>
-            !currentSelection.some((s) => s.value === item.value) &&
-            (item.label.toLowerCase().includes(inputValue.toLowerCase()) ||
-              item.searchTerms?.some((term) =>
-                term.toLowerCase().includes(inputValue.toLowerCase())
-              ))
-        )
-        .sort((a, b) => a.label.localeCompare(b.label)),
+      selectable.filter(
+        (item) =>
+          !currentSelection.some((s) => s.value === item.value) &&
+          (item.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+            item.searchTerms?.some((term) =>
+              term.toLowerCase().includes(inputValue.toLowerCase())
+            ))
+      ),
     [selectable, currentSelection, inputValue]
   );
 
@@ -304,22 +302,38 @@ export function FancySelect<T>({
                   </CommandItem>
                 )}
 
-                {selectables.map((item, index) => (
+                {selectables.length ? (
+                  selectables.map((item, index) => (
+                    <CommandItem
+                      key={`${item.label}-${index}`}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onSelect={() => {
+                        setInputValue("");
+                        handleSelected(item);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      {item.label}
+                    </CommandItem>
+                  ))
+                ) : (
                   <CommandItem
-                    key={`${item.label}-${index}`}
+                    key="no-result"
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                     }}
                     onSelect={() => {
                       setInputValue("");
-                      handleSelected(item);
                     }}
                     className="cursor-pointer"
                   >
-                    {item.label}
+                    No results (Clear search)
                   </CommandItem>
-                ))}
+                )}
               </CommandGroup>
             </div>
           )}
