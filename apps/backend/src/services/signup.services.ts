@@ -1,6 +1,8 @@
 import type { PoolConnection } from "mysql2/promise";
 import { insertSeasonTeamRegistration } from "../models/seasonteamregistration.models";
 import { insertSeasonTeamPlayer } from "../models/seasonteamplayers.models";
+import { SeasonPlatform } from "@eggosystem/types";
+import { getFaceITTeamDetails } from "./faceit.services";
 
 export const signUpTeamForSeason = async (
   data: {
@@ -42,4 +44,18 @@ export const signUpTeamForSeason = async (
       connection
     );
   }
+};
+
+export const isValidExternalId = async (
+  platform: SeasonPlatform,
+  id?: string
+) => {
+  if (platform === SeasonPlatform.Kanaliiga) {
+    return true;
+  }
+  if (platform === SeasonPlatform.FACEIT && id) {
+    const data = await getFaceITTeamDetails(id);
+    return !!data;
+  }
+  return false;
 };

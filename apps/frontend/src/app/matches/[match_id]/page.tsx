@@ -1,6 +1,6 @@
 import type { MatchInfo } from "@eggosystem/types";
 import { getMatchInfo } from "./utils";
-import { MatchStats } from "@/components/match/match-stats";
+import { MatchStats } from "@/components/matches/match/match-stats";
 
 interface PageProps {
   params: Promise<{ match_id: string }>;

@@ -38,7 +38,7 @@ import passport from "./configs/passport";
 import "express-async-errors";
 
 import v1Router from "./routes";
-import { errorHandler } from "./middlewares/errors";
+import { expressErrorHandler } from "./middlewares/express-error-handler";
 import { type ParsedParams } from "@eggosystem/types";
 import cookieParser from "cookie-parser";
 import { type JwtPayload } from "jsonwebtoken";
@@ -98,6 +98,6 @@ app.use(passport.initialize());
 
 app.use("/api/v1", v1Router);
 
-app.use(errorHandler);
+app.use(expressErrorHandler);
 
 export { app };

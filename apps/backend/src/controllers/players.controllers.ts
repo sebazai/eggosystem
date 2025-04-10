@@ -4,13 +4,14 @@ import {
   getPlayersByFilters,
   getPlayerLeaderboard
 } from "../models/player.models";
-import { isSteamProfilePublic } from "../services/player.services";
+
 import {
   getPlayerHoursForSteamAppId,
   getPlayerAppIdRank,
   getPlayerRankForPlatform
 } from "../services/player-ranks.services";
 import { isSeasonPlatform } from "@eggosystem/types";
+import { isSteamProfilePublic } from "../services/steam.services";
 
 export const getPlayerBySteamIdController = async (
   req: Request,

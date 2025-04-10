@@ -211,7 +211,7 @@ export const TabPlayers = ({
 
     checkPlayers(steamIds);
     prevWatchedSteamIds.current = steamIds;
-  }, [platform, seasonSteamAppId, setValue, steamIds]);
+  }, [platform, seasonId, seasonSteamAppId, setValue, steamIds]);
 
   const onCapitanChange = (
     checked: CheckedState,

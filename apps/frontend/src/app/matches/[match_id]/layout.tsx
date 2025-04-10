@@ -1,4 +1,4 @@
-import { MatchHeader } from "@/components/match/match-header";
+import { MatchHeader } from "@/components/matches/match/match-header";
 import type { MatchInfo } from "@eggosystem/types";
 import type { Metadata } from "next";
 import type React from "react";

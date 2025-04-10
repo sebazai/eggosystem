@@ -15,13 +15,14 @@ import { insertOrganization } from "../models/organization.models";
 import { getConnection } from "../db/mysqlConnection";
 import { insertTeam } from "../models/team.models";
 import { upsertPlayer } from "../models/player.models";
-import { signUpTeamForSeason } from "../services/signup.services";
-import { isTeamPartOfOrganization } from "../services/team.services";
 import {
-  areSteamProfilesPublic,
-  getFullPlayerDetails
-} from "../services/player.services";
+  isValidExternalId,
+  signUpTeamForSeason
+} from "../services/signup.services";
+import { isTeamPartOfOrganization } from "../services/team.services";
+import { getFullPlayerDetails } from "../services/player.services";
 import _ from "lodash";
+import { areSteamProfilesPublic } from "../services/steam.services";
 
 export const fetchSeasons = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
@@ -96,6 +97,17 @@ export const addSignupForSeason = async (
       return;
     }
     throw error;
+  }
+
+  const externalIdValid = await isValidExternalId(
+    season.platform,
+    formData.teamExternalId
+  );
+
+  if (!externalIdValid) {
+    throw new Error(
+      `Could not find external team data for ${season.platform.toLocaleUpperCase()} id ${formData.teamExternalId}`
+    );
   }
 
   const steamIds = formData.players.map((p) => p.steam_id);

@@ -4,6 +4,7 @@ import * as db from "../../db/mysqlConnection";
 import * as signupServices from "../../services/signup.services";
 import * as teamServices from "../../services/team.services";
 import * as playerServices from "../../services/player.services";
+import * as steamServices from "../../services/steam.services";
 import * as playerModels from "../../models/player.models";
 import * as teamModels from "../../models/team.models";
 import * as organizationModels from "../../models/organization.models";
@@ -91,7 +92,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       end_date: null
     } satisfies Season);
     jest
-      .spyOn(playerServices, "areSteamProfilesPublic")
+      .spyOn(steamServices, "areSteamProfilesPublic")
       .mockResolvedValue({ is_all_public: true });
   });
 

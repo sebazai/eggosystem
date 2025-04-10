@@ -1,4 +1,4 @@
-import { generateQueryWithFilters } from "../middlewares/queryFilter";
+import { generateQueryWithFilters } from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
 import type {
   UpsertPlayer,

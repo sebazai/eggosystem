@@ -5,10 +5,10 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import type { MatchInfo } from "@eggosystem/types";
 
-import { MatchMapPicks } from "./map-picks";
-import { TeamStatistics } from "./statistics/team-statistics";
-import { PlayerStatistics } from "./statistics/player-stats-grid";
-import { TopPlayers } from "./top-players";
+import { MatchMapPicks } from "./stats/map-picks";
+import { TeamStatistics } from "./stats/team-statistics";
+import { PlayerStatistics } from "./stats/player-stats-grid";
+import { TopPlayers } from "./stats/top-players";
 import { useMatchTeamStats } from "@/hooks/data/useMatchTeamStats";
 import { useMatchPlayerStats } from "@/hooks/data/useMatchPlayerStats";
 import { useMatchTopPlayers } from "@/hooks/data/useMatchTopPlayers";

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import parseQueryParams from "../../middlewares/parseQueryParams";
+import parseQueryParams from "../../middlewares/parse-query-params.middleware";
 import { knex } from "../../db/knex"; // Your Knex instance
 
 const router = Router();

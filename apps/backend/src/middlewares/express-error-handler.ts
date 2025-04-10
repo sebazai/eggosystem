@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { UnauthorizedError } from "express-jwt";
 
-export const errorHandler = (
+export const expressErrorHandler = (
   err: Error,
   req: Request,
   res: Response,

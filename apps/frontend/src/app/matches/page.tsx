@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { FilteredMatchesList } from "@/components/match/filtered-matches-list";
+import { FilteredMatchesList } from "@/components/matches/filtered-matches-list";
 import { envConfig } from "@/configs/env";
 import { TheContainer } from "@/components/layout/the-container";
 

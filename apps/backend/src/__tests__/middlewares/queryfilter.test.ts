@@ -1,4 +1,4 @@
-import { generateQueryWithFilters } from "../../middlewares/queryFilter";
+import { generateQueryWithFilters } from "../../utils/queryFilter";
 
 describe("generateQueryWithFilters", () => {
   test("should return '1=1' when no filters are provided", () => {

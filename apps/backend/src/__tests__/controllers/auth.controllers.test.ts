@@ -5,6 +5,7 @@ import * as uuid from "uuid";
 import { redisClient } from "../../utils/redisClient";
 
 import * as authControllers from "../../controllers/auth.controllers";
+import * as authServices from "../../services/auth.services";
 
 describe("AuthControllers utils", () => {
   describe("generateTokens", () => {
@@ -20,7 +21,7 @@ describe("AuthControllers utils", () => {
         .spyOn(jwt, "sign")
         .mockImplementation(() => "mockedToken");
 
-      const tokens = authControllers.generateTokens(user, jti);
+      const tokens = authServices.generateTokens(user, jti);
 
       expect(signSpy).toHaveBeenCalledTimes(2);
       expect(signSpy).toHaveBeenNthCalledWith(
@@ -61,7 +62,7 @@ describe("AuthControllers", () => {
     beforeEach(() => {
       jest.clearAllMocks();
 
-      jest.spyOn(authControllers, "generateTokens").mockReturnValue({
+      jest.spyOn(authServices, "generateTokens").mockReturnValue({
         accessToken: "newAccessToken",
         refreshToken: "newRefreshToken"
       });
@@ -79,7 +80,7 @@ describe("AuthControllers", () => {
 
       await authControllers.login(req, res);
 
-      expect(authControllers.generateTokens).toHaveBeenCalledWith(
+      expect(authServices.generateTokens).toHaveBeenCalledWith(
         { steamId: "12345", displayName: "enzoj" },
         "123123"
       );
@@ -120,7 +121,7 @@ describe("AuthControllers", () => {
     beforeEach(() => {
       jest.clearAllMocks();
 
-      jest.spyOn(authControllers, "generateTokens").mockReturnValue({
+      jest.spyOn(authServices, "generateTokens").mockReturnValue({
         accessToken: "newAccessToken",
         refreshToken: "newRefreshToken"
       });
@@ -159,7 +160,7 @@ describe("AuthControllers", () => {
     beforeEach(() => {
       jest.clearAllMocks();
 
-      jest.spyOn(authControllers, "generateTokens").mockReturnValue({
+      jest.spyOn(authServices, "generateTokens").mockReturnValue({
         accessToken: "newAccessToken",
         refreshToken: "newRefreshToken"
       });
@@ -225,7 +226,7 @@ describe("AuthControllers", () => {
 
       await authControllers.refreshToken(req, res);
 
-      expect(authControllers.generateTokens).toHaveBeenCalledWith({
+      expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
         jti: "123123"
       });
@@ -281,7 +282,7 @@ describe("AuthControllers", () => {
         return { steamId: "12345", jti: "123123" };
       });
       await authControllers.refreshToken(req, res);
-      expect(authControllers.generateTokens).toHaveBeenCalledWith({
+      expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
         jti: "123123"
       });

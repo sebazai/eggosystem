@@ -13,7 +13,7 @@ import {
   getMatchRoundInfoController
 } from "../../controllers/matches.controllers";
 
-import parseQueryParams from "../../middlewares/parseQueryParams";
+import parseQueryParams from "../../middlewares/parse-query-params.middleware";
 // New Router instance
 const router = Router();
 
