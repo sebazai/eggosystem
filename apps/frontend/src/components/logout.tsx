@@ -12,7 +12,7 @@ export const DesktopLogOut = ({ logOutUser }: LogOutProps) => {
   };
   return (
     <DropdownMenuItem asChild>
-      <div onClick={handleLogout}>
+      <div className="cursor-pointer" onClick={handleLogout}>
         <LogOutIcon /> Sign Out
       </div>
     </DropdownMenuItem>

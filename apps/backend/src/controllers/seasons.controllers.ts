@@ -63,7 +63,7 @@ export const getActiveSeasonForApp = async (
   const redisKey = `${app_id}-active-season`;
   const dataInRedis = await redisClient.get(redisKey);
   if (dataInRedis) {
-    res.set("Cache-Control", "public, max-age=604800");
+    res.set("Cache-Control", "public, max-age=86400");
     res.json({ season_id: Number(dataInRedis) });
     return;
   }
@@ -73,7 +73,7 @@ export const getActiveSeasonForApp = async (
     return;
   }
   await redisClient.set(redisKey, activeSeason.season_id, "EX", expireIn30Days);
-  res.set("Cache-Control", "public, max-age=604800");
+  res.set("Cache-Control", "public, max-age=86400");
   res.json(activeSeason);
 };
 

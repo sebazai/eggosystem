@@ -111,7 +111,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
         return true;
       },
       {
-        message: `Team external ID must be between 2 and 50 characters for platform ${context.platform.toLocaleUpperCase()}.`,
+        message: `Team external ID must be between 2 and 50 characters for platform ${context.platform?.toLocaleUpperCase()}.`,
         path: ["teamExternalId"]
       }
     );
