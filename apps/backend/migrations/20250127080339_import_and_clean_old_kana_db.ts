@@ -7,6 +7,27 @@ export const config = { transaction: false };
 
 function getCleanDatabaseQueries() {
   return [
+    // Remove tabs and spaces from steamID
+    `
+     UPDATE players 
+     SET steamID = REPLACE(LTRIM(RTRIM(REPLACE(steamID, CHAR(9), ' '))), ' ', CHAR(9))
+   `,
+    `
+     UPDATE stats_all_seasons 
+     SET steamID = REPLACE(LTRIM(RTRIM(REPLACE(steamID, CHAR(9), ' '))), ' ', CHAR(9))
+   `,
+    // Fix specific steamIDs
+    `
+       UPDATE players 
+       SET steamID = '76561197991248173' 
+       WHERE id = 9457
+     `,
+
+    `
+       UPDATE players 
+       SET steamID = '76561197967466825' 
+       WHERE id = 11648
+     `,
     "DELETE FROM players WHERE steamID NOT LIKE '7%'",
 
     "DELETE FROM stats_all_seasons WHERE steamID NOT LIKE '7%'",
@@ -149,24 +170,6 @@ function getCleanDatabaseQueries() {
     WHERE m.steamID IS NULL
   )
 `,
-    // Remove tabs and spaces from steamID
-    `
-  UPDATE players 
-  SET steamID = REPLACE(LTRIM(RTRIM(REPLACE(steamID, CHAR(9), ' '))), ' ', CHAR(9))
-`,
-
-    // Fix specific steamIDs
-    `
-  UPDATE players 
-  SET steamID = '76561197991248173' 
-  WHERE id = 9457
-`,
-
-    `
-  UPDATE players 
-  SET steamID = '76561197967466825' 
-  WHERE id = 11648
-`,
 
     // Remove duplicate players in the same team, keeping the one with the lowest id
     `
@@ -208,7 +211,7 @@ function getCleanDatabaseQueries() {
     5238, 6098, 7612, 7609, 8155, 9492, 9493, 9494, 9495, 9496, 9497, 9498, 
     9500, 9501, 9502, 9503, 9504, 9506, 9508, 9509, 9510, 10938, 10939, 10949, 
     11657, 11658, 11660, 11661, 11662, 11663, 11664, 11665, 11666, 11669, 11670, 
-    11671, 11673, 11674, 11675, 11676, 16919, 16920
+    11671, 11673, 11674, 11675, 11676, 16919, 16920, 19703, 19706
   )
 `,
 
@@ -475,7 +478,6 @@ export async function up(knex: Knex): Promise<void> {
     console.log("Cleaning up the old Kana database...");
     const queries = getCleanDatabaseQueries();
     for (const query of queries) {
-      console.log(`Executing query: ${query}`);
       await otherDb.raw(query);
     }
     console.log("Finished cleaning...");

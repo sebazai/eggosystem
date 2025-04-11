@@ -41,10 +41,19 @@ export const StageFilter = (props: StageFilterProps) => {
     (a, b) => a.id === b
   );
 
-  const handleSelectedItems = (selectedItems: MultiSelect<number>[]) => {
-    const selectedValues = selectedItems.map((item) => item.value);
-    props.handleSetSearchParams(filterName, selectedValues);
+  const handleSelectedItems = (value: MultiSelect<number>[]) => {
+    const selectedValues = value.map((item) => item.value);
+    if (props.openFilter !== "stages") {
+      props.handleSetSearchParams("stages", selectedValues);
+    }
     setSelectedItems(selectedValues);
+  };
+
+  const handleOpenFilter = (filter: Nullable<string>) => {
+    if (filter === null) {
+      props.handleSetSearchParams("stages", selectedItems);
+    }
+    props.handleOpen(filter);
   };
 
   return (
@@ -59,12 +68,7 @@ export const StageFilter = (props: StageFilterProps) => {
       currentSelection={selectedIdsToSelectables}
       placeholder="Filter stages"
       isOpen={props.openFilter === filterName}
-      setOpen={(value) => {
-        if (value === null) {
-          props.setFilterParams(selectedItems);
-        }
-        props.handleOpen(value);
-      }}
+      setOpen={handleOpenFilter}
     />
   );
 };

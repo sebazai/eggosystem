@@ -65,8 +65,17 @@ export const ItemFilter = <T extends { id: number }>(
 
   const handleSelectedItems = (value: MultiSelect<number>[]) => {
     const selectedValues = value.map((item) => item.value);
-    props.handleSetSearchParams(props.filterName, selectedValues);
+    if (props.openFilter !== props.filterName) {
+      props.handleSetSearchParams(props.filterName, selectedValues);
+    }
     setSelectedItems(selectedValues);
+  };
+
+  const handleOpenFilter = (filter: Nullable<string>) => {
+    if (filter === null) {
+      props.handleSetSearchParams(props.filterName, selectedItems);
+    }
+    props.handleOpen(filter);
   };
 
   return (
@@ -81,7 +90,7 @@ export const ItemFilter = <T extends { id: number }>(
       currentSelection={selectedIdsToSelectables}
       placeholder={`Filter ${props.filterName}`}
       isOpen={props.openFilter === props.filterName}
-      setOpen={props.handleOpen}
+      setOpen={handleOpenFilter}
     />
   );
 };

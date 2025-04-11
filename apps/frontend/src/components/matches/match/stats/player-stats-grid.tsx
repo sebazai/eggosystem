@@ -1,3 +1,4 @@
+import { createStatsKanaliigaImageUrl } from "@/lib/utils";
 import type {
   MatchPlayerStats,
   MatchTeamInfo,
@@ -47,7 +48,7 @@ export const PlayerStatistics = ({
           {/* Team name bar */}
           <div className="flex items-center gap-2 p-3 mb-[1px] bg-kanaliiga-light-brown/20">
             <Image
-              src={`https://stats.kanaliiga.fi/img/${team.logo}`}
+              src={createStatsKanaliigaImageUrl(team.logo)}
               alt={team.name}
               className="w-6 h-6"
               width={24}

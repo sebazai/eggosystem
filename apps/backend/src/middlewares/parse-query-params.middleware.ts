@@ -41,15 +41,11 @@ const parseQueryParams = (
   };
 
   const parsedParams: ParsedParams = {
-    season_ids: parseArray(
-      req.query.season_ids as string | string[] | undefined
-    ),
-    league_ids: parseArray(
-      req.query.league_ids as string | string[] | undefined
-    ),
-    team_ids: parseArray(req.query.team_ids as string | string[] | undefined),
-    stages: parseArray(req.query.stages as string | string[] | undefined),
-    map_ids: parseArray(req.query.map_ids as string | string[] | undefined),
+    season_ids: parseArray(req.query.season_ids?.toString()),
+    league_ids: parseArray(req.query.league_ids?.toString()),
+    team_ids: parseArray(req.query.team_ids?.toString()),
+    stages: parseArray(req.query.stages?.toString()),
+    map_ids: parseArray(req.query.map_ids?.toString()),
     leaderboard:
       req.params.leaderboard === "any" ? null : req.params.leaderboard
   };

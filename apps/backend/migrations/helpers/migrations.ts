@@ -229,16 +229,6 @@ export const migrateAlmostErrything = async () => {
       const newCompany =
         newCompaniesByCompanyCode[teamCompany.yrityksen_y_tunnus];
 
-      console.log(
-        "Found company for,",
-        teamName,
-        "company name",
-        teamCompany.Name,
-        "with y-tunnus,",
-        newCompany?.organization_code,
-        "and id,",
-        newCompany?.id
-      );
       const emailToAddForTeam =
         team.email === "noreply@kanaliiga.fi" ? teamCompany.email : team.email;
 
@@ -256,7 +246,6 @@ export const migrateAlmostErrything = async () => {
     }
 
     if (!teamCompany) {
-      console.log("No company found for team", teamName);
       const query = `INSERT INTO Teams (id, name, team_logo, email) VALUES (?, ?, ?, ?);`;
       await runNewDbQuery(query, [
         teamId,
@@ -300,15 +289,9 @@ export const migrateAlmostErrything = async () => {
           `UPDATE SeasonTeamRegistrations SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = ${seasonId} AND team_id = ${st.team_id}`
         );
       } catch (_error) {
-        console.log(
-          "Error updating captain for team",
-          teamName,
-          "with registrationID",
-          registrationID
-        );
+        // NO-OP
       }
     } else {
-      console.log("No captain found for team", teamName);
       const registrationID = await runOldDbQuery<any>(
         `SELECT registrationID FROM teamsbuild WHERE LOWER(Name) = LOWER(?)`,
         [teamName]
@@ -319,12 +302,7 @@ export const migrateAlmostErrything = async () => {
             `UPDATE SeasonTeamRegistrations SET captain_steam_id = ${registrationID[0].registrationID} WHERE season_id = 15 AND team_id = ${st.team_id}`
           );
         } catch (_error) {
-          console.log(
-            "Error updating captain for team",
-            teamName,
-            "with registrationID",
-            registrationID
-          );
+          // NO-OP
         }
       }
     }
@@ -425,7 +403,6 @@ export const migrateMatchesAndReservations = async () => {
 
     // If one old match has been migrated, we don't want to migrate it again, i.e. if one match of a BO3 has been migrated, we know that all other one the same date the matches were played has been migrated, we can skip.
     if (matchMapsPlayedAlreadyMigratedIds.has(match.id)) {
-      console.log("Continuing, match already migrated", match.id);
       continue;
     }
 
@@ -471,28 +448,13 @@ export const migrateMatchesAndReservations = async () => {
     matchMapsPlayedAlreadyMigratedIds.add(match.id);
 
     if (match.best_of === 3) {
-      console.log(
-        "Match is best of 3, let's migrate all other matches played on the same date between the same teams"
-      );
       // Select all other matches played between the teams on the same date for the same league, except this match
       const allOtherBestOfMatchesQuery = `SELECT * FROM matches WHERE ((team1 = '${match.team1}' AND team2 = '${match.team2}') OR (team1 = '${match.team2}' AND team2 = '${match.team1}')) AND date = '${match.date}' AND leagueID = '${match.leagueID}' AND best_of = 3 AND id NOT IN (${match.id});`;
 
-      console.log("Query", allOtherBestOfMatchesQuery);
-
       const matchesPlayedOnSameDateBetweenSameTeams: any[] =
         await runOldDbQuery(allOtherBestOfMatchesQuery);
-      console.log(
-        "Found matches that weren't migrated",
-        matchesPlayedOnSameDateBetweenSameTeams.length
-      );
-      for (const matchPlayed of matchesPlayedOnSameDateBetweenSameTeams) {
-        console.log(
-          "Migrating match that wasn't migrated, ",
-          matchPlayed.id,
-          "parent, ",
-          newParentMatchId
-        );
 
+      for (const matchPlayed of matchesPlayedOnSameDateBetweenSameTeams) {
         const t_team_id_other = matchPlayed.team1;
         const ct_team_id_other = matchPlayed.team2;
 
@@ -739,36 +701,6 @@ export const migrateTrades = async () => {
   console.log("Trades migrated");
 };
 
-// export const migrateMatchStats = async () => {
-//   // old afterplant insert
-//   // INSERT INTO `afterplant`(`id`, `matchID`, `round`, `CT_T`, `CT_Team`, `T_Team`, `firstKill`, `winner`, `Site`, `roundInfo`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]')
-
-//   // New MatchStats insert
-//   // INSERT INTO `MatchStats`(`id`, `match_id`, `round_number`, `ct_t`, `ct_team`, `t_team`, `first_kill`, `winner`, `plant_site`, `round_info`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]')
-//   console.log('Migrating MatchStats, just sit back and relax...');
-// const allOldMatchStats: any[] = await runOldDbQuery('SELECT * FROM afterplant');
-// const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, winner, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
-// for (const round of allOldMatchStats) {
-//   // const matchMapPlayed = await runNewDbQuery<any>(
-//   //   'SELECT  FROM MatchGames mmp JOIN MatchTeams mt ON mt.match_id = mmp.match_id WHERE id = ?',
-//   //   [round.matchID]
-//   // );
-//   await runNewDbQuery(MatchMapRoundStatsInsert, [
-//     round.matchID,
-//     // round.CT_Team === 2 ? ct_team_id : t_team_id,
-//     // round.T_Team === 1 ? t_team_id : ct_team_id,
-//     round.CT_Team,
-//     round.T_Team,
-//     round.round,
-//     round.roundInfo,
-//     round.CT_T,
-//     round.firstKill,
-//     round.winner,
-//     round.Site,
-//   ]);
-// }
-// };
-
 export const teamLogosToCompanies = async () => {
   const teamNameOk = new Set();
   console.log("Fixing logos for teams and companies");
@@ -782,31 +714,15 @@ export const teamLogosToCompanies = async () => {
       "SELECT * FROM Teams WHERE name = ? ORDER BY id DESC",
       [team.name]
     );
-    console.log(
-      "Found",
-      allTeamsWithSameName.length,
-      "teams with name",
-      team.name
-    );
+
     const findLatestTeamWithLogo = allTeamsWithSameName.find((t) => {
       const pattern = /^S\d\d/;
       return pattern.test(t.team_logo);
     });
     if (findLatestTeamWithLogo) {
-      console.log(
-        "Found logo for team",
-        team.name,
-        findLatestTeamWithLogo.team_logo
-      );
       const logo = findLatestTeamWithLogo.team_logo;
       for (const t of allTeamsWithSameName) {
         if (t.organization_id) {
-          console.log(
-            "This team has an organization id",
-            t.organization_id,
-            "update logo to",
-            logo
-          );
           const updateOrgLogo = `UPDATE Organizations SET logo = ? WHERE id = ?;`;
           await runNewDbQuery(updateOrgLogo, [logo, t.organization_id]);
         }

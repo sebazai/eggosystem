@@ -1,3 +1,4 @@
+import { createStatsKanaliigaImageUrl } from "@/lib/utils";
 import type {
   MatchInfo,
   MatchTopPlayerAwards,
@@ -46,7 +47,7 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
                   {team && (
                     <div>
                       <Image
-                        src={`https://stats.kanaliiga.fi/img/${team.logo}`}
+                        src={createStatsKanaliigaImageUrl(team.logo)}
                         alt={team.name}
                         width={16}
                         height={16}

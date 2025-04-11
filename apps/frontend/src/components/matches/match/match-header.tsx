@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, createStatsKanaliigaImageUrl } from "@/lib/utils";
 import type { MatchTeamInfo } from "@eggosystem/types";
 import Image from "next/image";
 
@@ -50,7 +50,7 @@ export function MatchHeader({
               </span>
               <div className="h-8 w-8 relative hidden xs:block">
                 <Image
-                  src={`https://stats.kanaliiga.fi/img/${team1.logo}`}
+                  src={createStatsKanaliigaImageUrl(team1.logo)}
                   alt={`${team1.name} logo`}
                   fill
                   className="object-contain"
@@ -81,7 +81,7 @@ export function MatchHeader({
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 relative hidden xs:block">
                 <Image
-                  src={`https://stats.kanaliiga.fi/img/${team2.logo}`}
+                  src={createStatsKanaliigaImageUrl(team2.logo)}
                   alt={`${team2.name} logo`}
                   fill
                   className="object-contain"

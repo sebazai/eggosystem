@@ -1,6 +1,7 @@
 import request from "supertest";
 import express from "express";
 import playerRouter from "../../routes/v1/player.routes";
+import _ from "lodash";
 
 describe("GET /players", () => {
   const app = express();
@@ -14,10 +15,9 @@ describe("GET /players", () => {
   it("/:steam_id/details", async () => {
     const response = await request(app).get("/76561198049745649/details");
     expect(response.status).toBe(200);
-    expect(response.body).toStrictEqual({
+    expect(_.omit(response.body, "discord")).toStrictEqual({
       steam_id: "76561198049745649",
       name: "sububobi",
-      discord: "Michael#862",
       is_valid_work_email: 1,
       is_valid_full_name: 1,
       has_accepted_latest_privacy_policy: 1

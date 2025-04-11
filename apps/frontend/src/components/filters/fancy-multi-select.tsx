@@ -302,24 +302,24 @@ export function FancySelect<T>({
                   </CommandItem>
                 )}
 
-                {selectables.length ? (
-                  selectables.map((item, index) => (
-                    <CommandItem
-                      key={`${item.label}-${index}`}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onSelect={() => {
-                        setInputValue("");
-                        handleSelected(item);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      {item.label}
-                    </CommandItem>
-                  ))
-                ) : (
+                {selectables.map((item, index) => (
+                  <CommandItem
+                    key={`${item.label}-${index}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onSelect={() => {
+                      setInputValue("");
+                      handleSelected(item);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    {item.label}
+                  </CommandItem>
+                ))}
+
+                {!selectables.length && inputValue && (
                   <CommandItem
                     key="no-result"
                     onMouseDown={(e) => {

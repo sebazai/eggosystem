@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Top teams",
+  description: "The teams that perform well in Kanaliiga"
+};
+
 export default function TopTeamsLayout({
   children
 }: {

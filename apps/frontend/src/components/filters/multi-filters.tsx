@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ItemFilter } from "./item-filter";
 import type { League, Season, Team, Map, Nullable } from "@eggosystem/types";
 import { StageFilter } from "./stage-filter";
@@ -29,6 +29,13 @@ export const MultiFilters = (props: MultiFiltersProps) => {
   });
 
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  const seasonSorter = useCallback((a: Season, b: Season) => b.id - a.id, []);
+  const leagueSorter = useCallback((a: League, b: League) => a.id - b.id, []);
+  const teamSorter = useCallback(
+    (a: Team, b: Team) => a.name.localeCompare(b.name),
+    []
+  );
 
   const { filterData: multiFilterSelectData } =
     useMultiFilterSelectables(filterParams);
@@ -76,7 +83,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
-          sorter={(a, b) => b.id - a.id}
+          sorter={seasonSorter}
         />
       )}
       {filterParams.leagues && (
@@ -91,7 +98,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
-          sorter={(a, b) => a.id - b.id}
+          sorter={leagueSorter}
         />
       )}
       {filterParams.stages && (
@@ -118,7 +125,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
-          sorter={(a, b) => a.name.localeCompare(b.name)}
+          sorter={teamSorter}
         />
       )}
       {filterParams.maps && (

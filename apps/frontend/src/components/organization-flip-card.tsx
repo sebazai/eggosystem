@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 import type { Organizations } from "@eggosystem/types";
+import { createStatsKanaliigaImageUrl } from "@/lib/utils";
 
 interface OrganizationFlipCardProps {
   organization: Organizations;
@@ -25,7 +26,7 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
   const [isMobile, setIsMobile] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
   const companyName = organization.name;
-  const imageSrc = `https://stats.kanaliiga.fi/img/${organization.logo}`;
+  const imageSrc = createStatsKanaliigaImageUrl(organization.logo);
   const orgPage = `/organizations/${organization.id}`;
 
   // Detect if it's a mobile device

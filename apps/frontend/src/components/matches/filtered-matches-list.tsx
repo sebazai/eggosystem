@@ -1,6 +1,8 @@
 import type { MatchesByFilters } from "@eggosystem/types";
 import Image from "next/image";
 import Link from "next/link";
+import { TheContainer } from "../layout/the-container";
+import { createStatsKanaliigaImageUrl } from "@/lib/utils";
 
 interface FilteredMatchesListProps {
   matches: MatchesByFilters[] | undefined;
@@ -12,18 +14,10 @@ export const FilteredMatchesList = ({
   isLoading
 }: FilteredMatchesListProps) => {
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        Loading...
-      </div>
-    );
+    return <TheContainer>Loading...</TheContainer>;
   }
   if (!matches) {
-    return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        No matches found
-      </div>
-    );
+    return <TheContainer>No matches found</TheContainer>;
   }
   const groupedMatches = matches.reduce(
     (acc, match) => {
@@ -57,7 +51,7 @@ export const FilteredMatchesList = ({
                       {match.team1_name}
                     </div>
                     <Image
-                      src={`https://stats.kanaliiga.fi/img/${match.team1_logo}`}
+                      src={createStatsKanaliigaImageUrl(match.team1_logo)}
                       alt={match.team1_name}
                       width={24}
                       height={24}
@@ -69,7 +63,7 @@ export const FilteredMatchesList = ({
                   </div>
                   <div className="flex items-center justify-start ml-1 min-w-0">
                     <Image
-                      src={`https://stats.kanaliiga.fi/img/${match.team2_logo}`}
+                      src={createStatsKanaliigaImageUrl(match.team2_logo)}
                       alt={match.team2_name}
                       width={24}
                       height={24}

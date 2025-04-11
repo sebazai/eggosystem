@@ -1,35 +1,30 @@
 "use client";
 
 import { useMemo } from "react";
-import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { FilteredMatchesList } from "@/components/matches/filtered-matches-list";
 import { TheContainer } from "@/components/layout/the-container";
-
-const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
-  searchParams
-    .getAll(key)
-    .map(Number)
-    .filter((n) => !isNaN(n))
-    .sort();
+import { getParamArray, type FilterParamsQuery } from "@/lib/utils";
 
 export default function AllMatches() {
   const searchParams = useSearchParams();
 
-  const initialParams = useMemo(
-    () => ({
-      seasons: getParamArray(searchParams, "seasons"),
-      leagues: getParamArray(searchParams, "leagues"),
-      stages: getParamArray(searchParams, "stages"),
-      teams: getParamArray(searchParams, "teams"),
-      maps: null
-    }),
+  const params = useMemo(
+    () =>
+      ({
+        seasons: getParamArray(searchParams, "seasons"),
+        leagues: getParamArray(searchParams, "leagues"),
+        stages: getParamArray(searchParams, "stages"),
+        teams: getParamArray(searchParams, "teams"),
+        maps: null
+      }) satisfies FilterParamsQuery,
     [searchParams]
   );
 
   const { matches, isError, isLoading, isValidating } =
-    useRecentMatches(initialParams);
+    useRecentMatches(params);
 
   if (isError) {
     return <TheContainer>Error loading Matches</TheContainer>;
@@ -40,11 +35,11 @@ export default function AllMatches() {
       <h1>Recent matches</h1>
       <div className="py-2">
         <MultiFilters
-          seasons={initialParams.seasons}
-          leagues={initialParams.leagues}
-          stages={initialParams.stages}
-          teams={initialParams.teams}
-          maps={initialParams.maps}
+          seasons={params.seasons}
+          leagues={params.leagues}
+          stages={params.stages}
+          teams={params.teams}
+          maps={params.maps}
         />
       </div>
 

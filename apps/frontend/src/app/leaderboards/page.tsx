@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import React, { useMemo } from "react";
-import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { MultiFilters } from "@/components/filters/multi-filters";
+import { getParamArray } from "@/lib/utils";
 
 interface LeaderboardPlayer {
   name: string;
@@ -19,13 +20,6 @@ interface LeaderboardCategory {
   unit: string;
   players: LeaderboardPlayer[];
 }
-
-const getParamArray = (searchParams: ReadonlyURLSearchParams, key: string) =>
-  searchParams
-    .getAll(key)
-    .map(Number)
-    .filter((n) => !isNaN(n))
-    .sort();
 
 export default function LeaderboardsPage() {
   const searchParams = useSearchParams();
