@@ -280,7 +280,11 @@ export const TabPlayers = ({
                     name={`players.${index}.steam_id`}
                     render={({ field }) => (
                       <FormItem className="w-full">
-                        <FormLabel>Steam ID</FormLabel>
+                        <FormLabel>
+                          {player.nickname
+                            ? `Player: ${player.nickname}`
+                            : "Steam ID"}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -513,9 +517,12 @@ export const TabPlayers = ({
           name="defects"
           render={({ field }) => (
             <FormItem className="my-2 sm:my-4">
-              <FormLabel>Defects</FormLabel>
+              <FormLabel>Issues we should know about...</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea
+                  placeholder={`Such as:\nNew team...\nPlayer enzoj rank not accurate...`}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

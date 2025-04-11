@@ -6,7 +6,8 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -26,6 +27,16 @@ interface TabTeamProps {
   platform: string;
   fetchingExternalData: boolean;
 }
+
+const parseFaceITTeamId = (val: string) => {
+  try {
+    const parsedUrl = new URL(val);
+    const segments = parsedUrl.pathname.split("/").filter(Boolean);
+    return segments.pop() || null;
+  } catch (_error) {
+    return val;
+  }
+};
 
 export const TabTeam = ({
   watchTeamId,
@@ -132,6 +143,11 @@ export const TabTeam = ({
                 <div className="relative">
                   <Input
                     {...field}
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      const parsedValue = parseFaceITTeamId(inputValue);
+                      field.onChange(parsedValue);
+                    }}
                     placeholder={`Team ${Platform} id`}
                     className="pr-10"
                   />
@@ -142,7 +158,9 @@ export const TabTeam = ({
                   )}
                 </div>
               </FormControl>
-
+              <FormDescription className="text-primary text-xs">
+                https://www.faceit.com/fi/teams/ID
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -150,7 +168,7 @@ export const TabTeam = ({
       )}
 
       <Button
-        className="mt-6 w-full"
+        className="mt-2 w-full"
         disabled={!validTeamSelection}
         onClick={() => onNext("players")}
       >
