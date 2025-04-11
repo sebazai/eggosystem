@@ -41,8 +41,8 @@ ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 ENV OTEL_SERVICE_NAME="eggosystem"
 ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=eggosystem-backend"
 ENV OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
-ENV OTEL_EXPORTER_OTLP_ENDPOINT=" http://host.docker.internal:4317"
-ENV OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=""http://172.17.0.1:4317"
+ENV OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
