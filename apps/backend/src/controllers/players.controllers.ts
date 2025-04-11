@@ -39,13 +39,9 @@ export const getIsPlayerProfilePublic = async (req: Request, res: Response) => {
  */
 export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
-  const steam_app_id = req.params.steam_app_id;
+  const app_id = req.params.app_id;
   const season_id = req.query.season_id?.toString();
-  const hours = await getPlayerHoursForSteamAppId(
-    steam_id,
-    steam_app_id,
-    season_id
-  );
+  const hours = await getPlayerHoursForSteamAppId(steam_id, app_id, season_id);
   res.status(200).json(hours);
 };
 
@@ -54,9 +50,9 @@ export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
  */
 export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
-  const steam_app_id = req.params.steam_app_id;
+  const app_id = req.params.app_id;
   const season_id = req.query.season_id?.toString();
-  const rank = await getPlayerAppIdRank(steam_id, steam_app_id, season_id);
+  const rank = await getPlayerAppIdRank(steam_id, app_id, season_id);
   res.status(200).json(rank);
 };
 

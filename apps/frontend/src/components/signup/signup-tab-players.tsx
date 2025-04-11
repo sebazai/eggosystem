@@ -50,7 +50,7 @@ interface TabPlayersProps {
   setValue: UseFormSetValue<SignupFormValues>;
   watch: UseFormWatch<SignupFormValues>;
   playerErrorIndices: string[];
-  seasonSteamAppId: Game["steam_app_id"];
+  seasonSteamAppId: Game["app_id"];
   platform: SeasonPlatform;
   seasonId: string;
 }

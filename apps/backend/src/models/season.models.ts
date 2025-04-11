@@ -15,8 +15,31 @@ export const getSeasonById = async (id: string) => {
 
 export const getSeasonDetailsById = async (id: string) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
-    "SELECT s.*, g.steam_app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
+    "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
     [id]
   );
   return data;
+};
+
+export const getActiveSeasonForAppId = async (app_id: string) => {
+  const [activeSeason] = await runQuery<
+    Array<{ season_id: number } | undefined>
+  >(
+    `SELECT s.id AS season_id
+     FROM Seasons s
+     JOIN Games g ON s.game_id = g.id
+     WHERE g.app_id = ?
+     AND (
+         (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+         OR s.id = (
+             SELECT MAX(s2.id) FROM Seasons s2 
+             JOIN Games g2 ON s2.game_id = g2.id 
+             WHERE g2.app_id = ?
+         )
+     )
+     ORDER BY s.id DESC
+     LIMIT 1;`,
+    [app_id, app_id]
+  );
+  return activeSeason;
 };

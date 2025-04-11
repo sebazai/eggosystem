@@ -328,7 +328,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                     ? Object.keys(form.formState.errors.players)
                     : []
                 }
-                seasonSteamAppId={seasonDetails.steam_app_id}
+                seasonSteamAppId={seasonDetails.app_id}
                 platform={seasonDetails.platform}
                 seasonId={seasonId}
               />

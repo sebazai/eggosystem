@@ -1,10 +1,10 @@
 import { Router } from "express";
-import parseQueryParams from "../../middlewares/parse-query-params.middleware";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { knex } from "../../db/knex"; // Your Knex instance
 
 const router = Router();
 
-router.get("/", parseQueryParams, async (req, res) => {
+router.get("/", parseQueryFilterParams, async (req, res) => {
   const { season_ids, league_ids, team_ids, stages, map_ids } =
     req.parsedParams;
 

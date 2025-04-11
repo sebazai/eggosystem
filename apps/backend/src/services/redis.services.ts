@@ -8,7 +8,7 @@ export const clearPossibleRedisCacheForNewUser = async (steamId: string) => {
   const games = await runQuery<Game[]>("SELECT * FROM Games");
   for (const game of games) {
     for (const key of redisKeysToClear) {
-      await redisClient.del(`${game.steam_app_id}-${steamId}-${key}`);
+      await redisClient.del(`${game.app_id}-${steamId}-${key}`);
     }
   }
 };

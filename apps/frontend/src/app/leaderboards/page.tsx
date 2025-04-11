@@ -4,7 +4,9 @@ import Image from "next/image";
 import React, { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { getParamArray } from "@/lib/utils";
+import { getParamArray, type FilterParamsQuery } from "@/lib/utils";
+import { useActiveSeason } from "@/hooks/data/useActiveSeason";
+import { WithActiveSeason } from "@/components/filters/with-active-season";
 
 interface LeaderboardPlayer {
   name: string;
@@ -22,18 +24,20 @@ interface LeaderboardCategory {
 }
 
 export default function LeaderboardsPage() {
+  const activeSeasonHook = useActiveSeason("730");
   const searchParams = useSearchParams();
 
-  const initialParams = useMemo(
-    () => ({
-      seasons: getParamArray(searchParams, "seasons"),
+  const params = useMemo(() => {
+    const seasons = getParamArray(searchParams, "seasons");
+    const activeSeason = activeSeasonHook.activeSeason?.season_id;
+    return {
+      seasons: activeSeason && seasons.length === 0 ? [activeSeason] : seasons,
       leagues: getParamArray(searchParams, "leagues"),
       stages: getParamArray(searchParams, "stages"),
       teams: getParamArray(searchParams, "teams"),
       maps: getParamArray(searchParams, "maps")
-    }),
-    [searchParams]
-  );
+    } satisfies FilterParamsQuery;
+  }, [searchParams, activeSeasonHook.activeSeason?.season_id]);
 
   // Dummy data that can be replaced with backend data later
   const leaderboardCategories: LeaderboardCategory[] = [
@@ -224,112 +228,116 @@ export default function LeaderboardsPage() {
   ];
 
   return (
-    <div className="p-0">
-      <MultiFilters
-        seasons={initialParams.seasons}
-        leagues={initialParams.leagues}
-        stages={initialParams.stages}
-        teams={initialParams.teams}
-        maps={initialParams.maps}
-      />
+    <WithActiveSeason>
+      <div className="p-0">
+        <MultiFilters
+          seasons={params.seasons}
+          leagues={params.leagues}
+          stages={params.stages}
+          teams={params.teams}
+          maps={params.maps}
+        />
 
-      <div
-        className="min-h-fit pb-8 px-4"
-        style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
-      >
-        <div className="max-w-[1400px] mx-auto">
-          <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
-            Leaderboards
-          </h1>
+        <div
+          className="min-h-fit pb-8 px-4"
+          style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
+        >
+          <div className="max-w-[1400px] mx-auto">
+            <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
+              Leaderboards
+            </h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {leaderboardCategories.map((category, index) => (
-              <div key={index} className="bg-card rounded-sm overflow-hidden">
-                <div className="bg-[#2a1810] p-4">
-                  <h2 className="text-xl font-bold text-kanaliiga-orange">
-                    {category.title}
-                  </h2>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {leaderboardCategories.map((category, index) => (
+                <div key={index} className="bg-card rounded-sm overflow-hidden">
+                  <div className="bg-[#2a1810] p-4">
+                    <h2 className="text-xl font-bold text-kanaliiga-orange">
+                      {category.title}
+                    </h2>
+                  </div>
 
-                <div className="p-4">
-                  {category.players.map((player, playerIndex) => (
-                    <div
-                      key={playerIndex}
-                      className={`flex items-center justify-between py-3 px-2 ${
-                        playerIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
-                      }`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <span
-                          className={`w-6 text-center ${
-                            playerIndex === 0
-                              ? "text-yellow-400 font-bold"
+                  <div className="p-4">
+                    {category.players.map((player, playerIndex) => (
+                      <div
+                        key={playerIndex}
+                        className={`flex items-center justify-between py-3 px-2 ${
+                          playerIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          <span
+                            className={`w-6 text-center ${
+                              playerIndex === 0
+                                ? "text-yellow-400 font-bold"
+                                : playerIndex === 1
+                                  ? "text-muted-foreground font-bold"
+                                  : playerIndex === 2
+                                    ? "text-amber-700 font-bold"
+                                    : "text-muted-foreground"
+                            }`}
+                          >
+                            {playerIndex === 0
+                              ? "👑"
                               : playerIndex === 1
-                                ? "text-muted-foreground font-bold"
+                                ? "🥈"
                                 : playerIndex === 2
-                                  ? "text-amber-700 font-bold"
-                                  : "text-muted-foreground"
-                          }`}
-                        >
-                          {playerIndex === 0
-                            ? "👑"
-                            : playerIndex === 1
-                              ? "🥈"
-                              : playerIndex === 2
-                                ? "🥉"
-                                : `#${player.rank}`}
-                        </span>
+                                  ? "🥉"
+                                  : `#${player.rank}`}
+                          </span>
 
-                        <div className="flex items-center gap-2">
-                          {playerIndex === 0 && player.teamLogo && (
-                            <Image
-                              src={player.teamLogo}
-                              alt={player.team}
-                              width={20}
-                              height={20}
-                              className="rounded-full"
-                            />
-                          )}
-                          <div>
-                            <span
-                              className={`${
-                                playerIndex < 3
-                                  ? "font-bold text-white"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {player.name}
-                            </span>
-                            <span className="text-muted-foreground text-sm ml-2">
-                              {player.team}
-                            </span>
+                          <div className="flex items-center gap-2">
+                            {playerIndex === 0 && player.teamLogo && (
+                              <Image
+                                src={player.teamLogo}
+                                alt={player.team}
+                                width={20}
+                                height={20}
+                                className="rounded-full"
+                              />
+                            )}
+                            <div>
+                              <span
+                                className={`${
+                                  playerIndex < 3
+                                    ? "font-bold text-white"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {player.name}
+                              </span>
+                              <span className="text-muted-foreground text-sm ml-2">
+                                {player.team}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-4">
-                        <span className="text-muted-foreground text-sm">
-                          {player.matches} matches
-                        </span>
-                        <span
-                          className={`w-16 text-right ${
-                            playerIndex < 3
-                              ? "font-bold text-white"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {player.value.toFixed(category.unit === "%" ? 1 : 2)}
-                          {category.unit}
-                        </span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-muted-foreground text-sm">
+                            {player.matches} matches
+                          </span>
+                          <span
+                            className={`w-16 text-right ${
+                              playerIndex < 3
+                                ? "font-bold text-white"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {player.value.toFixed(
+                              category.unit === "%" ? 1 : 2
+                            )}
+                            {category.unit}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </WithActiveSeason>
   );
 }

@@ -13,11 +13,11 @@ import {
   getMatchRoundInfoController
 } from "../../controllers/matches.controllers";
 
-import parseQueryParams from "../../middlewares/parse-query-params.middleware";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 // New Router instance
 const router = Router();
 
-router.get("/recent", parseQueryParams, getMatchesByFiltersController);
+router.get("/recent", parseQueryFilterParams, getMatchesByFiltersController);
 router.get("/:match_id/info", getMatchInfoController);
 router.get("/:match_id/mapsplayed", getMatchGamesController);
 router.get("/:match_id/playerstats", getMatchPlayerStatsController);

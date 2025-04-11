@@ -2,13 +2,15 @@ import { type Request, type Response } from "express";
 import {
   getSeasons,
   getSeasonById,
-  getSeasonDetailsById
+  getSeasonDetailsById,
+  getActiveSeasonForAppId
 } from "../models/season.models";
 import {
   signupFormSchema,
   type UpsertPlayer,
   type RequestWithParamsAndBody,
-  type SignupFormValues
+  type SignupFormValues,
+  type RequestWithParams
 } from "@eggosystem/types";
 import z from "zod";
 import { insertOrganization } from "../models/organization.models";
@@ -23,13 +25,14 @@ import { isTeamPartOfOrganization } from "../services/team.services";
 import { getFullPlayerDetails } from "../services/player.services";
 import _ from "lodash";
 import { areSteamProfilesPublic } from "../services/steam.services";
+import { expireIn30Days, redisClient } from "../utils/redisClient";
 
-export const fetchSeasons = async (_req: Request, res: Response) => {
+export const getSeasonsController = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
   res.json(allSeasons);
 };
 
-export const fetchSeasonById = async (req: Request, res: Response) => {
+export const getSeasonByIdController = async (req: Request, res: Response) => {
   const { id } = req.params;
   const season = await getSeasonById(id);
   if (!season) {
@@ -39,7 +42,10 @@ export const fetchSeasonById = async (req: Request, res: Response) => {
   res.json(season);
 };
 
-export const fetchSeasonDetailsById = async (req: Request, res: Response) => {
+export const getSeasonDetailsByIdController = async (
+  req: Request,
+  res: Response
+) => {
   const { id } = req.params;
   const season = await getSeasonDetailsById(id);
   if (!season) {
@@ -47,6 +53,28 @@ export const fetchSeasonDetailsById = async (req: Request, res: Response) => {
     return;
   }
   res.json(season);
+};
+
+export const getActiveSeasonForApp = async (
+  req: RequestWithParams<{ app_id: string }>,
+  res: Response
+) => {
+  const app_id = req.params.app_id;
+  const redisKey = `${app_id}-active-season`;
+  const dataInRedis = await redisClient.get(redisKey);
+  if (dataInRedis) {
+    res.set("Cache-Control", "public, max-age=604800");
+    res.json({ season_id: Number(dataInRedis) });
+    return;
+  }
+  const activeSeason = await getActiveSeasonForAppId(app_id);
+  if (!activeSeason) {
+    res.status(404).json({ message: "No active season found for app" });
+    return;
+  }
+  await redisClient.set(redisKey, activeSeason.season_id, "EX", expireIn30Days);
+  res.set("Cache-Control", "public, max-age=604800");
+  res.json(activeSeason);
 };
 
 export const addSignupForSeason = async (
