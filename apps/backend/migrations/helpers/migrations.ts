@@ -155,7 +155,7 @@ export const migrateAlmostErrything = async () => {
     "SELECT * FROM players ORDER BY id ASC"
   );
 
-  // Players by steamID, we shoould have the latest/freshest objective per steam id due to ordering by id ASC
+  // SteamPlayers by steamID, we shoould have the latest/freshest objective per steam id due to ordering by id ASC
   const oldPlayersReducedSteamId: any = oldPlayers.reduce(
     (acc: any, obj: any) => {
       acc[obj.steamID] = obj;
@@ -211,7 +211,7 @@ export const migrateAlmostErrything = async () => {
     // Insert players into new db if they don't exist
     for (const steamId of playersSteamIdsArray) {
       const player = oldPlayersReducedSteamId[steamId];
-      const query = `INSERT IGNORE INTO Players (steam_id, name, email, player_name, work_email) VALUES (?, ?, ?, ?, ?);`;
+      const query = `INSERT IGNORE INTO SteamPlayers (steam_id, nickname, email, full_name, work_email) VALUES (?, ?, ?, ?, ?);`;
       await runNewDbQuery(query, [
         player.steamID,
         player.name,

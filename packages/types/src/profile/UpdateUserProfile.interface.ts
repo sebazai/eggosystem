@@ -1,8 +1,8 @@
 import { Nullable } from "../utils";
 
 export interface UpdateUserProfile {
-  name: string;
-  player_name: string;
+  nickname: string;
+  full_name: string;
   work_email: string;
   discord: Nullable<string>;
 }

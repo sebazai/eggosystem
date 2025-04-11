@@ -9,7 +9,7 @@ import _ from "lodash";
  */
 export const getFullPlayerDetails = async (steam_id: string) => {
   const results = await runQuery<Player[]>(
-    `SELECT * FROM Players WHERE steam_id = ?`,
+    `SELECT * FROM SteamPlayers WHERE steam_id = ?`,
     [steam_id]
   );
   return results.length > 0 ? results[0] : undefined;

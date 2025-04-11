@@ -348,7 +348,7 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw("DELETE FROM MatchReservations");
   await knex.raw("DELETE FROM Reservations");
   await knex.raw("DELETE FROM SeasonTeamPlayers");
-  await knex.raw("DELETE FROM Players");
+  await knex.raw("DELETE FROM SteamPlayers");
   await knex.raw("DELETE FROM Matches");
   await knex.raw("DELETE FROM SeasonLeagueTeams");
   await knex.raw("DELETE FROM SeasonLeagues");

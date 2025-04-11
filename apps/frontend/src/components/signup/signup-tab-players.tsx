@@ -190,8 +190,8 @@ export const TabPlayers = ({
                 data.has_accepted_latest_privacy_policy
             );
             setValue(`players.${index}.has_valid_data`, has_valid_data);
-            if (data.name)
-              setValue(`players.${index}.name`, data.name, {
+            if (data.nickname)
+              setValue(`players.${index}.nickname`, data.nickname, {
                 shouldValidate: true
               });
             if (data.discord)
@@ -291,7 +291,7 @@ export const TabPlayers = ({
                               const newValue = e.target.value;
                               const oldValue = field.value;
                               if (newValue !== oldValue) {
-                                resetField(`players.${index}.name`);
+                                resetField(`players.${index}.nickname`);
                                 resetField(`players.${index}.discord`);
                                 setValue(
                                   `players.${index}.has_valid_data`,
@@ -396,7 +396,7 @@ export const TabPlayers = ({
 
                   <FormField
                     control={control}
-                    name={`players.${index}.name`}
+                    name={`players.${index}.nickname`}
                     render={({ field }) => (
                       <FormItem className="py-1 sm:py-2">
                         <FormLabel>Steam nickname</FormLabel>
@@ -441,8 +441,7 @@ export const TabPlayers = ({
 
                   {player.has_valid_data === false && (
                     <SignupPlayerNotification>
-                      Ask player to login to Kanahub and fill in their personal
-                      details.
+                      Ask the player to sign up for Kanahub.
                     </SignupPlayerNotification>
                   )}
 
@@ -497,7 +496,7 @@ export const TabPlayers = ({
             onClick={() => {
               append({
                 steam_id: "",
-                name: "",
+                nickname: "",
                 discord: "",
                 captain: false,
                 co_captain: false

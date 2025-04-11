@@ -24,27 +24,27 @@ const validSignupData = {
   players: [
     {
       steam_id: "12345678901234567",
-      name: "Player One",
+      nickname: "Player One",
       discord: "playerOne#1234",
       captain: true
     },
     {
       steam_id: "12345678901234568",
-      name: "Player Two",
+      nickname: "Player Two",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
       steam_id: "12345678901234569",
-      name: "Player three"
+      nickname: "Player three"
     },
     {
       steam_id: "12345678901234570",
-      name: "Player Four"
+      nickname: "Player Four"
     },
     {
       steam_id: "12345678901234571",
-      name: "Player Five"
+      nickname: "Player Five"
     }
   ]
 };
@@ -56,26 +56,26 @@ const invalidSignupData = {
   players: [
     {
       steam_id: "12345678901234567",
-      name: "Player One",
+      nickname: "Player One",
       captain: true
     },
     {
       steam_id: "12345678901234568",
-      name: "Player Two",
+      nickname: "Player Two",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
       steam_id: "12345678901234569",
-      name: "Player three"
+      nickname: "Player three"
     },
     {
       steam_id: "12345678901234570",
-      name: "Player Four"
+      nickname: "Player Four"
     },
     {
       steam_id: "12345678901234571",
-      name: "Player Five"
+      nickname: "Player Five"
     }
   ]
 };

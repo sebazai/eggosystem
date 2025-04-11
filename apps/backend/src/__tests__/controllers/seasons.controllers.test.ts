@@ -28,27 +28,27 @@ const validSignupData = {
   players: [
     {
       steam_id: "12345678901234567",
-      name: "Player One",
+      nickname: "Player One",
       discord: "playerOne#1234",
       captain: true
     },
     {
       steam_id: "12345678901234568",
-      name: "Player Two",
+      nickname: "Player Two",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
       steam_id: "12345678901234569",
-      name: "Player three"
+      nickname: "Player three"
     },
     {
       steam_id: "12345678901234570",
-      name: "Player Four"
+      nickname: "Player Four"
     },
     {
       steam_id: "12345678901234571",
-      name: "Player Five"
+      nickname: "Player Five"
     }
   ]
 };
@@ -302,7 +302,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
     req.body.players[2].captain = true;
     req.body.players[2].discord = "Nakki";
     jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      name: "JohnnyTheKiller"
+      nickname: "JohnnyTheKiller"
     } as unknown as Player);
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -318,23 +318,23 @@ describe("addSignupForSeason - Try Catch Block", () => {
       mockConnection
     );
   });
-  it("should update only discord for players that are captain or co-captain and name not updated", async () => {
+  it("should update only discord for players that are captain or co-captain and nickname not updated", async () => {
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
       .mockResolvedValueOnce({
-        name: "Player One"
+        nickname: "Player One"
       } as unknown as Player)
       .mockResolvedValueOnce({
-        name: "Player Two"
+        nickname: "Player Two"
       } as unknown as Player)
       .mockResolvedValueOnce({
-        name: "Player three"
+        nickname: "Player three"
       } as unknown as Player)
       .mockResolvedValueOnce({
-        name: "Player Four"
+        nickname: "Player Four"
       } as unknown as Player)
       .mockResolvedValueOnce({
-        name: "Player Five"
+        nickname: "Player Five"
       } as unknown as Player);
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -347,7 +347,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       {
         steam_id: "12345678901234567",
         discord: "playerOne#1234",
-        name: "Player One"
+        nickname: "Player One"
       },
       mockConnection
     );
@@ -355,7 +355,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       {
         steam_id: "12345678901234568",
         discord: "playerTwo#1234",
-        name: "Player Two"
+        nickname: "Player Two"
       },
       mockConnection
     );
@@ -369,7 +369,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
         ..._.cloneDeep(validSignupData.players),
         {
           steam_id: "12345678901234572",
-          name: "Player6",
+          nickname: "Player6",
           discord: "playerSix#1234",
           captain: false,
           co_captain: true
@@ -399,7 +399,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
     expect(upsert).toHaveBeenCalledWith(
       {
         discord: "playerSix#1234",
-        name: "Player6",
+        nickname: "Player6",
         steam_id: "12345678901234572"
       },
       mockConnection
@@ -409,10 +409,10 @@ describe("addSignupForSeason - Try Catch Block", () => {
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
       .mockResolvedValueOnce({
-        name: "JohnnyTheKiller"
+        nickname: "JohnnyTheKiller"
       } as unknown as Player)
       .mockResolvedValueOnce({
-        name: "JaneTheSlayer"
+        nickname: "JaneTheSlayer"
       } as unknown as Player);
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -425,7 +425,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       {
         steam_id: "12345678901234567",
         discord: "playerOne#1234",
-        name: "JohnnyTheKiller"
+        nickname: "JohnnyTheKiller"
       },
       mockConnection
     );
@@ -433,7 +433,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       {
         steam_id: "12345678901234568",
         discord: "playerTwo#1234",
-        name: "JaneTheSlayer"
+        nickname: "JaneTheSlayer"
       },
       mockConnection
     );

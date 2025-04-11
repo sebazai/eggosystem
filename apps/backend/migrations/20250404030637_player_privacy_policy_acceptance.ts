@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
     table
       .foreign("steam_id")
       .references("steam_id")
-      .inTable("Players")
+      .inTable("SteamPlayers")
       .onDelete("CASCADE");
 
     table.unique(["steam_id", "privacy_policy_version"]);

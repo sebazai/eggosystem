@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const profileSchema = z.object({
-  name: z.string().min(2, "Nickname is required"),
-  player_name: z
+  nickname: z.string().min(2, "Nickname is required"),
+  full_name: z
     .string()
     .min(2)
     .refine(

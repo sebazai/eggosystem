@@ -23,12 +23,12 @@ export const upsertPlayer = async (
 ) => {
   const { columns, placeholders, values } = buildInsertQueryParts(data);
   const results = await runQuery<{ insertId: number; affectedRows: number }>(
-    `INSERT INTO Players (${columns.join(", ")})
+    `INSERT INTO SteamPlayers (${columns.join(", ")})
     VALUES (${placeholders})
     ON DUPLICATE KEY UPDATE
       discord = COALESCE(VALUES(discord), discord),
       work_email = COALESCE(VALUES(work_email), work_email),
-      player_name = COALESCE(VALUES(player_name), player_name);`,
+      full_name = COALESCE(VALUES(full_name), full_name);`,
     values,
     connection
   );
@@ -39,7 +39,7 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   const results = await runQuery<PlayerDetailsBySteamId[]>(
     `SELECT
       p.steam_id, 
-      p.name,
+      p.nickname,
       p.discord,
       CASE 
           WHEN work_email IS NULL THEN FALSE
@@ -47,14 +47,14 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
           ELSE FALSE
       END AS is_valid_work_email,
       CASE 
-          WHEN player_name REGEXP '^[A-Za-z]+ [A-Za-z]+$' THEN TRUE 
+          WHEN full_name REGEXP '^[A-Za-z]+ [A-Za-z]+$' THEN TRUE 
           ELSE FALSE 
       END AS is_valid_full_name,
       CASE 
           WHEN upa.accepted_privacy_policy = TRUE AND upa.privacy_policy_version = ? THEN TRUE 
           ELSE FALSE 
       END AS has_accepted_latest_privacy_policy
-    FROM Players p 
+    FROM SteamPlayers p 
     LEFT JOIN UserPolicyAcceptances upa ON upa.steam_id = p.steam_id
     WHERE p.steam_id = ?`,
     [process.env.PRIVACY_POLICY_VERSION!, steam_id]
@@ -74,7 +74,7 @@ export const getPlayersByFilters = async ({
 }: ParsedParams): Promise<any[]> => {
   // Base query
   const _baseQuery = `
-      SELECT p.name, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
+      SELECT p.nickname, t.name as team_name, l.name as league_name, count(m.id) as matches_played,
       ${[
         "kills",
         "assists",
@@ -98,7 +98,7 @@ export const getPlayersByFilters = async ({
         .join(", ")},
       ${["adr", "kana_rating", "hs_percent"].map((col) => `avg(ps.${col}) as ${col}`).join(", ")}
       FROM PlayerStats ps
-      INNER JOIN Players p ON p.steam_id = ps.steam_id
+      INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       INNER JOIN Matches m ON m.id = ps.match_id
       INNER JOIN Leagues l ON m.league_id = l.id
       INNER JOIN Teams t ON p.team_id = t.id
@@ -141,8 +141,8 @@ export const getPlayerLeaderboard = async ({
     ]);
 
   const subQuery = `
-    SELECT steam_id, p.name, team_id
-    FROM Players p
+    SELECT steam_id, p.nickname, team_id
+    FROM SteamPlayers p
     JOIN Teams t ON t.id = p.team_id
     JOIN leagues l ON l.id = t.league_id
     WHERE 1=1
@@ -159,7 +159,7 @@ export const getPlayerLeaderboard = async ({
     ]);
 
   const baseQuery = `
-    SELECT p.name, t.name as team_name, ${leaderboardExpression} as ${leaderboard}
+    SELECT p.nickname, t.name as team_name, ${leaderboardExpression} as ${leaderboard}
     FROM PlayerStats ps
     LEFT JOIN (${subQuery}) p ON p.steam_id = ps.steam_id
     LEFT JOIN Matches m ON m.id = ps.match_id

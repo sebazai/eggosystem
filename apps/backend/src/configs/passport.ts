@@ -34,7 +34,7 @@ passport.use(
 
       const user = {
         steamId: userInDb.steam_id,
-        displayName: userInDb.name
+        displayName: userInDb.nickname
       } satisfies UserPayload;
 
       return done(null, user);

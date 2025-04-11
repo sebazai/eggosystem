@@ -46,8 +46,8 @@ export const updateProfile = async (
   }
 
   const updatedUser = {
-    name: formData.name,
-    player_name: formData.player_name,
+    nickname: formData.nickname,
+    full_name: formData.full_name,
     work_email: formData.work_email,
     discord: formData.discord ?? null
   } satisfies UpdateUserProfile;

@@ -8,7 +8,7 @@ import { runQuery } from "../db/mysqlRunQuery";
  */
 export const getAuthUserBySteamId = async (steamId: string) => {
   const [user] = await runQuery<Player[]>(
-    "SELECT * FROM Players WHERE steam_id = ?",
+    "SELECT * FROM SteamPlayers WHERE steam_id = ?",
     [steamId]
   );
 
@@ -30,7 +30,7 @@ export const createSteamPlayer = async ({
   steamRealname
 }: CreateUserParams) => {
   const results = await runQuery<{ insertId: number }>(
-    "INSERT INTO Players (steam_id, name, player_name) VALUES (?, ?, ?)",
+    "INSERT INTO SteamPlayers (steam_id, nickname, full_name) VALUES (?, ?, ?)",
     [steamId, steamDisplayName, steamRealname]
   );
   return String(results.insertId);

@@ -80,9 +80,9 @@ describe("Migration tests", () => {
   });
 
   it("Leaderboards, season 14 total matesflashed", async () => {
-    const query = `select p.name, t.name as team_name, sum(ps.mates_flashed) as mates_flashed
+    const query = `select p.nickname, t.name as team_name, sum(ps.mates_flashed) as mates_flashed
       from PlayerStats ps 
-      JOIN Players p ON p.steam_id = ps.steam_id
+      JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id
@@ -92,15 +92,19 @@ describe("Migration tests", () => {
       ORDER by mates_flashed desc LIMIT 5;`;
     const result =
       await runQuery<
-        [{ name: string; team_name: string; mates_flashed: string }]
+        [{ nickname: string; team_name: string; mates_flashed: string }]
       >(query);
     expect(result.length).toBeGreaterThanOrEqual(5);
     const expectedResults = [
-      { name: "hebe", team_name: "Avant Tecno", mates_flashed: 568 },
-      { name: "tiMMyd", team_name: "Evitec Esports", mates_flashed: 465 },
-      { name: "Miqu", team_name: "K-Auto Marmoripojat", mates_flashed: 461 },
-      { name: "ville1", team_name: "Frendy Fire", mates_flashed: 453 },
-      { name: "havukr", team_name: "Janla eSports", mates_flashed: 430 }
+      { nickname: "hebe", team_name: "Avant Tecno", mates_flashed: 568 },
+      { nickname: "tiMMyd", team_name: "Evitec Esports", mates_flashed: 465 },
+      {
+        nickname: "Miqu",
+        team_name: "K-Auto Marmoripojat",
+        mates_flashed: 461
+      },
+      { nickname: "ville1", team_name: "Frendy Fire", mates_flashed: 453 },
+      { nickname: "havukr", team_name: "Janla eSports", mates_flashed: 430 }
     ];
 
     expectedResults.forEach((expected, index) => {
@@ -109,9 +113,9 @@ describe("Migration tests", () => {
   });
 
   it("Leaderboards, Season 14 playoffs #3 in Kanarating", async () => {
-    const query = `select p.name as nick, t.name as team_name, round(avg(ps.kana_rating),2) as kana_rating
+    const query = `select p.nickname as nick, t.name as team_name, round(avg(ps.kana_rating),2) as kana_rating
       from PlayerStats ps
-      JOIN Players p ON p.steam_id = ps.steam_id
+      JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id

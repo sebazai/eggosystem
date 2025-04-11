@@ -4,7 +4,7 @@ import { SeasonPlatform } from "@eggosystem/types";
 const playerSchema = z
   .object({
     steam_id: z.string().length(17),
-    name: z.string().min(1).max(50),
+    nickname: z.string().min(1).max(50),
     has_valid_data: z.boolean().optional(),
     is_profile_public: z.boolean().optional(),
     hours: z.number().optional(),

@@ -31,8 +31,8 @@ export default function ProfileForm() {
   const form = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "",
-      player_name: "",
+      nickname: "",
+      full_name: "",
       work_email: "",
       discord: "",
       acceptPrivacyPolicy: false,
@@ -43,8 +43,8 @@ export default function ProfileForm() {
 
   useEffect(() => {
     if (auth.user) {
-      form.setValue("name", auth.user.displayName);
-      form.setValue("player_name", auth.user.fullName || "");
+      form.setValue("nickname", auth.user.displayName);
+      form.setValue("full_name", auth.user.fullName || "");
       form.setValue("work_email", auth.user.workEmail || "");
       form.setValue("discord", auth.user.discord || "");
       form.setValue(
@@ -132,7 +132,7 @@ export default function ProfileForm() {
         )}
         <FormField
           control={form.control}
-          name="name"
+          name="nickname"
           render={({ field }) => (
             <FormItem>
               <Label>Name</Label>
@@ -146,7 +146,7 @@ export default function ProfileForm() {
 
         <FormField
           control={form.control}
-          name="player_name"
+          name="full_name"
           render={({ field }) => (
             <FormItem>
               <Label>Full Name</Label>

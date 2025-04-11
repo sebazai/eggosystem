@@ -114,9 +114,9 @@ test.describe("Profile Form", () => {
     await expect(page.locator('input[name="name"]').first()).toBeVisible({
       timeout: 20000
     });
-    await expect(page.locator('input[name="player_name"]').first()).toBeVisible(
-      { timeout: 20000 }
-    );
+    await expect(page.locator('input[name="full_name"]').first()).toBeVisible({
+      timeout: 20000
+    });
     await expect(page.locator('button[type="submit"]').first()).toBeVisible({
       timeout: 20000
     });
@@ -348,7 +348,7 @@ test.describe("Profile Form", () => {
 
     // Fill out required form fields
     await page.fill('input[name="name"]', "Test User");
-    await page.fill('input[name="player_name"]', "John Doe");
+    await page.fill('input[name="full_name"]', "John Doe");
     await page.fill('input[name="work_email"]', "test@example.com");
 
     // Click the privacy policy checkbox using the data-testid

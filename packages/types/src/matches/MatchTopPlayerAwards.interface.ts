@@ -1,7 +1,7 @@
 import { Player, Team, Nullable } from "@eggosystem/types";
 
 export interface MatchTopPlayerAwardsValue {
-  name: Player["name"];
+  nickname: Player["nickname"];
   value: Nullable<number>;
   team_id: Team["id"];
 }

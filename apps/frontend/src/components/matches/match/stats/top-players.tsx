@@ -55,7 +55,7 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
                       />
                     </div>
                   )}
-                  <span className="text-sm">{stat.name}</span>
+                  <span className="text-sm">{stat.nickname}</span>
                 </div>
                 <div className="text-sm text-right">
                   {roundToOneDecimal(stat.value ?? 0)}

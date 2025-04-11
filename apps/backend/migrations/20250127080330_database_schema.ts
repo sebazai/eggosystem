@@ -70,11 +70,11 @@ export async function up(knex: Knex): Promise<void> {
     table.string("email", 255).notNullable();
   });
 
-  await knex.schema.createTable("Players", (table: Knex.TableBuilder) => {
+  await knex.schema.createTable("SteamPlayers", (table: Knex.TableBuilder) => {
     table.bigInteger("steam_id").primary();
-    table.string("name", 255).notNullable();
+    table.string("nickname", 255).notNullable();
     table.string("email", 255);
-    table.string("player_name", 255);
+    table.string("full_name", 255);
     table.string("work_email", 255);
     table.string("discord", 255);
   });
@@ -92,7 +92,7 @@ export async function up(knex: Knex): Promise<void> {
     table
       .foreign("steam_id")
       .references("steam_id")
-      .inTable("Players")
+      .inTable("SteamPlayers")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
   });
@@ -123,12 +123,12 @@ export async function up(knex: Knex): Promise<void> {
       table
         .foreign("captain_steam_id")
         .references("steam_id")
-        .inTable("Players")
+        .inTable("SteamPlayers")
         .onDelete("SET NULL");
       table
         .foreign("co_captain_steam_id")
         .references("steam_id")
-        .inTable("Players")
+        .inTable("SteamPlayers")
         .onDelete("SET NULL");
     }
   );
@@ -173,7 +173,7 @@ export async function up(knex: Knex): Promise<void> {
       table
         .foreign("steam_id")
         .references("steam_id")
-        .inTable("Players")
+        .inTable("SteamPlayers")
         .onUpdate("CASCADE")
         .onDelete("CASCADE");
     }
@@ -447,7 +447,7 @@ export async function up(knex: Knex): Promise<void> {
 
     table
       .foreign("steam_id")
-      .references("Players.steam_id")
+      .references("SteamPlayers.steam_id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
@@ -478,7 +478,7 @@ export async function up(knex: Knex): Promise<void> {
 
       table
         .foreign("steam_id")
-        .references("Players.steam_id")
+        .references("SteamPlayers.steam_id")
         .onUpdate("CASCADE")
         .onDelete("CASCADE");
       table
@@ -506,17 +506,17 @@ export async function up(knex: Knex): Promise<void> {
 
     table
       .foreign("trader_steam_id")
-      .references("Players.steam_id")
+      .references("SteamPlayers.steam_id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
       .foreign("killer_steam_id")
-      .references("Players.steam_id")
+      .references("SteamPlayers.steam_id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
       .foreign("victim_steam_id")
-      .references("Players.steam_id")
+      .references("SteamPlayers.steam_id")
       .onUpdate("CASCADE")
       .onDelete("CASCADE");
     table
@@ -575,7 +575,7 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists("SeasonLeagues");
   await knex.schema.dropTableIfExists("Leagues");
   await knex.schema.dropTableIfExists("Teams");
-  await knex.schema.dropTableIfExists("Players");
+  await knex.schema.dropTableIfExists("SteamPlayers");
   await knex.schema.dropTableIfExists("TeamRosters");
   await knex.schema.dropTableIfExists("SeasonTeamPlayers");
   await knex.schema.dropTableIfExists("SeasonLeagueTeams");

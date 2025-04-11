@@ -48,7 +48,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `id` (INT, PK)
   - `name` (VARCHAR)
   - `organization_code` (VARCHAR, UNIQUE) - Unique business identifier.
-  - `admin_steam_id` (BIGINT, FK → Players.steam_id) - Admin's Steam ID.
+  - `admin_steam_id` (BIGINT, FK → SteamPlayers.steam_id) - Admin's Steam ID.
 
 ### Teams
 
@@ -58,13 +58,16 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `organization_id` (INT, FK → Organizations.id)
   - `name` (VARCHAR)
 
-### Players
+### SteamPlayers
 
 - **Purpose**: Stores Steam users participating in the league.
 - **Columns**:
   - `steam_id` (BIGINT, PK) - Unique Steam identifier.
-  - `name` (VARCHAR)
+  - `nickname` (VARCHAR)
   - `email` (VARCHAR)
+  - `work_email` (VARCHAR)
+  - `discord` (VARCHAR)
+  - `full_name` (VARCHAR)
 
 ### PlayerStats
 
@@ -79,8 +82,8 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 - **Columns**:
   - `season_id` (INT, FK → Seasons.id)
   - `team_id` (INT, FK → Teams.id)
-  - `captain_steam_id` (BIGINT, FK → Players.steam_id)
-  - `co_captain_steam_id` (BIGINT, FK → Players.steam_id)
+  - `captain_steam_id` (BIGINT, FK → SteamPlayers.steam_id)
+  - `co_captain_steam_id` (BIGINT, FK → SteamPlayers.steam_id)
   - `defects` (TEXT) - Notes from captain.
   - `ticket` (VARCHAR) - Manual ticketing reference.
   - `approved` (BOOLEAN) - Indicates if the team is officially registered.
@@ -99,7 +102,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
 - **Columns**:
   - `season_id` (INT, FK → Seasons.id)
   - `team_id` (INT, FK → Teams.id)
-  - `steam_id` (BIGINT, FK → Players.steam_id)
+  - `steam_id` (BIGINT, FK → SteamPlayers.steam_id)
   - `role` (ENUM) - 'primary' or 'substitute'.
 
 **Business Rule:**

@@ -12,11 +12,11 @@ export interface ParsedParams {
 
 export interface UserPayload {
   steamId: Player["steam_id"];
-  displayName: Player["name"];
+  displayName: Player["nickname"];
 }
 
 export interface UserFullPayload extends UserPayload {
-  fullName: Player["player_name"];
+  fullName: Player["full_name"];
   workEmail: Player["work_email"];
   discord: Player["discord"];
   acceptedPrivacyPolicy: boolean;

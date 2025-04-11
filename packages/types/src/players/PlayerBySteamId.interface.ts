@@ -1,8 +1,9 @@
+import { Player } from "../db";
 import type { Nullable } from "../utils";
 
 export interface PlayerDetailsBySteamId {
-  steam_id: number;
-  name: string;
+  steam_id: Player["steam_id"];
+  nickname: Player["nickname"];
   discord: Nullable<string>;
   work_email: Nullable<string>;
   is_valid_full_name: boolean;

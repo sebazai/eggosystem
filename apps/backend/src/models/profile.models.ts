@@ -12,10 +12,10 @@ export const updateProfileData = async (
   connection?: PoolConnection
 ) => {
   return await runQuery(
-    `UPDATE Players SET name = ?, player_name = ?, work_email = ?, discord = ? WHERE steam_id = ?`,
+    `UPDATE SteamPlayers SET nickname = ?, full_name = ?, work_email = ?, discord = ? WHERE steam_id = ?`,
     [
-      updatedUser.name,
-      updatedUser.player_name,
+      updatedUser.nickname,
+      updatedUser.full_name,
       updatedUser.work_email,
       updatedUser.discord,
       steamId

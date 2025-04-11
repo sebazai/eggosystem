@@ -34,8 +34,8 @@ describe("updateProfile Controller", () => {
     req = {
       auth: { steamId: "12345", displayName: "hehe" },
       body: {
-        name: "Test User",
-        player_name: "Test Player",
+        nickname: "Test User",
+        full_name: "Test Player",
         work_email: "test@example.com",
         discord: "testDiscord",
         acceptPrivacyPolicy: true,

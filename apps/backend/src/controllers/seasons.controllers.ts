@@ -163,8 +163,8 @@ export const addSignupForSeason = async (
           {
             steam_id: formDataPlayer.steam_id,
             ...(!playerExists
-              ? { name: formDataPlayer.name }
-              : { name: playerExists.name }),
+              ? { nickname: formDataPlayer.nickname }
+              : { nickname: playerExists.nickname }),
             ...parameters
           } satisfies UpsertPlayer,
           connection

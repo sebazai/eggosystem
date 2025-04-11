@@ -1,10 +1,10 @@
 -- Season 11 and 14
 DELETE FROM Seasons
 WHERE id NOT IN (11, 14);
-DELETE FROM Players
+DELETE FROM SteamPlayers
 WHERE steam_id NOT IN (
         SELECT steam_id
-        FROM SeasonTeamPlayers
+        FROM SeasonTeamSteamPlayers
     );
 DELETE FROM Teams
 WHERE id NOT IN (
@@ -123,41 +123,41 @@ VALUES ('John', 'Smith'),
 CREATE TEMPORARY TABLE TempPlayerNames AS
 SELECT p.steam_id,
     CONCAT(fn1.firstname, ' ', fn2.lastname) AS new_player_name
-FROM Players p
+FROM SteamPlayers p
     JOIN fake_names fn1 ON RAND() < 0.5 -- Random selection of firstname
     JOIN fake_names fn2 ON RAND() < 0.5 -- Random selection of lastname
 ORDER BY RAND();
--- Step 2: Update Players table
-UPDATE Players p
+-- Step 2: Update SteamPlayers table
+UPDATE SteamPlayers p
     JOIN TempPlayerNames tpn ON p.steam_id = tpn.steam_id
-SET p.player_name = tpn.new_player_name;
+SET p.full_name = tpn.new_player_name;
 -- Step 3: Drop temporary table
 DROP TEMPORARY TABLE TempPlayerNames;
-UPDATE Players
+UPDATE SteamPlayers
 SET email = CONCAT(
-        LOWER(SUBSTRING_INDEX(player_name, ' ', 1)),
+        LOWER(SUBSTRING_INDEX(full_name, ' ', 1)),
         '.',
-        LOWER(SUBSTRING_INDEX(player_name, ' ', -1)),
+        LOWER(SUBSTRING_INDEX(full_name, ' ', -1)),
         '@kanamail.fi'
     )
-WHERE player_name IS NOT NULL
-    AND player_name LIKE '% %';
-UPDATE Players
+WHERE full_name IS NOT NULL
+    AND full_name LIKE '% %';
+UPDATE SteamPlayers
 SET work_email = CONCAT(
-        LOWER(SUBSTRING_INDEX(player_name, ' ', 1)),
+        LOWER(SUBSTRING_INDEX(full_name, ' ', 1)),
         '.',
-        LOWER(SUBSTRING_INDEX(player_name, ' ', -1)),
+        LOWER(SUBSTRING_INDEX(full_name, ' ', -1)),
         '@kanawork.org'
     )
-WHERE player_name IS NOT NULL
-    AND player_name LIKE '% %';
-UPDATE Players
+WHERE full_name IS NOT NULL
+    AND full_name LIKE '% %';
+UPDATE SteamPlayers
 SET discord = CONCAT(
-        SUBSTRING_INDEX(player_name, ' ', 1),
+        SUBSTRING_INDEX(full_name, ' ', 1),
         '#',
         FLOOR(RAND() * 9999) + 1
     )
-WHERE player_name IS NOT NULL
-    AND player_name LIKE '% %';
--- UPDATE Players
+WHERE full_name IS NOT NULL
+    AND full_name LIKE '% %';
+-- UPDATE SteamPlayers
 -- SET discord = name;

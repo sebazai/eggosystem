@@ -56,12 +56,12 @@ CREATE TABLE IF NOT EXISTS Teams (
     email VARCHAR(255) NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES Organizations(id)
 );
--- Table: Players
-CREATE TABLE IF NOT EXISTS Players (
+-- Table: SteamPlayers
+CREATE TABLE IF NOT EXISTS SteamPlayers (
     steam_id BIGINT NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    nickname VARCHAR(255) NOT NULL,
     email VARCHAR(255),
-    player_name VARCHAR(255),
+    full_name VARCHAR(255),
     work_email VARCHAR(255),
     discord VARCHAR(255),
     PRIMARY KEY (steam_id)
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS TeamRosters (
     team_id INT NOT NULL,
     steam_id BIGINT NOT NULL,
     FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- Table: SeasonTeamRegistrations
 CREATE TABLE IF NOT EXISTS SeasonTeamRegistrations (
@@ -86,9 +86,9 @@ CREATE TABLE IF NOT EXISTS SeasonTeamRegistrations (
     PRIMARY KEY (season_id, team_id),
     FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (captain_steam_id) REFERENCES Players(steam_id) ON DELETE
+    FOREIGN KEY (captain_steam_id) REFERENCES SteamPlayers(steam_id) ON DELETE
     SET NULL,
-        FOREIGN KEY (co_captain_steam_id) REFERENCES Players(steam_id) ON DELETE
+        FOREIGN KEY (co_captain_steam_id) REFERENCES SteamPlayers(steam_id) ON DELETE
     SET NULL
 );
 -- Create SeasonLeagueTeams table
@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS SeasonTeamPlayers (
     role ENUM('primary', 'substitute') NOT NULL,
     PRIMARY KEY (season_id, steam_id, team_id),
     FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeamRegistrations(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- All maps of games by name
 CREATE TABLE IF NOT EXISTS Maps (
@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS PlayerStats (
     shots_hit MEDIUMINT UNSIGNED,
     total_strafing_shots MEDIUMINT UNSIGNED,
     good_strafing_shots MEDIUMINT UNSIGNED,
-    FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (game_id) REFERENCES MatchGames(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- Table: Ranks
@@ -340,7 +340,7 @@ CREATE TABLE IF NOT EXISTS SeasonPlayerRanks (
     esportal_kd DECIMAL(4, 2),
     esportal_elo INT,
     esportal_rank INT,
-    FOREIGN KEY (steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
     UNIQUE (steam_id, season_id)
 );
@@ -357,9 +357,9 @@ CREATE TABLE IF NOT EXISTS PlayerTrades (
     `time` BIGINT UNSIGNED,
     trade_time BIGINT UNSIGNED,
     death_time BIGINT UNSIGNED,
-    FOREIGN KEY (trader_steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (killer_steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (victim_steam_id) REFERENCES Players(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (trader_steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (killer_steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY (victim_steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
     FOREIGN KEY (game_id) REFERENCES MatchGames(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS Reservations (

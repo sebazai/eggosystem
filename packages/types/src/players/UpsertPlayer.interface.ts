@@ -2,8 +2,8 @@ import type { Player } from "@eggosystem/types";
 
 export interface UpsertPlayer {
   steam_id: Player["steam_id"];
-  name?: Player["name"];
+  nickname?: Player["nickname"];
   discord?: Player["discord"];
   work_email?: Player["work_email"];
-  player_name?: Player["player_name"];
+  full_name?: Player["full_name"];
 }

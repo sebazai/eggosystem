@@ -7,7 +7,7 @@ describe("buildInsertQueryParts", () => {
       name: "John Doe",
       discord: "johndoe#1234",
       work_email: "john@example.com",
-      player_name: "JD"
+      full_name: "JD"
     };
 
     const { columns, placeholders, values } = buildInsertQueryParts(data);
@@ -17,7 +17,7 @@ describe("buildInsertQueryParts", () => {
       "name",
       "discord",
       "work_email",
-      "player_name"
+      "full_name"
     ]);
     expect(placeholders).toBe("?, ?, ?, ?, ?");
     expect(values).toEqual([
@@ -35,12 +35,12 @@ describe("buildInsertQueryParts", () => {
       name: null,
       discord: "johndoe#1234",
       work_email: undefined,
-      player_name: "JD"
+      full_name: "JD"
     };
 
     const { columns, placeholders, values } = buildInsertQueryParts(data);
 
-    expect(columns).toEqual(["steam_id", "discord", "player_name"]); // `name` & `work_email` removed
+    expect(columns).toEqual(["steam_id", "discord", "full_name"]); // `name` & `work_email` removed
     expect(placeholders).toBe("?, ?, ?");
     expect(values).toEqual(["123456", "johndoe#1234", "JD"]);
   });
