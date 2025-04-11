@@ -60,7 +60,7 @@ test.describe("Profile Form", () => {
             id: "test-user-id",
             steamId: "76561198012345678",
             avatar: "https://placekitten.com/200/200",
-            name: "Test User",
+            nickname: "Test User",
             roles: ["user"],
             // No acceptedPrivacyPolicy - user hasn't accepted it yet
             acceptedPrivacyPolicy: false
@@ -79,7 +79,7 @@ test.describe("Profile Form", () => {
           user: {
             id: "test-user-id",
             steamId: "76561198012345678",
-            name: "Test User",
+            nickname: "Test User",
             email: "test@example.com",
             image: "https://placekitten.com/200/200"
           },
@@ -111,7 +111,7 @@ test.describe("Profile Form", () => {
     await expect(form).toBeVisible({ timeout: 20000 });
 
     // Check for form elements one by one with first() to avoid multiple matches
-    await expect(page.locator('input[name="name"]').first()).toBeVisible({
+    await expect(page.locator('input[name="nickname"]').first()).toBeVisible({
       timeout: 20000
     });
     await expect(page.locator('input[name="full_name"]').first()).toBeVisible({
@@ -263,7 +263,7 @@ test.describe("Profile Form", () => {
             id: "test-user-id",
             steamId: "76561198012345678",
             avatar: "https://placekitten.com/200/200",
-            name: "Test User",
+            nickname: "Test User",
             roles: ["user"],
             acceptedPrivacyPolicy: false
           }
@@ -347,7 +347,7 @@ test.describe("Profile Form", () => {
     });
 
     // Fill out required form fields
-    await page.fill('input[name="name"]', "Test User");
+    await page.fill('input[name="nickname"]', "Test User");
     await page.fill('input[name="full_name"]', "John Doe");
     await page.fill('input[name="work_email"]', "test@example.com");
 

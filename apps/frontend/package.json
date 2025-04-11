@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "check-types": "tsc --noEmit",
+    "test": "playwright test src/__tests__/integration/ --headed --reporter=dot",
     "test:integration": "pnpm --filter=\"@eggosystem/types\" build && playwright test src/__tests__/integration/",
     "test:integration:profile": "pnpm --filter=\"@eggosystem/types\" build && playwright test src/__tests__/integration/profile-form.spec.ts",
     "test:integration:ui": "playwright test src/__tests__/integration/ --ui",
