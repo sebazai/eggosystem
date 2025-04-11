@@ -25,6 +25,7 @@ services:
       JWT_REFRESH_SECRET: $JWT_REFRESH_SECRET_ONDEMAND
       JWT_EXPIRES_IN: $JWT_EXPIRES_IN
       JWT_REFRESH_EXPIRES_IN: $JWT_REFRESH_EXPIRES_IN
+      OTEL_SERVICE_NAME: eggosystem-mr-${ENV_ID}-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=ondemand,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=backend-${ENV_ID}"
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
     networks:
