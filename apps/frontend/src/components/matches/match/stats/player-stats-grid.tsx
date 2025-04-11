@@ -80,12 +80,10 @@ export const PlayerStatistics = ({
           </div>
 
           {players.map((player) => (
-            <div key={player.player_nickname}>
+            <div key={player.player_name}>
               {/* Desktop Row */}
               <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
-                <div className="text-left font-bold">
-                  {player.player_nickname}
-                </div>
+                <div className="text-left font-bold">{player.player_name}</div>
                 <div className="text-center">{player.kills}</div>
                 <div className="text-center">{player.deaths}</div>
                 <div
@@ -116,9 +114,7 @@ export const PlayerStatistics = ({
 
               {/* Mobile Row */}
               <div className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
-                <div className="text-left font-bold">
-                  {player.player_nickname}
-                </div>
+                <div className="text-left font-bold">{player.player_name}</div>
                 <div className="text-center">{player.kills}</div>
                 <div className="text-center">{player.deaths}</div>
                 <div className="text-center">
