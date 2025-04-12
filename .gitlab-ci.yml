@@ -325,16 +325,13 @@ build-dockerfile:backend:
     # Build backend dev image with shared & MR-specific cache
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG}
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG},mode=max
       -t eggo-backend:dev
       -f $DOCKERFILE_DEV .
 
       # Build backend image with shared & MR-specific cache
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG}
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG},mode=max
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
       -t eggo-backend:latest
       -f $DOCKERFILE .
     # Run Trivy scans
@@ -364,16 +361,13 @@ build-dockerfile:frontend:
   script:
     # Build dev image
     - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-dev
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-dev-${CACHE_TAG}
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-dev-${CACHE_TAG},mode=max
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
       -t $REGISTRY/eggo-frontend:cache
       -f $DOCKERFILE_DEV .
     # Build production image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG},mode=max
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
@@ -411,6 +405,7 @@ push-dockerfile:backend:
   script:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
       --push
       -t $REGISTRY/eggo-backend:latest
       -t $REGISTRY/eggo-backend:staging
@@ -465,6 +460,11 @@ push-dockerfile:frontend:
     - docker buildx use mybuilder
     - docker buildx inspect --bootstrap
   script:
+    # Build and cache dev image
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max
+      -f apps/frontend/Dockerfile.dev .
     # Build and push staging image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging
@@ -477,6 +477,7 @@ push-dockerfile:frontend:
     # Build and push latest image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --push
       -t $REGISTRY/eggo-frontend:latest
       -f apps/frontend/Dockerfile .
@@ -566,7 +567,7 @@ deploy-ondemand:
     # Build backend mr-id image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache-${CACHE_TAG}
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
       --push
       -t $REGISTRY/eggo-backend:${ENV_ID}
       -f apps/backend/Dockerfile .
@@ -574,14 +575,13 @@ deploy-ondemand:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend-dev:cache-${CACHE_TAG}
       --push
       -t $REGISTRY/eggo-migrations:${ENV_ID}
       -f apps/backend/Dockerfile.dev .
     # Build frontend mr-id image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache-${CACHE_TAG}
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
