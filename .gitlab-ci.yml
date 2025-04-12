@@ -468,6 +468,7 @@ push-dockerfile:frontend:
     # Build and push staging image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL
