@@ -11,9 +11,8 @@ COPY package.json ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/*/package.json ./packages/
 
-# Install dependencies with cache mount
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
 # Copy source code after dependency installation
 COPY packages/ ./packages/

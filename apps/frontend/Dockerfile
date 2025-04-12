@@ -18,7 +18,7 @@ COPY packages/types/package.json ./packages/types/
 # Builder stage
 FROM base AS builder
 # Install dependencies first
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source code - these change more frequently
 COPY packages/ ./packages/
@@ -33,7 +33,7 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_CLIENT_API_URL=${NEXT_PUBLIC_CLIENT_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm build --filter=frontend
+RUN pnpm build --filter=frontend
 
 # Stage 2: Run Stage
 FROM base AS runner
