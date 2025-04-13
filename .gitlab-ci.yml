@@ -406,6 +406,7 @@ push-dockerfile:backend:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max
       --push
       -t $REGISTRY/eggo-backend:latest
       -t $REGISTRY/eggo-backend:staging
@@ -438,6 +439,8 @@ push-dockerfile:migrations:
     #   -f apps/backend/Dockerfile.migrations .
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max
       --push
       -t $REGISTRY/eggo-migrations:dev
       -f apps/backend/Dockerfile.migrations.dev .
@@ -468,7 +471,8 @@ push-dockerfile:frontend:
     # Build and push staging image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL
@@ -479,6 +483,7 @@ push-dockerfile:frontend:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max
       --push
       -t $REGISTRY/eggo-frontend:latest
       -f apps/frontend/Dockerfile .
