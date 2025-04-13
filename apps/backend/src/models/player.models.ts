@@ -6,12 +6,12 @@ import {
 } from "@eggosystem/types";
 
 const leaderboardExpressions: { [key: string]: string } = {
-  Kills: "sum(ps.kills)",
-  Assists: "sum(ps.assists)",
-  Deaths: "sum(ps.deaths)",
-  KAST: "avg(ps.kast)",
-  KD: "sum(ps.kills) - sum(ps.deaths)",
-  flashAssists: "sum(ps.flash_assists)"
+  kills: "sum(ps.kills)",
+  assists: "sum(ps.assists)",
+  deaths: "sum(ps.deaths)",
+  kast: "avg(ps.kast)",
+  kd: "sum(ps.kills) / GREATEST(sum(ps.deaths), 1)",
+  flash_assists: "sum(ps.flash_assists)"
 };
 
 export const getPlayerDetailsBySteamId = async (steam_id: string) => {
@@ -114,46 +114,62 @@ export const getPlayerLeaderboard = async ({
     throw new Error(`Invalid leaderboard type: ${leaderboard}`);
   }
 
-  const { query: subQueryWithFilters, queryParams: subQueryParams } =
-    generateQueryWithFilters([
-      { column: "p.team_id", value: team_ids },
-      { column: "l.season_id", value: season_ids },
-      { column: "l.id", value: league_ids }
-    ]);
+  // Generate the main query filters
+  const queryFilters = [];
+  const queryParams = [];
 
-  const subQuery = `
-    SELECT steam_id, p.nickname, team_id
-    FROM SteamPlayers p
-    JOIN Teams t ON t.id = p.team_id
-    JOIN leagues l ON l.id = t.league_id
-    WHERE 1=1
-    ${subQueryWithFilters}
-  `;
+  if (team_ids && team_ids.length > 0) {
+    const placeholders = team_ids.map(() => "?").join(",");
+    queryFilters.push(`stp.team_id IN (${placeholders})`);
+    queryParams.push(...team_ids);
+  }
 
-  const { query: baseQueryFilters, queryParams: additionalParams } =
-    generateQueryWithFilters([
-      { column: "p.team_id", value: team_ids },
-      { column: "l.season_id", value: season_ids },
-      { column: "l.id", value: league_ids },
-      { column: "m.stage", value: stages },
-      { column: "mmp.map_id", value: map_ids }
-    ]);
+  if (season_ids && season_ids.length > 0) {
+    const placeholders = season_ids.map(() => "?").join(",");
+    queryFilters.push(`m.season_id IN (${placeholders})`);
+    queryParams.push(...season_ids);
+  }
 
-  const baseQuery = `
-    SELECT p.nickname, t.name as team_name, ${leaderboardExpression} as ${leaderboard}
+  if (league_ids && league_ids.length > 0) {
+    const placeholders = league_ids.map(() => "?").join(",");
+    queryFilters.push(`m.league_id IN (${placeholders})`);
+    queryParams.push(...league_ids);
+  }
+
+  if (stages && stages.length > 0) {
+    const placeholders = stages.map(() => "?").join(",");
+    queryFilters.push(`m.stage IN (${placeholders})`);
+    queryParams.push(...stages);
+  }
+
+  if (map_ids && map_ids.length > 0) {
+    const placeholders = map_ids.map(() => "?").join(",");
+    queryFilters.push(`mg.map_id IN (${placeholders})`);
+    queryParams.push(...map_ids);
+  }
+
+  const whereClause =
+    queryFilters.length > 0 ? `WHERE ${queryFilters.join(" AND ")}` : "";
+
+  const query = `
+    SELECT 
+      sp.nickname,
+      t.name as team_name,
+      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) as team_logo,
+      COUNT(DISTINCT mg.id) as matches_played,
+      ${leaderboardExpression} as ${leaderboard}
     FROM PlayerStats ps
-    LEFT JOIN (${subQuery}) p ON p.steam_id = ps.steam_id
-    LEFT JOIN Matches m ON m.id = ps.match_id
-    LEFT JOIN Leagues l ON m.league_id = l.id
-    LEFT JOIN Teams t ON p.team_id = t.id
-    WHERE 1=1
-    ${baseQueryFilters}
+    INNER JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
+    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN Matches m ON m.id = mg.match_id
+    INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
+    INNER JOIN Teams t ON t.id = stp.team_id
+    ${whereClause}
+    GROUP BY ps.steam_id, sp.nickname, t.name, t.team_logo
+    HAVING matches_played > 0
+    ORDER BY ${leaderboard} DESC
+    LIMIT 5
   `;
-
-  const query = baseQuery.concat(
-    ` GROUP BY ps.steam_id ORDER BY ${leaderboard} DESC LIMIT 5`
-  );
-  const queryParams = [...subQueryParams, ...additionalParams]; // Combine subquery params with main query params
 
   return runQuery(query, queryParams);
 };

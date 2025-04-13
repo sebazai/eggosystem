@@ -13,6 +13,7 @@ import topteamsRouter from "./v1/topteams.routes";
 import nowRouter from "./v1/now.routes";
 import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
+import leaderboardRouter from "./v1/leaderboard.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -28,6 +29,7 @@ v1Router.use("/teams", teamsRouter);
 v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/leagues", leaguesRouter);
 v1Router.use("/topteams", topteamsRouter);
+v1Router.use("/leaderboard", leaderboardRouter);
 v1Router.use("/now", nowRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);

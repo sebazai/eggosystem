@@ -29,9 +29,9 @@ Run all tests:
 
 - pnpm test
 
-Run specific test, example run players tests:
+Run specific test, example run leaderboard backend tests:
 
-- pnpm test players
+- pnpm --filter=backend test -- leaderboard
 
 Run backend tests:
 

@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Leaderboards"
+  title: "Leaderboards",
+  description: "Player statistics and rankings in Kanaliiga"
 };
 
-export default function Layout({ children }: { children: ReactNode }) {
+export default function LeaderboardsLayout({
+  children
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <div>{children}</div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-4xl font-bold mb-8 text-kanaliiga-orange font-headings">
+        Leaderboards
+      </h1>
+      {children}
     </div>
   );
 }
