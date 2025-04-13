@@ -6,12 +6,33 @@ import {
 } from "@eggosystem/types";
 
 const leaderboardExpressions: { [key: string]: string } = {
+  // SUM stats
   kills: "sum(ps.kills)",
   assists: "sum(ps.assists)",
   deaths: "sum(ps.deaths)",
+  flash_assists: "sum(ps.flash_assists)",
+  utility_damage: "sum(ps.utility_damage)",
+  total_damage: "sum(ps.total_damage)",
+  awp_kills: "sum(ps.awp_kills)",
+  headshots: "sum(ps.headshots)",
+  enemies_flashed: "sum(ps.enemies_flashed)",
+  mates_flashed: "sum(ps.mates_flashed)",
+  self_flashes: "sum(ps.self_flashes)",
+  clutches_won: "sum(ps.clutches_won)",
+  one_v_one_won: "sum(ps.one_v_one_won)",
+  first_deaths: "sum(ps.first_deaths)",
+  first_kills: "sum(ps.first_kills)",
+  flashes_thrown: "sum(ps.flashes_thrown)",
+  total_ef_duration: "sum(ps.total_ef_duration)",
+
+  // AVG stats
   kast: "avg(ps.kast)",
-  kd: "sum(ps.kills) / GREATEST(sum(ps.deaths), 1)",
-  flash_assists: "sum(ps.flash_assists)"
+  kana_rating: "avg(ps.kana_rating)",
+  hs_percent: "avg(ps.hs_percent)",
+  adr: "avg(ps.adr)",
+
+  // Derived stats
+  kd: "sum(ps.kills) / GREATEST(sum(ps.deaths), 1)" // Safer division
 };
 
 export const getPlayerDetailsBySteamId = async (steam_id: string) => {

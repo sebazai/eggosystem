@@ -94,18 +94,39 @@ export const getMultipleLeaderboardsController = async (
 ): Promise<void> => {
   const { parsedParams } = req;
   const leaderboards = [
+    // AVG stats
+    "kana_rating",
+    "kast",
+    "hs_percent",
+    "adr",
+
+    // SUM stats
     "kills",
     "assists",
     "deaths",
-    "kast",
     "kd",
-    "flash_assists"
+    "flash_assists",
+    "utility_damage",
+    "total_damage",
+    "awp_kills",
+    "headshots",
+    "enemies_flashed",
+    "mates_flashed",
+    "self_flashes",
+    "clutches_won",
+    "one_v_one_won",
+    "first_deaths",
+    "first_kills",
+    "flashes_thrown",
+    "total_ef_duration"
   ]; // Add more as needed
+
   const results = await Promise.all(
     leaderboards.map((lb) =>
       getPlayerLeaderboard({ ...parsedParams, leaderboard: lb })
     )
   );
+
   const response = leaderboards.reduce(
     (acc, leaderboard, index) => {
       acc[leaderboard] = results[index];
@@ -114,5 +135,6 @@ export const getMultipleLeaderboardsController = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     {} as { [key: string]: any[] }
   );
+
   res.json(response);
 };
