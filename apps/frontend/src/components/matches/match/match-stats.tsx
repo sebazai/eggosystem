@@ -4,6 +4,9 @@ import React from "react";
 
 import { useRouter } from "next/navigation";
 import type { MatchInfo } from "@eggosystem/types";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
 
 import { MatchMapPicks } from "./stats/map-picks";
 import { TeamStatistics } from "./stats/team-statistics";
@@ -37,6 +40,15 @@ export const MatchStats = ({ matchId, teams }: MatchStatsProps) => {
 
   return (
     <>
+      <div className="mb-6">
+        <Button variant="outline" asChild>
+          <Link href="/matches" className="flex items-center gap-2">
+            <ChevronLeft size={16} />
+            Back to Matches
+          </Link>
+        </Button>
+      </div>
+
       <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
       {teamStats && <TeamStatistics teamStats={teamStats} />}
 
