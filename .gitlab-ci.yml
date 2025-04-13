@@ -7,18 +7,23 @@ variables:
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
   TRIVY_VERSION: "0.59.1" # Set the Trivy version here
   TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
+  PNPM_STORE_PATH: .pnpm-store
+  TURBO_TOKEN: $TURBO_TOKEN
+  TURBO_TEAM: $TURBO_TEAM
 
 # Define a common anchor for the cache configuration
 .common-cache: &common-cache
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - .pnpm-store
-      - node_modules/
-      - packages/types/node_modules/
-      - packages/eslint/node_modules/
-      - apps/frontend/node_modules/
-      - apps/backend/node_modules/
+  key:
+    files:
+      - pnpm-lock.yaml
+      - .gitlab-ci.yml
+    prefix: "eggo"
+  paths:
+    - node_modules/
+    - apps/frontend/node_modules/
+    - apps/backend/node_modules/
+    - packages/types/node_modules/
+    - packages/eslint/node_modules/
 
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables
@@ -31,6 +36,8 @@ variables:
   DB_USER: kanadbuser
   REDIS_HOST: eggo-redis
   REDIS_PORT: 6379
+  TURBO_TOKEN: $TURBO_TOKEN
+  TURBO_TEAM: $TURBO_TEAM
 
 .deploy-variables: &deploy-variables
   # DEV & PROD
@@ -43,10 +50,11 @@ variables:
   PORTAINER_URL: $PORTAINER_URL
   PORTAINER_TOKEN: $PORTAINER_TOKEN
 
-.default:
+.prepare-pnpm:
   before_script:
-    - npm install -g pnpm@10.3.0
-  <<: *common-cache # Include the common cache configuration
+    - corepack enable
+    - corepack prepare pnpm@10.3.0 --activate
+    - pnpm config set store-dir $PNPM_STORE_PATH
 
 # Sadly gitlab changes do not support with anchors or references to make these DRY
 .frontend-changes: &frontend-changes
@@ -111,9 +119,9 @@ variables:
 
 # Define the pull-only cache configuration
 .pull-only-cache:
-  <<: *common-cache # Merge the common cache configuration
   cache:
-    policy: pull # Add the pull policy
+    policy: pull
+    <<: *common-cache
   tags:
     - cache
 
@@ -167,33 +175,46 @@ stages:
 
 install:
   stage: install
+  extends: [.prepare-pnpm, .mr-all-app]
   tags:
     - cache
-  extends: [.default, .mr-all-app]
+  cache:
+    - <<: *common-cache
+    - key: pnpm-store
+      paths:
+        - .pnpm-store
   script:
-    - pnpm install
+    - pnpm install --frozen-lockfile
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      changes:
+        - pnpm-lock.yaml
+        - .gitlab-ci.yml
 
 check-types:
   stage: lint
-  extends: [.default, .pull-only-cache, .mr-all-app]
+  extends: [.pull-only-cache, .prepare-pnpm, .mr-all-app]
+  needs:
+    - job: install
+      optional: true
   script:
-    - pnpm check-types
+    - npx turbo check-types --cache=remote:rw
 
-lint:frontend:
+lint-all:
   stage: lint
-  extends: [.default, .pull-only-cache, .mr-frontend]
+  extends: [.prepare-pnpm, .pull-only-cache, .mr-frontend, .mr-backend]
+  needs:
+    - job: install
+      optional: true
   script:
-    - pnpm --filter=frontend lint
-
-lint:backend:
-  stage: lint
-  extends: [.default, .pull-only-cache, .mr-backend]
-  script:
-    - pnpm --filter=backend lint
+    - npx turbo run lint --continue --cache=remote:rw
 
 audit:
   stage: security
-  extends: [.default, .pull-only-cache, .mr-all-app]
+  extends: [.prepare-pnpm, .pull-only-cache, .mr-all-app]
+  needs:
+    - job: install
+      optional: true
   allow_failure: true
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
@@ -209,6 +230,9 @@ secrets_scan:
   stage: security
   image: python:3.9
   extends: [.mr-all-app]
+  needs:
+    - job: install
+      optional: true
   script:
     - pip install trufflehog
     - trufflehog --regex --entropy=False .
@@ -216,23 +240,23 @@ secrets_scan:
 
 test:backend:
   stage: test
-  extends: [.pull-only-cache, .default, .mr-backend]
+  extends: [.pull-only-cache, .mr-backend]
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
-    - name: redis:7-alpine
-      alias: eggo-redis
+    # - name: redis:7-alpine
+    #   alias: eggo-redis
   variables:
     <<: *overwrite-variables
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
-    - npm install -g pnpm@10.3.0
+    - corepack enable
+    - corepack prepare pnpm@10.3.0 --activate
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm --filter=backend seed
-    - pnpm --filter=@eggosystem/types build
   script:
-    - pnpm --filter=backend test
+    - npx turbo run test --filter=backend --cache=remote:rw
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
@@ -247,25 +271,18 @@ test:backend:
       - apps/backend/coverage/cobertura-coverage.xml
 
 test:frontend:
-  image: node:22
+  image: mcr.microsoft.com/playwright:v1.51.1-jammy
   stage: test
-  extends: [.pull-only-cache, .default, .mr-frontend]
-  services:
-    - name: bitnami/mariadb:11.4.2
-      alias: eggo-devdb
-    - name: redis:7-alpine
-      alias: eggo-redis
+  extends: [.pull-only-cache, .mr-frontend]
   variables:
     <<: *overwrite-variables
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
-    - npm install -g pnpm@10.3.0
+    - corepack enable
+    - corepack prepare pnpm@10.3.0 --activate
     - export $(grep -v '^#' .env.development | xargs)
-    #- pnpm --filter=backend seed
-    #- pnpm --filter=backend dev &
     - pnpm --filter="@eggosystem/types" build
-    - cd apps/frontend && npx playwright install --with-deps chromium
   script:
     - unset NODE_ENV
     - pnpm --filter=frontend test:integration
@@ -280,32 +297,15 @@ test:frontend:
 
 build:frontend:
   stage: build
-  extends: [.pull-only-cache, .default, .mr-frontend]
-  cache:
-    - key: ${CI_COMMIT_REF_SLUG}
-      paths:
-        - .pnpm-store
-        - node_modules/
-        - packages/
-        - apps/frontend/node_modules/
-    - key: ${CI_COMMIT_REF_SLUG}-frontend-build
-      paths:
-        - apps/frontend/.next/cache
-        - .turbo
-  before_script:
-    - npm install -g pnpm@10.3.0
-    - pnpm --filter=@eggosystem/types build
+  extends: [.pull-only-cache, .prepare-pnpm, .mr-frontend]
   script:
-    - pnpm --filter=frontend build
+    - npx turbo run build --filter='!backend' --cache=remote:rw
 
 build:backend:
   stage: build
-  extends: [.pull-only-cache, .default, .mr-backend]
-  before_script:
-    - npm install -g pnpm@10.3.0
-    - pnpm --filter=@eggosystem/types build
+  extends: [.pull-only-cache, .prepare-pnpm, .mr-backend]
   script:
-    - pnpm --filter=backend build
+    - npx turbo run build --filter='!frontend' --cache=remote:rw
 
 # Backend job
 build-dockerfile:backend:
@@ -362,6 +362,8 @@ build-dockerfile:frontend:
     # Build dev image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
+      --build-arg TURBO_TEAM=$TURBO_TEAM
+      --build-arg TURBO_TOKEN=$TURBO_TOKEN
       -t $REGISTRY/eggo-frontend:cache
       -f $DOCKERFILE_DEV .
     # Build production image
@@ -372,6 +374,8 @@ build-dockerfile:frontend:
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
+      --build-arg TURBO_TEAM=$TURBO_TEAM
+      --build-arg TURBO_TOKEN=$TURBO_TOKEN
       -t eggo-frontend
       -f $DOCKERFILE .
 
@@ -476,6 +480,8 @@ push-dockerfile:frontend:
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL
+      --build-arg TURBO_TEAM=$TURBO_TEAM
+      --build-arg TURBO_TOKEN=$TURBO_TOKEN
       --push
       -t $REGISTRY/eggo-frontend:staging
       -f apps/frontend/Dockerfile .
@@ -592,6 +598,8 @@ deploy-ondemand:
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
+      --build-arg TURBO_TEAM=$TURBO_TEAM
+      --build-arg TURBO_TOKEN=$TURBO_TOKEN
       --push
       -t $REGISTRY/eggo-frontend:${ENV_ID}
       -f apps/frontend/Dockerfile .

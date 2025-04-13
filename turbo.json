@@ -45,8 +45,7 @@
       "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": ["^check-types", "@eggosystem/types#build"],
-      "cache": false
+      "dependsOn": ["^check-types", "@eggosystem/types#build"]
     },
     "dev": {
       "dependsOn": ["@eggosystem/types#build"],
@@ -54,8 +53,10 @@
       "persistent": true
     },
     "test": {
-      "dependsOn": ["@eggosystem/types#build"],
-      "cache": false
+      "dependsOn": ["@eggosystem/types#build"]
+    },
+    "test:integration": {
+      "dependsOn": ["@eggosystem/types#build"]
     },
     "add-shadcn-component": {
       "cache": false

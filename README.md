@@ -1,6 +1,6 @@
-# Kanahub
+# Kanaliiga Kanahub
 
-This is the Eggosystem for Kanaliiga hubstat
+This is the Eggosystem for Kanaliiga Hub
 
 ## Development environment (VSCode)
 
@@ -36,6 +36,10 @@ Run specific test, example run players tests:
 Run backend tests:
 
 - pnpm --filter=backend test
+
+Run frontend tests:
+
+- pnpm --filter=frontend test
 
 ## Database
 
