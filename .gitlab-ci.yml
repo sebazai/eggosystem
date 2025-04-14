@@ -183,7 +183,6 @@ check-types:
   extends: [.pull-only-cache, .prepare-pnpm, .mr-all-app]
   needs:
     - job: install
-      optional: true
   script:
     - npx turbo check-types --cache=remote:rw
 
@@ -192,7 +191,6 @@ lint-all:
   extends: [.prepare-pnpm, .pull-only-cache, .mr-frontend, .mr-backend]
   needs:
     - job: install
-      optional: true
   script:
     - npx turbo run lint --continue --cache=remote:rw
 
@@ -201,8 +199,6 @@ audit:
   extends: [.prepare-pnpm, .pull-only-cache, .mr-all-app]
   needs:
     - job: install
-      optional: true
-  allow_failure: true
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
     - apt update && apt install -y jq
@@ -219,11 +215,9 @@ secrets_scan:
   extends: [.mr-all-app]
   needs:
     - job: install
-      optional: true
   script:
     - pip install trufflehog
     - trufflehog --regex --entropy=False .
-  allow_failure: true
 
 test:backend:
   stage: test
