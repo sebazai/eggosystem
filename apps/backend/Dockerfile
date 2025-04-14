@@ -16,6 +16,10 @@ COPY packages/ ./packages/
 # Builder stage
 FROM base AS builder
 # Install dependencies first - this layer will be cached if package.json files haven't changed
+ARG CI=false
+RUN if [ "${CI}" = "true" ]; then \
+      pnpm config set registry http://172.17.0.1:4873; \
+    fi
 RUN pnpm install --frozen-lockfile
 # Build types first
 RUN pnpm build --filter=@eggosystem/types

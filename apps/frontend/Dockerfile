@@ -18,6 +18,10 @@ COPY packages/types/package.json ./packages/types/
 # Builder stage
 FROM base AS builder
 # Install dependencies first
+ARG CI=false
+RUN if [ "${CI}" = "true" ]; then \
+      pnpm config set registry http://172.17.0.1:4873; \
+    fi
 RUN pnpm install --frozen-lockfile
 
 # Copy source code - these change more frequently

@@ -12,6 +12,10 @@ COPY apps/frontend/package.json ./apps/frontend/
 COPY packages/*/package.json ./packages/
 
 # Install dependencies
+ARG CI=false
+RUN if [ "${CI}" = "true" ]; then \
+      pnpm config set registry http://172.17.0.1:4873; \
+    fi
 RUN pnpm install --filter='!backend' --frozen-lockfile
 
 # Copy source code after dependency installation
