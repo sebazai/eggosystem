@@ -653,4 +653,5 @@ stop-ondemand:
     action: stop
   rules:
     - if: $CI_MERGE_REQUEST_ID
+      <<: *all-app-changes
       when: manual

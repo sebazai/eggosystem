@@ -3,7 +3,7 @@
 export default function Home() {
   return (
     <section>
-      <h1>Kanaliiga</h1>
+      <h1>Kanahub by Kanaliiga</h1>
       <p>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam a
         mollis elit. Orci varius natoque penatibus et magnis dis parturient

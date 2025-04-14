@@ -1,6 +1,6 @@
 # Kanaliiga Kanahub
 
-This is the Eggosystem for Kanaliiga Hub
+The Eggosystem for Kanaliiga Hub
 
 ## Development environment (VSCode)
 
