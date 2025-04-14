@@ -181,24 +181,18 @@ install:
 check-types:
   stage: lint
   extends: [.pull-only-cache, .prepare-pnpm, .mr-all-app]
-  needs:
-    - job: install
   script:
     - npx turbo check-types --cache=remote:rw
 
 lint-all:
   stage: lint
   extends: [.prepare-pnpm, .pull-only-cache, .mr-frontend, .mr-backend]
-  needs:
-    - job: install
   script:
     - npx turbo run lint --continue --cache=remote:rw
 
 audit:
   stage: security
   extends: [.prepare-pnpm, .pull-only-cache, .mr-all-app]
-  needs:
-    - job: install
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
     - apt update && apt install -y jq
@@ -213,8 +207,6 @@ secrets_scan:
   stage: security
   image: python:3.9
   extends: [.mr-all-app]
-  needs:
-    - job: install
   script:
     - pip install trufflehog
     - trufflehog --regex --entropy=False .
@@ -488,6 +480,7 @@ deploy-prod:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
+  resource_group: production
   when: manual
   environment:
     name: production
@@ -514,6 +507,7 @@ deploy-staging:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
+  resource_group: staging
   environment:
     name: staging
     url: https://${HUBDEV_PUBLIC_URL}
