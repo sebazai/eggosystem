@@ -186,6 +186,7 @@ install:
       paths:
         - .pnpm-store
   script:
+    - pnpm config set registry http://verdaccio:4873
     - pnpm install --frozen-lockfile
 
 check-types:
