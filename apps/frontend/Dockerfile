@@ -1,5 +1,5 @@
 # Base image
-FROM node:22-slim AS base
+FROM node:22-slim@sha256:1c18d9ab3af4585870b92e4dbc5cac5a0dc77dd13df1a5905cea89fc720eb05b AS base
 RUN apt update && apt upgrade -y
 WORKDIR /usr/src/app
 # Install pnpm globally - do this first as it changes least often
@@ -11,7 +11,7 @@ ENV NODE_ENV=production
 COPY pnpm-workspace.yaml turbo.json ./
 COPY pnpm-lock.yaml ./
 COPY package.json ./
-COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/frontend/package.json ./apps/frontend/package.json
 COPY packages/*/package.json ./packages/
 COPY packages/types/package.json ./packages/types/
 

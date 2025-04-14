@@ -362,6 +362,7 @@ build-dockerfile:frontend:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
@@ -401,7 +402,7 @@ push-dockerfile:backend:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max,compression=zstd
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-backend:latest
@@ -436,7 +437,7 @@ push-dockerfile:migrations:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max
+      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-migrations:dev
@@ -463,14 +464,14 @@ push-dockerfile:frontend:
     # Build and cache dev image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd
       --build-arg CI=true
       -f apps/frontend/Dockerfile.dev .
     # Build and push staging image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max,compression=zstd
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL
       --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL
@@ -482,7 +483,7 @@ push-dockerfile:frontend:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max,compression=zstd
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-frontend:latest
@@ -574,6 +575,7 @@ deploy-ondemand:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:${ENV_ID}
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-backend:${ENV_ID}
@@ -582,6 +584,7 @@ deploy-ondemand:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:${ENV_ID}
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-migrations:${ENV_ID}
@@ -590,6 +593,8 @@ deploy-ondemand:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
