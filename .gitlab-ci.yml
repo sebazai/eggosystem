@@ -213,7 +213,7 @@ secrets_scan:
 
 test:backend:
   stage: test
-  extends: [.pull-only-cache, .mr-backend]
+  extends: [.mr-backend]
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
@@ -248,7 +248,7 @@ test:backend:
 test:frontend:
   image: mcr.microsoft.com/playwright:v1.51.1-jammy
   stage: test
-  extends: [.pull-only-cache, .mr-frontend]
+  extends: [.mr-frontend]
   variables:
     <<: *overwrite-variables
     MARIADB_MAX_ALLOWED_PACKET: 128M
