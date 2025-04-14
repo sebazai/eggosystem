@@ -156,7 +156,12 @@ stages:
 
 install:
   stage: install
-  extends: [.prepare-pnpm, .mr-all-app]
+  extends: [.mr-all-app]
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@10.3.0 --activate
+    - pnpm config set store-dir $PNPM_STORE_PATH
+    - pnpm config set registry http://172.17.0.1:4873 #verdaccio aridivereci!
   script:
     - pnpm install --frozen-lockfile
 
