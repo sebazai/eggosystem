@@ -31,8 +31,6 @@ variables:
   DB_USER: kanadbuser
   REDIS_HOST: eggo-redis
   REDIS_PORT: 6379
-  TURBO_TOKEN: $TURBO_TOKEN
-  TURBO_TEAM: $TURBO_TEAM
 
 .deploy-variables: &deploy-variables
   # DEV & PROD
