@@ -19,7 +19,6 @@ variables:
   key:
     files:
       - pnpm-lock.yaml
-      - .gitlab-ci.yml
     prefix: "eggo"
   paths:
     - node_modules/
@@ -188,11 +187,6 @@ install:
         - .pnpm-store
   script:
     - pnpm install --frozen-lockfile
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      changes:
-        - pnpm-lock.yaml
-        - .gitlab-ci.yml
 
 check-types:
   stage: lint
