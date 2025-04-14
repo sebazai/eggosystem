@@ -5,7 +5,7 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
-  TRIVY_VERSION: "0.59.1" # Set the Trivy version here
+  TRIVY_VERSION: "0.59.1" # Set the Trivy version here yes
   TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
   PNPM_STORE_PATH: .pnpm-store
   TURBO_TOKEN: $TURBO_TOKEN
