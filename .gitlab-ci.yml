@@ -14,12 +14,6 @@ variables:
   CACHE_COMPRESSION_LEVEL: "fastest"
   FF_USE_FASTZIP: 1
 
-# Define a common anchor for the cache configuration
-.common-cache: &common-cache
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-    - .pnpm-store
-
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables
   ENV_ID: mr-${CI_MERGE_REQUEST_IID}
@@ -112,14 +106,6 @@ variables:
     - if: $CI_MERGE_REQUEST_ID
       <<: *all-app-changes
 
-# Define the pull-only cache configuration
-.pull-only-cache:
-  cache:
-    policy: pull
-    <<: *common-cache
-  tags:
-    - cache
-
 # Define common configurations using anchors
 .common-docker-build: &common-docker-build
   stage: build-docker
@@ -171,29 +157,24 @@ stages:
 install:
   stage: install
   extends: [.prepare-pnpm, .mr-all-app]
-  tags:
-    - cache
-  cache:
-    - <<: *common-cache
   script:
     - pnpm install --frozen-lockfile
 
 check-types:
   stage: lint
-  extends: [.pull-only-cache, .prepare-pnpm, .mr-all-app]
+  extends: [.prepare-pnpm, .mr-all-app]
   script:
     - npx turbo check-types --cache=remote:rw
 
 lint-all:
   stage: lint
-  extends: [.prepare-pnpm, .pull-only-cache, .mr-frontend, .mr-backend]
+  extends: [.prepare-pnpm, .mr-frontend, .mr-backend]
   script:
     - npx turbo run lint --continue --cache=remote:rw
 
 audit:
   stage: security
-  extends: [.prepare-pnpm, .pull-only-cache, .mr-all-app]
-  needs: []
+  extends: [.prepare-pnpm, .mr-all-app]
   script:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
     - apt update && apt install -y jq
@@ -207,7 +188,6 @@ audit:
 secrets_scan:
   stage: security
   image: python:3.9
-  needs: []
   extends: [.mr-all-app]
   script:
     - pip install trufflehog
@@ -276,13 +256,13 @@ test:frontend:
 
 build:frontend:
   stage: build
-  extends: [.pull-only-cache, .prepare-pnpm, .mr-frontend]
+  extends: [.prepare-pnpm, .mr-frontend]
   script:
     - npx turbo run build --filter='!backend' --cache=remote:rw
 
 build:backend:
   stage: build
-  extends: [.pull-only-cache, .prepare-pnpm, .mr-backend]
+  extends: [.prepare-pnpm, .mr-backend]
   script:
     - npx turbo run build --filter='!frontend' --cache=remote:rw
 
