@@ -438,10 +438,11 @@ push-dockerfile:migrations:
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
       --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-migrations:dev
-      -f apps/backend/Dockerfile.migrations.dev .
+      -f apps/backend/Dockerfile.dev .
 
 push-dockerfile:frontend:
   stage: build-docker
