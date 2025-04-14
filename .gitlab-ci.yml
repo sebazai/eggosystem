@@ -10,6 +10,9 @@ variables:
   PNPM_STORE_PATH: .pnpm-store
   TURBO_TOKEN: $TURBO_TOKEN
   TURBO_TEAM: $TURBO_TEAM
+  TRANSFER_METER_FREQUENCY: "10s"
+  CACHE_COMPRESSION_LEVEL: "fastest"
+  FF_USE_FASTZIP: 1
 
 # Define a common anchor for the cache configuration
 .common-cache: &common-cache

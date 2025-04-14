@@ -29,7 +29,6 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "dist/**/*.d.ts"]
     },
     "@eggosystem/types#build": {
-      "dependsOn": [],
       "outputs": [
         "dist/**",
         "dist/**/*.js",
