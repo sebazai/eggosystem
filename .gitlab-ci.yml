@@ -291,6 +291,7 @@ build-dockerfile:backend:
     IMAGE_NAME: eggo-backend
     DOCKERFILE_DEV: apps/backend/Dockerfile.dev
     DOCKERFILE: apps/backend/Dockerfile
+    DOCKERFILE_MIGRATIONS: apps/backend/Dockerfile.migrations.dev
     DOCKER_DRIVER: overlay2
     DOCKER_HOST: tcp://docker:2375
     DOCKER_TLS_CERTDIR: ""
@@ -299,20 +300,27 @@ build-dockerfile:backend:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
   script:
-    # Build backend dev image with shared & MR-specific cache
+    # Build backend dev image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
       --build-arg CI=true
       -t eggo-backend:dev
       -f $DOCKERFILE_DEV .
 
-      # Build backend image with shared & MR-specific cache
+      # Build backend image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
       --build-arg CI=true
       -t eggo-backend:latest
       -f $DOCKERFILE .
+      # Build backend migrations
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
+      --build-arg CI=true
+      -t eggo-migrations:dev
+      -f $DOCKERFILE_MIGRATIONS .
     # Run Trivy scans
     #- ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
     #- ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
@@ -386,6 +394,12 @@ push-dockerfile:backend:
     - docker buildx inspect --bootstrap
   script:
     - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd
+      --build-arg CI=true
+      -t $REGISTRY/eggo-backend:dev
+      -f apps/backend/Dockerfile.dev .
+    - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
       --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max,compression=zstd
@@ -413,22 +427,14 @@ push-dockerfile:migrations:
     - docker buildx use mybuilder
     - docker buildx inspect --bootstrap
   script:
-    # TODO:
-    # - docker buildx build
-    #   --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
-    #   --push
-    #   -t $REGISTRY/eggo-migrations:latest
-    #   -t $REGISTRY/eggo-migrations:staging
-    #   -f apps/backend/Dockerfile.migrations .
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
       --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
       --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-migrations:dev
-      -f apps/backend/Dockerfile.dev .
+      -f apps/backend/Dockerfile.migrations.dev .
 
 push-dockerfile:frontend:
   stage: build-docker
