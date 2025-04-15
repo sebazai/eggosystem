@@ -41,7 +41,7 @@ export default function UserDropdown() {
         <DropdownMenuGroup>
           {user && (
             <DropdownMenuItem>
-              <div>User: {user.displayName}</div>
+              <div>User: {user.nickname}</div>
             </DropdownMenuItem>
           )}
 

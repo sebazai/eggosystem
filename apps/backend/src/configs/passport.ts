@@ -1,7 +1,10 @@
 import passport from "passport";
 import steam from "passport-steam";
 
-import { getAuthUserBySteamId, createSteamPlayer } from "../models/auth.models";
+import {
+  getAuthUserBySteamId,
+  createAccountForSteam
+} from "../models/auth.models";
 import { clearPossibleRedisCacheForNewUser } from "../services/redis.services";
 import type { UserPayload } from "@eggosystem/types";
 
@@ -17,15 +20,18 @@ passport.use(
 
       if (!userInDb) {
         try {
-          await createSteamPlayer({
+          const insert = await createAccountForSteam({
             steamId: profile.id,
             steamDisplayName: profile.displayName,
             steamRealname: profile._json.realname
           });
+          console.log(insert.provider_id, profile.id);
           await clearPossibleRedisCacheForNewUser(profile.id);
           return done(null, {
-            steamId: profile.id,
-            displayName: profile.displayName
+            account_id: insert.account_id,
+            provider_id: profile.id,
+            nickname: profile.displayName,
+            provider: "steam"
           } satisfies UserPayload);
         } catch (error) {
           return done(error);
@@ -33,8 +39,10 @@ passport.use(
       }
 
       const user = {
-        steamId: userInDb.steam_id,
-        displayName: userInDb.nickname
+        account_id: userInDb.account_id,
+        provider_id: profile.id,
+        nickname: userInDb.nickname,
+        provider: "steam"
       } satisfies UserPayload;
 
       return done(null, user);

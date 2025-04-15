@@ -1,4 +1,9 @@
-import type { Player, Nullable } from "@eggosystem/types";
+import type {
+  SteamPlayer,
+  Nullable,
+  Account,
+  LinkedAccount
+} from "@eggosystem/types";
 import type { Request } from "express";
 
 export interface ParsedParams {
@@ -11,14 +16,16 @@ export interface ParsedParams {
 }
 
 export interface UserPayload {
-  steamId: Player["steam_id"];
-  displayName: Player["nickname"];
+  account_id: Account["id"];
+  provider_id: SteamPlayer["steam_id"];
+  nickname: SteamPlayer["nickname"];
+  provider: LinkedAccount["provider"];
 }
 
 export interface UserFullPayload extends UserPayload {
-  fullName: Player["full_name"];
-  workEmail: Player["work_email"];
-  discord: Player["discord"];
+  fullName: Account["full_name"];
+  workEmail: Account["work_email"];
+  discord: Account["discord"];
   acceptedPrivacyPolicy: boolean;
   acceptedMarketing: boolean;
 }

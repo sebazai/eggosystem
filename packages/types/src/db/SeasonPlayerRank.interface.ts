@@ -1,8 +1,8 @@
-import type { Player, Season, Nullable } from "@eggosystem/types";
+import type { SteamPlayer, Season, Nullable } from "@eggosystem/types";
 
 export interface SeasonPlayerRank {
   id: number;
-  steam_id: Player["steam_id"]; // Updated to string for steam_id
+  steam_id: SteamPlayer["steam_id"]; // Updated to string for steam_id
   season_id: Season["id"];
   rank_updated_at: string | null; // TIMESTAMP, can be null
   hours_updated_at: string;

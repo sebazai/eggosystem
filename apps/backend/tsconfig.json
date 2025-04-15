@@ -1,6 +1,8 @@
 {
   "extends": "@eggosystem/tsconfig/express.json",
   "compilerOptions": {
+    "typeRoots": ["node_modules/@types", "./node_modules/@types", "src/types"],
+    "types": ["jest", "node"],
     "outDir": "dist",
     "paths": {
       "@eggosystem/types": ["../../packages/types/dist/index"]
@@ -13,6 +15,7 @@
     "migrations/**/*.ts",
     "seeds/**/*.ts",
     "knexfile.ts",
-    "jest.setup.ts"
+    "jest.setup.ts",
+    "src/**/*.d.ts"
   ]
 }

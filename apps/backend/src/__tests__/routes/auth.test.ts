@@ -20,8 +20,11 @@ describe("GET /me", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("user");
-    expect(response.body.user).toHaveProperty("steamId", "76561198049745649");
-    expect(response.body.user).toHaveProperty("displayName", "sububobi");
+    expect(response.body.user).toHaveProperty(
+      "provider_id",
+      "76561198049745649"
+    );
+    expect(response.body.user).toHaveProperty("nickname", "sububobi");
     expect(response.body.user).toHaveProperty("fullName");
     expect(response.body.user).toHaveProperty("workEmail");
     expect(response.body.user).toHaveProperty("discord");

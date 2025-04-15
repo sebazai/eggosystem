@@ -7,7 +7,6 @@ import {
 } from "../models/season.models";
 import {
   signupFormSchema,
-  type UpsertPlayer,
   type RequestWithParamsAndBody,
   type SignupFormValues,
   type RequestWithParams
@@ -16,16 +15,15 @@ import z from "zod";
 import { insertOrganization } from "../models/organization.models";
 import { getConnection } from "../db/mysqlConnection";
 import { insertTeam } from "../models/team.models";
-import { upsertPlayer } from "../models/player.models";
 import {
   isValidExternalId,
   signUpTeamForSeason
 } from "../services/signup.services";
 import { isTeamPartOfOrganization } from "../services/team.services";
-import { getFullPlayerDetails } from "../services/player.services";
 import _ from "lodash";
 import { areSteamProfilesPublic } from "../services/steam.services";
 import { expireIn30Days, redisClient } from "../utils/redisClient";
+import { updateAccountDiscord } from "../models/account.models";
 
 export const getSeasonsController = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
@@ -151,24 +149,16 @@ export const addSignupForSeason = async (
     await connection.beginTransaction();
     // Handle adding or updating players
     for (const formDataPlayer of formData.players) {
-      const playerExists = await getFullPlayerDetails(formDataPlayer.steam_id);
-      const parameters = {
-        ...(formDataPlayer.captain || formDataPlayer.co_captain
-          ? { discord: formDataPlayer.discord }
-          : {})
-      };
-
-      if (!_.isEmpty(parameters) || !playerExists)
-        await upsertPlayer(
-          {
-            steam_id: formDataPlayer.steam_id,
-            ...(!playerExists
-              ? { nickname: formDataPlayer.nickname }
-              : { nickname: playerExists.nickname }),
-            ...parameters
-          } satisfies UpsertPlayer,
-          connection
+      console.log(formDataPlayer);
+      if (
+        formDataPlayer.discord &&
+        (formDataPlayer.captain || formDataPlayer.co_captain)
+      ) {
+        await updateAccountDiscord(
+          formDataPlayer.account_id,
+          formDataPlayer.discord
         );
+      }
     }
 
     const playersForTeamRegistration = formData.players.map((player) => {

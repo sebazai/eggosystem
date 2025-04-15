@@ -1,7 +1,7 @@
-import { Player, Team, Nullable } from "@eggosystem/types";
+import { SteamPlayer, Team, Nullable } from "@eggosystem/types";
 
 export interface MatchTopPlayerAwardsValue {
-  nickname: Player["nickname"];
+  nickname: SteamPlayer["nickname"];
   value: Nullable<number>;
   team_id: Team["id"];
 }

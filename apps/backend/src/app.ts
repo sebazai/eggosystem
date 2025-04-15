@@ -39,26 +39,7 @@ import "express-async-errors";
 
 import v1Router from "./routes";
 import { expressErrorHandler } from "./middlewares/express-error-handler";
-import { type ParsedParams } from "@eggosystem/types";
 import cookieParser from "cookie-parser";
-import { type JwtPayload } from "jsonwebtoken";
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      parsedParams: ParsedParams; // Add the parsedParams property to the Request type
-      auth?: JwtPayload;
-    }
-  }
-}
-
-declare module "jsonwebtoken" {
-  export interface JwtPayload {
-    steamId: string;
-    displayName: string;
-  }
-}
 
 const app = express();
 

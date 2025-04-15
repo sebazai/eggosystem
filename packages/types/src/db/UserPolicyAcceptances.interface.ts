@@ -1,6 +1,8 @@
+import { Account } from "./Account.interface";
+
 export interface UserPolicyAcceptance {
   id: number;
-  steam_id: string;
+  account_id: Account["id"];
   accepted_privacy_policy: boolean;
   accepted_marketing: boolean;
   created_at: Date;

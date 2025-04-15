@@ -1,7 +1,7 @@
-import { Player, PlayerStats, Team } from "../db";
+import { SteamPlayer, PlayerStats, Team } from "../db";
 
 export interface MatchPlayerStats {
-  nickname: Player["nickname"];
+  nickname: SteamPlayer["nickname"];
   team_id: Team["id"];
   kills: PlayerStats["kills"];
   headshots: PlayerStats["headshots"];

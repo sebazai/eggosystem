@@ -6,6 +6,7 @@ import { redisClient } from "../../utils/redisClient";
 
 import * as authControllers from "../../controllers/auth.controllers";
 import * as authServices from "../../services/auth.services";
+import type { UserPayload } from "@eggosystem/types";
 
 describe("AuthControllers utils", () => {
   describe("generateTokens", () => {
@@ -14,7 +15,12 @@ describe("AuthControllers utils", () => {
     });
 
     it("should generate tokens", () => {
-      const user = { steamId: "12345", displayName: "enzoj" };
+      const user = {
+        provider_id: "12345",
+        nickname: "enzoj",
+        provider: "steam",
+        account_id: 1
+      } satisfies UserPayload;
       const jti = "123123";
 
       const signSpy = jest
@@ -26,13 +32,25 @@ describe("AuthControllers utils", () => {
       expect(signSpy).toHaveBeenCalledTimes(2);
       expect(signSpy).toHaveBeenNthCalledWith(
         1,
-        { steamId: "12345", displayName: "enzoj", jti: "123123" },
+        {
+          account_id: 1,
+          provider: "steam",
+          provider_id: "12345",
+          nickname: "enzoj",
+          jti: "123123"
+        },
         "your_jwt_secret",
         { expiresIn: 1200 }
       );
       expect(signSpy).toHaveBeenNthCalledWith(
         2,
-        { steamId: "12345", displayName: "enzoj", jti: "123123" },
+        {
+          account_id: 1,
+          provider: "steam",
+          provider_id: "12345",
+          nickname: "enzoj",
+          jti: "123123"
+        },
         "your_refresh_secret",
         { expiresIn: 604800 }
       );
@@ -71,7 +89,12 @@ describe("AuthControllers", () => {
         .spyOn(uuid, "v4")
         .mockImplementation((() => "123123") as typeof uuid.v4);
       req = {
-        user: { steamId: "12345", displayName: "enzoj" }
+        user: {
+          account_id: 1,
+          provider: "steam",
+          provider_id: "12345",
+          nickname: "enzoj"
+        } satisfies UserPayload
       };
     });
 
@@ -81,7 +104,12 @@ describe("AuthControllers", () => {
       await authControllers.login(req, res);
 
       expect(authServices.generateTokens).toHaveBeenCalledWith(
-        { steamId: "12345", displayName: "enzoj" },
+        {
+          provider_id: "12345",
+          nickname: "enzoj",
+          provider: "steam",
+          account_id: 1
+        } satisfies UserPayload,
         "123123"
       );
 

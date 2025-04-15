@@ -1,20 +1,20 @@
-import { updateProfile } from "../../controllers/profile.controllers";
+import { updateAccount } from "../../controllers/account.controllers";
 import { getConnection } from "../../db/mysqlConnection";
 import {
   insertUserPolicyAcceptance,
-  updateProfileData,
+  updateAccountData,
   updateUserPolicyAcceptance,
   userPolicyAcceptance
-} from "../../models/profile.models";
+} from "../../models/account.models";
 import type { Request, Response } from "express";
 
 jest.mock("../../db/mysqlConnection", () => ({
   getConnection: jest.fn()
 }));
 
-jest.mock("../../models/profile.models", () => ({
+jest.mock("../../models/account.models", () => ({
   insertUserPolicyAcceptance: jest.fn(),
-  updateProfileData: jest.fn(),
+  updateAccountData: jest.fn(),
   updateUserPolicyAcceptance: jest.fn(),
   userPolicyAcceptance: jest.fn()
 }));
@@ -32,7 +32,12 @@ describe("updateProfile Controller", () => {
     statusMock = jest.fn().mockReturnValue({ json: jsonMock });
 
     req = {
-      auth: { steamId: "12345", displayName: "hehe" },
+      auth: {
+        account_id: 1,
+        provider_id: "12345",
+        nickname: "hehe",
+        provider: "steam"
+      },
       body: {
         nickname: "Test User",
         full_name: "Test Player",
@@ -63,14 +68,14 @@ describe("updateProfile Controller", () => {
 
   it("should return 401 if user is not authenticated", async () => {
     req.auth = undefined;
-    await updateProfile(req as Request, res as Response);
+    await updateAccount(req as Request, res as Response);
     expect(statusMock).toHaveBeenCalledWith(401);
     expect(jsonMock).toHaveBeenCalledWith({ message: "Unauthorized" });
   });
 
   it("should return 400 if validation fails", async () => {
     req.body = { invalidField: "invalid" };
-    await updateProfile(req as Request, res as Response);
+    await updateAccount(req as Request, res as Response);
     expect(statusMock).toHaveBeenCalledWith(400);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Invalid profile data" })
@@ -79,15 +84,15 @@ describe("updateProfile Controller", () => {
 
   it("should update profile and policy acceptance if user exists", async () => {
     (userPolicyAcceptance as jest.Mock).mockResolvedValue(true);
-    await updateProfile(req as Request, res as Response);
+    await updateAccount(req as Request, res as Response);
     expect(connection.beginTransaction).toHaveBeenCalled();
-    expect(updateProfileData).toHaveBeenCalledWith(
-      "12345",
+    expect(updateAccountData).toHaveBeenCalledWith(
+      1,
       expect.any(Object),
       connection
     );
     expect(updateUserPolicyAcceptance).toHaveBeenCalledWith(
-      "12345",
+      1,
       expect.any(Object),
       connection
     );
@@ -100,9 +105,9 @@ describe("updateProfile Controller", () => {
 
   it("should insert policy acceptance if none exists", async () => {
     (userPolicyAcceptance as jest.Mock).mockResolvedValue(null);
-    await updateProfile(req as Request, res as Response);
+    await updateAccount(req as Request, res as Response);
     expect(insertUserPolicyAcceptance).toHaveBeenCalledWith(
-      "12345",
+      1,
       expect.any(Object),
       connection
     );
@@ -114,9 +119,9 @@ describe("updateProfile Controller", () => {
   });
 
   it("should rollback and throw error on failure", async () => {
-    (updateProfileData as jest.Mock).mockRejectedValue(new Error("DB Error"));
+    (updateAccountData as jest.Mock).mockRejectedValue(new Error("DB Error"));
     await expect(
-      updateProfile(req as Request, res as Response)
+      updateAccount(req as Request, res as Response)
     ).rejects.toThrow("DB Error");
     expect(connection.rollback).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();

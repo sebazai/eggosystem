@@ -1,31 +1,46 @@
 import type {
   UserPolicyAcceptancesPayload,
   UpdateUserProfile,
-  UserPolicyAcceptance
+  UserPolicyAcceptance,
+  Account
 } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 
-export const updateProfileData = async (
-  steamId: string,
+export const updateAccountData = async (
+  accountId: Account["id"],
   updatedUser: UpdateUserProfile,
   connection?: PoolConnection
 ) => {
-  return await runQuery(
-    `UPDATE SteamPlayers SET nickname = ?, full_name = ?, work_email = ?, discord = ? WHERE steam_id = ?`,
+  await runQuery(
+    "Update SteamPlayers SET nickname = ? WHERE account_id = ?",
+    [updatedUser.nickname, accountId],
+    connection
+  );
+  return runQuery(
+    `UPDATE Accounts SET full_name = ?, work_email = ?, discord = ? WHERE id = ?`,
     [
-      updatedUser.nickname,
       updatedUser.full_name,
       updatedUser.work_email,
       updatedUser.discord,
-      steamId
+      accountId
     ],
     connection
   );
 };
 
+export const updateAccountDiscord = async (
+  accountId: Account["id"],
+  discord: string
+) => {
+  return runQuery("UPDATE Accounts set discord = ? WHERE id = ?", [
+    discord,
+    accountId
+  ]);
+};
+
 export const userPolicyAcceptance = async (
-  steamId: string,
+  accountId: Account["id"],
   privacy_policy_version: string,
   connection: PoolConnection
 ) => {
@@ -33,8 +48,8 @@ export const userPolicyAcceptance = async (
   const existingPolicyAcceptance = await runQuery<
     UserPolicyAcceptance[] | undefined
   >(
-    `SELECT * FROM UserPolicyAcceptances WHERE steam_id = ? AND privacy_policy_version = ?`,
-    [steamId, privacy_policy_version],
+    `SELECT * FROM UserPolicyAcceptances WHERE account_id = ? AND privacy_policy_version = ?`,
+    [accountId, privacy_policy_version],
     connection
   );
   if (!existingPolicyAcceptance) {
@@ -44,16 +59,16 @@ export const userPolicyAcceptance = async (
 };
 
 export const updateUserPolicyAcceptance = async (
-  steamId: string,
+  accountId: Account["id"],
   updatedData: UserPolicyAcceptancesPayload,
   connection: PoolConnection
 ) => {
   await runQuery(
-    `UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ?, accepted_marketing = ? WHERE steam_id = ? AND privacy_policy_version = ?`,
+    `UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ?, accepted_marketing = ? WHERE account_id = ? AND privacy_policy_version = ?`,
     [
       updatedData.accepted_privacy_policy,
       updatedData.accepted_marketing,
-      steamId,
+      accountId,
       updatedData.privacy_policy_version
     ],
     connection
@@ -61,15 +76,15 @@ export const updateUserPolicyAcceptance = async (
 };
 
 export const insertUserPolicyAcceptance = async (
-  steamId: string,
+  accountId: Account["id"],
   newUserPolicy: UserPolicyAcceptancesPayload,
   connection: PoolConnection
 ) => {
   // Update or insert UserPolicyAcceptance
   await runQuery(
-    `INSERT INTO UserPolicyAcceptances (steam_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version) VALUES (?, ?, ?, ?)`,
     [
-      steamId,
+      accountId,
       newUserPolicy.accepted_privacy_policy,
       newUserPolicy.accepted_marketing,
       newUserPolicy.privacy_policy_version
@@ -79,15 +94,15 @@ export const insertUserPolicyAcceptance = async (
 };
 
 export const getUserProfileAcceptanceForVersion = async (
-  steamId: string,
+  accountId: Account["id"],
   privacyPolicyVersion?: string
 ) => {
   if (!privacyPolicyVersion) {
     throw new Error("Missing PRIVACY_POLICY_VERSION in env");
   }
   const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE steam_id = ? AND privacy_policy_version = ?",
-    [steamId, privacyPolicyVersion]
+    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ? AND privacy_policy_version = ?",
+    [accountId, privacyPolicyVersion]
   );
 
   if (!result) {
@@ -96,10 +111,12 @@ export const getUserProfileAcceptanceForVersion = async (
   return result[0];
 };
 
-export const getLatestUserProfileMarketingConsent = async (steamId: string) => {
+export const getLatestUserProfileMarketingConsent = async (
+  accountId: Account["id"]
+) => {
   const result = await runQuery<UserPolicyAcceptance[] | undefined>(
-    "SELECT * FROM UserPolicyAcceptances WHERE steam_id = ? ORDER BY created_at DESC",
-    [steamId]
+    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ? ORDER BY created_at DESC",
+    [accountId]
   );
   return !!result?.[0]?.accepted_marketing;
 };

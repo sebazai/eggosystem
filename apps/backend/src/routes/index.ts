@@ -11,7 +11,7 @@ import seasonsRouter from "./v1/season.routes";
 import leaguesRouter from "./v1/league.routes";
 import topteamsRouter from "./v1/topteams.routes";
 import nowRouter from "./v1/now.routes";
-import profileRouter from "./v1/profile.routes";
+import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
 
 // Create a new Router instance
@@ -29,7 +29,7 @@ v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/leagues", leaguesRouter);
 v1Router.use("/topteams", topteamsRouter);
 v1Router.use("/now", nowRouter);
-v1Router.use("/profiles", authenticateJWT, profileRouter);
+v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
 v1Router.use("/", async () => {
   console.log("Hello");

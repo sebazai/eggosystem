@@ -1,12 +1,9 @@
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import type {
-  UpsertPlayer,
-  ParsedParams,
-  PlayerDetailsBySteamId
+import {
+  type ParsedParams,
+  type PlayerDetailsBySteamId
 } from "@eggosystem/types";
-import type { PoolConnection } from "mysql2/promise";
-import { buildInsertQueryParts } from "../db/utils";
 
 const leaderboardExpressions: { [key: string]: string } = {
   Kills: "sum(ps.kills)",
@@ -17,37 +14,20 @@ const leaderboardExpressions: { [key: string]: string } = {
   flashAssists: "sum(ps.flash_assists)"
 };
 
-export const upsertPlayer = async (
-  data: UpsertPlayer,
-  connection?: PoolConnection
-) => {
-  const { columns, placeholders, values } = buildInsertQueryParts(data);
-  const results = await runQuery<{ insertId: number; affectedRows: number }>(
-    `INSERT INTO SteamPlayers (${columns.join(", ")})
-    VALUES (${placeholders})
-    ON DUPLICATE KEY UPDATE
-      discord = COALESCE(VALUES(discord), discord),
-      work_email = COALESCE(VALUES(work_email), work_email),
-      full_name = COALESCE(VALUES(full_name), full_name);`,
-    values,
-    connection
-  );
-  return String(results.insertId) || data.steam_id;
-};
-
 export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   const results = await runQuery<PlayerDetailsBySteamId[]>(
     `SELECT
       p.steam_id, 
       p.nickname,
-      p.discord,
+      a.id as account_id,
+      a.discord,
       CASE 
-          WHEN work_email IS NULL THEN FALSE
-          WHEN work_email LIKE '%@%' THEN TRUE
+          WHEN a.work_email IS NULL THEN FALSE
+          WHEN a.work_email LIKE '%@%' THEN TRUE
           ELSE FALSE
       END AS is_valid_work_email,
       CASE 
-          WHEN full_name REGEXP '^[A-Za-z]+ [A-Za-z]+$' THEN TRUE 
+          WHEN a.full_name REGEXP '.+\\s.+' THEN TRUE 
           ELSE FALSE 
       END AS is_valid_full_name,
       CASE 
@@ -55,7 +35,8 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
           ELSE FALSE 
       END AS has_accepted_latest_privacy_policy
     FROM SteamPlayers p 
-    LEFT JOIN UserPolicyAcceptances upa ON upa.steam_id = p.steam_id
+    JOIN Accounts a ON a.id = p.account_id
+    LEFT JOIN UserPolicyAcceptances upa ON upa.account_id = a.id
     WHERE p.steam_id = ?`,
     [process.env.PRIVACY_POLICY_VERSION!, steam_id]
   );

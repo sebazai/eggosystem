@@ -1,11 +1,11 @@
-import type { MatchGame, Player } from "@eggosystem/types";
+import type { MatchGame, SteamPlayer } from "@eggosystem/types";
 
 export interface PlayerTrade {
   id: number;
   game_id: MatchGame["id"];
-  trader_steam_id: Player["steam_id"]; // steam_id as string
-  killer_steam_id: Player["steam_id"]; // steam_id as string
-  victim_steam_id: Player["steam_id"]; // steam_id as string
+  trader_steam_id: SteamPlayer["steam_id"]; // steam_id as string
+  killer_steam_id: SteamPlayer["steam_id"]; // steam_id as string
+  victim_steam_id: SteamPlayer["steam_id"]; // steam_id as string
   round_number: number; // TINYINT UNSIGNED as number
   first_death: boolean; // TINYINT(1) as boolean
   traded: boolean; // TINYINT(1) as boolean

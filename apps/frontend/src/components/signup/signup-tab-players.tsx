@@ -66,10 +66,12 @@ export const TabPlayers = ({
   seasonId
 }: TabPlayersProps) => {
   const [newPlayers, setNewPlayers] = useState<string[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
   const auth = useAuth();
   useEffect(() => {
-    if (auth.user?.steamId) {
-      setValue("players.0.steam_id", auth.user.steamId);
+    if (auth.user?.provider === "steam" && auth.user?.provider_id) {
+      setValue("players.0.account_id", auth.user.account_id);
+      setValue("players.0.steam_id", auth.user.provider_id);
       setValue("players.0.captain", true);
     }
   }, [auth.user, setValue]);
@@ -91,35 +93,40 @@ export const TabPlayers = ({
     (p) => p.steam_id
   );
 
-  const [loadingStates, setLoadingStates] = useState<Record<number, boolean>>(
-    {}
-  );
+  const [loadingStates, setLoadingStates] = useState<
+    Record<number, boolean | undefined>
+  >({});
+  const prevWatchedSteamIds = useRef(steamIds);
   // Open accordions if any errors
   useEffect(() => {
     const errorIndices: string[] = [];
     for (const [index, player] of watchPlayers.entries()) {
-      if (
-        !loadingStates[index] &&
+      if (loadingStates[index] === undefined) {
+        continue;
+      }
+      const error =
         player.steam_id.length === 17 &&
         (playerSchema.safeParse(player).success === false ||
-          !player.has_valid_data ||
-          !player.is_profile_public ||
+          player.has_valid_data !== true ||
+          player.is_profile_public !== true ||
+          player.hours === undefined ||
           player.hours === -1 ||
-          player.rank === -1)
-      ) {
+          player.rank === -1);
+
+      if (error && !loadingStates[index]) {
         errorIndices.push(`player-${index}`);
       }
     }
-    setOpenItems(errorIndices);
+    if (errorIndices.length > 0) {
+      setOpenItems(errorIndices);
+    }
   }, [loadingStates, watchPlayers]);
 
-  const [openItems, setOpenItems] = useState<string[]>([]);
   const { fields, append, remove } = useFieldArray({
     control,
     name: "players"
   });
 
-  const prevWatchedSteamIds = useRef(steamIds);
   useEffect(() => {
     const checkPlayers = async (steamIds: string[]) => {
       for (const [index, steam_id] of steamIds.entries()) {
@@ -183,6 +190,10 @@ export const TabPlayers = ({
             }
           }
           if (playerData.status === "fulfilled") {
+            setValue(
+              `players.${index}.account_id`,
+              playerData.value.account_id
+            );
             const data = playerData.value;
             const has_valid_data = Boolean(
               data.is_valid_full_name &&
@@ -311,6 +322,10 @@ export const TabPlayers = ({
                                   `players.${index}.external_rank`,
                                   undefined
                                 );
+                                setLoadingStates((prev) => ({
+                                  ...prev,
+                                  [index]: undefined
+                                }));
                               }
                               field.onChange(e);
                             }}
@@ -499,6 +514,7 @@ export const TabPlayers = ({
             type="button"
             onClick={() => {
               append({
+                account_id: 0,
                 steam_id: "",
                 nickname: "",
                 discord: "",

@@ -5,7 +5,6 @@ import * as signupServices from "../../services/signup.services";
 import * as teamServices from "../../services/team.services";
 import * as playerServices from "../../services/player.services";
 import * as steamServices from "../../services/steam.services";
-import * as playerModels from "../../models/player.models";
 import * as teamModels from "../../models/team.models";
 import * as organizationModels from "../../models/organization.models";
 import * as seasonTeamRegistrationModels from "../../models/seasonteamregistration.models";
@@ -15,7 +14,7 @@ import {
   type SignupFormValues,
   type RequestWithParamsAndBody,
   type Season,
-  type Player,
+  type SteamPlayer,
   SeasonPlatform
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
@@ -126,8 +125,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       .mockImplementation(() => Promise.resolve(true));
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValue({} as unknown as Player);
-    jest.spyOn(playerModels, "upsertPlayer").mockResolvedValue("1");
+      .mockResolvedValue({} as unknown as SteamPlayer);
 
     await addSignupForSeason(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -164,8 +162,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       .mockImplementation(() => Promise.resolve(true));
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValue({} as unknown as Player);
-    jest.spyOn(playerModels, "upsertPlayer").mockResolvedValue("1");
+      .mockResolvedValue({} as unknown as SteamPlayer);
 
     await addSignupForSeason(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -213,8 +210,8 @@ describe("addSignupForSeason - Try Catch Block", () => {
       .mockImplementation(() => Promise.resolve(true));
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValue({} as unknown as Player);
-    jest.spyOn(playerModels, "upsertPlayer").mockResolvedValue("1");
+      .mockResolvedValue({} as unknown as SteamPlayer);
+
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 666
     } as unknown as { insertId: number });
@@ -255,8 +252,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       .mockImplementation(() => Promise.resolve(true));
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValue({} as unknown as Player);
-    jest.spyOn(playerModels, "upsertPlayer").mockResolvedValue("1");
+      .mockResolvedValue({} as unknown as SteamPlayer);
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 1337
     } as unknown as { insertId: number });
@@ -281,10 +277,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
   it("should return error if team is not part of organization", async () => {
     req.body.organizationId = 1;
     req.body.teamId = 1;
-    jest.spyOn(playerModels, "upsertPlayer").mockResolvedValue("1");
     jest
       .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValue({} as unknown as Player);
+      .mockResolvedValue({} as unknown as SteamPlayer);
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(false));
@@ -297,145 +292,143 @@ describe("addSignupForSeason - Try Catch Block", () => {
       message: "Team does not belong to the selected organization"
     });
   });
-  it("should not call upsertPlayer if player exists, is not captain or co-captain and data is ok in db", async () => {
-    req.body.players[0].captain = false;
-    req.body.players[2].captain = true;
-    req.body.players[2].discord = "Nakki";
-    jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
-      nickname: "JohnnyTheKiller"
-    } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).not.toHaveBeenCalledWith(
-      {
-        steam_id: req.body.players[0].steam_id
-      },
-      mockConnection
-    );
-  });
-  it("should update only discord for players that are captain or co-captain and nickname not updated", async () => {
-    jest
-      .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValueOnce({
-        nickname: "Player One"
-      } as unknown as Player)
-      .mockResolvedValueOnce({
-        nickname: "Player Two"
-      } as unknown as Player)
-      .mockResolvedValueOnce({
-        nickname: "Player three"
-      } as unknown as Player)
-      .mockResolvedValueOnce({
-        nickname: "Player Four"
-      } as unknown as Player)
-      .mockResolvedValueOnce({
-        nickname: "Player Five"
-      } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234567",
-        discord: "playerOne#1234",
-        nickname: "Player One"
-      },
-      mockConnection
-    );
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234568",
-        discord: "playerTwo#1234",
-        nickname: "Player Two"
-      },
-      mockConnection
-    );
-    expect(players).toHaveBeenCalledTimes(2);
-  });
+  // it("should not call upsertPlayer if player exists, is not captain or co-captain and data is ok in db", async () => {
+  //   req.body.players[0].captain = false;
+  //   req.body.players[2].captain = true;
+  //   req.body.players[2].discord = "Nakki";
+  //   jest.spyOn(playerServices, "getFullPlayerDetails").mockResolvedValue({
+  //     nickname: "JohnnyTheKiller"
+  //   } as unknown as Player);
+  //   jest
+  //     .spyOn(teamServices, "isTeamPartOfOrganization")
+  //     .mockImplementation(() => Promise.resolve(true));
+  //   const players = jest
+  //     .spyOn(playerModels, "upsertPlayer")
+  //     .mockResolvedValue("1");
+  //   await addSignupForSeason(req, res);
+  //   expect(players).not.toHaveBeenCalledWith(
+  //     {
+  //       steam_id: req.body.players[0].steam_id
+  //     },
+  //     mockConnection
+  //   );
+  // });
+  // it("should update only discord for players that are captain or co-captain and nickname not updated", async () => {
+  //   jest
+  //     .spyOn(playerServices, "getFullPlayerDetails")
+  //     .mockResolvedValueOnce({
+  //       nickname: "Player One"
+  //     } as unknown as Player)
+  //     .mockResolvedValueOnce({
+  //       nickname: "Player Two"
+  //     } as unknown as Player)
+  //     .mockResolvedValueOnce({
+  //       nickname: "Player three"
+  //     } as unknown as Player)
+  //     .mockResolvedValueOnce({
+  //       nickname: "Player Four"
+  //     } as unknown as Player)
+  //     .mockResolvedValueOnce({
+  //       nickname: "Player Five"
+  //     } as unknown as Player);
+  //   jest
+  //     .spyOn(teamServices, "isTeamPartOfOrganization")
+  //     .mockImplementation(() => Promise.resolve(true));
 
-  it("should add new player to database if it does not exist", async () => {
-    const signupData = {
-      ..._.cloneDeep(validSignupData),
-      players: [
-        ..._.cloneDeep(validSignupData.players),
-        {
-          steam_id: "12345678901234572",
-          nickname: "Player6",
-          discord: "playerSix#1234",
-          captain: false,
-          co_captain: true
-        }
-      ]
-    };
-    signupData.players[1].co_captain = false;
-    req.body = signupData;
-    const upsert = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    jest
-      .spyOn(playerServices, "getFullPlayerDetails")
-      .mockImplementation((steam_id) => {
-        if (steam_id === "12345678901234572") {
-          return Promise.resolve(undefined);
-        }
-        return Promise.resolve({
-          name: "NakkiKauppias",
-          discord: "Nakki#1234"
-        } as unknown as Player);
-      });
-    await addSignupForSeason(req, res);
-    expect(upsert).toHaveBeenCalledWith(
-      {
-        discord: "playerSix#1234",
-        nickname: "Player6",
-        steam_id: "12345678901234572"
-      },
-      mockConnection
-    );
-  });
-  it("should not update player nickname if it differs from the one in db", async () => {
-    jest
-      .spyOn(playerServices, "getFullPlayerDetails")
-      .mockResolvedValueOnce({
-        nickname: "JohnnyTheKiller"
-      } as unknown as Player)
-      .mockResolvedValueOnce({
-        nickname: "JaneTheSlayer"
-      } as unknown as Player);
-    jest
-      .spyOn(teamServices, "isTeamPartOfOrganization")
-      .mockImplementation(() => Promise.resolve(true));
-    const players = jest
-      .spyOn(playerModels, "upsertPlayer")
-      .mockResolvedValue("1");
-    await addSignupForSeason(req, res);
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234567",
-        discord: "playerOne#1234",
-        nickname: "JohnnyTheKiller"
-      },
-      mockConnection
-    );
-    expect(players).toHaveBeenCalledWith(
-      {
-        steam_id: "12345678901234568",
-        discord: "playerTwo#1234",
-        nickname: "JaneTheSlayer"
-      },
-      mockConnection
-    );
-  });
+  //   await addSignupForSeason(req, res);
+  //   expect(players).toHaveBeenCalledWith(
+  //     {
+  //       steam_id: "12345678901234567",
+  //       discord: "playerOne#1234",
+  //       nickname: "Player One"
+  //     },
+  //     mockConnection
+  //   );
+  //   expect(players).toHaveBeenCalledWith(
+  //     {
+  //       steam_id: "12345678901234568",
+  //       discord: "playerTwo#1234",
+  //       nickname: "Player Two"
+  //     },
+  //     mockConnection
+  //   );
+  //   expect(players).toHaveBeenCalledTimes(2);
+  // });
+
+  // it("should add new player to database if it does not exist", async () => {
+  //   const signupData = {
+  //     ..._.cloneDeep(validSignupData),
+  //     players: [
+  //       ..._.cloneDeep(validSignupData.players),
+  //       {
+  //         steam_id: "12345678901234572",
+  //         nickname: "Player6",
+  //         discord: "playerSix#1234",
+  //         captain: false,
+  //         co_captain: true
+  //       }
+  //     ]
+  //   };
+  //   signupData.players[1].co_captain = false;
+  //   req.body = signupData;
+  //   const upsert = jest
+  //     .spyOn(playerModels, "upsertPlayer")
+  //     .mockResolvedValue("1");
+  //   jest
+  //     .spyOn(teamServices, "isTeamPartOfOrganization")
+  //     .mockImplementation(() => Promise.resolve(true));
+  //   jest
+  //     .spyOn(playerServices, "getFullPlayerDetails")
+  //     .mockImplementation((steam_id) => {
+  //       if (steam_id === "12345678901234572") {
+  //         return Promise.resolve(undefined);
+  //       }
+  //       return Promise.resolve({
+  //         name: "NakkiKauppias",
+  //         discord: "Nakki#1234"
+  //       } as unknown as Player);
+  //     });
+  //   await addSignupForSeason(req, res);
+  //   expect(upsert).toHaveBeenCalledWith(
+  //     {
+  //       discord: "playerSix#1234",
+  //       nickname: "Player6",
+  //       steam_id: "12345678901234572"
+  //     },
+  //     mockConnection
+  //   );
+  // });
+  // it("should not update player nickname if it differs from the one in db", async () => {
+  //   jest
+  //     .spyOn(playerServices, "getFullPlayerDetails")
+  //     .mockResolvedValueOnce({
+  //       nickname: "JohnnyTheKiller"
+  //     } as unknown as Player)
+  //     .mockResolvedValueOnce({
+  //       nickname: "JaneTheSlayer"
+  //     } as unknown as Player);
+  //   jest
+  //     .spyOn(teamServices, "isTeamPartOfOrganization")
+  //     .mockImplementation(() => Promise.resolve(true));
+  //   const players = jest
+  //     .spyOn(playerModels, "upsertPlayer")
+  //     .mockResolvedValue("1");
+  //   await addSignupForSeason(req, res);
+  //   expect(players).toHaveBeenCalledWith(
+  //     {
+  //       steam_id: "12345678901234567",
+  //       discord: "playerOne#1234",
+  //       nickname: "JohnnyTheKiller"
+  //     },
+  //     mockConnection
+  //   );
+  //   expect(players).toHaveBeenCalledWith(
+  //     {
+  //       steam_id: "12345678901234568",
+  //       discord: "playerTwo#1234",
+  //       nickname: "JaneTheSlayer"
+  //     },
+  //     mockConnection
+  //   );
+  // });
 });

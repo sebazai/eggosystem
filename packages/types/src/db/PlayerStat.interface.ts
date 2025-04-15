@@ -1,8 +1,8 @@
-import type { Player, MatchGame } from "@eggosystem/types";
+import type { SteamPlayer, MatchGame } from "@eggosystem/types";
 
 export interface PlayerStats {
   id: number;
-  steam_id: Player["steam_id"];
+  steam_id: SteamPlayer["steam_id"];
   game_id: MatchGame["id"];
   team: number; // 1 = CT, 2 = T
   kills: number;

@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { TheContainer } from "../layout/the-container";
 import { SteamLoginButton } from "../steam-login";
-import { profileSchema, type ProfileUpdateValues } from "@eggosystem/types";
+import { accountSchema, type AccountUpdateValues } from "@eggosystem/types";
 import { apiFetch } from "@/lib/apiClient";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -29,7 +29,7 @@ export default function ProfileForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const form = useForm({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(accountSchema),
     defaultValues: {
       nickname: "",
       full_name: "",
@@ -43,7 +43,7 @@ export default function ProfileForm() {
 
   useEffect(() => {
     if (auth.user) {
-      form.setValue("nickname", auth.user.displayName);
+      form.setValue("nickname", auth.user.nickname);
       form.setValue("full_name", auth.user.fullName || "");
       form.setValue("work_email", auth.user.workEmail || "");
       form.setValue("discord", auth.user.discord || "");
@@ -85,12 +85,12 @@ export default function ProfileForm() {
     );
   }
 
-  async function onSubmit(data: ProfileUpdateValues) {
+  async function onSubmit(data: AccountUpdateValues) {
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
       await apiFetch({
-        url: `/profiles/update`,
+        url: `/accounts/update`,
         method: "POST",
         body: data
       });

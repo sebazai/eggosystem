@@ -1,10 +1,10 @@
-import type { Nullable, Player, Season, Team } from "@eggosystem/types";
+import type { Nullable, SteamPlayer, Season, Team } from "@eggosystem/types";
 
 export interface SeasonTeamRegistration {
   season_id: Season["id"];
   team_id: Team["id"];
-  captain_steam_id?: Nullable<Player["steam_id"]>;
-  co_captain_steam_id?: Nullable<Player["steam_id"]>;
+  captain_steam_id?: Nullable<SteamPlayer["steam_id"]>;
+  co_captain_steam_id?: Nullable<SteamPlayer["steam_id"]>;
   defects?: Nullable<string>;
   ticket?: Nullable<string>;
   approved: boolean; // Not nullable, defaults to false (0)

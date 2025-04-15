@@ -1,8 +1,8 @@
 import {
   type UserPolicyAcceptancesPayload,
-  type ProfileUpdateValues,
+  type AccountUpdateValues,
   type RequestWithBody,
-  profileSchema,
+  accountSchema,
   type UpdateUserProfile
 } from "@eggosystem/types";
 import type { Response } from "express";
@@ -10,13 +10,13 @@ import z from "zod";
 import { getConnection } from "../db/mysqlConnection";
 import {
   insertUserPolicyAcceptance,
-  updateProfileData,
+  updateAccountData,
   updateUserPolicyAcceptance,
   userPolicyAcceptance
-} from "../models/profile.models";
+} from "../models/account.models";
 
-export const updateProfile = async (
-  req: RequestWithBody<ProfileUpdateValues>,
+export const updateAccount = async (
+  req: RequestWithBody<AccountUpdateValues>,
   res: Response
 ) => {
   const user = req.auth;
@@ -24,7 +24,7 @@ export const updateProfile = async (
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
-  const steamId = user.steamId;
+  const accountId = user.account_id;
   const formData = req.body;
 
   const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION;
@@ -33,7 +33,7 @@ export const updateProfile = async (
   }
 
   try {
-    profileSchema.parse(formData);
+    accountSchema.parse(formData);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       res.status(400).json({
@@ -63,10 +63,10 @@ export const updateProfile = async (
   try {
     await connection.beginTransaction();
     // Update Player by steamId
-    await updateProfileData(steamId, updatedUser, connection);
+    await updateAccountData(accountId, updatedUser, connection);
 
     const existingPolicyAcceptance = await userPolicyAcceptance(
-      steamId,
+      accountId,
       privacyPolicyVersion,
       connection
     );
@@ -75,7 +75,7 @@ export const updateProfile = async (
       // If it exists, update the existing record
 
       await updateUserPolicyAcceptance(
-        steamId,
+        accountId,
         userPolicyAcceptancePayload,
         connection
       );
@@ -87,7 +87,7 @@ export const updateProfile = async (
     }
 
     await insertUserPolicyAcceptance(
-      steamId,
+      accountId,
       userPolicyAcceptancePayload,
       connection
     );

@@ -1,7 +1,7 @@
-import { Player, PlayerStats, SeasonTeamPlayer } from "@eggosystem/types";
+import { SteamPlayer, PlayerStats, SeasonTeamPlayer } from "@eggosystem/types";
 
 export interface MatchTopPlayersQueryResult<T extends keyof PlayerStats> {
-  nickname: Player["nickname"];
+  nickname: SteamPlayer["nickname"];
   value: PlayerStats[T];
   team_id: SeasonTeamPlayer["team_id"];
 }

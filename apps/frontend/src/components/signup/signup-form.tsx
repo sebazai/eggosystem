@@ -68,8 +68,9 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
       },
       teamExternalId: "",
       players: Array(5).fill({
+        account_id: 0,
         steam_id: "",
-        name: "",
+        nickname: "",
         discord: "",
         captain: false,
         co_captain: false,

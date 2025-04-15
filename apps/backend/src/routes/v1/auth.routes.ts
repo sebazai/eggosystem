@@ -12,7 +12,7 @@ import type { UserFullPayload } from "@eggosystem/types";
 import {
   getLatestUserProfileMarketingConsent,
   getUserProfileAcceptanceForVersion
-} from "../../models/profile.models";
+} from "../../models/account.models";
 
 const router = Router();
 
@@ -86,26 +86,28 @@ router.post("/refresh", refreshToken);
 router.get("/logout", logout);
 
 router.get("/me", authenticateJWT, async (req, res) => {
-  if (req.auth) {
-    const userInDb = await getAuthUserBySteamId(req.auth.steamId);
+  if (req.auth && req.auth.provider === "steam") {
+    const userInDb = await getAuthUserBySteamId(req.auth.provider_id);
     if (!userInDb) {
       res.status(403).json({ message: "Bad request" });
       return;
     }
 
     const result = await getUserProfileAcceptanceForVersion(
-      req.auth.steamId,
+      req.auth.account_id,
       process.env.PRIVACY_POLICY_VERSION
     );
 
     const hasMarketingConsent = result
       ? result.accepted_marketing
       : // Tick the marketing box if privacy_policy version changes and user had it ticked.
-        await getLatestUserProfileMarketingConsent(req.auth.steamId);
+        await getLatestUserProfileMarketingConsent(req.auth.account_id);
 
     const userPayload = {
-      steamId: userInDb.steam_id,
-      displayName: userInDb.nickname,
+      account_id: userInDb.account_id,
+      provider_id: userInDb.steam_id,
+      provider: "steam",
+      nickname: userInDb.nickname,
       fullName: userInDb.full_name,
       workEmail: userInDb.work_email,
       discord: userInDb.discord,

@@ -1,4 +1,4 @@
-import type { Player } from "@eggosystem/types";
+import type { SteamPlayer } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import _ from "lodash";
 
@@ -8,7 +8,7 @@ import _ from "lodash";
  * @returns Player
  */
 export const getFullPlayerDetails = async (steam_id: string) => {
-  const results = await runQuery<Player[]>(
+  const results = await runQuery<SteamPlayer[]>(
     `SELECT * FROM SteamPlayers WHERE steam_id = ?`,
     [steam_id]
   );

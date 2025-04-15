@@ -1,3 +1,4 @@
+import type { UserPayload } from "@eggosystem/types";
 import type { Request, Response, NextFunction } from "express";
 
 type ExpressJwtMiddleware = (
@@ -9,7 +10,12 @@ type ExpressJwtMiddleware = (
 export const expressjwt = jest.fn((): ExpressJwtMiddleware => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.headers.authorization === "Bearer valid_token") {
-      req.auth = { steamId: "76561198049745649", displayName: "subu" }; // Simulated authenticated user
+      req.auth = {
+        provider_id: "76561198049745649",
+        nickname: "subu",
+        account_id: 1,
+        provider: "steam"
+      } satisfies UserPayload; // Simulated authenticated user
       next();
     } else {
       res.status(401).json({ message: "Unauthorized" });

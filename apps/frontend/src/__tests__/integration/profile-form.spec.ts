@@ -1,3 +1,4 @@
+import type { UserFullPayload } from "@eggosystem/types";
 import { test, expect } from "./fixtures";
 import type { Page, Route, TestInfo } from "@playwright/test";
 
@@ -57,33 +58,17 @@ test.describe("Profile Form", () => {
         contentType: "application/json",
         body: JSON.stringify({
           user: {
-            id: "test-user-id",
-            steamId: "76561198012345678",
-            avatar: "https://placekitten.com/200/200",
-            nickname: "Test User",
-            roles: ["user"],
+            account_id: 1,
+            provider_id: "76561198012345678",
+            provider: "steam",
+            nickname: "TestStormer",
             // No acceptedPrivacyPolicy - user hasn't accepted it yet
-            acceptedPrivacyPolicy: false
-          }
-        })
-      });
-    });
-
-    // Also mock the session endpoint
-    await page.route("**/api/v1/auth/session", async (route: Route) => {
-      console.log("Mocking auth/session endpoint");
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          user: {
-            id: "test-user-id",
-            steamId: "76561198012345678",
-            nickname: "Test User",
-            email: "test@example.com",
-            image: "https://placekitten.com/200/200"
-          },
-          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            acceptedPrivacyPolicy: false,
+            fullName: "Test user",
+            workEmail: "test@user.fi",
+            discord: "tester",
+            acceptedMarketing: false
+          } satisfies UserFullPayload
         })
       });
     });
