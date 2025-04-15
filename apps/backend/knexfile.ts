@@ -11,7 +11,8 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME ?? "kanaliiga",
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       typeCast: (field: any, next: any): any => {
-        if (field.type === "DATETIME") return field.string();
+        if (field.type === "DATETIME" || field.type === "LONGLONG")
+          return field.string();
         return next();
       }
     },
@@ -34,7 +35,9 @@ const config: { [key: string]: Knex.Config } = {
       database: process.env.DB_NAME,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       typeCast: (field: any, next: any): any => {
-        if (field.type === "DATETIME") return field.string();
+        if (field.type === "DATETIME" || field.type === "LONGLONG")
+          return field.string();
+
         return next();
       }
     },
