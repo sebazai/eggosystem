@@ -9,10 +9,19 @@ import { getConnection } from "../db/mysqlConnection";
  */
 export const getAuthUserBySteamId = async (steamId: string) => {
   const [user] = await runQuery<AuthSteamUser[]>(
-    `SELECT sp.nickname, sp.steam_id, a.id as account_id, a.full_name, a.work_email, a.discord, a.email, la.provider FROM LinkedAccounts la 
+    `SELECT 
+      sp.nickname, 
+      sp.steam_id, 
+      a.id as account_id, 
+      a.full_name, 
+      a.work_email, 
+      a.discord, 
+      a.email, 
+      la.provider 
+    FROM LinkedAccounts la 
       JOIN Accounts a ON la.account_id = a.id 
       JOIN SteamPlayers sp ON a.id = sp.account_id 
-      WHERE la.provider_id = ? AND la.provider = 'steam'`,
+    WHERE la.provider_id = ? AND la.provider = 'steam'`,
     [steamId]
   );
 

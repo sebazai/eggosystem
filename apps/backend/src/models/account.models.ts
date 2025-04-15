@@ -13,7 +13,7 @@ export const updateAccountData = async (
   connection?: PoolConnection
 ) => {
   await runQuery(
-    "Update SteamPlayers SET nickname = ? WHERE account_id = ?",
+    "UPDATE SteamPlayers SET nickname = ? WHERE account_id = ?",
     [updatedUser.nickname, accountId],
     connection
   );

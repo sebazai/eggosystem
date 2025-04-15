@@ -93,13 +93,13 @@ router.get("/me", authenticateJWT, async (req, res) => {
       return;
     }
 
-    const result = await getUserProfileAcceptanceForVersion(
+    const userPolicy = await getUserProfileAcceptanceForVersion(
       req.auth.account_id,
       process.env.PRIVACY_POLICY_VERSION
     );
 
-    const hasMarketingConsent = result
-      ? result.accepted_marketing
+    const hasMarketingConsent = userPolicy
+      ? userPolicy.accepted_marketing
       : // Tick the marketing box if privacy_policy version changes and user had it ticked.
         await getLatestUserProfileMarketingConsent(req.auth.account_id);
 
@@ -112,7 +112,9 @@ router.get("/me", authenticateJWT, async (req, res) => {
       workEmail: userInDb.work_email,
       email: userInDb.email,
       discord: userInDb.discord,
-      acceptedPrivacyPolicy: result ? result.accepted_privacy_policy : false,
+      acceptedPrivacyPolicy: userPolicy
+        ? userPolicy.accepted_privacy_policy
+        : false,
       acceptedMarketing: hasMarketingConsent
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
