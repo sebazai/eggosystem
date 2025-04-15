@@ -18,10 +18,11 @@ export const updateAccountData = async (
     connection
   );
   return runQuery(
-    `UPDATE Accounts SET full_name = ?, work_email = ?, discord = ? WHERE id = ?`,
+    `UPDATE Accounts SET full_name = ?, work_email = ?, email = ?, discord = ? WHERE id = ?`,
     [
       updatedUser.full_name,
       updatedUser.work_email,
+      updatedUser.email,
       updatedUser.discord,
       accountId
     ],

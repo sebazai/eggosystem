@@ -15,7 +15,6 @@ import { TabPlayers } from "./signup-tab-players";
 import { TabTeam } from "./signup-tab-team";
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ErrorMessage } from "@hookform/error-message";
 import { apiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
@@ -334,14 +333,6 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                 seasonId={seasonId}
               />
             </Tabs>
-
-            <ErrorMessage
-              errors={form.formState.errors}
-              name="players.root"
-              render={({ message }) => (
-                <p className="text-destructive">{message}</p>
-              )}
-            />
 
             {successMessage && (
               <div className="text-green-500 font-semibold">

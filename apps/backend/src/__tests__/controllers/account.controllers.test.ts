@@ -1,4 +1,4 @@
-import { updateAccount } from "../../controllers/account.controllers";
+import { updateAccountProfile } from "../../controllers/account.controllers";
 import { getConnection } from "../../db/mysqlConnection";
 import {
   insertUserPolicyAcceptance,
@@ -68,14 +68,14 @@ describe("updateProfile Controller", () => {
 
   it("should return 401 if user is not authenticated", async () => {
     req.auth = undefined;
-    await updateAccount(req as Request, res as Response);
+    await updateAccountProfile(req as Request, res as Response);
     expect(statusMock).toHaveBeenCalledWith(401);
     expect(jsonMock).toHaveBeenCalledWith({ message: "Unauthorized" });
   });
 
   it("should return 400 if validation fails", async () => {
     req.body = { invalidField: "invalid" };
-    await updateAccount(req as Request, res as Response);
+    await updateAccountProfile(req as Request, res as Response);
     expect(statusMock).toHaveBeenCalledWith(400);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Invalid profile data" })
@@ -84,7 +84,7 @@ describe("updateProfile Controller", () => {
 
   it("should update profile and policy acceptance if user exists", async () => {
     (userPolicyAcceptance as jest.Mock).mockResolvedValue(true);
-    await updateAccount(req as Request, res as Response);
+    await updateAccountProfile(req as Request, res as Response);
     expect(connection.beginTransaction).toHaveBeenCalled();
     expect(updateAccountData).toHaveBeenCalledWith(
       1,
@@ -105,7 +105,7 @@ describe("updateProfile Controller", () => {
 
   it("should insert policy acceptance if none exists", async () => {
     (userPolicyAcceptance as jest.Mock).mockResolvedValue(null);
-    await updateAccount(req as Request, res as Response);
+    await updateAccountProfile(req as Request, res as Response);
     expect(insertUserPolicyAcceptance).toHaveBeenCalledWith(
       1,
       expect.any(Object),
@@ -121,7 +121,7 @@ describe("updateProfile Controller", () => {
   it("should rollback and throw error on failure", async () => {
     (updateAccountData as jest.Mock).mockRejectedValue(new Error("DB Error"));
     await expect(
-      updateAccount(req as Request, res as Response)
+      updateAccountProfile(req as Request, res as Response)
     ).rejects.toThrow("DB Error");
     expect(connection.rollback).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();

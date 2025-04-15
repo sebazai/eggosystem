@@ -34,6 +34,7 @@ export default function ProfileForm() {
       nickname: "",
       full_name: "",
       work_email: "",
+      email: "",
       discord: "",
       acceptPrivacyPolicy: false,
       acceptMarketing: false
@@ -46,6 +47,7 @@ export default function ProfileForm() {
       form.setValue("nickname", auth.user.nickname);
       form.setValue("full_name", auth.user.fullName || "");
       form.setValue("work_email", auth.user.workEmail || "");
+      form.setValue("email", auth.user.email || "");
       form.setValue("discord", auth.user.discord || "");
       form.setValue(
         "acceptPrivacyPolicy",
@@ -135,9 +137,9 @@ export default function ProfileForm() {
           name="nickname"
           render={({ field }) => (
             <FormItem>
-              <Label>Nickname</Label>
+              <Label>Steam nickname</Label>
               <FormControl>
-                <Input placeholder="Your Nickname" {...field} />
+                <Input placeholder="Your Steam name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -163,9 +165,27 @@ export default function ProfileForm() {
           name="work_email"
           render={({ field }) => (
             <FormItem>
-              <Label>Work Email</Label>
+              <Label>Work email</Label>
               <FormControl>
-                <Input type="email" placeholder="your@email.com" {...field} />
+                <Input type="email" placeholder="work@email.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <Label>Personal email</Label>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="personal@email.com"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

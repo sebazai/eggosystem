@@ -15,7 +15,7 @@ import {
   userPolicyAcceptance
 } from "../models/account.models";
 
-export const updateAccount = async (
+export const updateAccountProfile = async (
   req: RequestWithBody<AccountUpdateValues>,
   res: Response
 ) => {
@@ -48,7 +48,8 @@ export const updateAccount = async (
   const updatedUser = {
     nickname: formData.nickname,
     full_name: formData.full_name,
-    work_email: formData.work_email,
+    work_email: formData.work_email ?? null,
+    email: formData.email ?? null,
     discord: formData.discord ?? null
   } satisfies UpdateUserProfile;
 

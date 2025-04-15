@@ -110,6 +110,7 @@ router.get("/me", authenticateJWT, async (req, res) => {
       nickname: userInDb.nickname,
       fullName: userInDb.full_name,
       workEmail: userInDb.work_email,
+      email: userInDb.email,
       discord: userInDb.discord,
       acceptedPrivacyPolicy: result ? result.accepted_privacy_policy : false,
       acceptedMarketing: hasMarketingConsent
