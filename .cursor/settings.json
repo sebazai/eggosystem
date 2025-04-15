@@ -1,0 +1,10 @@
+{
+  "ai": {
+    "defaultPrompt": "Follow the guidelines in ASSISTANT-RULES.md when responding",
+    "customInstructions": [
+      "Always reference docs/database.md for database schema questions",
+      "Assume devcontainer environment as described in README.md",
+      "Provide concise answers without unnecessary introductions"
+    ]
+  }
+}
