@@ -71,9 +71,16 @@ export const LeaderboardsGrid = ({
         Leaderboards
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        data-testid="leaderboards-grid"
+      >
         {leaderboards.map((category, index) => (
-          <div key={index} className="bg-card rounded-sm overflow-hidden">
+          <div
+            key={index}
+            className="bg-card rounded-sm overflow-hidden"
+            data-testid={`leaderboard-category${category.title === "Kana Rating" ? " kana-rating-category" : ""}`}
+          >
             <div className="bg-[#2a1810] p-4">
               <h2 className="text-xl font-bold text-kanaliiga-orange">
                 {category.title}
@@ -88,6 +95,7 @@ export const LeaderboardsGrid = ({
                     className={`flex items-center justify-between py-3 px-2 ${
                       playerIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
                     }`}
+                    data-testid="player-row"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <span
@@ -100,6 +108,7 @@ export const LeaderboardsGrid = ({
                                 ? "text-amber-700 font-bold"
                                 : "text-muted-foreground"
                         }`}
+                        data-testid="player-rank"
                       >
                         {playerIndex === 0
                           ? "👑"
@@ -127,6 +136,7 @@ export const LeaderboardsGrid = ({
                                 ? "font-bold text-white"
                                 : "text-muted-foreground"
                             }`}
+                            data-testid="player-name"
                           >
                             {player.nickname}
                           </span>
@@ -138,7 +148,10 @@ export const LeaderboardsGrid = ({
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <span className="text-muted-foreground text-sm">
+                      <span
+                        className="text-muted-foreground text-sm"
+                        data-testid="player-matches"
+                      >
                         {player.matches_played} matches
                       </span>
                       <span
@@ -147,6 +160,7 @@ export const LeaderboardsGrid = ({
                             ? "font-bold text-white"
                             : "text-muted-foreground"
                         }`}
+                        data-testid="player-value"
                       >
                         {typeof player.value === "number"
                           ? formatValue(player.value, category.unit)
