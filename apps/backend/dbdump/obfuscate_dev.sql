@@ -4,7 +4,7 @@ WHERE id NOT IN (11, 14);
 DELETE FROM SteamPlayers
 WHERE steam_id NOT IN (
         SELECT steam_id
-        FROM SeasonTeamSteamPlayers
+        FROM SeasonTeamPlayers
     );
 DELETE FROM Teams
 WHERE id NOT IN (
@@ -121,37 +121,39 @@ VALUES ('John', 'Smith'),
     ('Mackenzie', 'Mendoza');
 -- Step 1: Create a temporary table with unique random player names
 CREATE TEMPORARY TABLE TempPlayerNames AS
-SELECT p.steam_id,
+SELECT p.account_id,
     CONCAT(fn1.firstname, ' ', fn2.lastname) AS new_player_name
-FROM SteamPlayers p
+FROM Accounts p
     JOIN fake_names fn1 ON RAND() < 0.5 -- Random selection of firstname
     JOIN fake_names fn2 ON RAND() < 0.5 -- Random selection of lastname
 ORDER BY RAND();
--- Step 2: Update SteamPlayers table
-UPDATE SteamPlayers p
-    JOIN TempPlayerNames tpn ON p.steam_id = tpn.steam_id
+-- Step 2: Update Accounts table
+UPDATE Accounts p
+    JOIN TempPlayerNames tpn ON p.account_id = tpn.account_id
 SET p.full_name = tpn.new_player_name;
 -- Step 3: Drop temporary table
 DROP TEMPORARY TABLE TempPlayerNames;
-UPDATE SteamPlayers
+UPDATE Accounts
 SET email = CONCAT(
         LOWER(SUBSTRING_INDEX(full_name, ' ', 1)),
         '.',
         LOWER(SUBSTRING_INDEX(full_name, ' ', -1)),
+        FLOOR(RAND() * 9999) + 1,
         '@kanamail.fi'
     )
 WHERE full_name IS NOT NULL
     AND full_name LIKE '% %';
-UPDATE SteamPlayers
+UPDATE Accounts
 SET work_email = CONCAT(
         LOWER(SUBSTRING_INDEX(full_name, ' ', 1)),
         '.',
         LOWER(SUBSTRING_INDEX(full_name, ' ', -1)),
+        FLOOR(RAND() * 9999) + 1,
         '@kanawork.org'
     )
 WHERE full_name IS NOT NULL
     AND full_name LIKE '% %';
-UPDATE SteamPlayers
+UPDATE Accounts
 SET discord = CONCAT(
         SUBSTRING_INDEX(full_name, ' ', 1),
         '#',
@@ -159,5 +161,5 @@ SET discord = CONCAT(
     )
 WHERE full_name IS NOT NULL
     AND full_name LIKE '% %';
--- UPDATE SteamPlayers
+-- UPDATE Accounts
 -- SET discord = name;
