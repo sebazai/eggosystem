@@ -18,5 +18,4 @@ This document defines rules and preferences for the AI assistant when interactin
 
 - **Database Handling**: When discussing database operations, reference the schema defined in docs/database.md. Full schema can be found in apps/backend/migrations/20250127080330_database_schema.ts
 - **Development Environment**: Assume work is being done in the devcontainer environment as described in README.md.
-- **Custom Rule 1**: [Your custom rule here]
-- **Custom Rule 2**: [Your custom rule here]
+- **Navigation**: Use breadcrumbs (from shadcn/ui) for page navigation instead of back buttons to maintain consistent navigation patterns across the application.

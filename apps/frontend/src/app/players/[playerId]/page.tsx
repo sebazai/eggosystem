@@ -1,10 +1,15 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
 
 interface PlayerDetailsProps {
   params: {
@@ -33,12 +38,21 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">
-        <Button variant="outline" asChild>
-          <Link href="/players" className="flex items-center gap-2">
-            <ChevronLeft size={16} />
-            Back to Players
-          </Link>
-        </Button>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/players">Players</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{playerData.nickname}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
 
       <div className="bg-card rounded-md overflow-hidden">

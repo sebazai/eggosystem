@@ -2,10 +2,15 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
 import { getParamArray } from "@/lib/utils";
 import { useTeamDetails } from "@/hooks/data/useTeamDetails";
 import { PlayerTable } from "@/components/players/player-table";
@@ -59,12 +64,21 @@ export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
   return (
     <div className="container mx-auto py-8 px-4 md:px-0">
       <div className="mb-6">
-        <Button variant="outline" asChild>
-          <Link href="/teams" className="flex items-center gap-2">
-            <ChevronLeft size={16} />
-            Back to Teams
-          </Link>
-        </Button>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Home</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{team.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
 
       {/* Team Header */}
