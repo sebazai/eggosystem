@@ -1,8 +1,7 @@
 import { type Request, type Response } from "express";
 import {
   getPlayerDetailsBySteamId,
-  getPlayersByFilters,
-  getPlayerLeaderboard
+  getPlayersByFilters
 } from "../models/player.models";
 
 import {
@@ -77,64 +76,4 @@ export const getPlayersByFiltersController = async (
 
   // Return the players as a response
   res.json(players);
-};
-
-export const getPlayerLeaderboardController = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { parsedParams } = req;
-  const result = await getPlayerLeaderboard(parsedParams);
-  res.json(result);
-};
-
-export const getMultipleLeaderboardsController = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { parsedParams } = req;
-  const leaderboards = [
-    // AVG stats
-    "kana_rating",
-    "kast",
-    "hs_percent",
-    "adr",
-
-    // SUM stats
-    "kills",
-    "assists",
-    "deaths",
-    "kd",
-    "flash_assists",
-    "utility_damage",
-    "total_damage",
-    "awp_kills",
-    "headshots",
-    "enemies_flashed",
-    "mates_flashed",
-    "self_flashes",
-    "clutches_won",
-    "one_v_one_won",
-    "first_deaths",
-    "first_kills",
-    "flashes_thrown",
-    "total_ef_duration"
-  ]; // Add more as needed
-
-  const results = await Promise.all(
-    leaderboards.map((lb) =>
-      getPlayerLeaderboard({ ...parsedParams, leaderboards: lb })
-    )
-  );
-
-  const response = leaderboards.reduce(
-    (acc, leaderboard, index) => {
-      acc[leaderboard] = results[index];
-      return acc;
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    {} as { [key: string]: any[] }
-  );
-
-  res.json(response);
 };

@@ -11,8 +11,8 @@ interface RequestWithParsedParams extends Request {
 // Import controller directly
 import {
   getMultipleLeaderboardsController,
-  getPlayerLeaderboardController
-} from "../../controllers/players.controllers";
+  getLeaderboardController
+} from "../../controllers/leaderboards.controllers";
 
 // Mock middleware for multiple leaderboards endpoint
 const mockMultipleLeaderboardsMiddleware = (
@@ -63,8 +63,7 @@ app.use(
 app.use(
   "/single",
   mockSingleLeaderboardMiddleware as RequestHandler,
-  (req, res) =>
-    getPlayerLeaderboardController(req as RequestWithParsedParams, res)
+  (req, res) => getLeaderboardController(req as RequestWithParsedParams, res)
 );
 
 describe("Leaderboards Routes", () => {
