@@ -4,7 +4,8 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
@@ -423,10 +424,7 @@ export const TabPlayers = ({
                           <Input
                             {...field}
                             onClick={(e) => e.stopPropagation()}
-                            disabled={
-                              player.has_valid_data === undefined &&
-                              newPlayers.includes(player.steam_id)
-                            }
+                            disabled={true}
                           />
                         </FormControl>
                         <FormMessage />
@@ -443,8 +441,20 @@ export const TabPlayers = ({
                         <FormItem className="py-1 sm:py-2">
                           <FormLabel>Discord</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input disabled={true} {...field} />
                           </FormControl>
+                          <FormDescription className="text-primary text-xs">
+                            {player.discord ? (
+                              <SignupPlayerNotification type="info">
+                                Can be updated in profile page
+                              </SignupPlayerNotification>
+                            ) : (
+                              <SignupPlayerNotification>
+                                User needs to fill in Discord nick in his
+                                profile
+                              </SignupPlayerNotification>
+                            )}
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

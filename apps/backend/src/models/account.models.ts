@@ -29,16 +29,6 @@ export const updateAccountData = async (
   );
 };
 
-export const updateAccountDiscord = async (
-  accountId: Account["id"],
-  discord: string
-) => {
-  return runQuery("UPDATE Accounts set discord = ? WHERE id = ?", [
-    discord,
-    accountId
-  ]);
-};
-
 export const userPolicyAcceptance = async (
   accountId: Account["id"],
   privacy_policy_version: string,

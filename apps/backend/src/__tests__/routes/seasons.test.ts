@@ -23,26 +23,31 @@ const validSignupData = {
   teamExternalId: "team-123",
   players: [
     {
+      account_id: 1,
       steam_id: "12345678901234567",
       nickname: "Player One",
       discord: "playerOne#1234",
       captain: true
     },
     {
+      account_id: 2,
       steam_id: "12345678901234568",
       nickname: "Player Two",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
+      account_id: 3,
       steam_id: "12345678901234569",
       nickname: "Player three"
     },
     {
+      account_id: 4,
       steam_id: "12345678901234570",
       nickname: "Player Four"
     },
     {
+      account_id: 5,
       steam_id: "12345678901234571",
       nickname: "Player Five"
     }
@@ -55,25 +60,30 @@ const invalidSignupData = {
   teamExternalId: "team-123",
   players: [
     {
+      account_id: 1,
       steam_id: "12345678901234567",
       nickname: "Player One",
       captain: true
     },
     {
+      account_id: 2,
       steam_id: "12345678901234568",
       nickname: "Player Two",
       discord: "playerTwo#1234",
       co_captain: true
     },
     {
+      account_id: 3,
       steam_id: "12345678901234569",
       nickname: "Player three"
     },
     {
+      account_id: 4,
       steam_id: "12345678901234570",
       nickname: "Player Four"
     },
     {
+      account_id: 5,
       steam_id: "12345678901234571",
       nickname: "Player Five"
     }
@@ -145,15 +155,6 @@ describe("POST /:id/signup", () => {
 
   // Custom Schema testing
   describe("with invalid data", () => {
-    it("should return 400 if captain missing discord nick", async () => {
-      mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
-      const res = await agent.post("/123/signup").send(invalidSignupData);
-      expect(res.status).toBe(400);
-      expect(res.body.message).toBe("Invalid signup form data");
-      expect(res.body.errors.fieldErrors.players).toEqual([
-        "Captains and co-captains must provide a Discord username."
-      ]);
-    });
     it("should return 400 if organizationId -1 and missing newOrganization", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
       const res = await agent.post("/123/signup").send(invalidSignupData);

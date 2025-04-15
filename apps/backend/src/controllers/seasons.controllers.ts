@@ -23,7 +23,6 @@ import { isTeamPartOfOrganization } from "../services/team.services";
 import _ from "lodash";
 import { areSteamProfilesPublic } from "../services/steam.services";
 import { expireIn30Days, redisClient } from "../utils/redisClient";
-import { updateAccountDiscord } from "../models/account.models";
 
 export const getSeasonsController = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
@@ -147,20 +146,6 @@ export const addSignupForSeason = async (
 
   try {
     await connection.beginTransaction();
-    // Handle adding or updating players
-    for (const formDataPlayer of formData.players) {
-      console.log(formDataPlayer);
-      if (
-        formDataPlayer.discord &&
-        (formDataPlayer.captain || formDataPlayer.co_captain)
-      ) {
-        await updateAccountDiscord(
-          formDataPlayer.account_id,
-          formDataPlayer.discord
-        );
-      }
-    }
-
     const playersForTeamRegistration = formData.players.map((player) => {
       return {
         steam_id: player.steam_id,

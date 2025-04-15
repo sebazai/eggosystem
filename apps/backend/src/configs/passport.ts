@@ -25,7 +25,6 @@ passport.use(
             steamDisplayName: profile.displayName,
             steamRealname: profile._json.realname
           });
-          console.log(insert.provider_id, profile.id);
           await clearPossibleRedisCacheForNewUser(profile.id);
           return done(null, {
             account_id: insert.account_id,
