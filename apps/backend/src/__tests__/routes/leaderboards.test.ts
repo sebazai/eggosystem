@@ -42,7 +42,7 @@ const mockSingleLeaderboardMiddleware = (
     team_ids: [],
     stages: [],
     map_ids: [],
-    leaderboard: "kast" // Explicitly set to KAST
+    leaderboards: "kast" // Explicitly set to KAST
   } as ParsedParams;
   next();
 };
@@ -67,7 +67,7 @@ app.use(
     getPlayerLeaderboardController(req as RequestWithParsedParams, res)
 );
 
-describe("Leaderboard Routes", () => {
+describe("Leaderboards Routes", () => {
   describe("GET /multiple", () => {
     it("should contain correct KAST values for Season 14", async () => {
       const response = await request(app)

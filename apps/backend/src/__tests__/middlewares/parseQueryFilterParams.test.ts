@@ -23,7 +23,7 @@ describe("parseFilterParams Middleware", () => {
       stages: "7,8",
       team_ids: "9,10"
     };
-    req.params = { leaderboard: "top" };
+    req.params = { leaderboards: "top" };
 
     parseQueryFilterParams(req as Request, res as Response, next);
 
@@ -33,7 +33,7 @@ describe("parseFilterParams Middleware", () => {
       league_ids: [5, 6],
       stages: [7, 8],
       team_ids: [9, 10],
-      leaderboard: "top"
+      leaderboards: "top"
     });
     expect(next).toHaveBeenCalled();
   });
@@ -52,13 +52,13 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       stages: null,
       team_ids: null,
-      leaderboard: undefined
+      leaderboards: undefined
     });
     expect(next).toHaveBeenCalled();
   });
 
   it('should handle "any" values correctly by setting them to null', () => {
-    req.params = { leaderboard: "any" };
+    req.params = { leaderboards: "any" };
 
     parseQueryFilterParams(req as Request, res as Response, next);
 
@@ -68,7 +68,7 @@ describe("parseFilterParams Middleware", () => {
       league_ids: null,
       stages: null,
       team_ids: null,
-      leaderboard: null
+      leaderboards: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -84,7 +84,7 @@ describe("parseFilterParams Middleware", () => {
       league_ids: null,
       stages: null,
       team_ids: null,
-      leaderboard: undefined
+      leaderboards: undefined
     });
     expect(next).toHaveBeenCalled();
   });
@@ -94,7 +94,7 @@ describe("parseFilterParams Middleware", () => {
       season_ids: "1",
       league_ids: "2"
     };
-    req.params = { leaderboard: "any" };
+    req.params = { leaderboards: "any" };
 
     parseQueryFilterParams(req as Request, res as Response, next);
 
@@ -104,7 +104,7 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       stages: null,
       team_ids: null,
-      leaderboard: null
+      leaderboards: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -123,7 +123,7 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       stages: null,
       team_ids: null,
-      leaderboard: undefined
+      leaderboards: undefined
     });
     expect(next).toHaveBeenCalled();
   });
@@ -142,7 +142,7 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       stages: null,
       team_ids: null,
-      leaderboard: undefined
+      leaderboards: undefined
     });
     expect(next).toHaveBeenCalled();
   });

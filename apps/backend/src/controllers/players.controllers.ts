@@ -123,7 +123,7 @@ export const getMultipleLeaderboardsController = async (
 
   const results = await Promise.all(
     leaderboards.map((lb) =>
-      getPlayerLeaderboard({ ...parsedParams, leaderboard: lb })
+      getPlayerLeaderboard({ ...parsedParams, leaderboards: lb })
     )
   );
 

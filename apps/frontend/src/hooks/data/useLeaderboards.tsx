@@ -186,7 +186,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
   const { data, error, isValidating } = useSWR<LeaderboardResponse>(
-    `/api/v1/leaderboard/multiple?${sortedQuery}`,
+    `/api/v1/leaderboards/multiple?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false,

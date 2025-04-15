@@ -276,9 +276,9 @@ test.describe("Leaderboards Page", () => {
 
     // Mock the leaderboards endpoint
     await page.route(
-      "**/api/v1/leaderboard/multiple**",
+      "**/api/v1/leaderboards/multiple**",
       async (route: Route) => {
-        console.log("Mocking leaderboard endpoint: " + route.request().url());
+        console.log("Mocking leaderboards endpoint: " + route.request().url());
         await route.fulfill({
           status: 200,
           contentType: "application/json",

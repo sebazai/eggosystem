@@ -46,8 +46,8 @@ const parseQueryFilterParams = (
     team_ids: parseArray(req.query.team_ids?.toString()),
     stages: parseArray(req.query.stages?.toString()),
     map_ids: parseArray(req.query.map_ids?.toString()),
-    leaderboard:
-      req.params.leaderboard === "any" ? null : req.params.leaderboard
+    leaderboards:
+      req.params.leaderboards === "any" ? null : req.params.leaderboards
   };
 
   req.parsedParams = parsedParams;

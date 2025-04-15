@@ -123,16 +123,16 @@ export const getPlayerLeaderboard = async ({
   team_ids,
   stages,
   map_ids,
-  leaderboard
+  leaderboards
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 }: ParsedParams): Promise<any[]> => {
-  if (!leaderboard) {
-    throw new Error("Leaderboard type is required");
+  if (!leaderboards) {
+    throw new Error("Leaderboards type is required");
   }
 
-  const leaderboardExpression = leaderboardExpressions[leaderboard];
+  const leaderboardExpression = leaderboardExpressions[leaderboards];
   if (!leaderboardExpression) {
-    throw new Error(`Invalid leaderboard type: ${leaderboard}`);
+    throw new Error(`Invalid leaderboards type: ${leaderboards}`);
   }
 
   // Generate the main query filters
@@ -178,7 +178,7 @@ export const getPlayerLeaderboard = async ({
       t.name as team_name,
       CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) as team_logo,
       COUNT(DISTINCT mg.id) as matches_played,
-      ${leaderboardExpression} as ${leaderboard}
+      ${leaderboardExpression} as ${leaderboards}
     FROM PlayerStats ps
     INNER JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
@@ -188,7 +188,7 @@ export const getPlayerLeaderboard = async ({
     ${whereClause}
     GROUP BY ps.steam_id, sp.nickname, t.name, t.team_logo
     HAVING matches_played > 0
-    ORDER BY ${leaderboard} DESC
+    ORDER BY ${leaderboards} DESC
     LIMIT 5
   `;
 

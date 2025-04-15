@@ -12,7 +12,7 @@ export interface ParsedParams {
   team_ids: Nullable<number[]>;
   stages: Nullable<number[]>;
   map_ids: Nullable<number[]>;
-  leaderboard?: Nullable<string>;
+  leaderboards?: Nullable<string>;
 }
 
 export interface UserPayload {
