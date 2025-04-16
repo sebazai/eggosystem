@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
 import { ThemeProvider } from "../providers/theme-provider";
-import { cn } from "@/lib/utils";
+import { cn, createNextImageUrl } from "@/lib/utils";
 import { Navigation } from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
 import SkipToContent from "@/components/layout/skip-to-content";
@@ -108,12 +108,34 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          `bg-kana min-h-svh flex flex-col antialiased`,
+          `min-h-svh flex flex-col antialiased`,
           kanaFonts.variable,
           kanaHeadingFonts.variable,
           poppinsFont.variable
         )}
       >
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute inset-0 bg-kana" />
+
+          {/* Lazy-loaded background video */}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="none"
+            poster={createNextImageUrl("/images/kana_background_nuke.jpg")}
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source
+              src={createNextImageUrl("/images/kanahub_bg_black.webm")}
+              type="video/webm"
+            />
+            Your browser does not support the video tag.
+          </video>
+
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
         <AuthProvider>
           <ThemeProvider
             attribute="class"
