@@ -1,7 +1,7 @@
-import type { TopTeamsByFilters } from "@eggosystem/types";
 import Image from "next/image";
 import { TheContainer } from "../layout/the-container";
-import { createNextImageUrl } from "@/lib/utils";
+import { createNextImageUrl, type FilterParamsQuery } from "@/lib/utils";
+import { useTopTeams } from "@/hooks/data/useTopTeams";
 
 const getLeagueEmoji = (leagueSortPriority: number): string => {
   switch (leagueSortPriority) {
@@ -28,12 +28,21 @@ const getStageType = (stage: number): string => {
 };
 
 interface TopTeamsGridProps {
-  divisions: TopTeamsByFilters[] | undefined;
-  isLoading: boolean;
+  filterQueryParams: FilterParamsQuery;
 }
 
-export const TopTeamsGrid = ({ divisions, isLoading }: TopTeamsGridProps) => {
-  if (isLoading) {
+export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
+  const { isError, isLoading, isValidating, divisions } =
+    useTopTeams(filterQueryParams);
+
+  if (isError) {
+    return (
+      <TheContainer>
+        {isError?.message ?? "Error loading top teams"}
+      </TheContainer>
+    );
+  }
+  if (isLoading || isValidating) {
     return <TheContainer>Loading...</TheContainer>;
   }
   if (!divisions) {

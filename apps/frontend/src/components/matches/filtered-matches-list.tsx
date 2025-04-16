@@ -1,19 +1,27 @@
-import type { MatchesByFilters } from "@eggosystem/types";
 import Image from "next/image";
 import Link from "next/link";
 import { TheContainer } from "../layout/the-container";
-import { createStatsKanaliigaImageUrl } from "@/lib/utils";
+import {
+  createStatsKanaliigaImageUrl,
+  type FilterParamsQuery
+} from "@/lib/utils";
+import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 
 interface FilteredMatchesListProps {
-  matches: MatchesByFilters[] | undefined;
-  isLoading: boolean;
+  filterQueryParams: FilterParamsQuery;
 }
 
 export const FilteredMatchesList = ({
-  matches,
-  isLoading
+  filterQueryParams
 }: FilteredMatchesListProps) => {
-  if (isLoading) {
+  const { matches, isError, isLoading, isValidating } =
+    useRecentMatches(filterQueryParams);
+
+  if (isError) {
+    return <TheContainer>Error loading Matches</TheContainer>;
+  }
+
+  if (isLoading || isValidating) {
     return <TheContainer>Loading...</TheContainer>;
   }
   if (!matches) {

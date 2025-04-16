@@ -1,12 +1,16 @@
 import Image from "next/image";
 import React from "react";
 import { Skeleton } from "../ui/skeleton";
-import { createNextImageUrl, createStatsKanaliigaImageUrl } from "@/lib/utils";
-import type { LeaderboardCategory } from "@eggosystem/types";
+import {
+  createNextImageUrl,
+  createStatsKanaliigaImageUrl,
+  type FilterParamsQuery
+} from "@/lib/utils";
+import { useLeaderboards } from "@/hooks/data/useLeaderboards";
+import { TheContainer } from "../layout/the-container";
 
 interface LeaderboardsGridProps {
-  leaderboards: LeaderboardCategory[] | undefined;
-  isLoading: boolean;
+  filterQueryParams: FilterParamsQuery;
 }
 
 const formatValue = (value: number, unit: string): string => {
@@ -23,11 +27,20 @@ const formatValue = (value: number, unit: string): string => {
 };
 
 export const LeaderboardsGrid = ({
-  leaderboards,
-  isLoading
+  filterQueryParams
 }: LeaderboardsGridProps) => {
-  if (isLoading) {
+  const { isError, isLoading, isValidating, leaderboards } =
+    useLeaderboards(filterQueryParams);
+  if (isLoading || isValidating) {
     return <LeaderboardsGridSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <TheContainer>
+        {isError?.message ?? "Error loading leaderboards"}
+      </TheContainer>
+    );
   }
 
   if (!leaderboards || leaderboards.length === 0) {
