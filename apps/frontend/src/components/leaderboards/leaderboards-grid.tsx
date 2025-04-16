@@ -1,8 +1,8 @@
 import Image from "next/image";
 import React from "react";
 import { Skeleton } from "../ui/skeleton";
-import type { LeaderboardCategory } from "@/hooks/data/useLeaderboards";
 import { createNextImageUrl, createStatsKanaliigaImageUrl } from "@/lib/utils";
+import type { LeaderboardCategory } from "@eggosystem/types";
 
 interface LeaderboardsGridProps {
   leaderboards: LeaderboardCategory[] | undefined;

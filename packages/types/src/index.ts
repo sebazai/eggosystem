@@ -15,3 +15,4 @@ export * from "./player-ranks/index";
 export * from "./faceit/index";
 export * from "./topteams/index";
 export * from "./auth/index";
+export * from "./leaderboards/index";

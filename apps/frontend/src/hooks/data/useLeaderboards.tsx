@@ -5,22 +5,8 @@ import {
   generateFiltersParamQuery,
   type FilterParamsQuery
 } from "@/lib/utils";
+import type { LeaderboardCategory } from "@eggosystem/types";
 import useSWR from "swr";
-
-export type LeaderboardPlayer = {
-  nickname: string;
-  team_name: string;
-  team_logo?: string;
-  value: number;
-  matches_played: number;
-  rank: number;
-};
-
-export type LeaderboardCategory = {
-  title: string;
-  unit: string;
-  players: LeaderboardPlayer[];
-};
 
 type LeaderboardResponse = {
   // AVG stats
