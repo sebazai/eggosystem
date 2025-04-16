@@ -35,15 +35,15 @@ export const generateFiltersParamQuery = ({
   const params = new URLSearchParams();
 
   if (seasons?.length)
-    seasons.forEach((season) => params.append("season_ids[]", String(season)));
+    seasons.forEach((season) => params.append("season_ids", String(season)));
   if (leagues?.length)
-    leagues.forEach((league) => params.append("league_ids[]", String(league)));
+    leagues.forEach((league) => params.append("league_ids", String(league)));
   if (stages?.length)
-    stages.forEach((stage) => params.append("stages[]", String(stage)));
+    stages.forEach((stage) => params.append("stages", String(stage)));
   if (teams?.length)
-    teams.forEach((team) => params.append("team_ids[]", String(team)));
+    teams.forEach((team) => params.append("team_ids", String(team)));
   if (maps?.length)
-    maps.forEach((map) => params.append("map_ids[]", String(map)));
+    maps.forEach((map) => params.append("map_ids", String(map)));
 
   const sortedQuery = Array.from(params.entries())
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))

@@ -135,8 +135,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
         seasonId: 1,
         teamId: 1,
         players: expect.any(Array),
-        teamExternalId: "team-123",
-        defects: undefined
+        teamExternalId: "team-123"
       },
       mockConnection
     );
@@ -169,8 +168,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
         team_id: 1,
         captain_steam_id: "12345678901234567",
         co_captain_steam_id: "12345678901234568",
-        external_platform_id: "team-123",
-        defects: undefined
+        external_platform_id: "team-123"
       },
       mockConnection
     );
@@ -221,8 +219,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
         seasonId: 1,
         teamId: 666,
         players: expect.any(Array),
-        teamExternalId: "team-123",
-        defects: undefined
+        teamExternalId: "team-123"
       },
       mockConnection
     );
@@ -257,8 +254,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
         seasonId: 1,
         teamId: 1337,
         players: expect.any(Array),
-        teamExternalId: "team-123",
-        defects: undefined
+        teamExternalId: "team-123"
       },
       mockConnection
     );

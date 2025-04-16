@@ -40,7 +40,7 @@ variables:
 .prepare-pnpm:
   before_script:
     - corepack enable
-    - corepack prepare pnpm@10.3.0 --activate
+    - corepack prepare pnpm@10.8.1 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873 #verdaccio
     - pnpm install --frozen-lockfile
@@ -159,7 +159,7 @@ install:
   extends: [.mr-all-app]
   before_script:
     - corepack enable
-    - corepack prepare pnpm@10.3.0 --activate
+    - corepack prepare pnpm@10.8.1 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873 #verdaccio aridivereci!
   script:
@@ -192,7 +192,7 @@ audit:
 
 secrets_scan:
   stage: security
-  image: python:3.9
+  image: python:3.13
   extends: [.mr-all-app]
   script:
     - pip install trufflehog
@@ -212,7 +212,7 @@ test:backend:
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
     - corepack enable
-    - corepack prepare pnpm@10.3.0 --activate
+    - corepack prepare pnpm@10.8.1 --activate
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - export $(grep -v '^#' .env.development | xargs)
@@ -242,7 +242,7 @@ test:frontend:
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
     - corepack enable
-    - corepack prepare pnpm@10.3.0 --activate
+    - corepack prepare pnpm@10.8.1 --activate
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile

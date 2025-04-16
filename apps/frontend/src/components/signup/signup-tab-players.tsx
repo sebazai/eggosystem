@@ -30,7 +30,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
-import { Textarea } from "@/components/ui/textarea";
 import type {
   FaceITCSRank,
   Game,
@@ -538,22 +537,6 @@ export const TabPlayers = ({
             Add Player
           </Button>
         )}
-        <FormField
-          control={control}
-          name="defects"
-          render={({ field }) => (
-            <FormItem className="my-2 sm:my-4">
-              <FormLabel>Issues we should know about...</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder={`Such as:\nNew team...\nPlayer enzoj rank not accurate...`}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
       </div>
     </TabsContent>
   );

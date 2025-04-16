@@ -14,7 +14,6 @@ export const signUpTeamForSeason = async (
       is_captain?: boolean;
     }[];
     teamExternalId?: string;
-    defects?: string;
   },
   connection?: PoolConnection
 ) => {
@@ -29,8 +28,7 @@ export const signUpTeamForSeason = async (
       team_id: data.teamId,
       captain_steam_id: captain.steam_id,
       co_captain_steam_id: coCaptain.steam_id,
-      external_platform_id: data.teamExternalId,
-      defects: data.defects
+      external_platform_id: data.teamExternalId
     },
     connection
   );

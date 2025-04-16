@@ -11,21 +11,21 @@ export const SignupPlayerNotification = ({
   switch (type) {
     case "alert":
       return (
-        <div className="text-xs flex gap-2 items-center py-1">
+        <span className="text-xs flex gap-2 items-center py-1">
           <OctagonX className="h-4 w-4 text-red-500" /> {children}
-        </div>
+        </span>
       );
     case "warning":
       return (
-        <div className="text-xs flex gap-2 items-center py-1">
+        <span className="text-xs flex gap-2 items-center py-1">
           <CircleAlert className="h-4 w-4 text-yellow-500" /> {children}
-        </div>
+        </span>
       );
     case "info":
       return (
-        <div className="text-xs flex gap-2 items-center py-1">
+        <span className="text-xs flex gap-2 items-center py-1">
           <Info className="h-4 w-4 text-blue-500" /> {children}
-        </div>
+        </span>
       );
   }
 };

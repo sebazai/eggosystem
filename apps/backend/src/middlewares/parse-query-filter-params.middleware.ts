@@ -3,7 +3,7 @@ import type { ParsedParams } from "@eggosystem/types";
 
 /**
  * Middleware to parse query parameters.
- * - Supports array-style queries (`season_ids[]=11&season_ids[]=14`).
+ * - Supports array-style queries (`season_ids=11&season_ids=14`).
  * - Supports comma-separated queries (`season_ids=11,14`).
  * - Converts numeric values to numbers.
  * - Sets `"any"` to `null`.

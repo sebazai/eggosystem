@@ -29,35 +29,19 @@ const playerSchema = z
     { message: "Invalid SteamID", path: ["steam_id"] }
   );
 
-const newOrganizationSchema = z.preprocess(
-  (val) =>
-    typeof val === "object" &&
-    val !== null &&
-    Object.values(val).every((v) => v === "")
-      ? undefined // Convert empty object to undefined
-      : val,
-  z
-    .object({
-      name: z.string().min(2).max(50),
-      organization_code: z.string().min(2).max(50),
-      website: z.string().url()
-    })
-    .optional()
-);
+const newOrganizationSchema = z
+  .object({
+    name: z.string().min(2).max(50),
+    organization_code: z.string().min(2).max(50),
+    website: z.string().url()
+  })
+  .optional();
 
-const newTeamSchema = z.preprocess(
-  (val) =>
-    typeof val === "object" &&
-    val !== null &&
-    Object.values(val).every((v) => v === "")
-      ? undefined
-      : val,
-  z
-    .object({
-      name: z.string().min(2).max(50)
-    })
-    .optional()
-);
+const newTeamSchema = z
+  .object({
+    name: z.string().min(2).max(50)
+  })
+  .optional();
 
 const teamExternalIdSchema = (platform: SeasonPlatform) => {
   if (platform === SeasonPlatform.FACEIT) {
@@ -97,8 +81,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
             message: "Each player must have a unique Steam ID.",
             path: ["players"]
           }
-        ),
-      defects: z.string().max(255).optional()
+        )
     })
     .refine(
       (data) => {

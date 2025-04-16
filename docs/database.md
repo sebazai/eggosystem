@@ -84,7 +84,7 @@ The Kanaliiga database is designed to support a corporate Counter-Strike ladder.
   - `team_id` (INT, FK → Teams.id)
   - `captain_steam_id` (BIGINT, FK → SteamPlayers.steam_id)
   - `co_captain_steam_id` (BIGINT, FK → SteamPlayers.steam_id)
-  - `defects` (TEXT) - Notes from captain.
+  - `defects` (TEXT) - Notes from Tournament organizer.
   - `ticket` (VARCHAR) - Manual ticketing reference.
   - `approved` (BOOLEAN) - Indicates if the team is officially registered.
   - `notification_sent` (BOOLEAN) - Indicates if additional information is required.

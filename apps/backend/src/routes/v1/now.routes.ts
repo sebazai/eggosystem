@@ -4,7 +4,7 @@ const router = Router();
 
 router.get("/", (req: Request, res: Response) => {
   const time = new Date().getTime();
-  res.send({ now: time });
+  res.status(200).send({ now: time });
 });
 
 export default router;

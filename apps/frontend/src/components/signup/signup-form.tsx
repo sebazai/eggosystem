@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./signup-tab-organizations";
 import { TabPlayers } from "./signup-tab-players";
 import { TabTeam } from "./signup-tab-team";
+import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiFetch } from "@/lib/apiClient";
@@ -52,19 +53,13 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
     platform !== SeasonPlatform.Kanaliiga ? null : true
   );
 
-  const form = useForm<SignupFormValues>({
+  const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       organizationId: undefined,
       teamId: undefined,
-      newOrganization: {
-        name: "",
-        organization_code: "",
-        website: ""
-      },
-      newTeam: {
-        name: ""
-      },
+      newOrganization: undefined,
+      newTeam: undefined,
       teamExternalId: "",
       players: Array(5).fill({
         account_id: 0,
@@ -78,8 +73,7 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
         hours: undefined,
         rank: undefined,
         external_rank: undefined
-      }),
-      defects: ""
+      })
     }
   });
 
@@ -333,6 +327,14 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
                 seasonId={seasonId}
               />
             </Tabs>
+
+            <ErrorMessage
+              errors={form.formState.errors}
+              name="players.root"
+              render={({ message }) => (
+                <p className="text-destructive">{message}</p>
+              )}
+            />
 
             {successMessage && (
               <div className="text-green-500 font-semibold">

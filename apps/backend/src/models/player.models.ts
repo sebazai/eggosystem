@@ -27,7 +27,7 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
           ELSE FALSE
       END AS is_valid_work_email,
       CASE 
-          WHEN a.full_name REGEXP '.+\\s.+' THEN TRUE 
+          WHEN a.full_name LIKE '% %' THEN TRUE 
           ELSE FALSE 
       END AS is_valid_full_name,
       CASE 

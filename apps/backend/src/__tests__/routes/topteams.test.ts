@@ -14,7 +14,7 @@ describe("GET /api/v1/topteams", () => {
 
   // Test successful responses
   it("should return top teams for Masters league in season 11", async () => {
-    const response = await request(app).get("/?league_ids[]=1&season_ids[]=11");
+    const response = await request(app).get("/?league_ids=1&season_ids=11");
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
 
@@ -52,7 +52,7 @@ describe("GET /api/v1/topteams", () => {
 
   it("should return top teams for Masters league playoffs in season 11", async () => {
     const response = await request(app).get(
-      "/?league_ids[]=1&season_ids[]=11&stages[]=2"
+      "/?league_ids=1&season_ids=11&stages=2"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -61,7 +61,7 @@ describe("GET /api/v1/topteams", () => {
 
   it("should return top teams for specific map in Masters league", async () => {
     const response = await request(app).get(
-      "/?league_ids[]=1&season_ids[]=11&map_ids[]=1"
+      "/?league_ids=1&season_ids=11&map_ids=1"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -70,7 +70,7 @@ describe("GET /api/v1/topteams", () => {
 
   // Test sorting and ranking
   it("should return teams sorted by kana rating in descending order", async () => {
-    const response = await request(app).get("/?league_ids[]=1&season_ids[]=11");
+    const response = await request(app).get("/?league_ids=1&season_ids=11");
     expect(response.status).toBe(200);
 
     if (response.body.length > 1) {
@@ -91,7 +91,7 @@ describe("GET /api/v1/topteams", () => {
   });
 
   it("should assign ranks correctly from 1 to 5", async () => {
-    const response = await request(app).get("/?league_ids[]=1&season_ids[]=11");
+    const response = await request(app).get("/?league_ids=1&season_ids=11");
     expect(response.status).toBe(200);
 
     if (response.body.length > 0) {

@@ -186,8 +186,7 @@ export const addSignupForSeason = async (
               seasonId: season.id,
               teamId: newTeam.insertId,
               players: playersForTeamRegistration,
-              teamExternalId: formData.teamExternalId,
-              defects: formData.defects
+              teamExternalId: formData.teamExternalId
             },
             connection
           );
@@ -212,8 +211,7 @@ export const addSignupForSeason = async (
               seasonId: season.id,
               teamId: newTeam.insertId,
               players: playersForTeamRegistration,
-              teamExternalId: formData.teamExternalId,
-              defects: formData.defects
+              teamExternalId: formData.teamExternalId
             },
             connection
           );
@@ -239,8 +237,7 @@ export const addSignupForSeason = async (
           seasonId: season.id,
           teamId: formData.teamId,
           players: playersForTeamRegistration,
-          teamExternalId: formData.teamExternalId,
-          defects: formData.defects
+          teamExternalId: formData.teamExternalId
         },
         connection
       );

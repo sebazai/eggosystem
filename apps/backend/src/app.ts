@@ -35,8 +35,6 @@ import helmet from "helmet";
 import morgan from "morgan";
 import passport from "./configs/passport";
 
-import "express-async-errors";
-
 import v1Router from "./routes";
 import { expressErrorHandler } from "./middlewares/express-error-handler";
 import cookieParser from "cookie-parser";
