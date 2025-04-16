@@ -52,7 +52,7 @@ export const TabTeam = ({
   const { teams, isLoading, isError, isValidating } =
     useOrganizationTeams(organizationId);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
-  if (isLoading || isValidating) {
+  if (isLoading) {
     return <Spinner />;
   }
   if (isError || !teams) {
@@ -89,6 +89,7 @@ export const TabTeam = ({
                 allowOtherText="Add new..."
                 filter={"teams"}
                 selectable={selectableTeams ?? []}
+                isValidating={isValidating}
                 placeholder="Select team"
                 currentSelection={
                   watchTeamId === -1

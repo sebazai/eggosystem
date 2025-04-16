@@ -21,11 +21,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [filterParams, setFilterParams] = useState({
-    seasons: props.seasons,
-    leagues: props.leagues,
-    stages: props.stages,
-    teams: props.teams,
-    maps: props.maps
+    seasons: props.seasons?.sort() ?? null,
+    leagues: props.leagues?.sort() ?? null,
+    stages: props.stages?.sort() ?? null,
+    teams: props.teams?.sort() ?? null,
+    maps: props.maps?.sort() ?? null
   });
 
   const [openFilter, setOpenFilter] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
     []
   );
 
-  const { filterData: multiFilterSelectData } =
+  const { multiFilterSelectData, isValidating } =
     useMultiFilterSelectables(filterParams);
 
   const handleOpen = (filter: string | null) => {
@@ -54,7 +54,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
     params.delete(key);
     values.forEach((v) => params.append(key, v.toString()));
     router.push(`?${params.toString()}`);
-    setFilterParams((prev) => ({ ...prev, [key]: values }));
+    setFilterParams((prev) => ({ ...prev, [key]: values.sort() }));
   };
 
   // How many props are passed to FancyMultiSelect?
@@ -80,6 +80,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
             setFilterParams((prev) => ({ ...prev, seasons: newParams }))
           }
           selectableIds={multiFilterSelectData?.season_ids}
+          isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -95,6 +96,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
             setFilterParams((prev) => ({ ...prev, leagues: newParams }))
           }
           selectableIds={multiFilterSelectData?.league_ids}
+          isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -105,6 +107,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         <StageFilter
           selectedStages={filterParams.stages}
           selectableStages={multiFilterSelectData?.stages}
+          isValidating={isValidating}
           setFilterParams={(newParams) =>
             setFilterParams((prev) => ({ ...prev, stages: newParams }))
           }
@@ -122,6 +125,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
             setFilterParams((prev) => ({ ...prev, teams: newParams }))
           }
           selectableIds={multiFilterSelectData?.team_ids}
+          isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
@@ -137,6 +141,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
             setFilterParams((prev) => ({ ...prev, maps: newParams }))
           }
           selectableIds={multiFilterSelectData?.map_ids}
+          isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}

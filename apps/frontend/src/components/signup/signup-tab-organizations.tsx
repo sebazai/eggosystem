@@ -76,6 +76,7 @@ export const TabOrganization = ({
                 allowOtherText="Add new..."
                 filter={"organizations"}
                 selectable={selectableOrganizations ?? []}
+                isValidating={isValidatingOrgs}
                 placeholder="Name or Business ID..."
                 currentSelection={
                   watchOrgId === -1

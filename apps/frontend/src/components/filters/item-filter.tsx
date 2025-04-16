@@ -12,6 +12,7 @@ interface ItemFilterProps<T> {
   filterName: string;
   labelKey: keyof T;
   selectableIds?: number[];
+  isValidating: boolean;
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
   handleSetSearchParams: (key: string, values: number[]) => void;
@@ -86,6 +87,7 @@ export const ItemFilter = <T extends { id: number }>(
         value: item.id,
         label: String(item[props.labelKey])
       }))}
+      isValidating={props.isValidating}
       onSelectChange={handleSelectedItems}
       currentSelection={selectedIdsToSelectables}
       placeholder={`Filter ${props.filterName}`}

@@ -34,11 +34,13 @@ import {
 } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
 import type { MultiSelect } from "@/types/MultiSelectType";
+import { Spinner } from "../icons";
 
 type FancyMultiSelectProps<T> = {
   isMulti: true;
   filter: string;
   selectable: MultiSelect<T>[];
+  isValidating: boolean;
   currentSelection: MultiSelect<T>[];
   onSelectChange: (value: MultiSelect<T>[]) => void;
   placeholder?: string;
@@ -52,6 +54,7 @@ type FancySelectProps<T> = {
   isMulti: false;
   filter: string;
   selectable: MultiSelect<T>[];
+  isValidating: boolean;
   currentSelection: MultiSelect<T>[];
   onSelectChange: (value: MultiSelect<T> | undefined) => void;
   placeholder?: string;
@@ -73,6 +76,7 @@ export function FancySelect<T>(props: FancySelectProps<T>): React.JSX.Element;
 export function FancySelect<T>({
   filter,
   selectable = [],
+  isValidating,
   onSelectChange,
   currentSelection = [],
   placeholder = "Filter",
@@ -256,6 +260,13 @@ export function FancySelect<T>({
             onClick={() => (isOpen ? setOpen(null) : setOpen(filter))}
             className="ml-2 text-muted-foreground hover:text-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center cursor-pointer"
           >
+            {isValidating && (
+              <div className="relative">
+                <div className="absolute inset-y-0 right-2 flex items-center">
+                  <Spinner />
+                </div>
+              </div>
+            )}
             {isOpen ? (
               <ChevronUp className="h-4 w-4" />
             ) : (

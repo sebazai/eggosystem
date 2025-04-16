@@ -6,6 +6,7 @@ import { useState } from "react";
 
 interface StageFilterProps {
   selectableStages?: number[];
+  isValidating: boolean;
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
   handleSetSearchParams: (key: string, values: number[]) => void;
@@ -64,6 +65,7 @@ export const StageFilter = (props: StageFilterProps) => {
         value: stage.id,
         label: stage.name
       }))}
+      isValidating={props.isValidating}
       onSelectChange={handleSelectedItems}
       currentSelection={selectedIdsToSelectables}
       placeholder="Filter stages"
