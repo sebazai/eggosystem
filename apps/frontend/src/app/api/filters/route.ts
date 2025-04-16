@@ -28,11 +28,11 @@ const fetchPossibleIdsWithIndividualParam = async (
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  const seasons = searchParams.getAll("seasons");
-  const leagues = searchParams.getAll("leagues");
-  const stages = searchParams.getAll("stages");
-  const teams = searchParams.getAll("teams");
-  const maps = searchParams.getAll("maps");
+  const seasons = searchParams.getAll("season_ids");
+  const leagues = searchParams.getAll("league_ids");
+  const stages = searchParams.getAll("stage_ids");
+  const teams = searchParams.getAll("team_ids");
+  const maps = searchParams.getAll("map_ids");
 
   const [
     withSeasonsParam,
@@ -41,11 +41,11 @@ export async function GET(request: NextRequest) {
     withTeamsParam,
     withMapsParam
   ] = await Promise.all([
-    fetchPossibleIdsWithIndividualParam(seasons, "season_ids[]"),
-    fetchPossibleIdsWithIndividualParam(leagues, "league_ids[]"),
-    fetchPossibleIdsWithIndividualParam(stages, "stages[]"),
-    fetchPossibleIdsWithIndividualParam(teams, "team_ids[]"),
-    fetchPossibleIdsWithIndividualParam(maps, "map_ids[]")
+    fetchPossibleIdsWithIndividualParam(seasons, "season_ids"),
+    fetchPossibleIdsWithIndividualParam(leagues, "league_ids"),
+    fetchPossibleIdsWithIndividualParam(stages, "stages"),
+    fetchPossibleIdsWithIndividualParam(teams, "team_ids"),
+    fetchPossibleIdsWithIndividualParam(maps, "map_ids")
   ]);
 
   const season_ids = _.intersection(
