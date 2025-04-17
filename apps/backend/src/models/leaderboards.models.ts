@@ -93,6 +93,7 @@ export const getLeaderboard = async ({
 
   const query = `
     SELECT 
+      sp.steam_id,
       sp.nickname,
       t.name as team_name,
       CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) as team_logo,
@@ -106,7 +107,7 @@ export const getLeaderboard = async ({
     ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
     ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
     ${whereClause}
-    GROUP BY ps.steam_id, sp.nickname, t.name, t.team_logo
+    GROUP BY sp.steam_id, sp.nickname, t.name, t.team_logo
     HAVING matches_played > 0
     ORDER BY ${leaderboards} DESC
     LIMIT 5
