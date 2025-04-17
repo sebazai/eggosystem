@@ -32,6 +32,8 @@ This document defines rules and preferences for the AI assistant when interactin
 - **Error Handling**: Always implement proper error handling in both frontend hooks and API routes.
 - **Data Hooks**: Follow the pattern in existing hooks (e.g., useTopTeams, usePlayers) that return the data, loading state, error state, and validation state.
 - **Request Forwarding**: When forwarding requests from frontend to backend, preserve all query parameters.
+- **Active Season Handling**: When implementing pages with filtering, always apply the active season as a default filter when no specific season is selected. Use the pattern: `seasons: activeSeason && seasons.length === 0 ? [activeSeason] : seasons` without additional conditions that might prevent the active season from being applied.
+- **Hook Return Types**: Ensure hook return types match their implementations. Use `isError` (not `error`) in hook return objects for consistency, as demonstrated in the players and leaderboards hooks.
 
 ## 5. API Middleware and Filtering
 
@@ -45,4 +47,7 @@ This document defines rules and preferences for the AI assistant when interactin
   - `stages`: Array of stage IDs
   - `map_ids`: Array of map IDs
 - **Filtering by Team**: When filtering by team, use the `SeasonTeamPlayers` table for the relationship, not other tables. Use INNER JOIN instead of LEFT JOIN when applying team-specific filters.
-- **Query Pattern**: Follow the established pattern in leaderboards.models.ts for applying filters to database queries.
+- **Query Pattern**: Follow the established pattern in player.models.ts for applying filters to database queries. Always include proper JOIN conditions and column references.
+- **Dynamic JOIN Types**: Use dynamic JOIN types based on filter presence. For team filtering, use: `const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";` to prevent data exclusion when filters aren't applied.
+- **Leagues Table References**: When filtering by league_ids, always join to the Leagues table explicitly and use `l.id` instead of `m.league_id` in WHERE clauses.
+- **Query Debugging**: Include query and parameter logging for easier debugging of SQL queries, especially for filtering operations.
