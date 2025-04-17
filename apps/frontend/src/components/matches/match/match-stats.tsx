@@ -4,15 +4,6 @@ import React from "react";
 
 import { useRouter } from "next/navigation";
 import type { MatchInfo } from "@eggosystem/types";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from "@/components/ui/breadcrumb";
-
 import { MatchMapPicks } from "./stats/map-picks";
 import { TeamStatistics } from "./stats/team-statistics";
 import { PlayerStatistics } from "./stats/player-stats-grid";
@@ -45,24 +36,6 @@ export const MatchStats = ({ matchId, teams }: MatchStatsProps) => {
 
   return (
     <>
-      <div className="mb-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/matches">Matches</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Match Details</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
       <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
       {teamStats && <TeamStatistics teamStats={teamStats} />}
 

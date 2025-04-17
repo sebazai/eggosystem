@@ -3,6 +3,7 @@ import type { MatchInfo } from "@eggosystem/types";
 import type { Metadata } from "next";
 import type React from "react";
 import { getMatchInfo } from "./utils";
+import { MatchBreadcrumbsWrapper } from "@/components/layout/breadcrumbs-wrapper";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -53,6 +54,11 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <div className="min-h-fit pb-8 bg-card">
+      <div className="max-w-[1400px] mx-auto px-2 pt-2">
+        <div className="container mx-auto">
+          <MatchBreadcrumbsWrapper />
+        </div>
+      </div>
       <MatchHeader
         team1={teams[0]!}
         team2={teams[1]!}
@@ -60,7 +66,9 @@ export default async function Layout({ children, params }: LayoutProps) {
         matchStartTime={matchInfo.start_time}
         matchEndTime={matchInfo.end_time}
       />
-      <div className="max-w-[1400px] mx-auto p-2">{children}</div>
+      <div className="max-w-[1400px] mx-auto p-2">
+        <div className="container mx-auto py-4">{children}</div>
+      </div>
     </div>
   );
 }
