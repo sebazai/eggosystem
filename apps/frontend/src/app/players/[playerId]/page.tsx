@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,6 +15,8 @@ import { MultiFilters } from "@/components/filters/multi-filters";
 import { getParamArray, type FilterParamsQuery } from "@/lib/utils";
 import { useActiveSeason } from "@/hooks/data/useActiveSeason";
 import { WithActiveSeason } from "@/components/filters/with-active-season";
+import { usePlayerDetails } from "@/hooks/data/usePlayerDetails";
+import { format } from "date-fns";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -41,6 +43,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
   const steamId = unwrappedParams.playerId;
   const activeSeasonHook = useActiveSeason("730");
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Get filter params from URL
   const filterParams = useMemo(() => {
@@ -55,113 +58,57 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
     } satisfies FilterParamsQuery;
   }, [searchParams, activeSeasonHook.activeSeason?.season_id]);
 
-  // This would be replaced with actual data fetching in the future
-  const playerData = {
-    steamId: steamId,
-    nickname: ".VILLE",
-    team_name: "Example Team",
-    team_logo: "/teams/nologo.svg",
-    matches_played: 17,
-    kills: 253,
-    deaths: 252,
-    assists: 95,
-    flash_assists: 22,
-    awp_kills: 12,
-    utility_damage: 1245,
-    headshots: 131,
-    first_kills: 30,
-    first_deaths: 25,
-    kd: 1.0,
-    adr: 80.1,
-    hs_percent: 51.8,
-    kana_rating: 1.05,
-    wins: 15,
-    losses: 10,
-    win_percentage: 60.0,
-    kast: 65.4,
-    impact: 1.25,
-    rounds_played: 468,
-    clutches_won: 12,
-    clutches_lost: 15,
-    clutch_percentage: 44.4,
-    entry_success: 52.3,
-    traded_percentage: 21.8,
-    multikills: {
-      "2k": 42,
-      "3k": 18,
-      "4k": 6,
-      "5k": 1
-    }
-  };
+  // Fetch player details using the hook
+  const { playerDetails, isLoading, isError } = usePlayerDetails({
+    steamId,
+    season_ids: filterParams.seasons.length ? filterParams.seasons : null,
+    league_ids: filterParams.leagues.length ? filterParams.leagues : null,
+    team_ids: filterParams.teams.length ? filterParams.teams : null,
+    stages: filterParams.stages.length ? filterParams.stages : null,
+    map_ids: filterParams.maps.length ? filterParams.maps : null
+  });
 
-  // Mock data for player matches
-  const playerMatches = [
-    {
-      id: "1",
-      team: "Praecopium",
-      score: 15,
-      opponent_score: 19,
-      opponent: "Crocot",
-      season: "CS2 Season 3",
-      league: "div6",
-      date: "2.4.2025",
-      map: "Anubis",
-      kills: 41,
-      assists: 8
-    },
-    {
-      id: "2",
-      team: "Praecopium",
-      score: 8,
-      opponent_score: 13,
-      opponent: "Crocot",
-      season: "CS2 Season 3",
-      league: "div6",
-      date: "2.4.2025",
-      map: "Ancient",
-      kills: 21,
-      assists: 3
-    },
-    {
-      id: "3",
-      team: "Praecopium",
-      score: 5,
-      opponent_score: 13,
-      opponent: "Produal",
-      season: "CS2 Season 3",
-      league: "div6",
-      date: "18.3.2025",
-      map: "Inferno",
-      kills: 12,
-      assists: 4
-    },
-    {
-      id: "4",
-      team: "Praecopium",
-      score: 8,
-      opponent_score: 13,
-      opponent: "Produal",
-      season: "CS2 Season 3",
-      league: "div6",
-      date: "18.3.2025",
-      map: "Dust2",
-      kills: 17,
-      assists: 1
-    },
-    {
-      id: "5",
-      team: "Praecopium",
-      score: 16,
-      opponent_score: 12,
-      opponent: "HYVAKS X-Men",
-      season: "CS2 Season 3",
-      league: "div6",
-      date: "13.3.2025",
-      map: "Mirage",
-      kills: 34,
-      assists: 7
-    }
-  ];
+  if (isError) {
+    return (
+      <div className="container mx-auto py-4">
+        <div className="mb-3">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Home</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/players">Players</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Error</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className="bg-card rounded-md p-6">
+          <h1 className="text-2xl font-bold text-kanaliiga-orange mb-3">
+            Error Loading Player Details
+          </h1>
+          <p className="text-muted-foreground">
+            There was an error loading the player details. Please try again
+            later or adjust your filters.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Use the player stats from the API if available, otherwise show loading state
+  const player = playerDetails?.playerStats;
+  const matchHistory = playerDetails?.matchHistory || [];
+
+  // Calculate win percentage
+  const winPercentage = player
+    ? (player.wins / Math.max(player.matches_played, 1)) * 100
+    : 0;
 
   return (
     <WithActiveSeason>
@@ -178,7 +125,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{playerData.nickname}</BreadcrumbPage>
+                <BreadcrumbPage>{player?.nickname || steamId}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -199,53 +146,65 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
 
         <div className="bg-card rounded-md overflow-hidden mb-3">
           <div className="p-6 border-b border-border">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-kanaliiga-light-brown/20 rounded-full flex items-center justify-center text-3xl font-bold">
-                {playerData.nickname.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-kanaliiga-orange">
-                  {playerData.nickname}
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <Image
-                    src={playerData.team_logo}
-                    alt={playerData.team_name}
-                    width={20}
-                    height={20}
-                    className="rounded-full"
-                  />
-                  <span className="text-muted-foreground">
-                    {playerData.team_name}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  <span>Steam ID: {playerData.steamId}</span>
+            {isLoading ? (
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-kanaliiga-light-brown/20 animate-pulse rounded-full" />
+                <div className="space-y-2">
+                  <div className="h-6 w-40 bg-kanaliiga-light-brown/20 animate-pulse rounded" />
+                  <div className="h-4 w-20 bg-kanaliiga-light-brown/20 animate-pulse rounded" />
                 </div>
               </div>
-              <div className="ml-auto">
-                <div className="flex items-center gap-3">
-                  <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Wins</div>
-                    <div className="text-lg font-semibold text-green-500">
-                      {playerData.wins}
-                    </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-kanaliiga-light-brown/20 rounded-full flex items-center justify-center text-3xl font-bold">
+                  {player?.nickname.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-kanaliiga-orange">
+                    {player?.nickname}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Image
+                      src={player?.team_logo || "/teams/nologo.svg"}
+                      alt={player?.team_name || "No team"}
+                      width={20}
+                      height={20}
+                      className="rounded-full"
+                    />
+                    <span className="text-muted-foreground">
+                      {player?.team_name || "No team"}
+                    </span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Losses</div>
-                    <div className="text-lg font-semibold text-red-500">
-                      {playerData.losses}
-                    </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    <span>Steam ID: {steamId}</span>
                   </div>
-                  <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Win %</div>
-                    <div className="text-lg font-semibold">
-                      {playerData.win_percentage.toFixed(1)}%
+                </div>
+                <div className="ml-auto">
+                  <div className="flex items-center gap-3">
+                    <div className="text-center">
+                      <div className="text-muted-foreground text-sm">Wins</div>
+                      <div className="text-lg font-semibold text-green-500">
+                        {player?.wins || 0}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-muted-foreground text-sm">
+                        Losses
+                      </div>
+                      <div className="text-lg font-semibold text-red-500">
+                        {player?.losses || 0}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-muted-foreground text-sm">Win %</div>
+                      <div className="text-lg font-semibold">
+                        {winPercentage.toFixed(1)}%
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -255,25 +214,51 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
             <h2 className="text-xl font-semibold text-kanaliiga-orange mb-3">
               Player Statistics
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard
-                label="Matches"
-                value={playerData.matches_played.toString()}
-              />
-              <StatCard label="Kills" value={playerData.kills.toString()} />
-              <StatCard label="Deaths" value={playerData.deaths.toString()} />
-              <StatCard label="Assists" value={playerData.assists.toString()} />
-              <StatCard label="K/D Ratio" value={playerData.kd.toFixed(2)} />
-              <StatCard label="ADR" value={playerData.adr.toFixed(1)} />
-              <StatCard
-                label="HS%"
-                value={`${playerData.hs_percent.toFixed(1)}%`}
-              />
-              <StatCard
-                label="Rating"
-                value={playerData.kana_rating.toFixed(2)}
-              />
-            </div>
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-kanaliiga-light-brown/10 p-4 rounded-md"
+                  >
+                    <div className="h-4 w-16 bg-kanaliiga-light-brown/20 animate-pulse rounded mb-2" />
+                    <div className="h-6 w-12 bg-kanaliiga-light-brown/20 animate-pulse rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard
+                  label="Matches"
+                  value={player?.matches_played?.toString() || "0"}
+                />
+                <StatCard
+                  label="Kills"
+                  value={player?.kills?.toString() || "0"}
+                />
+                <StatCard
+                  label="Deaths"
+                  value={player?.deaths?.toString() || "0"}
+                />
+                <StatCard
+                  label="Assists"
+                  value={player?.assists?.toString() || "0"}
+                />
+                <StatCard
+                  label="K/D Ratio"
+                  value={player?.kd?.toFixed(2) || "0"}
+                />
+                <StatCard label="ADR" value={player?.adr?.toFixed(1) || "0"} />
+                <StatCard
+                  label="HS%"
+                  value={`${player?.hs_percent?.toFixed(1) || "0"}%`}
+                />
+                <StatCard
+                  label="Rating"
+                  value={player?.kana_rating?.toFixed(2) || "0"}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -284,148 +269,166 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
               Match History
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-kanaliiga-light-brown/20 text-xs uppercase">
-                    <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-muted-foreground">
-                      OPPONENT
-                    </th>
-                    <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      SCORE
-                    </th>
-                    <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      K
-                    </th>
-                    <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      A (f)
-                    </th>
-                    <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      D
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      AWP
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      UD
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      HS
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      FK
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      FD
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      ADR
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      HS%
-                    </th>
-                    <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      K/D
-                    </th>
-                    <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                      RATING
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-kanaliiga-light-brown/10">
-                  {playerMatches.map((match) => {
-                    const teamWon = match.score > match.opponent_score;
-                    // Calculate mock stats for each match
-                    const mockDeaths = Math.round(match.kills * 0.7);
-                    const mockRating = (
-                      (match.kills * 0.8 + match.assists * 0.2) /
-                      20
-                    ).toFixed(2);
-                    const mockFA = Math.round(match.assists * 0.3);
-                    const mockAWP = Math.round(match.kills * 0.05);
-                    const mockUD = Math.round(match.kills * 10);
-                    const mockHS = Math.round(match.kills * 0.45);
-                    const mockFK = Math.round(match.kills * 0.1);
-                    const mockFD = Math.round(match.kills * 0.08);
-                    const mockADR = (match.kills * 2).toFixed(1);
-                    const mockHSPercent = Math.round(
-                      (mockHS / match.kills) * 100
-                    ).toFixed(1);
-                    const mockKD = (
-                      match.kills / Math.max(mockDeaths, 1)
-                    ).toFixed(2);
+              {isLoading ? (
+                <div className="p-6 text-center">
+                  <div className="h-6 w-40 bg-kanaliiga-light-brown/20 animate-pulse rounded mx-auto mb-3" />
+                  <div className="h-4 w-60 bg-kanaliiga-light-brown/20 animate-pulse rounded mx-auto" />
+                </div>
+              ) : matchHistory.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  No match history available for this player with the current
+                  filters.
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-kanaliiga-light-brown/20 text-xs uppercase">
+                      <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-muted-foreground">
+                        OPPONENT
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        SCORE
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        K
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        A (f)
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        D
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        AWP
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        UD
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        HS
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        FK
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        FD
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        ADR
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        HS%
+                      </th>
+                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        K/D
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                        RATING
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-kanaliiga-light-brown/10">
+                    {matchHistory.map((match) => {
+                      const teamWon = match.score > match.opponent_score;
 
-                    return (
-                      <tr
-                        key={match.id}
-                        className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                        onClick={() => console.log(`Clicked match ${match.id}`)}
-                      >
-                        <td className="px-3 py-2 text-left">
-                          {match.opponent}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <span
-                            className={
-                              teamWon ? "text-green-500" : "text-red-500"
-                            }
-                          >
-                            {match.score}
-                          </span>
-                          -
-                          <span
-                            className={
-                              !teamWon ? "text-green-500" : "text-red-500"
-                            }
-                          >
-                            {match.opponent_score}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-center">{match.kills}</td>
-                        <td className="px-3 py-2 text-center">
-                          {match.assists} ({mockFA})
-                        </td>
-                        <td className="px-3 py-2 text-center">{mockDeaths}</td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockAWP}
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockUD}
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockHS}
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockFK}
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockFD}
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockADR}
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockHSPercent}%
-                        </td>
-                        <td className="hidden md:table-cell px-3 py-2 text-center">
-                          {mockKD}
-                        </td>
-                        <td className="px-3 py-2 text-center font-bold">
-                          {mockRating}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <tr
+                          key={`${match.match_id}`}
+                          className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
+                          onClick={() =>
+                            router.push(`/matches/${match.match_id}`)
+                          }
+                        >
+                          <td className="px-3 py-2 text-left">
+                            <div className="flex items-center gap-2">
+                              <div className="text-xs text-muted-foreground">
+                                {match.match_date
+                                  ? format(
+                                      new Date(match.match_date),
+                                      "dd.MM.yyyy"
+                                    )
+                                  : "N/A"}
+                              </div>
+                              <span>{match.opponent_name}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {match.map_name} · {match.league_name}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <span
+                              className={
+                                teamWon ? "text-green-500" : "text-red-500"
+                              }
+                            >
+                              {match.score}
+                            </span>
+                            -
+                            <span
+                              className={
+                                !teamWon ? "text-green-500" : "text-red-500"
+                              }
+                            >
+                              {match.opponent_score}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {match.kills}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {match.assists} (
+                            <span className="text-xs">
+                              {match.flash_assists}
+                            </span>
+                            )
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            {match.deaths}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.awp_kills}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.utility_damage}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.headshots}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.first_kills}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.first_deaths}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.adr?.toFixed(1)}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.hs_percent?.toFixed(1)}%
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                            {match.kd?.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-center font-bold">
+                            {match.kana_rating?.toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
-            <div className="flex justify-between mt-2">
-              <button className="text-muted-foreground">
-                <span className="text-kanaliiga-orange">◀</span> Previous
-              </button>
-              <button className="text-muted-foreground">
-                Next <span className="text-kanaliiga-orange">▶</span>
-              </button>
-            </div>
+            {matchHistory.length > 0 && (
+              <div className="flex justify-between mt-2">
+                <button className="text-muted-foreground">
+                  <span className="text-kanaliiga-orange">◀</span> Previous
+                </button>
+                <button className="text-muted-foreground">
+                  Next <span className="text-kanaliiga-orange">▶</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

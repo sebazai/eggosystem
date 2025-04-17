@@ -5,7 +5,8 @@ import {
   getPlayerSteamAppIdHours,
   getPlayerSteamAppIdRank,
   getPlayerPlatformRank,
-  getPlayerStatsByFiltersController
+  getPlayerStatsByFiltersController,
+  getPlayerDetailsWithStatsController
   // getPlayersByFiltersController,
   // getPlayerLeaderboardController,
   // getMultipleLeaderboardsController
@@ -21,6 +22,11 @@ const router = Router();
 router.get("/stats", parseQueryFilterParams, getPlayerStatsByFiltersController);
 router.get("/:steam_id/details", getPlayerBySteamIdController);
 router.get("/:steam_id/public", getIsPlayerProfilePublic);
+router.get(
+  "/:steam_id/statistics",
+  parseQueryFilterParams,
+  getPlayerDetailsWithStatsController
+);
 router.get("/:steam_id/app/:app_id/hours", getPlayerSteamAppIdHours);
 router.get("/:steam_id/app/:app_id/rank", getPlayerSteamAppIdRank);
 router.get("/:steam_id/platform/:platform/rank", getPlayerPlatformRank);

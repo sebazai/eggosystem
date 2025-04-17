@@ -1,7 +1,8 @@
 import { type Request, type Response } from "express";
 import {
   getPlayerDetailsBySteamId,
-  getPlayersByFilters
+  getPlayersByFilters,
+  getPlayerDetailsWithStatsByFilters
 } from "../models/player.models";
 
 import {
@@ -88,12 +89,12 @@ export const getPlayerStatsByFiltersController = async (
 ) => {
   try {
     const { parsedParams } = req;
-    console.log("Player stats filter params:", parsedParams);
+    console.warn("Player stats filter params:", parsedParams);
 
     // Fetch player stats from database using the model
     const playerStats = await getPlayersByFilters(parsedParams);
 
-    console.log(
+    console.warn(
       `Found ${Array.isArray(playerStats) ? playerStats.length : 0} players from database`
     );
 
@@ -101,5 +102,43 @@ export const getPlayerStatsByFiltersController = async (
   } catch (error) {
     console.error("Error fetching player stats:", error);
     res.status(500).json({ error: "Failed to fetch player stats" });
+  }
+};
+
+/**
+ * Get detailed player stats and match history with filters
+ * @route GET /api/v1/players/:steam_id/statistics
+ */
+export const getPlayerDetailsWithStatsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { steam_id } = req.params;
+    const { parsedParams } = req;
+
+    console.warn(
+      `Getting player details for steam_id: ${steam_id} with filters:`,
+      parsedParams
+    );
+
+    // Fetch player stats and match history from database using the model
+    const playerDetails = await getPlayerDetailsWithStatsByFilters(
+      steam_id,
+      parsedParams
+    );
+
+    if (!playerDetails.playerStats) {
+      res.status(404).json({
+        error: "Player not found or no stats match the given filters"
+      });
+      return;
+    }
+
+    // Return the player details as a response
+    res.status(200).json(playerDetails);
+  } catch (error) {
+    console.error("Error fetching player details:", error);
+    res.status(500).json({ error: "Failed to fetch player details" });
   }
 };

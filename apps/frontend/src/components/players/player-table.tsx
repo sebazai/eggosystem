@@ -14,7 +14,7 @@ import {
 interface PlayerTableProps {
   players: PlayerStats[];
   isLoading: boolean;
-  onPlayerClick?: (nickname: string) => void;
+  onPlayerClick?: (steamId: string) => void;
 }
 
 type SortDirection = "asc" | "desc";
@@ -116,9 +116,9 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     return sortableItems;
   }, [players, sortConfig]);
 
-  const handleRowClick = (nickname: string) => {
+  const handleRowClick = (steamId: string) => {
     if (onPlayerClick) {
-      onPlayerClick(nickname);
+      onPlayerClick(steamId);
     }
   };
 
@@ -213,7 +213,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       }
                     )}
                     onClick={() =>
-                      onPlayerClick && handleRowClick(player.nickname)
+                      onPlayerClick && handleRowClick(player.steam_id)
                     }
                   >
                     <td className="px-4 py-3">

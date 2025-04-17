@@ -36,8 +36,8 @@ export default function PlayersPage() {
     map_ids: params.maps.length ? params.maps : null
   });
 
-  const handlePlayerClick = (nickname: string) => {
-    router.push(`/players/${encodeURIComponent(nickname)}`);
+  const handlePlayerClick = (steamId: string) => {
+    router.push(`/players/${encodeURIComponent(steamId)}`);
   };
 
   if (isError) {
