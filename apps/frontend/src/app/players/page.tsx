@@ -60,7 +60,7 @@ export default function PlayersPage() {
           style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
         >
           <div className="max-w-[1400px] mx-auto">
-            <h1 className="text-kanaliiga-orange text-2xl font-bold py-6">
+            <h1 className="text-kanaliiga-orange text-3xl font-bold py-8">
               Players
             </h1>
 
