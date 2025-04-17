@@ -34,10 +34,6 @@ export const LeaderboardsGrid = ({
   const { isError, isLoading, isValidating, leaderboards } =
     useLeaderboards(filterQueryParams);
 
-  const handlePlayerClick = (steamId: string) => {
-    router.push(`/players/${encodeURIComponent(steamId)}`);
-  };
-
   if (isLoading || isValidating) {
     return <LeaderboardsGridSkeleton />;
   }
@@ -116,9 +112,12 @@ export const LeaderboardsGrid = ({
                       playerIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
                     } hover:bg-kanaliiga-light-brown/10 cursor-pointer`}
                     data-testid="player-row"
-                    onClick={() =>
-                      player.steam_id && handlePlayerClick(player.steam_id)
-                    }
+                    onClick={() => {
+                      if (player.steam_id) {
+                        console.log(`Navigating to player: ${player.steam_id}`);
+                        router.push(`/players/${encodeURIComponent(player.steam_id)}`);
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <span

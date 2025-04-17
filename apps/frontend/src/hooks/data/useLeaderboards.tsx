@@ -11,6 +11,7 @@ import useSWR from "swr";
 type LeaderboardResponse = {
   // AVG stats
   kana_rating?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -18,6 +19,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   kast?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -25,6 +27,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   hs_percent?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -32,6 +35,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   adr?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -41,6 +45,7 @@ type LeaderboardResponse = {
 
   // SUM and derived stats
   kills?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -48,6 +53,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   assists?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -55,6 +61,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   deaths?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -62,6 +69,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   kd?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -69,6 +77,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   flash_assists?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -76,6 +85,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   utility_damage?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -83,6 +93,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   total_damage?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -90,6 +101,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   awp_kills?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -97,6 +109,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   headshots?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -104,6 +117,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   enemies_flashed?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -111,6 +125,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   mates_flashed?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -118,6 +133,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   self_flashes?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -125,6 +141,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   clutches_won?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -132,6 +149,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   one_v_one_won?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -139,6 +157,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   first_deaths?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -146,6 +165,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   first_kills?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -153,6 +173,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   flashes_thrown?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -160,6 +181,7 @@ type LeaderboardResponse = {
     matches_played: number;
   }>;
   total_ef_duration?: Array<{
+    steam_id: string;
     nickname: string;
     team_name: string;
     team_logo?: string;
@@ -213,6 +235,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Kana Rating",
       unit: "",
       players: (data.kana_rating || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -225,6 +248,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "KAST",
       unit: "%",
       players: (data.kast || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -237,6 +261,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Headshot %",
       unit: "%",
       players: (data.hs_percent || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -249,6 +274,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "ADR",
       unit: "",
       players: (data.adr || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -263,6 +289,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Kills",
       unit: "",
       players: (data.kills || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -275,6 +302,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Deaths",
       unit: "",
       players: (data.deaths || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -287,6 +315,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Assists",
       unit: "",
       players: (data.assists || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -299,6 +328,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "K/D Ratio",
       unit: "",
       players: (data.kd || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -311,6 +341,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Flash Assists",
       unit: "",
       players: (data.flash_assists || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -323,6 +354,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Utility Damage",
       unit: "",
       players: (data.utility_damage || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -335,6 +367,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Total Damage",
       unit: "",
       players: (data.total_damage || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -347,6 +380,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "AWP Kills",
       unit: "",
       players: (data.awp_kills || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -359,6 +393,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Headshots",
       unit: "",
       players: (data.headshots || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -371,6 +406,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Enemies Flashed",
       unit: "",
       players: (data.enemies_flashed || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -383,6 +419,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Teammates Flashed",
       unit: "",
       players: (data.mates_flashed || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -395,6 +432,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Self Flashes",
       unit: "",
       players: (data.self_flashes || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -407,6 +445,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Clutches Won",
       unit: "",
       players: (data.clutches_won || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -419,6 +458,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "1v1 Duels Won",
       unit: "",
       players: (data.one_v_one_won || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -431,6 +471,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "First Deaths",
       unit: "",
       players: (data.first_deaths || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -443,6 +484,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "First Kills",
       unit: "",
       players: (data.first_kills || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -455,6 +497,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Flashes Thrown",
       unit: "",
       players: (data.flashes_thrown || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
@@ -467,6 +510,7 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
       title: "Enemy Flash Duration",
       unit: "s",
       players: (data.total_ef_duration || []).map((player, index) => ({
+        steam_id: player.steam_id,
         nickname: player.nickname,
         team_name: player.team_name,
         team_logo: player.team_logo,
