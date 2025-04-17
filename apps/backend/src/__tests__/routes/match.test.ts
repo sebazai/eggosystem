@@ -64,41 +64,49 @@ describe("Match Routes", () => {
     it("should return top players for match 7750 and game id 10340", async () => {
       const expectedTopPlayers = {
         most_kills: {
+          steam_id: "76561198007519209",
           nickname: "tobbbles",
           team_id: 53,
           value: 29
         },
         most_adr: {
+          steam_id: "76561198007519209",
           nickname: "tobbbles",
           team_id: 53,
           value: 102.8
         },
         most_assists: {
+          steam_id: "76561198149557914",
           nickname: "kuula",
           team_id: 53,
           value: 8
         },
         most_awp_kills: {
+          steam_id: "76561198001042535",
           nickname: "meppi",
           team_id: 53,
           value: 10
         },
         most_utility_damage: {
+          steam_id: "76561198069480549",
           nickname: "Pronssi",
           team_id: 18,
           value: 300
         },
         most_first_kills: {
+          steam_id: "76561198001042535",
           nickname: "meppi",
           team_id: 53,
           value: 7
         },
         most_flash_assists: {
+          steam_id: "76561198070316771",
           nickname: "defektro",
           team_id: 53,
           value: 2
         },
         most_mates_flashed: {
+          steam_id: "76561198047025039",
           nickname: "enzoj",
           team_id: 53,
           value: 10

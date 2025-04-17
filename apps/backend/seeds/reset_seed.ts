@@ -19,7 +19,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Re-enable foreign key checks
   await knex.raw("SET FOREIGN_KEY_CHECKS=1");
 
-  console.log(
+  console.warn(
     "All tables dropped successfully. Ready for migrations and seeding."
   );
 }

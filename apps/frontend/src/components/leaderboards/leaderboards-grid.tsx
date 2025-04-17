@@ -114,8 +114,9 @@ export const LeaderboardsGrid = ({
                     data-testid="player-row"
                     onClick={() => {
                       if (player.steam_id) {
-                        console.log(`Navigating to player: ${player.steam_id}`);
-                        router.push(`/players/${encodeURIComponent(player.steam_id)}`);
+                        router.push(
+                          `/players/${encodeURIComponent(player.steam_id)}`
+                        );
                       }
                     }}
                   >

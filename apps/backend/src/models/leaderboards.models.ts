@@ -113,8 +113,8 @@ export const getLeaderboard = async ({
     LIMIT 5
   `;
 
-  console.log("Executing leaderboard query:", query);
-  console.log("With parameters:", queryParams);
+  console.warn("Executing leaderboard query:", query);
+  console.warn("With parameters:", queryParams);
 
   return runQuery(query, queryParams);
 };

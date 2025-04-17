@@ -33,7 +33,8 @@ v1Router.use("/leaderboards", leaderboardsRouter);
 v1Router.use("/now", nowRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
-v1Router.use("/", async () => {
-  console.log("Hello");
+v1Router.use("/", async (req, res) => {
+  console.warn("API root endpoint accessed");
+  res.status(200).json({ message: "API is running" });
 });
 export default v1Router;
