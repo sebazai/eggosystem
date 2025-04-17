@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -12,11 +12,18 @@ import {
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { getParamArray, type FilterParamsQuery } from "@/lib/utils";
+import { getParamArray, type FilterParamsQuery, cn } from "@/lib/utils";
 import { useActiveSeason } from "@/hooks/data/useActiveSeason";
 import { WithActiveSeason } from "@/components/filters/with-active-season";
 import { usePlayerDetails } from "@/hooks/data/usePlayerDetails";
 import { format } from "date-fns";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider
+} from "@/components/ui/tooltip";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -38,12 +45,22 @@ function StatCard({ label, value }: StatCardProps) {
   );
 }
 
+type SortDirection = "asc" | "desc";
+
 export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
   const unwrappedParams = React.use(params);
   const steamId = unwrappedParams.playerId;
   const activeSeasonHook = useActiveSeason("730");
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: SortDirection;
+  }>({
+    key: "match_date",
+    direction: "desc"
+  });
 
   // Get filter params from URL
   const filterParams = useMemo(() => {
@@ -67,6 +84,132 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
     stages: filterParams.stages.length ? filterParams.stages : null,
     map_ids: filterParams.maps.length ? filterParams.maps : null
   });
+
+  // Match column definitions with tooltips
+  const matchColumns = useMemo(
+    () => [
+      {
+        key: "opponent_name",
+        label: "OPPONENT",
+        sortable: true,
+        tooltip: "Opponent Team"
+      },
+      { key: "score", label: "SCORE", sortable: true, tooltip: "Match Score" },
+      { key: "kills", label: "K", sortable: true, tooltip: "Kills" },
+      {
+        key: "assists",
+        label: "A (f)",
+        sortable: true,
+        tooltip: "Assists (Flash Assists)"
+      },
+      { key: "deaths", label: "D", sortable: true, tooltip: "Deaths" },
+      {
+        key: "awp_kills",
+        label: "AWP",
+        sortable: true,
+        tooltip: "AWP Kills",
+        responsive: false
+      },
+      {
+        key: "utility_damage",
+        label: "UD",
+        sortable: true,
+        tooltip: "Utility Damage",
+        responsive: false
+      },
+      {
+        key: "headshots",
+        label: "HS",
+        sortable: true,
+        tooltip: "Headshots",
+        responsive: false
+      },
+      {
+        key: "first_kills",
+        label: "FK",
+        sortable: true,
+        tooltip: "First Kills",
+        responsive: false
+      },
+      {
+        key: "first_deaths",
+        label: "FD",
+        sortable: true,
+        tooltip: "First Deaths",
+        responsive: false
+      },
+      {
+        key: "adr",
+        label: "ADR",
+        sortable: true,
+        tooltip: "Average Damage per Round",
+        responsive: false
+      },
+      {
+        key: "hs_percent",
+        label: "HS%",
+        sortable: true,
+        tooltip: "Headshot Percentage",
+        responsive: false
+      },
+      {
+        key: "kd",
+        label: "K/D",
+        sortable: true,
+        tooltip: "Kill/Death Ratio",
+        responsive: false
+      },
+      {
+        key: "kana_rating",
+        label: "RATING",
+        sortable: true,
+        tooltip: "Kanaliiga Rating"
+      }
+    ],
+    []
+  );
+
+  const handleSortClick = (key: string) => {
+    let direction: SortDirection = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "desc") {
+      direction = "asc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedMatchHistory = useMemo(() => {
+    if (!playerDetails?.matchHistory || playerDetails.matchHistory.length === 0)
+      return [];
+
+    const sortableItems = [...playerDetails.matchHistory];
+    sortableItems.sort((a, b) => {
+      // Special case for match date
+      if (sortConfig.key === "match_date") {
+        const aDate = a.match_date ? new Date(a.match_date).getTime() : 0;
+        const bDate = b.match_date ? new Date(b.match_date).getTime() : 0;
+        return sortConfig.direction === "asc" ? aDate - bDate : bDate - aDate;
+      }
+
+      // Get values for the sort key
+      const aValue = a[sortConfig.key as keyof typeof a];
+      const bValue = b[sortConfig.key as keyof typeof b];
+
+      // Handle special cases for strings and nulls
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortConfig.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      // Convert to numbers for comparison
+      const aNum = aValue === null || aValue === undefined ? 0 : Number(aValue);
+      const bNum = bValue === null || bValue === undefined ? 0 : Number(bValue);
+
+      return sortConfig.direction === "asc" ? aNum - bNum : bNum - aNum;
+    });
+
+    return sortableItems;
+  }, [playerDetails?.matchHistory, sortConfig]);
 
   if (isError) {
     return (
@@ -103,7 +246,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
 
   // Use the player stats from the API if available, otherwise show loading state
   const player = playerDetails?.playerStats;
-  const matchHistory = playerDetails?.matchHistory || [];
+  const matchHistory = getSortedMatchHistory;
 
   // Calculate win percentage
   const winPercentage = player
@@ -280,143 +423,143 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
                   filters.
                 </div>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-kanaliiga-light-brown/20 text-xs uppercase">
-                      <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-muted-foreground">
-                        OPPONENT
-                      </th>
-                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        SCORE
-                      </th>
-                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        K
-                      </th>
-                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        A (f)
-                      </th>
-                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        D
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        AWP
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        UD
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        HS
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        FK
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        FD
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        ADR
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        HS%
-                      </th>
-                      <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        K/D
-                      </th>
-                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
-                        RATING
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-kanaliiga-light-brown/10">
-                    {matchHistory.map((match) => {
-                      const teamWon = match.score > match.opponent_score;
+                <TooltipProvider>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-[#2a1810] text-xs uppercase">
+                        {matchColumns.map((column) => (
+                          <th
+                            key={column.key}
+                            className={cn(
+                              "px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange",
+                              column.key === "opponent_name" && "text-left",
+                              column.responsive === false &&
+                                "hidden md:table-cell",
+                              column.sortable &&
+                                "cursor-pointer hover:bg-[#3a281a]"
+                            )}
+                            onClick={() =>
+                              column.sortable && handleSortClick(column.key)
+                            }
+                          >
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center justify-center">
+                                  <span>{column.label}</span>
+                                  {column.sortable &&
+                                    sortConfig.key === column.key && (
+                                      <span className="inline-block ml-1">
+                                        {sortConfig.direction === "asc" ? (
+                                          <ChevronUp className="h-4 w-4" />
+                                        ) : (
+                                          <ChevronDown className="h-4 w-4" />
+                                        )}
+                                      </span>
+                                    )}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="top"
+                                className="bg-gray-900 border border-gray-700 text-white px-2 py-1 text-xs"
+                              >
+                                {column.tooltip}
+                              </TooltipContent>
+                            </Tooltip>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-kanaliiga-light-brown/10">
+                      {matchHistory.map((match) => {
+                        const teamWon = match.score > match.opponent_score;
 
-                      return (
-                        <tr
-                          key={`${match.match_id}`}
-                          className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                          onClick={() =>
-                            router.push(`/matches/${match.match_id}`)
-                          }
-                        >
-                          <td className="px-3 py-2 text-left">
-                            <div className="flex items-center gap-2">
-                              <div className="text-xs text-muted-foreground">
-                                {match.match_date
-                                  ? format(
-                                      new Date(match.match_date),
-                                      "dd.MM.yyyy"
-                                    )
-                                  : "N/A"}
+                        return (
+                          <tr
+                            key={`${match.match_id}`}
+                            className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
+                            onClick={() =>
+                              router.push(`/matches/${match.match_id}`)
+                            }
+                          >
+                            <td className="px-3 py-2 text-left">
+                              <div className="flex items-center gap-2">
+                                <div className="text-xs text-muted-foreground">
+                                  {match.match_date
+                                    ? format(
+                                        new Date(match.match_date),
+                                        "dd.MM.yyyy"
+                                      )
+                                    : "N/A"}
+                                </div>
+                                <span>{match.opponent_name}</span>
                               </div>
-                              <span>{match.opponent_name}</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {match.map_name} · {match.league_name}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            <span
-                              className={
-                                teamWon ? "text-green-500" : "text-red-500"
-                              }
-                            >
-                              {match.score}
-                            </span>
-                            -
-                            <span
-                              className={
-                                !teamWon ? "text-green-500" : "text-red-500"
-                              }
-                            >
-                              {match.opponent_score}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            {match.kills}
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            {match.assists} (
-                            <span className="text-xs">
-                              {match.flash_assists}
-                            </span>
-                            )
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            {match.deaths}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.awp_kills}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.utility_damage}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.headshots}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.first_kills}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.first_deaths}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.adr?.toFixed(1)}
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.hs_percent?.toFixed(1)}%
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
-                            {match.kd?.toFixed(2)}
-                          </td>
-                          <td className="px-3 py-2 text-center font-bold">
-                            {match.kana_rating?.toFixed(2)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {match.map_name} · {match.league_name}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <span
+                                className={
+                                  teamWon ? "text-green-500" : "text-red-500"
+                                }
+                              >
+                                {match.score}
+                              </span>
+                              -
+                              <span
+                                className={
+                                  !teamWon ? "text-green-500" : "text-red-500"
+                                }
+                              >
+                                {match.opponent_score}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {match.kills}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {match.assists} (
+                              <span className="text-xs">
+                                {match.flash_assists}
+                              </span>
+                              )
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              {match.deaths}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.awp_kills}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.utility_damage}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.headshots}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.first_kills}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.first_deaths}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.adr?.toFixed(1)}
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.hs_percent?.toFixed(1)}%
+                            </td>
+                            <td className="hidden md:table-cell px-3 py-2 text-center">
+                              {match.kd?.toFixed(2)}
+                            </td>
+                            <td className="px-3 py-2 text-center font-bold">
+                              {match.kana_rating?.toFixed(2)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </TooltipProvider>
               )}
             </div>
             {matchHistory.length > 0 && (
