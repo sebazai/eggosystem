@@ -20,6 +20,7 @@ export const getMatches = (): Promise<Match[]> => {
 
 export const getMatchPlayerStats = async (match_id: number) => {
   const query = `SELECT
+        p.steam_id,
         p.nickname,
         stp.team_id as team_id,
         SUM(ps.kills) as kills,
@@ -40,7 +41,7 @@ export const getMatchPlayerStats = async (match_id: number) => {
       INNER JOIN SeasonTeamPlayers stp on stp.season_id = s.id and stp.steam_id = p.steam_id
       INNER JOIN Teams t on t.id = stp.team_id
       WHERE g.match_id = ?
-      GROUP BY p.nickname, stp.team_id
+      GROUP BY p.steam_id, p.nickname, stp.team_id
       ORDER BY stp.team_id, kills desc,deaths asc;`;
 
   return runQuery<MatchPlayerStats[]>(query, [match_id]);
@@ -51,6 +52,7 @@ export const getMatchGamePlayerStats = async (
   game_id: number
 ) => {
   const query = `SELECT
+        p.steam_id,
         p.nickname,
         stp.team_id as team_id,
         ps.kills as kills,
@@ -71,7 +73,7 @@ export const getMatchGamePlayerStats = async (
       INNER JOIN SeasonTeamPlayers stp on stp.season_id = s.id and stp.steam_id = p.steam_id
       INNER JOIN Teams t on t.id = stp.team_id
       WHERE ps.game_id = ?
-      GROUP BY p.nickname, stp.team_id
+      GROUP BY p.steam_id, p.nickname, stp.team_id
       ORDER BY stp.team_id, kills desc,deaths asc;`;
 
   return runQuery<MatchPlayerStats[]>(query, [game_id]);
@@ -180,13 +182,13 @@ export const getMatchTopPlayers = async (match_id: number) => {
   }) => {
     const sqlFunction = column === "adr" ? "AVG" : "SUM";
     const query = `
-          SELECT p.nickname, ${sqlFunction}(ps.${column}) as value, stp.team_id
+          SELECT p.steam_id, p.nickname, ${sqlFunction}(ps.${column}) as value, stp.team_id
           FROM PlayerStats ps 
           JOIN SteamPlayers p ON p.steam_id = ps.steam_id 
           JOIN MatchGames mmp ON ps.game_id = mmp.id
           JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = ?
           WHERE mmp.match_id = ? 
-          GROUP BY p.nickname
+          GROUP BY p.steam_id, p.nickname
           ORDER BY value DESC 
           LIMIT 1;
         `;
@@ -220,7 +222,7 @@ export const getGameTopPlayers = async (match_id: number, game_id: number) => {
     column: T;
   }) => {
     const query = `
-        SELECT p.nickname, ps.${column} as value, stp.team_id
+        SELECT p.steam_id, p.nickname, ps.${column} as value, stp.team_id
         FROM PlayerStats ps 
         JOIN SteamPlayers p ON p.steam_id = ps.steam_id 
         JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = ?

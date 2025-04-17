@@ -1,6 +1,7 @@
 import { SteamPlayer, PlayerStats, Team } from "../db";
 
 export interface MatchPlayerStats {
+  steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
   team_id: Team["id"];
   kills: PlayerStats["kills"];

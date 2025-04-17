@@ -1,6 +1,7 @@
 import { SteamPlayer, Team, Nullable } from "@eggosystem/types";
 
 export interface MatchTopPlayerAwardsValue {
+  steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
   value: Nullable<number>;
   team_id: Team["id"];

@@ -6,6 +6,7 @@ import type {
 } from "@eggosystem/types";
 import Image from "next/image";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface PlayerStatisticsProps {
   playerStats: MatchPlayerStats[];
@@ -16,6 +17,12 @@ export const PlayerStatistics = ({
   playerStats,
   teams
 }: PlayerStatisticsProps) => {
+  const router = useRouter();
+
+  const handlePlayerClick = (steamId: string) => {
+    router.push(`/players/${encodeURIComponent(steamId)}`);
+  };
+
   // Player Stats Grid section
   const groupedPlayerStats = React.useMemo(() => {
     if (!playerStats || !teams) return [];
@@ -80,7 +87,11 @@ export const PlayerStatistics = ({
           </div>
 
           {players.map((player) => (
-            <div key={player.nickname}>
+            <div
+              key={player.nickname}
+              className="cursor-pointer hover:bg-kanaliiga-light-brown/10"
+              onClick={() => handlePlayerClick(player.steam_id)}
+            >
               {/* Desktop Row */}
               <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
                 <div className="text-left font-bold">{player.nickname}</div>

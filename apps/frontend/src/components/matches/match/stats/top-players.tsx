@@ -6,6 +6,7 @@ import type {
 } from "@eggosystem/types";
 import Image from "next/image";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface TopPlayerProps {
   topPlayers: MatchTopPlayerAwards;
@@ -16,6 +17,12 @@ const roundToOneDecimal = (num: number) =>
   num % 1 === 0 ? num : parseFloat(num.toFixed(1));
 
 export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
+  const router = useRouter();
+
+  const handlePlayerClick = (steamId: string) => {
+    router.push(`/players/${encodeURIComponent(steamId)}`);
+  };
+
   const awardNames: Record<keyof MatchTopPlayerAwards, string> = {
     most_kills: "Most Kills",
     most_adr: "Highest ADR",
@@ -43,7 +50,12 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
             return (
               <React.Fragment key={key}>
                 <div className="text-muted-foreground text-sm">{text}</div>
-                <div className="flex gap-2">
+                <div
+                  className="flex gap-2 cursor-pointer hover:text-kanaliiga-orange"
+                  onClick={() =>
+                    stat && stat.steam_id && handlePlayerClick(stat.steam_id)
+                  }
+                >
                   {team && (
                     <div>
                       <Image
