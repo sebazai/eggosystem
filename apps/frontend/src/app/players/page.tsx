@@ -28,7 +28,7 @@ export default function PlayersPage() {
   }, [searchParams, activeSeasonHook.activeSeason?.season_id]);
 
   // Get players data based on filters
-  const { players, isLoading, error } = usePlayers({
+  const { players, isLoading, isError } = usePlayers({
     season_ids: params.seasons.length ? params.seasons : null,
     league_ids: params.leagues.length ? params.leagues : null,
     team_ids: params.teams.length ? params.teams : null,
@@ -40,7 +40,7 @@ export default function PlayersPage() {
     router.push(`/players/${encodeURIComponent(nickname)}`);
   };
 
-  if (error) {
+  if (isError) {
     return <TheContainer>Error loading players data</TheContainer>;
   }
 

@@ -4,18 +4,21 @@ import {
   getIsPlayerProfilePublic,
   getPlayerSteamAppIdHours,
   getPlayerSteamAppIdRank,
-  getPlayerPlatformRank
+  getPlayerPlatformRank,
+  getPlayerStatsByFiltersController
   // getPlayersByFiltersController,
   // getPlayerLeaderboardController,
   // getMultipleLeaderboardsController
 } from "../../controllers/players.controllers";
 
 // import parseQueryParams from "../../middlewares/parseQueryParams";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 
 // New Router instance
 const router = Router();
 
 // Player routes
+router.get("/stats", parseQueryFilterParams, getPlayerStatsByFiltersController);
 router.get("/:steam_id/details", getPlayerBySteamIdController);
 router.get("/:steam_id/public", getIsPlayerProfilePublic);
 router.get("/:steam_id/app/:app_id/hours", getPlayerSteamAppIdHours);

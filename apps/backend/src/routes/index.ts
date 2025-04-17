@@ -20,7 +20,7 @@ const v1Router = Router();
 
 // Mount the routers
 v1Router.use("/auth", authRouter);
-v1Router.use("/players", authenticateJWT, playerRouter);
+v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/organizations", organizationRouter);
 v1Router.use("/filters", filtersRouter);

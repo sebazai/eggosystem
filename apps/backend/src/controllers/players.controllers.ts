@@ -77,3 +77,29 @@ export const getPlayersByFiltersController = async (
   // Return the players as a response
   res.json(players);
 };
+
+/**
+ * Get player stats with filters
+ * @route GET /api/v1/players/stats
+ */
+export const getPlayerStatsByFiltersController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { parsedParams } = req;
+    console.log("Player stats filter params:", parsedParams);
+
+    // Fetch player stats from database using the model
+    const playerStats = await getPlayersByFilters(parsedParams);
+
+    console.log(
+      `Found ${Array.isArray(playerStats) ? playerStats.length : 0} players from database`
+    );
+
+    res.status(200).json(playerStats);
+  } catch (error) {
+    console.error("Error fetching player stats:", error);
+    res.status(500).json({ error: "Failed to fetch player stats" });
+  }
+};

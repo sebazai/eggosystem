@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useMemo } from "react";
-import Image from "next/image";
+import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { type PlayerStats } from "@/hooks/data/usePlayers";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider
+} from "@/components/ui/tooltip";
 
 interface PlayerTableProps {
   players: PlayerStats[];
@@ -11,33 +17,104 @@ interface PlayerTableProps {
   onPlayerClick?: (nickname: string) => void;
 }
 
+type SortDirection = "asc" | "desc";
+
+// Column definitions with full names for tooltips
+const COLUMN_TOOLTIPS: Record<string, string> = {
+  nickname: "Player Nickname",
+  team_name: "Team Name",
+  matches_played: "Games Played",
+  kills: "Kills",
+  assists: "Assists (Flash Assists)",
+  deaths: "Deaths",
+  awp_kills: "AWP Kills",
+  utility_damage: "Utility Damage",
+  headshots: "Headshots",
+  first_kills: "First Kills",
+  first_deaths: "First Deaths",
+  adr: "Average Damage per Round",
+  hs_percent: "Headshot Percentage",
+  kd: "Kill/Death Ratio",
+  kana_rating: "Kanaliiga Rating"
+};
+
 export const PlayerTable: React.FC<PlayerTableProps> = ({
   players,
   isLoading,
   onPlayerClick
 }) => {
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: SortDirection;
+  }>({
+    key: "kana_rating",
+    direction: "desc"
+  });
+
   // Column definitions for the table
   const columns = useMemo(
     () => [
-      { key: "nickname", label: "Player", sortable: true },
-      { key: "team_name", label: "Team", sortable: true },
-      { key: "matches_played", label: "GP", sortable: true },
-      { key: "kills", label: "K", sortable: true },
-      { key: "assists", label: "A", sortable: true },
-      { key: "deaths", label: "D", sortable: true },
-      { key: "flash_assists", label: "FA", sortable: true },
-      { key: "awp_kills", label: "AWP", sortable: true },
-      { key: "utility_damage", label: "UD", sortable: true },
-      { key: "headshots", label: "HS", sortable: true },
-      { key: "first_kills", label: "FK", sortable: true },
-      { key: "first_deaths", label: "FD", sortable: true },
-      { key: "adr", label: "ADR", sortable: true },
-      { key: "kana_rating", label: "Rating", sortable: true },
-      { key: "hs_percent", label: "HS%", sortable: true },
-      { key: "kd", label: "K/D", sortable: true }
+      { key: "nickname", label: "Player", sortable: true, responsive: true },
+      { key: "team_name", label: "Team", sortable: true, responsive: true },
+      { key: "matches_played", label: "GP", sortable: true, responsive: false },
+      { key: "kills", label: "K", sortable: true, responsive: true },
+      {
+        key: "assists",
+        label: (
+          <>
+            A<span className="text-transform-none">(f)</span>
+          </>
+        ),
+        sortable: true,
+        responsive: false
+      },
+      { key: "deaths", label: "D", sortable: true, responsive: true },
+      { key: "awp_kills", label: "AWP", sortable: true, responsive: false },
+      { key: "utility_damage", label: "UD", sortable: true, responsive: false },
+      { key: "headshots", label: "HS", sortable: true, responsive: false },
+      { key: "first_kills", label: "FK", sortable: true, responsive: false },
+      { key: "first_deaths", label: "FD", sortable: true, responsive: false },
+      { key: "adr", label: "ADR", sortable: true, responsive: true },
+      { key: "hs_percent", label: "HS%", sortable: true, responsive: false },
+      { key: "kd", label: "K/D", sortable: true, responsive: false },
+      { key: "kana_rating", label: "Rating", sortable: true, responsive: true }
     ],
     []
   );
+
+  const handleSortClick = (key: string) => {
+    let direction: SortDirection = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "desc") {
+      direction = "asc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortedPlayers = useMemo(() => {
+    if (!players || players.length === 0) return [];
+
+    const sortableItems = [...players];
+    sortableItems.sort((a, b) => {
+      // Get values for the sort key
+      const aValue = a[sortConfig.key as keyof PlayerStats];
+      const bValue = b[sortConfig.key as keyof PlayerStats];
+
+      // Handle special cases for strings and nulls
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortConfig.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      // Convert to numbers for comparison
+      const aNum = aValue === null || aValue === undefined ? 0 : Number(aValue);
+      const bNum = bValue === null || bValue === undefined ? 0 : Number(bValue);
+
+      return sortConfig.direction === "asc" ? aNum - bNum : bNum - aNum;
+    });
+
+    return sortableItems;
+  }, [players, sortConfig]);
 
   const handleRowClick = (nickname: string) => {
     if (onPlayerClick) {
@@ -45,120 +122,176 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     }
   };
 
+  const getTopPlayerClass = (index: number) => {
+    if (index < 3) return "bg-[#1e1e1e] font-bold";
+    return "";
+  };
+
   return (
-    <div className="bg-card rounded-md overflow-hidden">
-      <div className="overflow-auto">
-        <table className="w-full min-w-[800px]">
-          <thead>
-            <tr className="bg-kanaliiga-light-brown/20 text-xs uppercase">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={cn(
-                    "px-4 py-3 text-left whitespace-nowrap font-semibold text-muted-foreground",
-                    {
-                      "text-center":
-                        column.key !== "nickname" && column.key !== "team_name"
+    <TooltipProvider>
+      <div className="bg-card rounded-sm overflow-hidden">
+        <div className="overflow-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-[#2a1810] text-xs uppercase">
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={cn(
+                      "px-4 py-3 text-center whitespace-nowrap font-semibold text-kanaliiga-orange",
+                      {
+                        "cursor-pointer hover:bg-[#3a281a]": column.sortable,
+                        "hidden md:table-cell": !column.responsive
+                      }
+                    )}
+                    onClick={() =>
+                      column.sortable && handleSortClick(column.key)
                     }
-                  )}
-                >
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              // Loading skeletons
-              Array.from({ length: 10 }).map((_, index) => (
-                <tr key={index} className="border-b border-border">
-                  {columns.map((column) => (
-                    <td key={column.key} className="px-4 py-3">
-                      <div className="h-4 w-full bg-gray-800 rounded animate-pulse"></div>
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : players.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  No players found with the current filters
-                </td>
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center">
+                          <span>{column.label}</span>
+                          {column.sortable && sortConfig.key === column.key && (
+                            <span className="inline-block ml-1">
+                              {sortConfig.direction === "asc" ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="bg-gray-900 border border-gray-700 text-white px-2 py-1 text-xs"
+                      >
+                        {COLUMN_TOOLTIPS[column.key] || column.key}
+                      </TooltipContent>
+                    </Tooltip>
+                  </th>
+                ))}
               </tr>
-            ) : (
-              players.map((player: PlayerStats, index: number) => (
-                <tr
-                  key={`${player.nickname}-${index}`}
-                  className={cn("border-b border-border transition-colors", {
-                    "hover:bg-kanaliiga-light-brown/10 cursor-pointer":
-                      !!onPlayerClick
-                  })}
-                  onClick={() =>
-                    onPlayerClick && handleRowClick(player.nickname)
-                  }
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-medium">{player.nickname}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {player.team_logo && (
-                        <Image
-                          src={player.team_logo}
-                          alt={player.team_name}
-                          width={20}
-                          height={20}
-                          className="rounded-full"
-                        />
-                      )}
-                      <span className="text-sm text-muted-foreground">
-                        {player.team_name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {player.matches_played}
-                  </td>
-                  <td className="px-4 py-3 text-center">{player.kills}</td>
-                  <td className="px-4 py-3 text-center">{player.assists}</td>
-                  <td className="px-4 py-3 text-center">{player.deaths}</td>
-                  <td className="px-4 py-3 text-center">
-                    {player.flash_assists}
-                  </td>
-                  <td className="px-4 py-3 text-center">{player.awp_kills}</td>
-                  <td className="px-4 py-3 text-center">
-                    {player.utility_damage}
-                  </td>
-                  <td className="px-4 py-3 text-center">{player.headshots}</td>
-                  <td className="px-4 py-3 text-center">
-                    {player.first_kills}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {player.first_deaths}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {player.adr?.toFixed(1) || 0}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {player.kana_rating?.toFixed(2) || 0}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {player.hs_percent?.toFixed(1) || 0}%
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {typeof player.kd === "number"
-                      ? player.kd.toFixed(2)
-                      : (player.kills / Math.max(player.deaths, 1)).toFixed(2)}
+            </thead>
+            <tbody>
+              {isLoading ? (
+                // Loading skeletons
+                Array.from({ length: 10 }).map((_, index) => (
+                  <tr key={index} className="border-b border-border">
+                    {columns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={cn("px-4 py-3", {
+                          "hidden md:table-cell": !column.responsive
+                        })}
+                      >
+                        <div className="h-4 w-full bg-gray-800 rounded animate-pulse"></div>
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : players.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    No players found with the current filters
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                getSortedPlayers.map((player: PlayerStats, index: number) => (
+                  <tr
+                    key={`${player.nickname}-${index}`}
+                    className={cn(
+                      "border-b border-border transition-colors",
+                      getTopPlayerClass(index),
+                      {
+                        "hover:bg-kanaliiga-light-brown/10 cursor-pointer":
+                          !!onPlayerClick
+                      }
+                    )}
+                    onClick={() =>
+                      onPlayerClick && handleRowClick(player.nickname)
+                    }
+                  >
+                    <td className="px-4 py-3">
+                      <div
+                        className={cn("font-medium", {
+                          "text-white": index < 3,
+                          "text-foreground": index >= 3
+                        })}
+                      >
+                        {player.nickname}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {player.team_name || "No team"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.matches_played}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">
+                      {player.kills}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.assists}(
+                      <span className="text-xs">
+                        {player.flash_assists || 0}
+                      </span>
+                      )
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">
+                      {player.deaths}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.awp_kills}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.utility_damage}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.headshots}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.first_kills}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.first_deaths}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">
+                      {player.adr?.toFixed(1) || 0}
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {player.hs_percent?.toFixed(1) || 0}%
+                    </td>
+                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      {typeof player.kd === "number"
+                        ? player.kd.toFixed(2)
+                        : (player.kills / Math.max(player.deaths, 1)).toFixed(
+                            2
+                          )}
+                    </td>
+                    <td
+                      className={cn("px-4 py-3 text-center", {
+                        "font-bold text-white": index < 3,
+                        "text-muted-foreground": index >= 3
+                      })}
+                    >
+                      {player.kana_rating?.toFixed(2) || 0}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };

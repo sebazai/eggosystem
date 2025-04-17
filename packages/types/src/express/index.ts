@@ -12,6 +12,7 @@ export interface ParsedParams {
   team_ids: Nullable<number[]>;
   stages: Nullable<number[]>;
   map_ids: Nullable<number[]>;
+  steam_ids?: Nullable<string[]>;
   leaderboards?: Nullable<string>;
 }
 

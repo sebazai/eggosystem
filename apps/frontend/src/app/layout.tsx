@@ -124,11 +124,11 @@ export default function RootLayout({
             loop
             playsInline
             preload="none"
-            poster={createNextImageUrl("/images/kana_background_nuke.jpg")}
+            poster={createNextImageUrl("/images/newbg.png")}
             className="absolute inset-0 w-full h-full object-cover"
           >
             <source
-              src={createNextImageUrl("/images/kanahub_bg_black.webm")}
+              src={createNextImageUrl("/images/newbg.png")}
               type="video/webm"
             />
             Your browser does not support the video tag.
