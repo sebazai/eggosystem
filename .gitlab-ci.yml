@@ -344,6 +344,8 @@ build-dockerfile:frontend:
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache,mode=max,compression=zstd
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
@@ -577,6 +579,7 @@ deploy-ondemand:
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}-cache
       --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
