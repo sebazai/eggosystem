@@ -16,10 +16,7 @@ export default function LeaderboardsPage() {
     const seasons = getParamArray(searchParams, "seasons");
     const activeSeason = activeSeasonHook.activeSeason?.season_id;
     return {
-      seasons:
-        activeSeason && seasons.length === 0 && searchParams.size === 0
-          ? [activeSeason]
-          : seasons,
+      seasons: activeSeason && seasons.length === 0 ? [activeSeason] : seasons,
       leagues: getParamArray(searchParams, "leagues"),
       stages: getParamArray(searchParams, "stages"),
       teams: getParamArray(searchParams, "teams"),

@@ -68,7 +68,7 @@ export const getLeaderboard = async ({
 
   if (league_ids && league_ids.length > 0) {
     const placeholders = league_ids.map(() => "?").join(",");
-    queryFilters.push(`m.league_id IN (${placeholders})`);
+    queryFilters.push(`l.id IN (${placeholders})`);
     queryParams.push(...league_ids);
   }
 
@@ -87,6 +87,10 @@ export const getLeaderboard = async ({
   const whereClause =
     queryFilters.length > 0 ? `WHERE ${queryFilters.join(" AND ")}` : "";
 
+  // Use INNER JOIN for team-related tables when filtering by team_id,
+  // otherwise use LEFT JOIN to include all players
+  const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
+
   const query = `
     SELECT 
       sp.nickname,
@@ -98,14 +102,18 @@ export const getLeaderboard = async ({
     INNER JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
-    INNER JOIN Teams t ON t.id = stp.team_id
+    INNER JOIN Leagues l ON m.league_id = l.id
+    ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
+    ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
     ${whereClause}
     GROUP BY ps.steam_id, sp.nickname, t.name, t.team_logo
     HAVING matches_played > 0
     ORDER BY ${leaderboards} DESC
     LIMIT 5
   `;
+
+  console.log("Executing leaderboard query:", query);
+  console.log("With parameters:", queryParams);
 
   return runQuery(query, queryParams);
 };
