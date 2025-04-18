@@ -31,6 +31,7 @@ interface UsePlayersProps {
   team_ids: Nullable<number[]>;
   stages: Nullable<number[]>;
   map_ids: Nullable<number[]>;
+  player_name?: Nullable<string>;
 }
 
 // Custom fetcher that directly talks to the backend
@@ -51,7 +52,8 @@ export const usePlayers = ({
   league_ids,
   team_ids,
   stages,
-  map_ids
+  map_ids,
+  player_name
 }: UsePlayersProps) => {
   const params: FilterParamsQuery = {
     seasons: season_ids || [],
@@ -63,10 +65,19 @@ export const usePlayers = ({
 
   const sortedQuery = generateFiltersParamQuery(params);
 
-  console.log("Player filter params:", params);
+  // Add player name search parameter if provided
+  const playerNameQuery = player_name
+    ? `&playerName=${encodeURIComponent(player_name)}`
+    : "";
+
+  console.log(
+    "Player filter params:",
+    params,
+    player_name ? { playerName: player_name } : {}
+  );
 
   const { data, error, isValidating } = useSWR<PlayerStats[]>(
-    `/api/v1/players/stats?${sortedQuery}`,
+    `/api/v1/players/stats?${sortedQuery}${playerNameQuery}`,
     directBackendFetcher,
     {
       revalidateOnFocus: false

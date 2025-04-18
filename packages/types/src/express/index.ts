@@ -14,6 +14,7 @@ export interface ParsedParams {
   map_ids: Nullable<number[]>;
   steam_ids?: Nullable<string[]>;
   leaderboards?: Nullable<string>;
+  playerName?: Nullable<string>;
 }
 
 export interface UserPayload {

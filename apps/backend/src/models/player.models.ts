@@ -41,7 +41,8 @@ export const getPlayersByFilters = async ({
   team_ids,
   stages,
   map_ids,
-  steam_ids
+  steam_ids,
+  playerName
 }: ParsedParams) => {
   // Create query and params arrays
   const queryFilters: string[] = [];
@@ -52,6 +53,12 @@ export const getPlayersByFilters = async ({
     const placeholders = steam_ids.map(() => "?").join(",");
     queryFilters.push(`p.steam_id IN (${placeholders})`);
     queryParams.push(...steam_ids);
+  }
+
+  // Handle playerName filtering
+  if (playerName) {
+    queryFilters.push(`p.nickname LIKE ?`);
+    queryParams.push(`%${playerName}%`);
   }
 
   // Handle direct filters

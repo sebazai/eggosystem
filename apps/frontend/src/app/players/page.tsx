@@ -9,11 +9,13 @@ import { usePlayers } from "@/hooks/data/usePlayers";
 import { PlayerTable } from "@/components/players/player-table";
 import { WithActiveSeason } from "@/components/filters/with-active-season";
 import { TheContainer } from "@/components/layout/the-container";
+import { PlayerNameFilter } from "@/components/filters/player-name-filter";
 
 export default function PlayersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeSeasonHook = useActiveSeason("730");
+  const playerName = searchParams.get("playerName") || "";
 
   const params = useMemo(() => {
     const seasons = getParamArray(searchParams, "seasons");
@@ -33,7 +35,8 @@ export default function PlayersPage() {
     league_ids: params.leagues.length ? params.leagues : null,
     team_ids: params.teams.length ? params.teams : null,
     stages: params.stages.length ? params.stages : null,
-    map_ids: params.maps.length ? params.maps : null
+    map_ids: params.maps.length ? params.maps : null,
+    player_name: playerName || null
   });
 
   const handlePlayerClick = (steamId: string) => {
@@ -47,14 +50,24 @@ export default function PlayersPage() {
   return (
     <WithActiveSeason>
       <div className="p-0">
-        <MultiFilters
-          seasons={params.seasons}
-          leagues={params.leagues}
-          stages={params.stages}
-          teams={params.teams}
-          maps={params.maps}
-        />
+        {/* Filter section */}
+        <div className="mb-4">
+          <div className="mb-2">
+            <MultiFilters
+              seasons={params.seasons}
+              leagues={params.leagues}
+              stages={params.stages}
+              teams={params.teams}
+              maps={params.maps}
+            />
+          </div>
 
+          <div className="px-1">
+            <PlayerNameFilter initialPlayerName={playerName} />
+          </div>
+        </div>
+
+        {/* Content section */}
         <div
           className="min-h-fit pb-8 px-4"
           style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
