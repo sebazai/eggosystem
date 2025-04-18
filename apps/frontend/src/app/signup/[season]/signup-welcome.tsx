@@ -5,7 +5,6 @@ import { SteamLoginButton } from "@/components/steam-login";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
-import { useServerTime } from "@/hooks/useNow";
 import Link from "next/link";
 
 interface SignupWelcomeProps {
@@ -16,7 +15,6 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   const { seasonDetails, isLoading, isError, isValidating } =
     useSeasonDetails(seasonId);
   const { user, loading } = useAuth();
-  const serverTime = useServerTime();
 
   if (isLoading || isValidating || loading) {
     return <TheContainer>Loading...</TheContainer>;
@@ -24,30 +22,6 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   if (isError || !seasonDetails) {
     return (
       <TheContainer>{isError?.message ?? "Season does not exist"}</TheContainer>
-    );
-  }
-
-  if (!seasonDetails.signup_start_date || !seasonDetails.signup_end_date) {
-    return (
-      <TheContainer>
-        Season sign up dates are not set. Please come back later.
-      </TheContainer>
-    );
-  }
-
-  if (new Date(seasonDetails.signup_start_date).getTime() > serverTime) {
-    return (
-      <TheContainer>
-        Season sign up has not started yet. Please come back later.
-      </TheContainer>
-    );
-  }
-
-  if (new Date(seasonDetails.signup_end_date).getTime() < serverTime) {
-    return (
-      <TheContainer>
-        Season sign up has ended. Please wait for the next season.
-      </TheContainer>
     );
   }
 

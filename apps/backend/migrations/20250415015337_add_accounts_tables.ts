@@ -34,20 +34,10 @@ export async function up(knex: Knex): Promise<void> {
   });
 
   // Insert new accounts for each player and link them with Steam data
-  const players = await knex("SteamPlayers").select(
-    "steam_id",
-    "email",
-    "work_email",
-    "discord",
-    "full_name"
-  );
+  const players = await knex("SteamPlayers").select("steam_id");
 
   for (const player of players) {
     const [accountId] = await knex("Accounts").insert({
-      work_email: player.work_email || null,
-      email: player.email || null,
-      discord: player.discord || null,
-      full_name: player.full_name || null,
       created_at: knex.fn.now()
     });
 

@@ -5,42 +5,54 @@ export const config = { transaction: false };
 // Import Games, Leagues, and Seasons tables
 export async function up(knex: Knex): Promise<void> {
   // Define the trigger creation statements
-  const createBeforeInsertTrigger = `
+  await knex.raw(`
         CREATE TRIGGER before_insert_primary_check
         BEFORE INSERT ON SeasonTeamPlayers
         FOR EACH ROW
         BEGIN
-            IF NEW.role = 'primary' THEN
-                IF (SELECT COUNT(*) FROM SeasonTeamPlayers
-                    WHERE season_id = NEW.season_id
-                      AND role = 'primary'
-                      AND steam_id = NEW.steam_id) > 0 THEN
-                    SIGNAL SQLSTATE '45000'
-                    SET MESSAGE_TEXT = 'A player can only be primary for one team per season';
-                END IF;
+          DECLARE conflicting_team_id INT;
+
+          IF NEW.role = 'primary' THEN
+            SELECT team_id INTO conflicting_team_id
+            FROM SeasonTeamPlayers
+            WHERE season_id = NEW.season_id
+              AND role = 'primary'
+              AND steam_id = NEW.steam_id
+            LIMIT 1;
+
+            IF conflicting_team_id IS NOT NULL THEN
+              SET @errorMsg = CONCAT('Player ', NEW.steam_id,' is already registered as primary for team ', conflicting_team_id,' in season ', NEW.season_id, '.');
+              SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
             END IF;
-        END;
-      `;
+          END IF;
+        END ;
+      `);
 
   const createBeforeUpdateTrigger = `
         CREATE TRIGGER before_update_primary_check
         BEFORE UPDATE ON SeasonTeamPlayers
         FOR EACH ROW
         BEGIN
+            DECLARE conflicting_team_id INT;
+
             IF NEW.role = 'primary' THEN
-                IF (SELECT COUNT(*) FROM SeasonTeamPlayers
-                    WHERE season_id = NEW.season_id
-                      AND role = 'primary'
-                      AND steam_id = NEW.steam_id
-                      AND (team_id <> NEW.team_id OR steam_id <> NEW.steam_id)) > 0 THEN
-                    SIGNAL SQLSTATE '45000'
-                    SET MESSAGE_TEXT = 'A player can only be primary for one team per season';
+                SELECT team_id
+                INTO conflicting_team_id
+                FROM SeasonTeamPlayers
+                WHERE season_id = NEW.season_id
+                  AND role = 'primary'
+                  AND steam_id = NEW.steam_id
+                  AND (team_id <> NEW.team_id OR steam_id <> NEW.steam_id)
+                LIMIT 1;
+
+                IF conflicting_team_id IS NOT NULL THEN
+                    SET @errorMsg = CONCAT('Player ', NEW.steam_id, ' is already registered as primary for team ', conflicting_team_id,' in season ', NEW.season_id, '.');
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
                 END IF;
             END IF;
         END;
       `;
 
-  await knex.raw(createBeforeInsertTrigger);
   await knex.raw(createBeforeUpdateTrigger);
 }
 

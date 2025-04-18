@@ -24,32 +24,32 @@ const validSignupData = {
   teamExternalId: "team-123",
   players: [
     {
-      account_id: 1,
-      steam_id: "12345678901234567",
+      accountId: 1,
+      steamId: "12345678901234567",
       nickname: "Player One",
       discord: "playerOne#1234",
       captain: true
     },
     {
-      account_id: 2,
-      steam_id: "12345678901234568",
+      accountId: 2,
+      steamId: "12345678901234568",
       nickname: "Player Two",
       discord: "playerTwo#1234",
-      co_captain: true
+      coCaptain: true
     },
     {
-      account_id: 3,
-      steam_id: "12345678901234569",
+      accountId: 3,
+      steamId: "12345678901234569",
       nickname: "Player three"
     },
     {
-      account_id: 4,
-      steam_id: "12345678901234570",
+      accountId: 4,
+      steamId: "12345678901234570",
       nickname: "Player Four"
     },
     {
-      account_id: 5,
-      steam_id: "12345678901234571",
+      accountId: 5,
+      steamId: "12345678901234571",
       nickname: "Player Five"
     }
   ]
@@ -142,7 +142,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
 
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ "Season signup": true });
+    expect(res.json).toHaveBeenCalledWith({ team_id: 1, organization_id: 1 });
   });
 
   it("insertSeasonTeamRegistration & insertSeasonTeamPlayer should be called with correct parameters", async () => {
@@ -183,7 +183,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
     expect(insertSeasonTeamPlayer).toHaveBeenCalledTimes(5);
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ "Season signup": true });
+    expect(res.json).toHaveBeenCalledWith({ team_id: 1, organization_id: 1 });
   });
 
   it("should handle new organization and new team successfully", async () => {
@@ -226,7 +226,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
 
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ "Season signup": true });
+    expect(res.json).toHaveBeenCalledWith({ team_id: 666, organization_id: 1 });
   });
 
   it("should handle existing organization and new team successfully", async () => {
@@ -260,7 +260,10 @@ describe("addSignupForSeason - Try Catch Block", () => {
     );
 
     expect(mockConnection.commit).toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ "Season signup": true });
+    expect(res.json).toHaveBeenCalledWith({
+      team_id: 1337,
+      organization_id: 1
+    });
   });
   it("should return error if team is not part of organization", async () => {
     req.body.organizationId = 1;

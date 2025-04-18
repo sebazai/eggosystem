@@ -3,29 +3,28 @@ import { SeasonPlatform } from "@eggosystem/types";
 
 const playerSchema = z
   .object({
-    account_id: z.number(),
-    steam_id: z.string().length(17),
+    accountId: z.number(),
+    steamId: z.string().length(17),
     nickname: z.string().min(1).max(50),
-    has_valid_data: z.boolean().optional(),
-    is_profile_public: z.boolean().optional(),
+    hasValidData: z.boolean().optional(),
+    isProfilePublic: z.boolean().optional(),
     hours: z.number().optional(),
     rank: z.number().optional(),
-    external_rank: z.number().optional(),
+    externalRank: z.number().optional(),
     discord: z.string().optional(),
     captain: z.boolean().optional(),
-    co_captain: z.boolean().optional()
+    coCaptain: z.boolean().optional()
   })
   .refine(
     (player) =>
-      !(player.captain || player.co_captain) || !!player.discord?.trim(),
+      !(player.captain || player.coCaptain) || !!player.discord?.trim(),
     {
       message: "Captains and co-captains must provide a Discord username.",
       path: ["discord"]
     }
   )
   .refine(
-    (player) =>
-      !isNaN(Number(player.steam_id)) && player.steam_id.length === 17,
+    (player) => !isNaN(Number(player.steamId)) && player.steamId.length === 17,
     { message: "Invalid SteamID", path: ["steam_id"] }
   );
 
@@ -65,7 +64,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
         .refine(
           (players) => {
             const captains = players.filter((p) => p.captain === true);
-            const coCaptains = players.filter((p) => p.co_captain === true);
+            const coCaptains = players.filter((p) => p.coCaptain === true);
             return captains.length === 1 && coCaptains.length === 1;
           },
           {
@@ -74,7 +73,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
         )
         .refine(
           (players) => {
-            const steamIds = new Set(players.map((p) => p.steam_id));
+            const steamIds = new Set(players.map((p) => p.steamId));
             return steamIds.size === players.length;
           },
           {
@@ -133,7 +132,7 @@ const signupFormSchema = (context: { platform: SeasonPlatform }) =>
     );
 
 export type SignupFormValues = z.infer<ReturnType<typeof signupFormSchema>>;
-export type PlayerSchemaType = typeof playerSchema;
+export type PlayerSchemaType = z.infer<typeof playerSchema>;
 
 export {
   playerSchema,

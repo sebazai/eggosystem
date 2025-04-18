@@ -1,31 +1,14 @@
 import { envConfig } from "@/configs/env";
-import type { Metadata } from "next";
 import { SignupForm } from "@/components/signup/signup-form";
 import { SignupInfo } from "@/components/signup/signup-info";
 import type { Season } from "@eggosystem/types";
 
-type Props = {
+type SignupPageProps = {
   params: Promise<{ season: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { season } = await params;
-
-  const result = await fetch(`${envConfig.API_URL}/api/v1/seasons/${season}`);
-
-  if (!result.ok) {
-    return {
-      title: "Failed to fetch season"
-    };
-  }
-  const data = await result.json();
-  return {
-    title: `Registration form for ${data.full_name}`
-  };
-}
-
-export default async function SignupPage({ params }: Props) {
+export default async function SignupPage({ params }: SignupPageProps) {
   const { season } = await params;
   const result = await fetch(`${envConfig.API_URL}/api/v1/seasons/${season}`);
   const data: Season = await result.json();

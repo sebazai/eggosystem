@@ -135,7 +135,7 @@ export const addSignupForSeason = async (
     );
   }
 
-  const steamIds = formData.players.map((p) => p.steam_id);
+  const steamIds = formData.players.map((p) => p.steamId);
   const areProfilePublic = await areSteamProfilesPublic(steamIds);
   if (!areProfilePublic.is_all_public) {
     throw new Error(
@@ -148,9 +148,9 @@ export const addSignupForSeason = async (
     await connection.beginTransaction();
     const playersForTeamRegistration = formData.players.map((player) => {
       return {
-        steam_id: player.steam_id,
+        steam_id: player.steamId,
         is_captain: player.captain,
-        is_co_captain: player.co_captain
+        is_co_captain: player.coCaptain
       };
     });
 
@@ -190,6 +190,12 @@ export const addSignupForSeason = async (
             },
             connection
           );
+          await connection.commit();
+          res.status(200).json({
+            team_id: newTeam.insertId,
+            organization_id: newOrg.insertId
+          });
+          return;
         }
       }
     }
@@ -215,6 +221,12 @@ export const addSignupForSeason = async (
             },
             connection
           );
+          await connection.commit();
+          res.status(200).json({
+            team_id: newTeam.insertId,
+            organization_id: formData.organizationId
+          });
+          return;
         }
       }
     }
@@ -241,17 +253,17 @@ export const addSignupForSeason = async (
         },
         connection
       );
+      await connection.commit();
+      res.status(200).json({
+        team_id: formData.teamId,
+        organization_id: formData.organizationId
+      });
+      return;
     }
-
-    await connection.commit();
   } catch (error) {
     await connection.rollback();
     throw error;
   } finally {
     connection.release();
   }
-
-  // If teamId -1, then create a new team
-
-  res.json({ "Season signup": true });
 };

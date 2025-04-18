@@ -101,15 +101,10 @@ export async function apiFetch<T>(params: ApiFetch): Promise<T> {
     }
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Error:", errorData);
-      if (
-        errorData &&
-        typeof errorData === "object" &&
-        "message" in errorData &&
-        typeof errorData.message === "string"
-      ) {
-        throw new ApiError(errorData.message, response.status);
+      const errData = await response.json();
+      console.error("API Client Error:", errData);
+      if (typeof errData?.error?.message === "string") {
+        throw new ApiError(errData.error.message, response.status);
       }
       throw new Error(`Request failed with status ${response.status}`);
     }

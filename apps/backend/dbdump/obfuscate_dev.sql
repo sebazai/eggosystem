@@ -121,7 +121,7 @@ VALUES ('John', 'Smith'),
     ('Mackenzie', 'Mendoza');
 -- Step 1: Create a temporary table with unique random player names
 CREATE TEMPORARY TABLE TempPlayerNames AS
-SELECT p.account_id,
+SELECT p.id as account_id,
     CONCAT(fn1.firstname, ' ', fn2.lastname) AS new_player_name
 FROM Accounts p
     JOIN fake_names fn1 ON RAND() < 0.5 -- Random selection of firstname
@@ -129,7 +129,7 @@ FROM Accounts p
 ORDER BY RAND();
 -- Step 2: Update Accounts table
 UPDATE Accounts p
-    JOIN TempPlayerNames tpn ON p.account_id = tpn.account_id
+    JOIN TempPlayerNames tpn ON p.id = tpn.account_id
 SET p.full_name = tpn.new_player_name;
 -- Step 3: Drop temporary table
 DROP TEMPORARY TABLE TempPlayerNames;

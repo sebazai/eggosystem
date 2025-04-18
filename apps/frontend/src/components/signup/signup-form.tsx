@@ -16,17 +16,20 @@ import { TabTeam } from "./signup-tab-team";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiFetch } from "@/lib/apiClient";
+import { ApiError, apiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
   type FaceITTeamDetails,
+  type PlayerSchemaType,
   type SignupFormValues
 } from "@eggosystem/types";
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
+import { CopyInput } from "@/components/inputs/CopyInput";
 
 interface SignupFormProps {
   seasonId: string;
   platform: SeasonPlatform;
+  editValues?: SignupFormValues;
 }
 
 const validateExternalPlaformId = async (
@@ -41,12 +44,17 @@ const validateExternalPlaformId = async (
   }
 };
 
-export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
+export const SignupForm = ({
+  seasonId,
+  platform,
+  editValues
+}: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState("organization");
   const { user, loading: loadingUser } = useAuth();
   const schema = signupFormSchema({ platform });
   const baseSchema = baseSignupFormSchema({ platform })._def.schema;
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fetchingExternalData, setFetchingExternalData] = useState(false);
   const [validExternalTeamId, setValidExternalTeamId] = useState(
@@ -55,25 +63,25 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: {
+    defaultValues: editValues ?? {
       organizationId: undefined,
       teamId: undefined,
       newOrganization: undefined,
       newTeam: undefined,
       teamExternalId: "",
       players: Array(5).fill({
-        account_id: 0,
-        steam_id: "",
+        accountId: 0,
+        steamId: "",
         nickname: "",
         discord: "",
         captain: false,
-        co_captain: false,
-        has_valid_data: undefined,
-        is_profile_public: undefined,
+        coCaptain: false,
+        hasValidData: undefined,
+        isProfilePublic: undefined,
         hours: undefined,
         rank: undefined,
-        external_rank: undefined
-      })
+        externalRank: undefined
+      } satisfies PlayerSchemaType)
     }
   });
 
@@ -173,7 +181,10 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
-      await apiFetch({
+      const returnValue = await apiFetch<{
+        team_id: number;
+        organization_id: number;
+      }>({
         url: `/seasons/${seasonId}/signup`,
         method: "POST",
         body: data
@@ -181,10 +192,21 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
       setSuccessMessage(
         "Team registered succesfully, please remember to pay participation fee."
       );
-    } catch (_error) {
+      setEditUrl(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/signup/${seasonId}/registration/team/${returnValue.team_id}`
+      );
+    } catch (error: unknown) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+        return;
+      }
       setErrorMessage("Something went wrong... Please contact organizer.");
     }
   };
+
+  if (!user) {
+    return <RequiresSteamLogin />;
+  }
 
   if (isLoading || isValidating || loadingUser) {
     return <TheContainer classNames="w-full">Loading...</TheContainer>;
@@ -196,10 +218,6 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
         {isError?.message ?? "Something went wrong..."}
       </TheContainer>
     );
-  }
-
-  if (!user) {
-    return <RequiresSteamLogin />;
   }
 
   const onNext = (value: string) => {
@@ -227,10 +245,10 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
     validPlayers &&
     watchPlayers.every(
       (p) =>
-        p.has_valid_data &&
-        p.is_profile_public &&
+        p.hasValidData &&
+        p.isProfilePublic &&
         p.rank !== -1 &&
-        p.external_rank !== -1 &&
+        p.externalRank !== -1 &&
         p.hours !== -1
     );
 
@@ -337,8 +355,14 @@ export const SignupForm = ({ seasonId, platform }: SignupFormProps) => {
             />
 
             {successMessage && (
-              <div className="text-green-500 font-semibold">
-                {successMessage}
+              <div>
+                <div className="text-green-500 font-semibold py-2">
+                  {successMessage}
+                </div>
+                <div className="gap-2">
+                  Captains edit link:
+                  <CopyInput value={editUrl} />
+                </div>
               </div>
             )}
             {errorMessage && (
