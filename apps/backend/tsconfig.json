@@ -4,6 +4,7 @@
     "typeRoots": ["node_modules/@types", "./node_modules/@types", "src/types"],
     "types": ["jest", "node"],
     "outDir": "dist",
+    "isolatedModules": true,
     "paths": {
       "@eggosystem/types": ["../../packages/types/dist/index"]
     }

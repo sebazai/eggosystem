@@ -14,6 +14,16 @@ import {
   getLeaderboardController
 } from "../../controllers/leaderboards.controllers";
 
+// Mock console.warn to prevent logs during tests
+const originalConsoleWarn = console.warn;
+beforeAll(() => {
+  console.warn = jest.fn();
+});
+
+afterAll(() => {
+  console.warn = originalConsoleWarn;
+});
+
 // Mock middleware for multiple leaderboards endpoint
 const mockMultipleLeaderboardsMiddleware = (
   req: RequestWithParsedParams,
