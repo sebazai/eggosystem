@@ -82,3 +82,24 @@ export const createNextImageUrl = (url: string) => {
 export const createStatsKanaliigaImageUrl = (url: string) => {
   return `https://stats.kanaliiga.fi/img/${url}`;
 };
+
+export const formatImageUrl = (url: string) => {
+  if (!url) return "";
+
+  // Check if the URL already starts with a slash or is an absolute URL
+  if (
+    url.startsWith("/") ||
+    url.startsWith("http://") ||
+    url.startsWith("https://")
+  ) {
+    return url;
+  }
+
+  // If the URL starts with S14_, S15_, etc. (season prefixes), it's likely a team logo
+  if (/^S\d+_\d+\.png$/i.test(url)) {
+    return `/images/team-logos/${url}`;
+  }
+
+  // Add leading slash to make it compatible with next/image
+  return `/${url}`;
+};

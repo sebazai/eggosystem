@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { type TeamMatch } from "@/hooks/data/useTeamDetails";
+import { type TeamMatch } from "@/hooks/data/useTeamDetailsApi";
 import { cn } from "@/lib/utils";
 
 interface TeamMatchesProps {
@@ -57,6 +57,13 @@ const MatchCard: React.FC<{ match: TeamMatch }> = ({ match }) => {
     year: "numeric"
   }).format(new Date(match.date));
 
+  const resultClass =
+    match.result === "win"
+      ? resultClasses.win
+      : match.result === "loss"
+        ? resultClasses.loss
+        : resultClasses.tie;
+
   return (
     <Link
       href={`/matches/${match.id}`}
@@ -70,7 +77,7 @@ const MatchCard: React.FC<{ match: TeamMatch }> = ({ match }) => {
             </span>
             <span className="text-sm block mt-1">Map: {match.map_name}</span>
           </div>
-          <span className={cn("font-bold", resultClasses[match.result])}>
+          <span className={cn("font-bold", resultClass)}>
             {match.result.toUpperCase()}
           </span>
         </div>

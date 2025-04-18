@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { type TeamStats } from "@/hooks/data/useTeams";
+import { createStatsKanaliigaImageUrl } from "@/lib/utils";
 
 interface TeamsGridProps {
   teams: TeamStats[];
@@ -50,6 +51,23 @@ export const TeamsGrid: React.FC<TeamsGridProps> = ({ teams, isLoading }) => {
 };
 
 const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
+  const [imageError, setImageError] = useState(false);
+  const defaultLogoPath = "/teams/nologo.svg";
+
+  // Use createStatsKanaliigaImageUrl function for team logos
+  let logoUrl = defaultLogoPath;
+
+  if (!imageError && team.team_logo && team.team_logo.trim() !== "") {
+    try {
+      logoUrl = createStatsKanaliigaImageUrl(team.team_logo);
+    } catch (error) {
+      console.error("Error creating team logo URL:", error);
+    }
+  }
+
+  // Ensure win percentage is not greater than 100%
+  const winPercentage = Math.min(team.win_percentage, 100);
+
   return (
     <Link
       href={`/teams/${team.id}`}
@@ -58,11 +76,12 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
       <div className="bg-kanaliiga-light-brown/20 p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <Image
-            src={team.team_logo}
+            src={logoUrl}
             alt={`${team.name} logo`}
-            width={40}
-            height={40}
-            className="rounded-full"
+            width={60}
+            height={60}
+            className="bg-card object-contain"
+            onError={() => setImageError(true)}
           />
           <div>
             <h3 className="text-lg font-bold">{team.name}</h3>
@@ -80,8 +99,8 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
           />
           <StatBox
             label="Win %"
-            value={`${team.win_percentage.toFixed(1)}%`}
-            highlight={team.win_percentage > 50}
+            value={`${winPercentage.toFixed(1)}%`}
+            highlight={winPercentage > 50}
           />
         </div>
       </div>
@@ -111,7 +130,7 @@ const TeamCardSkeleton: React.FC = () => {
     <div className="bg-card rounded-md overflow-hidden">
       <div className="bg-kanaliiga-light-brown/20 p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-800 animate-pulse" />
+          <div className="w-[60px] h-[60px] bg-gray-800 animate-pulse" />
           <div className="space-y-2">
             <div className="h-5 w-32 bg-gray-800 rounded animate-pulse" />
             <div className="h-4 w-24 bg-gray-800 rounded animate-pulse" />
