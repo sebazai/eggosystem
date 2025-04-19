@@ -19,7 +19,13 @@ export default function AllMatches() {
       <h1>Recent matches</h1>
       <WithActiveSeason>
         <div className="py-2">
-          <MultiFilters {...activeSeasonHook.filterParams} />
+          <MultiFilters
+            seasons={activeSeasonHook.filterParams.seasons}
+            leagues={activeSeasonHook.filterParams.leagues}
+            stages={activeSeasonHook.filterParams.stages}
+            teams={activeSeasonHook.filterParams.teams}
+            maps={null}
+          />
         </div>
 
         <FilteredMatchesList
