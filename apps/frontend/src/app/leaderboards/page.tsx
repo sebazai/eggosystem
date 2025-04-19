@@ -11,7 +11,7 @@ import { TheContainer } from "@/components/layout/the-container";
 export default function LeaderboardsPage() {
   const { filterParams } = useActiveSeason("730");
   if (!filterParams) {
-    return <TheContainer>Fetching filters...</TheContainer>;
+    return <TheContainer>Fetching active season...</TheContainer>;
   }
   return (
     <WithActiveSeason>
