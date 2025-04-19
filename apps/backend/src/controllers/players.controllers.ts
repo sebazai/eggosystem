@@ -10,7 +10,7 @@ import {
   getPlayerAppIdRank,
   getPlayerRankForPlatform
 } from "../services/player-ranks.services";
-import { isSeasonPlatform } from "@eggosystem/types";
+import { isSeasonPlatform, RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
 
 export const getPlayerBySteamIdController = async (
@@ -68,17 +68,6 @@ export const getPlayerPlatformRank = async (req: Request, res: Response) => {
   res.status(400).json({ message: "Unknown platform enum" });
 };
 
-export const getPlayersByFiltersController = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  const { parsedParams } = req;
-  const players = await getPlayersByFilters(parsedParams);
-
-  // Return the players as a response
-  res.json(players);
-};
-
 /**
  * Get player stats with filters
  * @route GET /api/v1/players/stats
@@ -87,22 +76,12 @@ export const getPlayerStatsByFiltersController = async (
   req: Request,
   res: Response
 ) => {
-  try {
-    const { parsedParams } = req;
-    console.warn("Player stats filter params:", parsedParams);
+  const { parsedParams } = req;
 
-    // Fetch player stats from database using the model
-    const playerStats = await getPlayersByFilters(parsedParams);
+  // Fetch player stats from database using the model
+  const playerStats = await getPlayersByFilters(parsedParams);
 
-    console.warn(
-      `Found ${Array.isArray(playerStats) ? playerStats.length : 0} players from database`
-    );
-
-    res.status(200).json(playerStats);
-  } catch (error) {
-    console.error("Error fetching player stats:", error);
-    res.status(500).json({ error: "Failed to fetch player stats" });
-  }
+  res.status(200).json(playerStats);
 };
 
 /**
@@ -110,35 +89,23 @@ export const getPlayerStatsByFiltersController = async (
  * @route GET /api/v1/players/:steam_id/statistics
  */
 export const getPlayerDetailsWithStatsController = async (
-  req: Request,
+  req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ): Promise<void> => {
-  try {
-    const { steam_id } = req.params;
-    const { parsedParams } = req;
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
 
-    console.warn(
-      `Getting player details for steam_id: ${steam_id} with filters:`,
-      parsedParams
-    );
+  const playerDetails = await getPlayerDetailsWithStatsByFilters(
+    steam_id,
+    parsedParams
+  );
 
-    // Fetch player stats and match history from database using the model
-    const playerDetails = await getPlayerDetailsWithStatsByFilters(
-      steam_id,
-      parsedParams
-    );
-
-    if (!playerDetails.playerStats) {
-      res.status(404).json({
-        error: "Player not found or no stats match the given filters"
-      });
-      return;
-    }
-
-    // Return the player details as a response
-    res.status(200).json(playerDetails);
-  } catch (error) {
-    console.error("Error fetching player details:", error);
-    res.status(500).json({ error: "Failed to fetch player details" });
+  if (!playerDetails.playerStats) {
+    res.status(404).json({
+      error: "Player not found or no stats match the given filters"
+    });
+    return;
   }
+
+  res.status(200).json(playerDetails);
 };

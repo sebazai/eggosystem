@@ -29,25 +29,25 @@ export default function TopTeamsPage() {
   }, [searchParams, activeSeasonHook.activeSeason?.season_id]);
 
   return (
-    <div className="p-0">
-      <MultiFilters
-        seasons={params.seasons}
-        leagues={params.leagues}
-        stages={params.stages}
-        teams={null}
-        maps={params.maps}
-      />
+    <WithActiveSeason>
+      <div className="p-0">
+        <MultiFilters
+          seasons={params.seasons}
+          leagues={params.leagues}
+          stages={params.stages}
+          teams={null}
+          maps={params.maps}
+        />
 
-      <div
-        className="min-h-fit pb-8 px-4"
-        style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
-      >
-        <div className="max-w-[1400px] mx-auto">
-          <WithActiveSeason>
+        <div
+          className="min-h-fit pb-8 px-4"
+          style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
+        >
+          <div className="max-w-[1400px] mx-auto">
             <TopTeamsGrid filterQueryParams={params} />
-          </WithActiveSeason>
+          </div>
         </div>
       </div>
-    </div>
+    </WithActiveSeason>
   );
 }

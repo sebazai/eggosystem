@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
-import { type PlayerStats } from "@/hooks/data/usePlayers";
+import { cn, type FilterParamsQuery } from "@/lib/utils";
+import { usePlayerStats } from "@/hooks/data/usePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Tooltip,
@@ -10,11 +10,12 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
+import { TheContainer } from "@/components/layout/the-container";
+import { useSearchParams, useRouter } from "next/navigation";
+import type { PlayerStatsTable } from "@eggosystem/types";
 
 interface PlayerTableProps {
-  players: PlayerStats[];
-  isLoading: boolean;
-  onPlayerClick?: (steamId: string) => void;
+  filterQueryParams: FilterParamsQuery;
 }
 
 type SortDirection = "asc" | "desc";
@@ -39,10 +40,16 @@ const COLUMN_TOOLTIPS: Record<string, string> = {
 };
 
 export const PlayerTable: React.FC<PlayerTableProps> = ({
-  players,
-  isLoading,
-  onPlayerClick
+  filterQueryParams
 }) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const playerName = searchParams.get("playerName") ?? null;
+  // Get players data based on filters
+  const { players, isLoading, isError, isValidating } = usePlayerStats({
+    player_name: playerName || null,
+    ...filterQueryParams
+  });
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: SortDirection;
@@ -96,8 +103,8 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     const sortableItems = [...players];
     sortableItems.sort((a, b) => {
       // Get values for the sort key
-      const aValue = a[sortConfig.key as keyof PlayerStats];
-      const bValue = b[sortConfig.key as keyof PlayerStats];
+      const aValue = a[sortConfig.key as keyof PlayerStatsTable];
+      const bValue = b[sortConfig.key as keyof PlayerStatsTable];
 
       // Handle special cases for strings and nulls
       if (typeof aValue === "string" && typeof bValue === "string") {
@@ -117,15 +124,25 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   }, [players, sortConfig]);
 
   const handleRowClick = (steamId: string) => {
-    if (onPlayerClick) {
-      onPlayerClick(steamId);
-    }
+    router.push(`/players/${encodeURIComponent(steamId)}`);
   };
 
   const getTopPlayerClass = (index: number) => {
     if (index < 3) return "bg-[#1e1e1e] font-bold";
     return "";
   };
+
+  if (isError) {
+    return <TheContainer>Error loading players data</TheContainer>;
+  }
+
+  if (isLoading || isValidating) {
+    return <TheContainer>Loading player stats...</TheContainer>;
+  }
+
+  if (!players) {
+    return <TheContainer>No players stats data found</TheContainer>;
+  }
 
   return (
     <TooltipProvider>
@@ -201,92 +218,89 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                   </td>
                 </tr>
               ) : (
-                getSortedPlayers.map((player: PlayerStats, index: number) => (
-                  <tr
-                    key={`${player.nickname}-${index}`}
-                    className={cn(
-                      "border-b border-border transition-colors",
-                      getTopPlayerClass(index),
-                      {
-                        "hover:bg-kanaliiga-light-brown/10 cursor-pointer":
-                          !!onPlayerClick
-                      }
-                    )}
-                    onClick={() =>
-                      onPlayerClick && handleRowClick(player.steam_id)
-                    }
-                  >
-                    <td className="px-4 py-3">
-                      <div
-                        className={cn("font-medium", {
-                          "text-white": index < 3,
-                          "text-foreground": index >= 3
+                getSortedPlayers.map(
+                  (player: PlayerStatsTable, index: number) => (
+                    <tr
+                      key={`${player.nickname}-${index}`}
+                      className={cn(
+                        "border-b border-border transition-colors",
+                        getTopPlayerClass(index),
+                        "hover:bg-kanaliiga-light-brown/10 cursor-pointer"
+                      )}
+                      onClick={() => handleRowClick(player.steam_id)}
+                    >
+                      <td className="px-4 py-3">
+                        <div
+                          className={cn("font-medium", {
+                            "text-white": index < 3,
+                            "text-foreground": index >= 3
+                          })}
+                        >
+                          {player.nickname}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">
+                            {player.team_name || "No team"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.matches_played}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">
+                        {player.kills}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.assists}(
+                        <span className="text-xs">
+                          {player.flash_assists || 0}
+                        </span>
+                        )
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">
+                        {player.deaths}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.awp_kills}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.utility_damage}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.headshots}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.first_kills}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.first_deaths}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground">
+                        {player.adr?.toFixed(1) || 0}
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {player.hs_percent?.toFixed(1) || 0}%
+                      </td>
+                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                        {typeof player.kd === "number"
+                          ? player.kd.toFixed(2)
+                          : (player.kills / Math.max(player.deaths, 1)).toFixed(
+                              2
+                            )}
+                      </td>
+                      <td
+                        className={cn("px-4 py-3 text-center", {
+                          "font-bold text-white": index < 3,
+                          "text-muted-foreground": index >= 3
                         })}
                       >
-                        {player.nickname}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {player.team_name || "No team"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.matches_played}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">
-                      {player.kills}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.assists}(
-                      <span className="text-xs">
-                        {player.flash_assists || 0}
-                      </span>
-                      )
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">
-                      {player.deaths}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.awp_kills}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.utility_damage}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.headshots}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.first_kills}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.first_deaths}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">
-                      {player.adr?.toFixed(1) || 0}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {player.hs_percent?.toFixed(1) || 0}%
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
-                      {typeof player.kd === "number"
-                        ? player.kd.toFixed(2)
-                        : (player.kills / Math.max(player.deaths, 1)).toFixed(
-                            2
-                          )}
-                    </td>
-                    <td
-                      className={cn("px-4 py-3 text-center", {
-                        "font-bold text-white": index < 3,
-                        "text-muted-foreground": index >= 3
-                      })}
-                    >
-                      {player.kana_rating?.toFixed(2) || 0}
-                    </td>
-                  </tr>
-                ))
+                        {player.kana_rating?.toFixed(2) || 0}
+                      </td>
+                    </tr>
+                  )
+                )
               )}
             </tbody>
           </table>

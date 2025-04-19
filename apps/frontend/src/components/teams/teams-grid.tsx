@@ -3,23 +3,23 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { type TeamStats } from "@/hooks/data/useTeams";
-import { createStatsKanaliigaImageUrl } from "@/lib/utils";
+import { useTeams } from "@/hooks/data/useTeams";
+import {
+  createStatsKanaliigaImageUrl,
+  type FilterParamsQuery
+} from "@/lib/utils";
+import { TheContainer } from "../layout/the-container";
+import type { TeamStats } from "@eggosystem/types";
 
 interface TeamsGridProps {
-  teams: TeamStats[];
-  isLoading: boolean;
+  filterQueryParams: FilterParamsQuery;
 }
 
-export const TeamsGrid: React.FC<TeamsGridProps> = ({ teams, isLoading }) => {
-  // Debug the component props
-  console.log("TeamsGrid rendering:", {
-    teamsLength: teams?.length,
-    isLoading
-  });
+export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
+  // Get teams data based on filters
+  const { teams, isLoading, error } = useTeams(filterQueryParams);
 
   if (isLoading) {
-    console.log("TeamsGrid showing skeletons due to loading state");
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, index) => (
@@ -30,17 +30,13 @@ export const TeamsGrid: React.FC<TeamsGridProps> = ({ teams, isLoading }) => {
   }
 
   if (!teams || teams.length === 0) {
-    console.log("TeamsGrid showing no teams found message");
-    return (
-      <div className="bg-card rounded-md p-8 text-center">
-        <p className="text-muted-foreground">
-          No teams found with the current filters
-        </p>
-      </div>
-    );
+    return <TheContainer>No teams found with the current filters</TheContainer>;
   }
 
-  console.log("TeamsGrid rendering actual team cards:", teams.length);
+  if (error) {
+    return <TheContainer>Error fetching teams</TheContainer>;
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {teams.map((team) => (

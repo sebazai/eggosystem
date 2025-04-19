@@ -33,6 +33,7 @@ describe("parseFilterParams Middleware", () => {
       league_ids: [5, 6],
       stages: [7, 8],
       team_ids: [9, 10],
+      playerName: null,
       leaderboards: "top"
     });
     expect(next).toHaveBeenCalled();
@@ -50,6 +51,7 @@ describe("parseFilterParams Middleware", () => {
       season_ids: [11, 12],
       league_ids: [13, 14],
       map_ids: null,
+      playerName: null,
       stages: null,
       team_ids: null,
       leaderboards: undefined
@@ -66,6 +68,7 @@ describe("parseFilterParams Middleware", () => {
       season_ids: null,
       map_ids: null,
       league_ids: null,
+      playerName: null,
       stages: null,
       team_ids: null,
       leaderboards: null
@@ -83,6 +86,7 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       league_ids: null,
       stages: null,
+      playerName: null,
       team_ids: null,
       leaderboards: undefined
     });
@@ -102,6 +106,7 @@ describe("parseFilterParams Middleware", () => {
       season_ids: [1],
       league_ids: [2],
       map_ids: null,
+      playerName: null,
       stages: null,
       team_ids: null,
       leaderboards: null
@@ -121,6 +126,7 @@ describe("parseFilterParams Middleware", () => {
       season_ids: null,
       league_ids: null,
       map_ids: null,
+      playerName: null,
       stages: null,
       team_ids: null,
       leaderboards: undefined
@@ -140,6 +146,7 @@ describe("parseFilterParams Middleware", () => {
       season_ids: [1, 2],
       league_ids: null,
       map_ids: null,
+      playerName: null,
       stages: null,
       team_ids: null,
       leaderboards: undefined

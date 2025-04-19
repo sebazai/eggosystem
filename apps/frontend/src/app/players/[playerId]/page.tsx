@@ -67,7 +67,10 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
     const seasons = getParamArray(searchParams, "seasons");
     const activeSeason = activeSeasonHook.activeSeason?.season_id;
     return {
-      seasons: activeSeason && seasons.length === 0 ? [activeSeason] : seasons,
+      seasons:
+        activeSeason && seasons.length === 0 && searchParams.size === 0
+          ? [activeSeason]
+          : seasons,
       leagues: getParamArray(searchParams, "leagues"),
       stages: getParamArray(searchParams, "stages"),
       teams: getParamArray(searchParams, "teams"),
@@ -78,11 +81,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
   // Fetch player details using the hook
   const { playerDetails, isLoading, isError } = usePlayerDetails({
     steamId,
-    season_ids: filterParams.seasons.length ? filterParams.seasons : null,
-    league_ids: filterParams.leagues.length ? filterParams.leagues : null,
-    team_ids: filterParams.teams.length ? filterParams.teams : null,
-    stages: filterParams.stages.length ? filterParams.stages : null,
-    map_ids: filterParams.maps.length ? filterParams.maps : null
+    ...filterParams
   });
 
   // Match column definitions with tooltips

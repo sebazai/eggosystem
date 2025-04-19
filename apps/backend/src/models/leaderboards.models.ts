@@ -1,5 +1,6 @@
 import type { ParsedParams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { generateQueryWithFilters } from "../utils/queryFilter";
 
 const leaderboardExpressions: { [key: string]: string } = {
   // SUM stats
@@ -39,8 +40,7 @@ export const getLeaderboard = async ({
   stages,
   map_ids,
   leaderboards
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-}: ParsedParams): Promise<any[]> => {
+}: ParsedParams): Promise<unknown[]> => {
   if (!leaderboards) {
     throw new Error("Leaderboards type is required");
   }
@@ -50,48 +50,19 @@ export const getLeaderboard = async ({
     throw new Error(`Invalid leaderboards type: ${leaderboards}`);
   }
 
-  // Generate the main query filters
-  const queryFilters = [];
-  const queryParams = [];
-
-  if (team_ids && team_ids.length > 0) {
-    const placeholders = team_ids.map(() => "?").join(",");
-    queryFilters.push(`stp.team_id IN (${placeholders})`);
-    queryParams.push(...team_ids);
-  }
-
-  if (season_ids && season_ids.length > 0) {
-    const placeholders = season_ids.map(() => "?").join(",");
-    queryFilters.push(`m.season_id IN (${placeholders})`);
-    queryParams.push(...season_ids);
-  }
-
-  if (league_ids && league_ids.length > 0) {
-    const placeholders = league_ids.map(() => "?").join(",");
-    queryFilters.push(`l.id IN (${placeholders})`);
-    queryParams.push(...league_ids);
-  }
-
-  if (stages && stages.length > 0) {
-    const placeholders = stages.map(() => "?").join(",");
-    queryFilters.push(`m.stage IN (${placeholders})`);
-    queryParams.push(...stages);
-  }
-
-  if (map_ids && map_ids.length > 0) {
-    const placeholders = map_ids.map(() => "?").join(",");
-    queryFilters.push(`mg.map_id IN (${placeholders})`);
-    queryParams.push(...map_ids);
-  }
-
-  const whereClause =
-    queryFilters.length > 0 ? `WHERE ${queryFilters.join(" AND ")}` : "";
+  const { query, queryParams } = generateQueryWithFilters([
+    { column: "stp.team_id", value: team_ids },
+    { column: "m.season_id", value: season_ids },
+    { column: "l.id", value: league_ids },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids }
+  ]);
 
   // Use INNER JOIN for team-related tables when filtering by team_id,
   // otherwise use LEFT JOIN to include all players
   const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
 
-  const query = `
+  const baseQuery = `
     SELECT 
       sp.steam_id,
       sp.nickname,
@@ -106,17 +77,14 @@ export const getLeaderboard = async ({
     INNER JOIN Leagues l ON m.league_id = l.id
     ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
     ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
-    ${whereClause}
+    WHERE ${query}
     GROUP BY sp.steam_id, sp.nickname, t.name, t.team_logo
     HAVING matches_played > 0
     ORDER BY ${leaderboards} DESC
     LIMIT 5
   `;
 
-  console.warn("Executing leaderboard query:", query);
-  console.warn("With parameters:", queryParams);
-
-  return runQuery(query, queryParams);
+  return runQuery(baseQuery, queryParams);
 };
 
 // Get available leaderboard types

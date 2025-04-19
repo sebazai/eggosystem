@@ -1,76 +1,20 @@
-import { type Team } from "@eggosystem/types";
+import {
+  type TeamMapStatsResult,
+  type TeamMatch,
+  type TeamPlayerStats,
+  type TeamStats,
+  type Team
+} from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
+import { generateQueryWithFilters } from "../utils/queryFilter";
 
 export const getTeams = async () => {
   return runQuery<Omit<Team, "email">[]>(
     "SELECT id, organization_id, name, team_logo FROM Teams"
   );
 };
-
-export interface TeamStats extends Omit<Team, "email"> {
-  matches_played: number;
-  wins: number;
-  losses: number;
-  ties: number;
-  win_percentage: number;
-  league_name: string;
-  league_id: number;
-  season_id: number;
-  season_name: string;
-}
-
-export interface TeamPlayerStats {
-  steam_id: string;
-  nickname: string;
-  team_name: string;
-  team_logo: string;
-  matches_played: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  flash_assists: number;
-  awp_kills: number;
-  headshots: number;
-  first_kills: number;
-  first_deaths: number;
-  utility_damage: number;
-  total_damage: number;
-  enemies_flashed: number;
-  mates_flashed: number;
-  adr: number;
-  kana_rating: number;
-  hs_percent: number;
-  kd: number;
-}
-
-export interface TeamMatch {
-  match_id: number;
-  date: string;
-  team_id: number;
-  team_name: string;
-  team_logo: string;
-  opponent_id: number;
-  opponent_name: string;
-  opponent_logo: string;
-  team_score: number;
-  opponent_score: number;
-  maps: string;
-  result: string;
-}
-
-export interface TeamMapStats {
-  map_id: number;
-  map_name: string;
-  matches_played: number;
-  wins: number;
-  losses: number;
-  win_percentage: number;
-  avg_score: string;
-  avg_opponent_score: string;
-  avg_rating: string;
-}
 
 export const getTeamsByFilters = async (
   season_ids: number[] | null,
@@ -328,7 +272,16 @@ export const getTeamPlayers = async (
   season_ids: number[] | null,
   map_ids: number[] | null
 ) => {
-  let query = `
+  const { query, queryParams } = generateQueryWithFilters([
+    { column: "t.id", value: [teamId] },
+    { column: "m.season_id", value: season_ids },
+    {
+      column: "mg.map_id",
+      value: map_ids
+    }
+  ]);
+
+  const baseQuery = `
     SELECT 
       sp.steam_id,
       sp.nickname,
@@ -357,27 +310,12 @@ export const getTeamPlayers = async (
     JOIN Matches m ON mg.match_id = m.id
     JOIN MatchTeams mt ON m.id = mt.match_id AND ps.team = mt.team_id
     JOIN Teams t ON mt.team_id = t.id
-    WHERE t.id = ?
-  `;
-
-  const params: (number | string)[] = [teamId];
-
-  if (season_ids && season_ids.length > 0) {
-    query += ` AND m.season_id IN (${season_ids.map(() => "?").join(",")})`;
-    params.push(...season_ids);
-  }
-
-  if (map_ids && map_ids.length > 0) {
-    query += ` AND mg.map_id IN (${map_ids.map(() => "?").join(",")})`;
-    params.push(...map_ids);
-  }
-
-  query += `
+    WHERE ${query}
     GROUP BY sp.steam_id
     ORDER BY kana_rating DESC
   `;
 
-  return runQuery<TeamPlayerStats[]>(query, params);
+  return runQuery<TeamPlayerStats[]>(baseQuery, queryParams);
 };
 
 // Get match history for a team
@@ -465,7 +403,7 @@ export const getTeamMatches = async (
     FROM match_games
   `;
 
-  const params: (number | string)[] = [teamId, teamId];
+  const params = [teamId, teamId];
 
   if (season_ids && season_ids.length > 0) {
     query += ` WHERE match_id IN (SELECT id FROM Matches WHERE season_id IN (${season_ids.map(() => "?").join(",")}))`;
@@ -506,7 +444,17 @@ export const getTeamMapStats = async (
   season_ids: number[] | null,
   map_ids: number[] | null
 ) => {
-  let query = `
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "mg.map_id",
+      value: map_ids
+    }
+  ]);
+  const baseQuery = `
     SELECT 
       mg.map_id,
       maps.name as map_name,
@@ -529,37 +477,13 @@ export const getTeamMapStats = async (
     JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = ?
     JOIN MatchTeams opponent_mt ON m.id = opponent_mt.match_id AND opponent_mt.team_id != ?
     JOIN TeamGameScores opponent_score ON mg.id = opponent_score.game_id AND opponent_score.team_id = opponent_mt.team_id
-    WHERE 1=1
-  `;
-
-  const params: number[] = [teamId, teamId, teamId];
-
-  if (season_ids && season_ids.length > 0) {
-    query += ` AND m.season_id IN (${season_ids.map(() => "?").join(",")})`;
-    params.push(...season_ids);
-  }
-
-  if (map_ids && map_ids.length > 0) {
-    query += ` AND mg.map_id IN (${map_ids.map(() => "?").join(",")})`;
-    params.push(...map_ids);
-  }
-
-  query += `
+    WHERE ${query}
     GROUP BY mg.map_id, maps.name
   `;
 
-  interface MapStatsResult {
-    map_id: number;
-    map_name: string;
-    matches_played: number;
-    wins: number;
-    losses: number;
-    avg_score: string;
-    avg_opponent_score: string;
-    avg_rating: string;
-  }
+  const params = [teamId, teamId, teamId, ...queryParams];
 
-  const results = await runQuery<MapStatsResult[]>(query, params);
+  const results = await runQuery<TeamMapStatsResult[]>(baseQuery, params);
 
   // Calculate win percentage in JavaScript to avoid SQL syntax issues
   return results.map((row) => ({
