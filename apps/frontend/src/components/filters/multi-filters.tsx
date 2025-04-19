@@ -20,13 +20,6 @@ interface MultiFiltersProps {
 export const MultiFilters = (props: MultiFiltersProps) => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [filterParams, setFilterParams] = useState({
-    seasons: props.seasons?.sort() ?? null,
-    leagues: props.leagues?.sort() ?? null,
-    stages: props.stages?.sort() ?? null,
-    teams: props.teams?.sort() ?? null,
-    maps: props.maps?.sort() ?? null
-  });
 
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
@@ -38,7 +31,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
   );
 
   const { multiFilterSelectData, isValidating } =
-    useMultiFilterSelectables(filterParams);
+    useMultiFilterSelectables(props);
 
   const handleOpen = (filter: string | null) => {
     if (filter === null) {
@@ -54,7 +47,6 @@ export const MultiFilters = (props: MultiFiltersProps) => {
     params.delete(key);
     values.forEach((v) => params.append(key, v.toString()));
     router.push(`?${params.toString()}`);
-    setFilterParams((prev) => ({ ...prev, [key]: values.sort() }));
   };
 
   // How many props are passed to FancyMultiSelect?
@@ -71,14 +63,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         }
       )}
     >
-      {filterParams.seasons && (
+      {props.seasons && (
         <ItemFilter<Season>
           filterName="seasons"
           labelKey="full_name"
-          selectedItems={filterParams.seasons}
-          setFilterParams={(newParams) =>
-            setFilterParams((prev) => ({ ...prev, seasons: newParams }))
-          }
+          selectedItems={props.seasons}
           selectableIds={multiFilterSelectData?.season_ids}
           isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
@@ -87,14 +76,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={seasonSorter}
         />
       )}
-      {filterParams.leagues && (
+      {props.leagues && (
         <ItemFilter<League>
           filterName="leagues"
           labelKey="name"
-          selectedItems={filterParams.leagues}
-          setFilterParams={(newParams) =>
-            setFilterParams((prev) => ({ ...prev, leagues: newParams }))
-          }
+          selectedItems={props.leagues}
           selectableIds={multiFilterSelectData?.league_ids}
           isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
@@ -103,27 +89,21 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={leagueSorter}
         />
       )}
-      {filterParams.stages && (
+      {props.stages && (
         <StageFilter
-          selectedStages={filterParams.stages}
+          selectedStages={props.stages}
           selectableStages={multiFilterSelectData?.stages}
           isValidating={isValidating}
-          setFilterParams={(newParams) =>
-            setFilterParams((prev) => ({ ...prev, stages: newParams }))
-          }
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}
           handleOpen={handleOpen}
         />
       )}
-      {filterParams.teams && (
+      {props.teams && (
         <ItemFilter<Team>
           filterName="teams"
           labelKey="name"
-          selectedItems={filterParams.teams}
-          setFilterParams={(newParams) =>
-            setFilterParams((prev) => ({ ...prev, teams: newParams }))
-          }
+          selectedItems={props.teams}
           selectableIds={multiFilterSelectData?.team_ids}
           isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
@@ -132,14 +112,11 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={teamSorter}
         />
       )}
-      {filterParams.maps && (
+      {props.maps && (
         <ItemFilter<Map>
           filterName="maps"
           labelKey="name"
-          selectedItems={filterParams.maps}
-          setFilterParams={(newParams) =>
-            setFilterParams((prev) => ({ ...prev, maps: newParams }))
-          }
+          selectedItems={props.maps}
           selectableIds={multiFilterSelectData?.map_ids}
           isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}

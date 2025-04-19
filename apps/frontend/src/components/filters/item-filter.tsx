@@ -17,7 +17,6 @@ interface ItemFilterProps<T> {
   handleOpen: (filter: Nullable<string>) => void;
   handleSetSearchParams: (key: string, values: number[]) => void;
   selectedItems: number[];
-  setFilterParams: (value: number[]) => void;
   sorter?: (a: T, b: T) => number;
 }
 
@@ -29,11 +28,16 @@ export const ItemFilter = <T extends { id: number }>(
   );
   const [selectableIds, setSelectableIds] = useState<T[]>([]);
 
+  useEffect(() => {
+    setSelectedItems(props.selectedItems);
+  }, [props.selectedItems]);
+
   const { data, isLoading } = useSWR<T[]>(
     `/api/v1/${props.filterName}`,
     expressFetcher,
     {
-      revalidateOnFocus: false
+      revalidateOnFocus: false,
+      keepPreviousData: true
     }
   );
 

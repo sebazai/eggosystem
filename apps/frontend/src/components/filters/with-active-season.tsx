@@ -7,17 +7,14 @@ export const WithActiveSeason = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const activeSeasonHook = useActiveSeason("730");
+  const { isError, isLoading, isValidating, activeSeason, filterParams } =
+    useActiveSeason("730");
 
-  if (activeSeasonHook.isError) {
+  if (isError) {
     return <TheContainer>Failed to fetch active season</TheContainer>;
   }
 
-  if (
-    activeSeasonHook.isLoading ||
-    activeSeasonHook.isValidating ||
-    !activeSeasonHook.activeSeason
-  ) {
+  if (isLoading || isValidating || !activeSeason || !filterParams) {
     return <TheContainer>Fetching active season...</TheContainer>;
   }
   return <>{children}</>;

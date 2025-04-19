@@ -10,7 +10,6 @@ interface StageFilterProps {
   openFilter: Nullable<string>;
   handleOpen: (filter: Nullable<string>) => void;
   handleSetSearchParams: (key: string, values: number[]) => void;
-  setFilterParams: (value: number[]) => void;
   selectedStages: number[];
 }
 
