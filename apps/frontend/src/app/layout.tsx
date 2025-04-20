@@ -9,9 +9,9 @@ import Footer from "@/components/layout/footer";
 import SkipToContent from "@/components/layout/skip-to-content";
 import { KfcRain } from "@/components/layout/kfc-rain";
 import ScrollToTop from "@/components/layout/scroll-to-top";
-import { Suspense } from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import { FilterProvider } from "@/context/FilterContext";
+import { Suspense } from "react";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -122,24 +122,24 @@ export default function RootLayout({
             // enableSystem
             disableTransitionOnChange
           >
-            <FilterProvider appId="730">
-              <SkipToContent />
-              <KfcRain />
-              <ScrollToTop />
-              <div className="flex flex-col min-h-svh min-w-[200px] w-full">
-                <Navigation />
-                <div className="flex flex-grow justify-center w-full">
-                  <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
-                    <Suspense>
+            <Suspense>
+              <FilterProvider appId="730">
+                <SkipToContent />
+                <KfcRain />
+                <ScrollToTop />
+                <div className="flex flex-col min-h-svh min-w-[200px] w-full">
+                  <Navigation />
+                  <div className="flex flex-grow justify-center w-full">
+                    <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
                       <main className="md:py-6 py-4" id="main-content">
                         {children}
                       </main>
-                    </Suspense>
+                    </div>
                   </div>
+                  <Footer />
                 </div>
-                <Footer />
-              </div>
-            </FilterProvider>
+              </FilterProvider>
+            </Suspense>
           </ThemeProvider>
         </AuthProvider>
       </body>
