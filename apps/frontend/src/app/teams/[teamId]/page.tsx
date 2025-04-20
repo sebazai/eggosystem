@@ -22,7 +22,7 @@ interface TeamDetailsPageProps {
 
 export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
   const unwrappedParams = React.use(params);
-  const teamId = unwrappedParams.teamId;
+  const teamId = Number(unwrappedParams.teamId);
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   if (isLoading || !filterParams || isValidating)
@@ -57,8 +57,9 @@ export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
         seasons={filterParams.seasons}
         leagues={filterParams.leagues}
         stages={filterParams.stages}
-        teams={null}
+        teams={[teamId]}
         maps={filterParams.maps}
+        hideFilters={{ teams: true }}
       />
 
       <TeamsTable teamId={teamId} filterQueryParams={filterParams} />

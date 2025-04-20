@@ -10,17 +10,14 @@ import {
 
 interface UseTeamDetailsProps {
   teamId: number | string;
-  maps: FilterParamsQuery["maps"];
+  filterQueryParams: FilterParamsQuery;
 }
 
-export const useTeamDetails = ({ teamId, maps }: UseTeamDetailsProps) => {
-  const sortedQuery = generateFiltersParamQuery({
-    maps,
-    seasons: null,
-    leagues: null,
-    stages: null,
-    teams: null
-  });
+export const useTeamDetails = ({
+  teamId,
+  filterQueryParams
+}: UseTeamDetailsProps) => {
+  const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   const { data, error, isValidating, isLoading } = useSWR<TeamDetails>(
     `/api/v1/teams/${teamId}?${sortedQuery}`,

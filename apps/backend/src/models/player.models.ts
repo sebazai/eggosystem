@@ -131,9 +131,6 @@ export const getPlayersByFilters = async ({
     ORDER BY kana_rating DESC
   `;
 
-  console.warn("Executing query:", query);
-  console.warn("With parameters:", queryParams);
-
   return runQuery(query, queryParams);
 };
 
@@ -461,11 +458,6 @@ export const getPlayerDetailsWithStatsByFilters = async (
     ORDER BY match_date DESC
     LIMIT 10
   `;
-
-  console.warn("Executing player details query:", statsQuery);
-  console.warn("With parameters:", queryParams);
-  console.warn("Executing match history query:", matchHistoryQuery);
-  console.warn("With parameters:", matchHistoryParams);
 
   const [playerStats, matchHistory] = await Promise.all([
     runQuery<PlayerStatsResult[]>(statsQuery, queryParams),

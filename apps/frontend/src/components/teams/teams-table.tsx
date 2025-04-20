@@ -14,7 +14,7 @@ import { TheContainer } from "@/components/layout/the-container";
 
 interface TeamTableProps {
   filterQueryParams: FilterParamsQuery;
-  teamId: string;
+  teamId: number;
 }
 
 export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
@@ -26,8 +26,8 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
     isLoading: isTeamLoading,
     error
   } = useTeamDetails({
-    teamId: Number(teamId),
-    maps: filterQueryParams.maps
+    teamId,
+    filterQueryParams
   });
 
   const [sortConfig, setSortConfig] = useState<{
@@ -240,7 +240,12 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
           <h2 className="text-xl font-semibold text-kanaliiga-orange mb-2">
             Team Players
           </h2>
-          <PlayerTable filterQueryParams={filterQueryParams} />
+          <PlayerTable
+            filterQueryParams={{
+              ...filterQueryParams,
+              teams: [Number(teamId)]
+            }}
+          />
         </div>
       </div>
       {/* Team match history section */}

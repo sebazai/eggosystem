@@ -15,6 +15,13 @@ interface MultiFiltersProps {
   stages: Nullable<number[]>;
   teams: Nullable<number[]>;
   maps: Nullable<number[]>;
+  hideFilters?: {
+    seasons?: boolean;
+    leagues?: boolean;
+    stages?: boolean;
+    teams?: boolean;
+    maps?: boolean;
+  };
 }
 
 export const MultiFilters = (props: MultiFiltersProps) => {
@@ -63,7 +70,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
         }
       )}
     >
-      {props.seasons && (
+      {props.seasons && !props.hideFilters?.seasons && (
         <ItemFilter<Season>
           filterName="seasons"
           labelKey="full_name"
@@ -76,7 +83,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={seasonSorter}
         />
       )}
-      {props.leagues && (
+      {props.leagues && !props.hideFilters?.leagues && (
         <ItemFilter<League>
           filterName="leagues"
           labelKey="name"
@@ -89,7 +96,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={leagueSorter}
         />
       )}
-      {props.stages && (
+      {props.stages && !props.hideFilters?.stages && (
         <StageFilter
           selectedStages={props.stages}
           selectableStages={multiFilterSelectData?.stages}
@@ -99,7 +106,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           handleOpen={handleOpen}
         />
       )}
-      {props.teams && (
+      {props.teams && !props.hideFilters?.teams && (
         <ItemFilter<Team>
           filterName="teams"
           labelKey="name"
@@ -112,7 +119,7 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           sorter={teamSorter}
         />
       )}
-      {props.maps && (
+      {props.maps && !props.hideFilters?.maps && (
         <ItemFilter<Map>
           filterName="maps"
           labelKey="name"

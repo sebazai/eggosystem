@@ -52,7 +52,7 @@ export const FilterProvider = ({
       searchParams.size === 0 &&
       data?.season_id &&
       !ready &&
-      filterPaths.includes(path)
+      filterPaths.some((p) => path.includes(p))
     ) {
       const params = new URLSearchParams();
       params.append("seasons", data.season_id.toString());
@@ -61,7 +61,7 @@ export const FilterProvider = ({
     if (searchParams.size !== 0 && !ready) {
       setReady(true);
     }
-  }, [searchParams, data?.season_id, router, ready]);
+  }, [searchParams, data?.season_id, router, ready, path]);
 
   const filterParams = useMemo(() => {
     if (!ready) return null;

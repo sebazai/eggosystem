@@ -10,6 +10,7 @@ import {
 } from "@/lib/utils";
 import { TheContainer } from "../layout/the-container";
 import type { TeamStats } from "@eggosystem/types";
+import { useSearchParams } from "next/navigation";
 
 interface TeamsGridProps {
   filterQueryParams: FilterParamsQuery;
@@ -48,6 +49,7 @@ export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
 
 const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
   const [imageError, setImageError] = useState(false);
+  const params = useSearchParams();
   const defaultLogoPath = "/teams/nologo.svg";
 
   // Use createStatsKanaliigaImageUrl function for team logos
@@ -66,7 +68,7 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
 
   return (
     <Link
-      href={`/teams/${team.id}`}
+      href={{ pathname: `/teams/${team.id}`, query: params.toString() }}
       className="block bg-card rounded-md overflow-hidden hover:bg-kanaliiga-light-brown/10 transition-colors"
     >
       <div className="bg-kanaliiga-light-brown/20 p-4 border-b border-border">

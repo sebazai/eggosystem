@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { Skeleton } from "../ui/skeleton";
 import {
@@ -8,7 +9,7 @@ import {
 } from "@/lib/utils";
 import { useLeaderboards } from "@/hooks/data/useLeaderboards";
 import { TheContainer } from "../layout/the-container";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 interface LeaderboardsGridProps {
   filterQueryParams: FilterParamsQuery;
@@ -30,7 +31,7 @@ const formatValue = (value: number, unit: string): string => {
 export const LeaderboardsGrid = ({
   filterQueryParams
 }: LeaderboardsGridProps) => {
-  const router = useRouter();
+  const search = useSearchParams();
   const { isError, isLoading, isValidating, leaderboards } =
     useLeaderboards(filterQueryParams);
 
@@ -106,18 +107,15 @@ export const LeaderboardsGrid = ({
             <div className="p-4">
               {category.players && category.players.length > 0 ? (
                 category.players.map((player, playerIndex) => (
-                  <div
+                  <Link
                     key={playerIndex}
                     className={`flex items-center justify-between py-3 px-2 ${
                       playerIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
                     } hover:bg-kanaliiga-light-brown/10 cursor-pointer`}
                     data-testid="player-row"
-                    onClick={() => {
-                      if (player.steam_id) {
-                        router.push(
-                          `/players/${encodeURIComponent(player.steam_id)}`
-                        );
-                      }
+                    href={{
+                      pathname: `/players/${player.steam_id}`,
+                      query: search.toString()
                     }}
                   >
                     <div className="flex items-center gap-3 flex-1">
@@ -191,7 +189,7 @@ export const LeaderboardsGrid = ({
                         {category.unit}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <p className="text-muted-foreground text-center py-4">

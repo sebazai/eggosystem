@@ -124,7 +124,9 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   }, [players, sortConfig]);
 
   const handleRowClick = (steamId: string) => {
-    router.push(`/players/${encodeURIComponent(steamId)}`);
+    router.push(
+      `/players/${encodeURIComponent(steamId)}?${searchParams.toString()}`
+    );
   };
 
   const getTopPlayerClass = (index: number) => {
