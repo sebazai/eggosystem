@@ -32,9 +32,12 @@ export const getActiveSeasonForAppId = async (app_id: string) => {
      AND (
          (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
          OR s.id = (
-             SELECT MAX(s2.id) FROM Seasons s2 
-             JOIN Games g2 ON s2.game_id = g2.id 
-             WHERE g2.app_id = ?
+            SELECT MAX(s2.id)
+            FROM Seasons s2 
+            JOIN Games g2 ON s2.game_id = g2.id 
+            WHERE g2.app_id = ?
+            AND s2.end_date IS NOT NULL
+            AND s2.end_date < NOW()
          )
      )
      ORDER BY s.id DESC

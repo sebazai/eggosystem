@@ -74,7 +74,7 @@ export const FilterProvider = ({
     } satisfies FilterParamsQuery;
   }, [ready, searchParams]);
 
-  if (!ready || !filterParams) {
+  if (!ready || !filterParams || !data) {
     return (
       <FilterContext.Provider
         value={{
@@ -93,7 +93,7 @@ export const FilterProvider = ({
   return (
     <FilterContext.Provider
       value={{
-        activeSeason: data ?? null,
+        activeSeason: data,
         filterParams,
         isLoading,
         error,
