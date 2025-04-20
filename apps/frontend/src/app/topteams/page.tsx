@@ -4,34 +4,31 @@ import React from "react";
 
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { TopTeamsGrid } from "@/components/topteams/top-teams-grid";
-import { useActiveSeason } from "@/hooks/data/useActiveSeason";
-import { WithActiveSeason } from "@/components/filters/with-active-season";
 import { TheContainer } from "@/components/layout/the-container";
+import { useFilters } from "@/context/FilterContext";
 
 export default function TopTeamsPage() {
-  const activeSeasonHook = useActiveSeason("730");
+  const { filterParams, isLoading, error, isValidating } = useFilters();
 
-  if (!activeSeasonHook.filterParams) {
-    return <TheContainer>Fetching active season...</TheContainer>;
-  }
+  if (isLoading || !filterParams || isValidating)
+    return <TheContainer>Loading...</TheContainer>;
+  if (error) return <TheContainer>Failed to load filters</TheContainer>;
 
   return (
-    <WithActiveSeason>
-      <div className="p-0">
-        <MultiFilters
-          seasons={activeSeasonHook.filterParams.seasons}
-          leagues={activeSeasonHook.filterParams.leagues}
-          stages={activeSeasonHook.filterParams.stages}
-          teams={null}
-          maps={activeSeasonHook.filterParams.maps}
-        />
+    <div>
+      <MultiFilters
+        seasons={filterParams.seasons}
+        leagues={filterParams.leagues}
+        stages={filterParams.stages}
+        teams={null}
+        maps={filterParams.maps}
+      />
 
-        <div className="min-h-fit pb-8 px-4 bg-card">
-          <div className="max-w-[1400px] mx-auto">
-            <TopTeamsGrid filterQueryParams={activeSeasonHook.filterParams} />
-          </div>
+      <div className="min-h-fit pb-8 px-4 bg-card">
+        <div className="max-w-[1400px] mx-auto">
+          <TopTeamsGrid filterQueryParams={filterParams} />
         </div>
       </div>
-    </WithActiveSeason>
+    </div>
   );
 }

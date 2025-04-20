@@ -2,36 +2,31 @@
 
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { FilteredMatchesList } from "@/components/matches/filtered-matches-list";
-import { useActiveSeason } from "@/hooks/data/useActiveSeason";
 import _ from "lodash";
-import { WithActiveSeason } from "@/components/filters/with-active-season";
+import { useFilters } from "@/context/FilterContext";
 import { TheContainer } from "@/components/layout/the-container";
 
 export default function AllMatches() {
-  const activeSeasonHook = useActiveSeason("730");
+  const { filterParams, isLoading, error, isValidating } = useFilters();
 
-  if (!activeSeasonHook.filterParams) {
-    return <TheContainer>Fetching active season...</TheContainer>;
-  }
+  if (isLoading || !filterParams || isValidating)
+    return <TheContainer>Loading...</TheContainer>;
+  if (error) return <TheContainer>Failed to load filters</TheContainer>;
 
   return (
     <div className="p-0">
       <h1>Recent matches</h1>
-      <WithActiveSeason>
-        <div className="py-2">
-          <MultiFilters
-            seasons={activeSeasonHook.filterParams.seasons}
-            leagues={activeSeasonHook.filterParams.leagues}
-            stages={activeSeasonHook.filterParams.stages}
-            teams={activeSeasonHook.filterParams.teams}
-            maps={null}
-          />
-        </div>
-
-        <FilteredMatchesList
-          filterQueryParams={activeSeasonHook.filterParams}
+      <div className="py-2">
+        <MultiFilters
+          seasons={filterParams.seasons}
+          leagues={filterParams.leagues}
+          stages={filterParams.stages}
+          teams={filterParams.teams}
+          maps={null}
         />
-      </WithActiveSeason>
+      </div>
+
+      <FilteredMatchesList filterQueryParams={filterParams} />
     </div>
   );
 }

@@ -1,0 +1,102 @@
+"use client";
+
+import {
+  expressFetcher,
+  getParamArray,
+  type FilterParamsQuery
+} from "@/lib/utils";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, createContext, useContext } from "react";
+import useSWR from "swr";
+
+type FilterContextType = {
+  activeSeason: { season_id: number } | null;
+  filterParams: FilterParamsQuery | null;
+  isLoading: boolean;
+  isValidating: boolean;
+  error: Error | undefined;
+};
+
+const FilterContext = createContext<FilterContextType | undefined>(undefined);
+
+export const FilterProvider = ({
+  appId,
+  children
+}: {
+  appId: string;
+  children: React.ReactNode;
+}) => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+
+  const { data, error, isValidating, isLoading } = useSWR<
+    { season_id: number },
+    Error
+  >(`/api/v1/seasons/app/${appId}/active`, expressFetcher, {
+    revalidateOnFocus: false,
+    revalidateIfStale: false,
+    keepPreviousData: true,
+    dedupingInterval: 24 * 60 * 60 * 1000
+  });
+
+  useEffect(() => {
+    if (searchParams.size === 0 && data?.season_id && !ready) {
+      const params = new URLSearchParams();
+      params.append("seasons", data.season_id.toString());
+      router.push(`?${params.toString()}`, { scroll: false });
+    }
+    if (searchParams.size !== 0 && !ready) {
+      setReady(true);
+    }
+  }, [searchParams, data?.season_id, router, ready]);
+
+  const filterParams = useMemo(() => {
+    if (!ready) return null;
+    return {
+      seasons: getParamArray(searchParams, "seasons"),
+      leagues: getParamArray(searchParams, "leagues"),
+      stages: getParamArray(searchParams, "stages"),
+      teams: getParamArray(searchParams, "teams"),
+      maps: getParamArray(searchParams, "maps")
+    } satisfies FilterParamsQuery;
+  }, [ready, searchParams]);
+
+  if (!ready || !filterParams) {
+    return (
+      <FilterContext.Provider
+        value={{
+          activeSeason: null,
+          filterParams: null,
+          isLoading: true,
+          isValidating: false,
+          error: undefined
+        }}
+      >
+        {children}
+      </FilterContext.Provider>
+    );
+  }
+
+  return (
+    <FilterContext.Provider
+      value={{
+        activeSeason: data ?? null,
+        filterParams,
+        isLoading,
+        error,
+        isValidating
+      }}
+    >
+      {children}
+    </FilterContext.Provider>
+  );
+};
+
+export const useFilters = () => {
+  const context = useContext(FilterContext);
+  if (!context) {
+    throw new Error("useFilters must be used within a FilterProvider");
+  }
+  return context;
+};

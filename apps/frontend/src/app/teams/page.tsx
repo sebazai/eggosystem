@@ -2,42 +2,39 @@
 
 import React from "react";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { useActiveSeason } from "@/hooks/data/useActiveSeason";
-import { WithActiveSeason } from "@/components/filters/with-active-season";
 import { TeamsGrid } from "@/components/teams/teams-grid";
 import { TheContainer } from "@/components/layout/the-container";
+import { useFilters } from "@/context/FilterContext";
 
 export default function TeamsPage() {
-  const activeSeasonHook = useActiveSeason("730");
+  const { filterParams, isLoading, error, isValidating } = useFilters();
 
-  if (!activeSeasonHook.filterParams) {
-    return <TheContainer>Fetching active season...</TheContainer>;
-  }
+  if (isLoading || !filterParams || isValidating)
+    return <TheContainer>Loading...</TheContainer>;
+  if (error) return <TheContainer>Failed to load filters</TheContainer>;
 
   return (
-    <WithActiveSeason>
-      <div className="p-0">
-        <MultiFilters
-          seasons={activeSeasonHook.filterParams.seasons}
-          leagues={activeSeasonHook.filterParams.leagues}
-          teams={activeSeasonHook.filterParams.teams}
-          stages={null}
-          maps={null}
-        />
+    <div className="p-0">
+      <MultiFilters
+        seasons={filterParams.seasons}
+        leagues={filterParams.leagues}
+        teams={filterParams.teams}
+        stages={null}
+        maps={null}
+      />
 
-        <div
-          className="min-h-fit pb-8 px-4"
-          style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
-        >
-          <div className="max-w-[1400px] mx-auto">
-            <h1 className="text-kanaliiga-orange text-3xl font-bold py-8">
-              Teams
-            </h1>
+      <div
+        className="min-h-fit pb-8 px-4"
+        style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
+      >
+        <div className="max-w-[1400px] mx-auto">
+          <h1 className="text-kanaliiga-orange text-3xl font-bold py-8">
+            Teams
+          </h1>
 
-            <TeamsGrid filterQueryParams={activeSeasonHook.filterParams} />
-          </div>
+          <TeamsGrid filterQueryParams={filterParams} />
         </div>
       </div>
-    </WithActiveSeason>
+    </div>
   );
 }

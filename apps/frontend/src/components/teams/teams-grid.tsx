@@ -39,8 +39,8 @@ export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {teams.map((team) => (
-        <TeamCard key={team.id} team={team} />
+      {teams.map((team, index) => (
+        <TeamCard key={index} team={team} />
       ))}
     </div>
   );

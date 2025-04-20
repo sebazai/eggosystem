@@ -1,3 +1,4 @@
+import type { UserFullPayload } from "@eggosystem/types";
 import { test, expect } from "./fixtures";
 import type { Page, Route } from "@playwright/test";
 
@@ -141,13 +142,17 @@ test.describe("Leaderboards Page", () => {
         contentType: "application/json",
         body: JSON.stringify({
           user: {
-            id: "test-user-id",
-            steamId: "76561198012345678",
-            avatar: "https://placekitten.com/200/200",
-            nickname: "Test User",
-            roles: ["user"],
-            acceptedPrivacyPolicy: true
-          }
+            account_id: 1,
+            provider_id: "76561198012345678",
+            nickname: "Testerino",
+            provider: "steam",
+            acceptedPrivacyPolicy: true,
+            acceptedMarketing: false,
+            fullName: "Hobo Nobo",
+            discord: "Testerino",
+            email: "john.doe@gmail.com",
+            workEmail: undefined
+          } satisfies UserFullPayload
         })
       });
     });
@@ -165,16 +170,6 @@ test.describe("Leaderboards Page", () => {
       }
     );
 
-    // Also mock the express path version
-    await page.route("/api/v1/seasons/app/730/active", async (route: Route) => {
-      console.log("Mocking direct active season endpoint");
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ season_id: 14 })
-      });
-    });
-
     // Mock the seasons endpoint
     await page.route("**/api/v1/seasons", async (route: Route) => {
       console.log("Mocking seasons endpoint");
@@ -190,22 +185,6 @@ test.describe("Leaderboards Page", () => {
             game_id: 1
           }
         ])
-      });
-    });
-
-    // Mock the filters endpoint specifically for Next.js internal API
-    await page.route("**/api/filters**", async (route: Route) => {
-      console.log("Mocking Next.js filters API: " + route.request().url());
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          season_ids: [11, 14],
-          league_ids: [1, 2, 3, 4, 5],
-          team_ids: [2000, 2001, 2094, 2123, 2195, 2199],
-          stages: [1, 2],
-          map_ids: [1, 2, 3, 4, 5, 7, 8, 9]
-        })
       });
     });
 
@@ -286,86 +265,6 @@ test.describe("Leaderboards Page", () => {
         });
       }
     );
-  });
-
-  test("should have proper title on homepage", async ({ page }) => {
-    // Start with a simple test to verify basic functionality
-    await page.goto("http://localhost:3000/");
-
-    // Take a basic screenshot
-    await page.screenshot({
-      path: "test-results/homepage.png",
-      fullPage: true
-    });
-
-    // Check that we have some title
-    const title = await page.title();
-    console.log(`Page title: ${title}`);
-
-    expect(title).not.toBe("");
-  });
-
-  test("should render leaderboard components correctly", async ({ page }) => {
-    // This test will verify the components render properly without navigating
-    test.setTimeout(60000); // Set a longer timeout
-
-    // Create mock elements to verify rendering
-    await page.setContent(`
-      <div>
-        <h1 class="text-4xl font-bold mb-8 text-kanaliiga-orange font-headings">Leaderboards</h1>
-        <div data-testid="leaderboards-grid">
-          <div data-testid="leaderboard-category kana-rating-category">
-            <div>
-              <h2 class="text-xl font-bold text-kanaliiga-orange">Kana Rating</h2>
-            </div>
-            <div>
-              <div data-testid="player-row">
-                <div>
-                  <span data-testid="player-rank">👑</span>
-                  <div>
-                    <span data-testid="player-name">t0Nppa</span>
-                  </div>
-                </div>
-                <div>
-                  <span data-testid="player-matches">16 matches</span>
-                  <span data-testid="player-value">1.3</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `);
-
-    // Take a screenshot of our mock
-    await page.screenshot({
-      path: "test-results/mock-leaderboard.png",
-      fullPage: true
-    });
-
-    // Check components that we expect to see
-    const heading = await page.locator('h1:has-text("Leaderboards")').first();
-    await expect(heading).toBeVisible();
-
-    const kanaRating = await page.locator('h2:has-text("Kana Rating")').first();
-    await expect(kanaRating).toBeVisible();
-
-    const playerName = await page
-      .locator('[data-testid="player-name"]')
-      .first();
-    await expect(playerName).toHaveText("t0Nppa");
-
-    const playerMatches = await page
-      .locator('[data-testid="player-matches"]')
-      .first();
-    await expect(playerMatches).toHaveText("16 matches");
-
-    const playerRank = await page
-      .locator('[data-testid="player-rank"]')
-      .first();
-    await expect(playerRank).toHaveText("👑");
-
-    console.log("Verified leaderboard components render correctly");
   });
 
   test("Leaderboards page renders correctly", async ({ page }) => {

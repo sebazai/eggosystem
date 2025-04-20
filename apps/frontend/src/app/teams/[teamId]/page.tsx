@@ -10,10 +10,9 @@ import {
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import { MultiFilters } from "@/components/filters/multi-filters";
-import { useActiveSeason } from "@/hooks/data/useActiveSeason";
-import { WithActiveSeason } from "@/components/filters/with-active-season";
 import { TeamsTable } from "@/components/teams/teams-table";
 import { TheContainer } from "@/components/layout/the-container";
+import { useFilters } from "@/context/FilterContext";
 
 interface TeamDetailsPageProps {
   params: Promise<{
@@ -24,11 +23,11 @@ interface TeamDetailsPageProps {
 export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
   const unwrappedParams = React.use(params);
   const teamId = unwrappedParams.teamId;
-  const activeSeasonHook = useActiveSeason("730");
+  const { filterParams, isLoading, error, isValidating } = useFilters();
 
-  if (!activeSeasonHook.filterParams) {
-    return <TheContainer>Fetching active season...</TheContainer>;
-  }
+  if (isLoading || !filterParams || isValidating)
+    return <TheContainer>Loading...</TheContainer>;
+  if (error) return <TheContainer>Failed to load filters</TheContainer>;
 
   return (
     <div className="container mx-auto py-4">
@@ -53,20 +52,16 @@ export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
       <h2 className="text-xl font-semibold text-kanaliiga-orange mb-2">
         Filter Statistics
       </h2>
-      <WithActiveSeason>
-        <MultiFilters
-          seasons={activeSeasonHook.filterParams.seasons}
-          leagues={activeSeasonHook.filterParams.leagues}
-          stages={activeSeasonHook.filterParams.stages}
-          teams={null}
-          maps={activeSeasonHook.filterParams.maps}
-        />
 
-        <TeamsTable
-          teamId={teamId}
-          filterQueryParams={activeSeasonHook.filterParams}
-        />
-      </WithActiveSeason>
+      <MultiFilters
+        seasons={filterParams.seasons}
+        leagues={filterParams.leagues}
+        stages={filterParams.stages}
+        teams={null}
+        maps={filterParams.maps}
+      />
+
+      <TeamsTable teamId={teamId} filterQueryParams={filterParams} />
     </div>
   );
 }

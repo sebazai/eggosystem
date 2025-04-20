@@ -31,10 +31,12 @@ import {
 import UserMenuDropdown from "./user-menu-dropdown";
 import { MobileUserMenu } from "./mobile/user-menu";
 import { createNextImageUrl } from "@/lib/utils";
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 
 interface MenuItemLink {
   title: string;
   url: string;
+  hasFilters: boolean;
   icon?: JSX.Element;
   items?: MenuItemLink[];
 }
@@ -63,31 +65,37 @@ const defaultProps: NavbarProps = {
   menu: [
     {
       title: "Home",
-      url: "/"
+      url: "/",
+      hasFilters: false
     },
     {
       title: "Matches",
-      url: "/matches"
+      url: "/matches",
+      hasFilters: true
     },
     {
       title: "Organizations",
-      url: "/organizations"
+      url: "/organizations",
+      hasFilters: false
     },
     {
       title: "Teams",
       url: "/teams",
+      hasFilters: true,
       items: [
-        { title: "Browse Teams", url: "/teams" },
-        { title: "Top Teams", url: "/topteams" }
+        { title: "Browse Teams", url: "/teams", hasFilters: true },
+        { title: "Top Teams", url: "/topteams", hasFilters: true }
       ]
     },
     {
       title: "Players",
-      url: "/players"
+      url: "/players",
+      hasFilters: true
     },
     {
       title: "Leaderboards",
-      url: "/leaderboards"
+      url: "/leaderboards",
+      hasFilters: true
     }
   ],
   mobileExtraLinks: [
@@ -108,6 +116,7 @@ export const Navigation = (props: NavbarProps) => {
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const params = useSearchParams();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -176,7 +185,9 @@ export const Navigation = (props: NavbarProps) => {
             </Link>
           )}
           <NavigationMenu viewport={false}>
-            <NavigationMenuList>{menu?.map(renderMenuItem)}</NavigationMenuList>
+            <NavigationMenuList>
+              {menu?.map((m) => renderMenuItem(m, params))}
+            </NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto">
             <UserMenuDropdown />
@@ -232,7 +243,11 @@ export const Navigation = (props: NavbarProps) => {
                     className="flex w-full flex-col gap-4"
                   >
                     {menu?.map((item) =>
-                      renderMobileMenuItem(item, () => setIsSheetOpen(false))
+                      renderMobileMenuItem(
+                        item,
+                        () => setIsSheetOpen(false),
+                        params
+                      )
                     )}
                   </Accordion>
                   {mobileExtraLinks && (
@@ -261,7 +276,7 @@ export const Navigation = (props: NavbarProps) => {
   );
 };
 
-const renderMenuItem = (item: MenuItem) => {
+const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
   if (item.items) {
     return (
       <NavigationMenuItem key={item.title}>
@@ -273,6 +288,7 @@ const renderMenuItem = (item: MenuItem) => {
                 key={component.title}
                 title={component.title}
                 href={component.url}
+                {...(component.hasFilters ? { params } : {})}
               />
             ))}
           </ul>
@@ -284,13 +300,24 @@ const renderMenuItem = (item: MenuItem) => {
   return (
     <NavigationMenuItem key={item.title}>
       <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-        <Link href={item.url}>{item.title}</Link>
+        <Link
+          href={{
+            pathname: item.url,
+            query: item.hasFilters ? params.toString() : undefined
+          }}
+        >
+          {item.title}
+        </Link>
       </NavigationMenuLink>
     </NavigationMenuItem>
   );
 };
 
-const renderMobileMenuItem = (item: MenuItem, closeMenuOnClick: () => void) => {
+const renderMobileMenuItem = (
+  item: MenuItem,
+  closeMenuOnClick: () => void,
+  params: ReadonlyURLSearchParams
+) => {
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">
@@ -300,7 +327,13 @@ const renderMobileMenuItem = (item: MenuItem, closeMenuOnClick: () => void) => {
         <AccordionContent className="mt-2">
           {item.items.map((subItem) => (
             <div className="py-2" key={subItem.title}>
-              <Link href={subItem.url} onClick={closeMenuOnClick}>
+              <Link
+                href={{
+                  pathname: item.url,
+                  query: item.hasFilters ? params.toString() : undefined
+                }}
+                onClick={closeMenuOnClick}
+              >
                 {subItem.title}
               </Link>
             </div>
@@ -312,7 +345,10 @@ const renderMobileMenuItem = (item: MenuItem, closeMenuOnClick: () => void) => {
   return (
     <Link
       key={item.title}
-      href={item.url}
+      href={{
+        pathname: item.url,
+        query: item.hasFilters ? params.toString() : undefined
+      }}
       onClick={closeMenuOnClick}
       className="font-semibold font-headings"
     >
@@ -323,12 +359,22 @@ const renderMobileMenuItem = (item: MenuItem, closeMenuOnClick: () => void) => {
 
 const ListItem = ({
   title,
-  href
-}: React.ComponentPropsWithoutRef<"li"> & { href: string }) => {
+  href,
+  params
+}: React.ComponentPropsWithoutRef<"li"> & {
+  href: string;
+  params?: ReadonlyURLSearchParams;
+}) => {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <Link href={href} className="flex flex-row items-center gap-2">
+        <Link
+          href={{
+            pathname: href,
+            query: params ? params.toString() : undefined
+          }}
+          className="flex flex-row items-center gap-2"
+        >
           {title}
         </Link>
       </NavigationMenuLink>

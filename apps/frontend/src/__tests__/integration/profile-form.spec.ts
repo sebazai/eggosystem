@@ -246,16 +246,33 @@ test.describe("Profile Form", () => {
         contentType: "application/json",
         body: JSON.stringify({
           user: {
-            id: "test-user-id",
-            steamId: "76561198012345678",
-            avatar: "https://placekitten.com/200/200",
+            account_id: 1,
+            provider_id: "76561198012345678",
+            provider: "steam",
             nickname: "Test User",
-            roles: ["user"],
-            acceptedPrivacyPolicy: false
-          }
+            acceptedPrivacyPolicy: false,
+            acceptedMarketing: false,
+            fullName: "John Doe",
+            email: "john.doe@kanaliiga.fi",
+            discord: undefined,
+            workEmail: undefined
+          } satisfies UserFullPayload
         })
       });
     });
+
+    // CRITICAL: Mock active season endpoint with the correct format and URL patterns
+    await page.route(
+      "**/api/v1/seasons/app/730/active",
+      async (route: Route) => {
+        console.log("Mocking active season endpoint for app 730");
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ season_id: 14 })
+        });
+      }
+    );
 
     // Make sure we're on the profile page first
     await page.waitForSelector("form", { timeout: 20000 });
