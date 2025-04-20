@@ -248,8 +248,8 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   }
 
   .privacy-policy h1,
-  h2,
-  h3 {
+  .privacy-policy h2,
+  .privacy-policy h3 {
     margin: 0.5rem 0;
   }
 
