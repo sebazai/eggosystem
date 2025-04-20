@@ -5,7 +5,7 @@ import {
   getParamArray,
   type FilterParamsQuery
 } from "@/lib/utils";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, createContext, useContext } from "react";
 import useSWR from "swr";
 
@@ -18,7 +18,13 @@ type FilterContextType = {
 };
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
-
+const filterPaths = [
+  "/matches",
+  "/teams",
+  "/topteams",
+  "/players",
+  "/leaderboards"
+];
 export const FilterProvider = ({
   appId,
   children
@@ -26,6 +32,7 @@ export const FilterProvider = ({
   appId: string;
   children: React.ReactNode;
 }) => {
+  const path = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [ready, setReady] = useState(false);
@@ -41,10 +48,15 @@ export const FilterProvider = ({
   });
 
   useEffect(() => {
-    if (searchParams.size === 0 && data?.season_id && !ready) {
+    if (
+      searchParams.size === 0 &&
+      data?.season_id &&
+      !ready &&
+      filterPaths.includes(path)
+    ) {
       const params = new URLSearchParams();
       params.append("seasons", data.season_id.toString());
-      router.push(`?${params.toString()}`, { scroll: false });
+      router.replace(`?${params.toString()}`, { scroll: false });
     }
     if (searchParams.size !== 0 && !ready) {
       setReady(true);
