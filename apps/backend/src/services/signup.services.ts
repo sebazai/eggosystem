@@ -52,12 +52,8 @@ export const signUpTeamForSeason = async (
       connection
     );
     const [{ rank }, { hours }, externalRank] = await Promise.all([
-      getPlayerAppIdRank(player.steam_id, seasonAppIdString, seasonIdString),
-      getPlayerHoursForSteamAppId(
-        player.steam_id,
-        seasonAppIdString,
-        seasonIdString
-      ),
+      getPlayerAppIdRank(player.steam_id, seasonAppIdString),
+      getPlayerHoursForSteamAppId(player.steam_id, seasonAppIdString),
       getPlayerRankForPlatform(player.steam_id, data.seasonPlatform)
     ]);
     await insertFaceITPlayerRankForSeason(

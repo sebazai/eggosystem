@@ -35,7 +35,7 @@ export const insertFaceITPlayerRankForSeason = async (
   connection: PoolConnection
 ) => {
   const faceitLevel = FaceITRank.faceit_level;
-  const faceitDate = FaceITRank.faceit_date;
+  const faceitDate = new Date(FaceITRank.faceit_date);
   const faceitElo = FaceITRank.faceit_elo;
   const faceitKD = FaceITRank.faceit_kd;
 
