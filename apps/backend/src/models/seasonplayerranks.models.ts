@@ -41,7 +41,30 @@ export const insertFaceITPlayerRankForSeason = async (
 
   const now = new Date();
 
-  const query = `INSERT INTO SeasonPlayerRanks (steam_id, season_id, rank_updated_at, cs2_rank, cs_hours, faceit_level, faceit_elo, faceit_kd, faceit_date, hours_updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const query = `
+      INSERT INTO SeasonPlayerRanks (
+        steam_id,
+        season_id,
+        rank_updated_at,
+        cs2_rank,
+        cs_hours,
+        faceit_level,
+        faceit_elo,
+        faceit_kd,
+        faceit_date,
+        hours_updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
+        cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),
+        cs_hours = IF(VALUES(cs_hours) != -1, VALUES(cs_hours), cs_hours),
+        faceit_level = IF(VALUES(faceit_level) != -1, VALUES(faceit_level), faceit_level),
+        faceit_elo = IF(VALUES(faceit_elo) != -1, VALUES(faceit_elo), faceit_elo),
+        faceit_kd = IF(VALUES(faceit_kd) != -1, VALUES(faceit_kd), faceit_kd),
+        faceit_date = IF(VALUES(faceit_elo) != -1, VALUES(faceit_date), faceit_date),
+        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at)
+    `;
   await runQuery(
     query,
     [
