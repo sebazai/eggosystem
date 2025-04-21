@@ -1,6 +1,6 @@
 "use client";
 
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { SteamLoginButton } from "@/components/steam-login";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -17,11 +17,13 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   const { user, loading } = useAuth();
 
   if (isLoading || isValidating || loading) {
-    return <TheContainer>Loading...</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
   }
   if (isError || !seasonDetails) {
     return (
-      <TheContainer>{isError?.message ?? "Season does not exist"}</TheContainer>
+      <ContentContainer>
+        {isError?.message ?? "Season does not exist"}
+      </ContentContainer>
     );
   }
 

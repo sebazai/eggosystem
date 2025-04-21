@@ -23,6 +23,7 @@ export interface FilterParamsQuery {
   stages: Nullable<number[]>;
   teams: Nullable<number[]>;
   maps: Nullable<number[]>;
+  steamId?: string;
 }
 
 export const generateFiltersParamQuery = ({

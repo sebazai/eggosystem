@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { PlayerDetails } from "@/components/players/player-details";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { useFilters } from "@/context/FilterContext";
 
 interface PlayerDetailsProps {
@@ -26,8 +26,8 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   if (isLoading || !filterParams || isValidating)
-    return <TheContainer>Loading...</TheContainer>;
-  if (error) return <TheContainer>Failed to load filters</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
+  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
     <div className="container mx-auto py-4">
@@ -53,7 +53,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
         <h2 className="text-xl font-semibold text-kanaliiga-orange mb-2">
           Filter Statistics
         </h2>
-        <MultiFilters {...filterParams} />
+        <MultiFilters {...filterParams} steamId={steamId} />
         <PlayerDetails steamId={steamId} filterParams={filterParams} />
       </div>
     </div>

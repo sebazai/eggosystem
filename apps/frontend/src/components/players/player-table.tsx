@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { PlayerStatsTable } from "@eggosystem/types";
 
@@ -135,15 +135,15 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   };
 
   if (isError) {
-    return <TheContainer>Error loading players data</TheContainer>;
+    return <ContentContainer>Error loading players data</ContentContainer>;
   }
 
   if (isLoading || isValidating) {
-    return <TheContainer>Loading player stats...</TheContainer>;
+    return <ContentContainer>Loading player stats...</ContentContainer>;
   }
 
   if (!players) {
-    return <TheContainer>No players stats data found</TheContainer>;
+    return <ContentContainer>No players stats data found</ContentContainer>;
   }
 
   return (

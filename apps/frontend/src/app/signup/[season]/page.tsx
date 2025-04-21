@@ -1,6 +1,7 @@
 import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
 import { SignupWelcome } from "./signup-welcome";
+import { CardContainer } from "@/components/layout/card-container";
 
 type Props = {
   params: Promise<{ season: string }>;
@@ -26,9 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SignupPage({ params }: Props) {
   const { season } = await params;
   return (
-    <div>
-      <h1 className="pb-4">Season registration</h1>
+    <CardContainer classNames="p-2 md:p-4">
       <SignupWelcome seasonId={season} />
-    </div>
+    </CardContainer>
   );
 }

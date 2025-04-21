@@ -39,7 +39,7 @@ export default async function AllOrganizations(props: {
 
   return (
     <div>
-      <h1 className="pb-6">
+      <h1 className="text-3xl mb-4 md:mb-8">
         {search
           ? `Search results for "${search}" in Organizations`
           : "Organizations"}

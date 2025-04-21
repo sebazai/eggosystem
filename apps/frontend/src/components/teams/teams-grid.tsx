@@ -8,7 +8,7 @@ import {
   createStatsKanaliigaImageUrl,
   type FilterParamsQuery
 } from "@/lib/utils";
-import { TheContainer } from "../layout/the-container";
+import { ContentContainer } from "../layout/content-container";
 import type { TeamStats } from "@eggosystem/types";
 import { useSearchParams } from "next/navigation";
 
@@ -31,11 +31,15 @@ export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
   }
 
   if (!teams || teams.length === 0) {
-    return <TheContainer>No teams found with the current filters</TheContainer>;
+    return (
+      <ContentContainer>
+        No teams found with the current filters
+      </ContentContainer>
+    );
   }
 
   if (error) {
-    return <TheContainer>Error fetching teams</TheContainer>;
+    return <ContentContainer>Error fetching teams</ContentContainer>;
   }
 
   return (

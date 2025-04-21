@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type React from "react";
 
 import { envConfig } from "@/configs/env";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -40,44 +40,45 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   if (!result.ok) {
     if (result.status === 404) {
-      return <TheContainer>Season does not exist</TheContainer>;
+      return <ContentContainer>Season does not exist</ContentContainer>;
     }
-    return <TheContainer>Error fetching season</TheContainer>;
+    return <ContentContainer>Error fetching season</ContentContainer>;
   }
 
   const seasonDetails: SeasonDetails | undefined = await result.json();
 
   if (!seasonDetails) {
-    return <TheContainer>{"Season does not exist"}</TheContainer>;
+    return <ContentContainer>{"Season does not exist"}</ContentContainer>;
   }
 
   if (!seasonDetails.signup_start_date || !seasonDetails.signup_end_date) {
     return (
-      <TheContainer>
+      <ContentContainer>
         Season sign up dates are not set. Please come back later.
-      </TheContainer>
+      </ContentContainer>
     );
   }
 
   if (new Date(seasonDetails.signup_start_date).getTime() > serverTime) {
     return (
-      <TheContainer>
+      <ContentContainer>
         Season sign up has not started yet. Please come back later.
-      </TheContainer>
+      </ContentContainer>
     );
   }
 
   if (new Date(seasonDetails.signup_end_date).getTime() < serverTime) {
     return (
-      <TheContainer>
+      <ContentContainer>
         Season sign up has ended. Please wait for the next season.
-      </TheContainer>
+      </ContentContainer>
     );
   }
 
   return (
-    <div className="min-h-fit pb-8 bg-card">
-      <div className="max-w-[1400px] mx-auto p-2">{children}</div>
+    <div>
+      <h1 className="text-3xl mb-4 md:mb-8">Season registration</h1>
+      {children}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import {
   type FilterParamsQuery
 } from "@/lib/utils";
 import { useLeaderboards } from "@/hooks/data/useLeaderboards";
-import { TheContainer } from "../layout/the-container";
+import { ContentContainer } from "../layout/content-container";
 import { useSearchParams } from "next/navigation";
 
 interface LeaderboardsGridProps {
@@ -41,9 +41,9 @@ export const LeaderboardsGrid = ({
 
   if (isError) {
     return (
-      <TheContainer>
+      <ContentContainer>
         {isError?.message ?? "Error loading leaderboards"}
-      </TheContainer>
+      </ContentContainer>
     );
   }
 

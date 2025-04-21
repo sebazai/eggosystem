@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { TheContainer } from "../layout/the-container";
+import { ContentContainer } from "../layout/content-container";
 import {
   createStatsKanaliigaImageUrl,
   type FilterParamsQuery
@@ -18,14 +18,14 @@ export const FilteredMatchesList = ({
     useRecentMatches(filterQueryParams);
 
   if (isError) {
-    return <TheContainer>Error loading Matches</TheContainer>;
+    return <ContentContainer>Error loading Matches</ContentContainer>;
   }
 
   if (isLoading || isValidating) {
-    return <TheContainer>Loading...</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
   }
   if (!matches) {
-    return <TheContainer>No matches found</TheContainer>;
+    return <ContentContainer>No matches found</ContentContainer>;
   }
   const groupedMatches = matches.reduce(
     (acc, match) => {

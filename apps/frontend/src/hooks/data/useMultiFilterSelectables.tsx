@@ -3,22 +3,19 @@
 import useSWR from "swr";
 import _ from "lodash";
 import { envConfig } from "@/configs/env";
-import type { MultiFilterSelectableIds, Nullable } from "@eggosystem/types";
-
-interface UseMultiFilterSelectablesProps {
-  seasons: Nullable<number[]>;
-  leagues: Nullable<number[]>;
-  stages: Nullable<number[]>;
-  teams: Nullable<number[]>;
-  maps: Nullable<number[]>;
-}
+import type { MultiFilterSelectableIds } from "@eggosystem/types";
+import type { FilterParamsQuery } from "@/lib/utils";
 
 const fetchPossibleIdsWithIndividualParam = async (
-  ids: (string | number)[],
-  key: string
+  ids: string[],
+  key: string,
+  steamId?: string
 ) => {
   const params = new URLSearchParams();
-  ids.forEach((id) => params.append(key, String(id)));
+  ids.forEach((id) => params.append(key, id));
+  if (steamId) {
+    params.append("steamId", steamId);
+  }
   const queryString = params.toString();
 
   const res = await fetch(`${envConfig.API_URL}/api/v1/filters?${queryString}`);
@@ -28,7 +25,7 @@ const fetchPossibleIdsWithIndividualParam = async (
 };
 
 const fetchMultiFilterData = async (
-  params: UseMultiFilterSelectablesProps
+  params: FilterParamsQuery
 ): Promise<MultiFilterSelectableIds> => {
   const [seasons, leagues, stages, teams, maps] = [
     params.seasons ?? [],
@@ -45,11 +42,27 @@ const fetchMultiFilterData = async (
     withTeamsParam,
     withMapsParam
   ] = await Promise.all([
-    fetchPossibleIdsWithIndividualParam(seasons ?? [], "season_ids"),
-    fetchPossibleIdsWithIndividualParam(leagues ?? [], "league_ids"),
-    fetchPossibleIdsWithIndividualParam(stages ?? [], "stage_ids"),
-    fetchPossibleIdsWithIndividualParam(teams ?? [], "team_ids"),
-    fetchPossibleIdsWithIndividualParam(maps ?? [], "map_ids")
+    fetchPossibleIdsWithIndividualParam(
+      seasons ?? [],
+      "season_ids",
+      params.steamId
+    ),
+    fetchPossibleIdsWithIndividualParam(
+      leagues ?? [],
+      "league_ids",
+      params.steamId
+    ),
+    fetchPossibleIdsWithIndividualParam(
+      stages ?? [],
+      "stage_ids",
+      params.steamId
+    ),
+    fetchPossibleIdsWithIndividualParam(
+      teams ?? [],
+      "team_ids",
+      params.steamId
+    ),
+    fetchPossibleIdsWithIndividualParam(maps ?? [], "map_ids", params.steamId)
   ]);
 
   return {
@@ -86,9 +99,7 @@ const fetchMultiFilterData = async (
   };
 };
 
-export const useMultiFilterSelectables = (
-  params: UseMultiFilterSelectablesProps
-) => {
+export const useMultiFilterSelectables = (params: FilterParamsQuery) => {
   const { data, error, isValidating, isLoading } = useSWR(
     ["multi-filters", params],
     () => fetchMultiFilterData(params),

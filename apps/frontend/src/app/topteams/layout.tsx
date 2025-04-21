@@ -11,10 +11,8 @@ export default function TopTeamsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-4xl font-bold mb-8 text-kanaliiga-orange font-headings">
-        Top Teams
-      </h1>
+    <div>
+      <h1 className="text-3xl mb-4 md:mb-8">Top Teams</h1>
       {children}
     </div>
   );

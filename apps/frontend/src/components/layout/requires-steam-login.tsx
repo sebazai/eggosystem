@@ -1,5 +1,5 @@
 "use client";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { SteamLoginButton } from "@/components/steam-login";
 import { motion } from "framer-motion";
 import { Pointer } from "lucide-react";
@@ -7,7 +7,7 @@ import type React from "react";
 
 export const RequiresSteamLogin = ({ returnUrl }: { returnUrl?: string }) => {
   return (
-    <TheContainer classNames="flex-col space-y-4">
+    <ContentContainer classNames="flex-col space-y-4">
       <div>You need to login with Steam before proceeding to this page...</div>
       <motion.div
         animate={{ y: [0, 10, 0] }}
@@ -17,6 +17,6 @@ export const RequiresSteamLogin = ({ returnUrl }: { returnUrl?: string }) => {
         <Pointer className="w-16 h-16 rotate-180" />
       </motion.div>
       <SteamLoginButton returnUrl={returnUrl} />
-    </TheContainer>
+    </ContentContainer>
   );
 };

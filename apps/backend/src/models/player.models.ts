@@ -1,4 +1,7 @@
-import { generateQueryWithFilters as _generateQueryWithFilters } from "../utils/queryFilter";
+import {
+  generateQueryWithFilters as _generateQueryWithFilters,
+  generateQueryWithFilters
+} from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   type ParsedParams,
@@ -41,66 +44,37 @@ export const getPlayersByFilters = async ({
   team_ids,
   stages,
   map_ids,
-  steam_ids,
   playerName
 }: ParsedParams) => {
-  // Create query and params arrays
-  const queryFilters: string[] = [];
-  const queryParams: (number | string)[] = [];
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "stp.team_id",
+      value: team_ids
+    },
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "l.id",
+      value: league_ids
+    },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids }
+  ]);
 
-  // Handle steam_ids filtering directly
-  if (steam_ids && steam_ids.length) {
-    const placeholders = steam_ids.map(() => "?").join(",");
-    queryFilters.push(`p.steam_id IN (${placeholders})`);
-    queryParams.push(...steam_ids);
-  }
+  const whereClause = playerName
+    ? `WHERE ${query} AND p.nickname LIKE ?`
+    : `WHERE ${query}`;
 
-  // Handle playerName filtering
   if (playerName) {
-    queryFilters.push(`p.nickname LIKE ?`);
     queryParams.push(`%${playerName}%`);
   }
-
-  // Handle direct filters
-  if (team_ids && team_ids.length) {
-    const placeholders = team_ids.map(() => "?").join(",");
-    queryFilters.push(`stp.team_id IN (${placeholders})`);
-    queryParams.push(...team_ids);
-  }
-
-  if (season_ids && season_ids.length) {
-    const placeholders = season_ids.map(() => "?").join(",");
-    queryFilters.push(`m.season_id IN (${placeholders})`);
-    queryParams.push(...season_ids);
-  }
-
-  if (league_ids && league_ids.length) {
-    const placeholders = league_ids.map(() => "?").join(",");
-    queryFilters.push(`l.id IN (${placeholders})`);
-    queryParams.push(...league_ids);
-  }
-
-  if (stages && stages.length) {
-    const placeholders = stages.map(() => "?").join(",");
-    queryFilters.push(`m.stage IN (${placeholders})`);
-    queryParams.push(...stages);
-  }
-
-  if (map_ids && map_ids.length) {
-    const placeholders = map_ids.map(() => "?").join(",");
-    queryFilters.push(`mg.map_id IN (${placeholders})`);
-    queryParams.push(...map_ids);
-  }
-
-  const whereClause = queryFilters.length
-    ? `WHERE ${queryFilters.join(" AND ")}`
-    : "";
-
   // Use INNER JOIN for team-related tables when filtering by team_id,
   // otherwise use LEFT JOIN to include all players
   const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
 
-  const query = `
+  const baseQuery = `
     SELECT 
       p.steam_id,
       p.nickname, 
@@ -131,7 +105,7 @@ export const getPlayersByFilters = async ({
     ORDER BY kana_rating DESC
   `;
 
-  return runQuery(query, queryParams);
+  return runQuery(baseQuery, queryParams);
 };
 
 export const getPlayerDetailsWithStatsByFilters = async (

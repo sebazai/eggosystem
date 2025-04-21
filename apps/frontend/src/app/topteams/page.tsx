@@ -4,15 +4,16 @@ import React from "react";
 
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { TopTeamsGrid } from "@/components/topteams/top-teams-grid";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { useFilters } from "@/context/FilterContext";
+import { CardContainer } from "@/components/layout/card-container";
 
 export default function TopTeamsPage() {
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   if (isLoading || !filterParams || isValidating)
-    return <TheContainer>Loading...</TheContainer>;
-  if (error) return <TheContainer>Failed to load filters</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
+  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
     <div>
@@ -24,11 +25,9 @@ export default function TopTeamsPage() {
         maps={filterParams.maps}
       />
 
-      <div className="min-h-fit pb-8 px-4 bg-card">
-        <div className="max-w-[1400px] mx-auto">
-          <TopTeamsGrid filterQueryParams={filterParams} />
-        </div>
-      </div>
+      <CardContainer classNames="p-2 md:p-4">
+        <TopTeamsGrid filterQueryParams={filterParams} />
+      </CardContainer>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 import { RequiresSteamLogin } from "@/components/layout/requires-steam-login";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
@@ -209,14 +209,14 @@ export const SignupForm = ({
   }
 
   if (isLoading || isValidating || loadingUser) {
-    return <TheContainer classNames="w-full">Loading...</TheContainer>;
+    return <ContentContainer classNames="w-full">Loading...</ContentContainer>;
   }
 
   if (isError || !seasonDetails) {
     return (
-      <TheContainer>
+      <ContentContainer>
         {isError?.message ?? "Something went wrong..."}
-      </TheContainer>
+      </ContentContainer>
     );
   }
 

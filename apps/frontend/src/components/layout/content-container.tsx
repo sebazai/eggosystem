@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import type React from "react";
 
-export const TheContainer = ({
+export const ContentContainer = ({
   children,
   classNames
 }: {

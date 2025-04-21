@@ -11,10 +11,8 @@ export default function LeaderboardsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-4xl font-bold mb-8 text-kanaliiga-orange font-headings">
-        Leaderboards
-      </h1>
+    <div>
+      <h1 className="text-3xl mb-4 md:mb-8">Leaderboards</h1>
       {children}
     </div>
   );

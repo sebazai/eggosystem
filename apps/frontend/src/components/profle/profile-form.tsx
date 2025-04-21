@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { TheContainer } from "../layout/the-container";
+import { ContentContainer } from "../layout/content-container";
 import { SteamLoginButton } from "../steam-login";
 import { accountSchema, type AccountUpdateValues } from "@eggosystem/types";
 import { apiFetch } from "@/lib/apiClient";
@@ -77,13 +77,13 @@ export default function ProfileForm() {
   }, [searchParams, pathname, router]);
 
   if (auth.loading) {
-    return <TheContainer>Loading...</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
   }
   if (!auth.user) {
     return (
-      <TheContainer classNames="flex-col space-y-4">
+      <ContentContainer classNames="flex-col space-y-4">
         <div>Please log in to view your profile.</div> <SteamLoginButton />
-      </TheContainer>
+      </ContentContainer>
     );
   }
 

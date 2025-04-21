@@ -6,24 +6,22 @@ import { MultiFilters } from "@/components/filters/multi-filters";
 import { LeaderboardsGrid } from "@/components/leaderboards/leaderboards-grid";
 
 import { useFilters } from "@/context/FilterContext";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
+import { CardContainer } from "@/components/layout/card-container";
 
 export default function LeaderboardsPage() {
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   if (isLoading || !filterParams || isValidating)
-    return <TheContainer>Loading...</TheContainer>;
-  if (error) return <TheContainer>Failed to load filters</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
+  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
-    <div className="p-0">
+    <div>
       <MultiFilters {...filterParams} />
-
-      <div className="min-h-fit pb-8 px-4 bg-card">
-        <div className="max-w-[1400px] mx-auto">
-          <LeaderboardsGrid filterQueryParams={filterParams} />
-        </div>
-      </div>
+      <CardContainer classNames="p-2 md:p-4">
+        <LeaderboardsGrid filterQueryParams={filterParams} />
+      </CardContainer>
     </div>
   );
 }

@@ -3,18 +3,14 @@
 import clsx from "clsx";
 import { useCallback, useState } from "react";
 import { ItemFilter } from "./item-filter";
-import type { League, Season, Team, Map, Nullable } from "@eggosystem/types";
+import type { League, Season, Team, Map } from "@eggosystem/types";
 import { StageFilter } from "./stage-filter";
 import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import type { FilterParamsQuery } from "@/lib/utils";
 
-interface MultiFiltersProps {
-  seasons: Nullable<number[]>;
-  leagues: Nullable<number[]>;
-  stages: Nullable<number[]>;
-  teams: Nullable<number[]>;
-  maps: Nullable<number[]>;
+interface MultiFiltersProps extends FilterParamsQuery {
   hideFilters?: {
     seasons?: boolean;
     leagues?: boolean;

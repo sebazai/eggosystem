@@ -10,7 +10,7 @@ import { PlayerTable } from "../players/player-table";
 import Image from "next/image";
 import { useTeamDetails } from "@/hooks/data/useTeamDetails";
 import { useState, useMemo } from "react";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 
 interface TeamTableProps {
   filterQueryParams: FilterParamsQuery;
@@ -62,23 +62,23 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
   }, [teamDetails?.matches, sortConfig]);
 
   if (error) {
-    return <TheContainer>Error loading team details</TheContainer>;
+    return <ContentContainer>Error loading team details</ContentContainer>;
   }
 
   if (isTeamLoading) {
     return (
-      <TheContainer>
+      <ContentContainer>
         <div className="animate-pulse flex flex-col space-y-6">
           <div className="h-8 w-40 bg-gray-800 rounded"></div>
           <div className="h-24 w-full bg-gray-800 rounded"></div>
           <div className="h-64 w-full bg-gray-800 rounded"></div>
         </div>
-      </TheContainer>
+      </ContentContainer>
     );
   }
 
   if (!teamDetails) {
-    return <TheContainer>Team not found</TheContainer>;
+    return <ContentContainer>Team not found</ContentContainer>;
   }
 
   const { team, map_stats } = teamDetails;

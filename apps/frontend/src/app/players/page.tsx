@@ -6,19 +6,20 @@ import { MultiFilters } from "@/components/filters/multi-filters";
 import { PlayerTable } from "@/components/players/player-table";
 import { PlayerNameFilter } from "@/components/filters/player-name-filter";
 import { useFilters } from "@/context/FilterContext";
-import { TheContainer } from "@/components/layout/the-container";
+import { CardContainer } from "@/components/layout/card-container";
+import { ContentContainer } from "@/components/layout/content-container";
 
 export default function PlayersPage() {
   const searchParams = useSearchParams();
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   if (isLoading || !filterParams || isValidating)
-    return <TheContainer>Loading...</TheContainer>;
-  if (error) return <TheContainer>Failed to load filters</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
+  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
-    <div className="p-0">
-      {/* Filter section */}
+    <div>
+      <h1 className="text-3xl mb-4 md:mb-8">Players</h1>
       <div className="mb-4">
         <MultiFilters {...filterParams} />
 
@@ -29,15 +30,9 @@ export default function PlayersPage() {
         </div>
       </div>
 
-      <div className="min-h-fit pb-8 px-4 bg-card">
-        <div className="max-w-[1400px] mx-auto">
-          <h1 className="text-kanaliiga-orange text-3xl font-bold py-8">
-            Players
-          </h1>
-
-          <PlayerTable filterQueryParams={filterParams} />
-        </div>
-      </div>
+      <CardContainer classNames="p-2 md:p-4">
+        <PlayerTable filterQueryParams={filterParams} />
+      </CardContainer>
     </div>
   );
 }

@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import type React from "react";
 import { getMatchInfo } from "./utils";
 import { MatchBreadcrumbsWrapper } from "@/components/layout/breadcrumbs-wrapper";
+import { CardContainer } from "@/components/layout/card-container";
+import { ContentContainer } from "@/components/layout/content-container";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -45,20 +47,21 @@ export default async function Layout({ children, params }: LayoutProps) {
   const matchInfo = await getMatchInfo<MatchInfo>(match_id);
 
   if (!matchInfo) {
-    return <div>Match not found</div>;
+    return <ContentContainer>Match not found</ContentContainer>;
   }
   const teams = Object.values(matchInfo.teams);
   if (teams.length < 2) {
-    return <div>Not enough teams found for match</div>;
+    return (
+      <ContentContainer>Not enough teams found for match</ContentContainer>
+    );
   }
 
   return (
-    <div className="min-h-fit pb-8 bg-card">
-      <div className="max-w-[1400px] mx-auto px-2 pt-2">
-        <div className="container mx-auto">
-          <MatchBreadcrumbsWrapper />
-        </div>
+    <CardContainer>
+      <div className="px-4 pt-4">
+        <MatchBreadcrumbsWrapper />
       </div>
+
       <MatchHeader
         team1={teams[0]!}
         team2={teams[1]!}
@@ -66,9 +69,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         matchStartTime={matchInfo.start_time}
         matchEndTime={matchInfo.end_time}
       />
-      <div className="max-w-[1400px] mx-auto p-2">
-        <div className="container mx-auto py-4">{children}</div>
-      </div>
-    </div>
+      <div className="p-2 md:p-6">{children}</div>
+    </CardContainer>
   );
 }

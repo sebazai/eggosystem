@@ -3,18 +3,20 @@
 import React from "react";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { TeamsGrid } from "@/components/teams/teams-grid";
-import { TheContainer } from "@/components/layout/the-container";
+import { ContentContainer } from "@/components/layout/content-container";
 import { useFilters } from "@/context/FilterContext";
+import { CardContainer } from "@/components/layout/card-container";
 
 export default function TeamsPage() {
   const { filterParams, isLoading, error, isValidating } = useFilters();
 
   if (isLoading || !filterParams || isValidating)
-    return <TheContainer>Loading...</TheContainer>;
-  if (error) return <TheContainer>Failed to load filters</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
+  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
-    <div className="p-0">
+    <div>
+      <h1 className="text-3xl mb-4 md:mb-8">Teams</h1>
       <MultiFilters
         seasons={filterParams.seasons}
         leagues={filterParams.leagues}
@@ -23,18 +25,9 @@ export default function TeamsPage() {
         maps={null}
       />
 
-      <div
-        className="min-h-fit pb-8 px-4"
-        style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
-      >
-        <div className="max-w-[1400px] mx-auto">
-          <h1 className="text-kanaliiga-orange text-3xl font-bold py-8">
-            Teams
-          </h1>
-
-          <TeamsGrid filterQueryParams={filterParams} />
-        </div>
-      </div>
+      <CardContainer classNames="p-2 md:p-4">
+        <TeamsGrid filterQueryParams={filterParams} />
+      </CardContainer>
     </div>
   );
 }

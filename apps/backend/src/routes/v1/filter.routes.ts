@@ -8,6 +8,8 @@ router.get("/", parseQueryFilterParams, async (req, res) => {
   const { season_ids, league_ids, team_ids, stages, map_ids } =
     req.parsedParams;
 
+  const filter_by_steam_id = req.query.steamId;
+
   let query = knex("Matches as M")
     .distinct()
     .select(
@@ -25,6 +27,17 @@ router.get("/", parseQueryFilterParams, async (req, res) => {
     )
     .join("MatchTeams as MT", "M.id", "MT.match_id")
     .join("MatchGames as MP", "M.id", "MP.match_id");
+
+  if (filter_by_steam_id) {
+    query = query
+      .join("SeasonTeamPlayers as STP", function () {
+        this.on("STP.season_id", "MT.season_id").andOn(
+          "STP.team_id",
+          "MT.team_id"
+        );
+      })
+      .where("STP.steam_id", filter_by_steam_id);
+  }
 
   if (season_ids?.length) {
     query = query.whereIn("M.season_id", season_ids);

@@ -1,7 +1,9 @@
 import Image from "next/image";
-import { TheContainer } from "../layout/the-container";
+import Link from "next/link";
+import { ContentContainer } from "../layout/content-container";
 import { createNextImageUrl, type FilterParamsQuery } from "@/lib/utils";
 import { useTopTeams } from "@/hooks/data/useTopTeams";
+import { useSearchParams } from "next/navigation";
 
 const getLeagueEmoji = (leagueSortPriority: number): string => {
   switch (leagueSortPriority) {
@@ -34,19 +36,20 @@ interface TopTeamsGridProps {
 export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
   const { isError, isLoading, isValidating, divisions } =
     useTopTeams(filterQueryParams);
+  const searchParams = useSearchParams();
 
   if (isError) {
     return (
-      <TheContainer>
+      <ContentContainer>
         {isError?.message ?? "Error loading top teams"}
-      </TheContainer>
+      </ContentContainer>
     );
   }
   if (isLoading || isValidating) {
-    return <TheContainer>Loading...</TheContainer>;
+    return <ContentContainer>Loading...</ContentContainer>;
   }
   if (!divisions) {
-    return <TheContainer>No top teams found</TheContainer>;
+    return <ContentContainer>No top teams found</ContentContainer>;
   }
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -67,8 +70,12 @@ export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
 
           <div className="p-4">
             {division.teams.map((team, teamIndex) => (
-              <div
+              <Link
                 key={teamIndex}
+                href={{
+                  pathname: `/teams/${team.team_id}`,
+                  query: searchParams.toString()
+                }}
                 className={`flex items-center justify-between py-3 px-2 ${
                   teamIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
                 }`}
@@ -126,7 +133,7 @@ export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
                     {team.kana.toFixed(2)}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
