@@ -287,9 +287,16 @@ export const TabPlayers = ({
                     render={({ field }) => (
                       <FormItem className="w-full">
                         <FormLabel>
-                          {player.nickname
-                            ? `Player: ${player.nickname}`
-                            : "Steam ID"}
+                          {player.nickname ? (
+                            <span>
+                              Player:{" "}
+                              <span className="text-kanaliiga-orange">
+                                {player.nickname}
+                              </span>
+                            </span>
+                          ) : (
+                            "Steam ID"
+                          )}
                         </FormLabel>
                         <FormControl>
                           <Input
