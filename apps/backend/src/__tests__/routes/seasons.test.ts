@@ -1,18 +1,19 @@
 import request from "supertest";
 import * as seasonModels from "../../models/season.models";
 import type TestAgent from "supertest/lib/agent";
-import { SeasonPlatform, type Season } from "@eggosystem/types";
+import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import _ from "lodash";
 import express from "express";
 import seasonRoutes from "../../routes/v1/season.routes";
 
-const mockSeasonWith = (returnValue: Partial<Season> | undefined) => {
-  jest.spyOn(seasonModels, "getSeasonById").mockResolvedValue(
+const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
+  jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue(
     returnValue
       ? ({
+          app_id: 730,
           platform: SeasonPlatform.Kanaliiga,
           ...returnValue
-        } as Season)
+        } as SeasonDetails)
       : undefined
   );
 };

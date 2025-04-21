@@ -12,8 +12,8 @@ import type { Response } from "express";
 import {
   type SignupFormValues,
   type RequestWithParamsAndBody,
-  type Season,
-  SeasonPlatform
+  SeasonPlatform,
+  type SeasonDetails
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
@@ -82,7 +82,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
     jest
       .spyOn(db, "getConnection")
       .mockResolvedValue(mockConnection as unknown as PoolConnection);
-    jest.spyOn(seasonModels, "getSeasonById").mockResolvedValue({
+    jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue({
       id: 1,
       name: "Test Season",
       signup_start_date: String(yesterday),
@@ -91,8 +91,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
       game_id: 0,
       full_name: "CS2 Test Season",
       start_date: "String(tomorrow)",
-      end_date: null
-    } satisfies Season);
+      end_date: null,
+      app_id: 730
+    } satisfies SeasonDetails);
     jest
       .spyOn(steamServices, "areSteamProfilesPublic")
       .mockResolvedValue({ is_all_public: true });
@@ -135,7 +136,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
         seasonId: 1,
         teamId: 1,
         players: expect.any(Array),
-        teamExternalId: "team-123"
+        teamExternalId: "team-123",
+        seasonAppId: 730,
+        seasonPlatform: SeasonPlatform.Kanaliiga
       },
       mockConnection
     );
@@ -219,7 +222,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
         seasonId: 1,
         teamId: 666,
         players: expect.any(Array),
-        teamExternalId: "team-123"
+        teamExternalId: "team-123",
+        seasonAppId: 730,
+        seasonPlatform: SeasonPlatform.Kanaliiga
       },
       mockConnection
     );
@@ -254,7 +259,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
         seasonId: 1,
         teamId: 1337,
         players: expect.any(Array),
-        teamExternalId: "team-123"
+        teamExternalId: "team-123",
+        seasonAppId: 730,
+        seasonPlatform: SeasonPlatform.Kanaliiga
       },
       mockConnection
     );

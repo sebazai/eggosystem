@@ -1,7 +1,11 @@
 import type { PoolConnection } from "mysql2/promise";
 import { insertSeasonTeamRegistration } from "../models/seasonteamregistration.models";
 import { insertSeasonTeamPlayer } from "../models/seasonteamplayers.models";
-import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
+import {
+  isFaceITCSRank,
+  type SeasonDetails,
+  SeasonPlatform
+} from "@eggosystem/types";
 import { getFaceITTeamDetails } from "./faceit.services";
 import {
   getPlayerAppIdRank,
@@ -56,14 +60,16 @@ export const signUpTeamForSeason = async (
       getPlayerHoursForSteamAppId(player.steam_id, seasonAppIdString),
       getPlayerRankForPlatform(player.steam_id, data.seasonPlatform)
     ]);
-    await insertFaceITPlayerRankForSeason(
-      player.steam_id,
-      seasonIdString,
-      rank,
-      hours,
-      externalRank,
-      connection
-    );
+
+    if (isFaceITCSRank(externalRank))
+      await insertFaceITPlayerRankForSeason(
+        player.steam_id,
+        seasonIdString,
+        rank,
+        hours,
+        externalRank,
+        connection
+      );
   }
 };
 

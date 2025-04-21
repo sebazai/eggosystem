@@ -65,7 +65,7 @@ export const insertFaceITPlayerRankForSeason = async (
         faceit_date = IF(VALUES(faceit_elo) != -1, VALUES(faceit_date), faceit_date),
         hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at)
     `;
-  await runQuery(
+  return runQuery(
     query,
     [
       steamId,

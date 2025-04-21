@@ -130,6 +130,8 @@ export const getPlayerRankForPlatform = async (
   switch (platform) {
     case SeasonPlatform.FACEIT:
       return getFaceITCS2Rank(steam_id);
+    case SeasonPlatform.Kanaliiga:
+      return null;
     default:
       throw new Error("Unknown platform");
   }
