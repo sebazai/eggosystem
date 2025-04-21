@@ -1,12 +1,20 @@
 import type { PoolConnection } from "mysql2/promise";
 import { insertSeasonTeamRegistration } from "../models/seasonteamregistration.models";
 import { insertSeasonTeamPlayer } from "../models/seasonteamplayers.models";
-import { SeasonPlatform } from "@eggosystem/types";
+import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import { getFaceITTeamDetails } from "./faceit.services";
+import {
+  getPlayerAppIdRank,
+  getPlayerHoursForSteamAppId,
+  getPlayerRankForPlatform
+} from "./player-ranks.services";
+import { insertFaceITPlayerRankForSeason } from "../models/seasonplayerranks.models";
 
 export const signUpTeamForSeason = async (
   data: {
-    seasonId: number;
+    seasonId: SeasonDetails["id"];
+    seasonAppId: SeasonDetails["app_id"];
+    seasonPlatform: SeasonDetails["platform"];
     teamId: number;
     players: {
       steam_id: string;
@@ -15,8 +23,10 @@ export const signUpTeamForSeason = async (
     }[];
     teamExternalId?: string;
   },
-  connection?: PoolConnection
+  connection: PoolConnection
 ) => {
+  const seasonIdString = data.seasonId.toString();
+  const seasonAppIdString = data.seasonAppId.toString();
   const captain = data.players.find((player) => player.is_captain);
   const coCaptain = data.players.find((player) => player.is_co_captain);
   if (!captain || !coCaptain) {
@@ -39,6 +49,23 @@ export const signUpTeamForSeason = async (
         team_id: data.teamId,
         steam_id: player.steam_id
       },
+      connection
+    );
+    const [{ rank }, { hours }, externalRank] = await Promise.all([
+      getPlayerAppIdRank(player.steam_id, seasonAppIdString, seasonIdString),
+      getPlayerHoursForSteamAppId(
+        player.steam_id,
+        seasonAppIdString,
+        seasonIdString
+      ),
+      getPlayerRankForPlatform(player.steam_id, data.seasonPlatform)
+    ]);
+    await insertFaceITPlayerRankForSeason(
+      player.steam_id,
+      seasonIdString,
+      rank,
+      hours,
+      externalRank,
       connection
     );
   }

@@ -80,7 +80,7 @@ export const addSignupForSeason = async (
 ) => {
   const { id } = req.params;
   // Ensure season exists, otherwise throw error
-  const season = await getSeasonById(id);
+  const season = await getSeasonDetailsById(id);
   if (!season) {
     res.status(404).json({ message: "Season not found" });
     return;
@@ -184,6 +184,8 @@ export const addSignupForSeason = async (
           await signUpTeamForSeason(
             {
               seasonId: season.id,
+              seasonAppId: season.app_id,
+              seasonPlatform: season.platform,
               teamId: newTeam.insertId,
               players: playersForTeamRegistration,
               teamExternalId: formData.teamExternalId
@@ -215,6 +217,8 @@ export const addSignupForSeason = async (
           await signUpTeamForSeason(
             {
               seasonId: season.id,
+              seasonAppId: season.app_id,
+              seasonPlatform: season.platform,
               teamId: newTeam.insertId,
               players: playersForTeamRegistration,
               teamExternalId: formData.teamExternalId
@@ -247,6 +251,8 @@ export const addSignupForSeason = async (
       await signUpTeamForSeason(
         {
           seasonId: season.id,
+          seasonAppId: season.app_id,
+          seasonPlatform: season.platform,
           teamId: formData.teamId,
           players: playersForTeamRegistration,
           teamExternalId: formData.teamExternalId
