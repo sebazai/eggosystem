@@ -63,13 +63,28 @@ export const PlayerDetails = ({
         sortable: true,
         tooltip: "Opponent Team"
       },
+      {
+        key: "match_date",
+        label: "DATE",
+        sortable: true,
+        tooltip: "Match Date",
+        responsive: false
+      },
+      {
+        key: "map_league",
+        label: "MAP/LEAGUE",
+        sortable: false,
+        tooltip: "Map and League",
+        responsive: false
+      },
       { key: "score", label: "SCORE", sortable: true, tooltip: "Match Score" },
       { key: "kills", label: "K", sortable: true, tooltip: "Kills" },
       {
         key: "assists",
         label: "A (f)",
         sortable: true,
-        tooltip: "Assists (Flash Assists)"
+        tooltip: "Assists (Flash Assists)",
+        responsive: false
       },
       { key: "deaths", label: "D", sortable: true, tooltip: "Deaths" },
       {
@@ -111,8 +126,7 @@ export const PlayerDetails = ({
         key: "adr",
         label: "ADR",
         sortable: true,
-        tooltip: "Average Damage per Round",
-        responsive: false
+        tooltip: "Average Damage per Round"
       },
       {
         key: "hs_percent",
@@ -400,21 +414,21 @@ export const PlayerDetails = ({
                           }
                         >
                           <td className="px-3 py-2 text-left">
-                            <div className="flex items-center gap-2">
-                              <div className="text-xs text-muted-foreground">
-                                {match.match_date
-                                  ? format(
-                                      new Date(match.match_date),
-                                      "dd.MM.yyyy"
-                                    )
-                                  : "N/A"}
-                              </div>
-                              <span>{match.opponent_name}</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {match.map_name} · {match.league_name}
-                            </div>
+                            <span>{match.opponent_name}</span>
                           </td>
+
+                          {/* Date - hidden on mobile */}
+                          <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
+                            {match.match_date
+                              ? format(new Date(match.match_date), "dd.MM.yyyy")
+                              : "N/A"}
+                          </td>
+
+                          {/* Map & League - hidden on mobile */}
+                          <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
+                            {match.map_name} • {match.league_name}
+                          </td>
+
                           <td className="px-3 py-2 text-center">
                             <span
                               className={
@@ -435,7 +449,7 @@ export const PlayerDetails = ({
                           <td className="px-3 py-2 text-center">
                             {match.kills}
                           </td>
-                          <td className="px-3 py-2 text-center">
+                          <td className="hidden md:table-cell px-3 py-2 text-center">
                             {match.assists} (
                             <span className="text-xs">
                               {match.flash_assists}
@@ -460,7 +474,7 @@ export const PlayerDetails = ({
                           <td className="hidden md:table-cell px-3 py-2 text-center">
                             {match.first_deaths}
                           </td>
-                          <td className="hidden md:table-cell px-3 py-2 text-center">
+                          <td className="px-3 py-2 text-center">
                             {match.adr?.toFixed(1)}
                           </td>
                           <td className="hidden md:table-cell px-3 py-2 text-center">

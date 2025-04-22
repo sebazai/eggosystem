@@ -62,7 +62,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   const columns = useMemo(
     () => [
       { key: "nickname", label: "Player", sortable: true, responsive: true },
-      { key: "team_name", label: "Team", sortable: true, responsive: true },
+      { key: "team_name", label: "Team", sortable: true, responsive: false },
       { key: "matches_played", label: "GP", sortable: true, responsive: false },
       { key: "kills", label: "K", sortable: true, responsive: true },
       {
@@ -157,7 +157,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                   <th
                     key={column.key}
                     className={cn(
-                      "px-4 py-3 text-center whitespace-nowrap font-semibold text-kanaliiga-orange",
+                      "px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange",
                       {
                         "cursor-pointer hover:bg-[#3a281a]": column.sortable,
                         "hidden md:table-cell": !column.responsive
@@ -201,7 +201,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={cn("px-4 py-3", {
+                        className={cn("px-3 py-2", {
                           "hidden md:table-cell": !column.responsive
                         })}
                       >
@@ -231,61 +231,62 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       )}
                       onClick={() => handleRowClick(player.steam_id)}
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2">
                         <div
-                          className={cn("font-medium", {
+                          className={cn("font-medium text-xs", {
                             "text-white": index < 3,
                             "text-foreground": index >= 3
                           })}
                         >
                           {player.nickname}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">
+                          <div className="text-[0.65rem] text-muted-foreground mt-1 sm:hidden">
                             {player.team_name || "No team"}
-                          </span>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 hidden md:table-cell">
+                        <div className="text-[0.65rem] text-muted-foreground">
+                          {player.team_name || "No team"}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.matches_played}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">
                         {player.kills}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.assists}(
-                        <span className="text-xs">
+                        <span className="text-[0.6rem]">
                           {player.flash_assists || 0}
                         </span>
                         )
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">
                         {player.deaths}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.awp_kills}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.utility_damage}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.headshots}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.first_kills}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.first_deaths}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">
                         {player.adr?.toFixed(1) || 0}
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {player.hs_percent?.toFixed(1) || 0}%
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground hidden md:table-cell">
+                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
                         {typeof player.kd === "number"
                           ? player.kd.toFixed(2)
                           : (player.kills / Math.max(player.deaths, 1)).toFixed(
@@ -293,7 +294,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                             )}
                       </td>
                       <td
-                        className={cn("px-4 py-3 text-center", {
+                        className={cn("px-3 py-2 text-center text-xs", {
                           "font-bold text-white": index < 3,
                           "text-muted-foreground": index >= 3
                         })}

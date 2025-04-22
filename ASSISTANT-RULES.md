@@ -23,6 +23,15 @@ This document defines rules and preferences for the AI assistant when interactin
 - **Development Environment**: Assume work is being done in the devcontainer environment as described in README.md.
 - **Navigation**: Use breadcrumbs (from shadcn/ui) for page navigation instead of back buttons to maintain consistent navigation patterns across the application.
 - **Filtering Pattern**: Use the MultiFilters component for implementing filtering functionality. The component accepts five filter types (seasons, leagues, stages, teams, maps) that can be enabled or disabled by passing arrays of IDs or null. Always include the useFilters hook for managing filter states. When adding filters to a page, implement the pattern seen in the topteams/matches pages where filter state is kept in URL parameters.
+- **Mobile View for Player Statistics**: For player statistics tables on mobile devices, show only the most essential columns: Player, K (kills), D (deaths), ADR, and Rating. Additional information like date, map, league, assists, HS%, and other detailed statistics should be hidden on mobile and only shown on medium-sized screens and larger. Use the "hidden md:table-cell" Tailwind class for columns that should be hidden on mobile.
+- **Table Styling and Structure**: For all data tables in the application, use compact styling with the following guidelines:
+  - Use `text-xs` for table cell content to ensure compact display
+  - Apply `px-3 py-2` padding to table cells for consistent spacing
+  - For secondary information like team names in player tables, use even smaller font sizes like `text-[0.65rem]`
+  - When displaying player names with their team, show the team name in smaller text beneath the player name on mobile
+  - For tables that need to display many columns, use a dedicated team column that's hidden on mobile (`hidden md:table-cell`)
+  - Ensure consistent application of these spacing and font size patterns across similar components (player-table, player-details, match-stats, etc.)
+  - Maintain clear hierarchy with proper use of font weight (bold for important stats) and text color contrasts
 
 ## 4. Frontend-Backend Integration
 

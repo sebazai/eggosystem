@@ -81,11 +81,12 @@ export const PlayerStatistics = ({
           </div>
 
           {/* Mobile Headers - only player columns */}
-          <div className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] text-xs text-muted-foreground p-2 bg-kanaliiga-light-brown/20">
+          <div className="grid sm:hidden grid-cols-[2fr_repeat(4,1fr)] text-xs text-muted-foreground p-2 bg-kanaliiga-light-brown/20">
             <div>PLAYER</div>
             <div className="text-center">K</div>
             <div className="text-center">D</div>
             <div className="text-center">ADR</div>
+            <div className="text-center">RATING</div>
           </div>
 
           {players.map((player) => (
@@ -129,7 +130,7 @@ export const PlayerStatistics = ({
               </div>
 
               {/* Mobile Row */}
-              <div className="grid sm:hidden grid-cols-[2fr_repeat(3,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
+              <div className="grid sm:hidden grid-cols-[2fr_repeat(4,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
                 <div className="text-left font-bold">{player.nickname}</div>
                 <div className="text-center">{player.kills}</div>
                 <div className="text-center">{player.deaths}</div>
@@ -137,6 +138,11 @@ export const PlayerStatistics = ({
                   {typeof player.adr === "number"
                     ? player.adr.toFixed(1)
                     : player.adr}
+                </div>
+                <div className="text-center font-medium">
+                  {typeof player.kana_rating === "number"
+                    ? player.kana_rating.toFixed(2)
+                    : player.kana_rating}
                 </div>
               </div>
             </Link>
