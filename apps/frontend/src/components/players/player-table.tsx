@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { cn, type FilterParamsQuery } from "@/lib/utils";
 import { usePlayerStats } from "@/hooks/data/usePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -45,6 +45,11 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const playerName = searchParams.get("playerName") ?? null;
+
+  // Pagination state (state-only pagination to prevent scroll issues)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
   // Get players data based on filters
   const { players, isLoading, isError, isValidating } = usePlayerStats({
     player_name: playerName || null,
@@ -123,16 +128,56 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     return sortableItems;
   }, [players, sortConfig]);
 
+  // Get current page items
+  const getCurrentPageItems = useMemo(() => {
+    const sorted = getSortedPlayers;
+    const startIndex = (currentPage - 1) * pageSize;
+    return sorted.slice(startIndex, startIndex + pageSize);
+  }, [getSortedPlayers, currentPage, pageSize]);
+
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil((players?.length || 0) / pageSize);
+  }, [players, pageSize]);
+
+  // Handle page change - state only (no URL updates)
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
+  // Handle page size change - state only (no URL updates)
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page
+  };
+
   const handleRowClick = (steamId: string) => {
     router.push(
       `/players/${encodeURIComponent(steamId)}?${searchParams.toString()}`
     );
   };
 
-  const getTopPlayerClass = (index: number) => {
-    if (index < 3) return "bg-[#1e1e1e] font-bold";
+  const getTopPlayerClass = (
+    index: number,
+    player: PlayerStatsTable,
+    sortedPlayers: PlayerStatsTable[]
+  ) => {
+    // Only apply top player styling if sorted by rating in descending order
+    if (sortConfig.key === "kana_rating" && sortConfig.direction === "desc") {
+      // Find the player's global index in the full sorted array
+      const globalIndex = sortedPlayers.findIndex(
+        (p) => p.steam_id === player.steam_id
+      );
+      if (globalIndex < 3) return "bg-[#1e1e1e] font-bold";
+    }
     return "";
   };
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterQueryParams, playerName]);
 
   if (isError) {
     return <ContentContainer>Error loading players data</ContentContainer>;
@@ -220,13 +265,13 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                   </td>
                 </tr>
               ) : (
-                getSortedPlayers.map(
+                getCurrentPageItems.map(
                   (player: PlayerStatsTable, index: number) => (
                     <tr
                       key={`${player.nickname}-${index}`}
                       className={cn(
                         "border-b border-border transition-colors",
-                        getTopPlayerClass(index),
+                        getTopPlayerClass(index, player, getSortedPlayers),
                         "hover:bg-kanaliiga-light-brown/10 cursor-pointer"
                       )}
                       onClick={() => handleRowClick(player.steam_id)}
@@ -308,6 +353,92 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {players && players.length > 0 && (
+          <div className="flex justify-between items-center p-3 border-t border-border">
+            <div className="text-xs text-muted-foreground">
+              Showing{" "}
+              {Math.min((currentPage - 1) * pageSize + 1, players.length)} -{" "}
+              {Math.min(currentPage * pageSize, players.length)} of{" "}
+              {players.length} players
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className={cn(
+                  "px-2 py-1 text-xs rounded border border-border",
+                  currentPage === 1
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : "hover:bg-kanaliiga-light-brown/10"
+                )}
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                  // Show first page, last page, current page, and pages around current
+                  let pageToShow = i + 1;
+                  if (totalPages > 5) {
+                    if (currentPage <= 3) {
+                      pageToShow = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageToShow = totalPages - 4 + i;
+                    } else {
+                      pageToShow = currentPage - 2 + i;
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={pageToShow}
+                      className={cn(
+                        "w-7 h-7 flex items-center justify-center text-xs rounded",
+                        currentPage === pageToShow
+                          ? "bg-kanaliiga-orange text-background"
+                          : "hover:bg-kanaliiga-light-brown/10"
+                      )}
+                      onClick={() => handlePageChange(pageToShow)}
+                    >
+                      {pageToShow}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                className={cn(
+                  "px-2 py-1 text-xs rounded border border-border",
+                  currentPage === totalPages
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : "hover:bg-kanaliiga-light-brown/10"
+                )}
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+
+              {/* Page size selector */}
+              <select
+                className="ml-4 px-2 py-1 text-xs bg-background border border-border rounded"
+                value={pageSize}
+                onChange={(e) => {
+                  const newPageSize = parseInt(e.target.value);
+                  handlePageSizeChange(newPageSize);
+                }}
+              >
+                <option value="10">10 per page</option>
+                <option value="20">20 per page</option>
+                <option value="50">50 per page</option>
+                <option value="100">100 per page</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
     </TooltipProvider>
   );
