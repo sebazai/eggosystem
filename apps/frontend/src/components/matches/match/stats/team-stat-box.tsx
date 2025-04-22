@@ -1,13 +1,19 @@
 import { createNextImageUrl } from "@/lib/utils";
 import type { MatchTeamStats } from "@eggosystem/types";
 import Image from "next/image";
+import Link from "next/link";
 
 export const TeamStatBox = ({ team }: { team: MatchTeamStats }) => {
   return (
     <div className="p-4">
-      <h3 className="text-base font-bold text-kanaliiga-orange mb-4">
-        {team.name}
-      </h3>
+      <Link
+        href={`/teams/${team.team_id}`}
+        className="hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors inline-block"
+      >
+        <h3 className="text-base font-bold text-kanaliiga-orange mb-4">
+          {team.name}
+        </h3>
+      </Link>
       <div className="space-y-3">
         {team.score && team.team_ht_score && (
           <div className="flex justify-between items-center">

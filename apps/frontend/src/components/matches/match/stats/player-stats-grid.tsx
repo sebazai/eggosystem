@@ -51,16 +51,21 @@ export const PlayerStatistics = ({
         <div key={team.id} className="flex flex-col">
           {/* Team name bar */}
           <div className="flex items-center gap-2 p-3 mb-[1px] bg-kanaliiga-light-brown/20">
-            <Image
-              src={createStatsKanaliigaImageUrl(team.logo)}
-              alt={team.name}
-              className="w-6 h-6"
-              width={24}
-              height={24}
-            />
-            <h2 className="text-base font-bold text-kanaliiga-orange">
-              {team.name}
-            </h2>
+            <Link
+              href={`/teams/${team.id}`}
+              className="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors"
+            >
+              <Image
+                src={createStatsKanaliigaImageUrl(team.logo)}
+                alt={team.name}
+                className="w-6 h-6"
+                width={24}
+                height={24}
+              />
+              <h2 className="text-base font-bold text-kanaliiga-orange">
+                {team.name}
+              </h2>
+            </Link>
           </div>
 
           {/* Stats header - Desktop */}

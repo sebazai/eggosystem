@@ -5,6 +5,7 @@ import type {
   MatchTopPlayerAwardsValue
 } from "@eggosystem/types";
 import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 import { useRouter } from "next/navigation";
 
@@ -38,7 +39,7 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
     <div className="mt-8 max-w-[600px]">
       <h2 className="text-kanaliiga-orange mb-4">TOP PLAYERS</h2>
       <div className="bg-card rounded-sm">
-        <div className="grid grid-cols-[1.5fr_1fr_auto] gap-1  xs:gap-4 p-4">
+        <div className="grid grid-cols-[1.5fr_1fr_auto] gap-1 xs:gap-4 p-4">
           <div className="text-muted-foreground text-sm">Award</div>
           <div className="text-muted-foreground text-sm">Player</div>
           <div className="text-muted-foreground text-sm text-right">Score</div>
@@ -50,24 +51,31 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
             return (
               <React.Fragment key={key}>
                 <div className="text-muted-foreground text-sm">{text}</div>
-                <div
-                  className="flex gap-2 cursor-pointer hover:text-kanaliiga-orange"
-                  onClick={() =>
-                    stat && stat.steam_id && handlePlayerClick(stat.steam_id)
-                  }
-                >
+                <div className="flex gap-2">
                   {team && (
-                    <div>
+                    <Link
+                      href={`/teams/${team.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="hover:opacity-80 transition-opacity"
+                    >
                       <Image
                         src={createStatsKanaliigaImageUrl(team.logo)}
                         alt={team.name}
                         width={16}
                         height={16}
+                        title={`${team.name} - Click to view team details`}
                         className="rounded-full"
                       />
-                    </div>
+                    </Link>
                   )}
-                  <span className="text-sm">{stat.nickname}</span>
+                  <span
+                    className="text-sm cursor-pointer hover:text-kanaliiga-orange"
+                    onClick={() =>
+                      stat?.steam_id && handlePlayerClick(stat.steam_id)
+                    }
+                  >
+                    {stat.nickname}
+                  </span>
                 </div>
                 <div className="text-sm text-right">
                   {roundToOneDecimal(stat.value ?? 0)}
