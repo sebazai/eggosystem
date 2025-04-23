@@ -49,6 +49,10 @@ export const PlayerDetails = ({
     direction: "desc"
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
   // Fetch player details using the hook
   const { playerDetails, isLoading, isError } = usePlayerDetails({
     steamId,
@@ -194,7 +198,28 @@ export const PlayerDetails = ({
 
     return sortableItems;
   }, [playerDetails?.matchHistory, sortConfig]);
+
   const matchHistory = getSortedMatchHistory;
+
+  // Calculate pagination
+  const totalMatches = matchHistory.length;
+  const totalPages = Math.ceil(totalMatches / itemsPerPage);
+  const paginatedMatches = matchHistory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   // Use the player stats from the API if available, otherwise show loading state
   const player = playerDetails?.playerStats;
@@ -441,7 +466,7 @@ export const PlayerDetails = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-kanaliiga-light-brown/10">
-                    {matchHistory.map((match) => {
+                    {paginatedMatches.map((match) => {
                       const teamWon = match.score > match.opponent_score;
 
                       return (
@@ -553,13 +578,29 @@ export const PlayerDetails = ({
             )}
           </div>
           {matchHistory.length > 0 && (
-            <div className="flex justify-between mt-2">
-              <button className="text-muted-foreground">
-                <span className="text-kanaliiga-orange">◀</span> Previous
-              </button>
-              <button className="text-muted-foreground">
-                Next <span className="text-kanaliiga-orange">▶</span>
-              </button>
+            <div className="flex justify-between mt-2 items-center">
+              <div className="text-sm text-muted-foreground">
+                Showing {paginatedMatches.length} of {totalMatches} matches
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className={`text-muted-foreground ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <span className="text-kanaliiga-orange">◀</span> Previous
+                </button>
+                <span className="text-muted-foreground px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  className={`text-muted-foreground ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  Next <span className="text-kanaliiga-orange">▶</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

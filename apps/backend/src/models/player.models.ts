@@ -430,7 +430,6 @@ export const getPlayerDetailsWithStatsByFilters = async (
     FROM MatchData
     GROUP BY match_id, season_id, season_name, league_id, league_name, stage, match_date, best_of
     ORDER BY match_date DESC
-    LIMIT 10
   `;
 
   const [playerStats, matchHistory] = await Promise.all([
