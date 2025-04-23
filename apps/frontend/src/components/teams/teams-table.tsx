@@ -37,6 +37,11 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
     key: "date",
     direction: "desc"
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
   const handleSortClick = (key: string) => {
     let direction: "asc" | "desc" = "desc";
     if (sortConfig.key === key && sortConfig.direction === "desc") {
@@ -60,6 +65,26 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
       return 0;
     });
   }, [teamDetails?.matches, sortConfig]);
+
+  // Calculate pagination
+  const totalMatches = sortedMatches.length;
+  const totalPages = Math.ceil(totalMatches / itemsPerPage);
+  const paginatedMatches = sortedMatches.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
   if (error) {
     return <ContentContainer>Error loading team details</ContentContainer>;
@@ -114,25 +139,25 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
             <div className="ml-auto">
               <div className="flex items-center gap-3">
                 <div className="text-center">
-                  <div className="text-muted-foreground text-sm">Games</div>
+                  <div className="text-muted-foreground text-sm">GP</div>
                   <div className="text-lg font-semibold">
                     {team.matches_played}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-muted-foreground text-sm">Wins</div>
+                  <div className="text-muted-foreground text-sm">W</div>
                   <div className="text-lg font-semibold text-green-500">
                     {team.wins}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-muted-foreground text-sm">Losses</div>
+                  <div className="text-muted-foreground text-sm">L</div>
                   <div className="text-lg font-semibold text-red-500">
                     {team.losses}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-muted-foreground text-sm">Win %</div>
+                  <div className="text-muted-foreground text-sm">Win%</div>
                   <div className="text-lg font-semibold">
                     {team.win_percentage.toFixed(1)}%
                   </div>
@@ -303,7 +328,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
                     </td>
                   </tr>
                 ) : sortedMatches && sortedMatches.length > 0 ? (
-                  sortedMatches.map((match) => {
+                  paginatedMatches.map((match) => {
                     const teamWon = match.result === "win";
                     const formattedDate = format(
                       new Date(match.date),
@@ -381,6 +406,32 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
               </tbody>
             </table>
           </div>
+          {sortedMatches.length > 0 && (
+            <div className="flex justify-between mt-2 items-center">
+              <div className="text-sm text-muted-foreground">
+                Showing {paginatedMatches.length} of {totalMatches} matches
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className={`text-muted-foreground ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  <span className="text-kanaliiga-orange">◀</span> Previous
+                </button>
+                <span className="text-muted-foreground px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  className={`text-muted-foreground ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  Next <span className="text-kanaliiga-orange">▶</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
