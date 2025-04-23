@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { cn, type FilterParamsQuery } from "@/lib/utils";
 import { usePlayerDetails } from "@/hooks/data/usePlayerDetails";
@@ -241,37 +242,55 @@ export const PlayerDetails = ({
                   {player?.nickname}
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
-                  <Image
-                    src={player?.team_logo || "/teams/nologo.svg"}
-                    alt={player?.team_name || "No team"}
-                    width={20}
-                    height={20}
-                    className="rounded-full"
-                  />
-                  <span className="text-muted-foreground">
-                    {player?.team_name || "No team"}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  <span>Steam ID: {steamId}</span>
+                  {player?.team_name &&
+                  playerDetails?.matchHistory?.[0]?.team_id ? (
+                    <Link
+                      href={`/teams/${playerDetails.matchHistory[0].team_id}`}
+                      className="flex items-center gap-2 hover:text-kanaliiga-orange transition-colors"
+                    >
+                      <Image
+                        src={player?.team_logo || "/teams/nologo.svg"}
+                        alt={player?.team_name || "No team"}
+                        width={20}
+                        height={20}
+                        className="rounded-full"
+                      />
+                      <span className="text-muted-foreground">
+                        {player?.team_name}
+                      </span>
+                    </Link>
+                  ) : (
+                    <>
+                      <Image
+                        src={player?.team_logo || "/teams/nologo.svg"}
+                        alt={player?.team_name || "No team"}
+                        width={20}
+                        height={20}
+                        className="rounded-full"
+                      />
+                      <span className="text-muted-foreground">
+                        {player?.team_name || "No team"}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
               <div className="ml-auto">
                 <div className="flex items-center gap-3">
                   <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Wins</div>
+                    <div className="text-muted-foreground text-sm">W</div>
                     <div className="text-lg font-semibold text-green-500">
                       {player?.wins || 0}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Losses</div>
+                    <div className="text-muted-foreground text-sm">L</div>
                     <div className="text-lg font-semibold text-red-500">
                       {player?.losses || 0}
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Win %</div>
+                    <div className="text-muted-foreground text-sm">Win%</div>
                     <div className="text-lg font-semibold">
                       {winPercentage.toFixed(1)}%
                     </div>
@@ -358,7 +377,8 @@ export const PlayerDetails = ({
               <TooltipProvider>
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-[#2a1810] text-xs uppercase">
+                    {/* Desktop headers */}
+                    <tr className="hidden sm:table-row bg-[#2a1810] text-xs uppercase">
                       {matchColumns.map((column) => (
                         <th
                           key={column.key}
@@ -400,6 +420,25 @@ export const PlayerDetails = ({
                         </th>
                       ))}
                     </tr>
+
+                    {/* Mobile headers */}
+                    <tr className="sm:hidden bg-[#2a1810] text-xs uppercase">
+                      <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-kanaliiga-orange">
+                        OPPONENT
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+                        K
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+                        D
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+                        ADR
+                      </th>
+                      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+                        RATING
+                      </th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-kanaliiga-light-brown/10">
                     {matchHistory.map((match) => {
@@ -415,6 +454,24 @@ export const PlayerDetails = ({
                         >
                           <td className="px-3 py-2 text-left">
                             <span>{match.opponent_name}</span>
+                            {/* Score on mobile - hidden on desktop */}
+                            <div className="sm:hidden text-xs mt-1">
+                              <span
+                                className={
+                                  teamWon ? "text-green-500" : "text-red-500"
+                                }
+                              >
+                                {match.score}
+                              </span>
+                              -
+                              <span
+                                className={
+                                  !teamWon ? "text-green-500" : "text-red-500"
+                                }
+                              >
+                                {match.opponent_score}
+                              </span>
+                            </div>
                           </td>
 
                           {/* Date - hidden on mobile */}
@@ -429,7 +486,8 @@ export const PlayerDetails = ({
                             {match.map_name} • {match.league_name}
                           </td>
 
-                          <td className="px-3 py-2 text-center">
+                          {/* Score - hidden on mobile, shown on desktop */}
+                          <td className="hidden sm:table-cell px-3 py-2 text-center">
                             <span
                               className={
                                 teamWon ? "text-green-500" : "text-red-500"
