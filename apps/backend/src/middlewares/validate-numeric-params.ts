@@ -1,0 +1,23 @@
+import { type RequestHandler } from "express";
+
+/**
+ * Middleware to validate that req.params (all or selected) are valid integers.
+ * @param keys Optional array of specific param keys to validate. If omitted, all req.params are checked.
+ */
+export function validateNumericParams(keys?: string[]): RequestHandler {
+  return (req, res, next) => {
+    const paramKeys = keys ?? Object.keys(req.params);
+
+    for (const key of paramKeys) {
+      const value = req.params[key];
+      const parsed = parseInt(value, 10);
+
+      if (isNaN(parsed)) {
+        res.status(400).json({ error: `Invalid numeric param: ${key}` });
+        return;
+      }
+    }
+
+    next();
+  };
+}

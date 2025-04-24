@@ -1,6 +1,6 @@
 "use client";
 
-import { apiFetch } from "@/lib/apiClient";
+import { clientApiFetch } from "@/lib/apiClient";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { UserFullPayload } from "@eggosystem/types";
 import { usePathname, useRouter } from "next/navigation";
@@ -22,9 +22,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkAuth = async () => {
     try {
-      const res = await apiFetch<{ user: UserFullPayload }>({
-        url: "/auth/me"
-      });
+      const res = await clientApiFetch<{ user: UserFullPayload }>(
+        "/api/v1/auth/me"
+      );
       setUser(res.user);
       // Check if the user has accepted the privacy policy
       if (res.user.acceptedPrivacyPolicy === false) {
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiFetch({ url: "/auth/logout" });
+      await clientApiFetch("/api/v1/auth/logout");
     } finally {
       setUser(null);
     }

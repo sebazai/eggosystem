@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 interface CopyInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string;
@@ -16,9 +17,13 @@ export function CopyInput({ value, className, ...props }: CopyInputProps) {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
+      toast.success("Copied!", {
+        description: "The link has been copied to your clipboard."
+      });
       setTimeout(() => setCopied(false), 2000); // reset after 2s
     } catch (err) {
       console.error("Failed to copy!", err);
+      toast.error("Error", { description: "Failed to copy to clipboard." });
     }
   };
 

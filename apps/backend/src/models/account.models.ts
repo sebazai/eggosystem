@@ -111,3 +111,18 @@ export const getLatestUserProfileMarketingConsent = async (
   );
   return !!result?.[0]?.accepted_marketing;
 };
+
+export const getAccountIdBySteamId = async (
+  steamId: string,
+  connection?: PoolConnection
+) => {
+  const [result] = await runQuery<{ account_id: number }[]>(
+    `SELECT id as account_id FROM Accounts a JOIN SteamPlayers sp ON a.id = sp.account_id WHERE sp.steam_id = ?`,
+    [steamId],
+    connection
+  );
+  if (!result) {
+    throw new Error(`Could not find account id for steam id ${steamId}`);
+  }
+  return result;
+};

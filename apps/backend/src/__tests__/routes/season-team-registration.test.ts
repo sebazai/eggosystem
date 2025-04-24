@@ -4,7 +4,7 @@ import type TestAgent from "supertest/lib/agent";
 import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import _ from "lodash";
 import express from "express";
-import seasonRoutes from "../../routes/v1/season.routes";
+import seasonTeamRegRoute from "../../routes/v1/season-team-registration.routes";
 
 const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
   jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue(
@@ -96,22 +96,18 @@ let agent: TestAgent;
 beforeAll(() => {
   const app = express();
   app.use(express.json());
-  app.use(seasonRoutes);
+  app.use(seasonTeamRegRoute);
 
   // Create a Supertest agent with default cookie set
   agent = request.agent(app);
   agent.set("Authorization", "Bearer valid_token");
 });
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
-
 describe("POST /:id/signup", () => {
   describe("with valid data", () => {
     it("should return 404 if season does not exist", async () => {
       mockSeasonWith(undefined);
-      const res = await agent.post("/123/signup").send(validSignupData);
+      const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(404);
       expect(res.body.message).toBe("Season not found");
     });
@@ -120,7 +116,7 @@ describe("POST /:id/signup", () => {
       mockSeasonWith({
         signup_start_date: null
       });
-      const res = await agent.post("/123/signup").send(validSignupData);
+      const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(400);
       expect(res.body.message).toBe("Season does not have a signup start date");
     });
@@ -129,7 +125,7 @@ describe("POST /:id/signup", () => {
       mockSeasonWith({
         signup_start_date: "2100-01-01T00:00:00Z"
       });
-      const res = await agent.post("/123/signup").send(validSignupData);
+      const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(400);
       expect(res.body.message).toBe("Signup has not started yet");
     });
@@ -139,7 +135,7 @@ describe("POST /:id/signup", () => {
         signup_start_date: "2024-01-01T00:00:00Z",
         signup_end_date: "2024-01-02T00:00:00Z"
       });
-      const res = await agent.post("/123/signup").send(validSignupData);
+      const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(400);
       expect(res.body.message).toBe("Signup has ended");
     });
@@ -149,7 +145,7 @@ describe("POST /:id/signup", () => {
         signup_start_date: "2024-01-01T00:00:00Z"
       });
       const invalidData = { ...validSignupData, players: [] }; // Invalid: not enough players
-      const res = await agent.post("/123/signup").send(invalidData);
+      const res = await agent.post("/season/123/signup").send(invalidData);
       expect(res.status).toBe(400);
     });
   });
@@ -158,7 +154,9 @@ describe("POST /:id/signup", () => {
   describe("with invalid data", () => {
     it("should return 400 if organizationId -1 and missing newOrganization", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
-      const res = await agent.post("/123/signup").send(invalidSignupData);
+      const res = await agent
+        .post("/season/123/signup")
+        .send(invalidSignupData);
       expect(res.status).toBe(400);
 
       expect(res.body.errors.fieldErrors.newOrganization).toEqual([
@@ -167,7 +165,9 @@ describe("POST /:id/signup", () => {
     });
     it("should return 400 if teamId -1 and missing newTeam", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
-      const res = await agent.post("/123/signup").send(invalidSignupData);
+      const res = await agent
+        .post("/season/123/signup")
+        .send(invalidSignupData);
       expect(res.status).toBe(400);
 
       expect(res.body.errors.fieldErrors.newTeam).toEqual([
@@ -176,7 +176,9 @@ describe("POST /:id/signup", () => {
     });
     it("should return 400 if missing discord for captain", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
-      const res = await agent.post("/123/signup").send(invalidSignupData);
+      const res = await agent
+        .post("/season/123/signup")
+        .send(invalidSignupData);
       expect(res.status).toBe(400);
 
       expect(res.body.errors.fieldErrors.players).toEqual([
@@ -187,7 +189,9 @@ describe("POST /:id/signup", () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
       invalidSignupData.players[0].steamId =
         invalidSignupData.players[1].steamId;
-      const res = await agent.post("/123/signup").send(invalidSignupData);
+      const res = await agent
+        .post("/season/123/signup")
+        .send(invalidSignupData);
       expect(res.status).toBe(400);
       expect(res.body.errors.fieldErrors.players).toContain(
         "Each player must have a unique Steam ID."

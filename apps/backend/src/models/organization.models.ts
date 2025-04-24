@@ -18,13 +18,13 @@ export const getOrganizations = async (searchParams?: string) => {
   );
 };
 
-export const getOrganizationById = async (id: string) => {
+export const getOrganizationById = async (id: number) => {
   return runQuery<Organizations[]>("SELECT * FROM Organizations WHERE id = ?", [
     id
   ]);
 };
 
-export const getOrganizationTeams = async (id: string) => {
+export const getOrganizationTeams = async (id: number) => {
   return runQuery<Team[]>("SELECT * FROM Teams WHERE organization_id = ?", [
     id
   ]);

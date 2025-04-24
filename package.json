@@ -5,7 +5,7 @@
   "license": "GPL-3.0",
   "description": "A unified monorepo for Kanahub’s frontend and backend services.",
   "scripts": {
-    "shadcn:add": "turbo run add-shadcn-component -- --",
+    "shadcn:add": "turbo run shadcn:add -- --",
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "turbo test",

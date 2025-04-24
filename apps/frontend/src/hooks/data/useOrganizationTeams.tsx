@@ -4,17 +4,19 @@ import { expressFetcher } from "@/lib/utils";
 import useSWR from "swr";
 import type { Team } from "@eggosystem/types";
 
-export const useOrganizationTeams = (organizationId: number) => {
+export const useOrganizationTeams = (organizationId?: number) => {
+  const shouldFetch = typeof organizationId === "number";
+
   const { data, error, isValidating, isLoading } = useSWR<Team[], Error>(
-    `/api/v1/organizations/${organizationId}/teams`,
+    shouldFetch ? `/api/v1/organizations/${organizationId}/teams` : null,
     expressFetcher,
     { revalidateOnFocus: false }
   );
 
   return {
-    teams: data,
-    isLoading, // When there is no data and no error, it's loading
-    isError: error,
-    isValidating
+    teams: shouldFetch ? data : null,
+    isLoading: shouldFetch ? isLoading : false,
+    isError: shouldFetch ? error : null,
+    isValidating: shouldFetch ? isValidating : false
   };
 };

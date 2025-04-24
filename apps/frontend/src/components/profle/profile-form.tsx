@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { ContentContainer } from "../layout/content-container";
 import { SteamLoginButton } from "../steam-login";
 import { accountSchema, type AccountUpdateValues } from "@eggosystem/types";
-import { apiFetch } from "@/lib/apiClient";
+import { clientApiFetch } from "@/lib/apiClient";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export default function ProfileForm() {
@@ -91,10 +91,9 @@ export default function ProfileForm() {
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
-      await apiFetch({
-        url: `/accounts/update`,
+      await clientApiFetch(`/api/v1/accounts/update`, {
         method: "POST",
-        body: data
+        body: JSON.stringify(data)
       });
 
       const returnTo = searchParams.get("returnTo");

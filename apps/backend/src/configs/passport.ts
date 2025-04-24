@@ -31,7 +31,7 @@ passport.use(
             provider_id: profile.id,
             nickname: profile.displayName,
             provider: "steam"
-          } satisfies UserPayload);
+          } satisfies Omit<UserPayload, "permissions">);
         } catch (error) {
           return done(error);
         }
@@ -42,7 +42,7 @@ passport.use(
         provider_id: profile.id,
         nickname: userInDb.nickname,
         provider: "steam"
-      } satisfies UserPayload;
+      } satisfies Omit<UserPayload, "permissions">;
 
       return done(null, user);
     }

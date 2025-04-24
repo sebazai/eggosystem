@@ -19,6 +19,7 @@ describe("AuthControllers utils", () => {
         provider_id: "12345",
         nickname: "enzoj",
         provider: "steam",
+        permissions: [],
         account_id: 1
       } satisfies UserPayload;
       const jti = "123123";
@@ -36,6 +37,7 @@ describe("AuthControllers utils", () => {
           account_id: 1,
           provider: "steam",
           provider_id: "12345",
+          permissions: [],
           nickname: "enzoj",
           jti: "123123"
         },
@@ -48,6 +50,7 @@ describe("AuthControllers utils", () => {
           account_id: 1,
           provider: "steam",
           provider_id: "12345",
+          permissions: [],
           nickname: "enzoj",
           jti: "123123"
         },
@@ -78,8 +81,6 @@ describe("AuthControllers", () => {
     let req: any, res: any;
 
     beforeEach(() => {
-      jest.clearAllMocks();
-
       jest.spyOn(authServices, "generateTokens").mockReturnValue({
         accessToken: "newAccessToken",
         refreshToken: "newRefreshToken"
@@ -93,6 +94,7 @@ describe("AuthControllers", () => {
           account_id: 1,
           provider: "steam",
           provider_id: "12345",
+          permissions: [],
           nickname: "enzoj"
         } satisfies UserPayload
       };
@@ -107,6 +109,7 @@ describe("AuthControllers", () => {
         {
           provider_id: "12345",
           nickname: "enzoj",
+          permissions: [],
           provider: "steam",
           account_id: 1
         } satisfies UserPayload,
@@ -147,8 +150,6 @@ describe("AuthControllers", () => {
     let req: any, res: any;
 
     beforeEach(() => {
-      jest.clearAllMocks();
-
       jest.spyOn(authServices, "generateTokens").mockReturnValue({
         accessToken: "newAccessToken",
         refreshToken: "newRefreshToken"
@@ -186,8 +187,6 @@ describe("AuthControllers", () => {
     let req: any, res: any;
 
     beforeEach(() => {
-      jest.clearAllMocks();
-
       jest.spyOn(authServices, "generateTokens").mockReturnValue({
         accessToken: "newAccessToken",
         refreshToken: "newRefreshToken"
@@ -252,10 +251,15 @@ describe("AuthControllers", () => {
         return { steamId: "12345", jti: "123123" };
       });
 
+      jest
+        .spyOn(authServices, "getPermissionsForAccountId")
+        .mockResolvedValue([]);
+
       await authControllers.refreshToken(req, res);
 
       expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
+        permissions: [],
         jti: "123123"
       });
 
@@ -306,13 +310,24 @@ describe("AuthControllers", () => {
     // Should have refresh_token and access_token secure: true if NODE_ENV === production
     it("should have refresh_token and access_token secure: true if NODE_ENV === production", async () => {
       process.env.NODE_ENV = "production";
+      jest
+        .spyOn(authServices, "getDBPermissionsForAccountId")
+        .mockResolvedValue([
+          {
+            permission_name: "edit",
+            role_name: "captain",
+            season_id: 1,
+            team_id: 2
+          }
+        ]);
       (jest.spyOn(jwt, "verify") as jest.Mock).mockImplementation(() => {
         return { steamId: "12345", jti: "123123" };
       });
       await authControllers.refreshToken(req, res);
       expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
-        jti: "123123"
+        jti: "123123",
+        permissions: ["captain:edit:season-1:team-2"]
       });
 
       expect(redisClient.set as jest.Mock).toHaveBeenCalledWith(

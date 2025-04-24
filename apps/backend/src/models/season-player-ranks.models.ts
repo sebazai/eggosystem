@@ -4,7 +4,7 @@ import { type PoolConnection } from "mysql2/promise";
 
 export const getPlayerHoursForSeason = async (
   steam_id: string,
-  season_id: string
+  season_id: number
 ) => {
   const [hours] = await runQuery<Array<{ hours: number } | undefined>>(
     "SELECT cs_hours as hours FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ? LIMIT 1",
@@ -16,7 +16,7 @@ export const getPlayerHoursForSeason = async (
 
 export const getPlayerRankForSeason = async (
   steam_id: string,
-  season_id: string
+  season_id: number
 ) => {
   const [rank] = await runQuery<Array<{ rank: number } | undefined>>(
     "SELECT cs2_rank as rank FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ? LIMIT 1",
@@ -28,11 +28,11 @@ export const getPlayerRankForSeason = async (
 
 export const insertFaceITPlayerRankForSeason = async (
   steamId: string,
-  seasonId: string,
+  seasonId: number,
   CS2Rank: number,
   CS2Hours: number,
   FaceITRank: FaceITCSRank,
-  connection: PoolConnection
+  connection?: PoolConnection
 ) => {
   const faceitLevel = FaceITRank.faceit_level;
   const faceitDate = new Date(FaceITRank.faceit_date);

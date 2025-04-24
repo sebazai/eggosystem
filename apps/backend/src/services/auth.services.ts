@@ -1,7 +1,20 @@
-import { expireIn20m, expireIn7Days } from "../utils/redisClient";
+import {
+  expireIn20m,
+  expireIn30Days,
+  expireIn7Days,
+  redisClient
+} from "../utils/redisClient";
 import type { Response } from "express";
 import jwt from "jsonwebtoken";
 import { getPath } from "../utils/path";
+import {
+  type Role,
+  type Permission,
+  type Season,
+  type Team
+} from "@eggosystem/types";
+import { runQuery } from "../db/mysqlRunQuery";
+import { type PoolConnection } from "mysql2/promise";
 
 export const getJWTValues = () => {
   const JWT_EXPIRES_IN_AS_NUM = isNaN(Number(process.env.JWT_EXPIRES_IN))
@@ -43,6 +56,70 @@ const {
   JWT_EXPIRES_IN,
   JWT_REFRESH_EXPIRES_IN
 } = getJWTValues();
+
+export const flushPermissionsForAccountId = async (accountId: number) => {
+  const redisKey = `permissions-${accountId}`;
+  await redisClient.del(redisKey);
+};
+
+export const getDBPermissionsForAccountId = async (
+  accountId: number,
+  connection?: PoolConnection
+) => {
+  const permissionsResult = await runQuery<
+    Array<{
+      permission_name: Permission["permission_name"];
+      role_name: Role["role_name"];
+      season_id: Season["id"];
+      team_id: Team["id"];
+    }>
+  >(
+    `
+    SELECT DISTINCT r.role_name, p.permission_name, aps.season_id, aps.team_id
+      FROM Accounts a
+      JOIN AccountRoles ar ON ar.account_id = a.id
+      JOIN Roles r ON r.id = ar.role_id
+      JOIN RolePermissions rp ON rp.role_id = ar.role_id
+      JOIN Permissions p ON p.id = rp.permission_id
+      LEFT JOIN AccountPermissionScopes aps ON aps.account_id = a.id AND aps.permission_id = p.id
+      WHERE a.id = ?
+    `,
+    [accountId],
+    connection
+  );
+  return permissionsResult;
+};
+
+export const getPermissionsForAccountId = async (
+  accountId: number,
+  connection?: PoolConnection
+) => {
+  const redisKey = `permissions-${accountId}`;
+  const permissionsInRedis = await redisClient.get(redisKey);
+  if (permissionsInRedis) {
+    return permissionsInRedis.split(",");
+  }
+
+  const permissionsResult = await getDBPermissionsForAccountId(
+    accountId,
+    connection
+  );
+
+  if (permissionsResult.length > 0) {
+    const permissions = permissionsResult.map(
+      (row) =>
+        `${row.role_name}:${row.permission_name}:season-${row.season_id}:team-${row.team_id}`
+    );
+    await redisClient.set(
+      redisKey,
+      permissions.join(","),
+      "EX",
+      expireIn30Days
+    );
+    return permissions;
+  }
+  return [];
+};
 
 export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {
   const { exp, iat, ...rest } = user;

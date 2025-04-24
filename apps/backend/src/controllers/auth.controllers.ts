@@ -6,7 +6,9 @@ import {
   clearCookies,
   generateTokens,
   setCookies,
-  getJWTValues
+  getJWTValues,
+  getPermissionsForAccountId,
+  flushPermissionsForAccountId
 } from "../services/auth.services";
 import { redisClient } from "../utils/redisClient";
 
@@ -19,7 +21,17 @@ export const login = async (req: Request, res: Response) => {
 
   const user = req.user as UserPayload;
   const jti = uuid();
-  const { accessToken, refreshToken } = generateTokens(user, jti);
+
+  const permissions = await getPermissionsForAccountId(user.account_id);
+  const userWithPermissions = {
+    ...user,
+    permissions
+  };
+
+  const { accessToken, refreshToken } = generateTokens(
+    userWithPermissions,
+    jti
+  );
 
   await redisClient.set(jti, refreshToken, "EX", JWT_REFRESH_EXPIRES_IN);
 
@@ -45,8 +57,13 @@ export const refreshToken = async (req: Request, res: Response) => {
       return;
     }
 
-    const { accessToken, refreshToken: newRefreshToken } =
-      generateTokens(decoded);
+    // Refresh permissions.
+    const permissions = await getPermissionsForAccountId(decoded.account_id);
+
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens({
+      ...decoded,
+      permissions
+    });
 
     await redisClient.set(
       decoded.jti!,
@@ -71,6 +88,7 @@ export const logout = async (req: Request, res: Response) => {
         jwt.verify(refreshToken, JWT_REFRESH_SECRET)
       );
       await redisClient.del(decoded.jti!);
+      await flushPermissionsForAccountId(decoded.account_id);
     } catch (_err) {
       // NO-op
     }

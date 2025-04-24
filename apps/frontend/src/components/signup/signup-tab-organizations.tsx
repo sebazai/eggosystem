@@ -22,6 +22,7 @@ interface TabOrganizationProps {
   resetField: UseFormResetField<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
+  isEditMode: boolean;
 }
 
 export const TabOrganization = ({
@@ -29,7 +30,8 @@ export const TabOrganization = ({
   control,
   resetField,
   validOrganizationSelection,
-  onNext
+  onNext,
+  isEditMode
 }: TabOrganizationProps) => {
   const {
     organizations,
@@ -71,6 +73,7 @@ export const TabOrganization = ({
             <FormLabel>Organization</FormLabel>
             <FormControl>
               <FancySelect<number>
+                disabled={isEditMode}
                 isMulti={false}
                 allowOther={true}
                 allowOtherText="Add new..."

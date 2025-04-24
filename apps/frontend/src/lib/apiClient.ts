@@ -20,25 +20,11 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
-interface ApiFetchGet {
-  url: string;
-  method?: "GET";
-}
 
-interface ApiFetchPost {
-  url: string;
-  method: "POST";
-  body: Record<string, unknown>;
-}
-
-type ApiFetch = ApiFetchGet | ApiFetchPost;
-export async function apiFetch<T>({
-  url,
-  method,
-  body
-}: ApiFetchPost): Promise<T>;
-export async function apiFetch<T>({ url, method }: ApiFetchGet): Promise<T>;
-export async function apiFetch<T>(params: ApiFetch): Promise<T> {
+export async function clientApiFetch<T>(
+  ...args: [RequestInfo, RequestInit?]
+): Promise<T> {
+  const [url, options] = args;
   const refreshAccessToken = async () => {
     if (isRefreshing) return;
     isRefreshing = true;
@@ -71,17 +57,14 @@ export async function apiFetch<T>(params: ApiFetch): Promise<T> {
     }
   };
   const fetchWithRetry = async (): Promise<T> => {
-    const response = await fetch(
-      `${envConfig.CLIENT_API_URL}/api/v1${params.url}`,
-      {
-        method: params.method ?? "GET",
-        ...(params.method === "POST" && {
-          body: JSON.stringify(params.body),
-          headers: { "Content-Type": "application/json" }
-        }),
-        credentials: "include"
-      }
-    );
+    const response = await fetch(`${envConfig.CLIENT_API_URL}${url}`, {
+      method: options?.method ?? "GET",
+      ...((options?.method === "POST" || options?.method === "PUT") && {
+        body: options?.body,
+        headers: { "Content-Type": "application/json" }
+      }),
+      credentials: "include"
+    });
 
     if (response.status === 401) {
       return new Promise((resolve, reject) => {

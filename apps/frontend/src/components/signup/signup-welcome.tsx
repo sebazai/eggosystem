@@ -113,12 +113,14 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
 
         {!user ? (
           <div className="flex justify-center">
-            <SteamLoginButton returnUrl={`/signup/${seasonId}/registration`}>
+            <SteamLoginButton
+              returnUrl={`/seasons/${seasonId}/signup/registration`}
+            >
               Login and register team!
             </SteamLoginButton>
           </div>
         ) : (
-          <Link href={`/signup/${seasonId}/registration`}>
+          <Link href={`/seasons/${seasonId}/signup/registration`}>
             <Button
               variant="outline"
               className="h-22 w-52 text-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"

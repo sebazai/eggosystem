@@ -39,7 +39,7 @@ import type {
 import { SeasonPlatform } from "@eggosystem/types";
 import { playerSchema } from "@eggosystem/types";
 import { TriangleAlert } from "lucide-react";
-import { ApiError, apiFetch } from "@/lib/apiClient";
+import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./signup-player-alert";
 import { FaceITLevelIcon } from "../profle/faceit-level";
 import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
@@ -53,6 +53,7 @@ interface TabPlayersProps {
   seasonSteamAppId: Game["app_id"];
   platform: SeasonPlatform;
   seasonId: string;
+  isEditMode: boolean;
 }
 
 export const TabPlayers = ({
@@ -63,18 +64,23 @@ export const TabPlayers = ({
   resetField,
   seasonSteamAppId,
   platform,
-  seasonId
+  seasonId,
+  isEditMode
 }: TabPlayersProps) => {
   const [newPlayers, setNewPlayers] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const auth = useAuth();
   useEffect(() => {
-    if (auth.user?.provider === "steam" && auth.user?.provider_id) {
+    if (
+      auth.user?.provider === "steam" &&
+      auth.user?.provider_id &&
+      !isEditMode
+    ) {
       setValue("players.0.accountId", auth.user.account_id);
       setValue("players.0.steamId", auth.user.provider_id);
       setValue("players.0.captain", true);
     }
-  }, [auth.user, setValue]);
+  }, [auth.user, setValue, isEditMode]);
 
   useEffect(() => {
     const playerErrorIndicesAsNumber = playerErrorIndices
@@ -94,7 +100,7 @@ export const TabPlayers = ({
   const [loadingStates, setLoadingStates] = useState<
     Record<number, boolean | undefined>
   >({});
-  const prevWatchedSteamIds = useRef(steamIds);
+  const prevWatchedSteamIds = useRef(isEditMode ? [] : steamIds);
   // Open accordions if any errors
   useEffect(() => {
     const errorIndices: string[] = [];
@@ -126,93 +132,98 @@ export const TabPlayers = ({
   });
 
   useEffect(() => {
-    const checkPlayers = async (steamIds: string[]) => {
-      for (const [index, steam_id] of steamIds.entries()) {
-        if (
-          steam_id.length === 17 &&
-          !isNaN(Number(steam_id)) &&
-          !prevWatchedSteamIds.current.includes(steam_id)
-        ) {
-          setLoadingStates((prev) => ({ ...prev, [index]: true }));
+    const handlePlayer = async (steam_id: string, index: number) => {
+      if (
+        steam_id.length === 17 &&
+        !isNaN(Number(steam_id)) &&
+        !prevWatchedSteamIds.current.includes(steam_id)
+      ) {
+        setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-          // Fetch player hours, rank and platform rank first, as they should not return error
-          const [
-            hoursData,
-            rankData,
-            externalRankData,
-            publicStatus,
-            playerData
-          ] = await Promise.allSettled([
-            apiFetch<{
-              hours: number;
-            }>({
-              url: `/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
-            }),
-            apiFetch<{ rank: number }>({
-              url: `/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
-            }),
-            apiFetch<unknown>({
-              url: `/players/${steam_id}/platform/${platform}/rank`
-            }),
-            apiFetch<{ public: boolean }>({
-              url: `/players/${steam_id}/public`
-            }),
-            apiFetch<PlayerDetailsBySteamId>({
-              url: `/players/${steam_id}/details`
-            })
-          ]);
+        // Fetch player hours, rank and platform rank first, as they should not return error
+        const [
+          hoursData,
+          rankData,
+          externalRankData,
+          publicStatus,
+          playerData
+        ] = await Promise.allSettled([
+          clientApiFetch<{
+            hours: number;
+          }>(
+            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
+          ),
+          clientApiFetch<{ rank: number }>(
+            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
+          ),
+          clientApiFetch<unknown>(
+            `/api/v1/players/${steam_id}/platform/${platform}/rank`
+          ),
+          clientApiFetch<{ public: boolean }>(
+            `/api/v1/players/${steam_id}/public`
+          ),
+          clientApiFetch<PlayerDetailsBySteamId>(
+            `/api/v1/players/${steam_id}/details`
+          )
+        ]);
 
-          // Only set values if the promises were fulfilled
-          if (publicStatus.status === "fulfilled") {
-            setValue(
-              `players.${index}.isProfilePublic`,
-              publicStatus.value.public
-            );
-          }
-
-          if (hoursData.status === "fulfilled") {
-            setValue(`players.${index}.hours`, hoursData.value.hours);
-          }
-
-          if (rankData.status === "fulfilled") {
-            setValue(`players.${index}.rank`, rankData.value.rank);
-          }
-
-          if (externalRankData.status === "fulfilled") {
-            switch (platform) {
-              case SeasonPlatform.FACEIT:
-                setValue(
-                  `players.${index}.externalRank`,
-                  (externalRankData.value as FaceITCSRank).faceit_level
-                );
-            }
-          }
-          if (playerData.status === "fulfilled") {
-            setValue(`players.${index}.accountId`, playerData.value.account_id);
-            const data = playerData.value;
-            const hasValidDataBool = Boolean(
-              data.is_valid_full_name &&
-                data.is_valid_work_email &&
-                data.has_accepted_latest_privacy_policy
-            );
-            setValue(`players.${index}.hasValidData`, hasValidDataBool);
-            if (data.nickname)
-              setValue(`players.${index}.nickname`, data.nickname, {
-                shouldValidate: true
-              });
-            if (data.discord)
-              setValue(`players.${index}.discord`, data.discord, {
-                shouldValidate: false
-              });
-          } else {
-            if (playerData.reason instanceof ApiError) {
-              if (playerData.reason.status === 404)
-                setNewPlayers((prev) => [...prev, steam_id]);
-            }
-          }
-          setLoadingStates((prev) => ({ ...prev, [index]: false }));
+        // Only set values if the promises were fulfilled
+        if (publicStatus.status === "fulfilled") {
+          setValue(
+            `players.${index}.isProfilePublic`,
+            publicStatus.value.public
+          );
         }
+
+        if (hoursData.status === "fulfilled") {
+          setValue(`players.${index}.hours`, hoursData.value.hours);
+        }
+
+        if (rankData.status === "fulfilled") {
+          setValue(`players.${index}.rank`, rankData.value.rank);
+        }
+
+        if (externalRankData.status === "fulfilled") {
+          switch (platform) {
+            case SeasonPlatform.FACEIT:
+              setValue(
+                `players.${index}.externalRank`,
+                (externalRankData.value as FaceITCSRank).faceit_level
+              );
+          }
+        }
+        if (playerData.status === "fulfilled") {
+          setValue(`players.${index}.accountId`, playerData.value.account_id);
+          const data = playerData.value;
+          const hasValidDataBool = Boolean(
+            data.is_valid_full_name &&
+              data.is_valid_work_email &&
+              data.has_accepted_latest_privacy_policy
+          );
+          setValue(`players.${index}.hasValidData`, hasValidDataBool);
+          if (data.nickname)
+            setValue(`players.${index}.nickname`, data.nickname, {
+              shouldValidate: true
+            });
+          if (data.discord)
+            setValue(`players.${index}.discord`, data.discord, {
+              shouldValidate: false
+            });
+        } else {
+          if (playerData.reason instanceof ApiError) {
+            if (playerData.reason.status === 404)
+              setNewPlayers((prev) => [...prev, steam_id]);
+          }
+        }
+
+        setLoadingStates((prev) => ({ ...prev, [index]: false }));
       }
+    };
+
+    const checkPlayers = async (steamIds: string[]) => {
+      await Promise.allSettled(
+        steamIds.map((steamId, index) => handlePlayer(steamId, index))
+      );
     };
 
     checkPlayers(steamIds);

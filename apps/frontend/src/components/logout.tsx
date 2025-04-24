@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/apiClient";
+import { clientApiFetch } from "@/lib/apiClient";
 import { LogOutIcon } from "lucide-react";
 import { DropdownMenuItem } from "./ui/dropdown-menu";
 interface LogOutProps {
@@ -7,7 +7,7 @@ interface LogOutProps {
 
 export const DesktopLogOut = ({ logOutUser }: LogOutProps) => {
   const handleLogout = async () => {
-    await apiFetch({ url: `/auth/logout` });
+    await clientApiFetch(`/api/v1/auth/logout`);
     logOutUser();
   };
   return (
@@ -21,7 +21,7 @@ export const DesktopLogOut = ({ logOutUser }: LogOutProps) => {
 
 export const MobileLogOut = ({ logOutUser }: LogOutProps) => {
   const handleLogout = async () => {
-    await apiFetch({ url: `/auth/logout` });
+    await clientApiFetch(`/api/v1/auth/logout`);
     logOutUser();
   };
   return (

@@ -11,7 +11,10 @@ const passportMock = {
     ): AuthMiddleware => {
       return (req: Request, res: Response, next: NextFunction) => {
         if (req.headers.authorization === "Bearer valid_token") {
-          req.user = { steamId: "76561198049745649", displayName: "sububobi" }; // Simulated authenticated user
+          req.user = {
+            steamId: "76561198049745649",
+            displayName: "sububobi"
+          };
           return next();
         }
         return next();

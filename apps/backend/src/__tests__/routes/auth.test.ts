@@ -2,6 +2,7 @@ import request from "supertest";
 import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "../../routes/v1/auth.routes";
+import * as authServices from "../../services/auth.services";
 
 describe("GET /me", () => {
   const app = express();
@@ -62,6 +63,9 @@ describe("GET /steam/return", () => {
   });
 
   it("should redirect to the valid returnUrl from cookie", async () => {
+    jest
+      .spyOn(authServices, "getPermissionsForAccountId")
+      .mockResolvedValue([]);
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token")
@@ -72,6 +76,9 @@ describe("GET /steam/return", () => {
   });
 
   it("should default to /login-success if no returnUrl is provided", async () => {
+    jest
+      .spyOn(authServices, "getPermissionsForAccountId")
+      .mockResolvedValue([]);
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token");
@@ -81,6 +88,9 @@ describe("GET /steam/return", () => {
   });
 
   it("should default to /login-success if returnUrl is invalid", async () => {
+    jest
+      .spyOn(authServices, "getPermissionsForAccountId")
+      .mockResolvedValue([]);
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token")

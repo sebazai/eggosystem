@@ -1,383 +1,1255 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.2
+-- https://www.phpmyadmin.net/
+--
+-- Host: eggo-devdb
+-- Generation Time: Apr 22, 2025 at 03:07 AM
+-- Server version: 11.4.2-MariaDB
+-- PHP Version: 8.2.27
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
 SET time_zone = "+00:00";
-SET GLOBAL max_allowed_packet = 134217728;
--- Table: Games
-CREATE TABLE IF NOT EXISTS Games (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    abbreviation VARCHAR(255) NOT NULL
-);
--- Table: Seasons
-CREATE TABLE IF NOT EXISTS Seasons (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    game_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    signup_start_date DATETIME,
-    signup_end_date DATETIME,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    platform VARCHAR(20) NOT NULL,
-    FOREIGN KEY (game_id) REFERENCES Games(id)
-);
 
-CREATE TABLE IF NOT EXISTS Leagues (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL
-);
 
--- Table: SeasonLeagues
-CREATE TABLE IF NOT EXISTS SeasonLeagues (
-    tier INT NOT NULL,
-    season_id INT NOT NULL,
-    league_id INT NOT NULL,
-    external_id VARCHAR(255),
-    old_kana_league_id INT NOT NULL,
-    PRIMARY KEY (season_id, league_id),
-    FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (league_id) REFERENCES Leagues(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
--- Table: Organizations
-CREATE TABLE IF NOT EXISTS Organizations (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    country VARCHAR(255),
-    organization_code VARCHAR(255),
-    logo VARCHAR(255) NOT NULL,
-    website VARCHAR(255),
-    UNIQUE KEY unique_org_code (organization_code)
-);
--- Table: Teams
-CREATE TABLE IF NOT EXISTS Teams (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    organization_id INT,
-    name VARCHAR(255) NOT NULL,
-    team_logo VARCHAR(255),
-    email VARCHAR(255) NOT NULL,
-    FOREIGN KEY (organization_id) REFERENCES Organizations(id)
-);
--- Table: SteamPlayers
-CREATE TABLE IF NOT EXISTS SteamPlayers (
-    steam_id BIGINT NOT NULL,
-    nickname VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
-    full_name VARCHAR(255),
-    work_email VARCHAR(255),
-    discord VARCHAR(255),
-    PRIMARY KEY (steam_id)
-);
-CREATE TABLE IF NOT EXISTS TeamRosters (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    team_id INT NOT NULL,
-    steam_id BIGINT NOT NULL,
-    FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
--- Table: SeasonTeamRegistrations
-CREATE TABLE IF NOT EXISTS SeasonTeamRegistrations (
-    season_id INT NOT NULL,
-    team_id INT NOT NULL,
-    captain_steam_id BIGINT,
-    defects TEXT,
-    co_captain_steam_id BIGINT,
-    ticket VARCHAR(50),
-    approved BOOLEAN NOT NULL DEFAULT FALSE,
-    notification_sent BOOLEAN NOT NULL DEFAULT FALSE,
-    PRIMARY KEY (season_id, team_id),
-    FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (captain_steam_id) REFERENCES SteamPlayers(steam_id) ON DELETE
-    SET NULL,
-        FOREIGN KEY (co_captain_steam_id) REFERENCES SteamPlayers(steam_id) ON DELETE
-    SET NULL
-);
--- Create SeasonLeagueTeams table
-CREATE TABLE IF NOT EXISTS SeasonLeagueTeams (
-    season_id INT NOT NULL,
-    team_id INT NOT NULL,
-    league_id INT NOT NULL,
-    external_platform_id VARCHAR(255),
-    PRIMARY KEY (season_id, league_id, team_id),
-    FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeamRegistrations(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, league_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
+--
+-- Database: `kanaliiga`
+--
 
--- Table: SeasonTeamPlayers
-CREATE TABLE IF NOT EXISTS SeasonTeamPlayers (
-    season_id INT NOT NULL,
-    team_id INT NOT NULL,
-    steam_id BIGINT NOT NULL,
-    -- Role primary allowed only once per season
-    role ENUM('primary', 'substitute') NOT NULL,
-    PRIMARY KEY (season_id, steam_id, team_id),
-    FOREIGN KEY (season_id, team_id) REFERENCES SeasonTeamRegistrations(season_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
--- All maps of games by name
-CREATE TABLE IF NOT EXISTS Maps (
-    id TINYINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(30) NOT NULL UNIQUE
-);
--- All matches played in the league and season
-CREATE TABLE IF NOT EXISTS Matches (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    league_id INT NOT NULL,
-    season_id INT NOT NULL,
-    stage TINYINT UNSIGNED NOT NULL DEFAULT 2,
-    best_of TINYINT UNSIGNED NOT NULL,
-    match_date DATE NOT NULL,
-    FOREIGN KEY (season_id, league_id) REFERENCES SeasonLeagues(season_id, league_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
--- All teams that participated in the match
-CREATE TABLE IF NOT EXISTS MatchTeams (
-    match_id INT NOT NULL,
-    team_id INT NOT NULL,
-    season_id INT NOT NULL,
-    league_id INT NOT NULL,
-    PRIMARY KEY (match_id, team_id),
-    -- The same team can't be in the same match twice
-    FOREIGN KEY (match_id) REFERENCES Matches(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (season_id, team_id, league_id) REFERENCES SeasonLeagueTeams(season_id, team_id, league_id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-CREATE TABLE IF NOT EXISTS MatchTeamMapVetoes (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    match_id INT NOT NULL,
-    team_id INT NOT NULL,
-    map_id TINYINT UNSIGNED NOT NULL,
-    action ENUM('drop', 'pick', 'decider') NOT NULL,
-    veto_order TINYINT UNSIGNED NOT NULL,
-    -- Order in which the veto was made
-    FOREIGN KEY (match_id, team_id) REFERENCES MatchTeams(match_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (map_id) REFERENCES Maps(id) ON DELETE RESTRICT,
-    UNIQUE (match_id, team_id, veto_order) -- Ensures each team makes unique veto decisions in order
-);
--- All maps played in the match, BO1, BO3, BO5 etc. Each BO in own row with demo
-CREATE TABLE IF NOT EXISTS MatchGames (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    match_id INT NOT NULL,
-    map_id TINYINT UNSIGNED NOT NULL,
-    map_order TINYINT UNSIGNED,
-    -- 1 = First map, 2 = Second map, 3 = Third map (if needed)
-    demofile VARCHAR(255) NOT NULL,
-    FOREIGN KEY (match_id) REFERENCES Matches(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (map_id) REFERENCES Maps(id) ON DELETE RESTRICT
-);
--- if old kana.matches.team1, starting_side is T, team2 is CT
-CREATE TABLE IF NOT EXISTS TeamGameScores(
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    match_id INT NOT NULL,
-    team_id INT NOT NULL,
-    game_id INT NOT NULL,
-    starting_side ENUM('CT', 'T') NOT NULL,
-    score TINYINT UNSIGNED NOT NULL,
-    halftime_score TINYINT UNSIGNED NOT NULL,
-    overtime_score TINYINT UNSIGNED DEFAULT 0,
-    FOREIGN KEY (match_id, team_id) REFERENCES MatchTeams(match_id, team_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (game_id) REFERENCES MatchGames(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
--- Each round of the match, who won, how many players alive, who planted the bomb, etc.
-CREATE TABLE IF NOT EXISTS MapRoundStats (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    game_id INT NOT NULL,
-    -- What map was played in this BOx Match
-    ct_team_id INT NOT NULL,
-    -- Which team played CT on this round
-    t_team_id INT NOT NULL,
-    -- Which team played T on this round
-    round_number TINYINT UNSIGNED NOT NULL,
-    -- 1-n
-    round_end_reason_info TINYINT UNSIGNED NOT NULL,
-    -- reason why round ended.
-    ct_t JSON,
-    -- This needs to be parsed later, who was alive when bomb planted.
-    first_kill VARCHAR(2) NOT NULL,
-    -- CT or T
-    plant_site CHAR(1),
-    -- A or B
-    FOREIGN KEY (game_id) REFERENCES MatchGames(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (ct_team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (t_team_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT unique_map_round_stats UNIQUE (game_id, round_number),
-    -- Each round is unique for played map in match
-    CONSTRAINT chk_ct_t_if_plant_site_not_null CHECK (
-        plant_site IS NULL
-        OR ct_t IS NOT NULL
-    ),
-    CONSTRAINT chk_plant_site_if_bomb_related CHECK (
-        NOT (
-            round_end_reason_info IN (1, 2)
-            AND plant_site IS NULL
-        )
-    )
-);
--- Table: PlayerStats
-CREATE TABLE IF NOT EXISTS PlayerStats (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    steam_id BIGINT NOT NULL,
-    game_id INT NOT NULL,
-    team INT NOT NULL,
-    kills TINYINT UNSIGNED NOT NULL,
-    deaths TINYINT UNSIGNED NOT NULL,
-    assists TINYINT UNSIGNED NOT NULL,
-    assists_ct TINYINT UNSIGNED NOT NULL,
-    assists_t TINYINT UNSIGNED NOT NULL,
-    mvps TINYINT UNSIGNED NOT NULL,
-    total_damage INT NOT NULL,
-    total_damage_ct INT NOT NULL,
-    total_damage_t INT NOT NULL,
-    headshots TINYINT UNSIGNED NOT NULL,
-    flash_assists TINYINT UNSIGNED NOT NULL,
-    flash_assists_t TINYINT UNSIGNED NOT NULL,
-    flash_assists_ct TINYINT UNSIGNED NOT NULL,
-    adr DECIMAL(4, 1) NOT NULL,
-    adr_t DECIMAL(4, 1),
-    adr_ct DECIMAL(4, 1),
-    hs_percent TINYINT UNSIGNED NOT NULL,
-    plants TINYINT UNSIGNED NOT NULL,
-    explodes TINYINT UNSIGNED NOT NULL,
-    defuses TINYINT UNSIGNED NOT NULL,
-    first_kills TINYINT UNSIGNED NOT NULL,
-    kills_1 INT NOT NULL,
-    kills_2 TINYINT UNSIGNED NOT NULL,
-    kills_3 TINYINT UNSIGNED NOT NULL,
-    kills_4 TINYINT UNSIGNED NOT NULL,
-    kills_5 TINYINT UNSIGNED NOT NULL,
-    trades TINYINT UNSIGNED NOT NULL,
-    traded TINYINT UNSIGNED NOT NULL,
-    clutches_won TINYINT UNSIGNED NOT NULL,
-    clutches TINYINT UNSIGNED NOT NULL,
-    awp_kills TINYINT UNSIGNED NOT NULL,
-    utility_damage INT NOT NULL,
-    utility_damage_t INT NOT NULL,
-    utility_damage_ct INT NOT NULL,
-    molotov_damage INT NOT NULL,
-    molotov_damage_ct INT NOT NULL,
-    molotov_damage_t INT NOT NULL,
-    he_damage INT NOT NULL,
-    he_damage_ct INT NOT NULL,
-    he_damage_t INT NOT NULL,
-    trade_attempts TINYINT UNSIGNED NOT NULL,
-    trade_attempts_ct TINYINT UNSIGNED NOT NULL,
-    trade_attempts_t TINYINT UNSIGNED NOT NULL,
-    kills_through_walls TINYINT UNSIGNED NOT NULL,
-    first_death_trade_attempts TINYINT UNSIGNED NOT NULL,
-    first_death_trade_attempts_ct TINYINT UNSIGNED NOT NULL,
-    first_death_trade_attempts_t TINYINT UNSIGNED NOT NULL,
-    first_death_trade_opportunities TINYINT UNSIGNED NOT NULL,
-    first_death_trade_opportunities_ct TINYINT UNSIGNED NOT NULL,
-    first_death_trade_opportunities_t TINYINT UNSIGNED NOT NULL,
-    trade_opportunities TINYINT UNSIGNED NOT NULL,
-    trade_opportunities_t TINYINT UNSIGNED NOT NULL,
-    trade_opportunities_ct TINYINT UNSIGNED NOT NULL,
-    flashes_thrown TINYINT UNSIGNED NOT NULL,
-    enemies_flashed TINYINT UNSIGNED NOT NULL,
-    mates_flashed TINYINT UNSIGNED NOT NULL,
-    self_flashes TINYINT UNSIGNED NOT NULL,
-    first_deaths TINYINT UNSIGNED NOT NULL,
-    total_mf_duration DECIMAL(5, 1) NOT NULL,
-    total_ef_duration DECIMAL(5, 1) NOT NULL,
-    one_v_one_won TINYINT UNSIGNED NOT NULL,
-    one_v_one_lost TINYINT UNSIGNED NOT NULL,
-    one_v_one_won_ct TINYINT UNSIGNED,
-    one_v_one_lost_ct TINYINT UNSIGNED,
-    one_v_one_won_t TINYINT UNSIGNED,
-    one_v_one_lost_t TINYINT UNSIGNED,
-    kast TINYINT UNSIGNED NOT NULL,
-    kana_rating DECIMAL(4, 2) NOT NULL,
-    first_kills_t TINYINT UNSIGNED,
-    first_kills_ct TINYINT UNSIGNED,
-    first_deaths_t TINYINT UNSIGNED,
-    first_deaths_ct TINYINT UNSIGNED,
-    first_death_trades TINYINT UNSIGNED NOT NULL,
-    first_death_traded TINYINT UNSIGNED NOT NULL,
-    first_death_trades_ct TINYINT UNSIGNED NOT NULL,
-    first_death_traded_ct TINYINT UNSIGNED NOT NULL,
-    first_death_trades_t TINYINT UNSIGNED NOT NULL,
-    first_death_traded_t TINYINT UNSIGNED NOT NULL,
-    flashes_thrown_t TINYINT UNSIGNED,
-    flashes_thrown_ct TINYINT UNSIGNED,
-    enemies_flashed_t TINYINT UNSIGNED,
-    enemies_flashed_ct TINYINT UNSIGNED,
-    kills_t TINYINT UNSIGNED,
-    kills_ct TINYINT UNSIGNED,
-    deaths_t TINYINT UNSIGNED,
-    deaths_ct TINYINT UNSIGNED,
-    trades_t TINYINT UNSIGNED,
-    trades_ct TINYINT UNSIGNED,
-    traded_t TINYINT UNSIGNED,
-    traded_ct TINYINT UNSIGNED,
-    total_ef_duration_ct INT,
-    total_ef_duration_t INT,
-    total_mf_duration_t INT,
-    total_mf_duration_ct INT,
-    mates_flashed_t TINYINT UNSIGNED,
-    mates_flashed_ct TINYINT UNSIGNED,
-    ttd INT,
-    crosshair_placement DECIMAL(3, 1),
-    ttf INT,
-    rws DECIMAL(4, 2) NOT NULL,
-    shots MEDIUMINT UNSIGNED,
-    shots_hit MEDIUMINT UNSIGNED,
-    total_strafing_shots MEDIUMINT UNSIGNED,
-    good_strafing_shots MEDIUMINT UNSIGNED,
-    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (game_id) REFERENCES MatchGames(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
--- Table: Ranks
-CREATE TABLE IF NOT EXISTS SeasonPlayerRanks (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    steam_id BIGINT NOT NULL,
-    season_id INT NOT NULL,
-    kukko_date TIMESTAMP NULL DEFAULT '1970-01-01 10:00:00',
-    csgo_rank INT DEFAULT -1,
-    cs2_rank INT,
-    cs_hours INT DEFAULT -1,
-    faceit_level INT,
-    faceit_elo INT DEFAULT 800,
-    faceit_kd DECIMAL(3, 2),
-    faceit_date TIMESTAMP NULL DEFAULT '1970-01-01 10:00:00',
-    kana_elo INT DEFAULT 0,
-    esportal_kd DECIMAL(4, 2),
-    esportal_elo INT,
-    esportal_rank INT,
-    FOREIGN KEY (steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (season_id) REFERENCES Seasons(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    UNIQUE (steam_id, season_id)
-);
-CREATE TABLE IF NOT EXISTS PlayerTrades (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    game_id INT NOT NULL,
-    trader_steam_id BIGINT NOT NULL,
-    killer_steam_id BIGINT NOT NULL,
-    victim_steam_id BIGINT NOT NULL,
-    round_number TINYINT UNSIGNED NOT NULL,
-    first_death TINYINT(1) NOT NULL,
-    traded TINYINT(1) NOT NULL,
-    attempted TINYINT(1) NOT NULL,
-    `time` BIGINT UNSIGNED,
-    trade_time BIGINT UNSIGNED,
-    death_time BIGINT UNSIGNED,
-    FOREIGN KEY (trader_steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (killer_steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (victim_steam_id) REFERENCES SteamPlayers(steam_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (game_id) REFERENCES MatchGames(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-CREATE TABLE IF NOT EXISTS Reservations (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    date_start DATETIME NOT NULL,
-    date_end DATETIME NOT NULL,
-    stream_url VARCHAR(255) NOT NULL,
-    team1_id INT NOT NULL,
-    team2_id INT NOT NULL,
-    hash VARCHAR(255) NOT NULL,
-    FOREIGN KEY (team1_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (team2_id) REFERENCES Teams(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
--- Junction table linking Matches and Reservations
-CREATE TABLE IF NOT EXISTS MatchReservations (
-    match_id INT,
-    reservation_id INT,
-    PRIMARY KEY (match_id, reservation_id),
-    FOREIGN KEY (match_id) REFERENCES Matches(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (reservation_id) REFERENCES Reservations(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `AccountRoles`
+--
+
+CREATE TABLE `AccountRoles` (
+  `account_id` int(10) UNSIGNED NOT NULL,
+  `role_id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Accounts`
+--
+
+CREATE TABLE `Accounts` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `work_email` varchar(255) DEFAULT NULL,
+  `full_name` varchar(255) DEFAULT NULL,
+  `discord` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `Accounts`
+--
+DELIMITER $$
+CREATE TRIGGER `update_account_updated_at` BEFORE UPDATE ON `Accounts` FOR EACH ROW SET NEW.updated_at = NOW()
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Games`
+--
+
+CREATE TABLE `Games` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `abbreviation` varchar(255) NOT NULL,
+  `app_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `knex_migrations`
+--
+
+CREATE TABLE `knex_migrations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `batch` int(11) DEFAULT NULL,
+  `migration_time` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `knex_migrations_lock`
+--
+
+CREATE TABLE `knex_migrations_lock` (
+  `index` int(10) UNSIGNED NOT NULL,
+  `is_locked` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Leagues`
+--
+
+CREATE TABLE `Leagues` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `sort_priority` int(11) NOT NULL DEFAULT 99
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `LinkedAccounts`
+--
+
+CREATE TABLE `LinkedAccounts` (
+  `account_id` int(10) UNSIGNED NOT NULL,
+  `provider` enum('steam') NOT NULL,
+  `provider_id` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `MapRoundStats`
+--
+
+CREATE TABLE `MapRoundStats` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `ct_team_id` int(10) UNSIGNED NOT NULL,
+  `t_team_id` int(10) UNSIGNED NOT NULL,
+  `round_number` tinyint(3) UNSIGNED NOT NULL,
+  `round_end_reason_info` enum('bomb_defused','target_bombed','target_saved','t_win','ct_win') NOT NULL,
+  `ct_t` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`ct_t`)),
+  `first_kill` varchar(2) NOT NULL,
+  `plant_site` char(1) DEFAULT NULL
+) ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Maps`
+--
+
+CREATE TABLE `Maps` (
+  `id` tinyint(3) UNSIGNED NOT NULL,
+  `name` varchar(30) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Matches`
+--
+
+CREATE TABLE `Matches` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `league_id` int(10) UNSIGNED NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `stage` tinyint(3) UNSIGNED NOT NULL DEFAULT 2,
+  `best_of` tinyint(3) UNSIGNED NOT NULL,
+  `match_date` date NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `MatchGames`
+--
+
+CREATE TABLE `MatchGames` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `match_id` int(10) UNSIGNED NOT NULL,
+  `map_id` tinyint(3) UNSIGNED NOT NULL,
+  `map_order` tinyint(3) UNSIGNED DEFAULT NULL,
+  `demofile` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `MatchTeamMapVetoes`
+--
+
+CREATE TABLE `MatchTeamMapVetoes` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `match_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `map_id` tinyint(3) UNSIGNED NOT NULL,
+  `action` enum('drop','pick','decider') NOT NULL,
+  `veto_order` tinyint(3) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `MatchTeams`
+--
+
+CREATE TABLE `MatchTeams` (
+  `match_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `league_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Organizations`
+--
+
+CREATE TABLE `Organizations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `country` varchar(255) NOT NULL DEFAULT 'Finland',
+  `organization_code` varchar(255) NOT NULL,
+  `logo` varchar(255) NOT NULL DEFAULT 'nologo.svg',
+  `website` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Permissions`
+--
+
+CREATE TABLE `Permissions` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `permission_name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `PlayerStats`
+--
+
+CREATE TABLE `PlayerStats` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `team` int(11) NOT NULL,
+  `kills` tinyint(3) UNSIGNED NOT NULL,
+  `deaths` tinyint(3) UNSIGNED NOT NULL,
+  `assists` tinyint(3) UNSIGNED NOT NULL,
+  `assists_ct` tinyint(3) UNSIGNED NOT NULL,
+  `assists_t` tinyint(3) UNSIGNED NOT NULL,
+  `mvps` tinyint(3) UNSIGNED NOT NULL,
+  `total_damage` int(11) NOT NULL,
+  `total_damage_ct` int(11) NOT NULL,
+  `total_damage_t` int(11) NOT NULL,
+  `headshots` tinyint(3) UNSIGNED NOT NULL,
+  `flash_assists` tinyint(3) UNSIGNED NOT NULL,
+  `flash_assists_t` tinyint(3) UNSIGNED NOT NULL,
+  `flash_assists_ct` tinyint(3) UNSIGNED NOT NULL,
+  `adr` decimal(4,1) NOT NULL,
+  `adr_t` decimal(4,1) DEFAULT NULL,
+  `adr_ct` decimal(4,1) DEFAULT NULL,
+  `hs_percent` tinyint(3) UNSIGNED NOT NULL,
+  `plants` tinyint(3) UNSIGNED NOT NULL,
+  `explodes` tinyint(3) UNSIGNED NOT NULL,
+  `defuses` tinyint(3) UNSIGNED NOT NULL,
+  `first_kills` tinyint(3) UNSIGNED NOT NULL,
+  `kills_1` int(11) NOT NULL,
+  `kills_2` tinyint(3) UNSIGNED NOT NULL,
+  `kills_3` tinyint(3) UNSIGNED NOT NULL,
+  `kills_4` tinyint(3) UNSIGNED NOT NULL,
+  `kills_5` tinyint(3) UNSIGNED NOT NULL,
+  `trades` tinyint(3) UNSIGNED NOT NULL,
+  `traded` tinyint(3) UNSIGNED NOT NULL,
+  `clutches_won` tinyint(3) UNSIGNED NOT NULL,
+  `clutches` tinyint(3) UNSIGNED NOT NULL,
+  `awp_kills` tinyint(3) UNSIGNED NOT NULL,
+  `utility_damage` int(11) NOT NULL,
+  `utility_damage_t` int(11) NOT NULL,
+  `utility_damage_ct` int(11) NOT NULL,
+  `molotov_damage` int(11) NOT NULL,
+  `molotov_damage_ct` int(11) NOT NULL,
+  `molotov_damage_t` int(11) NOT NULL,
+  `he_damage` int(11) NOT NULL,
+  `he_damage_ct` int(11) NOT NULL,
+  `he_damage_t` int(11) NOT NULL,
+  `trade_attempts` tinyint(3) UNSIGNED NOT NULL,
+  `trade_attempts_ct` tinyint(3) UNSIGNED NOT NULL,
+  `trade_attempts_t` tinyint(3) UNSIGNED NOT NULL,
+  `kills_through_walls` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trade_attempts` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trade_attempts_ct` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trade_attempts_t` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trade_opportunities` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trade_opportunities_ct` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trade_opportunities_t` tinyint(3) UNSIGNED NOT NULL,
+  `trade_opportunities` tinyint(3) UNSIGNED NOT NULL,
+  `trade_opportunities_t` tinyint(3) UNSIGNED NOT NULL,
+  `trade_opportunities_ct` tinyint(3) UNSIGNED NOT NULL,
+  `flashes_thrown` tinyint(3) UNSIGNED NOT NULL,
+  `enemies_flashed` tinyint(3) UNSIGNED NOT NULL,
+  `mates_flashed` tinyint(3) UNSIGNED NOT NULL,
+  `self_flashes` tinyint(3) UNSIGNED NOT NULL,
+  `first_deaths` tinyint(3) UNSIGNED NOT NULL,
+  `total_mf_duration` decimal(5,1) NOT NULL,
+  `total_ef_duration` decimal(5,1) NOT NULL,
+  `one_v_one_won` tinyint(3) UNSIGNED NOT NULL,
+  `one_v_one_lost` tinyint(3) UNSIGNED NOT NULL,
+  `one_v_one_won_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `one_v_one_lost_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `one_v_one_won_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `one_v_one_lost_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `kast` tinyint(3) UNSIGNED NOT NULL,
+  `kana_rating` decimal(4,2) NOT NULL,
+  `first_kills_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `first_kills_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `first_deaths_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `first_deaths_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `first_death_trades` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_traded` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trades_ct` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_traded_ct` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_trades_t` tinyint(3) UNSIGNED NOT NULL,
+  `first_death_traded_t` tinyint(3) UNSIGNED NOT NULL,
+  `flashes_thrown_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `flashes_thrown_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `enemies_flashed_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `enemies_flashed_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `kills_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `kills_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `deaths_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `deaths_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `trades_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `trades_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `traded_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `traded_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `total_ef_duration_ct` int(11) DEFAULT NULL,
+  `total_ef_duration_t` int(11) DEFAULT NULL,
+  `total_mf_duration_t` int(11) DEFAULT NULL,
+  `total_mf_duration_ct` int(11) DEFAULT NULL,
+  `mates_flashed_t` tinyint(3) UNSIGNED DEFAULT NULL,
+  `mates_flashed_ct` tinyint(3) UNSIGNED DEFAULT NULL,
+  `ttd` int(11) DEFAULT NULL,
+  `crosshair_placement` decimal(3,1) DEFAULT NULL,
+  `ttf` int(11) DEFAULT NULL,
+  `rws` decimal(4,2) NOT NULL,
+  `shots` mediumint(8) UNSIGNED DEFAULT NULL,
+  `shots_hit` mediumint(8) UNSIGNED DEFAULT NULL,
+  `total_strafing_shots` mediumint(8) UNSIGNED DEFAULT NULL,
+  `good_strafing_shots` mediumint(8) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `PlayerTrades`
+--
+
+CREATE TABLE `PlayerTrades` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `trader_steam_id` bigint(20) NOT NULL,
+  `killer_steam_id` bigint(20) NOT NULL,
+  `victim_steam_id` bigint(20) NOT NULL,
+  `round_number` tinyint(3) UNSIGNED NOT NULL,
+  `first_death` tinyint(1) NOT NULL,
+  `traded` tinyint(1) NOT NULL,
+  `attempted` tinyint(1) NOT NULL,
+  `time` bigint(20) UNSIGNED DEFAULT NULL,
+  `trade_time` bigint(20) UNSIGNED DEFAULT NULL,
+  `death_time` bigint(20) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Reservations`
+--
+
+CREATE TABLE `Reservations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `stream_url` varchar(255) NOT NULL,
+  `hash` varchar(255) NOT NULL,
+  `match_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `RolePermissions`
+--
+
+CREATE TABLE `RolePermissions` (
+  `role_id` int(10) UNSIGNED NOT NULL,
+  `permission_id` int(10) UNSIGNED NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Roles`
+--
+
+CREATE TABLE `Roles` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `role_name` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SeasonLeagues`
+--
+
+CREATE TABLE `SeasonLeagues` (
+  `tier` int(11) NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `league_id` int(10) UNSIGNED NOT NULL,
+  `external_id` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SeasonLeagueTeams`
+--
+
+CREATE TABLE `SeasonLeagueTeams` (
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `league_id` int(10) UNSIGNED NOT NULL,
+  `placement` tinyint(3) UNSIGNED DEFAULT NULL,
+  `position_offset` tinyint(3) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SeasonPlayerRanks`
+--
+
+CREATE TABLE `SeasonPlayerRanks` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `rank_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
+  `csgo_rank` int(11) DEFAULT -1,
+  `cs2_rank` int(11) DEFAULT NULL,
+  `cs_hours` int(11) DEFAULT -1,
+  `faceit_level` int(11) DEFAULT NULL,
+  `faceit_elo` int(11) DEFAULT 800,
+  `faceit_kd` decimal(3,2) DEFAULT NULL,
+  `faceit_date` timestamp NULL DEFAULT '1970-01-01 10:00:00',
+  `kana_elo` int(11) DEFAULT 0,
+  `esportal_kd` decimal(4,2) DEFAULT NULL,
+  `esportal_elo` int(11) DEFAULT NULL,
+  `esportal_rank` int(11) DEFAULT NULL,
+  `hours_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Seasons`
+--
+
+CREATE TABLE `Seasons` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `signup_start_date` datetime DEFAULT NULL,
+  `signup_end_date` datetime DEFAULT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date DEFAULT NULL,
+  `platform` enum('kanaliiga','esportal','faceit','popflash') NOT NULL DEFAULT 'kanaliiga'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SeasonTeamPlayers`
+--
+
+CREATE TABLE `SeasonTeamPlayers` (
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `role` enum('primary','substitute') DEFAULT 'primary'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `SeasonTeamPlayers`
+--
+DELIMITER $$
+CREATE TRIGGER `before_insert_primary_check` BEFORE INSERT ON `SeasonTeamPlayers` FOR EACH ROW BEGIN
+          DECLARE conflicting_team_id INT;
+
+          IF NEW.role = 'primary' THEN
+            SELECT team_id INTO conflicting_team_id
+            FROM SeasonTeamPlayers
+            WHERE season_id = NEW.season_id
+              AND role = 'primary'
+              AND steam_id = NEW.steam_id
+            LIMIT 1;
+
+            IF conflicting_team_id IS NOT NULL THEN
+              SET @errorMsg = CONCAT('Player ', NEW.steam_id,' is already registered as primary for team ', conflicting_team_id,' in season ', NEW.season_id, '.');
+              SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
+            END IF;
+          END IF;
+        END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `before_update_primary_check` BEFORE UPDATE ON `SeasonTeamPlayers` FOR EACH ROW BEGIN
+            DECLARE conflicting_team_id INT;
+
+            IF NEW.role = 'primary' THEN
+                SELECT team_id
+                INTO conflicting_team_id
+                FROM SeasonTeamPlayers
+                WHERE season_id = NEW.season_id
+                  AND role = 'primary'
+                  AND steam_id = NEW.steam_id
+                  AND (team_id <> NEW.team_id OR steam_id <> NEW.steam_id)
+                LIMIT 1;
+
+                IF conflicting_team_id IS NOT NULL THEN
+                    SET @errorMsg = CONCAT('Player ', NEW.steam_id, ' is already registered as primary for team ', conflicting_team_id,' in season ', NEW.season_id, '.');
+                    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
+                END IF;
+            END IF;
+        END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SeasonTeamRegistrations`
+--
+
+CREATE TABLE `SeasonTeamRegistrations` (
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `captain_steam_id` bigint(20) DEFAULT NULL,
+  `co_captain_steam_id` bigint(20) DEFAULT NULL,
+  `approved` tinyint(1) NOT NULL DEFAULT 0,
+  `external_platform_id` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `SeasonTeamRegistrations`
+--
+DELIMITER $$
+CREATE TRIGGER `before_insert_team_registration` BEFORE INSERT ON `SeasonTeamRegistrations` FOR EACH ROW BEGIN
+      IF EXISTS (
+        SELECT 1 FROM SeasonTeamRegistrations
+        WHERE season_id = NEW.season_id AND team_id = NEW.team_id
+      ) THEN
+        SET @errorMsg = CONCAT('Team ', NEW.team_id, ' is already registered for season ', NEW.season_id);
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `before_insert_unique_external_platform` BEFORE INSERT ON `SeasonTeamRegistrations` FOR EACH ROW BEGIN
+      DECLARE platform_name VARCHAR(255);
+
+      IF NEW.external_platform_id IS NOT NULL THEN
+        -- Get the platform name from the Seasons table
+        SELECT UPPER(platform) INTO platform_name
+        FROM Seasons
+        WHERE id = NEW.season_id
+        LIMIT 1;
+
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrations
+          WHERE season_id = NEW.season_id
+            AND external_platform_id = NEW.external_platform_id
+        ) THEN
+          SET @errorMsg = CONCAT(platform_name, ' Platform ID "', NEW.external_platform_id, '" is already used for season ', NEW.season_id, '.');
+          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `before_update_team_registration` BEFORE UPDATE ON `SeasonTeamRegistrations` FOR EACH ROW BEGIN
+      -- Only check if season_id or team_id is changing
+      IF NEW.season_id <> OLD.season_id OR NEW.team_id <> OLD.team_id THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrations
+          WHERE season_id = NEW.season_id
+            AND team_id = NEW.team_id
+            -- Exclude the row being updated
+            AND NOT (season_id = OLD.season_id AND team_id = OLD.team_id)
+        ) THEN
+          SET @errorMsg = CONCAT('Team ', NEW.team_id, ' is already registered for season ', NEW.season_id, '.');
+          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `before_update_unique_external_platform` BEFORE UPDATE ON `SeasonTeamRegistrations` FOR EACH ROW BEGIN
+      DECLARE platform_name VARCHAR(255);
+      
+      IF (NEW.external_platform_id IS NOT NULL AND (
+            NEW.external_platform_id <> OLD.external_platform_id OR
+            NEW.season_id <> OLD.season_id
+        )) THEN
+
+        SELECT UPPER(platform) INTO platform_name
+        FROM Seasons
+        WHERE id = NEW.season_id
+        LIMIT 1;
+
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrations
+          WHERE season_id = NEW.season_id
+            AND external_platform_id = NEW.external_platform_id
+            AND NOT (season_id = OLD.season_id AND external_platform_id = OLD.external_platform_id)
+        ) THEN
+          SET @errorMsg = CONCAT(platform_name, ' Platform ID "', NEW.external_platform_id, '" is already used for season ', NEW.season_id, '.');
+          SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = @errorMsg;
+        END IF;
+
+      END IF;
+    END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SteamPlayers`
+--
+
+CREATE TABLE `SteamPlayers` (
+  `steam_id` bigint(20) NOT NULL,
+  `nickname` varchar(255) NOT NULL,
+  `account_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `TeamGameScores`
+--
+
+CREATE TABLE `TeamGameScores` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `match_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `starting_side` enum('CT','T') NOT NULL,
+  `score` tinyint(3) UNSIGNED NOT NULL,
+  `halftime_score` tinyint(3) UNSIGNED NOT NULL,
+  `overtime_score` tinyint(3) UNSIGNED DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `TeamRosters`
+--
+
+CREATE TABLE `TeamRosters` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Teams`
+--
+
+CREATE TABLE `Teams` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `organization_id` int(10) UNSIGNED DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `team_logo` varchar(255) NOT NULL DEFAULT 'nologo.svg',
+  `org_approved` tinyint(1) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `UserPolicyAcceptances`
+--
+
+CREATE TABLE `UserPolicyAcceptances` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `accepted_privacy_policy` tinyint(1) NOT NULL DEFAULT 0,
+  `accepted_marketing` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `privacy_policy_version` varchar(255) NOT NULL DEFAULT '1',
+  `account_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `UserPolicyAcceptances`
+--
+DELIMITER $$
+CREATE TRIGGER `update_user_policy_acceptances_updated_at` BEFORE UPDATE ON `UserPolicyAcceptances` FOR EACH ROW SET NEW.updated_at = NOW()
+$$
+DELIMITER ;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `AccountRoles`
+--
+ALTER TABLE `AccountRoles`
+  ADD PRIMARY KEY (`account_id`,`role_id`,`game_id`),
+  ADD KEY `accountroles_role_id_foreign` (`role_id`),
+  ADD KEY `accountroles_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `Accounts`
+--
+ALTER TABLE `Accounts`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `accounts_email_unique` (`email`),
+  ADD UNIQUE KEY `accounts_work_email_unique` (`work_email`);
+
+--
+-- Indexes for table `Games`
+--
+ALTER TABLE `Games`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `knex_migrations`
+--
+ALTER TABLE `knex_migrations`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `knex_migrations_lock`
+--
+ALTER TABLE `knex_migrations_lock`
+  ADD PRIMARY KEY (`index`);
+
+--
+-- Indexes for table `Leagues`
+--
+ALTER TABLE `Leagues`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `LinkedAccounts`
+--
+ALTER TABLE `LinkedAccounts`
+  ADD PRIMARY KEY (`provider`,`provider_id`),
+  ADD KEY `linkedaccounts_account_id_foreign` (`account_id`);
+
+--
+-- Indexes for table `MapRoundStats`
+--
+ALTER TABLE `MapRoundStats`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `maproundstats_game_id_round_number_unique` (`game_id`,`round_number`),
+  ADD KEY `maproundstats_ct_team_id_foreign` (`ct_team_id`),
+  ADD KEY `maproundstats_t_team_id_foreign` (`t_team_id`);
+
+--
+-- Indexes for table `Maps`
+--
+ALTER TABLE `Maps`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `maps_name_unique` (`name`);
+
+--
+-- Indexes for table `Matches`
+--
+ALTER TABLE `Matches`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `matches_season_id_league_id_foreign` (`season_id`,`league_id`);
+
+--
+-- Indexes for table `MatchGames`
+--
+ALTER TABLE `MatchGames`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `matchgames_match_id_foreign` (`match_id`),
+  ADD KEY `matchgames_map_id_foreign` (`map_id`);
+
+--
+-- Indexes for table `MatchTeamMapVetoes`
+--
+ALTER TABLE `MatchTeamMapVetoes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `matchteammapvetoes_match_id_team_id_veto_order_unique` (`match_id`,`team_id`,`veto_order`),
+  ADD KEY `matchteammapvetoes_map_id_foreign` (`map_id`);
+
+--
+-- Indexes for table `MatchTeams`
+--
+ALTER TABLE `MatchTeams`
+  ADD PRIMARY KEY (`match_id`,`team_id`),
+  ADD KEY `matchteams_season_id_team_id_league_id_foreign` (`season_id`,`team_id`,`league_id`);
+
+--
+-- Indexes for table `Organizations`
+--
+ALTER TABLE `Organizations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `organizations_organization_code_unique` (`organization_code`);
+
+--
+-- Indexes for table `Permissions`
+--
+ALTER TABLE `Permissions`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `permissions_permission_name_unique` (`permission_name`);
+
+--
+-- Indexes for table `PlayerStats`
+--
+ALTER TABLE `PlayerStats`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `playerstats_steam_id_foreign` (`steam_id`),
+  ADD KEY `playerstats_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `PlayerTrades`
+--
+ALTER TABLE `PlayerTrades`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `playertrades_trader_steam_id_foreign` (`trader_steam_id`),
+  ADD KEY `playertrades_killer_steam_id_foreign` (`killer_steam_id`),
+  ADD KEY `playertrades_victim_steam_id_foreign` (`victim_steam_id`),
+  ADD KEY `playertrades_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `Reservations`
+--
+ALTER TABLE `Reservations`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `reservations_match_id_foreign` (`match_id`);
+
+--
+-- Indexes for table `RolePermissions`
+--
+ALTER TABLE `RolePermissions`
+  ADD PRIMARY KEY (`role_id`,`permission_id`),
+  ADD KEY `rolepermissions_permission_id_foreign` (`permission_id`);
+
+--
+-- Indexes for table `Roles`
+--
+ALTER TABLE `Roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `roles_role_name_unique` (`role_name`);
+
+--
+-- Indexes for table `SeasonLeagues`
+--
+ALTER TABLE `SeasonLeagues`
+  ADD PRIMARY KEY (`season_id`,`league_id`),
+  ADD KEY `seasonleagues_league_id_foreign` (`league_id`);
+
+--
+-- Indexes for table `SeasonLeagueTeams`
+--
+ALTER TABLE `SeasonLeagueTeams`
+  ADD PRIMARY KEY (`season_id`,`league_id`,`team_id`),
+  ADD KEY `seasonleagueteams_season_id_team_id_foreign` (`season_id`,`team_id`);
+
+--
+-- Indexes for table `SeasonPlayerRanks`
+--
+ALTER TABLE `SeasonPlayerRanks`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `seasonplayerranks_steam_id_season_id_unique` (`steam_id`,`season_id`),
+  ADD KEY `seasonplayerranks_season_id_foreign` (`season_id`);
+
+--
+-- Indexes for table `Seasons`
+--
+ALTER TABLE `Seasons`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `seasons_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `SeasonTeamPlayers`
+--
+ALTER TABLE `SeasonTeamPlayers`
+  ADD PRIMARY KEY (`season_id`,`steam_id`,`team_id`),
+  ADD KEY `seasonteamplayers_season_id_team_id_foreign` (`season_id`,`team_id`),
+  ADD KEY `seasonteamplayers_steam_id_foreign` (`steam_id`);
+
+--
+-- Indexes for table `SeasonTeamRegistrations`
+--
+ALTER TABLE `SeasonTeamRegistrations`
+  ADD PRIMARY KEY (`season_id`,`team_id`),
+  ADD UNIQUE KEY `unique_season_external_platform_id` (`season_id`,`external_platform_id`),
+  ADD KEY `seasonteamregistrations_team_id_foreign` (`team_id`),
+  ADD KEY `seasonteamregistrations_captain_steam_id_foreign` (`captain_steam_id`),
+  ADD KEY `seasonteamregistrations_co_captain_steam_id_foreign` (`co_captain_steam_id`);
+
+--
+-- Indexes for table `SteamPlayers`
+--
+ALTER TABLE `SteamPlayers`
+  ADD PRIMARY KEY (`steam_id`),
+  ADD KEY `steamplayers_account_id_foreign` (`account_id`);
+
+--
+-- Indexes for table `TeamGameScores`
+--
+ALTER TABLE `TeamGameScores`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `teamgamescores_match_id_team_id_foreign` (`match_id`,`team_id`),
+  ADD KEY `teamgamescores_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `TeamRosters`
+--
+ALTER TABLE `TeamRosters`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `teamrosters_team_id_foreign` (`team_id`),
+  ADD KEY `teamrosters_steam_id_foreign` (`steam_id`);
+
+--
+-- Indexes for table `Teams`
+--
+ALTER TABLE `Teams`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `teams_name_unique` (`name`),
+  ADD KEY `teams_organization_id_foreign` (`organization_id`);
+
+--
+-- Indexes for table `UserPolicyAcceptances`
+--
+ALTER TABLE `UserPolicyAcceptances`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `userpolicyacceptances_account_id_privacy_policy_version_unique` (`account_id`,`privacy_policy_version`);
+
+--
+-- AUTO_INCREMENT for dumped tables
+--
+
+--
+-- AUTO_INCREMENT for table `Accounts`
+--
+ALTER TABLE `Accounts`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Games`
+--
+ALTER TABLE `Games`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `knex_migrations`
+--
+ALTER TABLE `knex_migrations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `knex_migrations_lock`
+--
+ALTER TABLE `knex_migrations_lock`
+  MODIFY `index` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Leagues`
+--
+ALTER TABLE `Leagues`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `MapRoundStats`
+--
+ALTER TABLE `MapRoundStats`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Maps`
+--
+ALTER TABLE `Maps`
+  MODIFY `id` tinyint(3) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Matches`
+--
+ALTER TABLE `Matches`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `MatchGames`
+--
+ALTER TABLE `MatchGames`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `MatchTeamMapVetoes`
+--
+ALTER TABLE `MatchTeamMapVetoes`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Organizations`
+--
+ALTER TABLE `Organizations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Permissions`
+--
+ALTER TABLE `Permissions`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `PlayerStats`
+--
+ALTER TABLE `PlayerStats`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `PlayerTrades`
+--
+ALTER TABLE `PlayerTrades`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Reservations`
+--
+ALTER TABLE `Reservations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Roles`
+--
+ALTER TABLE `Roles`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `SeasonPlayerRanks`
+--
+ALTER TABLE `SeasonPlayerRanks`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Seasons`
+--
+ALTER TABLE `Seasons`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `TeamGameScores`
+--
+ALTER TABLE `TeamGameScores`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `TeamRosters`
+--
+ALTER TABLE `TeamRosters`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Teams`
+--
+ALTER TABLE `Teams`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `UserPolicyAcceptances`
+--
+ALTER TABLE `UserPolicyAcceptances`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `AccountRoles`
+--
+ALTER TABLE `AccountRoles`
+  ADD CONSTRAINT `accountroles_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `accountroles_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `accountroles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `LinkedAccounts`
+--
+ALTER TABLE `LinkedAccounts`
+  ADD CONSTRAINT `linkedaccounts_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `MapRoundStats`
+--
+ALTER TABLE `MapRoundStats`
+  ADD CONSTRAINT `maproundstats_ct_team_id_foreign` FOREIGN KEY (`ct_team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `maproundstats_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `maproundstats_t_team_id_foreign` FOREIGN KEY (`t_team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Matches`
+--
+ALTER TABLE `Matches`
+  ADD CONSTRAINT `matches_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `MatchGames`
+--
+ALTER TABLE `MatchGames`
+  ADD CONSTRAINT `matchgames_map_id_foreign` FOREIGN KEY (`map_id`) REFERENCES `Maps` (`id`),
+  ADD CONSTRAINT `matchgames_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `MatchTeamMapVetoes`
+--
+ALTER TABLE `MatchTeamMapVetoes`
+  ADD CONSTRAINT `matchteammapvetoes_map_id_foreign` FOREIGN KEY (`map_id`) REFERENCES `Maps` (`id`),
+  ADD CONSTRAINT `matchteammapvetoes_match_id_team_id_foreign` FOREIGN KEY (`match_id`,`team_id`) REFERENCES `MatchTeams` (`match_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `MatchTeams`
+--
+ALTER TABLE `MatchTeams`
+  ADD CONSTRAINT `matchteams_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `matchteams_season_id_team_id_league_id_foreign` FOREIGN KEY (`season_id`,`team_id`,`league_id`) REFERENCES `SeasonLeagueTeams` (`season_id`, `team_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `PlayerStats`
+--
+ALTER TABLE `PlayerStats`
+  ADD CONSTRAINT `playerstats_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `playerstats_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `PlayerTrades`
+--
+ALTER TABLE `PlayerTrades`
+  ADD CONSTRAINT `playertrades_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `playertrades_killer_steam_id_foreign` FOREIGN KEY (`killer_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `playertrades_trader_steam_id_foreign` FOREIGN KEY (`trader_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `playertrades_victim_steam_id_foreign` FOREIGN KEY (`victim_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Reservations`
+--
+ALTER TABLE `Reservations`
+  ADD CONSTRAINT `reservations_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `RolePermissions`
+--
+ALTER TABLE `RolePermissions`
+  ADD CONSTRAINT `rolepermissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `Permissions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `rolepermissions_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `SeasonLeagues`
+--
+ALTER TABLE `SeasonLeagues`
+  ADD CONSTRAINT `seasonleagues_league_id_foreign` FOREIGN KEY (`league_id`) REFERENCES `Leagues` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonleagues_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SeasonLeagueTeams`
+--
+ALTER TABLE `SeasonLeagueTeams`
+  ADD CONSTRAINT `seasonleagueteams_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonleagueteams_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SeasonPlayerRanks`
+--
+ALTER TABLE `SeasonPlayerRanks`
+  ADD CONSTRAINT `seasonplayerranks_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonplayerranks_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Seasons`
+--
+ALTER TABLE `Seasons`
+  ADD CONSTRAINT `seasons_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `SeasonTeamPlayers`
+--
+ALTER TABLE `SeasonTeamPlayers`
+  ADD CONSTRAINT `seasonteamplayers_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonteamplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SeasonTeamRegistrations`
+--
+ALTER TABLE `SeasonTeamRegistrations`
+  ADD CONSTRAINT `seasonteamregistrations_captain_steam_id_foreign` FOREIGN KEY (`captain_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `seasonteamregistrations_co_captain_steam_id_foreign` FOREIGN KEY (`co_captain_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `seasonteamregistrations_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonteamregistrations_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SteamPlayers`
+--
+ALTER TABLE `SteamPlayers`
+  ADD CONSTRAINT `steamplayers_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `TeamGameScores`
+--
+ALTER TABLE `TeamGameScores`
+  ADD CONSTRAINT `teamgamescores_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `teamgamescores_match_id_team_id_foreign` FOREIGN KEY (`match_id`,`team_id`) REFERENCES `MatchTeams` (`match_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `TeamRosters`
+--
+ALTER TABLE `TeamRosters`
+  ADD CONSTRAINT `teamrosters_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `teamrosters_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Teams`
+--
+ALTER TABLE `Teams`
+  ADD CONSTRAINT `teams_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `Organizations` (`id`);
+
+--
+-- Constraints for table `UserPolicyAcceptances`
+--
+ALTER TABLE `UserPolicyAcceptances`
+  ADD CONSTRAINT `userpolicyacceptances_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

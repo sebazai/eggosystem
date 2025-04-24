@@ -10,7 +10,7 @@ import {
   getPlayerAppIdRank,
   getPlayerRankForPlatform
 } from "../services/player-ranks.services";
-import { isSeasonPlatform, RequestWithParams } from "@eggosystem/types";
+import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
 
 export const getPlayerBySteamIdController = async (
@@ -39,8 +39,15 @@ export const getIsPlayerProfilePublic = async (req: Request, res: Response) => {
  */
 export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
-  const app_id = req.params.app_id;
-  const season_id = req.query.season_id?.toString();
+  const app_id = Number(req.params.app_id);
+  const season_id = req.query.season_id?.toString()
+    ? parseInt(req.query.season_id.toString(), 10)
+    : undefined;
+
+  if (season_id && isNaN(season_id)) {
+    throw new Error("Season id query param is not a number.");
+  }
+
   const hours = await getPlayerHoursForSteamAppId(steam_id, app_id, season_id);
   res.status(200).json(hours);
 };
@@ -50,8 +57,14 @@ export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
  */
 export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
-  const app_id = req.params.app_id;
-  const season_id = req.query.season_id?.toString();
+  const app_id = Number(req.params.app_id);
+  const season_id = req.query.season_id?.toString()
+    ? parseInt(req.query.season_id.toString(), 10)
+    : undefined;
+
+  if (season_id && isNaN(season_id)) {
+    throw new Error("Season id query param is not a number.");
+  }
   const rank = await getPlayerAppIdRank(steam_id, app_id, season_id);
   res.status(200).json(rank);
 };

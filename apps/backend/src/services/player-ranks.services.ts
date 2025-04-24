@@ -5,13 +5,13 @@ import { expireIn30Days, redisClient } from "../utils/redisClient";
 import {
   getPlayerHoursForSeason,
   getPlayerRankForSeason
-} from "../models/seasonplayerranks.models";
+} from "../models/season-player-ranks.models";
 import { convertCSGORankToCS2 } from "../utils/ranks";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
 
-const getPlayerHoursForCS = async (steam_id: string, season_id?: string) => {
+const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
   // Return rank for season_id from db, i.e. if admin has added manually
   if (season_id) {
@@ -40,11 +40,11 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: string) => {
 
 export const getPlayerHoursForSteamAppId = async (
   steam_id: string,
-  app_id: string,
-  season_id?: string
+  app_id: number,
+  season_id?: number
 ) => {
   switch (app_id) {
-    case "730": // CS
+    case 730: // CS
       return getPlayerHoursForCS(steam_id, season_id);
     default:
       throw new Error("Unknown app_id");
@@ -53,18 +53,18 @@ export const getPlayerHoursForSteamAppId = async (
 
 export const getPlayerAppIdRank = async (
   steam_id: string,
-  app_id: string,
-  season_id?: string
+  app_id: number,
+  season_id?: number
 ) => {
   switch (app_id) {
-    case "730": // CS
+    case 730: // CS
       return getCSRank(steam_id, season_id);
     default:
       throw new Error("Unknown app_id");
   }
 };
 
-export const getCSRank = async (steam_id: string, season_id?: string) => {
+export const getCSRank = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-rank`;
 
   // If someone added the rank to database, we use that one

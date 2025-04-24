@@ -5,7 +5,8 @@ import {
   getTeamById,
   getTeamPlayers,
   getTeamMatches,
-  getTeamMapStats
+  getTeamMapStats,
+  getTopTeams
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 
@@ -30,11 +31,6 @@ export const getTeamDetailsController = async (
   const teamId = parseInt(req.params.teamId);
   const { season_ids, map_ids } = req.parsedParams;
 
-  if (isNaN(teamId)) {
-    res.status(400).json({ error: "Invalid team ID" });
-    return;
-  }
-
   const team = await getTeamById(teamId, season_ids);
 
   if (!team) {
@@ -54,4 +50,13 @@ export const getTeamDetailsController = async (
     matches,
     map_stats
   });
+};
+
+export const getTopTeamsController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const topTeams = await getTopTeams(req.parsedParams);
+
+  res.json(topTeams);
 };

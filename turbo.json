@@ -57,7 +57,7 @@
     "test:integration": {
       "dependsOn": ["@eggosystem/types#build"]
     },
-    "add-shadcn-component": {
+    "shadcn:add": {
       "cache": false
     },
     "migrate": {

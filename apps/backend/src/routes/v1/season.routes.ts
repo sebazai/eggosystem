@@ -3,17 +3,23 @@ import {
   getSeasonsController,
   getSeasonByIdController,
   getSeasonDetailsByIdController,
-  addSignupForSeason,
   getActiveSeasonForApp
 } from "../../controllers/seasons.controllers";
-import { authenticateJWT } from "../../middlewares/auth.middleware";
+import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 const router = Router();
 
 router.get("/", getSeasonsController);
-router.get("/:id", getSeasonByIdController);
-router.get("/:id/details", getSeasonDetailsByIdController);
-router.post("/:id/signup", authenticateJWT, addSignupForSeason);
-router.get("/app/:app_id/active", getActiveSeasonForApp);
+router.get("/:id", validateNumericParams(), getSeasonByIdController);
+router.get(
+  "/:id/details",
+  validateNumericParams(),
+  getSeasonDetailsByIdController
+);
+router.get(
+  "/app/:app_id/active",
+  validateNumericParams(),
+  getActiveSeasonForApp
+);
 
 export default router;

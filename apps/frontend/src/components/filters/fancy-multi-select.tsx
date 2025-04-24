@@ -48,6 +48,7 @@ type FancyMultiSelectProps<T> = {
   setOpen: (value: string | null) => void;
   allowOther?: false;
   allowOtherText?: string;
+  disabled?: boolean;
 };
 
 type FancySelectProps<T> = {
@@ -62,6 +63,7 @@ type FancySelectProps<T> = {
   setOpen: (value: string | null) => void;
   allowOther?: boolean;
   allowOtherText?: string;
+  disabled?: boolean;
 };
 
 type FancyCombinedProps<T> = FancyMultiSelectProps<T> | FancySelectProps<T>;
@@ -84,7 +86,8 @@ export function FancySelect<T>({
   setOpen,
   isMulti,
   allowOther = false,
-  allowOtherText = "Other..."
+  allowOtherText = "Other...",
+  disabled
 }: FancyCombinedProps<T>) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -162,6 +165,7 @@ export function FancySelect<T>({
           (e.key === "Delete" || e.key === "Backspace") &&
           inputValue === ""
         ) {
+          if (disabled) return;
           if (isMulti && currentSelection.length > 0) {
             const lastSelected = currentSelection[currentSelection.length - 1];
             if (lastSelected) {
@@ -181,6 +185,7 @@ export function FancySelect<T>({
       }
     },
     [
+      disabled,
       inputValue,
       isMulti,
       currentSelection,
@@ -204,10 +209,11 @@ export function FancySelect<T>({
                 <Badge key={`${item.label}-${index}`} variant="secondary">
                   {item.label}
                   <button
-                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    disabled={disabled}
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground cursor-pointer disabled:hover:text-muted-foreground disabled:cursor-not-allowed"
                     onClick={() => handleUnselect(item)}
                   >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                    <X className="h-3 w-3" />
                   </button>
                 </Badge>
               ))
@@ -215,16 +221,18 @@ export function FancySelect<T>({
                 <Badge variant="secondary">
                   {currentSelection[0]?.label}
                   <button
-                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    disabled={disabled}
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground cursor-pointer disabled:hover:text-muted-foreground disabled:cursor-not-allowed"
                     onClick={handleClearAll}
                   >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                    <X className="h-3 w-3" />
                   </button>
                 </Badge>
               )}
           <CommandPrimitive.Input
             ref={inputRef}
             value={inputValue}
+            disabled={!!disabled}
             onValueChange={(search) => {
               if (!isOpen) {
                 setOpen(filter);
@@ -260,7 +268,7 @@ export function FancySelect<T>({
             onClick={() => (isOpen ? setOpen(null) : setOpen(filter))}
             className="ml-2 text-muted-foreground hover:text-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center cursor-pointer"
           >
-            {isValidating && (
+            {isValidating && !disabled && (
               <div className="relative">
                 <div className="absolute inset-y-0 right-2 flex items-center">
                   <Spinner />
@@ -269,8 +277,10 @@ export function FancySelect<T>({
             )}
             {isOpen ? (
               <ChevronUp className="h-4 w-4" />
-            ) : (
+            ) : !disabled ? (
               <ChevronDown className="h-4 w-4" />
+            ) : (
+              <></>
             )}
           </div>
         </div>

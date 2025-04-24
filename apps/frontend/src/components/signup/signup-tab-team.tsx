@@ -19,13 +19,14 @@ import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 
 interface TabTeamProps {
   watchTeamId: number;
-  organizationId: number;
+  organizationId?: number;
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
   platform: string;
   fetchingExternalData: boolean;
+  isEditMode: boolean;
 }
 
 const parseFaceITTeamId = (val: string) => {
@@ -46,12 +47,17 @@ export const TabTeam = ({
   validTeamSelection,
   onNext,
   platform,
-  fetchingExternalData
+  fetchingExternalData,
+  isEditMode
 }: TabTeamProps) => {
   const Platform = platform.charAt(0).toUpperCase() + platform.slice(1);
   const { teams, isLoading, isError, isValidating } =
     useOrganizationTeams(organizationId);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
+
+  if (!organizationId) {
+    return <></>;
+  }
   if (isLoading) {
     return <Spinner />;
   }
@@ -84,6 +90,7 @@ export const TabTeam = ({
             <FormLabel>Team</FormLabel>
             <FormControl>
               <FancySelect<number>
+                disabled={isEditMode}
                 isMulti={false}
                 allowOther={true}
                 allowOtherText="Add new..."

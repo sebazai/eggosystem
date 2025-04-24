@@ -35,6 +35,7 @@ describe("updateProfile Controller", () => {
       auth: {
         account_id: 1,
         provider_id: "12345",
+        permissions: [],
         nickname: "hehe",
         provider: "steam"
       },
@@ -60,10 +61,6 @@ describe("updateProfile Controller", () => {
     };
     (getConnection as jest.Mock).mockResolvedValue(connection);
     process.env.PRIVACY_POLICY_VERSION = "1";
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 
   it("should return 401 if user is not authenticated", async () => {

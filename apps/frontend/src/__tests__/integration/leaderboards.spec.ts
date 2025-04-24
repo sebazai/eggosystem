@@ -277,7 +277,7 @@ test.describe("Leaderboards Page", () => {
     await _navigateWithRetry(page, "/leaderboards");
 
     // Wait for all network requests to finish (adding a delay)
-    await page.waitForTimeout(5000);
+    await page.waitForTimeout(10000);
 
     // Take a screenshot for debugging
     await page.screenshot({

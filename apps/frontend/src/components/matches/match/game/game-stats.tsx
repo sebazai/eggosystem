@@ -47,7 +47,7 @@ export const GameStats = ({ matchId, gameId, teams }: MatchStatsProps) => {
       />
       {teamStats && <TeamStatistics teamStats={teamStats} />}
       {/* Round Score */}
-      {roundInfo && <RoundInfo roundInfo={roundInfo} />}
+      {roundInfo && roundInfo.length > 0 && <RoundInfo roundInfo={roundInfo} />}
 
       {/* Player Stats Grid */}
       {playerStats && (

@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
-import { SignupWelcome } from "./signup-welcome";
+import { SignupWelcome } from "@/components/signup/signup-welcome";
 import { CardContainer } from "@/components/layout/card-container";
 
 type Props = {

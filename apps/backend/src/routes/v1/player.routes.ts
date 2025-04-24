@@ -14,6 +14,7 @@ import {
 
 // import parseQueryParams from "../../middlewares/parseQueryParams";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
+import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 // New Router instance
 const router = Router();
@@ -27,8 +28,16 @@ router.get(
   parseQueryFilterParams,
   getPlayerDetailsWithStatsController
 );
-router.get("/:steam_id/app/:app_id/hours", getPlayerSteamAppIdHours);
-router.get("/:steam_id/app/:app_id/rank", getPlayerSteamAppIdRank);
+router.get(
+  "/:steam_id/app/:app_id/hours",
+  validateNumericParams(["app_id"]),
+  getPlayerSteamAppIdHours
+);
+router.get(
+  "/:steam_id/app/:app_id/rank",
+  validateNumericParams(["app_id"]),
+  getPlayerSteamAppIdRank
+);
 router.get("/:steam_id/platform/:platform/rank", getPlayerPlatformRank);
 // router.get(
 //   "/:season_id/:map_id/:league_id/:stage/:team_id/leaderboards",

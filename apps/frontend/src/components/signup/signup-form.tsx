@@ -16,7 +16,7 @@ import { TabTeam } from "./signup-tab-team";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ApiError, apiFetch } from "@/lib/apiClient";
+import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
   type FaceITTeamDetails,
@@ -37,9 +37,9 @@ const validateExternalPlaformId = async (
   externalId: string
 ) => {
   if (platform === SeasonPlatform.FACEIT) {
-    const data = await apiFetch<FaceITTeamDetails>({
-      url: `/faceit/teams/${externalId}`
-    });
+    const data = await clientApiFetch<FaceITTeamDetails>(
+      `/api/v1/faceit/teams/${externalId}`
+    );
     return data;
   }
 };
@@ -49,7 +49,9 @@ export const SignupForm = ({
   platform,
   editValues
 }: SignupFormProps) => {
-  const [activeTab, setActiveTab] = useState("organization");
+  const [activeTab, setActiveTab] = useState(
+    editValues ? "players" : "organization"
+  );
   const { user, loading: loadingUser } = useAuth();
   const schema = signupFormSchema({ platform });
   const baseSchema = baseSignupFormSchema({ platform })._def.schema;
@@ -60,6 +62,9 @@ export const SignupForm = ({
   const [validExternalTeamId, setValidExternalTeamId] = useState(
     platform !== SeasonPlatform.Kanaliiga ? null : true
   );
+  const [submitDisabled, setSubmitDisabled] = useState(false);
+
+  const isEditMode = !!editValues;
 
   const form = useForm({
     resolver: zodResolver(schema),
@@ -178,22 +183,29 @@ export const SignupForm = ({
   ]);
 
   const onSubmit = async (data: SignupFormValues) => {
+    setSubmitDisabled(true);
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
-      const returnValue = await apiFetch<{
+      const returnValue = await clientApiFetch<{
         team_id: number;
         organization_id: number;
-      }>({
-        url: `/seasons/${seasonId}/signup`,
-        method: "POST",
-        body: data
-      });
+      }>(
+        editValues
+          ? `/api/v1/registrations/season/${seasonId}/signup/team/${editValues.teamId}`
+          : `/api/v1/registrations/season/${seasonId}/signup`,
+        {
+          method: editValues ? "PUT" : "POST",
+          body: JSON.stringify(data)
+        }
+      );
       setSuccessMessage(
-        "Team registered succesfully, please remember to pay participation fee."
+        isEditMode
+          ? "Team edited successfully"
+          : "Team registered succesfully, please remember to pay participation fee."
       );
       setEditUrl(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/signup/${seasonId}/registration/team/${returnValue.team_id}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
       );
     } catch (error: unknown) {
       if (error instanceof ApiError) {
@@ -260,7 +272,9 @@ export const SignupForm = ({
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardContent className="p-6 space-y-6">
-            <h2 className="text-xl font-semibold">Sign up Form</h2>
+            <h2 className="text-xl font-semibold">
+              {isEditMode ? "Edit signup" : "Sign up Form"}
+            </h2>
 
             <Tabs
               value={activeTab}
@@ -317,6 +331,7 @@ export const SignupForm = ({
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
+                isEditMode={isEditMode}
               />
 
               <TabTeam
@@ -328,6 +343,7 @@ export const SignupForm = ({
                 watchTeamId={watchTeamId}
                 platform={seasonDetails.platform}
                 fetchingExternalData={fetchingExternalData}
+                isEditMode={isEditMode}
               />
 
               <TabPlayers
@@ -343,6 +359,7 @@ export const SignupForm = ({
                 seasonSteamAppId={seasonDetails.app_id}
                 platform={seasonDetails.platform}
                 seasonId={seasonId}
+                isEditMode={isEditMode}
               />
             </Tabs>
 
@@ -373,7 +390,7 @@ export const SignupForm = ({
               type="submit"
               variant="outline"
               className="w-full"
-              disabled={!!successMessage || !canSubmit}
+              disabled={submitDisabled || !canSubmit}
             >
               Submit
             </Button>

@@ -164,43 +164,50 @@ const stats = [
   { key: "most_flash_assists", column: "flash_assists" }
 ] satisfies { key: keyof MatchTopPlayerAwards; column: keyof PlayerStats }[];
 
-export const getMatchTopPlayers = async (match_id: number) => {
-  const [match_season_id] = await runQuery<{ season_id: number }[]>(
-    `SELECT season_id FROM Matches WHERE id = ?`,
-    [match_id]
-  );
-  if (!match_season_id) {
-    throw new Error("Could not find season for match id");
-  }
-
-  const fetchStat = async <T extends keyof PlayerStats>({
+const fetchStat = async <T extends keyof PlayerStats>(
+  season_id: number,
+  match_id: number,
+  {
     key,
     column
   }: {
     key: keyof MatchTopPlayerAwards;
     column: T;
-  }) => {
-    const sqlFunction = column === "adr" ? "AVG" : "SUM";
-    const query = `
-          SELECT p.steam_id, p.nickname, ${sqlFunction}(ps.${column}) as value, stp.team_id
-          FROM PlayerStats ps 
-          JOIN SteamPlayers p ON p.steam_id = ps.steam_id 
-          JOIN MatchGames mmp ON ps.game_id = mmp.id
-          JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = ?
-          WHERE mmp.match_id = ? 
-          GROUP BY p.steam_id, p.nickname
-          ORDER BY value DESC 
-          LIMIT 1;
-        `;
-    const [queryResults] = await runQuery<MatchTopPlayersQueryResult<T>[]>(
-      query,
-      [match_season_id.season_id, match_id]
-    );
+  }
+) => {
+  const sqlFunction = column === "adr" ? "AVG" : "SUM";
+  const query = `
+        SELECT p.steam_id, p.nickname, ${sqlFunction}(ps.${column}) as value, stp.team_id
+        FROM PlayerStats ps 
+        JOIN SteamPlayers p ON p.steam_id = ps.steam_id 
+        JOIN MatchGames mmp ON ps.game_id = mmp.id
+        JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = ?
+        WHERE mmp.match_id = ? 
+        GROUP BY p.steam_id, p.nickname
+        ORDER BY value DESC 
+        LIMIT 1;
+      `;
+  const [queryResults] = await runQuery<MatchTopPlayersQueryResult<T>[]>(
+    query,
+    [season_id, match_id]
+  );
 
-    return { [key]: queryResults };
-  };
+  return { [key]: queryResults };
+};
 
-  const queries = stats.map(fetchStat);
+export const getMatchTopPlayers = async (match_id: number) => {
+  const [match_season_id] = await runQuery<{ season_id: number }[]>(
+    `SELECT season_id FROM Matches WHERE id = ?`,
+    [match_id]
+  );
+
+  if (!match_season_id) {
+    throw new Error("Could not find season for match id");
+  }
+
+  const queries = stats.map((stat) =>
+    fetchStat(match_season_id.season_id, match_id, stat)
+  );
   const queryResults = await Promise.all(queries);
 
   return Object.assign({}, ...queryResults) as MatchTopPlayerAwards;

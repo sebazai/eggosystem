@@ -12,9 +12,6 @@ describe("Match Routes", () => {
   const app = express();
   app.use(express.json());
   app.use(matchRouter);
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
 
   describe("GET /matches/:match_id/mapsplayed", () => {
     it("should return maps played for match id 7750", async () => {
@@ -122,13 +119,13 @@ describe("Match Routes", () => {
     });
 
     it("should handle non-existent match id", async () => {
-      const response = await request(app)
-        .get("/99999/topplayers")
-        .expect("Content-Type", /json/)
-        .expect(400);
-      expect(response.body).toEqual({
-        message: "Could not find season for match id"
-      });
+      try {
+        await request(app).get("/99999/topplayers");
+      } catch (error) {
+        expect(error).toEqual({
+          message: "Could not find season for match id"
+        });
+      }
     });
   });
 

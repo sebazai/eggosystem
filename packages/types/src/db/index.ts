@@ -23,3 +23,8 @@ export * from "./TeamRoster.interface";
 export * from "./UserPolicyAcceptances.interface";
 export * from "./Account.interface";
 export * from "./LinkedAccount.interface";
+export * from "./AccountRole.interface";
+export * from "./Role.interface";
+export * from "./Permission.interface";
+export * from "./RolePermission.interface";
+export * from "./AccountPermissionScopes.interface";

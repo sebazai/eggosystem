@@ -1,13 +1,17 @@
 import * as seasonModels from "../../models/season.models";
-import { addSignupForSeason } from "../../controllers/seasons.controllers";
+import { addSignupForSeason } from "../../controllers/seasonteamregistration.controllers";
 import * as db from "../../db/mysqlConnection";
 import * as signupServices from "../../services/signup.services";
+import * as registrationModels from "../../models/season-team-registration.models";
+import * as rankModels from "../../models/season-player-ranks.models";
 import * as teamServices from "../../services/team.services";
 import * as steamServices from "../../services/steam.services";
+import * as leetifyService from "../../services/leetify.services";
 import * as teamModels from "../../models/team.models";
 import * as organizationModels from "../../models/organization.models";
-import * as seasonTeamRegistrationModels from "../../models/seasonteamregistration.models";
-import * as seasonTeamPlayersModels from "../../models/seasonteamplayers.models";
+import * as seasonTeamRegistrationModels from "../../models/season-team-registration.models";
+import * as seasonTeamRegistrationServices from "../../services/season-team-registration.services";
+import * as seasonTeamPlayersModels from "../../models/season-team-players.models";
 import type { Response } from "express";
 import {
   type SignupFormValues,
@@ -99,16 +103,12 @@ describe("addSignupForSeason - Try Catch Block", () => {
       .mockResolvedValue({ is_all_public: true });
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("should rollback and return 500 if an error occurs in transaction", async () => {
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
     jest
-      .spyOn(signupServices, "signUpTeamForSeason")
+      .spyOn(registrationModels, "insertSeasonTeamRegistration")
       .mockRejectedValue(new Error("DB Error"));
 
     try {
@@ -122,24 +122,39 @@ describe("addSignupForSeason - Try Catch Block", () => {
 
   it("should handle existing organization and existing team successfully", async () => {
     const signSpy = jest
-      .spyOn(signupServices, "signUpTeamForSeason")
+      .spyOn(registrationModels, "insertSeasonTeamRegistration")
+      .mockImplementation(() => Promise.resolve({ insertId: 2 }));
+    const playersAddSpy = jest
+      .spyOn(signupServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
 
+    jest
+      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
+      .mockResolvedValue();
+
     await addSignupForSeason(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
 
     expect(signSpy).toHaveBeenCalledWith(
+      1,
+      1,
       {
-        seasonId: 1,
-        teamId: 1,
-        players: expect.any(Array),
-        teamExternalId: "team-123",
-        seasonAppId: 730,
-        seasonPlatform: SeasonPlatform.Kanaliiga
+        captain_steam_id: "12345678901234567",
+        co_captain_steam_id: "12345678901234568",
+        external_platform_id: "team-123"
       },
+      mockConnection
+    );
+
+    expect(playersAddSpy).toHaveBeenCalledWith(
+      1,
+      730,
+      SeasonPlatform.Kanaliiga,
+      1,
+      req.body.players,
       mockConnection
     );
 
@@ -148,17 +163,32 @@ describe("addSignupForSeason - Try Catch Block", () => {
     expect(res.json).toHaveBeenCalledWith({ team_id: 1, organization_id: 1 });
   });
 
-  it("insertSeasonTeamRegistration & insertSeasonTeamPlayer should be called with correct parameters", async () => {
+  it("insertSeasonTeamRegistration & insertSeasonTeamPlayer in addPlayersForTeamInSeason and it's subfunctions should be called with correct parameters", async () => {
     const insertSeasonTeamReg = jest
       .spyOn(seasonTeamRegistrationModels, "insertSeasonTeamRegistration")
       .mockResolvedValue({
         insertId: 1
-      } as unknown as { insertId: number });
+      });
     const insertSeasonTeamPlayer = jest
       .spyOn(seasonTeamPlayersModels, "insertSeasonTeamPlayer")
       .mockResolvedValue({
         insertId: 1
-      } as unknown as { insertId: number });
+      });
+    jest
+      .spyOn(leetifyService, "getCS2RankFromLeetify")
+      .mockResolvedValue({ rank: 666 });
+    jest.spyOn(steamServices, "getSteamHoursForAppId").mockResolvedValue({
+      appid: 730,
+      playtime_forever: 1000
+    });
+    jest
+      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
+      .mockResolvedValue();
+
+    const faceItRank = jest.spyOn(
+      rankModels,
+      "insertFaceITPlayerRankForSeason"
+    );
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
@@ -166,9 +196,9 @@ describe("addSignupForSeason - Try Catch Block", () => {
     await addSignupForSeason(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
     expect(insertSeasonTeamReg).toHaveBeenCalledWith(
+      1,
+      1,
       {
-        season_id: 1,
-        team_id: 1,
         captain_steam_id: "12345678901234567",
         co_captain_steam_id: "12345678901234568",
         external_platform_id: "team-123"
@@ -176,13 +206,15 @@ describe("addSignupForSeason - Try Catch Block", () => {
       mockConnection
     );
     expect(insertSeasonTeamPlayer).toHaveBeenCalledWith(
+      1,
+      1,
       {
-        season_id: 1,
-        team_id: 1,
         steam_id: "12345678901234567"
       },
       mockConnection
     );
+    // Platform is Kanaliiga
+    expect(faceItRank).toHaveBeenCalledTimes(0);
     expect(insertSeasonTeamPlayer).toHaveBeenCalledTimes(5);
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
@@ -201,31 +233,46 @@ describe("addSignupForSeason - Try Catch Block", () => {
       website: "https://new-organization.com"
     };
     const signSpy = jest
-      .spyOn(signupServices, "signUpTeamForSeason")
+      .spyOn(registrationModels, "insertSeasonTeamRegistration")
+      .mockImplementation(() => Promise.resolve({ insertId: 2 }));
+    const playersAddSpy = jest
+      .spyOn(signupServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
 
+    jest
+      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
+      .mockResolvedValue();
+
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 666
-    } as unknown as { insertId: number });
+    });
     jest.spyOn(organizationModels, "insertOrganization").mockResolvedValue({
       insertId: 1
-    } as unknown as { insertId: number });
+    });
 
     await addSignupForSeason(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
 
     expect(signSpy).toHaveBeenCalledWith(
+      1,
+      666,
       {
-        seasonId: 1,
-        teamId: 666,
-        players: expect.any(Array),
-        teamExternalId: "team-123",
-        seasonAppId: 730,
-        seasonPlatform: SeasonPlatform.Kanaliiga
+        captain_steam_id: "12345678901234567",
+        co_captain_steam_id: "12345678901234568",
+        external_platform_id: "team-123"
       },
+      mockConnection
+    );
+
+    expect(playersAddSpy).toHaveBeenCalledWith(
+      1,
+      730,
+      SeasonPlatform.Kanaliiga,
+      666,
+      req.body.players,
       mockConnection
     );
 
@@ -241,11 +288,17 @@ describe("addSignupForSeason - Try Catch Block", () => {
       name: "New Team"
     };
     const signSpy = jest
-      .spyOn(signupServices, "signUpTeamForSeason")
+      .spyOn(registrationModels, "insertSeasonTeamRegistration")
+      .mockImplementation(() => Promise.resolve({ insertId: 2 }));
+    const playersAddSpy = jest
+      .spyOn(signupServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
+    jest
+      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
+      .mockResolvedValue();
 
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 1337
@@ -255,14 +308,22 @@ describe("addSignupForSeason - Try Catch Block", () => {
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
 
     expect(signSpy).toHaveBeenCalledWith(
+      1,
+      1337,
       {
-        seasonId: 1,
-        teamId: 1337,
-        players: expect.any(Array),
-        teamExternalId: "team-123",
-        seasonAppId: 730,
-        seasonPlatform: SeasonPlatform.Kanaliiga
+        captain_steam_id: "12345678901234567",
+        co_captain_steam_id: "12345678901234568",
+        external_platform_id: "team-123"
       },
+      mockConnection
+    );
+
+    expect(playersAddSpy).toHaveBeenCalledWith(
+      1,
+      730,
+      SeasonPlatform.Kanaliiga,
+      1337,
+      req.body.players,
       mockConnection
     );
 
@@ -278,6 +339,10 @@ describe("addSignupForSeason - Try Catch Block", () => {
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(false));
+
+    jest
+      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
+      .mockResolvedValue();
 
     await addSignupForSeason(req, res);
     expect(mockConnection.release).toHaveBeenCalled();

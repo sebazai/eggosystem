@@ -32,3 +32,4 @@ export const coverageProvider = "v8";
 export const moduleNameMapper = {
   "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js"
 };
+export const testTimeout = 10000;

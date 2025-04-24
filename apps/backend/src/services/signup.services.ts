@@ -1,9 +1,8 @@
 import type { PoolConnection } from "mysql2/promise";
-import { insertSeasonTeamRegistration } from "../models/seasonteamregistration.models";
-import { insertSeasonTeamPlayer } from "../models/seasonteamplayers.models";
+import { insertSeasonTeamPlayer } from "../models/season-team-players.models";
 import {
   isFaceITCSRank,
-  type SeasonDetails,
+  type PlayerSchemaType,
   SeasonPlatform
 } from "@eggosystem/types";
 import { getFaceITTeamDetails } from "./faceit.services";
@@ -12,59 +11,100 @@ import {
   getPlayerHoursForSteamAppId,
   getPlayerRankForPlatform
 } from "./player-ranks.services";
-import { insertFaceITPlayerRankForSeason } from "../models/seasonplayerranks.models";
+import { insertFaceITPlayerRankForSeason } from "../models/season-player-ranks.models";
+import { getSeasonDetailsById } from "../models/season.models";
+import { areSteamProfilesPublic } from "./steam.services";
 
-export const signUpTeamForSeason = async (
-  data: {
-    seasonId: SeasonDetails["id"];
-    seasonAppId: SeasonDetails["app_id"];
-    seasonPlatform: SeasonDetails["platform"];
-    teamId: number;
-    players: {
-      steam_id: string;
-      is_co_captain?: boolean;
-      is_captain?: boolean;
-    }[];
-    teamExternalId?: string;
-  },
-  connection: PoolConnection
+export const ensurePlayerSteamProfilesPublic = async (
+  players: PlayerSchemaType[]
 ) => {
-  const seasonIdString = data.seasonId.toString();
-  const seasonAppIdString = data.seasonAppId.toString();
-  const captain = data.players.find((player) => player.is_captain);
-  const coCaptain = data.players.find((player) => player.is_co_captain);
-  if (!captain || !coCaptain) {
-    throw new Error("Captain and co-captain are required");
+  const steamIds = players.map((p) => p.steamId);
+  const areProfilePublic = await areSteamProfilesPublic(steamIds);
+  if (!areProfilePublic.is_all_public) {
+    throw new Error(
+      `Steam IDs ${areProfilePublic.not_public.join(", ")} are not public.`
+    );
   }
-  await insertSeasonTeamRegistration(
-    {
-      season_id: data.seasonId,
-      team_id: data.teamId,
-      captain_steam_id: captain.steam_id,
-      co_captain_steam_id: coCaptain.steam_id,
-      external_platform_id: data.teamExternalId
-    },
-    connection
-  );
-  for (const player of data.players) {
+};
+
+export const checkExternalId = async (
+  platform: SeasonPlatform,
+  teamExternalId?: string
+) => {
+  const externalIdValid = await isValidExternalId(platform, teamExternalId);
+
+  if (!externalIdValid) {
+    throw new Error(
+      `Could not find external team data for ${platform.toLocaleUpperCase()} id ${teamExternalId}`
+    );
+  }
+};
+
+export const getValidSeason = async (seasonId: number) => {
+  const season = await getSeasonDetailsById(seasonId);
+  if (!season) {
+    return { status: 404, message: "Season not found" };
+  }
+  if (!season.signup_start_date) {
+    return {
+      status: 400,
+      message: "Season does not have a signup start date"
+    };
+  }
+  const now = new Date();
+  const signupStart = new Date(season.signup_start_date);
+  if (now < signupStart) {
+    return {
+      status: 400,
+      message: "Signup has not started yet"
+    };
+  }
+  if (season.signup_end_date) {
+    const signupEnd = new Date(season.signup_end_date);
+    if (now > signupEnd) {
+      return {
+        status: 400,
+        message: "Signup has ended"
+      };
+    }
+  }
+  return season;
+};
+
+export const addPlayersForTeamInSeason = async (
+  seasonId: number,
+  appId: number,
+  platform: SeasonPlatform,
+  teamId: number,
+  players: PlayerSchemaType[],
+  connection?: PoolConnection
+) => {
+  const playersForTeamRegistration = players.map((player) => {
+    return {
+      steam_id: player.steamId,
+      is_captain: player.captain,
+      is_co_captain: player.coCaptain
+    };
+  });
+  for (const player of playersForTeamRegistration) {
     await insertSeasonTeamPlayer(
+      seasonId,
+      teamId,
       {
-        season_id: data.seasonId,
-        team_id: data.teamId,
         steam_id: player.steam_id
       },
       connection
     );
     const [{ rank }, { hours }, externalRank] = await Promise.all([
-      getPlayerAppIdRank(player.steam_id, seasonAppIdString),
-      getPlayerHoursForSteamAppId(player.steam_id, seasonAppIdString),
-      getPlayerRankForPlatform(player.steam_id, data.seasonPlatform)
+      getPlayerAppIdRank(player.steam_id, appId),
+      getPlayerHoursForSteamAppId(player.steam_id, appId),
+      getPlayerRankForPlatform(player.steam_id, platform)
     ]);
 
     if (isFaceITCSRank(externalRank))
       await insertFaceITPlayerRankForSeason(
         player.steam_id,
-        seasonIdString,
+        seasonId,
         rank,
         hours,
         externalRank,

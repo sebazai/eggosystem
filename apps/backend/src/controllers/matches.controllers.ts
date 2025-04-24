@@ -24,12 +24,6 @@ export const getMatchInfoController = async (
   res: Response
 ) => {
   const matchId = parseInt(req.params.match_id, 10);
-
-  if (isNaN(matchId)) {
-    res.status(400).json({ error: "Invalid match ID" });
-    return;
-  }
-
   const match = await getMatchInfo(matchId);
 
   if (!match) {
@@ -55,15 +49,8 @@ export const getTopPlayersController = async (
   res: Response
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
-
-  try {
-    const topplayers = await getMatchTopPlayers(match_id);
-    res.json(topplayers);
-  } catch (error) {
-    if (error instanceof Error) {
-      res.status(400).json({ message: error.message });
-    }
-  }
+  const topplayers = await getMatchTopPlayers(match_id);
+  res.json(topplayers);
 };
 
 export const getGameTopPlayersController = async (
@@ -134,17 +121,6 @@ export const getMatchRoundInfoController = async (
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
   const game_id = parseInt(req.params.game_id, 10);
-
-  if (isNaN(match_id)) {
-    res.status(400).json({ error: "Invalid match ID" });
-    return;
-  }
-
-  if (isNaN(game_id)) {
-    res.status(400).json({ error: "Invalid game ID" });
-    return;
-  }
-
   const roundInfo = await getMatchRoundInfo(match_id, game_id);
   res.json(roundInfo);
 };

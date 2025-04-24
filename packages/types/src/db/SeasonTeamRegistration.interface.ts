@@ -5,9 +5,6 @@ export interface SeasonTeamRegistration {
   team_id: Team["id"];
   captain_steam_id?: Nullable<SteamPlayer["steam_id"]>;
   co_captain_steam_id?: Nullable<SteamPlayer["steam_id"]>;
-  defects?: Nullable<string>;
-  ticket?: Nullable<string>;
   approved: boolean; // Not nullable, defaults to false (0)
-  notification_sent: boolean; // Not nullable, defaults to false (0)
   external_platform_id?: Nullable<string>;
 }

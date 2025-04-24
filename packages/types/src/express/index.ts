@@ -19,11 +19,12 @@ export interface ParsedParams {
 export interface UserPayload {
   account_id: Account["id"];
   provider_id: SteamPlayer["steam_id"];
+  permissions: string[];
   nickname: SteamPlayer["nickname"];
   provider: LinkedAccount["provider"];
 }
 
-export interface UserFullPayload extends UserPayload {
+export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
   fullName: Account["full_name"];
   workEmail: Account["work_email"];
   email: Account["email"];

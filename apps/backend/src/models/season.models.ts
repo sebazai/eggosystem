@@ -5,7 +5,7 @@ export const getSeasons = async () => {
   return runQuery<Season[]>("SELECT * FROM Seasons");
 };
 
-export const getSeasonById = async (id: string) => {
+export const getSeasonById = async (id: number) => {
   const [data] = await runQuery<[Season | undefined]>(
     "SELECT * FROM Seasons WHERE id = ?",
     [id]
@@ -13,7 +13,7 @@ export const getSeasonById = async (id: string) => {
   return data;
 };
 
-export const getSeasonDetailsById = async (id: string) => {
+export const getSeasonDetailsById = async (id: number) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
     "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",
     [id]
@@ -21,7 +21,7 @@ export const getSeasonDetailsById = async (id: string) => {
   return data;
 };
 
-export const getActiveSeasonForAppId = async (app_id: string) => {
+export const getActiveSeasonForAppId = async (app_id: number) => {
   const [activeSeason] = await runQuery<
     Array<{ season_id: number } | undefined>
   >(

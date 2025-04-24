@@ -12,13 +12,13 @@ export const getOrgs = async (req: Request, res: Response) => {
 };
 
 export const getOrgById = async (req: Request, res: Response) => {
-  const orgId = req.params.id;
+  const orgId = Number(req.params.id);
   const org = await getOrganizationById(orgId);
   res.json(org);
 };
 
 export const getOrgTeams = async (req: Request, res: Response) => {
-  const orgId = req.params.id;
+  const orgId = Number(req.params.id);
   const org = await getOrganizationTeams(orgId);
   res.json(org);
 };

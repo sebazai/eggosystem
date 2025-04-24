@@ -12,6 +12,7 @@ import ScrollToTop from "@/components/layout/scroll-to-top";
 import { AuthProvider } from "@/context/AuthContext";
 import { FilterProvider } from "@/context/FilterContext";
 import { Suspense } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -142,6 +143,7 @@ export default function RootLayout({
             </Suspense>
           </ThemeProvider>
         </AuthProvider>
+        <Toaster richColors />
       </body>
     </html>
   );
