@@ -17,7 +17,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch
 } from "react-hook-form";
-import { cn, createNextImageUrl } from "@/lib/utils";
+import { createNextImageUrl } from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -43,7 +43,7 @@ import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./signup-player-alert";
 import { FaceITLevelIcon } from "../profle/faceit-level";
 import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
-import { WarningTooltipIcon } from "../icons";
+import { Spinner, WarningTooltipIcon } from "../icons";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -313,11 +313,6 @@ export const TabPlayers = ({
 
             const isHardCarry = hardCarrySteamId === player.steamId;
 
-            const playerOk =
-              player.steamId.length === 17 &&
-              playerSchema.safeParse(player).success &&
-              player.hasValidData &&
-              player.isProfilePublic;
             return (
               <AccordionItem
                 className="space-y-2 border-b-0"
@@ -325,15 +320,9 @@ export const TabPlayers = ({
                 value={`player-${index}`}
               >
                 <AccordionTrigger
-                  className={cn(
-                    "border-1 p-4 w-full rounded-lg flex flex-col items-center xs:flex-row",
-                    loadingStates[index] && "border-yellow-400 animate-pulse",
-                    playerOk && "border-green-500",
-                    !playerOk &&
-                      player.steamId.length === 17 &&
-                      !loadingStates[index] &&
-                      "border-red-500"
-                  )}
+                  className={
+                    "border-1 p-4 w-full rounded-lg flex flex-col items-center xs:flex-row"
+                  }
                 >
                   <FormField
                     control={control}
@@ -353,39 +342,46 @@ export const TabPlayers = ({
                           )}
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            {...field}
-                            className="w-full"
-                            onClick={(e) => e.stopPropagation()}
-                            disabled={loadingStates[index]}
-                            onChange={(e) => {
-                              const newValue = e.target.value;
-                              const oldValue = field.value;
-                              if (newValue !== oldValue) {
-                                resetField(`players.${index}.nickname`);
-                                resetField(`players.${index}.discord`);
-                                setValue(
-                                  `players.${index}.hasValidData`,
-                                  undefined
-                                );
-                                setValue(
-                                  `players.${index}.isProfilePublic`,
-                                  undefined
-                                );
-                                setValue(`players.${index}.hours`, undefined);
-                                setValue(`players.${index}.rank`, undefined);
-                                setValue(
-                                  `players.${index}.externalRank`,
-                                  undefined
-                                );
-                                setLoadingStates((prev) => ({
-                                  ...prev,
-                                  [index]: undefined
-                                }));
-                              }
-                              field.onChange(e);
-                            }}
-                          />
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              className="w-full"
+                              onClick={(e) => e.stopPropagation()}
+                              disabled={loadingStates[index]}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                const oldValue = field.value;
+                                if (newValue !== oldValue) {
+                                  resetField(`players.${index}.nickname`);
+                                  resetField(`players.${index}.discord`);
+                                  setValue(
+                                    `players.${index}.hasValidData`,
+                                    undefined
+                                  );
+                                  setValue(
+                                    `players.${index}.isProfilePublic`,
+                                    undefined
+                                  );
+                                  setValue(`players.${index}.hours`, undefined);
+                                  setValue(`players.${index}.rank`, undefined);
+                                  setValue(
+                                    `players.${index}.externalRank`,
+                                    undefined
+                                  );
+                                  setLoadingStates((prev) => ({
+                                    ...prev,
+                                    [index]: undefined
+                                  }));
+                                }
+                                field.onChange(e);
+                              }}
+                            />
+                            {loadingStates[index] && (
+                              <div className="absolute inset-y-0 right-2 flex items-center">
+                                <Spinner />
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
