@@ -43,6 +43,7 @@ import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./signup-player-alert";
 import { FaceITLevelIcon } from "../profle/faceit-level";
 import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
+import { WarningTooltipIcon } from "../icons";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -69,6 +70,7 @@ export const TabPlayers = ({
 }: TabPlayersProps) => {
   const [newPlayers, setNewPlayers] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
+  const [hardCarrySteamId, setHardCarrySteamId] = useState("");
   const auth = useAuth();
   useEffect(() => {
     if (
@@ -125,6 +127,45 @@ export const TabPlayers = ({
       setOpenItems(errorIndices);
     }
   }, [loadingStates, watchPlayers]);
+
+  useEffect(() => {
+    if (watchPlayers.length >= 5) {
+      const validRanks = watchPlayers
+        .map((player) => player.rank)
+        .filter((rank) => typeof rank === "number")
+        .filter((rank) => rank > 0);
+
+      const validExternalRanks = watchPlayers
+        .map((player) => player.externalRank)
+        .filter((rank) => typeof rank === "number")
+        .filter((rank) => rank > 0);
+
+      const sum = validRanks.reduce((acc, rank) => acc + rank, 0);
+      const rankAvg = sum / validRanks.length;
+      const sumExternal = validExternalRanks.reduce(
+        (acc, rank) => acc + rank,
+        0
+      );
+      const avgExternal = sumExternal / validExternalRanks.length;
+
+      const highestRankedPlayer = watchPlayers
+        .filter((player) => typeof player.rank === "number")
+        .reduce(
+          (best, current) => {
+            return current.rank! > best.rank! ? current : best;
+          },
+          { rank: -Infinity } as (typeof watchPlayers)[number]
+        );
+      if (
+        (highestRankedPlayer.rank &&
+          highestRankedPlayer.rank - rankAvg >= 10000) ||
+        (highestRankedPlayer.externalRank &&
+          highestRankedPlayer.externalRank - avgExternal >= 4)
+      ) {
+        setHardCarrySteamId(highestRankedPlayer.steamId);
+      }
+    }
+  }, [watchPlayers]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -270,6 +311,8 @@ export const TabPlayers = ({
           {fields.map((field, index) => {
             const player = watch(`players.${index}`);
 
+            const isHardCarry = hardCarrySteamId === player.steamId;
+
             const playerOk =
               player.steamId.length === 17 &&
               playerSchema.safeParse(player).success &&
@@ -374,6 +417,13 @@ export const TabPlayers = ({
                         height={23}
                       />
                     )}
+                    {isHardCarry && (
+                      <WarningTooltipIcon
+                        text={
+                          "Note: Player is Hard carry for the team - make sure he plays all games"
+                        }
+                      />
+                    )}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="w-full p-4 border-t space-y-3">
@@ -455,7 +505,7 @@ export const TabPlayers = ({
                           <FormControl>
                             <Input disabled={true} {...field} />
                           </FormControl>
-                          <FormDescription className="text-primary text-xs">
+                          <FormDescription className="text-primary text-xs pb-1">
                             {player.discord ? (
                               <SignupPlayerNotification type="info">
                                 Can be updated in profile page
@@ -473,6 +523,11 @@ export const TabPlayers = ({
                     />
                   )}
 
+                  {isHardCarry && (
+                    <SignupPlayerNotification type="warning">
+                      {`Note: Player is Hard carry for the team - make sure he plays all games`}
+                    </SignupPlayerNotification>
+                  )}
                   {player.hasValidData === undefined &&
                     newPlayers.includes(player.steamId) && (
                       <SignupPlayerNotification type="warning">
