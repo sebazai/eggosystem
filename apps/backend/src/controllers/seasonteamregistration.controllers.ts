@@ -183,7 +183,6 @@ export const addSignupForSeason = async (
   }
 
   await checkExternalId(season.platform, formData.teamExternalId);
-  await ensurePlayerSteamProfilesPublic(formData.players);
 
   const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
   const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;

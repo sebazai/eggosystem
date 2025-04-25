@@ -14,7 +14,10 @@ import {
 } from "@eggosystem/types";
 import { getDBPermissionsForAccountId } from "./auth.services";
 import { insertSeasonTeamRegistration } from "../models/season-team-registration.models";
-import { addPlayersForTeamInSeason } from "./signup.services";
+import {
+  addPlayersForTeamInSeason,
+  validatePlayersForSignup
+} from "./signup.services";
 
 export const updateCaptainPermissionsForSeasonTeam = async (
   season_id: number,
@@ -145,6 +148,13 @@ export const handleSeasonTeamRegistration = async (
   connection?: PoolConnection
 ) => {
   return Promise.all([
+    validatePlayersForSignup(
+      seasonId,
+      seasonPlatform,
+      appId,
+      teamId,
+      playersData
+    ),
     insertSeasonTeamRegistration(seasonId, teamId, teamData, connection),
     addPlayersForTeamInSeason(
       seasonId,

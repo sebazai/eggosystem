@@ -1,5 +1,8 @@
 import type { PoolConnection } from "mysql2/promise";
-import { insertSeasonTeamPlayer } from "../models/season-team-players.models";
+import {
+  insertSeasonTeamPlayer,
+  isPlayerApprovedForSeasonTeamManually
+} from "../models/season-team-players.models";
 import {
   isFaceITCSRank,
   type PlayerSchemaType,
@@ -14,6 +17,7 @@ import {
 import { insertFaceITPlayerRankForSeason } from "../models/season-player-ranks.models";
 import { getSeasonDetailsById } from "../models/season.models";
 import { areSteamProfilesPublic } from "./steam.services";
+import { getPlayerDetailsBySteamId } from "../models/player.models";
 
 export const ensurePlayerSteamProfilesPublic = async (
   players: PlayerSchemaType[]
@@ -125,4 +129,57 @@ export const isValidExternalId = async (
     return !!data;
   }
   return false;
+};
+
+export const validatePlayersForSignup = async (
+  seasonId: number,
+  platform: SeasonPlatform,
+  seasonAppId: number,
+  teamId: number,
+  players: PlayerSchemaType[]
+) => {
+  await ensurePlayerSteamProfilesPublic(players);
+  const data = await Promise.all(
+    players.map((player) => getPlayerDetailsBySteamId(player.steamId))
+  );
+  const filteredData = data.filter((player) => !!player);
+  if (filteredData.length !== players.length) {
+    throw new Error(
+      "Could not find players in database that is provided in the form"
+    );
+  }
+
+  for (const playerData of filteredData) {
+    const [hoursData, rankData, externalRankData] = await Promise.all([
+      getPlayerHoursForSteamAppId(playerData.steam_id, seasonAppId, seasonId),
+      getPlayerAppIdRank(playerData.steam_id, seasonAppId, seasonId),
+      getPlayerRankForPlatform(playerData.steam_id, platform)
+    ]);
+    if (hoursData.hours === -1) {
+      throw new Error(`Player ${playerData.steam_id} hours not found.`);
+    }
+    if (rankData.rank === -1 && externalRankData?.faceit_elo === -1) {
+      throw new Error(`Player ${playerData.steam_id} rank not found.`);
+    }
+    if (!playerData.has_accepted_latest_privacy_policy) {
+      throw new Error(
+        `Player ${playerData.steam_id} has not accepted privacy policy.`
+      );
+    }
+    if (!playerData.is_valid_work_email) {
+      const manuallyApprovedPlayer =
+        await isPlayerApprovedForSeasonTeamManually(
+          seasonId,
+          teamId,
+          playerData.steam_id
+        );
+      if (!manuallyApprovedPlayer.employment_approved_by_organizer) {
+        throw new Error(`Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contant organizer in d
+          Discord.`);
+      }
+    }
+    if (!playerData.is_valid_full_name) {
+      throw new Error(`Player ${playerData.steam_id} profile data missing.`);
+    }
+  }
 };
