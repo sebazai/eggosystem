@@ -3,6 +3,7 @@ import { validateNumericParams } from "../../middlewares/validate-numeric-params
 
 import {
   addSignupForSeason,
+  getPlayerApprovedByOrganizer,
   getTeamSignupDetails,
   updateTeamSignupDetails
 } from "../../controllers/seasonteamregistration.controllers";
@@ -12,6 +13,12 @@ import {
 } from "../../middlewares/auth.middleware";
 
 const router = Router();
+router.get(
+  "/season/:season_id/team/:team_id/player/:steam_id/approved-manually",
+  validateNumericParams(["season_id", "team_id"]),
+  authenticateJWT,
+  getPlayerApprovedByOrganizer
+);
 router.get(
   "/season/:season_id/signup/team/:team_id",
   validateNumericParams(),

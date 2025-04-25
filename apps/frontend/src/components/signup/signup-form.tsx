@@ -139,7 +139,7 @@ export const SignupForm = ({
         .safeParse({ newTeam: watchNewTeam }),
     [watchNewTeam, baseSchema]
   );
-  const validTeamExternalId = useMemo(
+  const validTeamExternalIdInForm = useMemo(
     () =>
       baseSchema
         .pick({ teamExternalId: true })
@@ -159,28 +159,67 @@ export const SignupForm = ({
   useEffect(() => {
     const validateExternalId = async () => {
       if (
-        validTeamExternalId.success &&
-        validTeamExternalId.data.teamExternalId &&
+        validTeamExternalIdInForm.success &&
+        validTeamExternalIdInForm.data.teamExternalId &&
         !fetchingExternalData &&
         !validExternalTeamId
       ) {
         setFetchingExternalData(true);
-        const id = validTeamExternalId.data.teamExternalId;
+        const id = validTeamExternalIdInForm.data.teamExternalId;
         const data = await validateExternalPlaformId(platform, id);
         setValidExternalTeamId(!!data);
         setFetchingExternalData(false);
       }
-      if (!validTeamExternalId.success) {
+      if (!validTeamExternalIdInForm.success) {
         setValidExternalTeamId(false);
       }
     };
     validateExternalId();
   }, [
-    validTeamExternalId,
+    validTeamExternalIdInForm,
     platform,
     fetchingExternalData,
     validExternalTeamId
   ]);
+
+  const validOrganizationSelection = Boolean(
+    (validOrgId.success && validOrgId.data.organizationId !== -1) ||
+      (validOrg.success &&
+        validOrgId.data?.organizationId === -1 &&
+        validOrg.data.newOrganization)
+  );
+
+  const validTeamSelection =
+    Boolean(
+      (validTeamId.success && validTeamId.data.teamId !== -1) ||
+        (validTeam.success &&
+          validTeamId.data?.teamId === -1 &&
+          validTeam.data.newTeam)
+    ) &&
+    validTeamExternalIdInForm.success &&
+    !!validExternalTeamId;
+
+  const validPlayerSelection =
+    validPlayers &&
+    watchPlayers.every(
+      (p) =>
+        p.hasValidData &&
+        p.isProfilePublic &&
+        p.rank !== -1 &&
+        p.externalRank !== -1 &&
+        p.hours !== -1
+    );
+
+  useEffect(() => {
+    console.log(isEditMode, validOrganizationSelection, validTeamSelection);
+    if (isEditMode && validOrganizationSelection && validTeamSelection) {
+      setActiveTab("players");
+    }
+    if (isEditMode && validOrganizationSelection && !validTeamSelection) {
+      setActiveTab("team");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, validExternalTeamId]);
 
   const onSubmit = async (data: SignupFormValues) => {
     setSubmitDisabled(true);
@@ -235,34 +274,6 @@ export const SignupForm = ({
   const onNext = (value: string) => {
     setActiveTab(value);
   };
-
-  const validOrganizationSelection = Boolean(
-    (validOrgId.success && validOrgId.data.organizationId !== -1) ||
-      (validOrg.success &&
-        validOrgId.data?.organizationId === -1 &&
-        validOrg.data.newOrganization)
-  );
-
-  const validTeamSelection =
-    Boolean(
-      (validTeamId.success && validTeamId.data.teamId !== -1) ||
-        (validTeam.success &&
-          validTeamId.data?.teamId === -1 &&
-          validTeam.data.newTeam)
-    ) &&
-    validTeamExternalId.success &&
-    !!validExternalTeamId;
-
-  const validPlayerSelection =
-    validPlayers &&
-    watchPlayers.every(
-      (p) =>
-        p.hasValidData &&
-        p.isProfilePublic &&
-        p.rank !== -1 &&
-        p.externalRank !== -1 &&
-        p.hours !== -1
-    );
 
   const canSubmit =
     validOrganizationSelection && validTeamSelection && validPlayerSelection;

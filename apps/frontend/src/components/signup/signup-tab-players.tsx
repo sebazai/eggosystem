@@ -97,6 +97,7 @@ export const TabPlayers = ({
   }, [playerErrorIndices]);
 
   const watchPlayers = useWatch({ control, name: "players" });
+  const watchTeamId = useWatch({ control, name: "teamId" });
 
   const steamIds = useWatch({ control, name: "players" }).map((p) => p.steamId);
 
@@ -242,10 +243,27 @@ export const TabPlayers = ({
             data.is_valid_full_name && data.has_accepted_latest_privacy_policy
           );
           setValue(`players.${index}.hasValidData`, hasValidDataBool);
-          setValue(
-            `players.${index}.hasValidWorkEmail`,
-            Boolean(data.is_valid_work_email)
-          );
+
+          const isValidWorkEmail = Boolean(data.is_valid_work_email);
+          if (isValidWorkEmail) {
+            setValue(
+              `players.${index}.hasValidWorkEmail`,
+              Boolean(data.is_valid_work_email)
+            );
+          } else {
+            // Check if organizer has approved manually
+            const approvedByOrganizer = await clientApiFetch<{
+              employment_approved_by_organizer: boolean;
+            }>(
+              `/api/v1/registrations/season/${seasonId}/team/${watchTeamId}/player/${steam_id}/approved-manually`
+            );
+
+            setValue(
+              `players.${index}.hasValidWorkEmail`,
+              Boolean(approvedByOrganizer.employment_approved_by_organizer)
+            );
+          }
+
           if (data.nickname)
             setValue(`players.${index}.nickname`, data.nickname, {
               shouldValidate: true

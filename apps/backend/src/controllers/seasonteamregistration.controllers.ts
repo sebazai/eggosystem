@@ -25,6 +25,7 @@ import {
 import { isTeamPartOfOrganization } from "../services/team.services";
 import { insertOrganization } from "../models/organization.models";
 import { insertTeam } from "../models/team.models";
+import { isPlayerApprovedForSeasonTeamManually } from "../models/season-team-players.models";
 
 export const getTeamSignupDetails = async (
   req: RequestWithParams<{ season_id: string; team_id: string }>,
@@ -34,6 +35,26 @@ export const getTeamSignupDetails = async (
   const teamId = Number(req.params.team_id);
   const seasonTeamRegistrationData = await getTeamSignupData(seasonId, teamId);
   res.json(seasonTeamRegistrationData);
+};
+
+export const getPlayerApprovedByOrganizer = async (
+  req: RequestWithParams<{
+    season_id: string;
+    team_id: string;
+    steam_id: string;
+  }>,
+  res: Response
+) => {
+  const season_id = Number(req.params.season_id);
+  const team_id = Number(req.params.team_id);
+  const steam_id = req.params.steam_id;
+
+  const approvedManually = await isPlayerApprovedForSeasonTeamManually(
+    season_id,
+    team_id,
+    steam_id
+  );
+  res.json(approvedManually);
 };
 
 export const updateTeamSignupDetails = async (
