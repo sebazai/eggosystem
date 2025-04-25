@@ -311,7 +311,8 @@ export const TabPlayers = ({
           {fields.map((field, index) => {
             const player = watch(`players.${index}`);
 
-            const isHardCarry = hardCarrySteamId === player.steamId;
+            const isHardCarry =
+              hardCarrySteamId !== "" && hardCarrySteamId === player.steamId;
 
             return (
               <AccordionItem
