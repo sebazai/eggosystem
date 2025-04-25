@@ -44,6 +44,7 @@ import { SignupPlayerNotification } from "./signup-player-alert";
 import { FaceITLevelIcon } from "../profle/faceit-level";
 import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
 import { Spinner, WarningTooltipIcon } from "../icons";
+import Link from "next/link";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -114,6 +115,7 @@ export const TabPlayers = ({
         player.steamId.length === 17 &&
         (playerSchema.safeParse(player).success === false ||
           player.hasValidData !== true ||
+          player.hasValidWorkEmail !== true ||
           player.isProfilePublic !== true ||
           player.hours === undefined ||
           player.hours === -1 ||
@@ -237,11 +239,13 @@ export const TabPlayers = ({
           setValue(`players.${index}.accountId`, playerData.value.account_id);
           const data = playerData.value;
           const hasValidDataBool = Boolean(
-            data.is_valid_full_name &&
-              data.is_valid_work_email &&
-              data.has_accepted_latest_privacy_policy
+            data.is_valid_full_name && data.has_accepted_latest_privacy_policy
           );
           setValue(`players.${index}.hasValidData`, hasValidDataBool);
+          setValue(
+            `players.${index}.hasValidWorkEmail`,
+            Boolean(data.is_valid_work_email)
+          );
           if (data.nickname)
             setValue(`players.${index}.nickname`, data.nickname, {
               shouldValidate: true
@@ -357,6 +361,10 @@ export const TabPlayers = ({
                                   resetField(`players.${index}.discord`);
                                   setValue(
                                     `players.${index}.hasValidData`,
+                                    undefined
+                                  );
+                                  setValue(
+                                    `players.${index}.hasValidWorkEmail`,
                                     undefined
                                   );
                                   setValue(
@@ -535,6 +543,23 @@ export const TabPlayers = ({
                   {player.hasValidData === false && (
                     <SignupPlayerNotification>
                       Ask the player to sign up for Kanahub.
+                    </SignupPlayerNotification>
+                  )}
+
+                  {player.hasValidWorkEmail === false && (
+                    <SignupPlayerNotification>
+                      <div>
+                        <span>
+                          Player does not have a valid work e-mail, open a
+                          ticket in Discord. See{" "}
+                          <Link
+                            target="_blank"
+                            href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"
+                          >
+                            registration info
+                          </Link>
+                        </span>
+                      </div>
                     </SignupPlayerNotification>
                   )}
 

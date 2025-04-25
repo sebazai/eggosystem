@@ -7,6 +7,7 @@ const playerSchema = z
     steamId: z.string().length(17),
     nickname: z.string().min(1).max(50),
     hasValidData: z.boolean().optional(),
+    hasValidWorkEmail: z.boolean().optional(),
     isProfilePublic: z.boolean().optional(),
     hours: z.number().optional(),
     rank: z.number().optional(),

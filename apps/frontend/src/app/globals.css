@@ -209,11 +209,13 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     padding-bottom: 1rem;
   }
 
-  p a {
+  p a,
+  span a {
     color: #f29209;
   }
 
-  p a:hover {
+  p a:hover,
+  span a:hover {
     text-decoration: underline;
   }
 
