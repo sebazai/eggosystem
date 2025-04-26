@@ -4,8 +4,8 @@ import {
   type TeamPlayerStats,
   type TeamStats,
   type Team,
-  TopTeamsByFiltersRaw,
-  ParsedParams
+  type TopTeamsByFiltersRaw,
+  type ParsedParams
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
@@ -13,8 +13,15 @@ import { buildInsertQueryParts } from "../db/utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 
 export const getTeams = async () => {
-  return runQuery<Omit<Team, "email">[]>(
+  return runQuery<Team[]>(
     "SELECT id, organization_id, name, team_logo FROM Teams"
+  );
+};
+
+export const getTeamById = async (teamId: number) => {
+  return runQuery<[Team | undefined]>(
+    "SELECT id, organization_id, name, team_logo FROM Teams WHERE id = ? LIMIT 1",
+    [teamId]
   );
 };
 
@@ -149,7 +156,7 @@ export const getTeamsByFilters = async (
 };
 
 // Get team details by team ID
-export const getTeamById = async (
+export const getTeamDetailsById = async (
   teamId: number,
   season_ids: number[] | null
 ) => {

@@ -20,7 +20,7 @@ export const useTeamDetails = ({
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   const { data, error, isValidating, isLoading } = useSWR<TeamDetails>(
-    `/api/v1/teams/${teamId}?${sortedQuery}`,
+    `/api/v1/teams/${teamId}/details?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false,

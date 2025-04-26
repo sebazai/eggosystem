@@ -3,7 +3,8 @@ import {
   getAllTeams,
   getTeamsByFiltersController,
   getTeamDetailsController,
-  getTopTeamsController
+  getTopTeamsController,
+  getTeamByIdController
 } from "../../controllers/teams.controllers";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -13,8 +14,9 @@ const router = Router();
 router.get("/filtered", parseQueryFilterParams, getTeamsByFiltersController);
 router.get("/", getAllTeams);
 router.get("/topteams", parseQueryFilterParams, getTopTeamsController);
+router.get("/:teamId", validateNumericParams(), getTeamByIdController);
 router.get(
-  "/:teamId",
+  "/:teamId/details",
   parseQueryFilterParams,
   validateNumericParams(),
   getTeamDetailsController

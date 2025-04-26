@@ -2,17 +2,30 @@ import { type Request, type Response } from "express";
 import {
   getTeams,
   getTeamsByFilters,
-  getTeamById,
+  getTeamDetailsById,
   getTeamPlayers,
   getTeamMatches,
   getTeamMapStats,
-  getTopTeams
+  getTopTeams,
+  getTeamById
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 
 export const getAllTeams = async (req: Request, res: Response) => {
   const allTeams = await getTeams();
   res.json(allTeams);
+};
+
+export const getTeamByIdController = async (
+  req: RequestWithParams<{ teamId: string }>,
+  res: Response
+) => {
+  const teamIdNumber = Number(req.params.teamId);
+  const [team] = await getTeamById(teamIdNumber);
+  if (!team) {
+    res.status(404).json("Team not found");
+  }
+  res.json(team);
 };
 
 export const getTeamsByFiltersController = async (
@@ -31,7 +44,7 @@ export const getTeamDetailsController = async (
   const teamId = parseInt(req.params.teamId);
   const { season_ids, map_ids } = req.parsedParams;
 
-  const team = await getTeamById(teamId, season_ids);
+  const team = await getTeamDetailsById(teamId, season_ids);
 
   if (!team) {
     res.status(404).json({ error: "Team not found" });
