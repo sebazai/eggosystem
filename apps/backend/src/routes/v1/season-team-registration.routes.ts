@@ -6,7 +6,7 @@ import {
   getPlayerApprovedByOrganizer,
   getTeamSignupDetails,
   updateTeamSignupDetails
-} from "../../controllers/seasonteamregistration.controllers";
+} from "../../controllers/season-team-registration.controllers";
 import {
   authenticateJWT,
   checkPermission

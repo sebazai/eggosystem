@@ -292,10 +292,12 @@ export const addSignupForSeason = async (
         formData.teamId,
         formData.organizationId
       );
+
       if (!isTeamPartOfOrg) {
         res.status(400).json({
           message: "Team does not belong to the selected organization"
         });
+        await connection.rollback();
         return;
       }
 

@@ -1,4 +1,4 @@
-import { type Game, type SeasonPlatform } from "@eggosystem/types";
+import { Nullable, type Game, type SeasonPlatform } from "@eggosystem/types";
 
 export interface Season {
   id: number;
@@ -10,4 +10,16 @@ export interface Season {
   platform: SeasonPlatform;
   start_date: string; // DATE stored as string (ISO format)
   end_date: string | null;
+}
+
+export interface InsertSeason {
+  id: number;
+  game_id: Game["id"];
+  name: string;
+  full_name: string;
+  signup_start_date: Nullable<Date>;
+  signup_end_date: Nullable<Date>;
+  platform: SeasonPlatform;
+  start_date: Date; // DATE stored as string (ISO format)
+  end_date: Nullable<Date>;
 }

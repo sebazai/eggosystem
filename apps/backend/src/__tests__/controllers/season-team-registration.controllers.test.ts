@@ -1,5 +1,5 @@
 import * as seasonModels from "../../models/season.models";
-import { addSignupForSeason } from "../../controllers/seasonteamregistration.controllers";
+import { addSignupForSeason } from "../../controllers/season-team-registration.controllers";
 import * as db from "../../db/mysqlConnection";
 import * as signupServices from "../../services/signup.services";
 import * as registrationModels from "../../models/season-team-registration.models";
@@ -59,7 +59,7 @@ const validSignupData = {
   ]
 };
 
-describe("addSignupForSeason - Try Catch Block", () => {
+describe("addSignupForSeason - database transaction testing", () => {
   let req: RequestWithParamsAndBody<{ id: string }, SignupFormValues>;
   let res: Response;
   const mockConnection = {
@@ -98,9 +98,7 @@ describe("addSignupForSeason - Try Catch Block", () => {
       end_date: null,
       app_id: 730
     } satisfies SeasonDetails);
-    jest
-      .spyOn(steamServices, "areSteamProfilesPublic")
-      .mockResolvedValue({ is_all_public: true });
+    jest.spyOn(signupServices, "validatePlayersForSignup").mockResolvedValue();
   });
 
   it("should rollback and return 500 if an error occurs in transaction", async () => {
@@ -345,7 +343,8 @@ describe("addSignupForSeason - Try Catch Block", () => {
       .mockResolvedValue();
 
     await addSignupForSeason(req, res);
-    expect(mockConnection.release).toHaveBeenCalled();
+    expect(mockConnection.release).toHaveBeenCalledTimes(1);
+    expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
     expect(mockConnection.commit).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
