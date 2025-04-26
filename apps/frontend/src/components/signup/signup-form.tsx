@@ -62,7 +62,6 @@ export const SignupForm = ({
   const [validExternalTeamId, setValidExternalTeamId] = useState(
     platform !== SeasonPlatform.Kanaliiga ? null : true
   );
-  const [submitDisabled, setSubmitDisabled] = useState(false);
 
   const isEditMode = !!editValues;
 
@@ -222,7 +221,6 @@ export const SignupForm = ({
   }, [isEditMode, validExternalTeamId]);
 
   const onSubmit = async (data: SignupFormValues) => {
-    setSubmitDisabled(true);
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
@@ -401,7 +399,11 @@ export const SignupForm = ({
               type="submit"
               variant="outline"
               className="w-full"
-              disabled={submitDisabled || !canSubmit}
+              disabled={
+                form.formState.isSubmitting ||
+                form.formState.isSubmitSuccessful ||
+                !canSubmit
+              }
             >
               Submit
             </Button>
