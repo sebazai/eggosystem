@@ -1,5 +1,5 @@
 import * as seasonModels from "../../models/season.models";
-import { addSignupForSeason } from "../../controllers/season-team-registration.controllers";
+import { addSignupForSeasonController } from "../../controllers/season-team-registration.controllers";
 import * as db from "../../db/mysqlConnection";
 import * as signupServices from "../../services/signup.services";
 import * as registrationModels from "../../models/season-team-registration.models";
@@ -110,7 +110,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .mockRejectedValue(new Error("DB Error"));
 
     try {
-      await addSignupForSeason(req, res);
+      await addSignupForSeasonController(req, res);
     } catch (_error) {
       expect(mockConnection.rollback).toHaveBeenCalled();
       expect(mockConnection.release).toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
       .mockResolvedValue();
 
-    await addSignupForSeason(req, res);
+    await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
 
     expect(signSpy).toHaveBeenCalledWith(
@@ -191,7 +191,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
 
-    await addSignupForSeason(req, res);
+    await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
     expect(insertSeasonTeamReg).toHaveBeenCalledWith(
       1,
@@ -251,7 +251,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       insertId: 1
     });
 
-    await addSignupForSeason(req, res);
+    await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
 
     expect(signSpy).toHaveBeenCalledWith(
@@ -302,7 +302,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       insertId: 1337
     } as unknown as { insertId: number });
 
-    await addSignupForSeason(req, res);
+    await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
 
     expect(signSpy).toHaveBeenCalledWith(
@@ -342,7 +342,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
       .mockResolvedValue();
 
-    await addSignupForSeason(req, res);
+    await addSignupForSeasonController(req, res);
     expect(mockConnection.release).toHaveBeenCalledTimes(1);
     expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
     expect(mockConnection.commit).not.toHaveBeenCalled();
@@ -352,3 +352,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     });
   });
 });
+
+// describe("addSignupForSeason", () => {
+//   it("");
+// });

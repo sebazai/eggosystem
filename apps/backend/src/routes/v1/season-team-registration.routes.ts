@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 import {
-  addSignupForSeason,
+  addSignupForSeasonController,
   getPlayerApprovedByOrganizer,
   getTeamSignupDetails,
   updateTeamSignupDetails
@@ -35,7 +35,7 @@ router.post(
   "/season/:season_id/signup",
   validateNumericParams(),
   authenticateJWT,
-  addSignupForSeason
+  addSignupForSeasonController
 );
 router.put(
   "/season/:season_id/signup/team/:team_id",

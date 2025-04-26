@@ -6,6 +6,7 @@ import {
 } from "@eggosystem/types";
 import type { Response } from "express";
 import {
+  addSignupForSeason,
   getSeasonTeamRegistrationBySeasonAndTeamId,
   getTeamSignupData,
   updatePlayersForSeasonTeamRegistration,
@@ -18,13 +19,7 @@ import {
   checkExternalId,
   ensurePlayerSteamProfilesPublic
 } from "../services/signup.services";
-import {
-  handleSeasonTeamRegistration,
-  updateCaptainPermissionsForSeasonTeam
-} from "../services/season-team-registration.services";
-import { isTeamPartOfOrganization } from "../services/team.services";
-import { insertOrganization } from "../models/organization.models";
-import { insertTeam } from "../models/team.models";
+import { updateCaptainPermissionsForSeasonTeam } from "../services/season-team-registration.services";
 import { isPlayerApprovedForSeasonTeamManually } from "../models/season-team-players.models";
 
 export const getTeamSignupDetails = async (
@@ -153,7 +148,7 @@ export const updateTeamSignupDetails = async (
   }
 };
 
-export const addSignupForSeason = async (
+export const addSignupForSeasonController = async (
   req: RequestWithParamsAndBody<{ id: string }, SignupFormValues>,
   res: Response
 ) => {
@@ -184,148 +179,14 @@ export const addSignupForSeason = async (
 
   await checkExternalId(season.platform, formData.teamExternalId);
 
-  const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
-  const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
-
-  if (!captainSteamId || !coCaptainSteamId) {
-    throw new Error("Could not determine captain and co-captain.");
-  }
-
-  const connection = await getConnection();
-
   try {
-    await connection.beginTransaction();
-
-    // Handle new org and new team.
-    if (formData.organizationId === -1) {
-      if (formData.teamId !== -1) {
-        res.status(400).json({
-          message: "Cannot create a new organization with an existing team"
-        });
-        return;
-      }
-
-      if (formData.newOrganization) {
-        const newOrg = await insertOrganization(
-          {
-            name: formData.newOrganization.name,
-            organization_code: formData.newOrganization.organization_code,
-            website: formData.newOrganization.website
-          },
-          connection
-        );
-        if (formData.newTeam) {
-          const newTeam = await insertTeam(
-            {
-              name: formData.newTeam.name,
-              organization_id: newOrg.insertId,
-              org_approved: true
-            },
-            connection
-          );
-
-          await handleSeasonTeamRegistration(
-            season.id,
-            season.platform,
-            season.app_id,
-            newTeam.insertId,
-            {
-              captain_steam_id: captainSteamId,
-              co_captain_steam_id: coCaptainSteamId,
-              external_platform_id: formData.teamExternalId
-            },
-            formData.players,
-            connection
-          );
-
-          await connection.commit();
-          res.status(200).json({
-            team_id: newTeam.insertId,
-            organization_id: newOrg.insertId
-          });
-          return;
-        }
-      }
-    }
-
-    // Handle existing org and new team
-    if (formData.organizationId !== -1) {
-      if (formData.teamId === -1) {
-        if (formData.newTeam) {
-          const newTeam = await insertTeam(
-            {
-              name: formData.newTeam.name,
-              organization_id: formData.organizationId,
-              org_approved: false
-            },
-            connection
-          );
-
-          await handleSeasonTeamRegistration(
-            season.id,
-            season.platform,
-            season.app_id,
-            newTeam.insertId,
-            {
-              captain_steam_id: captainSteamId,
-              co_captain_steam_id: coCaptainSteamId,
-              external_platform_id: formData.teamExternalId
-            },
-            formData.players,
-            connection
-          );
-
-          await connection.commit();
-          res.status(200).json({
-            team_id: newTeam.insertId,
-            organization_id: formData.organizationId
-          });
-          return;
-        }
-      }
-    }
-
-    // Handle existing organization and existing team
-    if (formData.organizationId !== -1 && formData.teamId !== -1) {
-      // Ensure the team belongs to the organization
-      const isTeamPartOfOrg = await isTeamPartOfOrganization(
-        formData.teamId,
-        formData.organizationId
-      );
-
-      if (!isTeamPartOfOrg) {
-        res.status(400).json({
-          message: "Team does not belong to the selected organization"
-        });
-        await connection.rollback();
-        return;
-      }
-
-      await handleSeasonTeamRegistration(
-        season.id,
-        season.platform,
-        season.app_id,
-        formData.teamId,
-        {
-          captain_steam_id: captainSteamId,
-          co_captain_steam_id: coCaptainSteamId,
-          external_platform_id: formData.teamExternalId
-        },
-        formData.players,
-        connection
-      );
-
-      await connection.commit();
-      res.status(200).json({
-        team_id: formData.teamId,
-        organization_id: formData.organizationId
-      });
+    const result = await addSignupForSeason(season, formData);
+    res.json(result);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
       return;
     }
-  } catch (error) {
-    await connection.rollback();
     throw error;
-  } finally {
-    connection.release();
   }
 };

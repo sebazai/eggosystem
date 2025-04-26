@@ -5,6 +5,7 @@ import type {
   InsertSeasonTeamRegistration,
   Organizations,
   PlayerSchemaType,
+  SeasonDetails,
   SeasonTeamPlayer,
   SeasonTeamRegistration,
   SignupFormValues,
@@ -14,6 +15,8 @@ import type {
 } from "@eggosystem/types";
 import _ from "lodash";
 import { insertSeasonTeamPlayer } from "./season-team-players.models";
+import { getConnection } from "../db/mysqlConnection";
+import { handleSignupFormForSeason } from "../services/season-team-registration.services";
 
 export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
   seasonId: number,
@@ -170,4 +173,26 @@ export const getTeamSignupData = async (seasonId: number, teamId: number) => {
     teamId
   ]);
   return transformTeamSignupData(teamSignupData);
+};
+
+export const addSignupForSeason = async (
+  season: SeasonDetails,
+  formData: SignupFormValues
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const data = await handleSignupFormForSeason(season, formData, connection);
+    if (!data) {
+      throw new Error("Failed to add registration");
+    }
+    await connection.commit();
+    return data;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };

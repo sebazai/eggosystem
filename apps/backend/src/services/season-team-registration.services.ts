@@ -7,6 +7,8 @@ import {
   setScopedPermissionForAccount
 } from "../models/account-roles.models";
 import {
+  SeasonDetails,
+  SignupFormValues,
   type InsertSeasonTeamRegistration,
   type PlayerSchemaType,
   type SeasonPlatform,
@@ -18,6 +20,9 @@ import {
   addPlayersForTeamInSeason,
   validatePlayersForSignup
 } from "./signup.services";
+import { insertOrganization } from "../models/organization.models";
+import { insertTeam } from "../models/team.models";
+import { isTeamPartOfOrganization } from "./team.services";
 
 export const updateCaptainPermissionsForSeasonTeam = async (
   season_id: number,
@@ -173,4 +178,131 @@ export const handleSeasonTeamRegistration = async (
       connection
     )
   ]);
+};
+
+export const handleSignupFormForSeason = async (
+  season: SeasonDetails,
+  formData: SignupFormValues,
+  connection?: PoolConnection
+) => {
+  const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
+  const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
+
+  if (!captainSteamId || !coCaptainSteamId) {
+    throw new Error("Could not determine captain and co-captain.");
+  }
+
+  // Handle new org and new team.
+  if (formData.organizationId === -1) {
+    if (formData.teamId !== -1) {
+      throw new Error("Cannot create a new organization with an existing team");
+    }
+
+    if (formData.newOrganization) {
+      const newOrg = await insertOrganization(
+        {
+          name: formData.newOrganization.name,
+          organization_code: formData.newOrganization.organization_code,
+          website: formData.newOrganization.website
+        },
+        connection
+      );
+      if (formData.newTeam) {
+        const newTeam = await insertTeam(
+          {
+            name: formData.newTeam.name,
+            organization_id: newOrg.insertId,
+            org_approved: true
+          },
+          connection
+        );
+
+        await handleSeasonTeamRegistration(
+          season.id,
+          season.platform,
+          season.app_id,
+          newTeam.insertId,
+          {
+            captain_steam_id: captainSteamId,
+            co_captain_steam_id: coCaptainSteamId,
+            external_platform_id: formData.teamExternalId
+          },
+          formData.players,
+          connection
+        );
+
+        return {
+          team_id: newTeam.insertId,
+          organization_id: newOrg.insertId
+        };
+      }
+    }
+  }
+
+  // Handle existing org and new team
+  if (formData.organizationId !== -1) {
+    if (formData.teamId === -1) {
+      if (formData.newTeam) {
+        const newTeam = await insertTeam(
+          {
+            name: formData.newTeam.name,
+            organization_id: formData.organizationId,
+            org_approved: false
+          },
+          connection
+        );
+
+        await handleSeasonTeamRegistration(
+          season.id,
+          season.platform,
+          season.app_id,
+          newTeam.insertId,
+          {
+            captain_steam_id: captainSteamId,
+            co_captain_steam_id: coCaptainSteamId,
+            external_platform_id: formData.teamExternalId
+          },
+          formData.players,
+          connection
+        );
+
+        return {
+          team_id: newTeam.insertId,
+          organization_id: formData.organizationId
+        };
+      }
+    }
+  }
+
+  // Handle existing organization and existing team
+  if (formData.organizationId !== -1 && formData.teamId !== -1) {
+    // Ensure the team belongs to the organization
+    const isTeamPartOfOrg = await isTeamPartOfOrganization(
+      formData.teamId,
+      formData.organizationId
+    );
+
+    if (!isTeamPartOfOrg) {
+      throw new Error("Team does not belong to the selected organization");
+    }
+
+    await handleSeasonTeamRegistration(
+      season.id,
+      season.platform,
+      season.app_id,
+      formData.teamId,
+      {
+        captain_steam_id: captainSteamId,
+        co_captain_steam_id: coCaptainSteamId,
+        external_platform_id: formData.teamExternalId
+      },
+      formData.players,
+      connection
+    );
+
+    return {
+      team_id: formData.teamId,
+      organization_id: formData.organizationId
+    };
+  }
 };
