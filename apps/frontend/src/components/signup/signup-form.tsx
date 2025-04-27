@@ -20,8 +20,8 @@ import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
   type FaceITTeamDetails,
-  type PlayerSchemaType,
-  type SignupFormValues
+  type SignupFormValues,
+  type SignupPlayerType
 } from "@eggosystem/types";
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/CopyInput";
@@ -85,7 +85,7 @@ export const SignupForm = ({
         hours: undefined,
         rank: undefined,
         externalRank: undefined
-      } satisfies PlayerSchemaType)
+      } satisfies SignupPlayerType)
     }
   });
 
@@ -210,15 +210,13 @@ export const SignupForm = ({
     );
 
   useEffect(() => {
-    console.log(isEditMode, validOrganizationSelection, validTeamSelection);
-    if (isEditMode && validOrganizationSelection && validTeamSelection) {
+    if (isEditMode && validTeamExternalIdInForm.success) {
       setActiveTab("players");
     }
-    if (isEditMode && validOrganizationSelection && !validTeamSelection) {
+    if (isEditMode && !validTeamExternalIdInForm.success) {
       setActiveTab("team");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, validExternalTeamId]);
+  }, [isEditMode, validTeamExternalIdInForm.success]);
 
   const onSubmit = async (data: SignupFormValues) => {
     setSuccessMessage(null);

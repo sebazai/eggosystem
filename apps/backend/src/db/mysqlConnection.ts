@@ -7,7 +7,15 @@ const dbPool = createPool({
   dateStrings: true,
   decimalNumbers: true,
   supportBigNumbers: true,
-  bigNumberStrings: false
+  bigNumberStrings: false,
+  typeCast: function (field, next) {
+    if (field.type === "TINY" && field.length === 1) {
+      const value = field.string();
+      return value === "1";
+    }
+
+    return next();
+  }
 });
 
 export const getConnection = () => {

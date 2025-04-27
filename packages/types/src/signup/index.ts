@@ -133,7 +133,9 @@ const signupFormSchema = (context: { platform: SeasonPlatform }) =>
     );
 
 export type SignupFormValues = z.infer<ReturnType<typeof signupFormSchema>>;
-export type PlayerSchemaType = z.infer<typeof playerSchema>;
+export type SignupPlayerType = z.infer<typeof playerSchema>;
+export type SignupNewOrganizationType = z.infer<typeof newOrganizationSchema>;
+export type SignupNewTeamType = z.infer<typeof newTeamSchema>;
 
 export {
   playerSchema,

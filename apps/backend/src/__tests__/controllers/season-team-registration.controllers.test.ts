@@ -21,7 +21,7 @@ import {
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
 import { validSignupData } from "../../__utils__/fixtures/signupFormData";
-import { BadRequestError } from "../../utils/errors";
+import { type BadRequestError } from "../../utils/errors";
 
 describe("addSignupForSeason - database transaction testing", () => {
   let req: RequestWithParamsAndBody<{ id: string }, SignupFormValues>;
@@ -103,7 +103,7 @@ describe("addSignupForSeason - database transaction testing", () => {
 
     expect(signSpy).toHaveBeenCalledWith(
       1,
-      1,
+      2,
       {
         captain_steam_id: "12345678901234567",
         co_captain_steam_id: "12345678901234568",
@@ -116,14 +116,14 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       730,
       SeasonPlatform.Kanaliiga,
-      1,
+      2,
       req.body.players,
       mockConnection
     );
 
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ team_id: 1, organization_id: 1 });
+    expect(res.json).toHaveBeenCalledWith({ team_id: 2, organization_id: 102 });
   });
 
   it("insertSeasonTeamRegistration & insertSeasonTeamPlayer in addPlayersForTeamInSeason and it's subfunctions should be called with correct parameters", async () => {
@@ -160,7 +160,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
     expect(insertSeasonTeamReg).toHaveBeenCalledWith(
       1,
-      1,
+      2,
       {
         captain_steam_id: "12345678901234567",
         co_captain_steam_id: "12345678901234568",
@@ -170,7 +170,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     );
     expect(insertSeasonTeamPlayer).toHaveBeenCalledWith(
       1,
-      1,
+      2,
       {
         steam_id: "12345678901234567"
       },
@@ -181,7 +181,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(insertSeasonTeamPlayer).toHaveBeenCalledTimes(5);
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ team_id: 1, organization_id: 1 });
+    expect(res.json).toHaveBeenCalledWith({ team_id: 2, organization_id: 102 });
   });
 
   it("should handle new organization and new team successfully", async () => {

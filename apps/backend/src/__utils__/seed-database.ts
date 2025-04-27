@@ -58,10 +58,26 @@ export const insertTestUsersForSignup = async () => {
       player.steamId,
       player.nickname,
       player.nickname,
-      player.nickname.replace(" ", "_").concat("@kanaliiga.org")
+      player.nickname.replace(" ", "_").concat("@kanaliiga.org"),
+      player.discord
     );
     await insertAccountPrivacyPolicyAccepted(player.accountId);
   }
+};
+
+export const insertCaptainRoleAndPermission = async () => {
+  const insertRole = await runQuery<{ insertId: number }>(
+    "INSERT INTO Roles (role_name) VALUES (?)",
+    ["captain"]
+  );
+  const insertPermission = await runQuery<{ insertId: number }>(
+    "INSERT INTO Permissions (permission_name) VALUES (?)",
+    ["edit-registration"]
+  );
+  await runQuery<{ insertId: number }>(
+    "INSERT INTO RolePermissions (role_id, permission_id) VALUES (?, ?)",
+    [insertRole.insertId, insertPermission.insertId]
+  );
 };
 
 export const cleanupTestUsers = async () => {
@@ -69,6 +85,31 @@ export const cleanupTestUsers = async () => {
     await runQuery("DELETE FROM Accounts WHERE id = ?", [player.accountId]);
   }
 };
+
+export const cleanupRolesAndPermissions = async () => {
+  await runQuery("DELETE FROM Roles WHERE role_name = ?", ["captain"]);
+  await runQuery("DELETE FROM Permissions WHERE permission_name = ?", [
+    "edit-registration"
+  ]);
+};
+
 export const removeTestSeason = async (seasonId: number) => {
   await runQuery("DELETE FROM Seasons WHERE id = ?", [seasonId]);
+};
+
+export const removeTestOrg = async (orgId: number) => {
+  await runQuery("DELETE FROM Organizations WHERE id = ?", [orgId]);
+};
+
+export const removeTestTeam = async (teamId: number) => {
+  await runQuery("DELETE FROM Teams WHERE id = ?", [teamId]);
+};
+
+export const setSeasonTeamPlayers = async (seasonId?: number) => {
+  for (const player of validSignupData.players) {
+    await runQuery(
+      "INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id) VALUES (?, ?, ?)",
+      [seasonId ?? 1, validSignupData.teamId, player.steamId]
+    );
+  }
 };

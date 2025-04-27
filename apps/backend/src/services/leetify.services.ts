@@ -25,7 +25,7 @@ interface FaceITRankType {
 
 type GameRanks = MatchmakingRankType | FaceITRankType;
 
-interface LeetifyResponse {
+export interface LeetifyResponse {
   games: Array<GameRanks>;
 }
 

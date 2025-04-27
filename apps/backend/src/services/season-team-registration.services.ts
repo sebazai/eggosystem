@@ -10,7 +10,7 @@ import {
   type SeasonDetails,
   type SignupFormValues,
   type InsertSeasonTeamRegistration,
-  type PlayerSchemaType,
+  type SignupPlayerType,
   SeasonPlatform,
   type SeasonTeamRegistration,
   isFaceITCSRank
@@ -41,7 +41,7 @@ import {
 } from "./player-ranks.services";
 
 export const ensurePlayerSteamProfilesPublic = async (
-  players: PlayerSchemaType[]
+  players: SignupPlayerType[]
 ) => {
   const steamIds = players.map((p) => p.steamId);
   const areProfilePublic = await areSteamProfilesPublic(steamIds);
@@ -92,7 +92,7 @@ export const addPlayersForTeamInSeason = async (
   appId: number,
   platform: SeasonPlatform,
   teamId: number,
-  players: PlayerSchemaType[],
+  players: SignupPlayerType[],
   connection?: PoolConnection
 ) => {
   const playersForTeamRegistration = players.map((player) => {
@@ -162,7 +162,7 @@ export const isValidExternalId = async (
 export const validatePlayersFromDBForSignup = async (
   seasonId: number,
   teamId: number,
-  players: PlayerSchemaType[]
+  players: SignupPlayerType[]
 ) => {
   await ensurePlayerSteamProfilesPublic(players);
   const data = await Promise.all(
@@ -189,8 +189,9 @@ export const validatePlayersFromDBForSignup = async (
           playerData.steam_id
         );
       if (!manuallyApprovedPlayer.employment_approved_by_organizer) {
-        throw new BadRequestError(`Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contant organizer in d
-          Discord.`);
+        throw new BadRequestError(
+          `Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord.`
+        );
       }
     }
     if (!playerData.is_valid_full_name) {
@@ -326,7 +327,7 @@ export const handleSeasonTeamRegistration = async (
   appId: number,
   teamId: number,
   teamData: InsertSeasonTeamRegistration,
-  playersData: PlayerSchemaType[],
+  playersData: SignupPlayerType[],
   connection?: PoolConnection
 ) => {
   await Promise.all([
@@ -340,7 +341,6 @@ export const handleSeasonTeamRegistration = async (
       playersData,
       connection
     ),
-
     setCaptainPermissionsForSeason(
       seasonId,
       teamId,
@@ -359,8 +359,11 @@ export const handleSignupFormForSeason = async (
   const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
   const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
 
-  if (!captainSteamId || !coCaptainSteamId) {
-    throw new BadRequestError("Could not determine captain and co-captain.");
+  if (!captainSteamId) {
+    throw new BadRequestError("Could not determine captain.");
+  }
+  if (!coCaptainSteamId) {
+    throw new BadRequestError("Could not determine co-captain.");
   }
 
   // Handle new org and new team.
@@ -448,7 +451,12 @@ export const handleSignupFormForSeason = async (
   }
 
   // Handle existing organization and existing team
-  if (formData.organizationId !== -1 && formData.teamId !== -1) {
+  if (
+    formData.organizationId !== -1 &&
+    formData.organizationId > 0 &&
+    formData.teamId !== -1 &&
+    formData.teamId > 0
+  ) {
     // Ensure the team belongs to the organization
     const isTeamPartOfOrg = await isTeamPartOfOrganization(
       formData.teamId,
@@ -481,6 +489,6 @@ export const handleSignupFormForSeason = async (
     };
   }
   throw new BadRequestError(
-    "Failed to add registration, could not determine team or organization"
+    "Failed to add registration, could not determine team or organization."
   );
 };

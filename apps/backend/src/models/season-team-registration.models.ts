@@ -4,7 +4,7 @@ import { buildInsertQueryParts } from "../db/utils";
 import type {
   InsertSeasonTeamRegistration,
   Organizations,
-  PlayerSchemaType,
+  SignupPlayerType,
   SeasonDetails,
   SeasonTeamPlayer,
   SeasonTeamRegistration,
@@ -73,7 +73,7 @@ export const updateSeasonTeamRegistration = async (
 export const updatePlayersForSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
-  players: PlayerSchemaType[],
+  players: SignupPlayerType[],
   connection: PoolConnection
 ) => {
   const existingPlayers = await runQuery<SeasonTeamPlayer[]>(

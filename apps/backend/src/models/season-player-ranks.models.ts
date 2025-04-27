@@ -44,7 +44,7 @@ export const insertCSPlayerRankForSeason = async (
         cs_hours,
         hours_updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
         cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),

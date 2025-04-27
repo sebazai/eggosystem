@@ -1,6 +1,8 @@
-export const validSignupData = {
-  organizationId: 1,
-  teamId: 1,
+import { type SignupFormValues } from "@eggosystem/types";
+
+export const validSignupData: SignupFormValues = {
+  organizationId: 102,
+  teamId: 2,
   teamExternalId: "team-123",
   players: [
     {
@@ -20,7 +22,7 @@ export const validSignupData = {
     {
       accountId: 99997,
       steamId: "12345678901234569",
-      nickname: "Player three"
+      nickname: "Player Three"
     },
     {
       accountId: 99996,
@@ -33,7 +35,7 @@ export const validSignupData = {
       nickname: "Player Five"
     }
   ]
-};
+} satisfies SignupFormValues;
 
 // New org and new team, but no newOrganization and newTeam data
 export const invalidSignupData = {
