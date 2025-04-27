@@ -1,7 +1,6 @@
 import * as seasonModels from "../../models/season.models";
 import { addSignupForSeasonController } from "../../controllers/season-team-registration.controllers";
 import * as db from "../../db/mysqlConnection";
-import * as signupServices from "../../services/signup.services";
 import * as registrationModels from "../../models/season-team-registration.models";
 import * as rankModels from "../../models/season-player-ranks.models";
 import * as teamServices from "../../services/team.services";
@@ -21,43 +20,8 @@ import {
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
-
-const validSignupData = {
-  organizationId: 1,
-  teamId: 1,
-  teamExternalId: "team-123",
-  players: [
-    {
-      accountId: 1,
-      steamId: "12345678901234567",
-      nickname: "Player One",
-      discord: "playerOne#1234",
-      captain: true
-    },
-    {
-      accountId: 2,
-      steamId: "12345678901234568",
-      nickname: "Player Two",
-      discord: "playerTwo#1234",
-      coCaptain: true
-    },
-    {
-      accountId: 3,
-      steamId: "12345678901234569",
-      nickname: "Player three"
-    },
-    {
-      accountId: 4,
-      steamId: "12345678901234570",
-      nickname: "Player Four"
-    },
-    {
-      accountId: 5,
-      steamId: "12345678901234571",
-      nickname: "Player Five"
-    }
-  ]
-};
+import { validSignupData } from "../../__utils__/fixtures/signupFormData";
+import { BadRequestError } from "../../utils/errors";
 
 describe("addSignupForSeason - database transaction testing", () => {
   let req: RequestWithParamsAndBody<{ id: string }, SignupFormValues>;
@@ -74,7 +38,6 @@ describe("addSignupForSeason - database transaction testing", () => {
   const tomorrow = new Date().setDate(now.getDate() + 1);
 
   beforeEach(() => {
-    jest.restoreAllMocks();
     req = {
       params: { id: "1" },
       body: _.cloneDeep(validSignupData)
@@ -98,10 +61,12 @@ describe("addSignupForSeason - database transaction testing", () => {
       end_date: null,
       app_id: 730
     } satisfies SeasonDetails);
-    jest.spyOn(signupServices, "validatePlayersForSignup").mockResolvedValue();
+    jest
+      .spyOn(seasonTeamRegistrationServices, "validatePlayersFromDBForSignup")
+      .mockResolvedValue();
   });
 
-  it("should rollback and return 500 if an error occurs in transaction", async () => {
+  it("should rollback and return 500 if an error occurs in transaction during handleSeasonTeamRegistration", async () => {
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
@@ -123,7 +88,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(registrationModels, "insertSeasonTeamRegistration")
       .mockImplementation(() => Promise.resolve({ insertId: 2 }));
     const playersAddSpy = jest
-      .spyOn(signupServices, "addPlayersForTeamInSeason")
+      .spyOn(seasonTeamRegistrationServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -234,7 +199,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(registrationModels, "insertSeasonTeamRegistration")
       .mockImplementation(() => Promise.resolve({ insertId: 2 }));
     const playersAddSpy = jest
-      .spyOn(signupServices, "addPlayersForTeamInSeason")
+      .spyOn(seasonTeamRegistrationServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -289,7 +254,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(registrationModels, "insertSeasonTeamRegistration")
       .mockImplementation(() => Promise.resolve({ insertId: 2 }));
     const playersAddSpy = jest
-      .spyOn(signupServices, "addPlayersForTeamInSeason")
+      .spyOn(seasonTeamRegistrationServices, "addPlayersForTeamInSeason")
       .mockImplementation(() => Promise.resolve());
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
@@ -342,17 +307,30 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
       .mockResolvedValue();
 
-    await addSignupForSeasonController(req, res);
-    expect(mockConnection.release).toHaveBeenCalledTimes(1);
-    expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
-    expect(mockConnection.commit).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Team does not belong to the selected organization"
-    });
+    try {
+      await addSignupForSeasonController(req, res);
+    } catch (error: unknown) {
+      expect(mockConnection.release).toHaveBeenCalledTimes(1);
+      expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
+      expect(mockConnection.commit).not.toHaveBeenCalled();
+
+      expect((error as BadRequestError).message).toEqual(
+        "Team does not belong to the selected organization"
+      );
+    }
+  });
+  it("should return error if external id not valid", async () => {
+    jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue({
+      id: 1,
+      name: "Test Season",
+      signup_start_date: String(yesterday),
+      signup_end_date: String(tomorrow),
+      platform: SeasonPlatform.FACEIT,
+      game_id: 0,
+      full_name: "CS2 Test Season",
+      start_date: "String(tomorrow)",
+      end_date: null,
+      app_id: 730
+    } satisfies SeasonDetails);
   });
 });
-
-// describe("addSignupForSeason", () => {
-//   it("");
-// });

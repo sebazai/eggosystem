@@ -10,10 +10,6 @@ import type { UserPayload } from "@eggosystem/types";
 
 describe("AuthControllers utils", () => {
   describe("generateTokens", () => {
-    beforeEach(() => {
-      jest.restoreAllMocks(); // Restore before each test
-    });
-
     it("should generate tokens", () => {
       const user = {
         provider_id: "12345",

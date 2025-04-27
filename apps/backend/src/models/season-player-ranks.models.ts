@@ -26,6 +26,38 @@ export const getPlayerRankForSeason = async (
   return rank;
 };
 
+export const insertCSPlayerRankForSeason = async (
+  steamId: string,
+  seasonId: number,
+  CS2Rank: number,
+  CS2Hours: number,
+  connection?: PoolConnection
+) => {
+  const now = new Date();
+
+  const query = `
+      INSERT INTO SeasonPlayerRanks (
+        steam_id,
+        season_id,
+        rank_updated_at,
+        cs2_rank,
+        cs_hours,
+        hours_updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
+        cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),
+        cs_hours = IF(VALUES(cs_hours) != -1, VALUES(cs_hours), cs_hours),
+        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at)
+    `;
+  return runQuery(
+    query,
+    [steamId, seasonId, now, CS2Rank, CS2Hours, now],
+    connection
+  );
+};
+
 export const insertFaceITPlayerRankForSeason = async (
   steamId: string,
   seasonId: number,

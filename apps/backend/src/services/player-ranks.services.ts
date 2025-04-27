@@ -10,6 +10,7 @@ import { convertCSGORankToCS2 } from "../utils/ranks";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
+import { BadRequestError } from "../utils/errors";
 
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
@@ -47,7 +48,7 @@ export const getPlayerHoursForSteamAppId = async (
     case 730: // CS
       return getPlayerHoursForCS(steam_id, season_id);
     default:
-      throw new Error("Unknown app_id");
+      throw new BadRequestError("Unknown app_id");
   }
 };
 
@@ -60,7 +61,7 @@ export const getPlayerAppIdRank = async (
     case 730: // CS
       return getCSRank(steam_id, season_id);
     default:
-      throw new Error("Unknown app_id");
+      throw new BadRequestError("Unknown app_id");
   }
 };
 
@@ -133,6 +134,6 @@ export const getPlayerRankForPlatform = async (
     case SeasonPlatform.Kanaliiga:
       return null;
     default:
-      throw new Error("Unknown platform");
+      throw new BadRequestError("Unknown platform");
   }
 };

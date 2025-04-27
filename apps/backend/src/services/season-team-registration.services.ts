@@ -7,22 +7,199 @@ import {
   setScopedPermissionForAccount
 } from "../models/account-roles.models";
 import {
-  SeasonDetails,
-  SignupFormValues,
+  type SeasonDetails,
+  type SignupFormValues,
   type InsertSeasonTeamRegistration,
   type PlayerSchemaType,
-  type SeasonPlatform,
-  type SeasonTeamRegistration
+  SeasonPlatform,
+  type SeasonTeamRegistration,
+  isFaceITCSRank
 } from "@eggosystem/types";
 import { getDBPermissionsForAccountId } from "./auth.services";
 import { insertSeasonTeamRegistration } from "../models/season-team-registration.models";
-import {
-  addPlayersForTeamInSeason,
-  validatePlayersForSignup
-} from "./signup.services";
+
 import { insertOrganization } from "../models/organization.models";
 import { insertTeam } from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
+import { areSteamProfilesPublic } from "./steam.services";
+import { getPlayerDetailsBySteamId } from "../models/player.models";
+import {
+  insertCSPlayerRankForSeason,
+  insertFaceITPlayerRankForSeason
+} from "../models/season-player-ranks.models";
+import {
+  insertSeasonTeamPlayer,
+  isPlayerApprovedForSeasonTeamManually
+} from "../models/season-team-players.models";
+import { getSeasonDetailsById } from "../models/season.models";
+import { NotFoundError, BadRequestError } from "../utils/errors";
+import { getFaceITTeamDetails } from "./faceit.services";
+import {
+  getPlayerAppIdRank,
+  getPlayerHoursForSteamAppId,
+  getPlayerRankForPlatform
+} from "./player-ranks.services";
+
+export const ensurePlayerSteamProfilesPublic = async (
+  players: PlayerSchemaType[]
+) => {
+  const steamIds = players.map((p) => p.steamId);
+  const areProfilePublic = await areSteamProfilesPublic(steamIds);
+  if (!areProfilePublic.is_all_public) {
+    throw new Error(
+      `Steam IDs ${areProfilePublic.not_public.join(", ")} are not public.`
+    );
+  }
+};
+
+export const checkExternalId = async (
+  platform: SeasonPlatform,
+  teamExternalId?: string
+) => {
+  const externalIdValid = await isValidExternalId(platform, teamExternalId);
+
+  if (!externalIdValid) {
+    throw new BadRequestError(
+      `Could not find external team data for ${platform.toLocaleUpperCase()} id ${teamExternalId}`
+    );
+  }
+};
+
+export const getValidSeason = async (seasonId: number) => {
+  const season = await getSeasonDetailsById(seasonId);
+  if (!season) {
+    throw new NotFoundError("Season not found");
+  }
+  if (!season.signup_start_date) {
+    throw new BadRequestError("Season does not have a signup start date");
+  }
+  const now = new Date();
+  const signupStart = new Date(season.signup_start_date);
+  if (now < signupStart) {
+    throw new BadRequestError("Signup has not started yet");
+  }
+  if (season.signup_end_date) {
+    const signupEnd = new Date(season.signup_end_date);
+    if (now > signupEnd) {
+      throw new BadRequestError("Signup has ended");
+    }
+  }
+  return season;
+};
+
+export const addPlayersForTeamInSeason = async (
+  seasonId: number,
+  appId: number,
+  platform: SeasonPlatform,
+  teamId: number,
+  players: PlayerSchemaType[],
+  connection?: PoolConnection
+) => {
+  const playersForTeamRegistration = players.map((player) => {
+    return {
+      steam_id: player.steamId,
+      is_captain: player.captain,
+      is_co_captain: player.coCaptain
+    };
+  });
+  for (const player of playersForTeamRegistration) {
+    await insertSeasonTeamPlayer(
+      seasonId,
+      teamId,
+      {
+        steam_id: player.steam_id
+      },
+      connection
+    );
+    const [{ rank }, { hours }, externalRank] = await Promise.all([
+      getPlayerAppIdRank(player.steam_id, appId),
+      getPlayerHoursForSteamAppId(player.steam_id, appId),
+      getPlayerRankForPlatform(player.steam_id, platform)
+    ]);
+
+    if (hours === -1) {
+      throw new BadRequestError(`Player ${player.steam_id} hours not found.`);
+    }
+    if (rank === -1 && externalRank?.faceit_elo === -1) {
+      throw new BadRequestError(`Player ${player.steam_id} rank not found.`);
+    }
+
+    if (isFaceITCSRank(externalRank)) {
+      await insertFaceITPlayerRankForSeason(
+        player.steam_id,
+        seasonId,
+        rank,
+        hours,
+        externalRank,
+        connection
+      );
+    } else {
+      await insertCSPlayerRankForSeason(
+        player.steam_id,
+        seasonId,
+        rank,
+        hours,
+        connection
+      );
+    }
+  }
+};
+
+export const isValidExternalId = async (
+  platform: SeasonPlatform,
+  id?: string
+) => {
+  if (platform === SeasonPlatform.Kanaliiga) {
+    return true;
+  }
+  if (platform === SeasonPlatform.FACEIT && id) {
+    const data = await getFaceITTeamDetails(id);
+    return !!data;
+  }
+  return false;
+};
+
+export const validatePlayersFromDBForSignup = async (
+  seasonId: number,
+  teamId: number,
+  players: PlayerSchemaType[]
+) => {
+  await ensurePlayerSteamProfilesPublic(players);
+  const data = await Promise.all(
+    players.map((player) => getPlayerDetailsBySteamId(player.steamId))
+  );
+  const filteredData = data.filter((player) => !!player);
+  if (filteredData.length !== players.length) {
+    throw new BadRequestError(
+      "Could not find players in database that is provided in the form"
+    );
+  }
+
+  for (const playerData of filteredData) {
+    if (!playerData.has_accepted_latest_privacy_policy) {
+      throw new BadRequestError(
+        `Player ${playerData.steam_id} has not accepted privacy policy.`
+      );
+    }
+    if (!playerData.is_valid_work_email) {
+      const manuallyApprovedPlayer =
+        await isPlayerApprovedForSeasonTeamManually(
+          seasonId,
+          teamId,
+          playerData.steam_id
+        );
+      if (!manuallyApprovedPlayer.employment_approved_by_organizer) {
+        throw new BadRequestError(`Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contant organizer in d
+          Discord.`);
+      }
+    }
+    if (!playerData.is_valid_full_name) {
+      throw new BadRequestError(
+        `Player ${playerData.steam_id} profile data missing.`
+      );
+    }
+  }
+};
 
 export const updateCaptainPermissionsForSeasonTeam = async (
   season_id: number,
@@ -152,14 +329,8 @@ export const handleSeasonTeamRegistration = async (
   playersData: PlayerSchemaType[],
   connection?: PoolConnection
 ) => {
-  return Promise.all([
-    validatePlayersForSignup(
-      seasonId,
-      seasonPlatform,
-      appId,
-      teamId,
-      playersData
-    ),
+  await Promise.all([
+    validatePlayersFromDBForSignup(seasonId, teamId, playersData),
     insertSeasonTeamRegistration(seasonId, teamId, teamData, connection),
     addPlayersForTeamInSeason(
       seasonId,
@@ -189,13 +360,15 @@ export const handleSignupFormForSeason = async (
   const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
 
   if (!captainSteamId || !coCaptainSteamId) {
-    throw new Error("Could not determine captain and co-captain.");
+    throw new BadRequestError("Could not determine captain and co-captain.");
   }
 
   // Handle new org and new team.
   if (formData.organizationId === -1) {
     if (formData.teamId !== -1) {
-      throw new Error("Cannot create a new organization with an existing team");
+      throw new BadRequestError(
+        "Cannot create a new organization with an existing team"
+      );
     }
 
     if (formData.newOrganization) {
@@ -283,7 +456,9 @@ export const handleSignupFormForSeason = async (
     );
 
     if (!isTeamPartOfOrg) {
-      throw new Error("Team does not belong to the selected organization");
+      throw new BadRequestError(
+        "Team does not belong to the selected organization"
+      );
     }
 
     await handleSeasonTeamRegistration(
@@ -305,4 +480,7 @@ export const handleSignupFormForSeason = async (
       organization_id: formData.organizationId
     };
   }
+  throw new BadRequestError(
+    "Failed to add registration, could not determine team or organization"
+  );
 };

@@ -184,9 +184,6 @@ export const addSignupForSeason = async (
   try {
     await connection.beginTransaction();
     const data = await handleSignupFormForSeason(season, formData, connection);
-    if (!data) {
-      throw new Error("Failed to add registration");
-    }
     await connection.commit();
     return data;
   } catch (error) {

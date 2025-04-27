@@ -5,6 +5,10 @@ import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import _ from "lodash";
 import express from "express";
 import seasonTeamRegRoute from "../../routes/v1/season-team-registration.routes";
+import {
+  validSignupData,
+  invalidSignupData
+} from "../../__utils__/fixtures/signupFormData";
 
 const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
   jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue(
@@ -16,79 +20,6 @@ const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
         } as SeasonDetails)
       : undefined
   );
-};
-
-const validSignupData = {
-  organizationId: 1,
-  teamId: 1,
-  teamExternalId: "team-123",
-  players: [
-    {
-      accountId: 1,
-      steamId: "12345678901234567",
-      nickname: "Player One",
-      discord: "playerOne#1234",
-      captain: true
-    },
-    {
-      accountId: 2,
-      steamId: "12345678901234568",
-      nickname: "Player Two",
-      discord: "playerTwo#1234",
-      coCaptain: true
-    },
-    {
-      accountId: 3,
-      steamId: "12345678901234569",
-      nickname: "Player three"
-    },
-    {
-      accountId: 4,
-      steamId: "12345678901234570",
-      nickname: "Player Four"
-    },
-    {
-      accountId: 5,
-      steamId: "12345678901234571",
-      nickname: "Player Five"
-    }
-  ]
-};
-
-const invalidSignupData = {
-  organizationId: -1,
-  teamId: -1,
-  teamExternalId: "team-123",
-  players: [
-    {
-      accountId: 1,
-      steamId: "12345678901234567",
-      nickname: "Player One",
-      captain: true
-    },
-    {
-      accountId: 2,
-      steamId: "12345678901234568",
-      nickname: "Player Two",
-      discord: "playerTwo#1234",
-      coCaptain: true
-    },
-    {
-      accountId: 3,
-      steamId: "12345678901234569",
-      nickname: "Player three"
-    },
-    {
-      accountId: 4,
-      steamId: "12345678901234570",
-      nickname: "Player Four"
-    },
-    {
-      accountId: 5,
-      steamId: "12345678901234571",
-      nickname: "Player Five"
-    }
-  ]
 };
 
 let agent: TestAgent;
@@ -109,7 +40,7 @@ describe("POST /:id/signup", () => {
       mockSeasonWith(undefined);
       const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(404);
-      expect(res.body.message).toBe("Season not found");
+      expect(res.text).toContain("Season not found");
     });
 
     it("should return 400 if season has no signup start date", async () => {
@@ -118,7 +49,7 @@ describe("POST /:id/signup", () => {
       });
       const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe("Season does not have a signup start date");
+      expect(res.text).toContain("Season does not have a signup start date");
     });
 
     it("should return 400 if signup has not started yet", async () => {
@@ -127,7 +58,7 @@ describe("POST /:id/signup", () => {
       });
       const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe("Signup has not started yet");
+      expect(res.text).toContain("Signup has not started yet");
     });
 
     it("should return 400 if signup has ended", async () => {
@@ -137,7 +68,7 @@ describe("POST /:id/signup", () => {
       });
       const res = await agent.post("/season/123/signup").send(validSignupData);
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe("Signup has ended");
+      expect(res.text).toContain("Signup has ended");
     });
 
     it("should return 400 if the signup form data is invalid", async () => {
@@ -147,6 +78,7 @@ describe("POST /:id/signup", () => {
       const invalidData = { ...validSignupData, players: [] }; // Invalid: not enough players
       const res = await agent.post("/season/123/signup").send(invalidData);
       expect(res.status).toBe(400);
+      expect(res.text).toContain("Array must contain at least 5 element(s)");
     });
   });
 

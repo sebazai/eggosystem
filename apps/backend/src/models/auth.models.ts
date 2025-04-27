@@ -50,17 +50,17 @@ export const createAccountForSteam = async ({
       [steamRealname],
       connection
     );
-    const results = await runQuery<{ insertId: number }>(
+    await runQuery<{ insertId: number }>(
       "INSERT INTO SteamPlayers (steam_id, nickname, account_id) VALUES (?, ?, ?)",
-      [steamId, steamDisplayName, steamRealname, account.insertId],
+      [steamId, steamDisplayName, account.insertId],
       connection
     );
     await runQuery<{ insertId: number }>(
-      "INSERT INTO LinkedAccounts (account_id, steam_id, provider) VALUES (?, ?, ?)",
-      [account.insertId, results.insertId, "steam"],
+      "INSERT INTO LinkedAccounts (account_id, provider_id, provider) VALUES (?, ?, ?)",
+      [account.insertId, steamId, "steam"],
       connection
     );
-    return { account_id: account.insertId, provider_id: results.insertId };
+    return { account_id: account.insertId, provider_id: steamId };
   } catch (error: unknown) {
     await connection.rollback();
     throw error;

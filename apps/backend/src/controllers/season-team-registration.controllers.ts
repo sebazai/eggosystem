@@ -17,9 +17,9 @@ import { getConnection } from "../db/mysqlConnection";
 import {
   getValidSeason,
   checkExternalId,
-  ensurePlayerSteamProfilesPublic
-} from "../services/signup.services";
-import { updateCaptainPermissionsForSeasonTeam } from "../services/season-team-registration.services";
+  ensurePlayerSteamProfilesPublic,
+  updateCaptainPermissionsForSeasonTeam
+} from "../services/season-team-registration.services";
 import { isPlayerApprovedForSeasonTeamManually } from "../models/season-team-players.models";
 
 export const getTeamSignupDetails = async (
@@ -62,11 +62,6 @@ export const updateTeamSignupDetails = async (
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
   const season = await getValidSeason(seasonId);
-
-  if ("status" in season && "message" in season) {
-    res.status(season.status).json({ message: season.message });
-    return;
-  }
   const formData = req.body;
 
   try {
@@ -156,12 +151,6 @@ export const addSignupForSeasonController = async (
   // Ensure season exists, otherwise throw error
 
   const season = await getValidSeason(id);
-
-  if ("status" in season && "message" in season) {
-    res.status(season.status).json({ message: season.message });
-    return;
-  }
-
   const formData = req.body;
 
   try {
@@ -179,14 +168,6 @@ export const addSignupForSeasonController = async (
 
   await checkExternalId(season.platform, formData.teamExternalId);
 
-  try {
-    const result = await addSignupForSeason(season, formData);
-    res.json(result);
-  } catch (error) {
-    if (error instanceof Error) {
-      res.status(400).json({ message: error.message });
-      return;
-    }
-    throw error;
-  }
+  const result = await addSignupForSeason(season, formData);
+  res.json(result);
 };
