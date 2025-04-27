@@ -16,7 +16,10 @@ import type {
 import _ from "lodash";
 import { insertSeasonTeamPlayer } from "./season-team-players.models";
 import { getConnection } from "../db/mysqlConnection";
-import { handleSignupFormForSeason } from "../services/season-team-registration.services";
+import {
+  handleSignupFormForSeason,
+  handleSignupFormForSeasonUpdate
+} from "../services/season-team-registration.services";
 
 export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
   seasonId: number,
@@ -74,7 +77,7 @@ export const updatePlayersForSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
   players: SignupPlayerType[],
-  connection: PoolConnection
+  connection?: PoolConnection
 ) => {
   const existingPlayers = await runQuery<SeasonTeamPlayer[]>(
     `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ?`,
@@ -173,6 +176,31 @@ export const getTeamSignupData = async (seasonId: number, teamId: number) => {
     teamId
   ]);
   return transformTeamSignupData(teamSignupData);
+};
+
+export const updateSignupForSeason = async (
+  season: SeasonDetails,
+  teamId: number,
+  formData: SignupFormValues
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const data = await handleSignupFormForSeasonUpdate(
+      season.id,
+      teamId,
+      formData,
+      connection
+    );
+    await connection.commit();
+    return data;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 export const addSignupForSeason = async (

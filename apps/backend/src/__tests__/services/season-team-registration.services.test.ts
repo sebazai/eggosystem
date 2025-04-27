@@ -516,15 +516,13 @@ describe("Season team registration services", () => {
         await insertTestUsersForSignup();
       }
     });
-    // it(
-    //   "Should pass if app id rank is not present in redis, rank has been added manually by organizer into database"
-    // );
   });
   // describe("addPlayersForTeamInSeason", () => {
   //   it("should fail if a player is missing hours");
   //   it(
   //     "should fail if a player is missing either external rank or app id rank"
   //   );
+  //   it("Should pass if app id rank is not present in redis, rank has been added manually by organizer into database");
   // });
   // describe("setCaptainPermissionsForSeason", () => {
   //   it(

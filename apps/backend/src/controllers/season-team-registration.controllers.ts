@@ -7,18 +7,13 @@ import {
 import type { Response } from "express";
 import {
   addSignupForSeason,
-  getSeasonTeamRegistrationBySeasonAndTeamId,
   getTeamSignupData,
-  updatePlayersForSeasonTeamRegistration,
-  updateSeasonTeamRegistration
+  updateSignupForSeason
 } from "../models/season-team-registration.models";
 import z from "zod";
-import { getConnection } from "../db/mysqlConnection";
 import {
   getValidSeason,
-  checkExternalId,
-  ensurePlayerSteamProfilesPublic,
-  updateCaptainPermissionsForSeasonTeam
+  checkExternalId
 } from "../services/season-team-registration.services";
 import { isPlayerApprovedForSeasonTeamManually } from "../models/season-team-players.models";
 
@@ -78,69 +73,11 @@ export const updateTeamSignupDetails = async (
   }
 
   await checkExternalId(season.platform, formData.teamExternalId);
-  await ensurePlayerSteamProfilesPublic(formData.players);
 
   const teamIdNum = Number(teamId);
-  const connection = await getConnection();
-  try {
-    await connection.beginTransaction();
 
-    const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
-    const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
-
-    if (!captainSteamId || !coCaptainSteamId) {
-      throw new Error("Could not determine captain and co-captain.");
-    }
-
-    const oldRegistration = await getSeasonTeamRegistrationBySeasonAndTeamId(
-      season.id,
-      teamIdNum
-    );
-
-    const oldCaptain = oldRegistration.captain_steam_id;
-    const oldCoCaptain = oldRegistration.co_captain_steam_id;
-
-    await Promise.all([
-      updateSeasonTeamRegistration(
-        season.id,
-        teamIdNum,
-        {
-          captain_steam_id: captainSteamId,
-          co_captain_steam_id: coCaptainSteamId,
-          external_platform_id: formData.teamExternalId ?? null
-        },
-        connection
-      ),
-
-      updatePlayersForSeasonTeamRegistration(
-        season.id,
-        teamIdNum,
-        formData.players,
-        connection
-      ),
-
-      updateCaptainPermissionsForSeasonTeam(
-        season.id,
-        teamIdNum,
-        captainSteamId,
-        oldCaptain,
-        coCaptainSteamId,
-        oldCoCaptain,
-        connection
-      )
-    ]);
-
-    await connection.commit();
-    res.status(200).json({
-      team_id: teamIdNum,
-      organization_id: formData.organizationId
-    });
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  const result = await updateSignupForSeason(season, teamIdNum, formData);
+  res.json(result);
 };
 
 export const addSignupForSeasonController = async (

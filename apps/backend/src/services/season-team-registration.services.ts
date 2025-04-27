@@ -13,10 +13,16 @@ import {
   type SignupPlayerType,
   SeasonPlatform,
   type SeasonTeamRegistration,
-  isFaceITCSRank
+  isFaceITCSRank,
+  type UpdateSeasonTeamRegistration
 } from "@eggosystem/types";
 import { getDBPermissionsForAccountId } from "./auth.services";
-import { insertSeasonTeamRegistration } from "../models/season-team-registration.models";
+import {
+  getSeasonTeamRegistrationBySeasonAndTeamId,
+  insertSeasonTeamRegistration,
+  updatePlayersForSeasonTeamRegistration,
+  updateSeasonTeamRegistration
+} from "../models/season-team-registration.models";
 
 import { insertOrganization } from "../models/organization.models";
 import { insertTeam } from "../models/team.models";
@@ -321,6 +327,36 @@ export const removeCaptainPermissionForAccountId = async (
   }
 };
 
+export const handleUpdateSeasonTeamRegistration = async (
+  seasonId: number,
+  teamId: number,
+  teamData: UpdateSeasonTeamRegistration,
+  old_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
+  old_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
+  playersData: SignupPlayerType[],
+  connection?: PoolConnection
+) => {
+  await Promise.all([
+    validatePlayersFromDBForSignup(seasonId, teamId, playersData),
+    updateSeasonTeamRegistration(seasonId, teamId, teamData, connection),
+    updatePlayersForSeasonTeamRegistration(
+      seasonId,
+      teamId,
+      playersData,
+      connection
+    ),
+    updateCaptainPermissionsForSeasonTeam(
+      seasonId,
+      teamId,
+      teamData.captain_steam_id,
+      old_captain_steam_id,
+      teamData.co_captain_steam_id,
+      old_co_captain_steam_id,
+      connection
+    )
+  ]);
+};
+
 export const handleSeasonTeamRegistration = async (
   seasonId: number,
   seasonPlatform: SeasonPlatform,
@@ -349,6 +385,45 @@ export const handleSeasonTeamRegistration = async (
       connection
     )
   ]);
+};
+
+export const handleSignupFormForSeasonUpdate = async (
+  seasonId: number,
+  teamId: number,
+  formData: SignupFormValues,
+  connection?: PoolConnection
+) => {
+  const captainSteamId = formData.players.find((p) => p.captain)?.steamId;
+  const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
+
+  if (!captainSteamId) {
+    throw new Error("Could not determine captain.");
+  }
+  if (!coCaptainSteamId) {
+    throw new Error("Could not determine co-captain.");
+  }
+
+  const oldRegistration = await getSeasonTeamRegistrationBySeasonAndTeamId(
+    seasonId,
+    teamId
+  );
+
+  const oldCaptain = oldRegistration.captain_steam_id;
+  const oldCoCaptain = oldRegistration.co_captain_steam_id;
+
+  await handleUpdateSeasonTeamRegistration(
+    seasonId,
+    teamId,
+    {
+      captain_steam_id: captainSteamId,
+      co_captain_steam_id: coCaptainSteamId,
+      external_platform_id: formData.teamExternalId ?? null
+    },
+    oldCaptain,
+    oldCoCaptain,
+    formData.players,
+    connection
+  );
 };
 
 export const handleSignupFormForSeason = async (
