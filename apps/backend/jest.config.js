@@ -26,7 +26,9 @@ export const collectCoverageFrom = ["src/**/*.{js,jsx,ts,tsx}"];
 export const coveragePathIgnorePatterns = [
   "/node_modules/",
   "/test-results/",
-  "/dist/"
+  "/dist/",
+  "/__utils__/",
+  "/src/types"
 ];
 export const coverageProvider = "v8";
 export const moduleNameMapper = {

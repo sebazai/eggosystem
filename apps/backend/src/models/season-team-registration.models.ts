@@ -36,6 +36,7 @@ export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
       `Could not find registration with season ${seasonId} and team ${teamId}`
     );
   }
+  console.log("RES", result);
   return result[0];
 };
 
@@ -65,7 +66,7 @@ export const updateSeasonTeamRegistration = async (
     [
       data.captain_steam_id,
       data.co_captain_steam_id,
-      data.external_platform_id,
+      data.external_platform_id ?? null,
       seasonId,
       teamId
     ],
@@ -86,7 +87,7 @@ export const updatePlayersForSeasonTeamRegistration = async (
 
   if (existingPlayers.length === 0) {
     throw new Error(
-      `No existing registerd players for team ID ${teamId} in season ${seasonId}`
+      `No existing registered players for team ID ${teamId} in season ${seasonId}`
     );
   }
 

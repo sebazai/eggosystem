@@ -219,9 +219,9 @@ export const validatePlayersFromDBForSignup = async (
 export const updateCaptainPermissionsForSeasonTeam = async (
   season_id: number,
   team_id: number,
-  new_captain_steam_id: string,
+  new_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
   old_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
-  new_co_captain_steam_id: string,
+  new_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
   old_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
   connection?: PoolConnection
 ) => {
@@ -344,6 +344,7 @@ export const handleUpdateSeasonTeamRegistration = async (
   playersData: SignupPlayerType[],
   connection?: PoolConnection
 ) => {
+  console.log(typeof old_captain_steam_id);
   await Promise.all([
     validatePlayersFromDBForSignup(seasonId, teamId, playersData),
     updateSeasonTeamRegistration(seasonId, teamId, teamData, connection),
@@ -415,6 +416,8 @@ export const handleSignupFormForSeasonUpdate = async (
     seasonId,
     teamId
   );
+
+  console.log(oldRegistration);
 
   const oldCaptain = oldRegistration.captain_steam_id;
   const oldCoCaptain = oldRegistration.co_captain_steam_id;
