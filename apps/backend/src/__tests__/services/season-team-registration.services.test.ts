@@ -1,27 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+  type Account,
   type AccountPermissionScopes,
   type AccountRole,
   type InsertSeason,
   type InsertSeasonTeamRegistration,
+  type Permission,
   type SeasonDetails,
   SeasonPlatform,
   type SeasonPlayerRank,
   type SignupNewOrganizationType,
   type SignupNewTeamType,
-  type Team,
-  UpdateSeasonTeamRegistration
+  type SteamPlayer,
+  type Team
 } from "@eggosystem/types";
 import {
   cleanupRolesAndPermissions,
   cleanupTestUsers,
   clearSeasonPlayerRanks,
   insertCaptainRoleAndPermission,
+  insertOneTestUser,
   insertTestSeason,
   insertTestUsersForSignup,
   removeTestOrg,
   removeTestSeason,
   removeTestTeam,
+  setCaptainEditRegistrationForAccountId,
+  setSeasonTeamPlayer,
   setSeasonTeamPlayers,
   setSeasonTeamRegistration,
   unsetSeasonTeamRegistration
@@ -1209,26 +1214,8 @@ describe("Season team registration services", () => {
     beforeEach(async () => {
       await runQuery("DELETE FROM AccountPermissionScopes");
       await runQuery("DELETE FROM AccountRoles");
-      const [permission] = await runQuery<[{ id: number }]>(
-        "SELECT id FROM Permissions WHERE permission_name = ?",
-        ["edit-registration"]
-      );
-      const [role] = await runQuery<[{ id: number }]>(
-        "SELECT id from Roles WHERE role_name = ?",
-        ["captain"]
-      );
-      await runQuery(
-        "INSERT INTO AccountPermissionScopes (season_id, team_id, account_id, permission_id) VALUES (?, ?, ?, ?)",
-        [
-          seasonDetails.id,
-          validSignupData.teamId,
-          validSignupData.players[0].accountId,
-          permission.id
-        ]
-      );
-      await runQuery(
-        "INSERT INTO AccountRoles (account_id, role_id, game_id) VALUES (?, ?, ?)",
-        [validSignupData.players[0].accountId, role.id, 1]
+      await setCaptainEditRegistrationForAccountId(
+        validSignupData.players[0].accountId
       );
     });
     it("should remove account permission scope for season and team when present", async () => {
@@ -1317,11 +1304,6 @@ describe("Season team registration services", () => {
       });
     });
   });
-  // describe("updateCaptainPermissionsForSeasonTeam", () => {
-  //   it("removes old captain ids and adds new captain ids");
-  //   it("does not update if both id's are same");
-  //   it("updates captain with different steam id but not co-captain");
-  // });
   describe("handleSignupFormForSeasonUpdate", () => {
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
@@ -1336,7 +1318,7 @@ describe("Season team registration services", () => {
       );
       await setSeasonTeamPlayers();
     });
-    it.only("happy path, have called all functions with correct params", async () => {
+    it("happy path, have called all functions with correct params", async () => {
       const formData = _.cloneDeep(validSignupData);
       formData.players[0].captain = false;
       formData.players[3].captain = true;
@@ -1435,11 +1417,369 @@ describe("Season team registration services", () => {
         seasonDetails.id,
         formData.teamId,
         formData.players[3].steamId,
-        formData.players[0].steamId,
+        // For some reason mysql2 returns as Number
+        Number(formData.players[0].steamId),
         formData.players[1].steamId,
         formData.players[1].steamId,
         undefined
       );
+    });
+    it("should throw error when captain cannot be determined", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      formData.players[0].captain = false;
+      try {
+        await registrationServices.handleSignupFormForSeasonUpdate(
+          seasonDetails.id,
+          2,
+          formData
+        );
+      } catch (error) {
+        const errAsBadReq = error as BadRequestError;
+        expect(errAsBadReq.message).toEqual("Could not determine new captain.");
+      }
+    });
+    it("should throw error when co-captain cannot be determined", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      formData.players[1].coCaptain = false;
+      try {
+        await registrationServices.handleSignupFormForSeasonUpdate(
+          seasonDetails.id,
+          2,
+          formData
+        );
+      } catch (error) {
+        const errAsBadReq = error as BadRequestError;
+        expect(errAsBadReq.message).toEqual(
+          "Could not determine new co-captain."
+        );
+      }
+    });
+  });
+  describe("updatePlayersForSeasonTeamRegistration", () => {
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration();
+      await runQuery(
+        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id) VALUES (?, ?, ?, ?)",
+        [
+          seasonDetails.id,
+          validSignupData.teamId,
+          validSignupData.players[0].steamId,
+          validSignupData.players[1].steamId
+        ]
+      );
+      await setSeasonTeamPlayers();
+    });
+    it("should return nothing when trying to insert same team", async () => {
+      const nothingChanged =
+        await registrationModels.updatePlayersForSeasonTeamRegistration(
+          1,
+          2,
+          validSignupData.players
+        );
+      expect(nothingChanged.added.length).toEqual(0);
+      expect(nothingChanged.removed.length).toEqual(0);
+    });
+    describe("with new account", () => {
+      beforeEach(async () => {
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
+        await insertOneTestUser(
+          100000,
+          "12345678912345601",
+          "Nakki Kauppias",
+          "nakki#123"
+        );
+      });
+      it("should add player to registration", async () => {
+        const addedOne =
+          await registrationModels.updatePlayersForSeasonTeamRegistration(
+            1,
+            2,
+            [
+              ...validSignupData.players,
+              {
+                nickname: "Nakki",
+                accountId: 100000,
+                steamId: "12345678912345601",
+                discord: "NotChanged"
+              }
+            ]
+          );
+        const [account] = await runQuery<Array<Account & SteamPlayer>>(
+          "SELECT a.*, sp.* FROM Accounts a JOIN SteamPlayers sp ON sp.account_id = a.id WHERE a.id = ?",
+          [100000]
+        );
+        expect(account.nickname).toEqual("Nakki Kauppias");
+        expect(account.discord).toEqual("nakki#123");
+        expect(addedOne.added.length).toEqual(1);
+        expect(addedOne.added[0]).toEqual("12345678912345601");
+        expect(addedOne.removed.length).toEqual(0);
+      });
+    });
+    describe("with 6 players", () => {
+      beforeEach(async () => {
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
+        await insertOneTestUser(
+          100000,
+          "12345678912345601",
+          "Nakki Kauppias",
+          "nakki#123"
+        );
+        await setSeasonTeamPlayer("12345678912345601");
+      });
+      it("should remove Nakki Kauppias from team registration", async () => {
+        const addedOne =
+          await registrationModels.updatePlayersForSeasonTeamRegistration(
+            1,
+            2,
+            validSignupData.players
+          );
+        const [account] = await runQuery<Array<Account & SteamPlayer>>(
+          "SELECT a.*, sp.* FROM Accounts a JOIN SteamPlayers sp ON sp.account_id = a.id WHERE a.id = ?",
+          [100000]
+        );
+        expect(account.nickname).toEqual("Nakki Kauppias");
+        expect(account.discord).toEqual("nakki#123");
+        expect(addedOne.removed.length).toEqual(1);
+        expect(addedOne.removed[0]).toEqual("12345678912345601");
+        expect(addedOne.added.length).toEqual(0);
+      });
+    });
+    describe("with two new accounts", () => {
+      beforeEach(async () => {
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100001]);
+        await insertOneTestUser(
+          100000,
+          "12345678912345601",
+          "Nakki Kauppias",
+          "nakki#123"
+        );
+        await insertOneTestUser(
+          100001,
+          "12345678912345603",
+          "Saippua Kauppias",
+          "soap#123"
+        );
+      });
+      it("should add two player to registration and remove one existing", async () => {
+        const addedOne =
+          await registrationModels.updatePlayersForSeasonTeamRegistration(
+            1,
+            2,
+            [
+              validSignupData.players[0],
+              validSignupData.players[1],
+              validSignupData.players[3],
+              validSignupData.players[4],
+              {
+                nickname: "Nakki",
+                accountId: 100000,
+                steamId: "12345678912345601",
+                discord: "NotChanged"
+              },
+              {
+                nickname: "saippua",
+                accountId: 100001,
+                steamId: "12345678912345603"
+              }
+            ]
+          );
+        expect(addedOne.added.length).toEqual(2);
+        expect(addedOne.added[0]).toEqual("12345678912345601");
+        expect(addedOne.added[1]).toEqual("12345678912345603");
+        expect(addedOne.removed.length).toEqual(1);
+        expect(addedOne.removed[0]).toEqual(validSignupData.players[2].steamId);
+      });
+    });
+  });
+  describe("updateCaptainPermissionsForSeasonTeam", () => {
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration();
+      await runQuery("DELETE FROM AccountPermissionScopes");
+      await runQuery("DELETE FROM AccountRoles");
+      await setSeasonTeamRegistration();
+      await setCaptainEditRegistrationForAccountId(
+        validSignupData.players[0].accountId
+      );
+      await setCaptainEditRegistrationForAccountId(
+        validSignupData.players[1].accountId
+      );
+    });
+
+    it("removes old captain id and adds new captain id, does not change co-captain", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const beforeReg = await runQuery<Array<AccountPermissionScopes>>(
+        "SELECT * FROM AccountPermissionScopes"
+      );
+      expect(beforeReg.length).toEqual(2);
+      expect(beforeReg[0]).toEqual(
+        expect.objectContaining({ account_id: 99999, season_id: 1, team_id: 2 })
+      );
+      expect(beforeReg[1]).toEqual(
+        expect.objectContaining({ account_id: 99998, season_id: 1, team_id: 2 })
+      );
+      const spyOnSetPerm = jest.spyOn(
+        registrationServices,
+        "setCaptainPermissionsForSeason"
+      );
+      const spyOnRemove = jest.spyOn(
+        registrationServices,
+        "removeCaptainPermissionForAccountId"
+      );
+      await registrationServices.updateCaptainPermissionsForSeasonTeam(
+        seasonDetails.id,
+        formData.teamId,
+        formData.players[3].steamId,
+        formData.players[0].steamId,
+        formData.players[1].steamId,
+        formData.players[1].steamId
+      );
+      const editedReg = await runQuery<Array<AccountPermissionScopes>>(
+        "SELECT * FROM AccountPermissionScopes"
+      );
+      expect(editedReg.length).toEqual(2);
+      expect(editedReg[0]).toEqual(
+        expect.objectContaining({ account_id: 99998, season_id: 1, team_id: 2 })
+      );
+      expect(editedReg[1]).toEqual(
+        expect.objectContaining({ account_id: 99996, season_id: 1, team_id: 2 })
+      );
+      expect(spyOnSetPerm).toHaveBeenCalledTimes(1);
+      expect(spyOnRemove).toHaveBeenCalledTimes(1);
+      expect(spyOnSetPerm).toHaveBeenCalledWith(
+        1,
+        2,
+        "12345678901234569",
+        undefined,
+        undefined
+      );
+      expect(spyOnRemove).toHaveBeenCalledWith(99999, 1, 2, undefined);
+    });
+    it("does not update if both id's are same", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const beforeReg = await runQuery<Array<AccountPermissionScopes>>(
+        "SELECT * FROM AccountPermissionScopes"
+      );
+      expect(beforeReg.length).toEqual(2);
+      expect(beforeReg[0]).toEqual(
+        expect.objectContaining({ account_id: 99999, season_id: 1, team_id: 2 })
+      );
+      expect(beforeReg[1]).toEqual(
+        expect.objectContaining({ account_id: 99998, season_id: 1, team_id: 2 })
+      );
+      const spyOnSetPerm = jest.spyOn(
+        registrationServices,
+        "setCaptainPermissionsForSeason"
+      );
+      const spyOnRemove = jest.spyOn(
+        registrationServices,
+        "removeCaptainPermissionForAccountId"
+      );
+      await registrationServices.updateCaptainPermissionsForSeasonTeam(
+        seasonDetails.id,
+        formData.teamId,
+        formData.players[0].steamId,
+        formData.players[0].steamId,
+        formData.players[1].steamId,
+        formData.players[1].steamId
+      );
+      const editedReg = await runQuery<Array<AccountPermissionScopes>>(
+        "SELECT * FROM AccountPermissionScopes"
+      );
+      expect(editedReg.length).toEqual(2);
+      expect(beforeReg[0]).toEqual(
+        expect.objectContaining({ account_id: 99999, season_id: 1, team_id: 2 })
+      );
+      expect(beforeReg[1]).toEqual(
+        expect.objectContaining({ account_id: 99998, season_id: 1, team_id: 2 })
+      );
+      expect(spyOnSetPerm).toHaveBeenCalledTimes(0);
+      expect(spyOnRemove).toHaveBeenCalledTimes(0);
+    });
+    describe("with double scoped permission", () => {
+      beforeEach(async () => {
+        await setCaptainEditRegistrationForAccountId(
+          validSignupData.players[0].accountId,
+          11
+        );
+      });
+      it("does update but does not remove role and scoped permission if player has another scoped permission", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        const beforeReg = await runQuery<Array<AccountPermissionScopes>>(
+          "SELECT * FROM AccountPermissionScopes"
+        );
+        expect(beforeReg.length).toEqual(3);
+        expect(beforeReg[0]).toEqual(
+          expect.objectContaining({
+            account_id: 99999,
+            season_id: 1,
+            team_id: 2
+          })
+        );
+        expect(beforeReg[1]).toEqual(
+          expect.objectContaining({
+            account_id: 99998,
+            season_id: 1,
+            team_id: 2
+          })
+        );
+        expect(beforeReg[2]).toEqual(
+          expect.objectContaining({
+            account_id: 99999,
+            season_id: 11,
+            team_id: 2
+          })
+        );
+        const spyOnSetPerm = jest.spyOn(
+          registrationServices,
+          "setCaptainPermissionsForSeason"
+        );
+        const spyOnRemove = jest.spyOn(
+          registrationServices,
+          "removeCaptainPermissionForAccountId"
+        );
+        await registrationServices.updateCaptainPermissionsForSeasonTeam(
+          seasonDetails.id,
+          formData.teamId,
+          formData.players[3].steamId,
+          formData.players[0].steamId,
+          formData.players[2].steamId,
+          formData.players[1].steamId
+        );
+        const editedReg = await runQuery<
+          Array<AccountPermissionScopes & Permission>
+        >(
+          "SELECT aps.*, p.permission_name FROM AccountPermissionScopes aps JOIN Permissions p ON p.id = aps.permission_id ORDER BY aps.id"
+        );
+
+        expect(editedReg.length).toEqual(3);
+        expect(editedReg[0]).toEqual(
+          expect.objectContaining({
+            account_id: 99999,
+            permission_name: "edit-registration",
+            season_id: 11,
+            team_id: 2
+          })
+        );
+        expect(editedReg[1]).toEqual(
+          expect.objectContaining({
+            account_id: 99996,
+            permission_name: "edit-registration",
+            season_id: 1,
+            team_id: 2
+          })
+        );
+        expect(editedReg[2]).toEqual(
+          expect.objectContaining({
+            account_id: 99997,
+            permission_name: "edit-registration",
+            season_id: 1,
+            team_id: 2
+          })
+        );
+        expect(spyOnSetPerm).toHaveBeenCalledTimes(1);
+        expect(spyOnRemove).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });

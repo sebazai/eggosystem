@@ -5,6 +5,7 @@ const dbPool = createPool({
   ...dbEnvConfig,
   connectionLimit: 10, // Adjust based on load
   dateStrings: true,
+  // debug: process.env.NODE_ENV !== "production",
   decimalNumbers: true,
   supportBigNumbers: true,
   bigNumberStrings: false,

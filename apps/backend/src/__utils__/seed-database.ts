@@ -51,6 +51,23 @@ export const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
   );
 };
 
+export const insertOneTestUser = async (
+  accountId: number,
+  steamId: string,
+  nickname: string,
+  discord?: string
+) => {
+  await insertAccountWithSteamId(
+    accountId,
+    steamId,
+    nickname,
+    nickname,
+    nickname.replace(" ", "_").concat("@kanaliiga.org"),
+    discord
+  );
+  await insertAccountPrivacyPolicyAccepted(accountId);
+};
+
 export const insertTestUsersForSignup = async () => {
   for (const player of validSignupData.players) {
     await insertAccountWithSteamId(
@@ -125,13 +142,24 @@ export const unsetSeasonTeamRegistration = async (
   );
 };
 
-export const setSeasonTeamPlayers = async (seasonId?: number) => {
+export const setSeasonTeamPlayers = async (
+  seasonId?: number,
+  teamId?: number
+) => {
   for (const player of validSignupData.players) {
-    await runQuery(
-      "INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id) VALUES (?, ?, ?)",
-      [seasonId ?? 1, validSignupData.teamId, player.steamId]
-    );
+    await setSeasonTeamPlayer(player.steamId, seasonId, teamId);
   }
+};
+
+export const setSeasonTeamPlayer = async (
+  steamId: string,
+  seasonId?: number,
+  teamId?: number
+) => {
+  await runQuery(
+    "INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id) VALUES (?, ?, ?)",
+    [seasonId ?? 1, validSignupData.teamId ?? teamId, steamId]
+  );
 };
 
 export const clearSeasonPlayerRanks = async (seasonId?: number) => {
@@ -141,4 +169,26 @@ export const clearSeasonPlayerRanks = async (seasonId?: number) => {
       [seasonId ?? 1, player.steamId]
     );
   }
+};
+
+export const setCaptainEditRegistrationForAccountId = async (
+  accountId: number,
+  seasonId?: number
+) => {
+  const [permission] = await runQuery<[{ id: number }]>(
+    "SELECT id FROM Permissions WHERE permission_name = ?",
+    ["edit-registration"]
+  );
+  const [role] = await runQuery<[{ id: number }]>(
+    "SELECT id from Roles WHERE role_name = ?",
+    ["captain"]
+  );
+  await runQuery(
+    "INSERT INTO AccountPermissionScopes (season_id, team_id, account_id, permission_id) VALUES (?, ?, ?, ?)",
+    [seasonId ?? 1, validSignupData.teamId, accountId, permission.id]
+  );
+  await runQuery(
+    "INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id) VALUES (?, ?, ?)",
+    [accountId, role.id, 1]
+  );
 };

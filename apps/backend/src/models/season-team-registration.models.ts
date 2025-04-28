@@ -36,7 +36,7 @@ export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
       `Could not find registration with season ${seasonId} and team ${teamId}`
     );
   }
-  console.log("RES", result);
+
   return result[0];
 };
 

@@ -234,13 +234,16 @@ export const updateCaptainPermissionsForSeasonTeam = async (
       ? new_co_captain_steam_id
       : undefined;
 
-  await setCaptainPermissionsForSeason(
-    season_id,
-    team_id,
-    newCaptain,
-    newCoCaptain,
-    connection
-  );
+  if (newCaptain || newCoCaptain) {
+    await setCaptainPermissionsForSeason(
+      season_id,
+      team_id,
+      newCaptain,
+      newCoCaptain,
+      connection
+    );
+  }
+
   if (newCaptain && old_captain_steam_id) {
     const oldAccount = await getAccountIdBySteamId(old_captain_steam_id);
     await removeCaptainPermissionForAccountId(
@@ -250,6 +253,7 @@ export const updateCaptainPermissionsForSeasonTeam = async (
       connection
     );
   }
+
   if (newCoCaptain && old_co_captain_steam_id) {
     const oldAccount = await getAccountIdBySteamId(old_co_captain_steam_id);
     await removeCaptainPermissionForAccountId(
@@ -344,7 +348,6 @@ export const handleUpdateSeasonTeamRegistration = async (
   playersData: SignupPlayerType[],
   connection?: PoolConnection
 ) => {
-  console.log(typeof old_captain_steam_id);
   await Promise.all([
     validatePlayersFromDBForSignup(seasonId, teamId, playersData),
     updateSeasonTeamRegistration(seasonId, teamId, teamData, connection),
@@ -406,18 +409,16 @@ export const handleSignupFormForSeasonUpdate = async (
   const coCaptainSteamId = formData.players.find((p) => p.coCaptain)?.steamId;
 
   if (!captainSteamId) {
-    throw new Error("Could not determine captain.");
+    throw new Error("Could not determine new captain.");
   }
   if (!coCaptainSteamId) {
-    throw new Error("Could not determine co-captain.");
+    throw new Error("Could not determine new co-captain.");
   }
 
   const oldRegistration = await getSeasonTeamRegistrationBySeasonAndTeamId(
     seasonId,
     teamId
   );
-
-  console.log(oldRegistration);
 
   const oldCaptain = oldRegistration.captain_steam_id;
   const oldCoCaptain = oldRegistration.co_captain_steam_id;
