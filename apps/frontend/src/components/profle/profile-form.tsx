@@ -99,12 +99,10 @@ export default function ProfileForm() {
         }
       );
 
-      console.log("UPDATED", returnValue);
-
       const returnTo = searchParams.get("returnTo");
       const message = returnTo
-        ? `${returnValue.message}. Redirecting you to ${returnTo}...`
-        : `${returnValue.message}.`;
+        ? `${returnValue.message} Redirecting you to ${returnTo}...`
+        : `${returnValue.message}`;
 
       setSuccessMessage(message);
 

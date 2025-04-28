@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { updateAccountProfile } from "../../controllers/account.controllers";
+import { updateAccountProfileController } from "../../controllers/account.controllers";
 
 const router = Router();
 
-router.post("/update", updateAccountProfile);
+router.post("/update", updateAccountProfileController);
 
 export default router;

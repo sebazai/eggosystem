@@ -2,10 +2,138 @@ import type {
   UserPolicyAcceptancesPayload,
   UpdateUserProfile,
   UserPolicyAcceptance,
-  Account
+  Account,
+  AccountUpdateValues
 } from "@eggosystem/types";
+import * as uuid from "uuid";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
+import { NotFoundError } from "../utils/errors";
+import { getConnection } from "../db/mysqlConnection";
+import { expireInOneDay, redisClient } from "../utils/redisClient";
+
+export const updateAccount = async (
+  accountId: number,
+  formData: AccountUpdateValues,
+  privacyPolicyVersion: string
+) => {
+  const existingAccount = await getAccountById(accountId);
+
+  const emailVerificationToken = uuid.v4();
+  const workEmailVerificationToken = uuid.v4();
+
+  const now = new Date();
+  const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  const hasWorkEmailChanged =
+    formData.work_email && formData.work_email !== existingAccount.work_email;
+  const hasEmailChanged =
+    formData.email && formData.email !== existingAccount.email;
+
+  const updatedUser = {
+    nickname: formData.nickname,
+    full_name: formData.full_name,
+    work_email: formData.work_email ?? null,
+    work_email_token: hasWorkEmailChanged ? workEmailVerificationToken : null,
+    work_email_token_expires_at: hasWorkEmailChanged ? oneDayLater : null,
+    email: formData.email ?? null,
+    email_token: hasEmailChanged ? emailVerificationToken : null,
+    email_token_expires_at: hasEmailChanged ? oneDayLater : null,
+    discord: formData.discord ?? null
+  } satisfies UpdateUserProfile;
+
+  const userPolicyAcceptancePayload = {
+    accepted_privacy_policy: formData.acceptPrivacyPolicy,
+    accepted_marketing: formData.acceptMarketing ?? false,
+    privacy_policy_version: privacyPolicyVersion
+  } satisfies UserPolicyAcceptancesPayload;
+
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    // Update Player by steamId
+    await updateAccountData(accountId, updatedUser, connection);
+
+    const existingPolicyAcceptance = await userPolicyAcceptance(
+      accountId,
+      privacyPolicyVersion,
+      connection
+    );
+
+    if (existingPolicyAcceptance) {
+      await updateUserPolicyAcceptance(
+        accountId,
+        userPolicyAcceptancePayload,
+        connection
+      );
+    } else {
+      await insertUserPolicyAcceptance(
+        accountId,
+        userPolicyAcceptancePayload,
+        connection
+      );
+    }
+
+    await connection.commit();
+
+    if (hasEmailChanged) {
+      await redisClient.set(
+        `verify:email:${emailVerificationToken}`,
+        JSON.stringify({
+          accountId,
+          email: formData.email
+        }),
+        "EX",
+        expireInOneDay
+      );
+
+      // await sendVerificationEmail(formData.email, emailVerificationToken);
+    }
+
+    if (hasWorkEmailChanged) {
+      await redisClient.set(
+        `verify:work_email:${workEmailVerificationToken}`,
+        JSON.stringify({
+          accountId,
+          work_email: formData.work_email
+        }),
+        "EX",
+        expireInOneDay
+      );
+      // await sendVerificationEmail(formData.work_email, workEmailVerificationToken);
+    }
+
+    const baseMsg = "Profile updated successfully.";
+    const rememberJunk = "Remember to check junk folder as well.";
+    if (hasWorkEmailChanged && hasEmailChanged) {
+      return {
+        message: `${baseMsg} Please verify both your emails. ${rememberJunk}`
+      };
+    }
+
+    if (hasWorkEmailChanged) {
+      return {
+        message: `${baseMsg} Please verify your work email. ${rememberJunk}`
+      };
+    }
+
+    if (hasEmailChanged) {
+      return {
+        message: `${baseMsg} Please verify your personal email. ${rememberJunk}`
+      };
+    }
+
+    return {
+      message: "Profile updated successfully."
+    };
+  } catch (error: unknown) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
 
 export const updateAccountData = async (
   accountId: Account["id"],
@@ -129,4 +257,20 @@ export const getAccountIdBySteamId = async (
     throw new Error(`Could not find account id for steam id ${steamId}`);
   }
   return result;
+};
+
+/**
+ * Never use in frontend.
+ * @param accountId
+ * @returns
+ */
+export const getAccountById = async (accountId: number) => {
+  const [account] = await runQuery<Array<Account | undefined>>(
+    "SELECT * FROM Accounts WHERE id = ?",
+    [accountId]
+  );
+  if (!account) {
+    throw new NotFoundError("Account not found");
+  }
+  return account;
 };

@@ -1,23 +1,22 @@
-import { updateAccountProfile } from "../../controllers/account.controllers";
+import { UserPolicyAcceptance, type Account } from "@eggosystem/types";
+import { updateAccountProfileController } from "../../controllers/account.controllers";
 import { getConnection } from "../../db/mysqlConnection";
-import {
-  insertUserPolicyAcceptance,
-  updateAccountData,
-  updateUserPolicyAcceptance,
-  userPolicyAcceptance
-} from "../../models/account.models";
+import * as accountModels from "../../models/account.models";
 import type { Request, Response } from "express";
+import _ from "lodash";
 
 jest.mock("../../db/mysqlConnection", () => ({
   getConnection: jest.fn()
 }));
 
-jest.mock("../../models/account.models", () => ({
-  insertUserPolicyAcceptance: jest.fn(),
-  updateAccountData: jest.fn(),
-  updateUserPolicyAcceptance: jest.fn(),
-  userPolicyAcceptance: jest.fn()
-}));
+const mockedAccount = {
+  id: 1,
+  work_email: "new@kana.fi",
+  email_verified: false,
+  work_email_verified: false,
+  updated_at: "",
+  created_at: ""
+} satisfies Account;
 
 describe("updateProfile Controller", () => {
   let req: Partial<Request>;
@@ -50,29 +49,39 @@ describe("updateProfile Controller", () => {
     };
 
     res = {
-      status: statusMock
+      status: statusMock,
+      json: jsonMock
     };
 
     connection = {
       beginTransaction: jest.fn(),
       commit: jest.fn(),
       rollback: jest.fn(),
-      release: jest.fn()
+      release: jest.fn(),
+      execute: jest.fn()
     };
     (getConnection as jest.Mock).mockResolvedValue(connection);
     process.env.PRIVACY_POLICY_VERSION = "1";
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(mockedAccount);
+    jest.spyOn(accountModels, "updateAccountData").mockResolvedValue(undefined);
+    jest
+      .spyOn(accountModels, "updateUserPolicyAcceptance")
+      .mockResolvedValue(undefined);
   });
 
   it("should return 401 if user is not authenticated", async () => {
     req.auth = undefined;
-    await updateAccountProfile(req as Request, res as Response);
+    await updateAccountProfileController(req as Request, res as Response);
     expect(statusMock).toHaveBeenCalledWith(401);
     expect(jsonMock).toHaveBeenCalledWith({ message: "Unauthorized" });
   });
 
   it("should return 400 if validation fails", async () => {
     req.body = { invalidField: "invalid" };
-    await updateAccountProfile(req as Request, res as Response);
+    await updateAccountProfileController(req as Request, res as Response);
     expect(statusMock).toHaveBeenCalledWith(400);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Invalid profile data" })
@@ -80,15 +89,29 @@ describe("updateProfile Controller", () => {
   });
 
   it("should update profile and policy acceptance if user exists", async () => {
-    (userPolicyAcceptance as jest.Mock).mockResolvedValue(true);
-    await updateAccountProfile(req as Request, res as Response);
+    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue({
+      id: 0,
+      account_id: 0,
+      accepted_privacy_policy: false,
+      accepted_marketing: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+      privacy_policy_version: ""
+    } satisfies UserPolicyAcceptance);
+    const updatedAccountSpy = jest
+      .spyOn(accountModels, "updateAccountData")
+      .mockResolvedValue(undefined);
+    const updatedPolicySpy = jest
+      .spyOn(accountModels, "updateUserPolicyAcceptance")
+      .mockResolvedValue(undefined);
+    await updateAccountProfileController(req as Request, res as Response);
     expect(connection.beginTransaction).toHaveBeenCalled();
-    expect(updateAccountData).toHaveBeenCalledWith(
+    expect(updatedAccountSpy).toHaveBeenCalledWith(
       1,
       expect.any(Object),
       connection
     );
-    expect(updateUserPolicyAcceptance).toHaveBeenCalledWith(
+    expect(updatedPolicySpy).toHaveBeenCalledWith(
       1,
       expect.any(Object),
       connection
@@ -96,29 +119,35 @@ describe("updateProfile Controller", () => {
     expect(connection.commit).toHaveBeenCalled();
     expect(statusMock).toHaveBeenCalledWith(200);
     expect(jsonMock).toHaveBeenCalledWith({
-      message: "User policy acceptances updated successfully"
+      message:
+        "Profile updated successfully. Please verify your work email. Remember to check junk folder as well."
     });
   });
 
   it("should insert policy acceptance if none exists", async () => {
-    (userPolicyAcceptance as jest.Mock).mockResolvedValue(null);
-    await updateAccountProfile(req as Request, res as Response);
-    expect(insertUserPolicyAcceptance).toHaveBeenCalledWith(
-      1,
-      expect.any(Object),
-      connection
-    );
+    const newMock: Account = _.omit(_.cloneDeep(mockedAccount), "work_email");
+    newMock.work_email = "test@example.com";
+
+    jest.spyOn(accountModels, "getAccountById").mockResolvedValue(newMock);
+    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(null);
+    const insertSpy = jest
+      .spyOn(accountModels, "insertUserPolicyAcceptance")
+      .mockResolvedValue();
+    await updateAccountProfileController(req as Request, res as Response);
+    expect(insertSpy).toHaveBeenCalledWith(1, expect.any(Object), connection);
     expect(connection.commit).toHaveBeenCalled();
     expect(statusMock).toHaveBeenCalledWith(200);
     expect(jsonMock).toHaveBeenCalledWith({
-      message: "Profile updated successfully"
+      message: "Profile updated successfully."
     });
   });
 
   it("should rollback and throw error on failure", async () => {
-    (updateAccountData as jest.Mock).mockRejectedValue(new Error("DB Error"));
+    jest
+      .spyOn(accountModels, "updateAccountData")
+      .mockRejectedValue(new Error("DB Error"));
     await expect(
-      updateAccountProfile(req as Request, res as Response)
+      updateAccountProfileController(req as Request, res as Response)
     ).rejects.toThrow("DB Error");
     expect(connection.rollback).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();
