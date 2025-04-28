@@ -91,15 +91,20 @@ export default function ProfileForm() {
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
-      await clientApiFetch(`/api/v1/accounts/update`, {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
+      const returnValue = await clientApiFetch<{ message: string }>(
+        `/api/v1/accounts/update`,
+        {
+          method: "POST",
+          body: JSON.stringify(data)
+        }
+      );
+
+      console.log("UPDATED", returnValue);
 
       const returnTo = searchParams.get("returnTo");
       const message = returnTo
-        ? `Your profile has been successfully updated! Redirecting you to ${returnTo}...`
-        : "Your profile has been successfully updated!";
+        ? `${returnValue.message}. Redirecting you to ${returnTo}...`
+        : `${returnValue.message}.`;
 
       setSuccessMessage(message);
 

@@ -3,8 +3,10 @@ import {
   type AccountUpdateValues,
   type RequestWithBody,
   accountSchema,
-  type UpdateUserProfile
+  type UpdateUserProfile,
+  type Account
 } from "@eggosystem/types";
+import * as uuid from "uuid";
 import type { Response } from "express";
 import z from "zod";
 import { getConnection } from "../db/mysqlConnection";
@@ -14,6 +16,8 @@ import {
   updateUserPolicyAcceptance,
   userPolicyAcceptance
 } from "../models/account.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { expireInOneDay, redisClient } from "../utils/redisClient";
 
 export const updateAccountProfile = async (
   req: RequestWithBody<AccountUpdateValues>,
@@ -45,11 +49,48 @@ export const updateAccountProfile = async (
     throw error;
   }
 
+  const [existingAccount] = await runQuery<
+    Array<
+      | {
+          email: Account["email"];
+          work_email: Account["work_email"];
+        }
+      | undefined
+    >
+  >(`SELECT email, work_email FROM Accounts WHERE id = ?`, [accountId]);
+
+  if (!existingAccount) {
+    res.status(404).json({ message: "Account not found" });
+    return;
+  }
+
+  const emailVerificationToken = uuid.v4();
+  const workEmailVerificationToken = uuid.v4();
+
+  const now = new Date();
+  const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
   const updatedUser = {
     nickname: formData.nickname,
     full_name: formData.full_name,
     work_email: formData.work_email ?? null,
+    work_email_token:
+      formData.work_email && formData.work_email !== existingAccount.work_email
+        ? workEmailVerificationToken
+        : null,
+    work_email_token_expires_at:
+      formData.work_email && formData.work_email !== existingAccount.work_email
+        ? oneDayLater
+        : null,
     email: formData.email ?? null,
+    email_token:
+      formData.email && formData.email !== existingAccount.email
+        ? emailVerificationToken
+        : null,
+    email_token_expires_at:
+      formData.email && formData.email !== existingAccount.email
+        ? oneDayLater
+        : null,
     discord: formData.discord ?? null
   } satisfies UpdateUserProfile;
 
@@ -81,8 +122,36 @@ export const updateAccountProfile = async (
         connection
       );
       await connection.commit();
+      if (formData.email && formData.email !== existingAccount.email) {
+        await redisClient.set(
+          `verify:email:${emailVerificationToken}`,
+          JSON.stringify({
+            accountId,
+            email: formData.email
+          }),
+          "EX",
+          expireInOneDay
+        );
+
+        // await sendVerificationEmail(formData.email, emailVerificationToken);
+      }
+
+      if (
+        formData.work_email &&
+        formData.work_email !== existingAccount.work_email
+      ) {
+        await redisClient.set(
+          `verify:work_email:${workEmailVerificationToken}`,
+          JSON.stringify({
+            accountId,
+            work_email: formData.work_email
+          }),
+          "EX",
+          expireInOneDay
+        );
+      }
       res.status(200).json({
-        message: "User policy acceptances updated successfully"
+        message: "Profile updated successfully"
       });
       return;
     }
@@ -92,6 +161,34 @@ export const updateAccountProfile = async (
       userPolicyAcceptancePayload,
       connection
     );
+    if (formData.email && formData.email !== existingAccount.email) {
+      await redisClient.set(
+        `verify:email:${emailVerificationToken}`,
+        JSON.stringify({
+          accountId,
+          email: formData.email
+        }),
+        "EX",
+        expireInOneDay
+      );
+
+      // await sendVerificationEmail(formData.email, emailVerificationToken);
+    }
+
+    if (
+      formData.work_email &&
+      formData.work_email !== existingAccount.work_email
+    ) {
+      await redisClient.set(
+        `verify:work_email:${workEmailVerificationToken}`,
+        JSON.stringify({
+          accountId,
+          work_email: formData.work_email
+        }),
+        "EX",
+        expireInOneDay
+      );
+    }
     await connection.commit();
     res.status(200).json({
       message: "Profile updated successfully"
