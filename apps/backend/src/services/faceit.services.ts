@@ -67,8 +67,9 @@ const getFaceITGameRank = async (steam_id: string, game: "cs2" | "csgo") => {
       rank,
       player_id
     };
-  } catch (_err) {
-    // NO-OP
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`Error fetching FaceIT rank for ${steam_id}`, err);
     return null;
   }
 };

@@ -105,11 +105,40 @@ export const removeTestTeam = async (teamId: number) => {
   await runQuery("DELETE FROM Teams WHERE id = ?", [teamId]);
 };
 
+export const setSeasonTeamRegistration = async (
+  seasonId?: number,
+  teamId?: number
+) => {
+  await runQuery(
+    "INSERT INTO SeasonTeamRegistrations (season_id, team_id) VALUES (?, ?)",
+    [seasonId ?? 1, teamId ?? validSignupData.teamId]
+  );
+};
+
+export const unsetSeasonTeamRegistration = async (
+  seasonId?: number,
+  teamId?: number
+) => {
+  await runQuery(
+    "DELETE FROM SeasonTeamRegistrations WHERE season_id = ? AND team_id = ?",
+    [seasonId ?? 1, teamId ?? validSignupData.teamId]
+  );
+};
+
 export const setSeasonTeamPlayers = async (seasonId?: number) => {
   for (const player of validSignupData.players) {
     await runQuery(
       "INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id) VALUES (?, ?, ?)",
       [seasonId ?? 1, validSignupData.teamId, player.steamId]
+    );
+  }
+};
+
+export const clearSeasonPlayerRanks = async (seasonId?: number) => {
+  for (const player of validSignupData.players) {
+    await runQuery(
+      "DELETE FROM SeasonPlayerRanks WHERE season_id = ? AND steam_id = ?",
+      [seasonId ?? 1, player.steamId]
     );
   }
 };

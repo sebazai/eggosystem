@@ -643,7 +643,7 @@ test.skip("Signup Form", () => {
 
       // Set up mock API response for invalid Steam ID
       await page.route(
-        "**/api/players/12345678901234567",
+        "**/api/players/12345678901234566",
         async (route: Route) => {
           await route.fulfill({
             status: 400,
@@ -657,7 +657,7 @@ test.skip("Signup Form", () => {
       );
 
       // Fill the Steam ID field with the ID that will trigger the mocked response
-      await steamIdField.fill("12345678901234567");
+      await steamIdField.fill("12345678901234566");
 
       // Wait for API response to be processed
       await page.waitForTimeout(500);

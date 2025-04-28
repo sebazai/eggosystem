@@ -68,15 +68,6 @@ export const getPlayerAppIdRank = async (
 export const getCSRank = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-rank`;
 
-  // If someone added the rank to database, we use that one
-  if (season_id) {
-    const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
-    if (rankFromDb) {
-      await redisClient.set(redisKey, rankFromDb.rank, "EX", expireIn30Days);
-      return rankFromDb;
-    }
-  }
-
   const rankInRedis = await redisClient.get(redisKey);
   if (rankInRedis) {
     return { rank: Number(rankInRedis) };
@@ -86,6 +77,15 @@ export const getCSRank = async (steam_id: string, season_id?: number) => {
   if (leetifyRank) {
     await redisClient.set(redisKey, leetifyRank.rank, "EX", expireIn30Days);
     return leetifyRank;
+  }
+
+  // If someone added the rank to database for season, we use that one
+  if (season_id) {
+    const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
+    if (rankFromDb) {
+      await redisClient.set(redisKey, rankFromDb.rank, "EX", expireIn30Days);
+      return rankFromDb;
+    }
   }
 
   // FALLBACK: Try to get latest known cs2_rank for the latest season from database

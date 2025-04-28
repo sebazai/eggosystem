@@ -126,8 +126,16 @@ export const addPlayersForTeamInSeason = async (
     if (hours === -1) {
       throw new BadRequestError(`Player ${player.steam_id} hours not found.`);
     }
-    if (rank === -1 && externalRank?.faceit_elo === -1) {
-      throw new BadRequestError(`Player ${player.steam_id} rank not found.`);
+    if (rank === -1 && externalRank && externalRank.faceit_elo === -1) {
+      throw new BadRequestError(
+        `Player ${player.steam_id} has no app id rank or ${platform} rank.`
+      );
+    }
+
+    if (rank === -1 && !externalRank) {
+      throw new BadRequestError(
+        `Player ${player.steam_id} rank not found for app ${appId}.`
+      );
     }
 
     if (isFaceITCSRank(externalRank)) {

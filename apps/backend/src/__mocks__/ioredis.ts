@@ -7,7 +7,7 @@ const IORedis = jest.createMockFromModule("ioredis");
   if (key === "123124") {
     return "differentRefreshToken";
   }
-  return null;
+  return undefined;
 });
 (IORedis as any).prototype.set = jest.fn();
 (IORedis as any).prototype.del = jest.fn();

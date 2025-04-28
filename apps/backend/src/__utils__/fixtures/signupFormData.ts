@@ -7,31 +7,31 @@ export const validSignupData: SignupFormValues = {
   players: [
     {
       accountId: 99999,
-      steamId: "12345678901234567",
+      steamId: "12345678901234566",
       nickname: "Player One",
       discord: "playerOne#1234",
       captain: true
     },
     {
       accountId: 99998,
-      steamId: "12345678901234568",
+      steamId: "12345678901234567",
       nickname: "Player Two",
       discord: "playerTwo#1234",
       coCaptain: true
     },
     {
       accountId: 99997,
-      steamId: "12345678901234569",
+      steamId: "12345678901234568",
       nickname: "Player Three"
     },
     {
       accountId: 99996,
-      steamId: "12345678901234570",
+      steamId: "12345678901234569",
       nickname: "Player Four"
     },
     {
       accountId: 99995,
-      steamId: "12345678901234571",
+      steamId: "12345678901234570",
       nickname: "Player Five"
     }
   ]

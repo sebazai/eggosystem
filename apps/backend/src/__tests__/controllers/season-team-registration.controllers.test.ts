@@ -105,8 +105,8 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       2,
       {
-        captain_steam_id: "12345678901234567",
-        co_captain_steam_id: "12345678901234568",
+        captain_steam_id: "12345678901234566",
+        co_captain_steam_id: "12345678901234567",
         external_platform_id: "team-123"
       },
       mockConnection
@@ -162,8 +162,8 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       2,
       {
-        captain_steam_id: "12345678901234567",
-        co_captain_steam_id: "12345678901234568",
+        captain_steam_id: "12345678901234566",
+        co_captain_steam_id: "12345678901234567",
         external_platform_id: "team-123"
       },
       mockConnection
@@ -172,7 +172,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       2,
       {
-        steam_id: "12345678901234567"
+        steam_id: "12345678901234566"
       },
       mockConnection
     );
@@ -223,8 +223,8 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       666,
       {
-        captain_steam_id: "12345678901234567",
-        co_captain_steam_id: "12345678901234568",
+        captain_steam_id: "12345678901234566",
+        co_captain_steam_id: "12345678901234567",
         external_platform_id: "team-123"
       },
       mockConnection
@@ -274,8 +274,8 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       1337,
       {
-        captain_steam_id: "12345678901234567",
-        co_captain_steam_id: "12345678901234568",
+        captain_steam_id: "12345678901234566",
+        co_captain_steam_id: "12345678901234567",
         external_platform_id: "team-123"
       },
       mockConnection
