@@ -10,8 +10,8 @@ import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 import { getConnection } from "../db/mysqlConnection";
-import { expireInOneDay, redisClient } from "../utils/redisClient";
-import { sendVerificationEmail } from "../services/email.services";
+import { handleEmailVerification } from "../services/account.services";
+import { getOneDayLaterInMillis } from "../utils/date-utils";
 
 export const updateAccount = async (
   accountId: number,
@@ -23,8 +23,7 @@ export const updateAccount = async (
   const emailVerificationToken = uuid.v4();
   const workEmailVerificationToken = uuid.v4();
 
-  const now = new Date();
-  const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const oneDayLater = getOneDayLaterInMillis();
 
   const hasWorkEmailChanged =
     formData.work_email && formData.work_email !== existingAccount.work_email;
@@ -36,14 +35,16 @@ export const updateAccount = async (
     full_name: formData.full_name,
     work_email: formData.work_email ? formData.work_email : null,
     work_email_token: hasWorkEmailChanged ? workEmailVerificationToken : null,
-    work_email_token_expires_at: hasWorkEmailChanged ? oneDayLater : null,
+    work_email_token_expires_at: hasWorkEmailChanged
+      ? new Date(oneDayLater)
+      : null,
     work_email_verified:
       hasWorkEmailChanged || !formData.work_email
         ? false
         : existingAccount.work_email_verified,
     email: formData.email ? formData.email : null,
     email_token: hasEmailChanged ? emailVerificationToken : null,
-    email_token_expires_at: hasEmailChanged ? oneDayLater : null,
+    email_token_expires_at: hasEmailChanged ? new Date(oneDayLater) : null,
     email_verified:
       hasEmailChanged || !formData.email
         ? false
@@ -87,34 +88,27 @@ export const updateAccount = async (
     await connection.commit();
 
     if (hasEmailChanged && formData.email) {
-      await redisClient.set(
-        `verify:email:${emailVerificationToken}`,
-        JSON.stringify({
-          accountId,
-          email: formData.email,
-          expirationTime: oneDayLater.getTime()
-        }),
-        "EX",
-        expireInOneDay
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      sendVerificationEmail(formData.email, emailVerificationToken);
+      handleEmailVerification(
+        accountId,
+        formData.email,
+        "verify:email",
+        workEmailVerificationToken,
+        oneDayLater
+      ).catch((err) => {
+        console.error("Failed to send verification email:", err);
+      });
     }
 
     if (hasWorkEmailChanged && formData.work_email) {
-      await redisClient.set(
-        `verify:work_email:${workEmailVerificationToken}`,
-        JSON.stringify({
-          accountId,
-          work_email: formData.work_email,
-          expirationTime: oneDayLater.getTime()
-        }),
-        "EX",
-        expireInOneDay
-      );
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      sendVerificationEmail(formData.work_email, workEmailVerificationToken);
+      handleEmailVerification(
+        accountId,
+        formData.work_email,
+        "verify:work_email",
+        workEmailVerificationToken,
+        oneDayLater
+      ).catch((err) => {
+        console.error("Failed to send verification email:", err);
+      });
     }
 
     const baseMsg = "Profile updated successfully.";

@@ -1,13 +1,109 @@
 import {
+  type Account,
   type AccountUpdateValues,
   type RequestWithBody,
+  type RequestWithParams,
   accountSchema
 } from "@eggosystem/types";
+import * as uuid from "uuid";
 import type { Response } from "express";
 import z from "zod";
-import { updateAccount } from "../models/account.models";
+import { getAccountById, updateAccount } from "../models/account.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
+import { handleEmailVerification } from "../services/account.services";
+import { getOneDayLaterInMillis } from "../utils/date-utils";
+
+export const sendVerificationEmails = async (
+  req: RequestWithParams<{ id: string }>,
+  res: Response
+) => {
+  const accountId = Number(req.params.id);
+  const user = req.auth;
+  if (!user || user.account_id !== accountId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const account = await getAccountById(accountId);
+  const oneDayInMillis = getOneDayLaterInMillis();
+
+  if (
+    !account.email_verified &&
+    account.email &&
+    account.email_token &&
+    account.email_token_expires_at
+  ) {
+    const token = uuid.v4();
+    await handleEmailVerification(
+      accountId,
+      account.email,
+      "verify:email",
+      token,
+      oneDayInMillis
+    );
+    await runQuery(
+      "UPDATE Account SET email_token = ?, email_token_expires_at",
+      [token, new Date(oneDayInMillis)]
+    );
+  }
+
+  if (
+    !account.work_email_verified &&
+    account.work_email &&
+    account.work_email_token &&
+    account.work_email_token_expires_at
+  ) {
+    const token = uuid.v4();
+    await handleEmailVerification(
+      accountId,
+      account.work_email,
+      "verify:work_email",
+      token,
+      oneDayInMillis
+    );
+    await runQuery(
+      "UPDATE Account SET work_email_token = ?, work_email_token_expires_at",
+      [token, new Date(oneDayInMillis)]
+    );
+  }
+
+  res.json({ message: "New verification links sent" });
+};
+
+export const emailsVerifiedController = async (
+  req: RequestWithParams<{ id: string }>,
+  res: Response
+) => {
+  const accountId = Number(req.params.id);
+  const user = req.auth;
+  if (!user || user.account_id !== accountId) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const [data] = await runQuery<
+    Array<
+      | Pick<
+          Account,
+          | "email_verified"
+          | "email_token_expires_at"
+          | "work_email_verified"
+          | "work_email_token_expires_at"
+        >
+      | undefined
+    >
+  >(
+    `SELECT email_verified, email_token_expires_at, work_email_verified, work_email_token_expires_at 
+      FROM Accounts WHERE id = ?`,
+    [accountId]
+  );
+  if (!data) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+  res.json(data);
+};
 
 export const updateAccountProfileController = async (
   req: RequestWithBody<AccountUpdateValues>,

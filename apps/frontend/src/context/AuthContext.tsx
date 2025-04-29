@@ -1,9 +1,14 @@
 "use client";
 
 import { clientApiFetch } from "@/lib/apiClient";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState
+} from "react";
 import type { UserFullPayload } from "@eggosystem/types";
-import { usePathname, useRouter } from "next/navigation";
 
 interface AuthContextType {
   user: UserFullPayload | null;
@@ -17,25 +22,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserFullPayload | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const res = await clientApiFetch<{ user: UserFullPayload }>(
         "/api/v1/auth/me"
       );
       setUser(res.user);
-      // Check if the user has accepted the privacy policy
-      if (res.user.acceptedPrivacyPolicy === false) {
-        router.push("/profile"); // Redirect to profile if privacy policy not accepted
-      }
     } catch (_error) {
       setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const logout = async () => {
     try {
@@ -47,27 +46,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const fetchAuth = async () => {
-      await checkAuth(); // Await the async function
+      if (user !== null) {
+        setLoading(false);
+        return;
+      }
+      await checkAuth();
     };
 
     fetchAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    // Force redirect if the user is logged in but hasn't accepted the privacy policy
-    if (
-      user &&
-      user.acceptedPrivacyPolicy === false &&
-      !pathname.includes("profile") &&
-      !pathname.includes("privacy-policy")
-    ) {
-      const urlEncodedPath = encodeURIComponent(pathname);
-      router.push(
-        `/profile?acceptPrivacyPolicyRequired=1&returnTo=${urlEncodedPath}`
-      );
-    }
-  }, [user, router, pathname]);
+  }, [checkAuth, user]);
 
   return (
     <AuthContext.Provider value={{ user, loading, checkAuth, logout }}>

@@ -1,4 +1,4 @@
-import { UserPolicyAcceptance, type Account } from "@eggosystem/types";
+import { type UserPolicyAcceptance, type Account } from "@eggosystem/types";
 import { updateAccountProfileController } from "../../controllers/account.controllers";
 import { getConnection } from "../../db/mysqlConnection";
 import * as accountModels from "../../models/account.models";

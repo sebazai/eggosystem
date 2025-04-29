@@ -13,6 +13,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { FilterProvider } from "@/context/FilterContext";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -117,31 +118,33 @@ export default function RootLayout({
         )}
       >
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            // enableSystem
-            disableTransitionOnChange
-          >
-            <Suspense>
-              <FilterProvider appId="730">
-                <SkipToContent />
-                <KfcRain />
-                <ScrollToTop />
-                <div className="flex flex-col min-h-svh min-w-[200px] w-full">
-                  <Navigation />
-                  <div className="flex flex-grow justify-center w-full">
-                    <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
-                      <main className="md:py-6 py-4" id="main-content">
-                        {children}
-                      </main>
+          <AcceptPolicyProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              // enableSystem
+              disableTransitionOnChange
+            >
+              <Suspense>
+                <FilterProvider appId="730">
+                  <SkipToContent />
+                  <KfcRain />
+                  <ScrollToTop />
+                  <div className="flex flex-col min-h-svh min-w-[200px] w-full">
+                    <Navigation />
+                    <div className="flex flex-grow justify-center w-full">
+                      <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
+                        <main className="md:py-6 py-4" id="main-content">
+                          {children}
+                        </main>
+                      </div>
                     </div>
+                    <Footer />
                   </div>
-                  <Footer />
-                </div>
-              </FilterProvider>
-            </Suspense>
-          </ThemeProvider>
+                </FilterProvider>
+              </Suspense>
+            </ThemeProvider>
+          </AcceptPolicyProvider>
         </AuthProvider>
         <Toaster richColors />
       </body>

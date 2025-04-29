@@ -11,10 +11,9 @@ function createTransporter() {
     secure: false,
     auth: {
       user: process.env.SMTP_USER,
-      pass: Buffer.from(
-        process.env.SMTP_PASSWORD ?? "ZW56b2oK",
-        "base64"
-      ).toString("utf8")
+      pass: Buffer.from(process.env.SMTP_PASSWORD ?? "ZW56b2oK", "base64")
+        .toString("utf8")
+        .trim()
     }
   });
 }

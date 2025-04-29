@@ -280,7 +280,9 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
   if (item.items) {
     return (
       <NavigationMenuItem key={item.title}>
-        <NavigationMenuTrigger>{item.title}</NavigationMenuTrigger>
+        <NavigationMenuTrigger className="text-kanaliiga-orange">
+          {item.title}
+        </NavigationMenuTrigger>
         <NavigationMenuContent>
           <ul className="grid w-[200px] gap-4">
             {item.items.map((component) => (

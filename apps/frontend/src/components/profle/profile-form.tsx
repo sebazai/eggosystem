@@ -21,6 +21,18 @@ import { SteamLoginButton } from "../steam-login";
 import { accountSchema, type AccountUpdateValues } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
+import { EmailVerifiedIcon } from "./email-verified-tooltip";
+import { toast } from "sonner";
+
+const requestNewEmailVerificationLinks = async (accountId?: number) => {
+  if (accountId) {
+    return clientApiFetch<{ message: string }>(
+      `/api/v1/accounts/${accountId}/emails/send-verifications`,
+      { method: "POST" }
+    );
+  }
+};
 
 export default function ProfileForm() {
   const searchParams = useSearchParams();
@@ -41,6 +53,7 @@ export default function ProfileForm() {
     }
   });
   const auth = useAuth();
+  const { emailsVerified } = useEmailsVerified(auth.user?.account_id);
 
   useEffect(() => {
     if (auth.user) {
@@ -167,9 +180,19 @@ export default function ProfileForm() {
           name="work_email"
           render={({ field }) => (
             <FormItem>
-              <Label>Work email</Label>
+              <Label>
+                Work email{" "}
+                {emailsVerified?.work_email_verified ? (
+                  <EmailVerifiedIcon />
+                ) : null}
+              </Label>
               <FormControl>
-                <Input type="email" placeholder="work@email.com" {...field} />
+                <Input
+                  autoComplete="work-email"
+                  type="email"
+                  placeholder="work@email.com"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -181,7 +204,10 @@ export default function ProfileForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <Label>Personal email</Label>
+              <Label>
+                Personal email{" "}
+                {emailsVerified?.email_verified ? <EmailVerifiedIcon /> : null}
+              </Label>
               <FormControl>
                 <Input
                   type="email"
@@ -250,7 +276,30 @@ export default function ProfileForm() {
           )}
         />
 
-        <Button type="submit">Save Changes</Button>
+        <div className="flex gap-4">
+          <Button type="submit">Save Changes</Button>
+          {emailsVerified?.email_token_expires_at ||
+          emailsVerified?.work_email_token_expires_at ? (
+            <Button
+              onClick={async () => {
+                try {
+                  const value = await requestNewEmailVerificationLinks(
+                    auth.user?.account_id
+                  );
+                  if (value) {
+                    toast.success(value.message);
+                  }
+                } catch (_err) {
+                  toast.error("Failed to send new links.");
+                }
+              }}
+              type="button"
+              variant={"secondary"}
+            >
+              Re-send validation email
+            </Button>
+          ) : null}
+        </div>
       </form>
     </Form>
   );

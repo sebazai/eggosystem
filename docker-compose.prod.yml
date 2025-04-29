@@ -23,6 +23,9 @@ services:
       OTEL_SERVICE_NAME: eggosystem-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production,service.namespace=eggosystem,service.version=1.0.0.0,service.instance.id=backend"
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
+      SMTP_HOST: $SMTP_HOST
+      SMTP_USER: $SMTP_USER
+      SMTP_PASSWORD: $SMTP_PASSWORD
     networks:
       - web
     labels:

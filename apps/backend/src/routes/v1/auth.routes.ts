@@ -118,9 +118,9 @@ router.get("/me", authenticateJWT, async (req, res) => {
       acceptedMarketing: hasMarketingConsent
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
-  } else {
-    res.status(401).json({ message: "Unauthorized" });
+    return;
   }
+  res.status(401).json({ message: "Unauthorized" });
 });
 
 export default router;

@@ -26,8 +26,8 @@ export const insertAccountWithSteamId = async (
     discord
   });
   const account = await runQuery<{ insertId: number }>(
-    `INSERT INTO Accounts (${accountInsertQuery.columns.join(", ")}) VALUES (${accountInsertQuery.placeholders})`,
-    accountInsertQuery.values
+    `INSERT INTO Accounts (${accountInsertQuery.columns.join(", ")}, work_email_verified) VALUES (${accountInsertQuery.placeholders}, ?)`,
+    [...accountInsertQuery.values, true]
   );
   const steamPlayerInsert = buildInsertQueryParts({
     steam_id: steamId,
