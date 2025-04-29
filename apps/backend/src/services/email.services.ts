@@ -21,7 +21,7 @@ function createTransporter() {
 
 const transporter = createTransporter();
 
-export const sendVerificationEmail = (to: string, token: string) => {
+export const sendVerificationEmail = async (to: string, token: string) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   const mailOptions = {
@@ -69,5 +69,5 @@ export const sendVerificationEmail = (to: string, token: string) => {
     }
   };
 
-  transporter?.sendMail(mailOptions);
+  await transporter?.sendMail(mailOptions);
 };

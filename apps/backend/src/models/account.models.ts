@@ -98,6 +98,7 @@ export const updateAccount = async (
         expireInOneDay
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       sendVerificationEmail(formData.email, emailVerificationToken);
     }
 
@@ -112,6 +113,7 @@ export const updateAccount = async (
         "EX",
         expireInOneDay
       );
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       sendVerificationEmail(formData.work_email, workEmailVerificationToken);
     }
 
