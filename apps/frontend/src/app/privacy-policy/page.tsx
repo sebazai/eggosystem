@@ -1,4 +1,6 @@
+import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy Policy"
@@ -9,7 +11,7 @@ export default function PrivacyPolicy() {
     <div className="privacy-policy">
       <h1>Privacy Policy</h1>
       <p>Effective Date: 1st of April 2025</p>
-      <p>Last Updated: 1st of April 2025</p>
+      <p>Last Updated: 29th of April 2025</p>
 
       <h2>1. Introduction</h2>
       <p>
@@ -38,8 +40,8 @@ export default function PrivacyPolicy() {
           ranking and statistical purposes.
         </li>
         <li>
-          <strong>Work Email & Full Name:</strong> Collected with consent to
-          verify your team/organization.{" "}
+          <strong>Personal Email & Work Email & Full Name:</strong> Collected
+          with consent to verify your team/organization.{" "}
           <strong>This information is never shared with third parties.</strong>
         </li>
       </ul>
@@ -68,8 +70,8 @@ export default function PrivacyPolicy() {
           Permanently stored for ranking history and statistical purposes.
         </li>
         <li>
-          <strong>Work Email & Full Name:</strong> Stored until a user requests
-          deletion.
+          <strong>Personal Email & Work Email & Full Name:</strong> Stored until
+          a user requests deletion.
         </li>
       </ul>
 
@@ -82,11 +84,12 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Correction:</strong> If any information is incorrect, you can
-          request a correction.
+          request a correction. You can also edit your personal data in{" "}
+          <Link href={`${envConfig.BASE_URL}/profile`}>your profile</Link>
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}
-          <strong>work email and full name</strong>. However,{" "}
+          <strong>personal email, work email and full name</strong>. However,{" "}
           <strong>
             Steam ID, nickname, performance data, and team or organization
             association cannot be deleted
@@ -103,10 +106,14 @@ export default function PrivacyPolicy() {
       <p>
         We may share certain data with third parties, but{" "}
         <strong>
-          we never share your full name or work email with any third party.
+          we never share your full name, work email or personal email with any
+          third party.
         </strong>
       </p>
-      <p>We may share the following data:</p>
+      <p>
+        We may share information, such as SteamID and nickname, to the
+        following:
+      </p>
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
           <strong>eSports Partners (e.g., Faceit):</strong> To facilitate

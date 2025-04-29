@@ -93,6 +93,9 @@ importers:
       mysql2:
         specifier: 3.14.0
         version: 3.14.0
+      nodemailer:
+        specifier: 6.10.1
+        version: 6.10.1
       passport:
         specifier: 0.7.0
         version: 0.7.0
@@ -166,6 +169,9 @@ importers:
       '@types/node':
         specifier: 22.14.1
         version: 22.14.1
+      '@types/nodemailer':
+        specifier: 6.4.17
+        version: 6.4.17
       '@types/passport':
         specifier: 1.0.17
         version: 1.0.17
@@ -2382,6 +2388,9 @@ packages:
   '@types/node@22.14.1':
     resolution: {integrity: sha512-u0HuPQwe/dHrItgHHpmw3N2fYCR6x4ivMNbPHRkBVP4CvN+kiRrKHWk3i8tXiO/joPwXLMYvF9TTF0eqgHIuOw==}
 
+  '@types/nodemailer@6.4.17':
+    resolution: {integrity: sha512-I9CCaIp6DTldEg7vyUTZi8+9Vo0hi1/T8gv3C89yk1rSAAzoKQ8H8ki/jBYJSFoH/BisgLP8tkZMlQ91CIquww==}
+
   '@types/passport-steam@1.0.6':
     resolution: {integrity: sha512-18oLDA1NkjzpCpwRtcIOIA0v6byklu81KsDxIRUaV9Wjmy26al+HCGlIrQYiyNxzR+dZfR/j3/D3GL5xLv3jJA==}
 
@@ -4543,6 +4552,10 @@ packages:
 
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
+
+  nodemailer@6.10.1:
+    resolution: {integrity: sha512-Z+iLaBGVaSjbIzQ4pX6XV41HrooLsQ10ZWPUehGmuantvzWoDVBnmsdUcOIDM1t+yPor5pDhVlDESgOMEGxhHA==}
+    engines: {node: '>=6.0.0'}
 
   nodemon@3.1.9:
     resolution: {integrity: sha512-hdr1oIb2p6ZSxu3PB2JWWYS7ZQ0qvaZsc3hK8DR8f02kRzc8rjYmxAIvdz+aYC+8F2IjNaB7HMcSDg8nQpJxyg==}
@@ -8042,6 +8055,10 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+  '@types/nodemailer@6.4.17':
+    dependencies:
+      '@types/node': 22.14.1
+
   '@types/passport-steam@1.0.6':
     dependencies:
       '@types/express': 5.0.1
@@ -10605,6 +10622,8 @@ snapshots:
   node-int64@0.4.0: {}
 
   node-releases@2.0.19: {}
+
+  nodemailer@6.10.1: {}
 
   nodemon@3.1.9:
     dependencies:

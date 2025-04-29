@@ -22,7 +22,10 @@
         "FRONTEND_URL",
         "BACKEND_URL",
         "BASE_PATH",
-        "PRIVACY_POLICY_VERSION"
+        "PRIVACY_POLICY_VERSION",
+        "SMTP_HOST",
+        "SMTP_USER",
+        "SMTP_PASSWORD"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

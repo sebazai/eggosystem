@@ -14,6 +14,7 @@ import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
 import leaderboardsRouter from "./v1/leaderboards.routes";
 import registrationsRouter from "./v1/season-team-registration.routes";
+import { verifyEmailController } from "../controllers/account.controllers";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -33,6 +34,8 @@ v1Router.use("/leaderboards", leaderboardsRouter);
 v1Router.use("/now", nowRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
+v1Router.post("/verify-email", verifyEmailController);
+
 v1Router.use("/", async (req, res) => {
   console.warn("API root endpoint accessed");
   res.status(200).json({ message: "API is running" });

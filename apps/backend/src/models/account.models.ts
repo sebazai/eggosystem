@@ -11,6 +11,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 import { getConnection } from "../db/mysqlConnection";
 import { expireInOneDay, redisClient } from "../utils/redisClient";
+import { sendVerificationEmail } from "../services/email.services";
 
 export const updateAccount = async (
   accountId: number,
@@ -33,12 +34,20 @@ export const updateAccount = async (
   const updatedUser = {
     nickname: formData.nickname,
     full_name: formData.full_name,
-    work_email: formData.work_email ?? null,
+    work_email: formData.work_email ? formData.work_email : null,
     work_email_token: hasWorkEmailChanged ? workEmailVerificationToken : null,
     work_email_token_expires_at: hasWorkEmailChanged ? oneDayLater : null,
-    email: formData.email ?? null,
+    work_email_verified:
+      hasWorkEmailChanged || !formData.work_email
+        ? false
+        : existingAccount.work_email_verified,
+    email: formData.email ? formData.email : null,
     email_token: hasEmailChanged ? emailVerificationToken : null,
     email_token_expires_at: hasEmailChanged ? oneDayLater : null,
+    email_verified:
+      hasEmailChanged || !formData.email
+        ? false
+        : existingAccount.email_verified,
     discord: formData.discord ?? null
   } satisfies UpdateUserProfile;
 
@@ -77,31 +86,33 @@ export const updateAccount = async (
 
     await connection.commit();
 
-    if (hasEmailChanged) {
+    if (hasEmailChanged && formData.email) {
       await redisClient.set(
         `verify:email:${emailVerificationToken}`,
         JSON.stringify({
           accountId,
-          email: formData.email
+          email: formData.email,
+          expirationTime: oneDayLater.getTime()
         }),
         "EX",
         expireInOneDay
       );
 
-      // await sendVerificationEmail(formData.email, emailVerificationToken);
+      sendVerificationEmail(formData.email, emailVerificationToken);
     }
 
-    if (hasWorkEmailChanged) {
+    if (hasWorkEmailChanged && formData.work_email) {
       await redisClient.set(
         `verify:work_email:${workEmailVerificationToken}`,
         JSON.stringify({
           accountId,
-          work_email: formData.work_email
+          work_email: formData.work_email,
+          expirationTime: oneDayLater.getTime()
         }),
         "EX",
         expireInOneDay
       );
-      // await sendVerificationEmail(formData.work_email, workEmailVerificationToken);
+      sendVerificationEmail(formData.work_email, workEmailVerificationToken);
     }
 
     const baseMsg = "Profile updated successfully.";
@@ -146,15 +157,29 @@ export const updateAccountData = async (
     connection
   );
   return runQuery(
-    `UPDATE Accounts SET full_name = ?,  work_email = ?, work_email_token = ?, work_email_token_expires_at = ?, email = ?, email_token = ?, email_token_expires_at = ?, discord = ? WHERE id = ?`,
+    `UPDATE Accounts 
+      SET 
+        full_name = ?,  
+        work_email = ?, 
+        work_email_token = ?, 
+        work_email_token_expires_at = ?, 
+        work_email_verified = ?, 
+        email = ?, 
+        email_token = ?, 
+        email_token_expires_at = ?, 
+        email_verified = ?, 
+        discord = ? 
+      WHERE id = ?`,
     [
       updatedUser.full_name,
       updatedUser.work_email,
       updatedUser.work_email_token,
       updatedUser.work_email_token_expires_at,
+      updatedUser.work_email_verified,
       updatedUser.email,
       updatedUser.email_token,
       updatedUser.email_token_expires_at,
+      updatedUser.email_verified,
       updatedUser.discord,
       accountId
     ],
