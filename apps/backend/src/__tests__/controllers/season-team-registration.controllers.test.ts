@@ -64,6 +64,9 @@ describe("addSignupForSeason - database transaction testing", () => {
     jest
       .spyOn(seasonTeamRegistrationServices, "validatePlayersFromDBForSignup")
       .mockResolvedValue();
+    jest
+      .spyOn(teamModels, "getTeamWithIdWithoutOrg")
+      .mockResolvedValue([undefined]);
   });
 
   it("should rollback and return 500 if an error occurs in transaction during handleSeasonTeamRegistration", async () => {

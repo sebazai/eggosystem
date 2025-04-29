@@ -25,7 +25,7 @@ import {
 } from "../models/season-team-registration.models";
 
 import { insertOrganization } from "../models/organization.models";
-import { insertTeam } from "../models/team.models";
+import { getTeamWithIdWithoutOrg, insertTeam } from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
 import { areSteamProfilesPublic } from "./steam.services";
 import { getPlayerDetailsBySteamId } from "../models/player.models";
@@ -45,6 +45,7 @@ import {
   getPlayerHoursForSteamAppId,
   getPlayerRankForPlatform
 } from "./player-ranks.services";
+import { runQuery } from "../db/mysqlRunQuery";
 
 export const ensurePlayerSteamProfilesPublic = async (
   players: SignupPlayerType[]
@@ -453,9 +454,14 @@ export const handleSignupFormForSeason = async (
     throw new BadRequestError("Could not determine co-captain.");
   }
 
+  // If someone selected a team that is not tied to organization
+  const [rogueTeam] = await getTeamWithIdWithoutOrg(formData.teamId);
+
+  console.log(rogueTeam);
+
   // Handle new org and new team.
   if (formData.organizationId === -1) {
-    if (formData.teamId !== -1) {
+    if (formData.teamId !== -1 && !rogueTeam) {
       throw new BadRequestError(
         "Cannot create a new organization with an existing team"
       );
@@ -470,6 +476,17 @@ export const handleSignupFormForSeason = async (
         },
         connection
       );
+      if (rogueTeam) {
+        await runQuery(
+          "UPDATE Teams SET organization_id = ? WHERE id = ?",
+          [newOrg.insertId, formData.teamId],
+          connection
+        );
+        return {
+          team_id: formData.teamId,
+          organization_id: newOrg.insertId
+        };
+      }
       if (formData.newTeam) {
         const newTeam = await insertTeam(
           {
@@ -504,36 +521,34 @@ export const handleSignupFormForSeason = async (
 
   // Handle existing org and new team
   if (formData.organizationId !== -1) {
-    if (formData.teamId === -1) {
-      if (formData.newTeam) {
-        const newTeam = await insertTeam(
-          {
-            name: formData.newTeam.name,
-            organization_id: formData.organizationId,
-            org_approved: false
-          },
-          connection
-        );
+    if (formData.teamId === -1 && formData.newTeam) {
+      const newTeam = await insertTeam(
+        {
+          name: formData.newTeam.name,
+          organization_id: formData.organizationId,
+          org_approved: false
+        },
+        connection
+      );
 
-        await handleSeasonTeamRegistration(
-          season.id,
-          season.platform,
-          season.app_id,
-          newTeam.insertId,
-          {
-            captain_steam_id: captainSteamId,
-            co_captain_steam_id: coCaptainSteamId,
-            external_platform_id: formData.teamExternalId
-          },
-          formData.players,
-          connection
-        );
+      await handleSeasonTeamRegistration(
+        season.id,
+        season.platform,
+        season.app_id,
+        newTeam.insertId,
+        {
+          captain_steam_id: captainSteamId,
+          co_captain_steam_id: coCaptainSteamId,
+          external_platform_id: formData.teamExternalId
+        },
+        formData.players,
+        connection
+      );
 
-        return {
-          team_id: newTeam.insertId,
-          organization_id: formData.organizationId
-        };
-      }
+      return {
+        team_id: newTeam.insertId,
+        organization_id: formData.organizationId
+      };
     }
   }
 
@@ -550,9 +565,17 @@ export const handleSignupFormForSeason = async (
       formData.organizationId
     );
 
-    if (!isTeamPartOfOrg) {
+    if (!isTeamPartOfOrg && !rogueTeam) {
       throw new BadRequestError(
         "Team does not belong to the selected organization"
+      );
+    }
+
+    if (rogueTeam) {
+      await runQuery(
+        "UPDATE Teams SET organization_id = ? WHERE id = ?",
+        [formData.organizationId, formData.teamId],
+        connection
       );
     }
 

@@ -163,6 +163,7 @@ export const TabTeam = ({
         <Checkbox
           id="toggleTeamsWithoutOrg"
           checked={fetchTeamsWithoutOrg}
+          disabled={isEditMode}
           onCheckedChange={(checked) => setFetchTeamsWithoutOrg(!!checked)}
         />
         <label

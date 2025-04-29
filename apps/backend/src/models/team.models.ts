@@ -579,7 +579,18 @@ export const getTopTeams = async ({
 };
 
 export const getTeamsWithoutOrgs = () => {
-  return runQuery<Array<Team[]>>(
+  return runQuery<Array<Team>>(
     "SELECT * FROM Teams WHERE organization_id IS NULL;"
+  );
+};
+
+export const getTeamWithIdWithoutOrg = (
+  teamId: number,
+  connection?: PoolConnection
+) => {
+  return runQuery<Array<Team | undefined>>(
+    "SELECT * FROM Teams WHERE id = ? AND organization_id IS NULL;",
+    [teamId],
+    connection
   );
 };

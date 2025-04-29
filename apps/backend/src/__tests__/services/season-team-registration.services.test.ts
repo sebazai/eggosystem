@@ -17,9 +17,12 @@ import {
 import {
   cleanupRolesAndPermissions,
   cleanupTestUsers,
+  clearOrganization,
+  clearRogueTeam,
   clearSeasonPlayerRanks,
   insertCaptainRoleAndPermission,
   insertOneTestUser,
+  insertRogueTeam,
   insertTestSeason,
   insertTestUsersForSignup,
   removeTestOrg,
@@ -260,6 +263,57 @@ describe("Season team registration services", () => {
           );
           expect(errAsBadReq.status).toEqual(400);
         }
+      });
+    });
+    describe("org and rogue team", () => {
+      let team: { insertId: number };
+      let orgToClear: number | undefined;
+      beforeEach(async () => {
+        team = await insertRogueTeam();
+      });
+      afterEach(async () => {
+        await clearRogueTeam();
+        await clearOrganization(orgToClear);
+      });
+      it("Should add the rogue team to existing org with org_approved false", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        formData.organizationId = 1;
+        formData.teamId = team.insertId;
+        await registrationServices.handleSignupFormForSeason(
+          seasonDetails,
+          formData
+        );
+        const [updatedTeam] = await runQuery<Array<Team>>(
+          "SELECT * FROM Teams WHERE id = ?",
+          [team.insertId]
+        );
+        expect(updatedTeam.organization_id).toEqual(1);
+        expect(updatedTeam.org_approved).toEqual(false);
+      });
+      it("Should add the rogue team to new org with org_approved false", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        formData.organizationId = -1;
+        formData.newOrganization = {
+          name: "Heppa",
+          organization_code: "1234567-9",
+          website: "https://kanaliiga.org"
+        };
+        formData.teamId = team.insertId;
+        await registrationServices.handleSignupFormForSeason(
+          seasonDetails,
+          formData
+        );
+        const [updatedTeam] = await runQuery<Array<Team>>(
+          "SELECT * FROM Teams WHERE id = ?",
+          [team.insertId]
+        );
+        const [lastInsertId] = await runQuery<
+          Array<{ "LAST_INSERT_ID()": number }>
+        >("SELECT LAST_INSERT_ID();");
+        orgToClear = lastInsertId["LAST_INSERT_ID()"];
+
+        expect(updatedTeam.organization_id).toEqual(orgToClear);
+        expect(updatedTeam.org_approved).toEqual(false);
       });
     });
   });

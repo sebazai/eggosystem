@@ -192,3 +192,21 @@ export const setCaptainEditRegistrationForAccountId = async (
     [accountId, role.id, 1]
   );
 };
+
+export const insertRogueTeam = (teamName?: string) => {
+  return runQuery<{ insertId: number }>("INSERT INTO Teams (name) VALUES (?)", [
+    teamName ?? "Testing team"
+  ]);
+};
+
+export const clearRogueTeam = (teamName?: string) => {
+  return runQuery<{ insertId: number }>("DELETE FROM Teams WHERE name = ?", [
+    teamName ?? "Testing team"
+  ]);
+};
+
+export const clearOrganization = (orgId?: number) => {
+  if (orgId) {
+    return runQuery("DELETE FROM Organizations WHERE id = ?", [orgId]);
+  }
+};
