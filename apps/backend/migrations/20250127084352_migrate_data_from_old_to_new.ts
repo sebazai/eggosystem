@@ -147,8 +147,19 @@ const insertSeasonLeagues = async (knex: Knex) => {
       game_id: 1,
       name: "Season 3",
       full_name: "CS2 Season 3",
-      start_date: "2024-02-02",
+      start_date: "2025-02-02",
+      end_date: "2025-05-17",
+      platform: "faceit"
+    },
+    {
+      id: 16,
+      game_id: 1,
+      name: "Season 4",
+      full_name: "CS2 Season 4",
+      start_date: "2025-09-01",
       end_date: null,
+      signup_start_date: "2025-06-01 00:00:00",
+      signup_end_date: "2025-08-22 23:59:59",
       platform: "faceit"
     }
   ]);

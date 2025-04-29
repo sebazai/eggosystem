@@ -1535,13 +1535,15 @@ describe("Season team registration services", () => {
     });
     describe("with new account", () => {
       beforeEach(async () => {
-        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
         await insertOneTestUser(
           100000,
           "12345678912345601",
           "Nakki Kauppias",
           "nakki#123"
         );
+      });
+      afterEach(async () => {
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
       });
       it("should add player to registration", async () => {
         const addedOne =
@@ -1571,7 +1573,6 @@ describe("Season team registration services", () => {
     });
     describe("with 6 players", () => {
       beforeEach(async () => {
-        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
         await insertOneTestUser(
           100000,
           "12345678912345601",
@@ -1579,6 +1580,9 @@ describe("Season team registration services", () => {
           "nakki#123"
         );
         await setSeasonTeamPlayer("12345678912345601");
+      });
+      afterEach(async () => {
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
       });
       it("should remove Nakki Kauppias from team registration", async () => {
         const addedOne =
@@ -1600,8 +1604,6 @@ describe("Season team registration services", () => {
     });
     describe("with two new accounts", () => {
       beforeEach(async () => {
-        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
-        await runQuery("DELETE FROM Accounts WHERE id = ?", [100001]);
         await insertOneTestUser(
           100000,
           "12345678912345601",
@@ -1614,6 +1616,10 @@ describe("Season team registration services", () => {
           "Saippua Kauppias",
           "soap#123"
         );
+      });
+      afterEach(async () => {
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
+        await runQuery("DELETE FROM Accounts WHERE id = ?", [100001]);
       });
       it("should add two player to registration and remove one existing", async () => {
         const addedOne =

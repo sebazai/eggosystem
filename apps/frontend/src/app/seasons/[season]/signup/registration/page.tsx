@@ -21,7 +21,7 @@ export default async function SignupPage({ params }: SignupPageProps) {
           <SignupForm seasonId={season} platform={data.platform} />
         </div>
 
-        <div className="min-w-xxs sm:max-w-xl space-y-6">
+        <div className="min-w-xxs sm:max-w-3xl space-y-6">
           <SignupInfo platform={data.platform} appId={data.app_id} />
         </div>
       </div>

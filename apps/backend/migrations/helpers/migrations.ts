@@ -272,15 +272,15 @@ export const migrateAlmostErrything = async () => {
   await runNewDbQuery("UPDATE Teams SET name = LTRIM(RTRIM(name));");
   console.log("Teams migrated");
 
-  console.log("Getting capitans for season 11-14");
+  console.log("Getting capitans for season 11-15");
   const seasonTeamsRegistrations = await runNewDbQuery<any>(
-    "SELECT st.season_id, st.team_id, t.name FROM SeasonTeamRegistrations st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14)"
+    "SELECT st.season_id, st.team_id, t.name FROM SeasonTeamRegistrations st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14, 15)"
   );
   for (const st of seasonTeamsRegistrations) {
     const teamName = st.name;
     const seasonId = st.season_id;
     const registrationID = await runOldDbQuery<any>(
-      `SELECT registrationID FROM teamsbuild_s${seasonId} WHERE LOWER(Name) = LOWER(?)`,
+      `SELECT registrationID FROM ${seasonId === 15 ? `teamsbuild` : `teamsbuild_s${seasonId}`} WHERE LOWER(Name) = LOWER(?)`,
       [teamName]
     );
     if (registrationID.length !== 0) {
