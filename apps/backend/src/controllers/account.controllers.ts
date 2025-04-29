@@ -43,8 +43,8 @@ export const sendVerificationEmails = async (
       oneDayInMillis
     );
     await runQuery(
-      "UPDATE Account SET email_token = ?, email_token_expires_at",
-      [token, new Date(oneDayInMillis)]
+      "UPDATE Accounts SET email_token = ?, email_token_expires_at = ? WHERE id = ?",
+      [token, new Date(oneDayInMillis), account.id]
     );
   }
 
@@ -63,8 +63,8 @@ export const sendVerificationEmails = async (
       oneDayInMillis
     );
     await runQuery(
-      "UPDATE Account SET work_email_token = ?, work_email_token_expires_at",
-      [token, new Date(oneDayInMillis)]
+      "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
+      [token, new Date(oneDayInMillis), account.id]
     );
   }
 
