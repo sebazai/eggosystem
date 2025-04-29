@@ -531,7 +531,7 @@ export const migrateRanks = async () => {
     const query = `INSERT INTO SeasonPlayerRanks (steam_id, season_id, kukko_date, csgo_rank, cs2_rank, cs_hours, faceit_level, faceit_elo, faceit_kd, faceit_date, kana_elo, esportal_kd, esportal_elo, esportal_rank) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
     await runNewDbQuery(query, [
       rank.steamID,
-      "14",
+      "15",
       rank.kukkoDate,
       rank.rank,
       rank.cs2rank,

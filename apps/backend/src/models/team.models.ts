@@ -577,3 +577,9 @@ export const getTopTeams = async ({
 
   return results;
 };
+
+export const getTeamsWithoutOrgs = () => {
+  return runQuery<Array<Team[]>>(
+    "SELECT * FROM Teams WHERE organization_id IS NULL;"
+  );
+};

@@ -7,7 +7,8 @@ import {
   getTeamMatches,
   getTeamMapStats,
   getTopTeams,
-  getTeamById
+  getTeamById,
+  getTeamsWithoutOrgs
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 
@@ -72,4 +73,12 @@ export const getTopTeamsController = async (
   const topTeams = await getTopTeams(req.parsedParams);
 
   res.json(topTeams);
+};
+
+export const getTeamsWithoutOrgController = async (
+  req: Request,
+  res: Response
+) => {
+  const teams = await getTeamsWithoutOrgs();
+  res.json(teams);
 };
