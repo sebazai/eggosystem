@@ -1,17 +1,25 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: Buffer.from(
-      process.env.SMTP_PASSWORD ?? "ZW56b2oK",
-      "base64"
-    ).toString("utf8")
+function createTransporter() {
+  if (process.env.NODE_ENV === "test") {
+    return undefined;
   }
-});
+
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: Buffer.from(
+        process.env.SMTP_PASSWORD ?? "ZW56b2oK",
+        "base64"
+      ).toString("utf8")
+    }
+  });
+}
+
+const transporter = createTransporter();
 
 export const sendVerificationEmail = (to: string, token: string) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
@@ -61,5 +69,5 @@ export const sendVerificationEmail = (to: string, token: string) => {
     }
   };
 
-  transporter.sendMail(mailOptions);
+  transporter?.sendMail(mailOptions);
 };
