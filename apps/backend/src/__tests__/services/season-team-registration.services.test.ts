@@ -15,12 +15,10 @@ import {
   type Team
 } from "@eggosystem/types";
 import {
-  cleanupRolesAndPermissions,
   cleanupTestUsers,
   clearOrganization,
   clearRogueTeam,
   clearSeasonPlayerRanks,
-  insertCaptainRoleAndPermission,
   insertOneTestUser,
   insertRogueTeam,
   insertTestSeason,
@@ -85,12 +83,10 @@ describe("Season team registration services", () => {
   beforeAll(async () => {
     await insertTestSeason(insertSeason);
     await insertTestUsersForSignup();
-    await insertCaptainRoleAndPermission();
   });
   afterAll(async () => {
     await removeTestSeason(1);
     await cleanupTestUsers();
-    await cleanupRolesAndPermissions();
   });
   describe("handleSignupFormForSeason", () => {
     beforeEach(() => {

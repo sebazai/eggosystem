@@ -82,32 +82,10 @@ export const insertTestUsersForSignup = async () => {
   }
 };
 
-export const insertCaptainRoleAndPermission = async () => {
-  const insertRole = await runQuery<{ insertId: number }>(
-    "INSERT INTO Roles (role_name) VALUES (?)",
-    ["captain"]
-  );
-  const insertPermission = await runQuery<{ insertId: number }>(
-    "INSERT INTO Permissions (permission_name) VALUES (?)",
-    ["edit-registration"]
-  );
-  await runQuery<{ insertId: number }>(
-    "INSERT INTO RolePermissions (role_id, permission_id) VALUES (?, ?)",
-    [insertRole.insertId, insertPermission.insertId]
-  );
-};
-
 export const cleanupTestUsers = async () => {
   for (const player of validSignupData.players) {
     await runQuery("DELETE FROM Accounts WHERE id = ?", [player.accountId]);
   }
-};
-
-export const cleanupRolesAndPermissions = async () => {
-  await runQuery("DELETE FROM Roles WHERE role_name = ?", ["captain"]);
-  await runQuery("DELETE FROM Permissions WHERE permission_name = ?", [
-    "edit-registration"
-  ]);
 };
 
 export const removeTestSeason = async (seasonId: number) => {

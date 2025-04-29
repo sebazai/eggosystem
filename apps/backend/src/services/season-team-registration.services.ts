@@ -457,8 +457,6 @@ export const handleSignupFormForSeason = async (
   // If someone selected a team that is not tied to organization
   const [rogueTeam] = await getTeamWithIdWithoutOrg(formData.teamId);
 
-  console.log(rogueTeam);
-
   // Handle new org and new team.
   if (formData.organizationId === -1) {
     if (formData.teamId !== -1 && !rogueTeam) {
