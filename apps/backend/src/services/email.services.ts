@@ -6,7 +6,10 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD
+    pass: Buffer.from(
+      process.env.SMTP_PASSWORD ?? "ZW56b2oK",
+      "base64"
+    ).toString("utf8")
   }
 });
 
