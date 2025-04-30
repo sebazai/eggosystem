@@ -30,8 +30,12 @@ import {
 } from "@/components/ui/sheet";
 import UserMenuDropdown from "./user-menu-dropdown";
 import { MobileUserMenu } from "./mobile/user-menu";
-import { createNextImageUrl } from "@/lib/utils";
-import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
+import { cn, createNextUrl } from "@/lib/utils";
+import {
+  ReadonlyURLSearchParams,
+  usePathname,
+  useSearchParams
+} from "next/navigation";
 
 interface MenuItemLink {
   title: string;
@@ -59,7 +63,7 @@ interface NavbarProps {
 const defaultProps: NavbarProps = {
   logo: {
     url: "/",
-    src: createNextImageUrl("/images/kanaliiga-logo-1800px.png"),
+    src: createNextUrl("/images/kanaliiga-logo-1800px.png"),
     alt: "Kanaliiga logo"
   },
   menu: [
@@ -107,6 +111,7 @@ const defaultProps: NavbarProps = {
 };
 
 export const Navigation = (props: NavbarProps) => {
+  const pathname = usePathname();
   const navigationProps =
     Object.keys(props).length === 0 ? defaultProps : props;
   const { logo, menu, mobileExtraLinks } = navigationProps;
@@ -167,20 +172,26 @@ export const Navigation = (props: NavbarProps) => {
     <div
       ref={navRef}
       id="navigation"
-      className={`pointer-events-none sticky top-0 w-full px-4 sm:landscape:px-4 md:landscape:px-8 sm:px-8 lg:px-16 backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs z-50 transition-all duration-300 ${isScrolled ? "scrolled" : ""}`}
+      className={cn(
+        `pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        pathname !== "/"
+          ? "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs"
+          : "",
+        isScrolled || pathname !== "/" ? "sticky top-0" : "absolute top-0"
+      )}
     >
-      <div className="pt-6 pb-4 md:pt-10 md:pb-6 mx-auto max-w-screen-2xl">
+      <div className="py-4 lg:py-8 mx-auto max-w-screen-2xl">
         {/* Desktop Navigation - Sticky by Default */}
         <div className="hidden w-full items-center justify-center gap-6 md:flex pointer-events-auto">
           {logo && (
             <Link href={logo.url}>
               <Image
                 ref={logoRef}
-                className="logo transition-all"
+                className="logo transition-all duration-500"
                 src={logo.src}
                 alt={logo.alt}
-                width={isScrolled ? 80 : 175}
-                height={isScrolled ? 80 : 175}
+                width={isScrolled || pathname === "/" ? 80 : 153}
+                height={isScrolled || pathname === "/" ? 80 : 175}
               />
             </Link>
           )}

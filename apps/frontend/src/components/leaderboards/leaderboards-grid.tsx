@@ -3,7 +3,7 @@ import Link from "next/link";
 import React from "react";
 import { Skeleton } from "../ui/skeleton";
 import {
-  createNextImageUrl,
+  createNextUrl,
   createStatsKanaliigaImageUrl,
   type FilterParamsQuery
 } from "@/lib/utils";
@@ -75,7 +75,7 @@ export const LeaderboardsGrid = ({
 
     // For logos that start with /, use createNextImageUrl
     if (logo.startsWith("/")) {
-      return createNextImageUrl(logo);
+      return createNextUrl(logo);
     }
 
     // For any other case, try to make it a valid path

@@ -17,7 +17,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch
 } from "react-hook-form";
-import { createNextImageUrl } from "@/lib/utils";
+import { createNextUrl } from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -426,7 +426,7 @@ export const TabPlayers = ({
 
                     {player.captain && (
                       <Image
-                        src={createNextImageUrl("/images/captain.png")}
+                        src={createNextUrl("/images/captain.png")}
                         alt="Captain"
                         width={30}
                         height={23}
@@ -434,7 +434,7 @@ export const TabPlayers = ({
                     )}
                     {player.coCaptain && (
                       <Image
-                        src={createNextImageUrl("/images/co-captain.png")}
+                        src={createNextUrl("/images/co-captain.png")}
                         alt="Co-Captain"
                         width={30}
                         height={23}

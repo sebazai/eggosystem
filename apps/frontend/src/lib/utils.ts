@@ -73,7 +73,7 @@ export const expressFetcher = async <T>(
   return res.json();
 };
 
-export const createNextImageUrl = (url: string) => {
+export const createNextUrl = (url: string) => {
   if (process.env.NEXT_PUBLIC_BASE_PATH) {
     return `${process.env.NEXT_PUBLIC_BASE_PATH}${url}`;
   }

@@ -1,0 +1,277 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { cn, createNextUrl } from "@/lib/utils";
+import Image from "next/image";
+import Link from "next/link";
+
+const overlays = [
+  {
+    id: 1,
+    title: "The Battle Begins.",
+    subtitle: "CS2 Corporate eSports Season 4 Starts September 1st."
+  },
+  {
+    id: 2,
+    title: "Last Season’s Stats",
+    subtitle: "850+ players · 120+ teams · 800+ matches"
+  },
+  {
+    id: 3,
+    title: "Think Your Team Has What It Takes?",
+    subtitle: "Rally your colleagues. Train hard. Rise to the top."
+  }
+];
+
+type HeroSectionProps = {
+  device?: string;
+};
+
+export default function HeroSection({ device }: HeroSectionProps) {
+  const [step, setStep] = useState(0);
+  const [isMobile, setIsMobile] = useState<boolean>(device === "mobile");
+  const [splashComplete, setSplashComplete] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const [videoSrc, setVideoSrc] = useState<string>(
+    device === "mobile"
+      ? createNextUrl(
+          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
+        )
+      : createNextUrl(
+          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
+        )
+  );
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const router = useRouter();
+
+  // Handle screen size changes
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) {
+      setVideoSrc(
+        createNextUrl(
+          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
+        )
+      );
+      return;
+    }
+    setVideoSrc(
+      createNextUrl(
+        "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
+      )
+    );
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (splashComplete) {
+      const interval = setInterval(() => {
+        setStep((prev) => (prev < overlays.length ? prev + 1 : prev));
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [splashComplete]);
+
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setHasScrolled(window.scrollY > 0);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onLoadedData = () => {
+      // Delay playing video until splash screen has shown
+      setTimeout(() => {
+        setSplashComplete(true);
+        video.play().catch(console.error);
+      }, 5000); // 3-second splash
+    };
+
+    video.addEventListener("canplay", onLoadedData);
+    return () => video.removeEventListener("canplay", onLoadedData);
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load();
+    }
+  }, [videoSrc]);
+
+  return (
+    <>
+      <motion.div
+        className={cn(
+          "absolute inset-0 z-20 flex mt-20 sm:mt-5 flex-col items-center justify-center bg-black transition-opacity duration-500 mx-4 sm:mx-2",
+          splashComplete ? "opacity-0 pointer-events-none" : "opacity-100"
+        )}
+      >
+        <motion.h1
+          layoutId="hero-title"
+          className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4"
+        >
+          The Battle Begins.
+        </motion.h1>
+        <motion.p
+          className="text-sm xxs:text-xl md:text-2xl text-white/70 mb-10 text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0, duration: 4 }}
+        >
+          Presented by our proud sponsors & partners
+        </motion.p>
+
+        {/* Sponsor Logos Row */}
+        <motion.div
+          className="flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 bg-white/70 rounded-lg mb-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          <Image
+            src={createNextUrl("/images/supermetrics.png")}
+            className="w-[150px] h-[23px] sm:w-[300px] sm:h-[46px]"
+            alt="Elisa Esports"
+            width={150}
+            height={89}
+          />
+        </motion.div>
+        <motion.div
+          className="flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 bg-white/70 rounded-lg"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          <Image
+            src={createNextUrl("/images/elisa-esports-black.png")}
+            className="w-[75px] h-[44px] sm:w-[150px] sm:h-[89px]"
+            alt="Elisa Esports"
+            width={150}
+            height={89}
+          />
+          <Image
+            src={createNextUrl("/images/visma-black.png")}
+            className="w-[110px] h-[20px] sm:w-[220px] sm:h-[41px]"
+            alt="Visma"
+            width={220}
+            height={41}
+          />
+          <Image
+            src={createNextUrl("/images/atflow-black.png")}
+            className="w-[100px] h-[30px] sm:w-[200px] sm:h-[59px]"
+            alt="Atflow"
+            width={200}
+            height={59}
+          />
+        </motion.div>
+
+        {/* Optional: subtle spinner */}
+        <motion.div
+          className="mt-10 w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"
+          aria-hidden
+        />
+      </motion.div>
+
+      <motion.section
+        className="relative w-full h-screen overflow-hidden max-w-screen-3xl mx-auto"
+        style={{
+          marginTop: hasScrolled ? `calc(-1 * var(--nav-height))` : undefined
+        }}
+        id="cta"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: splashComplete ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <video
+          ref={videoRef}
+          className={cn("absolute top-0 left-0 w-full h-full z-0 object-fill")}
+          preload="auto"
+          muted
+          loop
+          playsInline
+        >
+          <source src={videoSrc} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/50 z-10" />
+
+        {/* Overlay Text */}
+        <div className="relative z-20 flex justify-center h-full pt-[25vh]">
+          <AnimatePresence mode="wait">
+            {(step === 0 || step > 0) && (
+              <motion.div
+                key={overlays[step]?.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.8 }}
+                className="text-center px-4"
+              >
+                <motion.h1
+                  layoutId="hero-title"
+                  className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4"
+                >
+                  {overlays[step]?.title}
+                </motion.h1>
+
+                <p className="text-sm xxs:text-xl md:text-2xl text-white/70 mb-10 text-center">
+                  {overlays[step]?.subtitle}
+                </p>
+              </motion.div>
+            )}
+
+            {step === overlays.length && (
+              <motion.div
+                key="register-button"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -50 }}
+                transition={{ duration: 0.8 }}
+                className="text-center flex flex-col items-center justify-center"
+              >
+                <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4">
+                  Season Starts September 1st
+                </motion.h1>
+                <Button
+                  onClick={() => {
+                    router.push("/seasons/16/signup");
+                  }}
+                  className="text-lg py-2 px-6 sm:px-10 sm:py-8 hover:bg-primary/80 transition-colors duration-300"
+                >
+                  Sign Up Now
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <div className="absolute bottom-4 right-4 z-30 text-white text-xs">
+          <Link
+            href="https://www.twitch.tv/slougani"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs sm:text-base hover:text-white/80 hover:underline transition-colors duration-300"
+          >
+            Video by Slougani
+          </Link>
+        </div>
+      </motion.section>
+    </>
+  );
+}

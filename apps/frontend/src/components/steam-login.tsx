@@ -3,7 +3,7 @@ import { envConfig } from "@/configs/env";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "./ui/button";
-import { createNextImageUrl } from "@/lib/utils";
+import { createNextUrl } from "@/lib/utils";
 
 // components/SteamLoginButton.tsx
 export const SteamLoginButton = ({
@@ -30,7 +30,7 @@ export const SteamLoginButton = ({
       data-testid="steam-login-button"
     >
       <Image
-        src={createNextImageUrl("/images/sits_01.png")}
+        src={createNextUrl("/images/sits_01.png")}
         alt="Steam login"
         width={180}
         height={35}

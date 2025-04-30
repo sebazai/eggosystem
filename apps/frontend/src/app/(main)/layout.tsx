@@ -1,8 +1,8 @@
-import "./globals.css";
+import "../globals.css";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
-import { ThemeProvider } from "../providers/theme-provider";
+import { ThemeProvider } from "../../providers/theme-provider";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
@@ -24,7 +24,7 @@ const kanaHeadingFonts = localFont({
   fallback: ["system-ui", "arial"],
   src: [
     {
-      path: "../../public/fonts/NEXT_ART_Heavy.otf",
+      path: "../../../public/fonts/NEXT_ART_Heavy.otf",
       weight: "400",
       style: "normal"
     }
@@ -36,22 +36,22 @@ const kanaFonts = localFont({
   fallback: ["system-ui", "arial"],
   src: [
     {
-      path: "../../public/fonts/VeraMono.ttf",
+      path: "../../../public/fonts/VeraMono.ttf",
       weight: "400",
       style: "normal"
     },
     {
-      path: "../../public/fonts/VeraMoIt.ttf",
+      path: "../../../public/fonts/VeraMoIt.ttf",
       weight: "400",
       style: "italic"
     },
     {
-      path: "../../public/fonts/VeraMoBd.ttf",
+      path: "../../../public/fonts/VeraMoBd.ttf",
       weight: "700",
       style: "normal"
     },
     {
-      path: "../../public/fonts/VeraMoBI.ttf",
+      path: "../../../public/fonts/VeraMoBI.ttf",
       weight: "700",
       style: "italic"
     }
@@ -63,12 +63,12 @@ const poppinsFont = localFont({
   fallback: ["system-ui", "arial"],
   src: [
     {
-      path: "../../public/fonts/poppins/Poppins-Regular.ttf",
+      path: "../../../public/fonts/poppins/Poppins-Regular.ttf",
       weight: "400",
       style: "normal"
     },
     {
-      path: "../../public/fonts/poppins/Poppins-Bold.ttf",
+      path: "../../../public/fonts/poppins/Poppins-Bold.ttf",
       weight: "700",
       style: "normal"
     }
@@ -132,13 +132,7 @@ export default function RootLayout({
                   <ScrollToTop />
                   <div className="flex flex-col min-h-svh min-w-[200px] w-full">
                     <Navigation />
-                    <div className="flex flex-grow justify-center w-full">
-                      <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
-                        <main className="md:py-6 py-4" id="main-content">
-                          {children}
-                        </main>
-                      </div>
-                    </div>
+                    <main id="main-content">{children}</main>
                     <Footer />
                   </div>
                 </FilterProvider>

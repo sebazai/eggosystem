@@ -1,4 +1,4 @@
-import { createNextImageUrl } from "@/lib/utils";
+import { createNextUrl } from "@/lib/utils";
 import type { MatchTeamStats } from "@eggosystem/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +21,7 @@ export const TeamStatBox = ({ team }: { team: MatchTeamStats }) => {
             <div className="flex items-center gap-2">
               <div className="flex items-center">
                 <Image
-                  src={createNextImageUrl("/images/t-side-crossed-swords.webp")}
+                  src={createNextUrl("/images/t-side-crossed-swords.webp")}
                   alt="Terrorist"
                   width={16}
                   height={16}
@@ -35,7 +35,7 @@ export const TeamStatBox = ({ team }: { team: MatchTeamStats }) => {
               </div>
               <div className="flex items-center">
                 <Image
-                  src={createNextImageUrl("/images/ct-side-pliers.webp")}
+                  src={createNextUrl("/images/ct-side-pliers.webp")}
                   alt="Counter-Terrorist"
                   width={16}
                   height={16}

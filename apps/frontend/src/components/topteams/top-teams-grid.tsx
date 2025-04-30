@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ContentContainer } from "../layout/content-container";
-import { createNextImageUrl, type FilterParamsQuery } from "@/lib/utils";
+import { createNextUrl, type FilterParamsQuery } from "@/lib/utils";
 import { useTopTeams } from "@/hooks/data/useTopTeams";
 import { useSearchParams } from "next/navigation";
 
@@ -98,7 +98,7 @@ export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
                   <div className="flex items-center gap-2 min-w-0">
                     {team.team_logo && (
                       <Image
-                        src={createNextImageUrl(team.team_logo)}
+                        src={createNextUrl(team.team_logo)}
                         alt={`${team.team_name} logo`}
                         width={20}
                         height={20}

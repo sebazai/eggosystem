@@ -314,6 +314,12 @@ describe("Season team registration services", () => {
     });
   });
   describe("handleSeasonTeamRegistration", () => {
+    afterEach(async () => {
+      await runQuery(
+        "DELETE FROM SeasonTeamRegistrations WHERE season_id = ? AND team_id = ?",
+        [seasonDetails.id, validSignupData.teamId]
+      );
+    });
     it("happy path - have called all functions with valid data and does not return error", async () => {
       const formData = _.cloneDeep(validSignupData);
       const validatePlayersInDb = jest.spyOn(
@@ -377,55 +383,49 @@ describe("Season team registration services", () => {
           } satisfies IPlayerServiceResponse
         }
       ]);
-      try {
-        await registrationServices.handleSeasonTeamRegistration(
-          seasonDetails.id,
-          seasonDetails.platform,
-          seasonDetails.app_id,
-          formData.teamId,
-          {
-            captain_steam_id: formData.players[0].steamId,
-            co_captain_steam_id: formData.players[1].steamId,
-            external_platform_id: formData.teamExternalId
-          } satisfies InsertSeasonTeamRegistration,
-          formData.players
-        );
-        expect(validatePlayersInDb).toHaveBeenCalledWith(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-        expect(registrationInsert).toHaveBeenCalledWith(
-          seasonDetails.id,
-          formData.teamId,
-          {
-            captain_steam_id: formData.players[0].steamId,
-            co_captain_steam_id: formData.players[1].steamId,
-            external_platform_id: formData.teamExternalId
-          },
-          undefined
-        );
-        expect(addPlayers).toHaveBeenCalledWith(
-          seasonDetails.id,
-          seasonDetails.app_id,
-          seasonDetails.platform,
-          formData.teamId,
-          formData.players,
-          undefined
-        );
-        expect(captainPerm).toHaveBeenCalledWith(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players[0].steamId,
-          formData.players[1].steamId,
-          undefined
-        );
-      } finally {
-        await runQuery(
-          "DELETE FROM SeasonTeamRegistrations WHERE season_id = ? AND team_id = ?",
-          [seasonDetails.id, formData.teamId]
-        );
-      }
+
+      await registrationServices.handleSeasonTeamRegistration(
+        seasonDetails.id,
+        seasonDetails.platform,
+        seasonDetails.app_id,
+        formData.teamId,
+        {
+          captain_steam_id: formData.players[0].steamId,
+          co_captain_steam_id: formData.players[1].steamId,
+          external_platform_id: formData.teamExternalId
+        } satisfies InsertSeasonTeamRegistration,
+        formData.players
+      );
+      expect(validatePlayersInDb).toHaveBeenCalledWith(
+        seasonDetails.id,
+        formData.teamId,
+        formData.players
+      );
+      expect(registrationInsert).toHaveBeenCalledWith(
+        seasonDetails.id,
+        formData.teamId,
+        {
+          captain_steam_id: formData.players[0].steamId,
+          co_captain_steam_id: formData.players[1].steamId,
+          external_platform_id: formData.teamExternalId
+        },
+        undefined
+      );
+      expect(addPlayers).toHaveBeenCalledWith(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        seasonDetails.platform,
+        formData.teamId,
+        formData.players,
+        undefined
+      );
+      expect(captainPerm).toHaveBeenCalledWith(
+        seasonDetails.id,
+        formData.teamId,
+        formData.players[0].steamId,
+        formData.players[1].steamId,
+        undefined
+      );
     });
   });
   describe("validatePlayersFromDBForSignup", () => {
@@ -444,6 +444,10 @@ describe("Season team registration services", () => {
         }
       ]);
     });
+    afterEach(async () => {
+      await cleanupTestUsers();
+      await insertTestUsersForSignup();
+    });
     it("should fail if a player steam id in form is not present in database", async () => {
       const steamIdToRemove = validSignupData.players[3].steamId;
       const formData = _.cloneDeep(validSignupData);
@@ -461,9 +465,6 @@ describe("Season team registration services", () => {
         expect(badReqError.message).toEqual(
           "Could not find players in database that is provided in the form"
         );
-      } finally {
-        await cleanupTestUsers();
-        await insertTestUsersForSignup();
       }
     });
     it("Should fail if profiles are not public", async () => {
@@ -498,9 +499,6 @@ describe("Season team registration services", () => {
         expect(asBadreq.message).toEqual(
           "Player 12345678901234570 has not accepted privacy policy."
         );
-      } finally {
-        await cleanupTestUsers();
-        await insertTestUsersForSignup();
       }
     });
     it("Should fail if user has no work e-mail and has not been approved by organizer", async () => {
@@ -520,9 +518,6 @@ describe("Season team registration services", () => {
         expect(asBadreq.message).toEqual(
           "Player 12345678901234568 does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord."
         );
-      } finally {
-        await cleanupTestUsers();
-        await insertTestUsersForSignup();
       }
     });
     it("Should fail if no full_name in profile", async () => {
@@ -542,9 +537,6 @@ describe("Season team registration services", () => {
         expect(asBadreq.message).toEqual(
           "Player 12345678901234568 profile data missing."
         );
-      } finally {
-        await cleanupTestUsers();
-        await insertTestUsersForSignup();
       }
     });
     it("Should pass if missing work e-mail in profile and manually approved by organizer", async () => {
@@ -567,19 +559,12 @@ describe("Season team registration services", () => {
         "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = ? WHERE steam_id = ?",
         [true, formData.players[2].steamId]
       );
-      try {
-        await registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-      } catch (_error) {
-        // Should not come here.
-        expect(true).toBe(false);
-      } finally {
-        await cleanupTestUsers();
-        await insertTestUsersForSignup();
-      }
+
+      await registrationServices.validatePlayersFromDBForSignup(
+        seasonDetails.id,
+        formData.teamId,
+        formData.players
+      );
     });
   });
   describe("addPlayersForTeamInSeason", () => {
@@ -957,9 +942,6 @@ describe("Season team registration services", () => {
         expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
         // 5 times for app id rank, 5 times for hours
         expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(10);
-      } catch (_error) {
-        // Should not error
-        expect(true).toBe(false);
       } finally {
         await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
           idToRemove.insertId

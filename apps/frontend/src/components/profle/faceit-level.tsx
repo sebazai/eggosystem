@@ -1,4 +1,4 @@
-import { createNextImageUrl } from "@/lib/utils";
+import { createNextUrl } from "@/lib/utils";
 import Image from "next/image";
 
 export const FaceITLevelIcon = ({ level }: { level: number }) => {
@@ -8,7 +8,7 @@ export const FaceITLevelIcon = ({ level }: { level: number }) => {
   return (
     <Image
       alt={`FaceIT level ${level}`}
-      src={createNextImageUrl(`/images/faceit${level}.svg`)}
+      src={createNextUrl(`/images/faceit${level}.svg`)}
       width={30}
       height={30}
     />
