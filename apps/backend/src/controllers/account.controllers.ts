@@ -34,6 +34,7 @@ export const sendVerificationEmails = async (
     account.email_token &&
     account.email_token_expires_at
   ) {
+    await redisClient.del(`verify:email:${account.email_token}`);
     const token = uuid.v4();
     await handleEmailVerification(
       accountId,
@@ -54,6 +55,7 @@ export const sendVerificationEmails = async (
     account.work_email_token &&
     account.work_email_token_expires_at
   ) {
+    await redisClient.del(`verify:email:${account.work_email_token}`);
     const token = uuid.v4();
     await handleEmailVerification(
       accountId,
