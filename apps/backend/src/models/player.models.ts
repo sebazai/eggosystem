@@ -4,9 +4,17 @@ import {
 } from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
+  type SteamPlayer,
   type ParsedParams,
   type PlayerDetailsBySteamId
 } from "@eggosystem/types";
+
+export const getPlayerBySteamId = async (steam_id: string) => {
+  return runQuery<Array<SteamPlayer | undefined>>(
+    "SELECT nickname, steam_id FROM SteamPlayers WHERE steam_id = ?",
+    [steam_id]
+  );
+};
 
 export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   const results = await runQuery<PlayerDetailsBySteamId[]>(

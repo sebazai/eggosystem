@@ -1,18 +1,11 @@
 "use client";
 
 import React from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from "@/components/ui/breadcrumb";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { TeamsTable } from "@/components/teams/teams-table";
 import { ContentContainer } from "@/components/layout/content-container";
 import { useFilters } from "@/context/FilterContext";
+import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
 
 interface TeamDetailsPageProps {
   params: Promise<{
@@ -31,24 +24,7 @@ export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
 
   return (
     <div className="container mx-auto py-4">
-      <div className="mb-3">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/teams">Teams</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{teamId}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
+      <AutoBreadcrumbs />
       <MultiFilters
         seasons={filterParams.seasons}
         leagues={filterParams.leagues}
@@ -57,7 +33,6 @@ export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
         maps={filterParams.maps}
         hideFilters={{ teams: true }}
       />
-
       <TeamsTable teamId={teamId} filterQueryParams={filterParams} />
     </div>
   );

@@ -3,9 +3,9 @@ import type { MatchInfo } from "@eggosystem/types";
 import type { Metadata } from "next";
 import type React from "react";
 import { getMatchInfo } from "./utils";
-import { MatchBreadcrumbsWrapper } from "@/components/layout/breadcrumbs-wrapper";
 import { CardContainer } from "@/components/layout/card-container";
 import { ContentContainer } from "@/components/layout/content-container";
+import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -59,7 +59,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   return (
     <CardContainer>
       <div className="px-4 pt-4">
-        <MatchBreadcrumbsWrapper />
+        <AutoBreadcrumbs />
       </div>
 
       <MatchHeader

@@ -2,7 +2,8 @@ import { type Request, type Response } from "express";
 import {
   getPlayerDetailsBySteamId,
   getPlayersByFilters,
-  getPlayerDetailsWithStatsByFilters
+  getPlayerDetailsWithStatsByFilters,
+  getPlayerBySteamId
 } from "../models/player.models";
 
 import {
@@ -14,6 +15,19 @@ import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
 
 export const getPlayerBySteamIdController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const steam_id = req.params.steam_id;
+  const [player] = await getPlayerBySteamId(steam_id);
+  if (!player) {
+    res.status(404).json({ message: "Not found" });
+    return;
+  }
+  res.json(player);
+};
+
+export const getPlayerDetailsBySteamIdController = async (
   req: Request,
   res: Response
 ): Promise<void> => {

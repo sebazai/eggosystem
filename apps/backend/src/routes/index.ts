@@ -14,6 +14,7 @@ import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
 import leaderboardsRouter from "./v1/leaderboards.routes";
 import registrationsRouter from "./v1/season-team-registration.routes";
+import gameRouter from "./v1/game.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
 
 // Create a new Router instance
@@ -23,6 +24,7 @@ const v1Router = Router();
 v1Router.use("/auth", authRouter);
 v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
+v1Router.use("/games", gameRouter);
 v1Router.use("/organizations", organizationRouter);
 v1Router.use("/filters", filtersRouter);
 v1Router.use("/maps", mapsRouter);

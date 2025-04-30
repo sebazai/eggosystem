@@ -18,6 +18,13 @@ export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
 };
 
+export const getMatch = (matchId: number) => {
+  return runQuery<Array<Match | undefined>>(
+    "SELECT * FROM Matches WHERE id = ?",
+    [matchId]
+  );
+};
+
 export const getMatchPlayerStats = async (match_id: number) => {
   const query = `SELECT
         p.steam_id,

@@ -10,7 +10,8 @@ import {
   getGameTopPlayersController,
   getMatchGamesController,
   getMatchInfoController,
-  getMatchRoundInfoController
+  getMatchRoundInfoController,
+  getMatchController
 } from "../../controllers/matches.controllers";
 
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
@@ -19,6 +20,7 @@ import { validateNumericParams } from "../../middlewares/validate-numeric-params
 const router = Router();
 
 router.get("/recent", parseQueryFilterParams, getMatchesByFiltersController);
+router.get("/:match_id", validateNumericParams(), getMatchController);
 router.get("/:match_id/info", validateNumericParams(), getMatchInfoController);
 router.get(
   "/:match_id/mapsplayed",

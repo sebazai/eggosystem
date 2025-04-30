@@ -10,13 +10,29 @@ import {
   getMatchesByFilters,
   getMatchGames,
   getMatchInfo,
-  getMatchRoundInfo
+  getMatchRoundInfo,
+  getMatch
 } from "../models/match.models";
 import type { RequestWithParams } from "@eggosystem/types";
 
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
   res.status(200).json({ matches });
+};
+
+export const getMatchController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+  const [match] = await getMatch(matchId);
+
+  if (!match) {
+    res.status(404).json({ error: "Match not found" });
+    return;
+  }
+
+  res.json(match);
 };
 
 export const getMatchInfoController = async (

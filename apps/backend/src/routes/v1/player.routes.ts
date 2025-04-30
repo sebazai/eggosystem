@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getPlayerDetailsBySteamIdController,
   getPlayerBySteamIdController,
   getIsPlayerProfilePublic,
   getPlayerSteamAppIdHours,
@@ -18,7 +19,8 @@ const router = Router();
 
 // Player routes
 router.get("/stats", parseQueryFilterParams, getPlayerStatsByFiltersController);
-router.get("/:steam_id/details", getPlayerBySteamIdController);
+router.get("/:steam_id", getPlayerBySteamIdController);
+router.get("/:steam_id/details", getPlayerDetailsBySteamIdController);
 router.get("/:steam_id/public", getIsPlayerProfilePublic);
 router.get(
   "/:steam_id/statistics",

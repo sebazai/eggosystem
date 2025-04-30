@@ -1,18 +1,11 @@
 "use client";
 
 import React from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator
-} from "@/components/ui/breadcrumb";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { PlayerDetails } from "@/components/players/player-details";
 import { ContentContainer } from "@/components/layout/content-container";
 import { useFilters } from "@/context/FilterContext";
+import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -32,21 +25,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
   return (
     <div className="container mx-auto py-4">
       <div className="mb-3">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Home</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/players">Players</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{steamId}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <AutoBreadcrumbs />
       </div>
 
       <div className="mb-3">
