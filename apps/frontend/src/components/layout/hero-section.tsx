@@ -11,7 +11,7 @@ import Link from "next/link";
 const overlays = [
   {
     id: 1,
-    title: "The Battle Begins.",
+    title: "CS 2 Season 4",
     subtitle: "CS2 Corporate eSports Season 4 Starts September 1st."
   },
   {
@@ -180,7 +180,6 @@ export default function HeroSection({ device }: HeroSectionProps) {
           />
         </motion.div>
 
-        {/* Optional: subtle spinner */}
         <motion.div
           className="mt-10 w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"
           aria-hidden

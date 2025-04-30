@@ -9,11 +9,11 @@ export default async function Home() {
   const deviceType = device?.type === "mobile" ? "mobile" : "desktop";
   return (
     <>
-      <section className="bg-black mb-10 xs:mb-25">
+      <section className="bg-black">
         <HeroSection device={deviceType} />
       </section>
       <section className="py-4 md:py-8 lg:py-16">
-        <div className="flex flex-grow justify-center w-full">
+        <div className="flex flex-grow justify-center items-center h-screen w-full">
           <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
             <h1>Kanahub by Kanaliiga</h1>
             <p>
