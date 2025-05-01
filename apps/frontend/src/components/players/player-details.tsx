@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/tooltip";
 import { FaceITLevelIcon } from "../profle/faceit-level";
 import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
-import { clientApiFetch } from "@/lib/apiClient";
-import { SeasonPlatform } from "@eggosystem/types";
+import { useFaceITRank } from "@/hooks/data/useFaceITRank";
+import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
 
 function StatCard({ label, value }: StatCardProps) {
   return (
@@ -44,6 +44,8 @@ export const PlayerDetails = ({
   filterParams
 }: PlayerDetailsProps) => {
   const router = useRouter();
+  const faceItRank = useFaceITRank(steamId);
+  const cs2PremierRank = useCS2PremierRank(steamId);
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -52,41 +54,6 @@ export const PlayerDetails = ({
     key: "match_date",
     direction: "desc"
   });
-
-  // Fetch player ranks
-  const [faceitLevel, setFaceitLevel] = useState<number | null>(null);
-  const [premierRank, setPremierRank] = useState<number | null>(null);
-  const [loadingRanks, setLoadingRanks] = useState(true);
-
-  // Fetch FaceIT and Premier ranks on component mount
-  useEffect(() => {
-    const fetchRanks = async () => {
-      setLoadingRanks(true);
-      try {
-        // Fetch FaceIT rank
-        const faceitData = await clientApiFetch<{ faceit_level: number }>(
-          `/api/v1/players/${steamId}/platform/${SeasonPlatform.FACEIT}/rank`
-        );
-        if (faceitData && faceitData.faceit_level > 0) {
-          setFaceitLevel(faceitData.faceit_level);
-        }
-
-        // Fetch Premier rank
-        const premierData = await clientApiFetch<{ rank: number }>(
-          `/api/v1/players/${steamId}/app/730/rank`
-        );
-        if (premierData && premierData.rank > 0) {
-          setPremierRank(premierData.rank);
-        }
-      } catch (error) {
-        console.error("Error fetching player ranks:", error);
-      } finally {
-        setLoadingRanks(false);
-      }
-    };
-
-    fetchRanks();
-  }, [steamId]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -308,18 +275,22 @@ export const PlayerDetails = ({
                 <div className="flex items-center gap-2 mt-1">
                   {/* Add rank indicators here */}
                   <div className="flex items-center gap-2">
-                    {loadingRanks ? (
+                    {faceItRank.isLoading || cs2PremierRank.isLoading ? (
                       <div className="flex gap-1">
                         <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/20 animate-pulse"></div>
                         <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/20 animate-pulse"></div>
                       </div>
                     ) : (
                       <>
-                        {faceitLevel ? (
-                          <FaceITLevelIcon level={faceitLevel} />
+                        {faceItRank.faceItRank?.faceit_level ? (
+                          <FaceITLevelIcon
+                            level={faceItRank.faceItRank.faceit_level}
+                          />
                         ) : null}
-                        {premierRank ? (
-                          <CS2PremierRankBadge rankScore={premierRank} />
+                        {cs2PremierRank.cs2Rank?.rank ? (
+                          <CS2PremierRankBadge
+                            rankScore={cs2PremierRank.cs2Rank.rank}
+                          />
                         ) : null}
                       </>
                     )}
