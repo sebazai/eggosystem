@@ -74,7 +74,11 @@ export default function HeroSection({ device }: HeroSectionProps) {
   }, [isMobile]);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
     if (splashComplete) {
+      video.play().catch(console.error);
       const interval = setInterval(() => {
         setStep((prev) => (prev < overlays.length ? prev + 1 : prev));
       }, 4000);
@@ -96,11 +100,9 @@ export default function HeroSection({ device }: HeroSectionProps) {
     if (!video) return;
 
     const onLoadedData = () => {
-      // Delay playing video until splash screen has shown
       setTimeout(() => {
         setSplashComplete(true);
-        video.play().catch(console.error);
-      }, 5000); // 3-second splash
+      }, 4000);
     };
 
     video.addEventListener("canplay", onLoadedData);
@@ -109,6 +111,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
 
   useEffect(() => {
     if (videoRef.current) {
+      console.log("Video source changed:", videoSrc);
       videoRef.current.load();
     }
   }, [videoSrc]);
