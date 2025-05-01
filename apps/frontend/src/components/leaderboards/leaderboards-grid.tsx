@@ -84,9 +84,7 @@ export const LeaderboardsGrid = ({
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
-        Leaderboards
-      </h1>
+      <h1 className="text-3xl font-bold py-8">Leaderboards</h1>
 
       <div
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -99,9 +97,7 @@ export const LeaderboardsGrid = ({
             data-testid={`leaderboard-category${category.title === "Kana Rating" ? " kana-rating-category" : ""}`}
           >
             <div className="bg-[#2a1810] p-4">
-              <h2 className="text-xl font-bold text-kanaliiga-orange">
-                {category.title}
-              </h2>
+              <h2 className="text-xl font-bold">{category.title}</h2>
             </div>
 
             <div className="p-4">
@@ -170,7 +166,7 @@ export const LeaderboardsGrid = ({
 
                     <div className="flex items-center gap-4">
                       <span
-                        className="text-muted-foreground text-sm"
+                        className="hidden text-muted-foreground text-sm xs:block"
                         data-testid="player-matches"
                       >
                         {player.matches_played} matches

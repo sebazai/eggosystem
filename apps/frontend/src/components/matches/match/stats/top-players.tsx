@@ -37,16 +37,21 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
 
   return (
     <div className="mt-8 max-w-[600px]">
-      <h2 className="text-kanaliiga-orange mb-4">TOP PLAYERS</h2>
+      <h2 className="mb-4">TOP PLAYERS</h2>
       <div className="bg-card rounded-sm">
-        <div className="grid grid-cols-[1.5fr_1fr_auto] gap-1 xs:gap-4 p-4">
+        <div className="grid grid-cols-[1.5fr_1fr_auto] gap-4 p-4">
           <div className="text-muted-foreground text-sm">Award</div>
           <div className="text-muted-foreground text-sm">Player</div>
           <div className="text-muted-foreground text-sm text-right">Score</div>
-          {Object.entries(topPlayers).map(([key, value]) => {
-            const awardsKey = key as keyof MatchTopPlayerAwards;
+          {(
+            Object.entries(topPlayers) as [
+              keyof MatchTopPlayerAwards,
+              MatchTopPlayerAwardsValue
+            ][]
+          ).map(([key, value]) => {
+            const awardsKey = key;
             const text = awardNames[awardsKey];
-            const stat = value as MatchTopPlayerAwardsValue;
+            const stat = value;
             const team = teams[stat.team_id];
             return (
               <React.Fragment key={key}>

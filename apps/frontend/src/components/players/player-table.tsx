@@ -66,10 +66,30 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   // Column definitions for the table
   const columns = useMemo(
     () => [
-      { key: "nickname", label: "Player", sortable: true, responsive: true },
-      { key: "team_name", label: "Team", sortable: true, responsive: false },
-      { key: "matches_played", label: "GP", sortable: true, responsive: false },
-      { key: "kills", label: "K", sortable: true, responsive: true },
+      {
+        key: "nickname",
+        label: "Player",
+        sortable: true,
+        responsive: ""
+      },
+      {
+        key: "team_name",
+        label: "Team",
+        sortable: true,
+        responsive: "hidden lg:table-cell"
+      },
+      {
+        key: "matches_played",
+        label: "GP",
+        sortable: true,
+        responsive: "hidden md:table-cell"
+      },
+      {
+        key: "kills",
+        label: "K",
+        sortable: true,
+        responsive: ""
+      },
       {
         key: "assists",
         label: (
@@ -78,21 +98,83 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
           </>
         ),
         sortable: true,
-        responsive: false
+        responsive: "hidden sm:table-cell"
       },
-      { key: "deaths", label: "D", sortable: true, responsive: true },
-      { key: "awp_kills", label: "AWP", sortable: true, responsive: false },
-      { key: "utility_damage", label: "UD", sortable: true, responsive: false },
-      { key: "headshots", label: "HS", sortable: true, responsive: false },
-      { key: "first_kills", label: "FK", sortable: true, responsive: false },
-      { key: "first_deaths", label: "FD", sortable: true, responsive: false },
-      { key: "adr", label: "ADR", sortable: true, responsive: true },
-      { key: "hs_percent", label: "HS%", sortable: true, responsive: false },
-      { key: "kd", label: "K/D", sortable: true, responsive: false },
-      { key: "kana_rating", label: "Rating", sortable: true, responsive: true }
+      {
+        key: "deaths",
+        label: "D",
+        sortable: true,
+        responsive: ""
+      },
+      {
+        key: "awp_kills",
+        label: "AWP",
+        sortable: true,
+        responsive: "hidden md:table-cell"
+      },
+      {
+        key: "utility_damage",
+        label: "UD",
+        sortable: true,
+        responsive: "hidden lg:table-cell"
+      },
+      {
+        key: "headshots",
+        label: "HS",
+        sortable: true,
+        responsive: "hidden sm:table-cell"
+      },
+      {
+        key: "first_kills",
+        label: "FK",
+        sortable: true,
+        responsive: "hidden lg:table-cell"
+      },
+      {
+        key: "first_deaths",
+        label: "FD",
+        sortable: true,
+        responsive: "hidden lg:table-cell"
+      },
+      {
+        key: "adr",
+        label: "ADR",
+        sortable: true,
+        responsive: ""
+      },
+      {
+        key: "hs_percent",
+        label: "HS%",
+        sortable: true,
+        responsive: "hidden md:table-cell"
+      },
+      {
+        key: "kd",
+        label: "K/D",
+        sortable: true,
+        responsive: "hidden md:table-cell"
+      },
+      {
+        key: "kana_rating",
+        label: "Rating",
+        sortable: true,
+        responsive: ""
+      }
     ],
     []
   );
+
+  const columnResponsive = useMemo(() => {
+    return columns.reduce(
+      (acc, column) => {
+        if (column.responsive) {
+          acc[column.key] = column.responsive;
+        }
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+  }, [columns]);
 
   const handleSortClick = (key: string) => {
     let direction: SortDirection = "desc";
@@ -204,9 +286,9 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                     className={cn(
                       "px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange",
                       {
-                        "cursor-pointer hover:bg-[#3a281a]": column.sortable,
-                        "hidden md:table-cell": !column.responsive
-                      }
+                        "cursor-pointer hover:bg-[#3a281a]": column.sortable
+                      },
+                      column.responsive
                     )}
                     onClick={() =>
                       column.sortable && handleSortClick(column.key)
@@ -246,9 +328,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={cn("px-3 py-2", {
-                          "hidden md:table-cell": !column.responsive
-                        })}
+                        className={cn("px-3 py-2", column.responsive)}
                       >
                         <div className="h-4 w-full bg-gray-800 rounded animate-pulse"></div>
                       </td>
@@ -276,7 +356,9 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       )}
                       onClick={() => handleRowClick(player.steam_id)}
                     >
-                      <td className="px-3 py-2">
+                      <td
+                        className={cn("px-3 py-2", columnResponsive.nickname)}
+                      >
                         <div
                           className={cn("font-medium text-xs", {
                             "text-white": index < 3,
@@ -289,63 +371,70 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 hidden md:table-cell">
+                      <td
+                        className={cn("px-3 py-2", columnResponsive.team_name)}
+                      >
                         <div className="text-[0.65rem] text-muted-foreground">
                           {player.team_name || "No team"}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      <TableDataCell
+                        responsive={columnResponsive.matches_played}
+                      >
                         {player.matches_played}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.kills}>
                         {player.kills}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.assists}>
                         {player.assists}(
                         <span className="text-[0.6rem]">
                           {player.flash_assists || 0}
                         </span>
                         )
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.deaths}>
                         {player.deaths}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.awp_kills}>
                         {player.awp_kills}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell
+                        responsive={columnResponsive.utility_damage}
+                      >
                         {player.utility_damage}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.headshots}>
                         {player.headshots}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.first_kills}>
                         {player.first_kills}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.first_deaths}>
                         {player.first_deaths}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.adr}>
                         {player.adr?.toFixed(1) || 0}
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.hs_percent}>
                         {player.hs_percent?.toFixed(1) || 0}%
-                      </td>
-                      <td className="px-3 py-2 text-center text-xs text-muted-foreground hidden md:table-cell">
+                      </TableDataCell>
+                      <TableDataCell responsive={columnResponsive.kd}>
                         {typeof player.kd === "number"
                           ? player.kd.toFixed(2)
                           : (player.kills / Math.max(player.deaths, 1)).toFixed(
                               2
                             )}
-                      </td>
-                      <td
-                        className={cn("px-3 py-2 text-center text-xs", {
+                      </TableDataCell>
+                      <TableDataCell
+                        classNames={cn("px-3 py-2 text-center text-xs", {
                           "font-bold text-white": index < 3,
                           "text-muted-foreground": index >= 3
                         })}
+                        responsive={columnResponsive.kana_rating}
                       >
                         {player.kana_rating?.toFixed(2) || 0}
-                      </td>
+                      </TableDataCell>
                     </tr>
                   )
                 )
@@ -355,15 +444,15 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
         </div>
 
         {/* Pagination */}
-        {players && players.length > 0 && (
-          <div className="flex justify-between items-center p-3 border-t border-border">
+        {players && players.length > 10 && (
+          <div className="flex flex-col md:flex-row justify-between items-center p-3 border-t border-border gap-4">
             <div className="text-xs text-muted-foreground">
               Showing{" "}
               {Math.min((currentPage - 1) * pageSize + 1, players.length)} -{" "}
               {Math.min(currentPage * pageSize, players.length)} of{" "}
               {players.length} players
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col xxs:flex-row items-center gap-6">
               <button
                 className={cn(
                   "px-2 py-1 text-xs rounded border border-border",
@@ -374,7 +463,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
-                Previous
+                Prev
               </button>
 
               {/* Page numbers */}
@@ -421,7 +510,8 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
               >
                 Next
               </button>
-
+            </div>
+            <div>
               {/* Page size selector */}
               <select
                 className="ml-4 px-2 py-1 text-xs bg-background border border-border rounded"
@@ -441,5 +531,27 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
         )}
       </div>
     </TooltipProvider>
+  );
+};
+
+const TableDataCell = ({
+  children,
+  responsive,
+  classNames
+}: {
+  children: React.ReactNode;
+  responsive?: string;
+  classNames?: string;
+}) => {
+  return (
+    <td
+      className={cn(
+        "px-3 py-2 text-center text-xs text-muted-foreground",
+        responsive,
+        classNames
+      )}
+    >
+      {children}
+    </td>
   );
 };

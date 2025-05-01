@@ -63,22 +63,27 @@ export function MatchHeader({
                 />
               </div>
             </div>
-            <span className="text-sm text-zinc-400">
-              Kana ranking #{team1.rank}
-            </span>
+            {team1.rank && (
+              <span className="text-sm text-zinc-400">
+                Ranking #{team1.rank}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Score */}
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-4">
-            <span className="text-4xl font-bold">{team1.score}</span>
-            <span className="text-lg text-zinc-400 uppercase">vs</span>
-            <span className="text-4xl font-bold">{team2.score}</span>
+            <span className="text-xl xs:text-4xl font-bold">{team1.score}</span>
+            <span className="text-xs xs:text-lg text-zinc-400 uppercase">
+              vs
+            </span>
+            <span className="text-xl xs:text-4xl font-bold">{team2.score}</span>
           </div>
           <div className="text-sm text-zinc-400">
-            {formattedStart}–{formattedEnd} - {formattedDate}
+            {formattedStart}–{formattedEnd}
           </div>
+          <div>{formattedDate}</div>
         </div>
 
         {/* Team 2 */}
@@ -102,9 +107,11 @@ export function MatchHeader({
                 </span>
               </Link>
             </div>
-            <span className="text-sm text-zinc-400">
-              Kana ranking #{team2.rank}
-            </span>
+            {team2.rank && (
+              <span className="text-sm text-zinc-400">
+                Ranking #{team2.rank}
+              </span>
+            )}
           </div>
         </div>
       </div>
