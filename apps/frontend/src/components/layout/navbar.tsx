@@ -101,13 +101,13 @@ const defaultProps: NavbarProps = {
       url: "/leaderboards",
       hasFilters: true
     }
-  ],
-  mobileExtraLinks: [
-    { name: "Press", url: "#" },
-    { name: "Contact", url: "#" },
-    { name: "Imprint", url: "#" },
-    { name: "Sitemap", url: "#" }
   ]
+  // mobileExtraLinks: [
+  //   { name: "Press", url: "#" },
+  //   { name: "Contact", url: "#" },
+  //   { name: "Imprint", url: "#" },
+  //   { name: "Sitemap", url: "#" }
+  // ]
 };
 
 export const Navigation = (props: NavbarProps) => {
@@ -342,8 +342,8 @@ const renderMobileMenuItem = (
             <div className="py-2" key={subItem.title}>
               <Link
                 href={{
-                  pathname: item.url,
-                  query: item.hasFilters ? params.toString() : undefined
+                  pathname: subItem.url,
+                  query: subItem.hasFilters ? params.toString() : undefined
                 }}
                 onClick={closeMenuOnClick}
               >
