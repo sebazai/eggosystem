@@ -33,12 +33,6 @@ const Footer = () => {
 
               <div className="flex space-x-3">
                 <Image
-                  src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/polar_squad.png"
-                  alt="Polar Squad"
-                  width={100}
-                  height={36}
-                />
-                <Image
                   src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/tnnet.png"
                   alt="TNNet"
                   width={100}

@@ -16,6 +16,7 @@ import leaderboardsRouter from "./v1/leaderboards.routes";
 import registrationsRouter from "./v1/season-team-registration.routes";
 import gameRouter from "./v1/game.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
+import { landingPageStatistics } from "../services/landing-page.services";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -36,6 +37,11 @@ v1Router.use("/leaderboards", leaderboardsRouter);
 v1Router.use("/now", nowRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
+
+v1Router.get("/stats", async (req, res) => {
+  const stats = await landingPageStatistics();
+  res.status(200).json(stats);
+});
 v1Router.post("/verify-email", verifyEmailController);
 
 v1Router.use("/", async (req, res) => {

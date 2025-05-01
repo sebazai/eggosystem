@@ -19,7 +19,7 @@ export const AcceptPolicyProvider = ({
     // Force redirect if the user is logged in but hasn't accepted the privacy policy
     if (
       user &&
-      user.acceptedPrivacyPolicy === false &&
+      !user.acceptedPrivacyPolicy &&
       !pathname.includes("profile") &&
       !pathname.includes("privacy-policy")
     ) {

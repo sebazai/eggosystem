@@ -78,8 +78,8 @@ const poppinsFont = localFont({
 
 export const metadata: Metadata = {
   title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
-  description: "Kanahub Statistics and Analytics",
-  applicationName: "Kanahub"
+  description: "Kanaliiga statistics and esports platform",
+  applicationName: "Kanahub by Kanaliiga"
 };
 
 export const viewport: Viewport = {

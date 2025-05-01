@@ -1,10 +1,44 @@
 "use server";
 
 import HeroSection from "@/components/layout/hero-section";
+import { SignupButton } from "@/components/signup/call-to-action-signup-button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { userAgent } from "next/server";
+import { CsMainSponsors } from "@/components/sponsors/cs-main-sponsors";
+import { KanaMainPartners } from "@/components/sponsors/kana-main-partners";
+import { SponsorContainer } from "@/components/sponsors/sponsor-container";
+import { CsSupportingOrgs } from "@/components/sponsors/cs-supporting-orgs";
+import { envConfig } from "@/configs/env";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Welcome to Kanaliiga",
+    description:
+      "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ companies annually. Join us for a season of competitive gaming and community building."
+  };
+}
+
+interface LandingPageStats {
+  unique_players: number;
+  total_teams: number;
+  total_games: number;
+  total_organizations: number;
+}
 
 export default async function Home() {
+  const defaultData = {
+    unique_players: 4700,
+    total_teams: 800,
+    total_games: 15000,
+    total_organizations: 220
+  } satisfies LandingPageStats;
+  const statistics = await fetch(`${envConfig.API_URL}/api/v1/stats`, {
+    cache: "no-cache"
+  });
+  const data = statistics.ok ? await statistics.json() : defaultData;
+
   const { device } = userAgent({ headers: await headers() });
   const deviceType = device?.type === "mobile" ? "mobile" : "desktop";
   return (
@@ -12,49 +46,117 @@ export default async function Home() {
       <section className="bg-black">
         <HeroSection device={deviceType} />
       </section>
-      <section className="py-4 md:py-8 lg:py-16">
-        <div className="flex flex-grow justify-center items-center h-screen w-full">
-          <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
-            <h1>Kanahub by Kanaliiga</h1>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam a
-              mollis elit. Orci varius natoque penatibus et magnis dis
-              parturient montes, nascetur ridiculus mus. Duis mattis ipsum
-              lectus, non viverra justo mattis quis. Sed massa dui, fringilla et
-              lacus ut, tempor tincidunt arcu. Proin dapibus auctor convallis.
-              Nullam posuere fermentum ex eget fermentum. Nam eros leo, sagittis
-              ac nunc id, molestie lacinia libero. Pellentesque dignissim id
-              turpis ultricies fermentum. In scelerisque pulvinar ligula, a
-              lacinia elit rutrum in. Nulla nibh felis, sollicitudin congue urna
-              ac, dignissim dignissim enim.
+      <section className="my-8 md:my-16 lg:my-32">
+        <div className="flex flex-grow justify-center items-center min-h-screen w-full">
+          <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl font-bold my-8">
+              Welcome to Kanaliiga – The World&apos;s Largest Corporate Esports
+              League
+            </h1>
+            <p className="mb-4 text-lg">
+              Founded in 2018, Kanaliiga is home to over{" "}
+              <strong>2,500 players from 300+ companies</strong> annually. We
+              bring professionals together through esports, cultivating positive
+              gaming culture within workplaces.
             </p>
-            <h2>Kanahub</h2>
-            <p>
-              Curabitur commodo tempus arcu a maximus. Pellentesque erat est,
-              blandit a lectus pellentesque, elementum gravida felis. Nam et
-              arcu fringilla, fringilla libero ut, malesuada nibh. Praesent
-              molestie commodo velit ac tristique. Duis ac gravida tortor, vitae
-              efficitur sapien. Ut non sagittis velit. Curabitur maximus nibh ut
-              justo dapibus, non dignissim lacus molestie. Duis volutpat erat
-              mauris, sed elementum ex ultricies a. Vestibulum ligula orci,
-              auctor ut lacus at, cursus finibus diam. Sed iaculis urna metus,
-              quis porttitor ante rutrum et. Integer sed eros lorem. Suspendisse
-              quis hendrerit mi, id tempor libero. Nunc sit amet sollicitudin
-              turpis. Etiam tincidunt metus eget sapien condimentum, at
-              consequat erat tincidunt. Quisque risus ex, pharetra fringilla
-              eleifend quis, hendrerit nec turpis.
+            <p className="mb-6">
+              Our mission is to make esports a bridge for collaboration,
+              community, and healthy competition across the business world.
             </p>
-            <h3>Eggosystem</h3>
-            <p>
-              Donec ac tellus nibh. Nulla eu imperdiet nibh, in blandit tellus.
-              Donec libero turpis, luctus eget porta ut, vulputate lobortis
-              velit. Mauris tempus neque quis vehicula laoreet. Donec nec ex
-              dolor. Cras risus mi, sagittis sed dui ac, efficitur hendrerit
-              ante. Praesent facilisis dolor a lacus porttitor ornare eget non
-              mi. Donec augue felis, dictum ac elit id, volutpat auctor ipsum.
-              Cras nulla arcu, fringilla vel dolor eget, pulvinar fermentum
-              odio.
+
+            {/* Statistic Cards for All Seasons */}
+            <h3 className="xs:text-2xl font-semibold mb-4">
+              📊 All-Time Highlights For Counter-Strike
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+              <Card>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                    {data.total_organizations}+
+                  </p>
+                  <p className="text-sm text-muted-foreground">Organizations</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                    {data.total_teams}+
+                  </p>
+                  <p className="text-sm text-muted-foreground">Unique Teams</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                    {data.unique_players}+
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Unique Players
+                  </p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                    {data.total_games}+
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Total Games Played
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* CS2 Season 4 Pitch */}
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6">
+              🎮 CS2 Season 4 – Kicking Off This Fall
+            </h2>
+            <p className="text-lg mb-2">
+              <strong>Registrations open June 1st – August 23rd</strong>
+              <br />
+              <strong>Season begins September 1st</strong>
             </p>
+
+            <p className="mb-6">
+              Get ready for the fourth installment of our most competitive and
+              community-driven Counter-Strike 2 season yet. Whether you&apos;re
+              returning to defend your title or joining us for the first time,{" "}
+              <strong>CS2 Season 4</strong> promises intense matches, epic
+              plays, and unmatched corporate camaraderie.
+            </p>
+
+            <ul className="list-disc list-inside mb-10 px-4 pb-2">
+              <li>Connect with hundreds of players from top companies</li>
+              <li>Build team spirit in and out of the server</li>
+              <li>Compete in a professionally organized league format</li>
+              <li>Appear in live-streamed broadcasts</li>
+            </ul>
+
+            <div className="text-center">
+              <SignupButton />
+            </div>
+
+            <SponsorContainer
+              header="CS2 Season 4 Main Sponsors"
+              classNames="mt-10 sm:mt-20"
+            >
+              <CsMainSponsors />
+            </SponsorContainer>
+
+            <SponsorContainer
+              classNames="mt-10 sm:mt-20"
+              secondary={true}
+              header="Supporting our tournaments"
+            >
+              <CsSupportingOrgs />
+            </SponsorContainer>
+
+            <SponsorContainer
+              classNames="mt-10 sm:mt-20"
+              header="Main Partners"
+            >
+              <KanaMainPartners />
+            </SponsorContainer>
           </div>
         </div>
       </section>

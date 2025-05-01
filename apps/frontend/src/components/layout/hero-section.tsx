@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { cn, createNextUrl } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
+import { CsMainSponsors } from "../sponsors/cs-main-sponsors";
+import { KanaMainPartners } from "../sponsors/kana-main-partners";
 
 const overlays = [
   {
@@ -78,6 +79,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
     if (!video) return;
 
     if (splashComplete) {
+      video.currentTime = 0;
       video.play().catch(console.error);
       const interval = setInterval(() => {
         setStep((prev) => (prev < overlays.length ? prev + 1 : prev));
@@ -124,10 +126,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           splashComplete ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
       >
-        <motion.h1
-          layoutId="hero-title"
-          className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4"
-        >
+        <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mt-6 mb-4">
           The Battle Begins.
         </motion.h1>
         <motion.p
@@ -136,7 +135,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0, duration: 4 }}
         >
-          Presented by our proud sponsors & partners
+          Presented by our proud CS sponsors & partners
         </motion.p>
 
         {/* Sponsor Logos Row */}
@@ -146,13 +145,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          <Image
-            src={createNextUrl("/images/supermetrics.png")}
-            className="w-[150px] h-[23px] sm:w-[300px] sm:h-[46px]"
-            alt="Elisa Esports"
-            width={150}
-            height={89}
-          />
+          <CsMainSponsors />
         </motion.div>
         <motion.div
           className="flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 bg-white/70 rounded-lg"
@@ -160,27 +153,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          <Image
-            src={createNextUrl("/images/elisa-esports-black.png")}
-            className="w-[75px] h-[44px] sm:w-[150px] sm:h-[89px]"
-            alt="Elisa Esports"
-            width={150}
-            height={89}
-          />
-          <Image
-            src={createNextUrl("/images/visma-black.png")}
-            className="w-[110px] h-[20px] sm:w-[220px] sm:h-[41px]"
-            alt="Visma"
-            width={220}
-            height={41}
-          />
-          <Image
-            src={createNextUrl("/images/atflow-black.png")}
-            className="w-[100px] h-[30px] sm:w-[200px] sm:h-[59px]"
-            alt="Atflow"
-            width={200}
-            height={59}
-          />
+          <KanaMainPartners />
         </motion.div>
 
         <motion.div
@@ -226,10 +199,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
                 transition={{ duration: 0.8 }}
                 className="text-center px-4"
               >
-                <motion.h1
-                  layoutId="hero-title"
-                  className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4"
-                >
+                <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4">
                   {overlays[step]?.title}
                 </motion.h1>
 
