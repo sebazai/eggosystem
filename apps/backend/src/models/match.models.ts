@@ -276,7 +276,7 @@ export const getMatchesByFilters = async ({
 
   const baseQuery = `
       SELECT 
-          m.id AS game_id,
+          m.id AS match_id,
           m.match_date,
           l.name AS league_name,
           m.stage,
@@ -284,6 +284,10 @@ export const getMatchesByFilters = async ({
           t1.team_logo AS team1_logo,
           t2.name AS team2_name,
           t2.team_logo AS team2_logo,
+          CASE
+            WHEN m.best_of = 1 THEN mmp.id
+            ELSE NULL
+          END AS game_id,
           CASE 
               WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
               ELSE tms1.score
