@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useTeamDetails } from "@/hooks/data/useTeamDetails";
 import { useState, useMemo } from "react";
 import { ContentContainer } from "@/components/layout/content-container";
+import { TablePagination } from "../tables/table-pagination";
 
 interface TeamTableProps {
   filterQueryParams: FilterParamsQuery;
@@ -40,7 +41,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const handleSortClick = (key: string) => {
     let direction: "asc" | "desc" = "desc";
@@ -73,18 +74,6 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
 
   if (error) {
     return <ContentContainer>Error loading team details</ContentContainer>;
@@ -400,31 +389,19 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
               </tbody>
             </table>
           </div>
-          {sortedMatches.length > 0 && (
-            <div className="flex justify-between mt-2 items-center">
-              <div className="text-sm text-muted-foreground">
-                Showing {paginatedMatches.length} of {totalMatches} matches
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className={`text-muted-foreground ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                >
-                  <span className="text-kanaliiga-orange">◀</span> Previous
-                </button>
-                <span className="text-muted-foreground px-2">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  className={`text-muted-foreground ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                >
-                  Next <span className="text-kanaliiga-orange">▶</span>
-                </button>
-              </div>
-            </div>
+
+          {sortedMatches.length > 10 && (
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalRows={totalMatches}
+              pageSize={itemsPerPage}
+              handlePageChange={(page) => setCurrentPage(page)}
+              handlePageSizeChange={(size) => {
+                setCurrentPage(1);
+                setItemsPerPage(size);
+              }}
+            />
           )}
         </div>
       </div>

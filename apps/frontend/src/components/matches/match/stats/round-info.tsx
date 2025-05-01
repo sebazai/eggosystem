@@ -46,9 +46,7 @@ export const RoundInfo = ({ roundInfo }: RoundInfoProps) => {
   return (
     <TooltipProvider>
       <div className="mb-4 p-4 bg-card">
-        <h2 className="text-base font-bold text-kanaliiga-orange mb-4">
-          ROUND INFO
-        </h2>
+        <h2 className="text-base font-bold mb-4">ROUND INFO</h2>
         <div className="flex flex-wrap gap-2">
           {roundInfo.map((round, index) => {
             const CT_WON =

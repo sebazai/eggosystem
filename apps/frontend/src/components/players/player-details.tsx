@@ -19,6 +19,7 @@ import { FaceITLevelIcon } from "../profle/faceit-level";
 import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
 import { useFaceITRank } from "@/hooks/data/useFaceITRank";
 import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
+import { TablePagination } from "../tables/table-pagination";
 
 function StatCard({ label, value }: StatCardProps) {
   return (
@@ -57,7 +58,7 @@ export const PlayerDetails = ({
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Fetch player details using the hook
   const { playerDetails, isLoading, isError } = usePlayerDetails({
@@ -215,16 +216,10 @@ export const PlayerDetails = ({
     currentPage * itemsPerPage
   );
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
+  // Handle page size change - state only (no URL updates)
+  const handlePageSizeChange = (newPageSize: number) => {
+    setItemsPerPage(newPageSize);
+    setCurrentPage(1); // Reset to first page
   };
 
   // Use the player stats from the API if available, otherwise show loading state
@@ -361,9 +356,7 @@ export const PlayerDetails = ({
       {/* Stat Cards Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-6">
-          <h2 className="text-xl font-semibold text-kanaliiga-orange mb-3">
-            Player Statistics
-          </h2>
+          <h2 className="text-xl font-semibold mb-3">Player Statistics</h2>
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {Array.from({ length: 8 }).map((_, index) => (
@@ -415,9 +408,7 @@ export const PlayerDetails = ({
       {/* Player match history section with detailed statistics */}
       <div className="bg-card rounded-md overflow-hidden">
         <div className="p-4">
-          <h2 className="text-xl font-semibold text-kanaliiga-orange mb-2">
-            Match History
-          </h2>
+          <h2 className="text-xl font-semibold mb-2">Match History</h2>
           <div className="overflow-x-auto">
             {isLoading ? (
               <div className="p-6 text-center">
@@ -608,31 +599,15 @@ export const PlayerDetails = ({
               </TooltipProvider>
             )}
           </div>
-          {matchHistory.length > 0 && (
-            <div className="flex justify-between mt-2 items-center">
-              <div className="text-sm text-muted-foreground">
-                Showing {paginatedMatches.length} of {totalMatches} matches
-              </div>
-              <div className="flex gap-2">
-                <button
-                  className={`text-muted-foreground ${currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 1}
-                >
-                  <span className="text-kanaliiga-orange">◀</span> Previous
-                </button>
-                <span className="text-muted-foreground px-2">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  className={`text-muted-foreground ${currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:text-kanaliiga-orange"}`}
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                >
-                  Next <span className="text-kanaliiga-orange">▶</span>
-                </button>
-              </div>
-            </div>
+          {totalMatches > 10 && (
+            <TablePagination
+              totalRows={totalMatches}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              handlePageChange={setCurrentPage}
+              handlePageSizeChange={handlePageSizeChange}
+              pageSize={itemsPerPage}
+            />
           )}
         </div>
       </div>

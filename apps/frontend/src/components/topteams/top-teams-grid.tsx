@@ -61,7 +61,7 @@ export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
                 {getLeagueEmoji(division.league_sort_priority)}
               </span>
               <div>
-                <h2 className="text-kanaliiga-orange text-xl font-bold">
+                <h2 className="text-xl font-bold">
                   {`${division.league_name}, ${getStageType(division.stage)}`}
                 </h2>
               </div>

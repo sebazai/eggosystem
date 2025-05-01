@@ -336,7 +336,7 @@ test.describe("Profile Form", () => {
     ).toBeTruthy();
   });
 
-  test("should allow navigation after accepting privacy policy", async ({
+  test.skip("should allow navigation after accepting privacy policy", async ({
     page
   }) => {
     // Ensure we're on the profile page

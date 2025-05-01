@@ -49,9 +49,7 @@ export const MatchMapPicks = ({
 
         {/* Map Pick/Ban Phase */}
         <div className="w-full">
-          <h2 className="text-lg font-bold text-kanaliiga-orange mb-3">
-            MAP PICKS & BANS
-          </h2>
+          <h2 className="text-lg font-bold mb-3">MAP PICKS & BANS</h2>
           <div className="grid grid-cols-2 xl:grid-cols-7 gap-[2px]">
             {maps?.map((mapInfo, index) => (
               <div key={index} className="relative bg-card p-3">

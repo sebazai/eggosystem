@@ -62,9 +62,7 @@ export const PlayerStatistics = ({
                 width={24}
                 height={24}
               />
-              <h2 className="text-base font-bold text-kanaliiga-orange">
-                {team.name}
-              </h2>
+              <h2 className="text-base font-bold">{team.name}</h2>
             </Link>
           </div>
 
