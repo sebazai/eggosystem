@@ -374,7 +374,11 @@ export const getMatchInfo = async (
               CASE 
                   WHEN best_of = 1 THEN COALESCE(MAX(team_score), 0)
                   ELSE COALESCE(SUM(team_score > opponent_score), 0)
-              END AS team_final_score
+              END AS team_final_score,
+              CASE
+                WHEN best_of = 1 THEN game_id
+                ELSE NULL
+              END AS game_id
           FROM MatchData
           GROUP BY match_id, team_id, team_name, team_logo, best_of
       )
@@ -387,6 +391,7 @@ export const getMatchInfo = async (
           m.season_id,
           m.best_of,
           m.stage,
+          a.game_id,
           JSON_OBJECTAGG(
               a.team_id, 
               JSON_OBJECT(

@@ -1,4 +1,9 @@
-import type { Match, MatchTeamInfo } from "@eggosystem/types";
+import type {
+  Match,
+  MatchGame,
+  MatchTeamInfo,
+  Nullable
+} from "@eggosystem/types";
 
 export interface MatchInfoQuery {
   match_id: Match["id"];
@@ -10,6 +15,7 @@ export interface MatchInfoQuery {
   season_id: Match["season_id"];
   stage: Match["stage"];
   teams: string; // JSON stringified array of MatchTeamInfo
+  game_id: Nullable<MatchGame["id"]>;
 }
 
 export interface MatchInfo {
@@ -22,4 +28,5 @@ export interface MatchInfo {
   season_id: Match["season_id"];
   stage: Match["stage"];
   teams: Record<string | number, MatchTeamInfo>;
+  game_id: Nullable<MatchGame["id"]>;
 }
