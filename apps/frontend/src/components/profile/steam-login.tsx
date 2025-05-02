@@ -2,8 +2,8 @@
 import { envConfig } from "@/configs/env";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Button } from "./ui/button";
 import { createNextUrl } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 // components/SteamLoginButton.tsx
 export const SteamLoginButton = ({

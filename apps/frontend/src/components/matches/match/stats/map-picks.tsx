@@ -1,9 +1,9 @@
 import { useMatchMaps } from "@/hooks/data/useMatchMaps";
 
 interface MatchMapPicksProps {
-  matchId: string;
-  gameId?: string;
-  handleMapSelect: (mapId?: string) => void;
+  matchId: number;
+  gameId?: number;
+  handleMapSelect: (mapId?: number) => void;
 }
 
 export const MatchMapPicks = ({
@@ -23,9 +23,9 @@ export const MatchMapPicks = ({
               <div
                 key={index}
                 className={`flex items-center mb-[2px] bg-card cursor-pointer hover:bg-accent/50 ${
-                  gameId === String(map.id) ? "bg-accent/50" : ""
+                  gameId === map.id ? "bg-kanaliiga-orange/10" : ""
                 }`}
-                onClick={() => handleMapSelect(String(map.id) || undefined)}
+                onClick={() => handleMapSelect(map.id ?? undefined)}
               >
                 <div className="w-32 p-3">
                   <div className="text-sm font-medium text-muted-foreground">
@@ -86,9 +86,7 @@ export const MatchMapPicks = ({
       </div>
 
       <div className="p-2 mb-2 flex flex-col sm:flex-row justify-between items-center bg-card">
-        <h1 className="text-xl text-kanaliiga-orange mb-2 sm:mb-0">
-          MATCH STATS
-        </h1>
+        <h1 className="text-xl mb-2 sm:mb-0">MATCH STATS</h1>
         <div className="flex flex-wrap gap-2 justify-center">
           <button
             className={`px-3 py-1 ${!gameId ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
@@ -99,8 +97,8 @@ export const MatchMapPicks = ({
           {maps?.map((map) => (
             <button
               key={map.id}
-              className={`px-3 py-1 ${gameId === String(map.id) ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
-              onClick={() => handleMapSelect(String(map.id))}
+              className={`px-3 py-1 ${gameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
+              onClick={() => handleMapSelect(map.id)}
             >
               {map.map_name}
             </button>

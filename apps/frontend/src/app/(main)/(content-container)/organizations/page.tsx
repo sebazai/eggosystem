@@ -1,8 +1,8 @@
-import OrganizationFlipCard from "@/components/organization-flip-card";
+import OrganizationFlipCard from "@/components/organizations/org-flip-card";
 import FadeOnScroll from "@/components/layout/fade-on-scroll";
 import { envConfig } from "@/configs/env";
 import type { Organizations } from "@eggosystem/types";
-import { SearchBar } from "@/components/search-bar";
+import { SearchBar } from "@/components/inputs/search-bar";
 import { Suspense } from "react";
 import { Spinner } from "@/components/icons";
 import type { Metadata } from "next";

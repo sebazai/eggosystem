@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { FooterSponsors } from "../sponsors/footer-sponsors";
 
 const Footer = () => {
   return (
@@ -21,33 +21,7 @@ const Footer = () => {
           </div>
 
           {/* Column 2 - Sponsors */}
-          <div>
-            <h2>Sponsors</h2>
-            <div className="mt-4 space-y-6 flex flex-col items-center md:items-start lg:items-center dark:invert-0 invert">
-              <Image
-                src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/elisa-esports.png"
-                alt="Elisa Esports"
-                width={200}
-                height={119}
-              />
-
-              <div className="flex space-x-3">
-                <Image
-                  src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/tnnet.png"
-                  alt="TNNet"
-                  width={100}
-                  height={19}
-                />
-              </div>
-
-              <Image
-                src="https://stats.kanaliiga.fi/cs/assets/sponsor-logos/atflow.png"
-                alt="Atflow"
-                width={120}
-                height={30}
-              />
-            </div>
-          </div>
+          <FooterSponsors />
 
           {/* Column 3 - Follow Us */}
           <div>

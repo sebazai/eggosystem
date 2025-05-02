@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
 
-export async function getMatchInfo<T>(matchId: string): Promise<T> {
+export async function getMatchInfo<T>(matchId: number): Promise<T> {
   const res = await fetch(
     `${envConfig.API_URL}/api/v1/matches/${matchId}/info`
   );

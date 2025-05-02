@@ -24,7 +24,7 @@ import {
   type SignupPlayerType
 } from "@eggosystem/types";
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
-import { CopyInput } from "@/components/inputs/CopyInput";
+import { CopyInput } from "@/components/inputs/copy-input";
 
 interface SignupFormProps {
   seasonId: string;

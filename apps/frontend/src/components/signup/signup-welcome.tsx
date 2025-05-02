@@ -1,7 +1,7 @@
 "use client";
 
 import { ContentContainer } from "@/components/layout/content-container";
-import { SteamLoginButton } from "@/components/steam-login";
+import { SteamLoginButton } from "@/components/profile/steam-login";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";

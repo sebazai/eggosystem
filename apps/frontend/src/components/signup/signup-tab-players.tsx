@@ -41,8 +41,8 @@ import { playerSchema } from "@eggosystem/types";
 import { TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./signup-player-alert";
-import { FaceITLevelIcon } from "../profle/faceit-level";
-import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
+import { FaceITLevelIcon } from "../profile/faceit-level";
+import { CS2PremierRankBadge } from "../profile/cs2-premier-rank";
 import { Spinner, WarningTooltipIcon } from "../icons";
 import Link from "next/link";
 

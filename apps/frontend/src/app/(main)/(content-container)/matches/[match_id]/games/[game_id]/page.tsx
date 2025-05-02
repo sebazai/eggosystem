@@ -8,8 +8,13 @@ interface PageProps {
 
 export default async function MatchGamePage({ params }: PageProps) {
   const { match_id, game_id } = await params;
-  const matchInfo = await getMatchInfo<MatchInfo>(match_id);
+  const matchId = parseInt(match_id, 10);
+  const gameId = parseInt(game_id, 10);
+  if (isNaN(matchId) || isNaN(gameId)) {
+    throw new Error("Invalid match_id or game_id");
+  }
+  const matchInfo = await getMatchInfo<MatchInfo>(matchId);
   return (
-    <GameStats matchId={match_id} gameId={game_id} teams={matchInfo.teams} />
+    <GameStats matchId={matchId} gameId={gameId} teams={matchInfo.teams} />
   );
 }

@@ -4,7 +4,7 @@ import { expressFetcher } from "@/lib/utils";
 import type { MatchMapsPlayed } from "@eggosystem/types";
 import useSWR from "swr";
 
-export const useMatchMaps = (matchId: string) => {
+export const useMatchMaps = (matchId: number) => {
   const { data, error, isValidating } = useSWR<MatchMapsPlayed[]>(
     `/api/v1/matches/${matchId}/mapsplayed`,
     expressFetcher,

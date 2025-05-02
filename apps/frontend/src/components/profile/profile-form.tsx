@@ -17,7 +17,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ContentContainer } from "../layout/content-container";
-import { SteamLoginButton } from "../steam-login";
+import { SteamLoginButton } from "@/components/profile/steam-login";
 import { accountSchema, type AccountUpdateValues } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";

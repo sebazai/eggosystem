@@ -17,7 +17,15 @@ export async function generateMetadata({
 }: LayoutProps): Promise<Metadata> {
   const { match_id } = await params;
 
-  const result = await getMatchInfo<MatchInfo>(match_id);
+  // parse the match_id to a number
+  const matchIdNumber = parseInt(match_id, 10);
+  if (isNaN(matchIdNumber)) {
+    return {
+      title: "Match not found"
+    };
+  }
+
+  const result = await getMatchInfo<MatchInfo>(matchIdNumber);
   if (!result) {
     return {
       title: "Match not found"
@@ -44,7 +52,11 @@ export async function generateMetadata({
 
 export default async function Layout({ children, params }: LayoutProps) {
   const { match_id } = await params;
-  const matchInfo = await getMatchInfo<MatchInfo>(match_id);
+  const matchIdNumber = parseInt(match_id, 10);
+  if (isNaN(matchIdNumber)) {
+    return <ContentContainer>Match not found</ContentContainer>;
+  }
+  const matchInfo = await getMatchInfo<MatchInfo>(matchIdNumber);
 
   if (!matchInfo) {
     return <ContentContainer>Match not found</ContentContainer>;

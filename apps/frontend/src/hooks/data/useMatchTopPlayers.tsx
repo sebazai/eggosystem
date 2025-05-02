@@ -4,7 +4,7 @@ import { expressFetcher } from "@/lib/utils";
 import type { MatchTopPlayerAwards } from "@eggosystem/types";
 import useSWR from "swr";
 
-export function useMatchTopPlayers(matchId: string) {
+export function useMatchTopPlayers(matchId: number) {
   const { data, error, isValidating } = useSWR<MatchTopPlayerAwards>(
     `/api/v1/matches/${matchId}/topplayers`,
     expressFetcher,

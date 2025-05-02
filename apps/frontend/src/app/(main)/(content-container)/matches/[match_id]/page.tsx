@@ -8,6 +8,12 @@ interface PageProps {
 
 export default async function MatchPage({ params }: PageProps) {
   const { match_id } = await params;
-  const result = await getMatchInfo<MatchInfo>(match_id);
-  return <MatchStats matchId={match_id} teams={result.teams} />;
+  // Convert match_id to a number
+  const matchId = parseInt(match_id, 10);
+  // Check if match_id is a valid number
+  if (isNaN(matchId)) {
+    throw new Error("Invalid match_id");
+  }
+  const result = await getMatchInfo<MatchInfo>(matchId);
+  return <MatchStats matchId={matchId} teams={result.teams} />;
 }

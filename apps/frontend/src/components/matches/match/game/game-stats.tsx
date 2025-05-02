@@ -15,15 +15,15 @@ import { TopPlayers } from "../stats/top-players";
 import { useMatchGameTopPlayers } from "@/hooks/data/useMatchGameTopPlayers";
 
 interface MatchStatsProps {
-  matchId: string;
-  gameId: string;
+  matchId: number;
+  gameId: number;
   teams: MatchInfo["teams"];
 }
 
 export const GameStats = ({ matchId, gameId, teams }: MatchStatsProps) => {
   const router = useRouter();
 
-  const handleMapSelect = (gameId: string | undefined) => {
+  const handleMapSelect = (gameId: number | undefined) => {
     // Generate the new URL based on the selected gameId
     const newUrl = gameId
       ? `/matches/${matchId}/games/${gameId}`

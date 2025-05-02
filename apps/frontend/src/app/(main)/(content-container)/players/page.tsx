@@ -4,7 +4,7 @@ import React from "react";
 import { useSearchParams } from "next/navigation";
 import { MultiFilters } from "@/components/filters/multi-filters";
 import { PlayerTable } from "@/components/players/player-table";
-import { PlayerNameFilter } from "@/components/filters/player-name-filter";
+import { PlayerNameFilter } from "@/components/filters/player-name-search";
 import { useFilters } from "@/context/FilterContext";
 import { CardContainer } from "@/components/layout/card-container";
 import { ContentContainer } from "@/components/layout/content-container";

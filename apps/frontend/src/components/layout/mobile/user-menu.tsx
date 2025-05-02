@@ -1,5 +1,5 @@
-import { MobileLogOut } from "@/components/logout";
-import { SteamLoginButton } from "@/components/steam-login";
+import { MobileLogOut } from "@/components/profile/logout";
+import { SteamLoginButton } from "@/components/profile/steam-login";
 import { useAuth } from "@/context/AuthContext";
 import { SettingsIcon } from "lucide-react";
 import Link from "next/link";

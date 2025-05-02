@@ -1,6 +1,6 @@
 "use client";
 import { ContentContainer } from "@/components/layout/content-container";
-import { SteamLoginButton } from "@/components/steam-login";
+import { SteamLoginButton } from "@/components/profile/steam-login";
 import { motion } from "framer-motion";
 import { Pointer } from "lucide-react";
 import type React from "react";

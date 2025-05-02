@@ -10,10 +10,10 @@ import {
 import { Settings2Icon, UserCheckIcon, UserIcon } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { SteamLoginButton } from "@/components/steam-login";
-import { DesktopLogOut } from "@/components/logout";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import { DesktopLogOut } from "../profile/logout";
+import { SteamLoginButton } from "../profile/steam-login";
 
 export default function UserDropdown() {
   const { user, logout } = useAuth();

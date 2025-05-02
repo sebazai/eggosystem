@@ -15,8 +15,8 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
-import { FaceITLevelIcon } from "../profle/faceit-level";
-import { CS2PremierRankBadge } from "../profle/cs2-premier-rank";
+import { FaceITLevelIcon } from "../profile/faceit-level";
+import { CS2PremierRankBadge } from "../profile/cs2-premier-rank";
 import { useFaceITRank } from "@/hooks/data/useFaceITRank";
 import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
 import { TablePagination } from "../tables/table-pagination";
