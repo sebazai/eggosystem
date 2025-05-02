@@ -14,10 +14,10 @@ import { useMatchTopPlayers } from "@/hooks/data/useMatchTopPlayers";
 
 interface MatchStatsProps {
   matchId: number;
-  teams: MatchInfo["teams"];
+  matchInfo: MatchInfo;
 }
 
-export const MatchStats = ({ matchId, teams }: MatchStatsProps) => {
+export const MatchStats = ({ matchId, matchInfo }: MatchStatsProps) => {
   const router = useRouter();
 
   const handleMapSelect = (gameId: number | undefined) => {
@@ -34,17 +34,34 @@ export const MatchStats = ({ matchId, teams }: MatchStatsProps) => {
   const { playerStats } = useMatchPlayerStats(matchId);
   const { topPlayers } = useMatchTopPlayers(matchId);
 
+  const baseFilters = {
+    seasons: matchInfo.season_id.toString(),
+    leagues: matchInfo.league_id.toString()
+  };
+
   return (
     <>
       <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
-      {teamStats && <TeamStatistics teamStats={teamStats} />}
+      {teamStats && (
+        <TeamStatistics teamStats={teamStats} teamStatsFilters={baseFilters} />
+      )}
 
       {/* Player Stats Grid */}
       {playerStats && (
-        <PlayerStatistics playerStats={playerStats} teams={teams} />
+        <PlayerStatistics
+          playerStats={playerStats}
+          teams={matchInfo.teams}
+          playerStatsFilters={baseFilters}
+        />
       )}
       {/* Top Players */}
-      {topPlayers && <TopPlayers topPlayers={topPlayers} teams={teams} />}
+      {topPlayers && (
+        <TopPlayers
+          topPlayers={topPlayers}
+          teams={matchInfo.teams}
+          topPlayerFilters={baseFilters}
+        />
+      )}
     </>
   );
 };

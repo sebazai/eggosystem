@@ -1,17 +1,28 @@
 import type { MatchTeamStats } from "@eggosystem/types";
 import { TeamStatBox } from "./team-stat-box";
 
-interface TeamStatisticsProps {
-  teamStats: MatchTeamStats[];
+export interface TeamStatsFilters {
+  seasons: string;
+  leagues: string;
 }
 
-export const TeamStatistics = ({ teamStats }: TeamStatisticsProps) => {
+interface TeamStatisticsProps {
+  teamStats: MatchTeamStats[];
+  teamStatsFilters: TeamStatsFilters;
+}
+
+export const TeamStatistics = ({
+  teamStats,
+  teamStatsFilters
+}: TeamStatisticsProps) => {
   const [team1, team2] = teamStats;
   return (
     <div className="mb-4 bg-card">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px]">
         {/* Team 1 Stats */}
-        {team1 && <TeamStatBox team={team1} />}
+        {team1 && (
+          <TeamStatBox team={team1} teamStatsFilters={teamStatsFilters} />
+        )}
 
         {/* Center Stats - GOTV Demo */}
         <div className="p-4 flex flex-col justify-center items-center border-l border-r border-gray-800">
@@ -22,7 +33,9 @@ export const TeamStatistics = ({ teamStats }: TeamStatisticsProps) => {
         </div>
 
         {/* Team 2 Stats */}
-        {team2 && <TeamStatBox team={team2} />}
+        {team2 && (
+          <TeamStatBox team={team2} teamStatsFilters={teamStatsFilters} />
+        )}
       </div>
     </div>
   );

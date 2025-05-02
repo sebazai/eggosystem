@@ -2,15 +2,25 @@ import { createNextUrl } from "@/lib/utils";
 import type { MatchTeamStats } from "@eggosystem/types";
 import Image from "next/image";
 import Link from "next/link";
+import type { TeamStatsFilters } from "./team-statistics";
 
-export const TeamStatBox = ({ team }: { team: MatchTeamStats }) => {
+export const TeamStatBox = ({
+  team,
+  teamStatsFilters
+}: {
+  team: MatchTeamStats;
+  teamStatsFilters: TeamStatsFilters;
+}) => {
   return (
     <div className="p-4">
       <Link
-        href={`/teams/${team.team_id}`}
-        className="hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors inline-block"
+        href={{
+          pathname: `/teams/${team.team_id}`,
+          query: new URLSearchParams({ ...teamStatsFilters }).toString()
+        }}
+        className="hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors inline-block mb-4"
       >
-        <h3 className="text-base font-bold text-kanaliiga-orange mb-4">
+        <h3 className="text-base font-bold text-kanaliiga-orange">
           {team.name}
         </h3>
       </Link>

@@ -1,7 +1,6 @@
 import { cn, createStatsKanaliigaImageUrl } from "@/lib/utils";
 import type { MatchTeamInfo } from "@eggosystem/types";
 import Image from "next/image";
-import Link from "next/link";
 
 interface MatchHeaderProps {
   team1: MatchTeamInfo;
@@ -46,14 +45,9 @@ export function MatchHeader({
         <div className="flex items-center gap-4 flex-1">
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-2">
-              <Link
-                href={`/teams/${team1.id}`}
-                className="hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors"
-              >
-                <span className="text-xl font-bold text-kanaliiga-orange">
-                  {team1.name}
-                </span>
-              </Link>
+              <span className="text-xl font-bold px-2 py-1 text-kanaliiga-orange">
+                {team1.name}
+              </span>
               <div className="h-8 w-8 relative hidden xs:block">
                 <Image
                   src={createStatsKanaliigaImageUrl(team1.logo)}
@@ -98,14 +92,9 @@ export function MatchHeader({
                   className="object-contain"
                 />
               </div>
-              <Link
-                href={`/teams/${team2.id}`}
-                className="hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors"
-              >
-                <span className="text-xl font-bold text-kanaliiga-orange">
-                  {team2.name}
-                </span>
-              </Link>
+              <span className="text-xl font-bold px-2 py-1 text-kanaliiga-orange">
+                {team2.name}
+              </span>
             </div>
             {team2.rank && (
               <span className="text-sm text-zinc-400">

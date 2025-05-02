@@ -15,5 +15,5 @@ export default async function MatchPage({ params }: PageProps) {
     throw new Error("Invalid match_id");
   }
   const result = await getMatchInfo<MatchInfo>(matchId);
-  return <MatchStats matchId={matchId} teams={result.teams} />;
+  return <MatchStats matchId={matchId} matchInfo={result} />;
 }

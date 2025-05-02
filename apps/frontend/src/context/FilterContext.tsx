@@ -52,7 +52,7 @@ export const FilterProvider = ({
       searchParams.size === 0 &&
       data?.season_id &&
       !ready &&
-      filterPaths.some((p) => path.includes(p))
+      filterPaths.some((p) => path.endsWith(p))
     ) {
       const params = new URLSearchParams();
       params.append("seasons", data.season_id.toString());

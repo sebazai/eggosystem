@@ -7,34 +7,37 @@ import type {
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-import { useRouter } from "next/navigation";
+
+interface TopPlayerFilters {
+  seasons: string;
+  leagues: string;
+}
 
 interface TopPlayerProps {
   topPlayers: MatchTopPlayerAwards;
   teams: MatchInfo["teams"];
+  topPlayerFilters: TopPlayerFilters;
 }
 
 const roundToOneDecimal = (num: number) =>
   num % 1 === 0 ? num : parseFloat(num.toFixed(1));
 
-export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
-  const router = useRouter();
+const awardNames: Record<keyof MatchTopPlayerAwards, string> = {
+  most_kills: "Most Kills",
+  most_adr: "Highest ADR",
+  most_assists: "Most Assists",
+  most_awp_kills: "Most AWP Kills",
+  most_utility_damage: "Most Utility Damage",
+  most_first_kills: "Most First Kills",
+  most_mates_flashed: "Most Teammates Flashed",
+  most_flash_assists: "Most Flash Assists"
+};
 
-  const handlePlayerClick = (steamId: string) => {
-    router.push(`/players/${encodeURIComponent(steamId)}`);
-  };
-
-  const awardNames: Record<keyof MatchTopPlayerAwards, string> = {
-    most_kills: "Most Kills",
-    most_adr: "Highest ADR",
-    most_assists: "Most Assists",
-    most_awp_kills: "Most AWP Kills",
-    most_utility_damage: "Most Utility Damage",
-    most_first_kills: "Most First Kills",
-    most_mates_flashed: "Most Teammates Flashed",
-    most_flash_assists: "Most Flash Assists"
-  };
-
+export const TopPlayers = ({
+  topPlayers,
+  teams,
+  topPlayerFilters
+}: TopPlayerProps) => {
   return (
     <div className="mt-8 max-w-[600px]">
       <h2 className="mb-4">TOP PLAYERS</h2>
@@ -53,13 +56,18 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
             const text = awardNames[awardsKey];
             const stat = value;
             const team = teams[stat.team_id];
+
+            const params = new URLSearchParams({ ...topPlayerFilters });
             return (
               <React.Fragment key={key}>
                 <div className="text-muted-foreground text-sm">{text}</div>
                 <div className="flex gap-2">
                   {team && (
                     <Link
-                      href={`/teams/${team.id}`}
+                      href={{
+                        pathname: `/teams/${team.id}`,
+                        query: params.toString()
+                      }}
                       onClick={(e) => e.stopPropagation()}
                       className="hover:opacity-80 transition-opacity"
                     >
@@ -73,14 +81,15 @@ export const TopPlayers = ({ topPlayers, teams }: TopPlayerProps) => {
                       />
                     </Link>
                   )}
-                  <span
+                  <Link
                     className="text-sm cursor-pointer hover:text-kanaliiga-orange"
-                    onClick={() =>
-                      stat?.steam_id && handlePlayerClick(stat.steam_id)
-                    }
+                    href={{
+                      pathname: `/players/${stat.steam_id}`,
+                      query: params.toString()
+                    }}
                   >
                     {stat.nickname}
-                  </span>
+                  </Link>
                 </div>
                 <div className="text-sm text-right">
                   {roundToOneDecimal(stat.value ?? 0)}
