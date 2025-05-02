@@ -8,21 +8,19 @@ import { FaceITLevelIcon } from "../profile/faceit-level";
 import { CS2PremierRankBadge } from "../profile/cs2-premier-rank";
 import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
 import { useFaceITRank } from "@/hooks/data/useFaceITRank";
-import type { FilterParamsQuery } from "@/lib/utils";
-import { usePlayerGameDetails } from "@/hooks/data/usePlayerGameDetails";
+import { usePlayerTeamDetails } from "@/hooks/data/usePlayerTeamDetails";
 import { ContentContainer } from "../layout/content-container";
+import { useFilters } from "@/context/FilterContext";
+import { PlayerWinsLosses } from "./player-game-wins-losses";
+import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
 
-export const PlayerDetailsHeader = ({
-  steamId,
-  filterParams
-}: {
-  steamId: string;
-  filterParams: FilterParamsQuery;
-}) => {
-  const { playerGameDetails, isLoading, isError } = usePlayerGameDetails({
+export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
+  const { filterParams } = useFilters();
+  const { playerTeamDetails, isLoading, isError } = usePlayerTeamDetails({
     steamId,
     ...filterParams
   });
+  const { steamPlayer } = useSteamPlayer(steamId);
   const faceItRank = useFaceITRank(steamId);
   const cs2PremierRank = useCS2PremierRank(steamId);
 
@@ -52,44 +50,18 @@ export const PlayerDetailsHeader = ({
     );
   }
 
-  // Gracefully "fail"
-  if (!playerGameDetails) {
-    console.error("No player game details");
-    return <></>;
-  }
-
-  const playerDetails = playerGameDetails[0];
-
-  // Gracefully "fail"
-  if (!playerDetails) {
-    console.error("No player game details");
-    return <></>;
-  }
-
-  const total = playerGameDetails.reduce(
-    (acc, player) => {
-      acc.wins += player.wins;
-      acc.losses += player.losses;
-      acc.draws += player.draws;
-      acc.matches_played += player.matches_played;
-      return acc;
-    },
-    { wins: 0, losses: 0, draws: 0, matches_played: 0 }
-  );
-
-  // get .wins of all playerDetails in reduce sum them up
-  const winPercentage = (total.wins / Math.max(total.matches_played, 1)) * 100;
+  const playerTeam = playerTeamDetails?.[0] ?? null;
 
   return (
     <div className="bg-card rounded-md overflow-hidden mb-3">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 bg-kanaliiga-light-brown/20 rounded-full flex items-center justify-center text-3xl font-bold">
-            {playerDetails.nickname.charAt(0).toUpperCase()}
+            {steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U"}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-kanaliiga-orange">
-              {playerDetails.nickname}
+              {steamPlayer?.nickname ?? "Unknown player"}
             </h1>
             <div className="flex items-center gap-2 mt-1">
               {/* Add rank indicators here */}
@@ -117,56 +89,29 @@ export const PlayerDetailsHeader = ({
             </div>
             {/* Team info on a new row */}
             <div className="flex items-center gap-2 mt-1">
-              {playerGameDetails.length === 1 ? (
+              {playerTeamDetails?.length === 1 ? (
                 <Link
-                  href={`/teams/${playerDetails.team_id}`}
+                  href={`/teams/${playerTeam?.team_id}`}
                   className="flex items-center gap-2 hover:text-kanaliiga-orange transition-colors"
                 >
                   <Image
-                    src={playerDetails.team_logo || "/teams/nologo.svg"}
-                    alt={playerDetails.team_name || "No team"}
+                    src={playerTeam?.team_logo || "/teams/nologo.svg"}
+                    alt={playerTeam?.team_name || "No team"}
                     width={20}
                     height={20}
                     className="rounded-full"
                   />
                   <span className="text-muted-foreground">
-                    {playerDetails.team_name}
+                    {playerTeam?.team_name}
                   </span>
                 </Link>
               ) : (
-                <span>In {playerGameDetails.length} teams</span>
+                <span>In {playerTeamDetails?.length ?? 0} teams</span>
               )}
             </div>
           </div>
           <div className="ml-auto">
-            <div className="flex items-center gap-3">
-              <div className="text-center">
-                <div className="text-muted-foreground text-sm">W</div>
-                <div className="text-lg font-semibold text-green-500">
-                  {total.wins}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-muted-foreground text-sm">L</div>
-                <div className="text-lg font-semibold text-red-500">
-                  {total.losses}
-                </div>
-              </div>
-              {total.draws !== 0 && (
-                <div className="text-center">
-                  <div className="text-muted-foreground text-sm">Draw</div>
-                  <div className="text-lg font-semibold text-blue-500">
-                    {total.draws}
-                  </div>
-                </div>
-              )}
-              <div className="text-center">
-                <div className="text-muted-foreground text-sm">Win%</div>
-                <div className="text-lg font-semibold">
-                  {winPercentage.toFixed(1)}%
-                </div>
-              </div>
-            </div>
+            <PlayerWinsLosses steamId={steamId} />
           </div>
         </div>
       </div>

@@ -5,7 +5,8 @@ import {
   getPlayerStatsWithFilters,
   getPlayerBySteamId,
   getPlayerMatchHistoryByFilters,
-  getPlayerDetailsWithFilters
+  getPlayerGameDetailsWithFilters,
+  getPlayerTeamDetailsWithFilters
 } from "../models/player.models";
 
 import {
@@ -97,10 +98,6 @@ export const getPlayerPlatformRank = async (req: Request, res: Response) => {
   res.status(400).json({ message: "Unknown platform enum" });
 };
 
-/**
- * Get player stats with filters
- * @route GET /api/v1/players/stats
- */
 export const getPlayerStatsByFiltersController = async (
   req: Request,
   res: Response
@@ -135,26 +132,40 @@ export const getPlayerMatchHistoryController = async (
   res.status(200).json(matchHistory);
 };
 
-export const getPlayerDetailsController = async (
+export const getPlayerTeamDetailsController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ) => {
   const { steam_id } = req.params;
   const { parsedParams } = req;
 
-  const playerDetails = await getPlayerDetailsWithFilters(
+  const playerTeamDetails = await getPlayerTeamDetailsWithFilters(
     steam_id,
     parsedParams
   );
 
-  if (!playerDetails) {
-    res.status(404).json({
-      error: "Player details not found."
-    });
-    return;
+  res.status(200).json(playerTeamDetails);
+};
+
+export const getPlayerGameDetailsController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const playerDetails = await getPlayerGameDetailsWithFilters(
+    steam_id,
+    parsedParams
+  );
+
+  // This should never happen...
+  if (playerDetails.length > 1) {
+    throw new Error("Player details length should only be one");
   }
 
-  res.status(200).json(playerDetails);
+  const [data] = playerDetails;
+  res.status(200).json(data);
 };
 
 export const getPlayerStatsController = async (
@@ -166,12 +177,5 @@ export const getPlayerStatsController = async (
 
   const playerStats = await getPlayerStatsWithFilters(steam_id, parsedParams);
 
-  if (!playerStats) {
-    res.status(404).json({
-      error: "Player details not found."
-    });
-    return;
-  }
-
-  res.status(200).json(playerStats);
+  res.status(200).json(playerStats ?? {});
 };

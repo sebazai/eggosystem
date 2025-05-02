@@ -9,7 +9,8 @@ import {
   type PlayerDetailsBySteamId,
   type PlayerStatsResult,
   type MatchHistoryResult,
-  PlayerGameDetailsByFilters
+  PlayerGameDetailsByFilters,
+  PlayerTeamDetailsByFilters
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
@@ -298,7 +299,52 @@ export const getPlayerMatchHistoryByFilters = async (
   return matchHistory;
 };
 
-export const getPlayerDetailsWithFilters = async (
+export const getPlayerTeamDetailsWithFilters = async (
+  steam_id: string,
+  { season_ids, league_ids, team_ids }: ParsedParams
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "stp.team_id",
+      value: team_ids
+    },
+    {
+      column: "s.id",
+      value: season_ids
+    },
+    {
+      column: "l.id",
+      value: league_ids
+    },
+    { column: "p.steam_id", value: [steam_id] }
+  ]);
+
+  const baseQuery = `
+    SELECT 
+      p.steam_id,
+      p.nickname,
+      t.name AS team_name,
+      t.id AS team_id,
+      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) AS team_logo
+    FROM SteamPlayers p
+    JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+    JOIN Seasons s ON s.id = stp.season_id
+    JOIN SeasonLeagueTeams slt ON slt.season_id = s.id AND stp.team_id = slt.team_id
+    JOIN Leagues l ON l.id = slt.league_id
+    JOIN Teams t ON t.id = slt.team_id
+    WHERE ${query}
+    GROUP BY p.steam_id, p.nickname, team_name;
+  `;
+
+  const playerTeamDetails = await runQuery<PlayerTeamDetailsByFilters[]>(
+    baseQuery,
+    queryParams
+  );
+
+  return playerTeamDetails;
+};
+
+export const getPlayerGameDetailsWithFilters = async (
   steam_id: string,
   { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
 ) => {
@@ -332,10 +378,6 @@ export const getPlayerDetailsWithFilters = async (
       JOIN TeamGameScores t2 ON t1.game_id = t2.game_id AND t1.team_id < t2.team_id
     )
     SELECT 
-      p.steam_id,
-      p.nickname,
-      t.name AS team_name,
-      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) AS team_logo,
       COUNT(DISTINCT mg.id) AS matches_played,
       COUNT(DISTINCT CASE 
         WHEN ps.team = 1 AND ts.team1_score > ts.team2_score THEN mg.id
@@ -357,12 +399,10 @@ export const getPlayerDetailsWithFilters = async (
     JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
     JOIN Teams t ON t.id = stp.team_id
     WHERE ${query}
-    GROUP BY p.steam_id, p.nickname, team_name;
   `;
-  const playerDetails = await runQuery<PlayerGameDetailsByFilters[]>(
-    baseQuery,
-    queryParams
-  );
+  const playerDetails = await runQuery<
+    Array<PlayerGameDetailsByFilters | undefined>
+  >(baseQuery, queryParams);
 
   return playerDetails;
 };

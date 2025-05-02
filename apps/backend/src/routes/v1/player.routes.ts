@@ -9,7 +9,8 @@ import {
   getPlayerStatsByFiltersController,
   getPlayerStatsController,
   getPlayerMatchHistoryController,
-  getPlayerDetailsController
+  getPlayerGameDetailsController,
+  getPlayerTeamDetailsController
 } from "../../controllers/players.controllers";
 
 // import parseQueryParams from "../../middlewares/parseQueryParams";
@@ -32,7 +33,12 @@ router.get(
 router.get(
   "/:steam_id/game-details",
   parseQueryFilterParams,
-  getPlayerDetailsController
+  getPlayerGameDetailsController
+);
+router.get(
+  "/:steam_id/teams",
+  parseQueryFilterParams,
+  getPlayerTeamDetailsController
 );
 router.get(
   "/:steam_id/match-history",

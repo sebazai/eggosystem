@@ -19,11 +19,10 @@ export const usePlayerGameDetails = ({
   const sortedQuery = generateFiltersParamQuery(params);
   const apiUrl = `/api/v1/players/${steamId}/game-details?${sortedQuery}`;
 
-  const { data, error, isValidating, isLoading } = useSWR<
-    Array<PlayerGameDetailsByFilters>
-  >(apiUrl, expressFetcher, {
-    revalidateOnFocus: false
-  });
+  const { data, error, isValidating, isLoading } =
+    useSWR<PlayerGameDetailsByFilters>(apiUrl, expressFetcher, {
+      revalidateOnFocus: false
+    });
 
   return {
     playerGameDetails: data,

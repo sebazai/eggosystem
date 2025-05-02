@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { cn, type FilterParamsQuery } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { usePlayerStats } from "@/hooks/data/usePlayerStats";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 import { TablePagination } from "../tables/table-pagination";
 import { usePlayerMatchHistory } from "@/hooks/data/usePlayerMatchHistory";
 import { PlayerDetailsHeader } from "./player-details-header";
+import { useFilters } from "@/context/FilterContext";
 
 function StatCard({ label, value }: StatCardProps) {
   return (
@@ -33,13 +34,9 @@ type SortDirection = "asc" | "desc";
 
 interface PlayerDetailsProps {
   steamId: string;
-  filterParams: FilterParamsQuery;
 }
 
-export const PlayerDetails = ({
-  steamId,
-  filterParams
-}: PlayerDetailsProps) => {
+export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
   const router = useRouter();
 
   const [sortConfig, setSortConfig] = useState<{
@@ -49,6 +46,8 @@ export const PlayerDetails = ({
     key: "match_date",
     direction: "desc"
   });
+
+  const { filterParams } = useFilters();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -241,7 +240,7 @@ export const PlayerDetails = ({
 
   return (
     <div>
-      <PlayerDetailsHeader steamId={steamId} filterParams={filterParams} />
+      <PlayerDetailsHeader steamId={steamId} />
       {/* Stat Cards Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-6">

@@ -11,15 +11,21 @@ import useSWR from "swr";
 
 type FilterContextType = {
   activeSeason: { season_id: number } | null;
-  filterParams: FilterParamsQuery | null;
+  filterParams: FilterParamsQuery;
   isLoading: boolean;
   isValidating: boolean;
   error: Error | undefined;
 };
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
-const includeExactPaths = ["/matches", "/topteams", "/leaderboards"];
-const includePrefixPaths = ["/players", "/teams"];
+const includeExactPaths = [
+  "/matches",
+  "/topteams",
+  "/leaderboards",
+  "/players"
+];
+const includePrefixPaths: string[] = ["/teams"];
+const excludePrefixPaths: string[] = ["/players/"];
 export const FilterProvider = ({
   appId,
   children
@@ -54,7 +60,13 @@ export const FilterProvider = ({
       params.append("seasons", data.season_id.toString());
       router.replace(`?${params.toString()}`, { scroll: false });
     }
-    if (searchParams.size !== 0 && !ready) {
+    if (
+      (searchParams.size !== 0 ||
+        excludePrefixPaths.some(
+          (p) => path === p || path.startsWith(`${p}`)
+        )) &&
+      !ready
+    ) {
       setReady(true);
     }
   }, [searchParams, data?.season_id, router, ready, path]);
@@ -75,7 +87,13 @@ export const FilterProvider = ({
       <FilterContext.Provider
         value={{
           activeSeason: null,
-          filterParams: null,
+          filterParams: {
+            seasons: null,
+            leagues: null,
+            stages: null,
+            teams: null,
+            maps: null
+          },
           isLoading: true,
           isValidating: false,
           error: undefined

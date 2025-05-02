@@ -31,7 +31,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
       <div className="mb-3">
         <h2 className="text-xl font-semibold mb-2">Filter Statistics</h2>
         <MultiFilters {...filterParams} steamId={steamId} />
-        <PlayerDetails steamId={steamId} filterParams={filterParams} />
+        <PlayerDetails steamId={steamId} />
       </div>
     </div>
   );
