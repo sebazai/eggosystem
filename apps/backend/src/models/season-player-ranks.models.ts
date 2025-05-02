@@ -128,3 +128,12 @@ export const insertFaceITPlayerRankForSeason = async (
     connection
   );
 };
+
+export const getPlayerKanaElo = async (steam_id: string) => {
+  const result = await runQuery<Array<{ kana_elo: number }>>(
+    "SELECT kana_elo FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC LIMIT 1",
+    [steam_id]
+  );
+
+  return result.length > 0 ? result[0] : { kana_elo: 0 };
+};

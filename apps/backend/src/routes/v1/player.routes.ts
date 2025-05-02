@@ -5,7 +5,8 @@ import {
   getIsPlayerProfilePublic,
   getPlayerSteamAppIdHours,
   getPlayerSteamAppIdRank,
-  getPlayerPlatformRank
+  getPlayerPlatformRank,
+  getPlayerKanaRankController
 } from "../../controllers/players.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
@@ -28,5 +29,6 @@ router.get(
   getPlayerSteamAppIdRank
 );
 router.get("/:steam_id/platform/:platform/rank", getPlayerPlatformRank);
+router.get("/:steam_id/kanarank", getPlayerKanaRankController);
 
 export default router;

@@ -12,7 +12,8 @@ import {
 import {
   getPlayerHoursForSteamAppId,
   getPlayerAppIdRank,
-  getPlayerRankForPlatform
+  getPlayerRankForPlatform,
+  getPlayerKanaRank
 } from "../services/player-ranks.services";
 import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
@@ -177,4 +178,13 @@ export const getFilteredPlayerStatisticsController = async (
   const playerStats = await getPlayerStatsWithFilters(steam_id, parsedParams);
 
   res.status(200).json(playerStats ?? {});
+};
+
+export const getPlayerKanaRankController = async (
+  req: Request,
+  res: Response
+) => {
+  const steam_id = req.params.steam_id;
+  const kanaRank = await getPlayerKanaRank(steam_id);
+  res.status(200).json(kanaRank);
 };

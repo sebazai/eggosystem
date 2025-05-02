@@ -65,3 +65,7 @@ packages/*/dist.turbo
 .pnpm-store/
 
 .cursor/rules
+
+# Cursor
+.cursor/
+.cursor/settings.json
