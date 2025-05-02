@@ -69,6 +69,9 @@ export const TabPlayers = ({
   seasonId,
   isEditMode
 }: TabPlayersProps) => {
+  const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
+    {}
+  );
   const [newPlayers, setNewPlayers] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
   const [hardCarrySteamId, setHardCarrySteamId] = useState("");
@@ -177,109 +180,140 @@ export const TabPlayers = ({
 
   useEffect(() => {
     const handlePlayer = async (steam_id: string, index: number) => {
-      if (
-        steam_id.length === 17 &&
-        !isNaN(Number(steam_id)) &&
-        !prevWatchedSteamIds.current.includes(steam_id)
-      ) {
-        setLoadingStates((prev) => ({ ...prev, [index]: true }));
+      try {
+        if (
+          steam_id.length === 17 &&
+          !isNaN(Number(steam_id)) &&
+          !prevWatchedSteamIds.current.includes(steam_id)
+        ) {
+          setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
-        // Fetch player hours, rank and platform rank first, as they should not return error
-        const [
-          hoursData,
-          rankData,
-          externalRankData,
-          publicStatus,
-          playerData
-        ] = await Promise.allSettled([
-          clientApiFetch<{
-            hours: number;
-          }>(
-            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
-          ),
-          clientApiFetch<{ rank: number }>(
-            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
-          ),
-          clientApiFetch<unknown>(
-            `/api/v1/players/${steam_id}/platform/${platform}/rank`
-          ),
-          clientApiFetch<{ public: boolean }>(
-            `/api/v1/players/${steam_id}/public`
-          ),
-          clientApiFetch<PlayerDetailsBySteamId>(
-            `/api/v1/players/${steam_id}/details`
-          )
-        ]);
-
-        // Only set values if the promises were fulfilled
-        if (publicStatus.status === "fulfilled") {
-          setValue(
-            `players.${index}.isProfilePublic`,
-            publicStatus.value.public
-          );
-        }
-
-        if (hoursData.status === "fulfilled") {
-          setValue(`players.${index}.hours`, hoursData.value.hours);
-        }
-
-        if (rankData.status === "fulfilled") {
-          setValue(`players.${index}.rank`, rankData.value.rank);
-        }
-
-        if (externalRankData.status === "fulfilled") {
-          switch (platform) {
-            case SeasonPlatform.FACEIT:
-              setValue(
-                `players.${index}.externalRank`,
-                (externalRankData.value as FaceITCSRank).faceit_level
-              );
-          }
-        }
-        if (playerData.status === "fulfilled") {
-          setValue(`players.${index}.accountId`, playerData.value.account_id);
-          const data = playerData.value;
-          const hasValidDataBool = Boolean(
-            data.is_valid_full_name && data.has_accepted_latest_privacy_policy
-          );
-          setValue(`players.${index}.hasValidData`, hasValidDataBool);
-
-          const isValidWorkEmail = Boolean(data.is_valid_work_email);
-          if (isValidWorkEmail) {
-            setValue(
-              `players.${index}.hasValidWorkEmail`,
-              Boolean(data.is_valid_work_email)
-            );
-          } else {
-            // Check if organizer has approved manually
-            const approvedByOrganizer = await clientApiFetch<{
-              employment_approved_by_organizer: boolean;
+          // Fetch player hours, rank and platform rank first, as they should not return error
+          const promises = await Promise.allSettled([
+            clientApiFetch<{
+              hours: number;
             }>(
-              `/api/v1/registrations/season/${seasonId}/team/${watchTeamId}/player/${steam_id}/approved-manually`
-            );
+              `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
+            ),
+            clientApiFetch<{ rank: number }>(
+              `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
+            ),
+            clientApiFetch<unknown>(
+              `/api/v1/players/${steam_id}/platform/${platform}/rank`
+            ),
+            clientApiFetch<{ public: boolean }>(
+              `/api/v1/players/${steam_id}/public`
+            ),
+            clientApiFetch<PlayerDetailsBySteamId>(
+              `/api/v1/players/${steam_id}/details`
+            )
+          ]);
 
+          const [
+            hoursData,
+            rankData,
+            externalRankData,
+            publicStatus,
+            playerData
+          ] = promises;
+
+          // Only set values if the promises were fulfilled
+          if (publicStatus.status === "fulfilled") {
             setValue(
-              `players.${index}.hasValidWorkEmail`,
-              Boolean(approvedByOrganizer.employment_approved_by_organizer)
+              `players.${index}.isProfilePublic`,
+              publicStatus.value.public
             );
           }
 
-          if (data.nickname)
-            setValue(`players.${index}.nickname`, data.nickname, {
-              shouldValidate: true
-            });
-          if (data.discord)
-            setValue(`players.${index}.discord`, data.discord, {
-              shouldValidate: false
-            });
-        } else {
-          if (playerData.reason instanceof ApiError) {
-            if (playerData.reason.status === 404)
-              setNewPlayers((prev) => [...prev, steam_id]);
+          if (hoursData.status === "fulfilled") {
+            setValue(`players.${index}.hours`, hoursData.value.hours);
           }
-        }
 
+          if (rankData.status === "fulfilled") {
+            setValue(`players.${index}.rank`, rankData.value.rank);
+          }
+
+          if (externalRankData.status === "fulfilled") {
+            switch (platform) {
+              case SeasonPlatform.FACEIT:
+                setValue(
+                  `players.${index}.externalRank`,
+                  (externalRankData.value as FaceITCSRank).faceit_level
+                );
+            }
+          }
+          if (playerData.status === "fulfilled") {
+            setValue(`players.${index}.accountId`, playerData.value.account_id);
+            const data = playerData.value;
+            const hasValidDataBool = Boolean(
+              data.is_valid_full_name && data.has_accepted_latest_privacy_policy
+            );
+            setValue(`players.${index}.hasValidData`, hasValidDataBool);
+
+            const isValidWorkEmail = Boolean(data.is_valid_work_email);
+            if (isValidWorkEmail) {
+              setValue(
+                `players.${index}.hasValidWorkEmail`,
+                Boolean(data.is_valid_work_email)
+              );
+            } else {
+              // Check if organizer has approved manually
+              if (watchTeamId) {
+                const approvedByOrganizer = await clientApiFetch<{
+                  employment_approved_by_organizer: boolean;
+                }>(
+                  `/api/v1/registrations/season/${seasonId}/team/${watchTeamId}/player/${steam_id}/approved-manually`
+                );
+
+                setValue(
+                  `players.${index}.hasValidWorkEmail`,
+                  approvedByOrganizer.employment_approved_by_organizer
+                );
+              }
+            }
+
+            if (data.nickname)
+              setValue(`players.${index}.nickname`, data.nickname, {
+                shouldValidate: true
+              });
+            if (data.discord)
+              setValue(`players.${index}.discord`, data.discord, {
+                shouldValidate: false
+              });
+          } else {
+            if (playerData.reason instanceof ApiError) {
+              if (playerData.reason.status === 404)
+                setNewPlayers((prev) => [...prev, steam_id]);
+            }
+          }
+
+          const errorReasonsMessage: string[] = [];
+          promises.forEach((promise) => {
+            if (promise.status === "rejected") {
+              errorReasonsMessage.push(
+                promise.reason instanceof ApiError
+                  ? promise.reason.message
+                  : "Unknown error"
+              );
+            }
+          });
+
+          setPromiseErrors((prev) => ({
+            ...prev,
+            [steam_id]: errorReasonsMessage
+          }));
+
+          setLoadingStates((prev) => ({ ...prev, [index]: false }));
+        }
+      } catch (error) {
+        console.error("Error fetching player data", error);
+        setPromiseErrors((prev) => ({
+          ...prev,
+          [steam_id]:
+            error instanceof ApiError ? [error.message] : ["Unknown error"]
+        }));
         setLoadingStates((prev) => ({ ...prev, [index]: false }));
+        throw error;
       }
     };
 
@@ -544,6 +578,23 @@ export const TabPlayers = ({
                         </FormItem>
                       )}
                     />
+                  )}
+
+                  {promiseErrors[player.steamId] && (
+                    <SignupPlayerNotification type="alert">
+                      <div className="flex flex-col">
+                        <span>
+                          {`Error fetching data for player ${player.steamId}`}
+                        </span>
+                        <div className="flex flex-col">
+                          {promiseErrors[player.steamId]?.map((error, i) => (
+                            <span key={i} className="text-sm">
+                              {error}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </SignupPlayerNotification>
                   )}
 
                   {isHardCarry && (
