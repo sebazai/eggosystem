@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 import { cn, type FilterParamsQuery } from "@/lib/utils";
-import { usePlayerDetails } from "@/hooks/data/usePlayerDetails";
+import { usePlayerStats } from "@/hooks/data/usePlayerStats";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -15,11 +13,9 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
-import { FaceITLevelIcon } from "../profile/faceit-level";
-import { CS2PremierRankBadge } from "../profile/cs2-premier-rank";
-import { useFaceITRank } from "@/hooks/data/useFaceITRank";
-import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
 import { TablePagination } from "../tables/table-pagination";
+import { usePlayerMatchHistory } from "@/hooks/data/usePlayerMatchHistory";
+import { PlayerDetailsHeader } from "./player-details-header";
 
 function StatCard({ label, value }: StatCardProps) {
   return (
@@ -45,8 +41,6 @@ export const PlayerDetails = ({
   filterParams
 }: PlayerDetailsProps) => {
   const router = useRouter();
-  const faceItRank = useFaceITRank(steamId);
-  const cs2PremierRank = useCS2PremierRank(steamId);
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -61,7 +55,12 @@ export const PlayerDetails = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Fetch player details using the hook
-  const { playerDetails, isLoading, isError } = usePlayerDetails({
+  const { playerStats, isLoading, isError } = usePlayerStats({
+    steamId,
+    ...filterParams
+  });
+
+  const { matchHistory } = usePlayerMatchHistory({
     steamId,
     ...filterParams
   });
@@ -89,7 +88,12 @@ export const PlayerDetails = ({
         tooltip: "Map and League",
         responsive: false
       },
-      { key: "score", label: "SCORE", sortable: true, tooltip: "Match Score" },
+      {
+        key: "score",
+        label: "SCORE",
+        sortable: true,
+        tooltip: "Match Score (Opponent score on right)"
+      },
       { key: "kills", label: "K", sortable: true, tooltip: "Kills" },
       {
         key: "assists",
@@ -173,10 +177,9 @@ export const PlayerDetails = ({
   };
 
   const getSortedMatchHistory = useMemo(() => {
-    if (!playerDetails?.matchHistory || playerDetails.matchHistory.length === 0)
-      return [];
+    if (!matchHistory || matchHistory.length === 0) return [];
 
-    const sortableItems = [...playerDetails.matchHistory];
+    const sortableItems = [...matchHistory];
     sortableItems.sort((a, b) => {
       // Special case for match date
       if (sortConfig.key === "match_date") {
@@ -204,14 +207,12 @@ export const PlayerDetails = ({
     });
 
     return sortableItems;
-  }, [playerDetails?.matchHistory, sortConfig]);
-
-  const matchHistory = getSortedMatchHistory;
+  }, [matchHistory, sortConfig]);
 
   // Calculate pagination
-  const totalMatches = matchHistory.length;
+  const totalMatches = getSortedMatchHistory.length;
   const totalPages = Math.ceil(totalMatches / itemsPerPage);
-  const paginatedMatches = matchHistory.slice(
+  const paginatedMatches = getSortedMatchHistory.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -221,14 +222,6 @@ export const PlayerDetails = ({
     setItemsPerPage(newPageSize);
     setCurrentPage(1); // Reset to first page
   };
-
-  // Use the player stats from the API if available, otherwise show loading state
-  const player = playerDetails?.playerStats;
-
-  // Calculate win percentage
-  const winPercentage = player
-    ? (player.wins / Math.max(player.matches_played, 1)) * 100
-    : 0;
 
   if (isError) {
     return (
@@ -248,111 +241,7 @@ export const PlayerDetails = ({
 
   return (
     <div>
-      <div className="bg-card rounded-md overflow-hidden mb-3">
-        <div className="p-6 border-b border-border">
-          {isLoading ? (
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-kanaliiga-light-brown/20 animate-pulse rounded-full" />
-              <div className="space-y-2">
-                <div className="h-6 w-40 bg-kanaliiga-light-brown/20 animate-pulse rounded" />
-                <div className="h-4 w-20 bg-kanaliiga-light-brown/20 animate-pulse rounded" />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-kanaliiga-light-brown/20 rounded-full flex items-center justify-center text-3xl font-bold">
-                {player?.nickname.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-kanaliiga-orange">
-                  {player?.nickname}
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  {/* Add rank indicators here */}
-                  <div className="flex items-center gap-2">
-                    {faceItRank.isLoading || cs2PremierRank.isLoading ? (
-                      <div className="flex gap-1">
-                        <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/20 animate-pulse"></div>
-                        <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/20 animate-pulse"></div>
-                      </div>
-                    ) : (
-                      <>
-                        {faceItRank.faceItRank?.faceit_level ? (
-                          <FaceITLevelIcon
-                            level={faceItRank.faceItRank.faceit_level}
-                          />
-                        ) : null}
-                        {cs2PremierRank.cs2Rank?.rank ? (
-                          <CS2PremierRankBadge
-                            rankScore={cs2PremierRank.cs2Rank.rank}
-                          />
-                        ) : null}
-                      </>
-                    )}
-                  </div>
-                </div>
-                {/* Team info on a new row */}
-                <div className="flex items-center gap-2 mt-1">
-                  {player?.team_name &&
-                  playerDetails?.matchHistory?.[0]?.team_id ? (
-                    <Link
-                      href={`/teams/${playerDetails.matchHistory[0].team_id}`}
-                      className="flex items-center gap-2 hover:text-kanaliiga-orange transition-colors"
-                    >
-                      <Image
-                        src={player?.team_logo || "/teams/nologo.svg"}
-                        alt={player?.team_name || "No team"}
-                        width={20}
-                        height={20}
-                        className="rounded-full"
-                      />
-                      <span className="text-muted-foreground">
-                        {player?.team_name}
-                      </span>
-                    </Link>
-                  ) : (
-                    <>
-                      <Image
-                        src={player?.team_logo || "/teams/nologo.svg"}
-                        alt={player?.team_name || "No team"}
-                        width={20}
-                        height={20}
-                        className="rounded-full"
-                      />
-                      <span className="text-muted-foreground">
-                        {player?.team_name || "No team"}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="ml-auto">
-                <div className="flex items-center gap-3">
-                  <div className="text-center">
-                    <div className="text-muted-foreground text-sm">W</div>
-                    <div className="text-lg font-semibold text-green-500">
-                      {player?.wins || 0}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-muted-foreground text-sm">L</div>
-                    <div className="text-lg font-semibold text-red-500">
-                      {player?.losses || 0}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-muted-foreground text-sm">Win%</div>
-                    <div className="text-lg font-semibold">
-                      {winPercentage.toFixed(1)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
+      <PlayerDetailsHeader steamId={steamId} filterParams={filterParams} />
       {/* Stat Cards Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-6">
@@ -373,32 +262,35 @@ export const PlayerDetails = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard
                 label="Matches"
-                value={player?.matches_played?.toString() || "0"}
+                value={playerStats?.matches_played?.toString() || "0"}
               />
               <StatCard
                 label="Kills"
-                value={player?.kills?.toString() || "0"}
+                value={playerStats?.kills?.toString() || "0"}
               />
               <StatCard
                 label="Deaths"
-                value={player?.deaths?.toString() || "0"}
+                value={playerStats?.deaths?.toString() || "0"}
               />
               <StatCard
                 label="Assists"
-                value={player?.assists?.toString() || "0"}
+                value={playerStats?.assists?.toString() || "0"}
               />
               <StatCard
                 label="K/D Ratio"
-                value={player?.kd?.toFixed(2) || "0"}
+                value={playerStats?.kd?.toFixed(2) || "0"}
               />
-              <StatCard label="ADR" value={player?.adr?.toFixed(1) || "0"} />
+              <StatCard
+                label="ADR"
+                value={playerStats?.adr?.toFixed(1) || "0"}
+              />
               <StatCard
                 label="HS%"
-                value={`${player?.hs_percent?.toFixed(1) || "0"}%`}
+                value={`${playerStats?.hs_percent?.toFixed(1) || "0"}%`}
               />
               <StatCard
                 label="Rating"
-                value={player?.kana_rating?.toFixed(2) || "0"}
+                value={playerStats?.kana_rating?.toFixed(2) || "0"}
               />
             </div>
           )}
@@ -415,7 +307,7 @@ export const PlayerDetails = ({
                 <div className="h-6 w-40 bg-kanaliiga-light-brown/20 animate-pulse rounded mx-auto mb-3" />
                 <div className="h-4 w-60 bg-kanaliiga-light-brown/20 animate-pulse rounded mx-auto" />
               </div>
-            ) : matchHistory.length === 0 ? (
+            ) : matchHistory?.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
                 No match history available for this player with the current
                 filters.
@@ -607,6 +499,7 @@ export const PlayerDetails = ({
               handlePageChange={setCurrentPage}
               handlePageSizeChange={handlePageSizeChange}
               pageSize={itemsPerPage}
+              type="matches"
             />
           )}
         </div>

@@ -401,6 +401,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
                 setCurrentPage(1);
                 setItemsPerPage(size);
               }}
+              type="matches"
             />
           )}
         </div>

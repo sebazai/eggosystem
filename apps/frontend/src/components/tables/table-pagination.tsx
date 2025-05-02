@@ -6,7 +6,8 @@ export const TablePagination = ({
   handlePageSizeChange,
   pageSize,
   totalPages,
-  totalRows
+  totalRows,
+  type
 }: {
   currentPage: number;
   pageSize: number;
@@ -14,12 +15,13 @@ export const TablePagination = ({
   totalPages: number;
   handlePageSizeChange: (pageSize: number) => void;
   handlePageChange: (page: number) => void;
+  type: string;
 }) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-center p-3 border-t border-border gap-4">
       <div className="text-xs text-muted-foreground">
         Showing {Math.min((currentPage - 1) * pageSize + 1, totalRows)} -{" "}
-        {Math.min(currentPage * pageSize, totalRows)} of {totalRows} players
+        {Math.min(currentPage * pageSize, totalRows)} of {totalRows} {type}
       </div>
       <div className="flex flex-col xxs:flex-row items-center gap-6">
         <button

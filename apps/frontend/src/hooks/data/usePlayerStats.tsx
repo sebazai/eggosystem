@@ -5,21 +5,18 @@ import {
   generateFiltersParamQuery,
   type FilterParamsQuery
 } from "@/lib/utils";
-import type { PlayerDetails } from "@eggosystem/types";
+import type { PlayerStatsResult } from "@eggosystem/types";
 import useSWR from "swr";
 
-interface UsePlayerDetailsProps extends FilterParamsQuery {
+interface UsePlayerStatsProps extends FilterParamsQuery {
   steamId: string;
 }
 
-export const usePlayerDetails = ({
-  steamId,
-  ...params
-}: UsePlayerDetailsProps) => {
+export const usePlayerStats = ({ steamId, ...params }: UsePlayerStatsProps) => {
   const sortedQuery = generateFiltersParamQuery(params);
   const apiUrl = `/api/v1/players/${steamId}/statistics?${sortedQuery}`;
 
-  const { data, error, isValidating, isLoading } = useSWR<PlayerDetails>(
+  const { data, error, isValidating, isLoading } = useSWR<PlayerStatsResult>(
     apiUrl,
     expressFetcher,
     {
@@ -28,7 +25,7 @@ export const usePlayerDetails = ({
   );
 
   return {
-    playerDetails: data,
+    playerStats: data,
     isLoading,
     isError: error,
     isValidating

@@ -6,7 +6,10 @@ import { runQuery } from "../db/mysqlRunQuery";
 import {
   type SteamPlayer,
   type ParsedParams,
-  type PlayerDetailsBySteamId
+  type PlayerDetailsBySteamId,
+  type PlayerStatsResult,
+  type MatchHistoryResult,
+  PlayerGameDetailsByFilters
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
@@ -116,221 +119,72 @@ export const getPlayersByFilters = async ({
   return runQuery(baseQuery, queryParams);
 };
 
-export const getPlayerDetailsWithStatsByFilters = async (
+export const getPlayerMatchHistoryByFilters = async (
   steam_id: string,
   { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
 ) => {
-  // Create query and params arrays for stats filtering
-  const queryFilters: string[] = [];
-  const queryParams: (number | string)[] = [];
-
-  // Always filter by the provided steam_id
-  queryFilters.push(`p.steam_id = ?`);
-  queryParams.push(steam_id);
-
-  // Handle direct filters
-  if (team_ids && team_ids.length) {
-    const placeholders = team_ids.map(() => "?").join(",");
-    queryFilters.push(`stp.team_id IN (${placeholders})`);
-    queryParams.push(...team_ids);
-  }
-
-  if (season_ids && season_ids.length) {
-    const placeholders = season_ids.map(() => "?").join(",");
-    queryFilters.push(`m.season_id IN (${placeholders})`);
-    queryParams.push(...season_ids);
-  }
-
-  if (league_ids && league_ids.length) {
-    const placeholders = league_ids.map(() => "?").join(",");
-    queryFilters.push(`l.id IN (${placeholders})`);
-    queryParams.push(...league_ids);
-  }
-
-  if (stages && stages.length) {
-    const placeholders = stages.map(() => "?").join(",");
-    queryFilters.push(`m.stage IN (${placeholders})`);
-    queryParams.push(...stages);
-  }
-
-  if (map_ids && map_ids.length) {
-    const placeholders = map_ids.map(() => "?").join(",");
-    queryFilters.push(`mg.map_id IN (${placeholders})`);
-    queryParams.push(...map_ids);
-  }
-
-  const whereClause = queryFilters.length
-    ? `WHERE ${queryFilters.join(" AND ")}`
-    : "";
-
-  // Use INNER JOIN for team-related tables when filtering by team_id,
-  // otherwise use LEFT JOIN to include all player data
-  const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
-
-  // Get player's aggregate statistics
-  const statsQuery = `
-    SELECT 
-      p.steam_id,
-      p.nickname,
-      t.name as team_name,
-      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) as team_logo,
-      COUNT(DISTINCT mg.id) as matches_played,
-      SUM(ps.kills) as kills,
-      SUM(ps.assists) as assists,
-      SUM(ps.deaths) as deaths,
-      SUM(ps.flash_assists) as flash_assists,
-      SUM(ps.awp_kills) as awp_kills,
-      SUM(ps.utility_damage) as utility_damage,
-      SUM(ps.headshots) as headshots,
-      SUM(ps.first_kills) as first_kills,
-      SUM(ps.first_deaths) as first_deaths,
-      AVG(ps.adr) as adr,
-      AVG(ps.kana_rating) as kana_rating,
-      AVG(ps.hs_percent) as hs_percent,
-      SUM(ps.clutches_won) as clutches_won,
-      SUM(ps.clutches) - SUM(ps.clutches_won) as clutches_lost,
-      AVG(ps.kast) as kast,
-      SUM(ps.enemies_flashed) as enemies_flashed,
-      SUM(ps.mates_flashed) as mates_flashed,
-      SUM(ps.self_flashes) as self_flashes,
-      SUM(ps.total_damage) as total_damage,
-      SUM(ps.flashes_thrown) as flashes_thrown,
-      SUM(ps.total_ef_duration) as total_ef_duration,
-      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
-      COUNT(DISTINCT CASE WHEN ps.team = 1 AND tgs1.score > tgs2.score THEN mg.id 
-                     WHEN ps.team = 2 AND tgs1.score < tgs2.score THEN mg.id END) as wins,
-      COUNT(DISTINCT CASE WHEN ps.team = 1 AND tgs1.score < tgs2.score THEN mg.id 
-                     WHEN ps.team = 2 AND tgs1.score > tgs2.score THEN mg.id END) as losses,
-      COUNT(DISTINCT CASE WHEN tgs1.score = tgs2.score THEN mg.id END) as draws,
-      SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
-      SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
-      SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
-      SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
-      COUNT(DISTINCT ps.id) as rounds_played
-    FROM SteamPlayers p
-    INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN Leagues l ON l.id = m.league_id
-    INNER JOIN TeamGameScores tgs1 ON tgs1.game_id = mg.id
-    INNER JOIN TeamGameScores tgs2 ON tgs2.game_id = mg.id AND tgs1.team_id < tgs2.team_id
-    ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
-    ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
-    ${whereClause}
-    GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
-  `;
-
-  // Get player's match history with stats per match
-  // Build a simpler query to avoid parameter handling issues with CTEs
-  let matchHistoryWhereClause = `WHERE p.steam_id = ?`;
-  const matchHistoryParams: (string | number)[] = [steam_id];
-
-  if (season_ids && season_ids.length) {
-    const placeholders = season_ids.map(() => "?").join(",");
-    matchHistoryWhereClause += ` AND m.season_id IN (${placeholders})`;
-    matchHistoryParams.push(...season_ids);
-  }
-
-  if (league_ids && league_ids.length) {
-    const placeholders = league_ids.map(() => "?").join(",");
-    matchHistoryWhereClause += ` AND l.id IN (${placeholders})`;
-    matchHistoryParams.push(...league_ids);
-  }
-
-  if (team_ids && team_ids.length) {
-    const placeholders = team_ids.map(() => "?").join(",");
-    matchHistoryWhereClause += ` AND stp.team_id IN (${placeholders})`;
-    matchHistoryParams.push(...team_ids);
-  }
-
-  if (stages && stages.length) {
-    const placeholders = stages.map(() => "?").join(",");
-    matchHistoryWhereClause += ` AND m.stage IN (${placeholders})`;
-    matchHistoryParams.push(...stages);
-  }
-
-  if (map_ids && map_ids.length) {
-    const placeholders = map_ids.map(() => "?").join(",");
-    matchHistoryWhereClause += ` AND mg.map_id IN (${placeholders})`;
-    matchHistoryParams.push(...map_ids);
-  }
-
-  // Define types for the query results
-  type PlayerStatsResult = {
-    steam_id: string;
-    nickname: string;
-    team_name: string;
-    team_logo: string;
-    matches_played: number;
-    kills: number;
-    assists: number;
-    deaths: number;
-    flash_assists: number;
-    awp_kills: number;
-    utility_damage: number;
-    headshots: number;
-    first_kills: number;
-    first_deaths: number;
-    adr: number;
-    kana_rating: number;
-    hs_percent: number;
-    clutches_won: number;
-    clutches_lost: number;
-    kast: number;
-    enemies_flashed: number;
-    mates_flashed: number;
-    self_flashes: number;
-    total_damage: number;
-    flashes_thrown: number;
-    total_ef_duration: number;
-    kd: number;
-    wins: number;
-    losses: number;
-    draws: number;
-    multikill_2k: number;
-    multikill_3k: number;
-    multikill_4k: number;
-    multikill_5k: number;
-    rounds_played: number;
-  };
-
-  type MatchHistoryResult = {
-    match_id: string;
-    game_id: string;
-    map_id: number;
-    map_name: string;
-    season_id: number;
-    season_name: string;
-    league_id: number;
-    league_name: string;
-    stage: number;
-    match_date: string;
-    team_id: number;
-    team_name: string;
-    team_logo: string;
-    score: number;
-    opponent_id: number;
-    opponent_name: string;
-    opponent_logo: string;
-    opponent_score: number;
-    kills: number;
-    deaths: number;
-    assists: number;
-    flash_assists: number;
-    awp_kills: number;
-    utility_damage: number;
-    headshots: number;
-    first_kills: number;
-    first_deaths: number;
-    kast: number;
-    adr: number;
-    hs_percent: number;
-    kana_rating: number;
-    kd: number;
-  };
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "stp.team_id",
+      value: team_ids
+    },
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "l.id",
+      value: league_ids
+    },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids },
+    { column: "p.steam_id", value: [steam_id] }
+  ]);
 
   const matchHistoryQuery = `
-    WITH MatchData AS (
+    WITH RelevantGames AS (
+      SELECT DISTINCT mg.id AS game_id
+      FROM SteamPlayers p
+      INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      INNER JOIN Maps maps ON maps.id = mg.map_id
+      INNER JOIN Seasons s ON s.id = m.season_id
+      INNER JOIN Leagues l ON l.id = m.league_id
+      INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
+      WHERE ${query}
+    ),
+    Team1 AS (
+      SELECT 
+        game_id, team_id AS team1_id, score AS team1_score
+      FROM (
+        SELECT *, ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY team_id) AS rn
+        FROM TeamGameScores
+        WHERE game_id IN (SELECT game_id FROM RelevantGames)
+      ) ranked
+      WHERE rn = 1
+    ),
+    Team2 AS (
+      SELECT 
+        game_id, team_id AS team2_id, score AS team2_score
+      FROM (
+        SELECT *, ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY team_id) AS rn
+        FROM TeamGameScores
+        WHERE game_id IN (SELECT game_id FROM RelevantGames)
+      ) ranked
+      WHERE rn = 2
+    ),
+    TeamScores AS (
+      SELECT 
+        t1.game_id,
+        t1.team1_id,
+        t1.team1_score,
+        t2.team2_id,
+        t2.team2_score
+      FROM Team1 t1
+      JOIN Team2 t2 ON t1.game_id = t2.game_id
+    ),
+    MatchData AS (
       SELECT 
         m.id as match_id,
         m.best_of,
@@ -357,21 +211,19 @@ export const getPlayerDetailsWithStatsByFilters = async (
         ps.adr,
         ps.hs_percent,
         ps.kana_rating,
-        t1.id as team1_id,
+        ts.team1_id,
         t1.name as team1_name,
         t1.team_logo as team1_logo,
-        t2.id as team2_id,
+        ts.team2_id,
         t2.name as team2_name,
         t2.team_logo as team2_logo,
-        tgs1.score as team1_score,
-        tgs2.score as team2_score,
-        -- Determine player team based on SeasonTeamPlayers
+        ts.team1_score,
+        ts.team2_score,
         CASE 
-          WHEN stp.team_id = t1.id THEN t1.id
-          WHEN stp.team_id = t2.id THEN t2.id
-          -- Fallback to ps.team when team_id doesn't match
-          WHEN ps.team = 1 THEN t1.id
-          ELSE t2.id
+          WHEN stp.team_id = ts.team1_id THEN ts.team1_id
+          WHEN stp.team_id = ts.team2_id THEN ts.team2_id
+          WHEN ps.team = 1 THEN ts.team1_id
+          ELSE ts.team2_id
         END as player_team_id
       FROM SteamPlayers p
       INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
@@ -380,14 +232,13 @@ export const getPlayerDetailsWithStatsByFilters = async (
       INNER JOIN Maps maps ON maps.id = mg.map_id
       INNER JOIN Seasons s ON s.id = m.season_id
       INNER JOIN Leagues l ON l.id = m.league_id
-      INNER JOIN TeamGameScores tgs1 ON tgs1.game_id = mg.id
-      INNER JOIN Teams t1 ON t1.id = tgs1.team_id
-      INNER JOIN TeamGameScores tgs2 ON tgs2.game_id = mg.id AND tgs1.team_id < tgs2.team_id
-      INNER JOIN Teams t2 ON t2.id = tgs2.team_id
-      ${team_ids && team_ids.length ? "INNER" : "LEFT"} JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
-      ${matchHistoryWhereClause}
+      INNER JOIN TeamScores ts ON ts.game_id = mg.id
+      INNER JOIN Teams t1 ON t1.id = ts.team1_id
+      INNER JOIN Teams t2 ON t2.id = ts.team2_id
+      INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
+      WHERE ${query}
     )
-    
+
     SELECT 
       match_id,
       season_id,
@@ -437,16 +288,154 @@ export const getPlayerDetailsWithStatsByFilters = async (
       ROUND(SUM(kills) / NULLIF(SUM(deaths), 0), 2) as kd
     FROM MatchData
     GROUP BY match_id, season_id, season_name, league_id, league_name, stage, match_date, best_of
-    ORDER BY match_date DESC
+    ORDER BY match_date DESC;
   `;
 
-  const [playerStats, matchHistory] = await Promise.all([
-    runQuery<PlayerStatsResult[]>(statsQuery, queryParams),
-    runQuery<MatchHistoryResult[]>(matchHistoryQuery, matchHistoryParams)
+  const matchHistory = await runQuery<MatchHistoryResult[]>(matchHistoryQuery, [
+    ...queryParams,
+    ...queryParams
+  ]);
+  return matchHistory;
+};
+
+export const getPlayerDetailsWithFilters = async (
+  steam_id: string,
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "stp.team_id",
+      value: team_ids
+    },
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "l.id",
+      value: league_ids
+    },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids },
+    { column: "p.steam_id", value: [steam_id] }
   ]);
 
-  return {
-    playerStats: playerStats.length > 0 ? playerStats[0] : null,
-    matchHistory
-  };
+  const baseQuery = `
+    WITH TeamScores AS (
+      SELECT 
+        t1.game_id,
+        t1.team_id AS team1_id,
+        t1.score AS team1_score,
+        t2.team_id AS team2_id,
+        t2.score AS team2_score
+      FROM TeamGameScores t1
+      JOIN TeamGameScores t2 ON t1.game_id = t2.game_id AND t1.team_id < t2.team_id
+    )
+    SELECT 
+      p.steam_id,
+      p.nickname,
+      t.name AS team_name,
+      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) AS team_logo,
+      COUNT(DISTINCT mg.id) AS matches_played,
+      COUNT(DISTINCT CASE 
+        WHEN ps.team = 1 AND ts.team1_score > ts.team2_score THEN mg.id
+        WHEN ps.team = 2 AND ts.team2_score > ts.team1_score THEN mg.id
+      END) AS wins,
+      COUNT(DISTINCT CASE 
+        WHEN ps.team = 1 AND ts.team1_score < ts.team2_score THEN mg.id
+        WHEN ps.team = 2 AND ts.team2_score < ts.team1_score THEN mg.id
+      END) AS losses,
+      COUNT(DISTINCT CASE 
+        WHEN ts.team1_score = ts.team2_score THEN mg.id
+      END) AS draws
+    FROM SteamPlayers p
+    JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+    JOIN MatchGames mg ON mg.id = ps.game_id
+    JOIN Matches m ON m.id = mg.match_id
+    JOIN Leagues l ON l.id = m.league_id
+    JOIN TeamScores ts ON ts.game_id = mg.id
+    JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
+    JOIN Teams t ON t.id = stp.team_id
+    WHERE ${query}
+    GROUP BY p.steam_id, p.nickname, team_name;
+  `;
+  const playerDetails = await runQuery<PlayerGameDetailsByFilters[]>(
+    baseQuery,
+    queryParams
+  );
+
+  return playerDetails;
+};
+
+export const getPlayerStatsWithFilters = async (
+  steam_id: string,
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "stp.team_id",
+      value: team_ids
+    },
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "l.id",
+      value: league_ids
+    },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids },
+    { column: "p.steam_id", value: [steam_id] }
+  ]);
+
+  // Get player's aggregate statistics
+  const statsQuery = `
+    SELECT 
+      p.steam_id,
+      p.nickname,
+      COUNT(DISTINCT mg.id) as matches_played,
+      SUM(ps.kills) as kills,
+      SUM(ps.assists) as assists,
+      SUM(ps.deaths) as deaths,
+      SUM(ps.flash_assists) as flash_assists,
+      SUM(ps.awp_kills) as awp_kills,
+      SUM(ps.utility_damage) as utility_damage,
+      SUM(ps.headshots) as headshots,
+      SUM(ps.first_kills) as first_kills,
+      SUM(ps.first_deaths) as first_deaths,
+      AVG(ps.adr) as adr,
+      AVG(ps.kana_rating) as kana_rating,
+      AVG(ps.hs_percent) as hs_percent,
+      SUM(ps.clutches_won) as clutches_won,
+      SUM(ps.clutches) - SUM(ps.clutches_won) as clutches_lost,
+      AVG(ps.kast) as kast,
+      SUM(ps.enemies_flashed) as enemies_flashed,
+      SUM(ps.mates_flashed) as mates_flashed,
+      SUM(ps.self_flashes) as self_flashes,
+      SUM(ps.total_damage) as total_damage,
+      SUM(ps.flashes_thrown) as flashes_thrown,
+      SUM(ps.total_ef_duration) as total_ef_duration,
+      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
+      SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
+      SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
+      SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
+      SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
+      COUNT(DISTINCT ps.id) as rounds_played
+    FROM SteamPlayers p
+    INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN Matches m ON m.id = mg.match_id
+    INNER JOIN Leagues l ON l.id = m.league_id
+    INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
+    WHERE ${query}
+    GROUP BY p.steam_id
+  `;
+
+  const [playerStats] = await runQuery<Array<PlayerStatsResult | undefined>>(
+    statsQuery,
+    queryParams
+  );
+
+  return playerStats;
 };

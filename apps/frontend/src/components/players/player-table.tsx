@@ -452,6 +452,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
             totalPages={totalPages}
             handlePageSizeChange={handlePageSizeChange}
             handlePageChange={handlePageChange}
+            type="players"
           />
         )}
       </div>

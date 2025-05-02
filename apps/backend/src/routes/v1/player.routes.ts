@@ -7,7 +7,9 @@ import {
   getPlayerSteamAppIdRank,
   getPlayerPlatformRank,
   getPlayerStatsByFiltersController,
-  getPlayerDetailsWithStatsController
+  getPlayerStatsController,
+  getPlayerMatchHistoryController,
+  getPlayerDetailsController
 } from "../../controllers/players.controllers";
 
 // import parseQueryParams from "../../middlewares/parseQueryParams";
@@ -25,7 +27,17 @@ router.get("/:steam_id/public", getIsPlayerProfilePublic);
 router.get(
   "/:steam_id/statistics",
   parseQueryFilterParams,
-  getPlayerDetailsWithStatsController
+  getPlayerStatsController
+);
+router.get(
+  "/:steam_id/game-details",
+  parseQueryFilterParams,
+  getPlayerDetailsController
+);
+router.get(
+  "/:steam_id/match-history",
+  parseQueryFilterParams,
+  getPlayerMatchHistoryController
 );
 router.get(
   "/:steam_id/app/:app_id/hours",

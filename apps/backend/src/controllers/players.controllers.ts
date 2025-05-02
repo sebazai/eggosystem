@@ -2,8 +2,10 @@ import { type Request, type Response } from "express";
 import {
   getPlayerDetailsBySteamId,
   getPlayersByFilters,
-  getPlayerDetailsWithStatsByFilters,
-  getPlayerBySteamId
+  getPlayerStatsWithFilters,
+  getPlayerBySteamId,
+  getPlayerMatchHistoryByFilters,
+  getPlayerDetailsWithFilters
 } from "../models/player.models";
 
 import {
@@ -111,28 +113,65 @@ export const getPlayerStatsByFiltersController = async (
   res.status(200).json(playerStats);
 };
 
-/**
- * Get detailed player stats and match history with filters
- * @route GET /api/v1/players/:steam_id/statistics
- */
-export const getPlayerDetailsWithStatsController = async (
+export const getPlayerMatchHistoryController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const matchHistory = await getPlayerMatchHistoryByFilters(
+    steam_id,
+    parsedParams
+  );
+
+  if (!matchHistory) {
+    res.status(404).json({
+      error: "Player match history not found."
+    });
+    return;
+  }
+
+  res.status(200).json(matchHistory);
+};
+
+export const getPlayerDetailsController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const playerDetails = await getPlayerDetailsWithFilters(
+    steam_id,
+    parsedParams
+  );
+
+  if (!playerDetails) {
+    res.status(404).json({
+      error: "Player details not found."
+    });
+    return;
+  }
+
+  res.status(200).json(playerDetails);
+};
+
+export const getPlayerStatsController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ): Promise<void> => {
   const { steam_id } = req.params;
   const { parsedParams } = req;
 
-  const playerDetails = await getPlayerDetailsWithStatsByFilters(
-    steam_id,
-    parsedParams
-  );
+  const playerStats = await getPlayerStatsWithFilters(steam_id, parsedParams);
 
-  if (!playerDetails.playerStats) {
+  if (!playerStats) {
     res.status(404).json({
-      error: "Player not found or no stats match the given filters"
+      error: "Player details not found."
     });
     return;
   }
 
-  res.status(200).json(playerDetails);
+  res.status(200).json(playerStats);
 };

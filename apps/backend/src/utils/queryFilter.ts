@@ -6,8 +6,11 @@ interface FilterGroup {
 }
 
 export type Filter =
-  | { column: string; value: Nullable<number[]> } // Single column filter
-  | { column: Array<{ column: string }>; value: Nullable<number[]> } // Multiple OR columns
+  | { column: string; value: Nullable<Array<string | number>> } // Single column filter
+  | {
+      column: Array<{ column: string }>;
+      value: Nullable<Array<string | number>>;
+    } // Multiple OR columns
   | { group: FilterGroup }; // Nested AND/OR groups
 
 interface QueryAndWithQueryParams {
