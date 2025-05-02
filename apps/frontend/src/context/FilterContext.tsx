@@ -18,13 +18,8 @@ type FilterContextType = {
 };
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
-const filterPaths = [
-  "/matches",
-  "/teams",
-  "/topteams",
-  "/players",
-  "/leaderboards"
-];
+const includeExactPaths = ["/matches", "/topteams", "/leaderboards"];
+const includePrefixPaths = ["/players", "/teams"];
 export const FilterProvider = ({
   appId,
   children
@@ -52,7 +47,8 @@ export const FilterProvider = ({
       searchParams.size === 0 &&
       data?.season_id &&
       !ready &&
-      filterPaths.some((p) => path.endsWith(p))
+      (includeExactPaths.includes(path) ||
+        includePrefixPaths.some((p) => path === p || path.startsWith(`${p}/`)))
     ) {
       const params = new URLSearchParams();
       params.append("seasons", data.season_id.toString());
