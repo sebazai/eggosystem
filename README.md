@@ -63,21 +63,22 @@ root / dev-pass
 
 ## Database Backups
 
-The system is configured to automatically create daily database backups at 04:00 using a rotating schedule based on weekdays. Backups are stored in the `./db-backup/` directory with filenames following the pattern `backup-[weekday].sql` (e.g., `backup-Mon.sql`, `backup-Tue.sql`, etc.).
+The system is configured to automatically create daily database backups at 04:00 using the juanluisbaptiste/mysql-backup image. Backups are stored in the `./db-backup/` directory and are automatically rotated with 7-day retention.
 
 ### Backup Features:
 
 - Automated daily backups at 04:00
-- Rotating backup files by weekday (7-day retention)
-- Backup logs stored in `./db-backup/backup.log`
-- All database contents included in each backup
+- Gzip compression for reduced storage needs
+- 7-day rotation for backups (MAX_BACKUPS=7)
+- Organized by database schema for easy restoration
+- Timeout protection (3 hours) for large databases
 
 ### Manual Backup
 
 To manually trigger a backup:
 
 ```bash
-docker-compose exec eggo-db-backup /backup.sh
+docker-compose exec eggo-db-backup /scripts/backup.sh
 ```
 
 ### Restoring from Backup
@@ -85,8 +86,14 @@ docker-compose exec eggo-db-backup /backup.sh
 To restore from a backup file:
 
 ```bash
-# Replace [weekday] with the day you want to restore from (Mon, Tue, Wed, etc.)
-cat ./db-backup/backup-[weekday].sql | docker-compose exec -T eggo-prod-db mysql -u root -p[root_password]
+# Navigate to the backup directory
+cd ./db-backup
+
+# Find the backup file you want to restore
+ls -la
+
+# Restore the backup (example for a specific file)
+zcat filename.sql.gz | docker-compose exec -T eggo-prod-db mysql -uroot -p${MARIADB_ROOT_PASSWORD}
 ```
 
-Note: Replace `[root_password]` with your actual database root password.
+For more information about the backup container, see [juanluisbaptiste/mysql-backup](https://hub.docker.com/r/juanluisbaptiste/mysql-backup).
