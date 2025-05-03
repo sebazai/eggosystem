@@ -60,3 +60,33 @@ Read [docs/migration.md](docs/migration.md).
 - With `devcontainer`, Phpmyadmin runs on port localhost:8083
 
 root / dev-pass
+
+## Database Backups
+
+The system is configured to automatically create daily database backups at 04:00 using a rotating schedule based on weekdays. Backups are stored in the `./db-backup/` directory with filenames following the pattern `backup-[weekday].sql` (e.g., `backup-Mon.sql`, `backup-Tue.sql`, etc.).
+
+### Backup Features:
+
+- Automated daily backups at 04:00
+- Rotating backup files by weekday (7-day retention)
+- Backup logs stored in `./db-backup/backup.log`
+- All database contents included in each backup
+
+### Manual Backup
+
+To manually trigger a backup:
+
+```bash
+docker-compose exec eggo-db-backup /backup.sh
+```
+
+### Restoring from Backup
+
+To restore from a backup file:
+
+```bash
+# Replace [weekday] with the day you want to restore from (Mon, Tue, Wed, etc.)
+cat ./db-backup/backup-[weekday].sql | docker-compose exec -T eggo-prod-db mysql -u root -p[root_password]
+```
+
+Note: Replace `[root_password]` with your actual database root password.

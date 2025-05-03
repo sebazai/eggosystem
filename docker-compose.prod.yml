@@ -149,6 +149,41 @@ services:
       - "traefik.http.services.phpmyadmin-hub.loadbalancer.server.port=80"
       - "traefik.docker.network=web"
 
+  eggo-db-backup:
+    image: alpine:3.15
+    restart: always
+    depends_on:
+      eggo-prod-db:
+        condition: service_healthy
+    environment:
+      MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
+    volumes:
+      - ./db-backup:/backups
+    command: |
+      sh -c '
+        apk --no-cache add mariadb-client
+        mkdir -p /backups
+        
+        cat > /backup.sh << "EOF"
+        #!/bin/sh
+        BACKUP_FILE="/backups/backup-$(date +%a).sql"
+        echo "Starting database backup to $BACKUP_FILE at $(date)"
+        mysqldump -h eggo-prod-db -u root -p$MARIADB_ROOT_PASSWORD --all-databases > "$BACKUP_FILE"
+        echo "Database backup completed at $(date), file size: $(du -h $BACKUP_FILE | cut -f1)"
+        EOF
+        
+        chmod +x /backup.sh
+        
+        echo "0 4 * * * /backup.sh >> /backups/backup.log 2>&1" > /etc/crontabs/root
+        crond -f -d 8
+      '
+    networks:
+      - web
+
 networks:
   web:
     external: true
+
+volumes:
+  mariadb_data:
+    name: eggo_mariadb_data
