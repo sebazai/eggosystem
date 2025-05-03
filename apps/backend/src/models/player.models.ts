@@ -139,163 +139,100 @@ export const getPlayerMatchHistoryByFilters = async (
     },
     { column: "m.stage", value: stages },
     { column: "mg.map_id", value: map_ids },
-    { column: "p.steam_id", value: [steam_id] }
+    { column: "sp.steam_id", value: [steam_id] }
   ]);
 
   const matchHistoryQuery = `
-    WITH RelevantGames AS (
-      SELECT DISTINCT mg.id AS game_id
-      FROM SteamPlayers p
-      INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-      INNER JOIN MatchGames mg ON mg.id = ps.game_id
-      INNER JOIN Matches m ON m.id = mg.match_id
-      INNER JOIN Maps maps ON maps.id = mg.map_id
-      INNER JOIN Seasons s ON s.id = m.season_id
-      INNER JOIN Leagues l ON l.id = m.league_id
-      INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
-      WHERE ${query}
-    ),
-    Team1 AS (
-      SELECT 
-        game_id, team_id AS team1_id, score AS team1_score
-      FROM (
-        SELECT *, ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY team_id) AS rn
-        FROM TeamGameScores
-        WHERE game_id IN (SELECT game_id FROM RelevantGames)
-      ) ranked
-      WHERE rn = 1
-    ),
-    Team2 AS (
-      SELECT 
-        game_id, team_id AS team2_id, score AS team2_score
-      FROM (
-        SELECT *, ROW_NUMBER() OVER (PARTITION BY game_id ORDER BY team_id) AS rn
-        FROM TeamGameScores
-        WHERE game_id IN (SELECT game_id FROM RelevantGames)
-      ) ranked
-      WHERE rn = 2
-    ),
-    TeamScores AS (
-      SELECT 
-        t1.game_id,
-        t1.team1_id,
-        t1.team1_score,
-        t2.team2_id,
-        t2.team2_score
-      FROM Team1 t1
-      JOIN Team2 t2 ON t1.game_id = t2.game_id
-    ),
-    MatchData AS (
-      SELECT 
-        m.id as match_id,
-        m.best_of,
-        m.match_date,
-        m.season_id,
-        s.name as season_name,
-        l.id as league_id,
-        l.name as league_name,
-        m.stage,
-        mg.id as game_id,
-        mg.map_id,
-        maps.name as map_name,
-        ps.team as player_team,
-        ps.kills,
-        ps.deaths,
-        ps.assists,
-        ps.flash_assists,
-        ps.awp_kills,
-        ps.utility_damage,
-        ps.headshots,
-        ps.first_kills,
-        ps.first_deaths,
-        ps.kast,
-        ps.adr,
-        ps.hs_percent,
-        ps.kana_rating,
-        ts.team1_id,
-        t1.name as team1_name,
-        t1.team_logo as team1_logo,
-        ts.team2_id,
-        t2.name as team2_name,
-        t2.team_logo as team2_logo,
-        ts.team1_score,
-        ts.team2_score,
-        CASE 
-          WHEN stp.team_id = ts.team1_id THEN ts.team1_id
-          WHEN stp.team_id = ts.team2_id THEN ts.team2_id
-          WHEN ps.team = 1 THEN ts.team1_id
-          ELSE ts.team2_id
-        END as player_team_id
-      FROM SteamPlayers p
-      INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-      INNER JOIN MatchGames mg ON mg.id = ps.game_id
-      INNER JOIN Matches m ON m.id = mg.match_id
-      INNER JOIN Maps maps ON maps.id = mg.map_id
-      INNER JOIN Seasons s ON s.id = m.season_id
-      INNER JOIN Leagues l ON l.id = m.league_id
-      INNER JOIN TeamScores ts ON ts.game_id = mg.id
-      INNER JOIN Teams t1 ON t1.id = ts.team1_id
-      INNER JOIN Teams t2 ON t2.id = ts.team2_id
-      INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
-      WHERE ${query}
-    )
+      SELECT
+        m.id AS match_id,
+        CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END AS game_id,
 
-    SELECT 
-      match_id,
-      season_id,
-      season_name,
-      league_id,
-      league_name,
-      stage,
-      match_date,
-      MAX(map_name) as map_name,
-      MAX(CASE WHEN player_team_id = team1_id THEN team1_id ELSE team2_id END) as team_id,
-      MAX(CASE WHEN player_team_id = team1_id THEN team1_name ELSE team2_name END) as team_name,
-      MAX(CASE WHEN player_team_id = team1_id THEN team1_logo ELSE team2_logo END) as team_logo,
-      MAX(CASE WHEN player_team_id = team1_id THEN team2_id ELSE team1_id END) as opponent_id,
-      MAX(CASE WHEN player_team_id = team1_id THEN team2_name ELSE team1_name END) as opponent_name,
-      MAX(CASE WHEN player_team_id = team1_id THEN team2_logo ELSE team1_logo END) as opponent_logo,
-      CASE 
-        WHEN best_of = 1 THEN 
-          MAX(CASE WHEN player_team_id = team1_id THEN team1_score ELSE team2_score END)
-        ELSE 
-          SUM(CASE 
-            WHEN (player_team_id = team1_id AND team1_score > team2_score) OR 
-                (player_team_id = team2_id AND team2_score > team1_score) 
-            THEN 1 ELSE 0 END)
-      END as score,
-      CASE 
-        WHEN best_of = 1 THEN 
-          MAX(CASE WHEN player_team_id = team1_id THEN team2_score ELSE team1_score END)
-        ELSE 
-          SUM(CASE 
-            WHEN (player_team_id = team1_id AND team1_score < team2_score) OR 
-                (player_team_id = team2_id AND team2_score < team1_score) 
-            THEN 1 ELSE 0 END)
-      END as opponent_score,
-      SUM(kills) as kills,
-      SUM(deaths) as deaths,
-      SUM(assists) as assists,
-      SUM(flash_assists) as flash_assists,
-      SUM(awp_kills) as awp_kills,
-      SUM(utility_damage) as utility_damage,
-      SUM(headshots) as headshots,
-      SUM(first_kills) as first_kills,
-      SUM(first_deaths) as first_deaths,
-      AVG(kast) as kast,
-      AVG(adr) as adr,
-      AVG(hs_percent) as hs_percent,
-      AVG(kana_rating) as kana_rating,
-      ROUND(SUM(kills) / NULLIF(SUM(deaths), 0), 2) as kd
-    FROM MatchData
-    GROUP BY match_id, season_id, season_name, league_id, league_name, stage, match_date, best_of
-    ORDER BY match_date DESC;
+        -- Map logic: single name or concatenated
+        CASE
+          WHEN m.best_of = 1 THEN MAX(mp.name)
+          ELSE GROUP_CONCAT(DISTINCT mp.name ORDER BY mg.id SEPARATOR ', ')
+        END AS map_name,
+
+        m.best_of,
+        m.season_id,
+        s.full_name AS season_name,
+        m.league_id,
+        l.name AS league_name,
+        m.stage,
+        m.match_date,
+
+        stp.team_id AS team_id,
+        t.name AS team_name,
+        t.team_logo AS team_logo,
+
+        opp_tgs.team_id AS opponent_id,
+        opp_t.name AS opponent_name,
+        opp_t.team_logo AS opponent_logo,
+
+        -- Score or Win Count
+        CASE
+          WHEN m.best_of = 1 THEN MAX(tgs.score)
+          ELSE COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)
+        END AS score,
+
+        CASE
+          WHEN m.best_of = 1 THEN MAX(opp_tgs.score)
+          ELSE COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)
+        END AS opponent_score,
+
+        -- PlayerStats aggregates
+        SUM(ps.kills) AS kills,
+        SUM(ps.deaths) AS deaths,
+        SUM(ps.assists) AS assists,
+        SUM(ps.flash_assists) AS flash_assists,
+        SUM(ps.awp_kills) AS awp_kills,
+        SUM(ps.utility_damage) AS utility_damage,
+        SUM(ps.headshots) AS headshots,
+        SUM(ps.first_kills) AS first_kills,
+        SUM(ps.first_deaths) AS first_deaths,
+        ROUND(AVG(ps.kast), 2) AS kast,
+        ROUND(AVG(ps.adr), 2) AS adr,
+        ROUND(AVG(ps.hs_percent), 2) AS hs_percent,
+        ROUND(AVG(ps.kana_rating), 2) AS kana_rating,
+        ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) AS kd
+
+      FROM PlayerStats ps
+      JOIN MatchGames mg ON mg.id = ps.game_id
+      JOIN Matches m ON m.id = mg.match_id
+      JOIN Maps mp ON mp.id = mg.map_id
+      JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
+      JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
+      JOIN TeamGameScores tgs ON tgs.team_id = stp.team_id AND tgs.game_id = mg.id
+      JOIN Teams t ON t.id = tgs.team_id
+      JOIN TeamGameScores opp_tgs ON opp_tgs.game_id = mg.id AND opp_tgs.team_id != tgs.team_id
+      JOIN Teams opp_t ON opp_t.id = opp_tgs.team_id
+      JOIN Seasons s ON s.id = m.season_id
+      JOIN Leagues l ON l.id = m.league_id
+
+      WHERE ${query}
+
+      GROUP BY
+        m.id,
+        CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END,
+        m.best_of,
+        m.season_id,
+        s.name,
+        m.league_id,
+        l.name,
+        m.stage,
+        m.match_date,
+        stp.team_id,
+        t.name,
+        t.team_logo,
+        opp_tgs.team_id,
+        opp_t.name,
+        opp_t.team_logo;
   `;
 
-  const matchHistory = await runQuery<MatchHistoryResult[]>(matchHistoryQuery, [
-    ...queryParams,
-    ...queryParams
-  ]);
+  const matchHistory = await runQuery<MatchHistoryResult[]>(
+    matchHistoryQuery,
+    queryParams
+  );
   return matchHistory;
 };
 

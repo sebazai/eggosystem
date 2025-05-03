@@ -81,8 +81,15 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
         responsive: false
       },
       {
+        key: "season",
+        label: "SEASON",
+        sortable: true,
+        tooltip: "Season",
+        responsive: false
+      },
+      {
         key: "map_league",
-        label: "MAP/LEAGUE",
+        label: "MAPS/LEAGUE",
         sortable: false,
         tooltip: "Map and League",
         responsive: false
@@ -417,6 +424,10 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
                             {match.match_date
                               ? format(new Date(match.match_date), "dd.MM.yyyy")
                               : "N/A"}
+                          </td>
+
+                          <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
+                            {match.season_name}
                           </td>
 
                           {/* Map & League - hidden on mobile */}
