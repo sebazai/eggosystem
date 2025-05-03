@@ -1,7 +1,6 @@
 export interface PlayerStatsTable {
   steam_id: string;
   nickname: string;
-  team_name: string; // Team name only, not logo
   matches_played: number;
   kills: number;
   deaths: number;

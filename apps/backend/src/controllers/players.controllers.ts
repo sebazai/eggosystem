@@ -104,7 +104,6 @@ export const getPlayerStatsByFiltersController = async (
 ) => {
   const { parsedParams } = req;
 
-  // Fetch player stats from database using the model
   const playerStats = await getPlayersByFilters(parsedParams);
 
   res.status(200).json(playerStats);

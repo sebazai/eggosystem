@@ -10,7 +10,8 @@ import {
   type PlayerStatsResult,
   type MatchHistoryResult,
   PlayerGameDetailsByFilters,
-  PlayerTeamDetailsByFilters
+  PlayerTeamDetailsByFilters,
+  PlayerStatsTable
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
@@ -90,7 +91,6 @@ export const getPlayersByFilters = async ({
     SELECT 
       p.steam_id,
       p.nickname, 
-      t.name as team_name, 
       COUNT(DISTINCT ps.game_id) as matches_played,
       SUM(ps.kills) as kills,
       SUM(ps.assists) as assists,
@@ -113,11 +113,11 @@ export const getPlayersByFilters = async ({
     ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
     ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
     ${whereClause}
-    GROUP BY p.steam_id, p.nickname, t.name
+    GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC
   `;
 
-  return runQuery(baseQuery, queryParams);
+  return runQuery<Array<PlayerStatsTable>>(baseQuery, queryParams);
 };
 
 export const getPlayerMatchHistoryByFilters = async (

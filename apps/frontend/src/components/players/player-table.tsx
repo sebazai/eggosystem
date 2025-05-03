@@ -24,7 +24,6 @@ type SortDirection = "asc" | "desc";
 // Column definitions with full names for tooltips
 const COLUMN_TOOLTIPS: Record<string, string> = {
   nickname: "Player Nickname",
-  team_name: "Team Name",
   matches_played: "Games Played",
   kills: "Kills",
   assists: "Assists (Flash Assists)",
@@ -72,12 +71,6 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
         label: "Player",
         sortable: true,
         responsive: ""
-      },
-      {
-        key: "team_name",
-        label: "Team",
-        sortable: true,
-        responsive: "hidden lg:table-cell"
       },
       {
         key: "matches_played",
@@ -241,22 +234,6 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     );
   };
 
-  const getTopPlayerClass = (
-    index: number,
-    player: PlayerStatsTable,
-    sortedPlayers: PlayerStatsTable[]
-  ) => {
-    // Only apply top player styling if sorted by rating in descending order
-    if (sortConfig.key === "kana_rating" && sortConfig.direction === "desc") {
-      // Find the player's global index in the full sorted array
-      const globalIndex = sortedPlayers.findIndex(
-        (p) => p.steam_id === player.steam_id
-      );
-      if (globalIndex < 3) return "bg-[#1e1e1e] font-bold";
-    }
-    return "";
-  };
-
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -350,11 +327,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                   (player: PlayerStatsTable, index: number) => (
                     <tr
                       key={`${player.nickname}-${index}`}
-                      className={cn(
-                        "border-b border-border transition-colors",
-                        getTopPlayerClass(index, player, getSortedPlayers),
-                        "hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                      )}
+                      className="border-b border-border transition-colors hover:bg-kanaliiga-light-brown/10 cursor-pointer"
                       onClick={() => handleRowClick(player.steam_id)}
                     >
                       <td
@@ -367,16 +340,6 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                           })}
                         >
                           {player.nickname}
-                          <div className="text-[0.65rem] text-muted-foreground mt-1 sm:hidden">
-                            {player.team_name || "No team"}
-                          </div>
-                        </div>
-                      </td>
-                      <td
-                        className={cn("px-3 py-2", columnResponsive.team_name)}
-                      >
-                        <div className="text-[0.65rem] text-muted-foreground">
-                          {player.team_name || "No team"}
                         </div>
                       </td>
                       <TableDataCell
@@ -428,10 +391,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                             )}
                       </TableDataCell>
                       <TableDataCell
-                        classNames={cn("px-3 py-2 text-center text-xs", {
-                          "font-bold text-white": index < 3,
-                          "text-muted-foreground": index >= 3
-                        })}
+                        classNames="px-3 py-2 text-center text-xs text-muted-foreground"
                         responsive={columnResponsive.kana_rating}
                       >
                         {player.kana_rating?.toFixed(2) || 0}
