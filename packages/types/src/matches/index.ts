@@ -8,3 +8,4 @@ export * from "./MatchPlayerStats.interface";
 export * from "./MatchTopPlayersQueryResult.interface";
 export * from "./MatchTeamInfo.interface";
 export * from "./MatchHistoryResult.interface";
+export * from "./MatchGameTeamRoundBreakdown.interface";
