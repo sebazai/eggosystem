@@ -70,14 +70,18 @@ The system is configured to automatically create daily database backups at 04:00
 - Automated daily backups at 04:00
 - Gzip compression for reduced storage needs
 - 7-day retention period (old backups automatically removed)
-- Entire database dumped as a single file for easy restoration
+- Entire database dumped for easy restoration
+
+### Backup File Format
+
+Backup files are stored with the naming format: `db_backup_YYYY-MM-DDTHH:mm:ssZ.sql.gz`
 
 ### Manual Backup
 
 To manually trigger a backup:
 
 ```bash
-docker-compose exec eggo-db-backup /backup.sh
+docker-compose exec eggo-db-backup /bin/bash -c 'mysql-backup dump --server $DB_SERVER --user $DB_USER --pass $DB_PASS --target $DB_DUMP_TARGET'
 ```
 
 ### Restoring from Backup
@@ -88,11 +92,11 @@ To restore from a backup file:
 # Navigate to the backup directory
 cd ./db-backup
 
-# Find the backup file you want to restore (format: yyyy-mm-dd-HHMMSS.sql.gz)
+# Find the backup file you want to restore
 ls -la
 
-# Restore the backup
-zcat filename.sql.gz | docker-compose exec -T eggo-prod-db mysql -uroot -p${MARIADB_ROOT_PASSWORD}
+# Restore the backup (example for a specific file)
+zcat db_backup_YYYY-MM-DDTHH:mm:ssZ.sql.gz | docker-compose exec -T eggo-prod-db mysql -uroot -p${MARIADB_ROOT_PASSWORD}
 ```
 
-For more information about the backup container, see [databack/mysql-backup](https://hub.docker.com/r/databack/mysql-backup).
+For more information about the backup container, see [databack/mysql-backup](https://github.com/databacker/mysql-backup).
