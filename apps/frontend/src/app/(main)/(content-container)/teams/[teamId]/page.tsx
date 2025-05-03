@@ -1,39 +1,43 @@
-"use client";
-
 import React from "react";
-import { MultiFilters } from "@/components/filters/multi-filters";
-import { TeamsTable } from "@/components/teams/teams-table";
-import { ContentContainer } from "@/components/layout/content-container";
-import { useFilters } from "@/context/FilterContext";
 import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
+import type { Metadata } from "next";
+import { envConfig } from "@/configs/env";
+import type { Team } from "@eggosystem/types";
+import { TeamPageWithFilters } from "@/components/teams/team-page";
 
 interface TeamDetailsPageProps {
   params: Promise<{
     teamId: string;
   }>;
 }
+export async function generateMetadata({
+  params
+}: TeamDetailsPageProps): Promise<Metadata> {
+  const { teamId } = await params;
 
-export default function TeamDetailsPage({ params }: TeamDetailsPageProps) {
-  const unwrappedParams = React.use(params);
+  const result = await fetch(`${envConfig.API_URL}/api/v1/teams/${teamId}`);
+
+  if (!result.ok) {
+    return {
+      title: "Failed to fetch team"
+    };
+  }
+  const data: Team = await result.json();
+  return {
+    title: `Team details for ${data.name}`
+  };
+}
+
+export default async function TeamDetailsPage({
+  params
+}: TeamDetailsPageProps) {
+  const unwrappedParams = await params;
   const teamId = Number(unwrappedParams.teamId);
-  const { filterParams, isLoading, error, isValidating } = useFilters();
-
-  if (isLoading || !filterParams || isValidating)
-    return <ContentContainer>Loading...</ContentContainer>;
-  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
     <div className="container mx-auto py-4">
       <AutoBreadcrumbs />
-      <MultiFilters
-        seasons={filterParams.seasons}
-        leagues={filterParams.leagues}
-        stages={filterParams.stages}
-        teams={[teamId]}
-        maps={filterParams.maps}
-        hideFilters={{ teams: true }}
-      />
-      <TeamsTable teamId={teamId} filterQueryParams={filterParams} />
+      <TeamPageWithFilters teamId={teamId} />
     </div>
   );
 }

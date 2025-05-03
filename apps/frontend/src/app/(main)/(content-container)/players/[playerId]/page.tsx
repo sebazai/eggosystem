@@ -1,11 +1,9 @@
-"use client";
-
 import React from "react";
-import { MultiFilters } from "@/components/filters/multi-filters";
-import { PlayerDetails } from "@/components/players/player-details";
-import { ContentContainer } from "@/components/layout/content-container";
-import { useFilters } from "@/context/FilterContext";
 import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
+import { PlayerPageWithFilters } from "@/components/players/player-page";
+import type { Metadata } from "next";
+import { envConfig } from "@/configs/env";
+import type { SteamPlayer } from "@eggosystem/types";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -13,14 +11,29 @@ interface PlayerDetailsProps {
   }>;
 }
 
-export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
-  const unwrappedParams = React.use(params);
-  const steamId = unwrappedParams.playerId;
-  const { filterParams, isLoading, error, isValidating } = useFilters();
+export async function generateMetadata({
+  params
+}: PlayerDetailsProps): Promise<Metadata> {
+  const { playerId } = await params;
 
-  if (isLoading || !filterParams || isValidating)
-    return <ContentContainer>Loading...</ContentContainer>;
-  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
+  const result = await fetch(`${envConfig.API_URL}/api/v1/players/${playerId}`);
+
+  if (!result.ok) {
+    return {
+      title: "Failed to fetch player"
+    };
+  }
+  const data: SteamPlayer = await result.json();
+  return {
+    title: `Player details for ${data.nickname}`
+  };
+}
+
+export default async function PlayerDetailsPage({
+  params
+}: PlayerDetailsProps) {
+  const unwrappedParams = await params;
+  const steamId = unwrappedParams.playerId;
 
   return (
     <div className="container mx-auto py-4">
@@ -30,8 +43,7 @@ export default function PlayerDetailsPage({ params }: PlayerDetailsProps) {
 
       <div className="mb-3">
         <h2 className="text-xl font-semibold mb-2">Filter Statistics</h2>
-        <MultiFilters {...filterParams} steamId={steamId} />
-        <PlayerDetails steamId={steamId} />
+        <PlayerPageWithFilters steamId={steamId} />
       </div>
     </div>
   );

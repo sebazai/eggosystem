@@ -9,9 +9,9 @@ import {
   type PlayerDetailsBySteamId,
   type PlayerStatsResult,
   type MatchHistoryResult,
-  PlayerGameDetailsByFilters,
-  PlayerTeamDetailsByFilters,
-  PlayerStatsTable
+  type PlayerGameDetailsByFilters,
+  type PlayerTeamDetailsByFilters,
+  type PlayerStatsTable
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
