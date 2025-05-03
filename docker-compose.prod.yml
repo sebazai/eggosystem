@@ -150,24 +150,21 @@ services:
       - "traefik.docker.network=web"
 
   eggo-db-backup:
-    image: juanluisbaptiste/mysql-backup:latest
+    image: databack/mysql-backup
     restart: always
     depends_on:
       eggo-prod-db:
         condition: service_healthy
     environment:
-      DB_SERVER: eggo-prod-db
-      DB_USER: root
-      DB_PASS: ${MARIADB_ROOT_PASSWORD}
-      DB_DUMP_FREQ: 1440
-      DB_DUMP_BEGIN: 0400
-      DB_DUMP_TARGET: /db
-      DB_DUMP_BY_SCHEMA: "true"
+      DB_DUMP_TARGET: "/db"
+      DB_USER: "root"
+      DB_PASS: "${MARIADB_ROOT_PASSWORD}"
+      DB_DUMP_FREQ: "1440"
+      DB_DUMP_BEGIN: "0400"
+      DB_SERVER: "eggo-prod-db"
+      DB_DUMP_DEBUG: "false"
+      DB_CLEANUP_TIME: "7"
       COMPRESSION: "gzip"
-      MYSQL_HOST: eggo-prod-db
-      TIMEOUT: 10800
-      MAX_BACKUPS: 7
-      BACKUP_DIR_OWNERSHIP: "1000"
     volumes:
       - ./db-backup:/db
     networks:
