@@ -14,7 +14,7 @@ describe("Match Routes", () => {
   app.use(matchRouter);
 
   describe("GET /matches/:match_id/mapsplayed", () => {
-    it("should return maps played for match id 7750", async () => {
+    it("should return maps played for match id 7752", async () => {
       const expectedMaps = [
         {
           id: 10338,
@@ -40,7 +40,7 @@ describe("Match Routes", () => {
       ] satisfies MatchMapsPlayed[];
 
       const response = await request(app)
-        .get("/7750/mapsplayed")
+        .get("/7752/mapsplayed")
         .expect("Content-Type", /json/)
         .expect(200);
 

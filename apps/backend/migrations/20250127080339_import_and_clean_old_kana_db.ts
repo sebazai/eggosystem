@@ -16,32 +16,8 @@ function getCleanDatabaseQueries() {
      UPDATE stats_all_seasons 
      SET steamID = REPLACE(LTRIM(RTRIM(REPLACE(steamID, CHAR(9), ' '))), ' ', CHAR(9))
    `,
-    // Fix specific steamIDs
-    `
-       UPDATE players 
-       SET steamID = '76561197991248173' 
-       WHERE id = 9457
-     `,
-
-    `
-       UPDATE players 
-       SET steamID = '76561197967466825' 
-       WHERE id = 11648
-     `,
     "DELETE FROM players WHERE steamID NOT LIKE '7%'",
-
     "DELETE FROM stats_all_seasons WHERE steamID NOT LIKE '7%'",
-
-    `
-  DELETE FROM teams 
-  WHERE leagueID IN (
-    SELECT DISTINCT a.leagueID 
-    FROM teams a 
-    LEFT JOIN leagues m ON m.id = a.leagueID 
-    WHERE m.id IS NULL
-  )
-`,
-
     `
   DELETE FROM matches 
   WHERE leagueID IN (
@@ -189,37 +165,6 @@ function getCleanDatabaseQueries() {
     `
   ALTER TABLE stats_all_seasons 
   CHANGE steamID steamID VARCHAR(25) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL
-`,
-
-    // Add a new column
-    `
-  ALTER TABLE players 
-  ADD isSub BOOLEAN NOT NULL DEFAULT FALSE
-`,
-
-    // Update isSub values
-    `
-  UPDATE players 
-  SET isSub = '1' 
-  WHERE id IN (
-    235, 592, 594, 595, 675, 676, 677, 719, 720, 1119, 1129, 1130, 1131, 
-    1296, 1299, 1301, 1403, 1514, 1701, 1704, 1707, 1708, 1760, 1762, 1771, 
-    1774, 1798, 1799, 1833, 1835, 1839, 1840, 1933, 1935, 1936, 1937, 1978, 
-    1979, 2003, 2004, 2006, 2056, 2134, 2192, 2193, 2292, 2293, 2294, 2295, 
-    2346, 2349, 2564, 2386, 2391, 2392, 2402, 2403, 2404, 2405, 2408, 2526, 
-    2938, 3112, 4220, 3917, 3918, 4172, 4174, 4193, 5376, 5521, 5678, 5679, 
-    5238, 6098, 7612, 7609, 8155, 9492, 9493, 9494, 9495, 9496, 9497, 9498, 
-    9500, 9501, 9502, 9503, 9504, 9506, 9508, 9509, 9510, 10938, 10939, 10949, 
-    11657, 11658, 11660, 11661, 11662, 11663, 11664, 11665, 11666, 11669, 11670, 
-    11671, 11673, 11674, 11675, 11676, 16919, 16920, 19703, 19706
-  )
-`,
-
-    // Update match league
-    `
-  UPDATE matches 
-  SET leagueID = 50 
-  WHERE id = 8316
 `,
 
     `

@@ -221,6 +221,7 @@ const insertSeasonLeagues = async (knex: Knex) => {
     { old_kana_league_id: 38, league_id: 6, tier: 6, season_id: 8 },
     { old_kana_league_id: 39, league_id: 7, tier: 7, season_id: 8 },
     { old_kana_league_id: 40, league_id: 8, tier: 8, season_id: 8 },
+    { old_kana_league_id: 666, league_id: 14, tier: 9, season_id: 8 },
     { old_kana_league_id: 41, league_id: 1, tier: 1, season_id: 9 },
     { old_kana_league_id: 42, league_id: 2, tier: 2, season_id: 9 },
     { old_kana_league_id: 43, league_id: 3, tier: 3, season_id: 9 },

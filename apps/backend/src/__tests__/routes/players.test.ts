@@ -16,7 +16,7 @@ describe("GET /players", () => {
     const response = await request(app).get("/76561198049745649/details");
     expect(response.status).toBe(200);
     expect(_.omit(response.body, "discord")).toStrictEqual({
-      account_id: 2906,
+      account_id: 2925,
       steam_id: "76561198049745649",
       nickname: "sububobi",
       is_valid_work_email: 0,

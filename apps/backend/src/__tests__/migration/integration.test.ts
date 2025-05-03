@@ -46,15 +46,15 @@ describe("Migration tests", () => {
     expect(result[0].total_flash_assists).toBe(1);
   });
 
-  it("There should be 1335 players on season 11", async () => {
+  it("There should be 1363 players on season 11", async () => {
     const query = `SELECT COUNT(stp.steam_id) AS total_players FROM SeasonTeamPlayers stp WHERE stp.season_id = 11;`;
     const result = await runQuery<[{ total_players: number }]>(query);
-    expect(result[0].total_players).toBe(1335);
+    expect(result[0].total_players).toBe(1363);
   });
-  it("There should be 895 players on season 14", async () => {
+  it("There should be 906 players on season 14", async () => {
     const query = `SELECT COUNT(stp.steam_id) AS total_players FROM SeasonTeamPlayers stp WHERE stp.season_id = 14;`;
     const result = await runQuery<[{ total_players: number }]>(query);
-    expect(result[0].total_players).toBe(895);
+    expect(result[0].total_players).toBe(906);
   });
 
   it("There should be 186 teams on season 11 ", async () => {
@@ -85,7 +85,7 @@ describe("Migration tests", () => {
       JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       JOIN MatchGames mmp ON ps.game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
-      JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id
+      JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id AND role = 'primary'
       JOIN Teams t ON stp.team_id = t.id
       WHERE m.season_id = 14
       GROUP BY p.steam_id
