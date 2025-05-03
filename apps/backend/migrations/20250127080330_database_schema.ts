@@ -298,7 +298,7 @@ export async function up(knex: Knex): Promise<void> {
       .specificType("round_end_reason_info", "TINYINT UNSIGNED")
       .notNullable();
     table.json("ct_t");
-    table.string("first_kill", 2).notNullable();
+    table.string("first_kill", 2);
     table.specificType("plant_site", "CHAR(1)");
 
     table
@@ -328,9 +328,9 @@ export async function up(knex: Knex): Promise<void> {
   ALTER TABLE MapRoundStats ADD CONSTRAINT chk_ct_t_if_plant_site_not_null 
   CHECK (plant_site IS NULL OR ct_t IS NOT NULL);`);
 
-  await knex.raw(`
-  ALTER TABLE MapRoundStats ADD CONSTRAINT chk_plant_site_if_bomb_related 
-  CHECK (NOT (round_end_reason_info IN (1, 2) AND plant_site IS NULL));`);
+  // await knex.raw(`
+  // ALTER TABLE MapRoundStats ADD CONSTRAINT chk_plant_site_if_bomb_related
+  // CHECK (NOT (round_end_reason_info IN (1, 2) AND plant_site IS NULL));`);
 
   await knex.schema.createTable("PlayerStats", (table: Knex.TableBuilder) => {
     table.increments("id").primary();

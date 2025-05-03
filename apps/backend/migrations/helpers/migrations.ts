@@ -350,22 +350,80 @@ const migrateMatchCrazy = async (
     "SELECT * FROM afterplant WHERE matchID = ?",
     [match.id]
   );
-  const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (id, game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`;
-  for (const round of allOldMatchStats) {
-    const plantSite =
-      round.Site === "A" ? "A" : round.Site === "B" ? "B" : null;
-    const ct_T_parsed = plantSite ? round.CT_T : null;
-    await runNewDbQuery(MatchMapRoundStatsInsert, [
-      round.id,
-      match.id,
-      round.CT_Team === 2 ? ct_team_id : t_team_id,
-      round.T_Team === 1 ? t_team_id : ct_team_id,
-      round.round,
-      round.roundInfo,
-      ct_T_parsed,
-      round.firstKill,
-      plantSite
-    ]);
+  // Season 7 and older used roundinfo
+  const [oldRoundInfoForMatch] = await runOldDbQuery<{
+    roundInfoString: string;
+  }>("SELECT * FROM roundInfo WHERE matchID = ?", [match.id]);
+  const MatchMapRoundStatsInsert = `INSERT INTO MapRoundStats (game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?);`;
+  // Feature implemented after these matches.
+  if (match.id >= 5172) {
+    for (const round of allOldMatchStats) {
+      const plantSite =
+        round.Site === "A" ? "A" : round.Site === "B" ? "B" : null;
+      const ct_T_parsed = plantSite ? round.CT_T : null;
+      await runNewDbQuery(MatchMapRoundStatsInsert, [
+        match.id,
+        round.CT_Team === 2 ? ct_team_id : t_team_id,
+        round.T_Team === 1 ? t_team_id : ct_team_id,
+        round.round,
+        round.roundInfo,
+        ct_T_parsed,
+        round.firstKill,
+        plantSite
+      ]);
+    }
+  } else {
+    const roundInfo = oldRoundInfoForMatch;
+    const team1_is_t_team_rounds_overtime = [
+      34, 35, 36, 37, 38, 39, 46, 47, 48, 49, 50, 51, 58, 59, 60, 61, 62, 63,
+      71, 72, 73, 74, 75, 76
+    ];
+    if (roundInfo) {
+      // CS:GO
+      const roundsInGame = 30;
+      const splittedRoundInfo = roundInfo.roundInfoString.split(",");
+      for (const [index, roundInfo] of splittedRoundInfo.entries()) {
+        const round = index + 1;
+        if (round <= 30) {
+          // rounds 1-15, t_team_id = t_team_id, otherwise terrorist is playing ct_team_id, swapped half
+          const terroristStart = round <= roundsInGame / 2;
+          await runNewDbQuery(MatchMapRoundStatsInsert, [
+            match.id,
+            terroristStart ? ct_team_id : t_team_id,
+            terroristStart ? t_team_id : ct_team_id,
+            round,
+            roundInfo,
+            null,
+            null,
+            null
+          ]);
+          // team1 = t_team_id = playing terrorist side in ot, i.e. t_team_id = t_team_id
+        } else if (team1_is_t_team_rounds_overtime.includes(round)) {
+          await runNewDbQuery(MatchMapRoundStatsInsert, [
+            match.id,
+            ct_team_id,
+            t_team_id,
+            round,
+            roundInfo,
+            null,
+            null,
+            null
+          ]);
+          // team1 = t_team_id = playing counter-terrorist side in ot, i.e. t_team_id = ct_team_id
+        } else {
+          await runNewDbQuery(MatchMapRoundStatsInsert, [
+            match.id,
+            t_team_id,
+            ct_team_id,
+            round,
+            roundInfo,
+            null,
+            null,
+            null
+          ]);
+        }
+      }
+    }
   }
 };
 
@@ -418,6 +476,8 @@ export const migrateMatchesAndReservations = async () => {
     const newParentMatchId = parentMatch.insertId;
 
     const insertMatchteams = `INSERT INTO MatchTeams (match_id, team_id, season_id, league_id) VALUES (?, ?, ?, ?);`;
+
+    // team1 always starts as terrorist in parser
     const t_team_id = match.team1;
     const ct_team_id = match.team2;
     await runNewDbQuery(insertMatchteams, [

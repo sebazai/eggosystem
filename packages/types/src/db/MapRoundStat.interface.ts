@@ -1,4 +1,9 @@
-import type { MatchGame, RoundEndReasonInfo, Team } from "@eggosystem/types";
+import type {
+  MatchGame,
+  Nullable,
+  RoundEndReasonInfo,
+  Team
+} from "@eggosystem/types";
 
 export interface MapRoundStat {
   id: number;
@@ -11,6 +16,6 @@ export interface MapRoundStat {
     T: number[]; // Array of player steam IDs on the T side
     CT: number[]; // Array of player steam IDs on the CT side
   } | null; // optional, can be null
-  first_kill: "CT" | "T"; // 'CT' or 'T'
+  first_kill: Nullable<"CT" | "T">; // 'CT' or 'T', can be null
   plant_site?: "A" | "B" | null; // CHAR(1), optional, can be null
 }
