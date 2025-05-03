@@ -15,3 +15,20 @@ export async function getMatchInfo<T>(matchId: number): Promise<T> {
   }
   return result;
 }
+
+export async function getMatchGame<T>(
+  matchId: number,
+  gameId: number
+): Promise<T> {
+  const res = await fetch(
+    `${envConfig.API_URL}/api/v1/matches/${matchId}/games/${gameId}`
+  );
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data?.message ?? "Could not fetch match game");
+  }
+
+  const result = await res.json();
+  return result;
+}

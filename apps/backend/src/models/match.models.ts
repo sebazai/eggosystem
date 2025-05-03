@@ -1,17 +1,18 @@
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
-import type {
-  Match,
-  MatchesByFilters,
-  ParsedParams,
-  MatchInfo,
-  MatchPlayerStats,
-  MatchRoundInfo,
-  MatchMapsPlayed,
-  MatchTeamStats,
-  MatchTopPlayersQueryResult,
-  PlayerStats,
-  MatchTopPlayerAwards
+import {
+  type Match,
+  type MatchesByFilters,
+  type ParsedParams,
+  type MatchInfo,
+  type MatchPlayerStats,
+  type MatchRoundInfo,
+  type MatchMapsPlayed,
+  type MatchTeamStats,
+  type MatchTopPlayersQueryResult,
+  type PlayerStats,
+  type MatchTopPlayerAwards,
+  type MatchGame
 } from "@eggosystem/types";
 
 export const getMatches = (): Promise<Match[]> => {
@@ -22,6 +23,13 @@ export const getMatch = (matchId: number) => {
   return runQuery<Array<Match | undefined>>(
     "SELECT * FROM Matches WHERE id = ?",
     [matchId]
+  );
+};
+
+export const getMatchGame = (matchId: number, gameId: number) => {
+  return runQuery<Array<MatchGame | undefined>>(
+    "SELECT * FROM MatchGames WHERE match_id = ? AND id = ?",
+    [matchId, gameId]
   );
 };
 

@@ -54,7 +54,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { match_id } = await params;
   const matchIdNumber = parseInt(match_id, 10);
   if (isNaN(matchIdNumber)) {
-    return <ContentContainer>Match not found</ContentContainer>;
+    return <ContentContainer>Match id not a number</ContentContainer>;
   }
   const matchInfo = await getMatchInfo<MatchInfo>(matchIdNumber);
 
