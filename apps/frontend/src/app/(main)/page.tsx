@@ -44,7 +44,7 @@ export default async function Home() {
   const deviceType = device?.type === "mobile" ? "mobile" : "desktop";
   return (
     <>
-      <section className="bg-black">
+      <section>
         <HeroSection device={deviceType} />
       </section>
       <section className="my-8 md:my-16 lg:my-32">

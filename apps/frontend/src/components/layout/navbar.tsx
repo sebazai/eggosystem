@@ -173,7 +173,7 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        `mb-3 sm:mb-10 pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
         pathname !== "/"
           ? "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs"
           : "",

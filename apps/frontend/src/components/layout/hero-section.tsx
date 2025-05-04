@@ -114,7 +114,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
     <>
       <motion.div
         className={cn(
-          "absolute inset-0 z-20 flex mt-20 sm:mt-5 flex-col items-center justify-center bg-black transition-opacity duration-500 mx-4 sm:mx-2",
+          "absolute inset-0 z-20 flex mt-20 sm:mt-5 flex-col items-center justify-center transition-opacity duration-500 mx-4 sm:mx-2",
           splashComplete ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
       >
