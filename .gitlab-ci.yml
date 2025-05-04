@@ -233,7 +233,7 @@ test:backend:
       - apps/backend/coverage/cobertura-coverage.xml
 
 test:frontend:
-  image: mcr.microsoft.com/playwright:1.52.0-jammy
+  image: mcr.microsoft.com/playwright:v1.52.0-jammy
   stage: test
   extends: [.mr-frontend]
   variables:
