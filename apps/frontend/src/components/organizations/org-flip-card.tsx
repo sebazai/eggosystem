@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 import type { Organizations } from "@eggosystem/types";
-import { createStatsKanaliigaImageUrl } from "@/lib/utils";
+import { createTeamLogoUrl } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface OrganizationFlipCardProps {
@@ -26,7 +26,7 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
   const companyName = organization.name;
-  const imageSrc = createStatsKanaliigaImageUrl(organization.logo);
+  const imageSrc = createTeamLogoUrl(organization.logo);
   const orgPage = `/organizations/${organization.id}`;
   const isMobile = useIsMobile();
 

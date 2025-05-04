@@ -1,4 +1,4 @@
-import { createStatsKanaliigaImageUrl } from "@/lib/utils";
+import { createTeamLogoUrl } from "@/lib/utils";
 import type {
   MatchPlayerStats,
   MatchTeamInfo,
@@ -73,7 +73,7 @@ export const PlayerStatistics = ({
                 className="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors"
               >
                 <Image
-                  src={createStatsKanaliigaImageUrl(team.logo)}
+                  src={createTeamLogoUrl(team.logo)}
                   alt={team.name}
                   className="w-6 h-6"
                   width={24}

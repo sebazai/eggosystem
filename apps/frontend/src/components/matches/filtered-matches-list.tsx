@@ -1,10 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ContentContainer } from "../layout/content-container";
-import {
-  createStatsKanaliigaImageUrl,
-  type FilterParamsQuery
-} from "@/lib/utils";
+import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { useRecentMatches } from "@/hooks/data/useRecentMatches";
 
 interface FilteredMatchesListProps {
@@ -63,7 +60,7 @@ export const FilteredMatchesList = ({
                       {match.team1_name}
                     </div>
                     <Image
-                      src={createStatsKanaliigaImageUrl(match.team1_logo)}
+                      src={createTeamLogoUrl(match.team1_logo)}
                       alt={match.team1_name}
                       width={24}
                       height={24}
@@ -75,7 +72,7 @@ export const FilteredMatchesList = ({
                   </div>
                   <div className="flex items-center justify-start ml-1 min-w-0">
                     <Image
-                      src={createStatsKanaliigaImageUrl(match.team2_logo)}
+                      src={createTeamLogoUrl(match.team2_logo)}
                       alt={match.team2_name}
                       width={24}
                       height={24}

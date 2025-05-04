@@ -4,10 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTeams } from "@/hooks/data/useTeams";
-import {
-  createStatsKanaliigaImageUrl,
-  type FilterParamsQuery
-} from "@/lib/utils";
+import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { ContentContainer } from "../layout/content-container";
 import type { TeamStats } from "@eggosystem/types";
 import { useSearchParams } from "next/navigation";
@@ -56,12 +53,12 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
   const params = useSearchParams();
   const defaultLogoPath = "/teams/nologo.svg";
 
-  // Use createStatsKanaliigaImageUrl function for team logos
+  // Use createTeamLogoUrl function for team logos
   let logoUrl = defaultLogoPath;
 
   if (!imageError && team.team_logo && team.team_logo.trim() !== "") {
     try {
-      logoUrl = createStatsKanaliigaImageUrl(team.team_logo);
+      logoUrl = createTeamLogoUrl(team.team_logo);
     } catch (error) {
       console.error("Error creating team logo URL:", error);
     }

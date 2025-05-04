@@ -1,4 +1,4 @@
-import { createStatsKanaliigaImageUrl } from "@/lib/utils";
+import { createTeamLogoUrl } from "@/lib/utils";
 import type {
   MatchInfo,
   MatchTopPlayerAwards,
@@ -72,7 +72,7 @@ export const TopPlayers = ({
                       className="hover:opacity-80 transition-opacity"
                     >
                       <Image
-                        src={createStatsKanaliigaImageUrl(team.logo)}
+                        src={createTeamLogoUrl(team.logo)}
                         alt={team.name}
                         width={16}
                         height={16}

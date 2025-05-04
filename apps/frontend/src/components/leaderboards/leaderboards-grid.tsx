@@ -4,7 +4,7 @@ import React from "react";
 import { Skeleton } from "../ui/skeleton";
 import {
   createNextUrl,
-  createStatsKanaliigaImageUrl,
+  createTeamLogoUrl,
   type FilterParamsQuery
 } from "@/lib/utils";
 import { useLeaderboards } from "@/hooks/data/useLeaderboards";
@@ -70,7 +70,7 @@ export const LeaderboardsGrid = ({
 
     // Handle the case where logo is a relative path like "S15_2259.png"
     if (logo.startsWith("S") && logo.includes("_")) {
-      return createStatsKanaliigaImageUrl(logo);
+      return createTeamLogoUrl(logo);
     }
 
     // For logos that start with /, use createNextImageUrl

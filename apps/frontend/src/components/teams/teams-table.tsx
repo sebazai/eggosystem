@@ -1,7 +1,4 @@
-import {
-  createStatsKanaliigaImageUrl,
-  type FilterParamsQuery
-} from "@/lib/utils";
+import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -105,7 +102,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-4">
             <Image
-              src={createStatsKanaliigaImageUrl(team.team_logo)}
+              src={createTeamLogoUrl(team.team_logo)}
               alt={team.name}
               width={80}
               height={80}
@@ -329,9 +326,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
                         <td className="px-3 py-2 text-left">
                           <div className="flex items-center gap-2">
                             <Image
-                              src={createStatsKanaliigaImageUrl(
-                                match.opponent_logo
-                              )}
+                              src={createTeamLogoUrl(match.opponent_logo)}
                               alt={match.opponent_name}
                               width={20}
                               height={20}
