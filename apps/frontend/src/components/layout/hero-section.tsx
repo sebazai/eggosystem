@@ -8,6 +8,7 @@ import { cn, createNextUrl } from "@/lib/utils";
 import Link from "next/link";
 import { CsMainSponsors } from "../sponsors/cs-main-sponsors";
 import { KanaMainPartners } from "../sponsors/kana-main-partners";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const overlays = [
   {
@@ -33,9 +34,9 @@ type HeroSectionProps = {
 
 export default function HeroSection({ device }: HeroSectionProps) {
   const [step, setStep] = useState(0);
-  const [isMobile, setIsMobile] = useState<boolean>(device === "mobile");
   const [splashComplete, setSplashComplete] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
+
   const [videoSrc, setVideoSrc] = useState<string>(
     device === "mobile"
       ? createNextUrl(
@@ -47,16 +48,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
-
-  // Handle screen size changes
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const isMobile = useIsMobile(device === "mobile");
 
   useEffect(() => {
     if (isMobile) {

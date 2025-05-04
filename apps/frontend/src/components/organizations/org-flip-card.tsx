@@ -13,6 +13,7 @@ import {
 import Image from "next/image";
 import type { Organizations } from "@eggosystem/types";
 import { createStatsKanaliigaImageUrl } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface OrganizationFlipCardProps {
   organization: Organizations;
@@ -23,19 +24,11 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
 }) => {
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
   const companyName = organization.name;
   const imageSrc = createStatsKanaliigaImageUrl(organization.logo);
   const orgPage = `/organizations/${organization.id}`;
-
-  // Detect if it's a mobile device
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isMobile || !cardRef.current) return;
