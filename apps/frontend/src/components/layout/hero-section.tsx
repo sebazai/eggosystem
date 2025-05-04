@@ -122,7 +122,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           The Battle Begins.
         </motion.h1>
         <motion.p
-          className="text-sm xxs:text-xl md:text-2xl text-white/70 mb-10 text-center"
+          className="text-sm xxs:text-lg lg:text-2xl text-white/70 mb-10 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0, duration: 4 }}
@@ -195,7 +195,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
                   {overlays[step]?.title}
                 </motion.h1>
 
-                <p className="text-sm xxs:text-xl md:text-2xl text-white/70 mb-10 text-center">
+                <p className="text-sm xxs:text-lg lg:text-2xl text-white/70 mb-10 text-center">
                   {overlays[step]?.subtitle}
                 </p>
               </motion.div>

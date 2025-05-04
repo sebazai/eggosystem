@@ -11,6 +11,7 @@ import { KanaMainPartners } from "@/components/sponsors/kana-main-partners";
 import { SponsorContainer } from "@/components/sponsors/sponsor-container";
 import { CsSupportingOrgs } from "@/components/sponsors/cs-supporting-orgs";
 import { envConfig } from "@/configs/env";
+import { Separator } from "@/components/ui/separator";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -64,6 +65,8 @@ export default async function Home() {
               community, and healthy competition across the business world.
             </p>
 
+            <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
+
             {/* Statistic Cards for All Seasons */}
             <h3 className="xs:text-2xl font-semibold mb-4">
               📊 All-Time Highlights For Counter-Strike
@@ -107,6 +110,8 @@ export default async function Home() {
               </Card>
             </div>
 
+            <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
+
             {/* CS2 Season 4 Pitch */}
             <h2 className="text-2xl sm:text-3xl font-bold mb-6">
               🎮 CS2 Season 4 – Kicking Off This Fall
@@ -132,9 +137,11 @@ export default async function Home() {
               <li>Appear in live-streamed broadcasts</li>
             </ul>
 
-            <div className="text-center">
+            <div className="text-center pb-3">
               <SignupButton />
             </div>
+
+            <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
             <SponsorContainer
               header="CS2 Season 4 Main Sponsors"
