@@ -6,7 +6,10 @@ import {
   type RequestWithParams
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { getMatchGameTeamRoundBreakdownController } from "../../controllers/games.controllers";
+import {
+  getMatchGameTeamRoundBreakdownController,
+  getGameRoundInfoController
+} from "../../controllers/games.controllers";
 
 const router = Router();
 
@@ -40,6 +43,11 @@ router.get(
   "/:game_id/breakdown",
   validateNumericParams(),
   getMatchGameTeamRoundBreakdownController
+);
+router.get(
+  "/:game_id/roundinfo",
+  validateNumericParams(),
+  getGameRoundInfoController
 );
 
 export default router;

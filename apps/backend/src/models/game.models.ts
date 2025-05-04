@@ -1,4 +1,7 @@
-import { type MatchGameTeamRoundBreakdown } from "@eggosystem/types";
+import {
+  type MapRoundInfo,
+  type MatchGameTeamRoundBreakdown
+} from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const getMatchGameTeamRoundBreakdown = async (game_id: number) => {
@@ -37,4 +40,23 @@ export const getMatchGameTeamRoundBreakdown = async (game_id: number) => {
     game_id
   ]);
   return data;
+};
+
+export const getGameRoundInfo = async (game_id: number) => {
+  const query = `
+      SELECT 
+        mrs.*,
+        mg.regulation_rounds,
+        ct.name AS ct_name,
+        t.name AS t_name,
+        ct.team_logo AS ct_logo,
+        t.team_logo AS t_logo
+      FROM MapRoundStats mrs
+      JOIN MatchGames mg ON mg.id = mrs.game_id
+      JOIN Teams ct ON ct.id = mrs.ct_team_id
+      JOIN Teams t ON t.id = mrs.t_team_id
+      WHERE mrs.game_id = ?
+      ORDER BY round_number ASC
+    `;
+  return runQuery<MapRoundInfo[]>(query, [game_id]);
 };

@@ -6,7 +6,6 @@ import {
   type ParsedParams,
   type MatchInfo,
   type MatchPlayerStats,
-  type MatchRoundInfo,
   type MatchMapsPlayed,
   type MatchTeamStats,
   type MatchTopPlayersQueryResult,
@@ -417,36 +416,4 @@ export const getMatchInfo = async (
   const [match] = await runQuery<MatchInfo[]>(query, [matchId]);
 
   return match;
-};
-
-export const getMatchRoundInfo = async (match_id: number, game_id: number) => {
-  // If game_id is provided, get rounds for specific map
-
-  // ensure game_id is part of match_id
-  const checkGameQuery = `
-    SELECT COUNT(*) as count
-    FROM MatchGames
-    WHERE match_id = ? AND id = ?
-  `;
-  const [checkGameResult] = await runQuery<{ count: number }[]>(
-    checkGameQuery,
-    [match_id, game_id]
-  );
-  if (checkGameResult.count === 0) {
-    throw new Error("Game ID does not belong to the specified match ID");
-  }
-
-  const query = `
-      SELECT 
-        round_number,
-        round_end_reason_info,
-        ct_team_id,
-        t_team_id,
-        plant_site,
-        first_kill
-      FROM MapRoundStats mrs
-      WHERE mrs.game_id = ?
-      ORDER BY round_number ASC
-    `;
-  return runQuery<MatchRoundInfo[]>(query, [game_id]);
 };

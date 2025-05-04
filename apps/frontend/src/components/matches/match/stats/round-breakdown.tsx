@@ -59,7 +59,7 @@ export const RoundBreakdown = ({
             {roundsWonSecondHalf}
           </span>
         </div>
-        {overtimeRoundsWon && <div>({overtimeRoundsWon})</div>}
+        {overtimeRoundsWon !== 0 && <div>({overtimeRoundsWon})</div>}
       </div>
     </div>
   );

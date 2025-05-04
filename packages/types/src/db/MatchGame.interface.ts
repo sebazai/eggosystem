@@ -6,4 +6,5 @@ export interface MatchGame {
   map_id: Map["id"]; // TINYINT UNSIGNED stored as number
   demofile: string; // demo file
   map_order?: number | null; // TINYINT UNSIGNED, optional
+  regulation_rounds: number;
 }

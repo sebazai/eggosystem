@@ -10,7 +10,6 @@ import {
   getMatchesByFilters,
   getMatchGames,
   getMatchInfo,
-  getMatchRoundInfo,
   getMatch,
   getMatchGame
 } from "../models/match.models";
@@ -145,14 +144,4 @@ export const getMatchGamesController = async (
   const mapsPlayed = await getMatchGames(match_id);
 
   res.json(mapsPlayed);
-};
-
-export const getMatchRoundInfoController = async (
-  req: RequestWithParams<{ match_id: string; game_id: string }>,
-  res: Response
-) => {
-  const match_id = parseInt(req.params.match_id, 10);
-  const game_id = parseInt(req.params.game_id, 10);
-  const roundInfo = await getMatchRoundInfo(match_id, game_id);
-  res.json(roundInfo);
 };

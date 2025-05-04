@@ -10,7 +10,6 @@ import {
   getGameTopPlayersController,
   getMatchGamesController,
   getMatchInfoController,
-  getMatchRoundInfoController,
   getMatchController,
   getMatchGameController
 } from "../../controllers/matches.controllers";
@@ -62,11 +61,6 @@ router.get(
   "/:match_id/games/:game_id/topplayers",
   validateNumericParams(),
   getGameTopPlayersController
-);
-router.get(
-  "/:match_id/games/:game_id/roundinfo",
-  validateNumericParams(),
-  getMatchRoundInfoController
 );
 router.get("/", getMatchesController);
 

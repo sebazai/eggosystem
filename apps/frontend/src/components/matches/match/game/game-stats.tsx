@@ -8,7 +8,7 @@ import { useMatchGamePlayerStats } from "@/hooks/data/useMatchGamePlayerStats";
 import { MatchMapPicks } from "../stats/map-picks";
 import { TeamStatistics } from "../stats/team-statistics";
 import { useMatchGameTeamStats } from "@/hooks/data/useMatchGameTeamStats";
-import { useMatchGameRoundInfo } from "@/hooks/data/useMatchGameRoundInfo";
+import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
 import { RoundInfo } from "../stats/round-info";
 import { PlayerStatistics } from "../stats/player-stats-grid";
 import { TopPlayers } from "../stats/top-players";
@@ -36,7 +36,7 @@ export const GameStats = ({ matchId, gameId, matchInfo }: MatchStatsProps) => {
   const { teamStats } = useMatchGameTeamStats(matchId, gameId);
   const { playerStats } = useMatchGamePlayerStats(matchId, gameId);
   const { topPlayers } = useMatchGameTopPlayers(matchId, gameId);
-  const { roundInfo } = useMatchGameRoundInfo(matchId, gameId);
+  const { roundInfo } = useGameRoundInfo(gameId);
 
   const baseFilter = {
     seasons: matchInfo.season_id.toString(),

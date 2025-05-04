@@ -17,3 +17,4 @@ export * from "./topteams/index";
 export * from "./auth/index";
 export * from "./leaderboards/index";
 export * from "./teams/index";
+export * from "./games/index";
