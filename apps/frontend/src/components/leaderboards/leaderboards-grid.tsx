@@ -97,7 +97,7 @@ export const LeaderboardsGrid = ({
             data-testid={`leaderboard-category${category.title === "Kana Rating" ? " kana-rating-category" : ""}`}
           >
             <div className="bg-[#2a1810] p-4">
-              <h2 className="text-xl font-bold">{category.title}</h2>
+              <h2>{category.title}</h2>
             </div>
 
             <div className="p-4">
@@ -116,15 +116,7 @@ export const LeaderboardsGrid = ({
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <span
-                        className={`w-6 text-center ${
-                          playerIndex === 0
-                            ? "text-yellow-400 font-bold"
-                            : playerIndex === 1
-                              ? "text-muted-foreground font-bold"
-                              : playerIndex === 2
-                                ? "text-amber-700 font-bold"
-                                : "text-muted-foreground"
-                        }`}
+                        className="w-6 text-center text-muted-foreground"
                         data-testid="player-rank"
                       >
                         {playerIndex === 0
@@ -146,21 +138,20 @@ export const LeaderboardsGrid = ({
                             className="rounded-full"
                           />
                         )}
-                        <div>
-                          <span
-                            className={`${
-                              playerIndex < 3
-                                ? "font-bold text-white"
-                                : "text-muted-foreground"
-                            }`}
-                            data-testid="player-name"
-                          >
-                            {player.nickname}
-                          </span>
-                          <span className="text-muted-foreground text-sm ml-2">
-                            {player.team_name}
-                          </span>
-                        </div>
+
+                        <span
+                          className={`${
+                            playerIndex < 3
+                              ? "font-bold"
+                              : "text-muted-foreground"
+                          }`}
+                          data-testid="player-name"
+                        >
+                          {player.nickname}
+                        </span>
+                        <span className="text-muted-foreground text-sm">
+                          {player.team_name}
+                        </span>
                       </div>
                     </div>
 
@@ -169,12 +160,12 @@ export const LeaderboardsGrid = ({
                         className="hidden text-muted-foreground text-sm xs:block"
                         data-testid="player-matches"
                       >
-                        {player.matches_played} matches
+                        {player.matches_played} maps
                       </span>
                       <span
                         className={`w-16 text-right ${
                           playerIndex < 3
-                            ? "font-bold text-white"
+                            ? "font-bold"
                             : "text-muted-foreground"
                         }`}
                         data-testid="player-value"

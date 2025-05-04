@@ -15,6 +15,7 @@ type FilterContextType = {
   isLoading: boolean;
   isValidating: boolean;
   error: Error | undefined;
+  areFiltersEmpty: boolean;
 };
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
@@ -96,13 +97,18 @@ export const FilterProvider = ({
           },
           isLoading: true,
           isValidating: false,
-          error: undefined
+          error: undefined,
+          areFiltersEmpty: true
         }}
       >
         {children}
       </FilterContext.Provider>
     );
   }
+
+  const areFiltersEmpty = Object.values(filterParams).every(
+    (arr) => !arr || arr.length === 0
+  );
 
   return (
     <FilterContext.Provider
@@ -111,7 +117,8 @@ export const FilterProvider = ({
         filterParams,
         isLoading,
         error,
-        isValidating
+        isValidating,
+        areFiltersEmpty
       }}
     >
       {children}

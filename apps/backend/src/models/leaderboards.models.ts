@@ -79,7 +79,7 @@ export const getLeaderboard = async ({
     ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
     WHERE ${query}
     GROUP BY sp.steam_id, sp.nickname, t.name, t.team_logo
-    HAVING matches_played > 0
+    HAVING matches_played > 1
     ORDER BY ${leaderboards} DESC
     LIMIT 5
   `;
