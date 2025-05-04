@@ -71,10 +71,10 @@ export const getLeaderboard = async ({
       COUNT(DISTINCT mg.id) as matches_played,
       ${leaderboardExpression} as ${leaderboards}
     FROM PlayerStats ps
-    INNER JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN Leagues l ON m.league_id = l.id
+    INNER JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
+    INNER JOIN Leagues l ON l.id = m.league_id
     ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
     ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
     WHERE ${query}
