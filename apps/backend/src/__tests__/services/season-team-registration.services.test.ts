@@ -322,22 +322,18 @@ describe("Season team registration services", () => {
     });
     it("happy path - have called all functions with valid data and does not return error", async () => {
       const formData = _.cloneDeep(validSignupData);
-      const validatePlayersInDb = jest.spyOn(
-        registrationServices,
-        "validatePlayersFromDBForSignup"
-      );
-      const registrationInsert = jest.spyOn(
-        registrationModels,
-        "insertSeasonTeamRegistration"
-      );
-      const addPlayers = jest.spyOn(
-        registrationServices,
-        "addPlayersForTeamInSeason"
-      );
-      const captainPerm = jest.spyOn(
-        registrationServices,
-        "setCaptainPermissionsForSeason"
-      );
+      const validatePlayersInDb = jest
+        .spyOn(registrationServices, "validatePlayersFromDBForSignup")
+        .mockResolvedValue();
+      const registrationInsert = jest
+        .spyOn(registrationModels, "insertSeasonTeamRegistration")
+        .mockResolvedValue({ insertId: 1 });
+      const addPlayers = jest
+        .spyOn(registrationServices, "addPlayersForTeamInSeason")
+        .mockResolvedValue();
+      const captainPerm = jest
+        .spyOn(registrationServices, "setCaptainPermissionsForSeason")
+        .mockResolvedValue();
       updateFetchMock([
         {
           urlContains: "GetPlayerSummaries",
