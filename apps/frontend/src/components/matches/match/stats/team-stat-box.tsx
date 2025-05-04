@@ -1,15 +1,19 @@
-import { createNextUrl } from "@/lib/utils";
-import type { MatchTeamStats } from "@eggosystem/types";
-import Image from "next/image";
+import type {
+  MatchGameTeamRoundBreakdown,
+  MatchTeamStats
+} from "@eggosystem/types";
 import Link from "next/link";
+import { RoundBreakdown } from "./round-breakdown";
 import type { TeamStatsFilters } from "./team-statistics";
 
 export const TeamStatBox = ({
   team,
-  teamStatsFilters
+  teamStatsFilters,
+  roundBreakDown
 }: {
   team: MatchTeamStats;
   teamStatsFilters: TeamStatsFilters;
+  roundBreakDown?: MatchGameTeamRoundBreakdown;
 }) => {
   return (
     <div className="p-4">
@@ -24,41 +28,15 @@ export const TeamStatBox = ({
           {team.name}
         </h3>
       </Link>
+
       <div className="space-y-3">
-        {team.score && team.team_ht_score && (
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Breakdown</span>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                <Image
-                  src={createNextUrl("/images/t-side-crossed-swords.webp")}
-                  alt="Terrorist"
-                  width={16}
-                  height={16}
-                  className="mr-1"
-                />
-                <span className="text-yellow-500">
-                  {team.starting_side === "T"
-                    ? team.team_ht_score
-                    : team.score - team.team_ht_score}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <Image
-                  src={createNextUrl("/images/ct-side-pliers.webp")}
-                  alt="Counter-Terrorist"
-                  width={16}
-                  height={16}
-                  className="mr-1"
-                />
-                <span className="text-blue-500">
-                  {team.starting_side === "CT"
-                    ? team.team_ht_score
-                    : team.score - team.team_ht_score}
-                </span>
-              </div>
-            </div>
-          </div>
+        {roundBreakDown && (
+          <RoundBreakdown
+            startingSide={roundBreakDown.starting_side}
+            roundWonFirstHalf={roundBreakDown.rounds_won_first_half}
+            roundsWonSecondHalf={roundBreakDown.rounds_won_second_half}
+            overtimeRoundsWon={roundBreakDown.total_overtime_rounds_won}
+          />
         )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">First kills</span>

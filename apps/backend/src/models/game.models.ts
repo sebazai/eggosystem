@@ -25,7 +25,7 @@ export const getMatchGameTeamRoundBreakdown = async (game_id: number) => {
         WHEN mrs.round_end_reason_info IN ('target_bombed', 't_win') THEN 'T'
       END AS side
     FROM MapRoundStats mrs
-    WHERE mrs.game_id = 14238
+    WHERE mrs.game_id = ?
   ) rw
   JOIN MatchGames mg ON mg.id = rw.game_id
   JOIN TeamGameScores tgs ON tgs.game_id = mg.id AND tgs.team_id = rw.team_id

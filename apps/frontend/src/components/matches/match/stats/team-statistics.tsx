@@ -1,5 +1,6 @@
 import type { MatchTeamStats } from "@eggosystem/types";
 import { TeamStatBox } from "./team-stat-box";
+import { useMatchGameTeamRoundBreakdowns } from "@/hooks/data/useMatchGameTeamRoundBreakdowns";
 
 export interface TeamStatsFilters {
   seasons: string;
@@ -9,19 +10,30 @@ export interface TeamStatsFilters {
 interface TeamStatisticsProps {
   teamStats: MatchTeamStats[];
   teamStatsFilters: TeamStatsFilters;
+  gameId?: number;
 }
 
 export const TeamStatistics = ({
   teamStats,
-  teamStatsFilters
+  teamStatsFilters,
+  gameId
 }: TeamStatisticsProps) => {
-  const [team1, team2] = teamStats;
+  const [teamOneStats, teamTwoStats] = teamStats;
+  const teamOneId = teamOneStats?.team_id;
+  const teamTwoId = teamTwoStats?.team_id;
+  const { teamsRoundBreakdown } = useMatchGameTeamRoundBreakdowns(gameId);
   return (
     <div className="mb-4 bg-card">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px]">
         {/* Team 1 Stats */}
-        {team1 && (
-          <TeamStatBox team={team1} teamStatsFilters={teamStatsFilters} />
+        {teamOneStats && (
+          <TeamStatBox
+            team={teamOneStats}
+            teamStatsFilters={teamStatsFilters}
+            roundBreakDown={teamsRoundBreakdown?.find(
+              (val) => val.team_id === teamOneId
+            )}
+          />
         )}
 
         {/* Center Stats - GOTV Demo */}
@@ -33,8 +45,14 @@ export const TeamStatistics = ({
         </div>
 
         {/* Team 2 Stats */}
-        {team2 && (
-          <TeamStatBox team={team2} teamStatsFilters={teamStatsFilters} />
+        {teamTwoStats && (
+          <TeamStatBox
+            team={teamTwoStats}
+            teamStatsFilters={teamStatsFilters}
+            roundBreakDown={teamsRoundBreakdown?.find(
+              (val) => val.team_id === teamTwoId
+            )}
+          />
         )}
       </div>
     </div>

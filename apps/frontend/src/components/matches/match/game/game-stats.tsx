@@ -51,7 +51,11 @@ export const GameStats = ({ matchId, gameId, matchInfo }: MatchStatsProps) => {
         handleMapSelect={handleMapSelect}
       />
       {teamStats && (
-        <TeamStatistics teamStats={teamStats} teamStatsFilters={baseFilter} />
+        <TeamStatistics
+          teamStats={teamStats}
+          teamStatsFilters={baseFilter}
+          gameId={gameId}
+        />
       )}
       {/* Round Score */}
       {roundInfo && roundInfo.length > 0 && <RoundInfo roundInfo={roundInfo} />}
