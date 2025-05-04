@@ -90,35 +90,45 @@ export const RoundInfo = ({ roundInfo }: RoundInfoProps) => {
     {}
   );
 
+  const overtimeRounds = roundInfo.slice(roundsInGame);
+
   return (
     <TooltipProvider>
-      <div className="mb-4 p-4 bg-card overflow-x-auto">
+      <div className="mb-4 p-4 relative overflow-x-auto">
         <h2 className="mb-4">ROUND HISTORY</h2>
-        <div>
-          <RoundRows
-            teamOne={teamOne}
-            teamTwo={teamTwo}
-            roundInfo={roundInfo}
-            roundWinners={roundWinnerByTeamId}
-            lengthOfGame={roundsInGame}
-            isOvertime={false}
-          />
+
+        <div className="min-w-[max-content]">
+          <div className="flex gap-2">
+            <RoundRows
+              teamOne={teamOne}
+              teamTwo={teamTwo}
+              roundInfo={roundInfo}
+              roundWinners={roundWinnerByTeamId}
+              lengthOfGame={roundsInGame}
+              isOvertime={false}
+            />
+          </div>
+
+          {overtimeRounds.length < roundsInGame && (
+            <Separator className="bg-kanaliiga-orange w-full my-2" />
+          )}
         </div>
-        {roundInfo.slice(roundsInGame).length > 0 && (
-          <>
-            <Separator className="my-2 bg-kanaliiga-orange" />
-            <div>
-              <h3 className="mb-4">Overtime</h3>
-              <RoundRows
-                teamOne={teamOne}
-                teamTwo={teamTwo}
-                roundInfo={roundInfo.slice(roundsInGame)}
-                roundWinners={roundWinnerByTeamId}
-                lengthOfGame={roundsInGame}
-                isOvertime={true}
-              />
-            </div>
-          </>
+
+        {overtimeRounds.length > 0 && (
+          <div className="min-w-[max-content]">
+            {overtimeRounds.length > roundsInGame && (
+              <Separator className="bg-kanaliiga-orange w-full my-2" />
+            )}
+            <h3 className="mb-4">Overtime</h3>
+            <RoundRows
+              teamOne={teamOne}
+              teamTwo={teamTwo}
+              roundInfo={roundInfo.slice(roundsInGame)}
+              roundWinners={roundWinnerByTeamId}
+              lengthOfGame={roundsInGame}
+              isOvertime={true}
+            />
+          </div>
         )}
       </div>
     </TooltipProvider>
@@ -175,7 +185,9 @@ const RoundRows = ({
                 ? "border-r-1 pr-1"
                 : "",
               isOvertime && (index - 2) % 6 === 0 ? "border-r-1 pr-1" : "",
-              isOvertime && (index + 1) % 6 == 0
+              isOvertime &&
+                (index + 1) % 6 == 0 &&
+                index + 1 !== roundInfo.length
                 ? "border-r-1 border-kanaliiga-orange pr-1"
                 : ""
             )}
