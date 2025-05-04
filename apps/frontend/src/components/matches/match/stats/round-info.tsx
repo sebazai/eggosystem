@@ -11,7 +11,7 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { cn, createStatsKanaliigaImageUrl } from "@/lib/utils";
+import { cn, createTeamLogoUrl } from "@/lib/utils";
 import {
   RoundEndReasonInfo,
   type MapRoundInfo,
@@ -91,14 +91,14 @@ const RoundRows = ({
       <div className="border-r-1 pr-4">
         <Image
           className="min-w-8 min-h-8 max-w-8 max-h-8 mb-4"
-          src={createStatsKanaliigaImageUrl(teamOne.logo)}
+          src={createTeamLogoUrl(teamOne.logo)}
           alt={teamOne.name}
           width={100}
           height={100}
         />
         <Image
           className="min-w-8 min-h-8 max-w-8 max-h-8 mb-4"
-          src={createStatsKanaliigaImageUrl(teamTwo.logo)}
+          src={createTeamLogoUrl(teamTwo.logo)}
           alt={teamTwo.name}
           width={100}
           height={100}
