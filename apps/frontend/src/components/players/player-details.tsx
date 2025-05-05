@@ -267,8 +267,8 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard
-                label="Matches"
-                value={playerStats?.matches_played?.toString() || "0"}
+                label="Maps played"
+                value={playerStats?.maps_played?.toString() || "0"}
               />
               <StatCard
                 label="Kills"

@@ -1,7 +1,7 @@
 export type PlayerStatsResult = {
   steam_id: string;
   nickname: string;
-  matches_played: number;
+  maps_played: number;
   kills: number;
   assists: number;
   deaths: number;
