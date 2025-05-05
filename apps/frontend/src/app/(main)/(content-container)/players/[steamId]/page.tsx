@@ -7,16 +7,16 @@ import type { SteamPlayer } from "@eggosystem/types";
 
 interface PlayerDetailsProps {
   params: Promise<{
-    playerId: string;
+    steamId: string;
   }>;
 }
 
 export async function generateMetadata({
   params
 }: PlayerDetailsProps): Promise<Metadata> {
-  const { playerId } = await params;
+  const { steamId } = await params;
 
-  const result = await fetch(`${envConfig.API_URL}/api/v1/players/${playerId}`);
+  const result = await fetch(`${envConfig.API_URL}/api/v1/players/${steamId}`);
 
   if (!result.ok) {
     return {
@@ -33,7 +33,7 @@ export default async function PlayerDetailsPage({
   params
 }: PlayerDetailsProps) {
   const unwrappedParams = await params;
-  const steamId = unwrappedParams.playerId;
+  const steamId = unwrappedParams.steamId;
 
   return (
     <div className="container mx-auto py-4">
