@@ -350,7 +350,7 @@ export const getPlayerStatsWithFilters = async (
 ) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
-      column: "stp.team_id",
+      column: "mt.team_id",
       value: team_ids
     },
     {
@@ -358,13 +358,15 @@ export const getPlayerStatsWithFilters = async (
       value: season_ids
     },
     {
-      column: "l.id",
+      column: "m.league_id",
       value: league_ids
     },
     { column: "m.stage", value: stages },
     { column: "mg.map_id", value: map_ids },
     { column: "p.steam_id", value: [steam_id] }
   ]);
+
+  const teamIdsJoin = team_ids && team_ids.length > 0;
 
   // Get player's aggregate statistics
   const statsQuery = `
@@ -403,10 +405,8 @@ export const getPlayerStatsWithFilters = async (
     INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN Leagues l ON l.id = m.league_id
-    INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
+    ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
     WHERE ${query}
-    GROUP BY p.steam_id
   `;
 
   const [playerStats] = await runQuery<Array<PlayerStatsResult | undefined>>(
