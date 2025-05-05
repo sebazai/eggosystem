@@ -281,6 +281,13 @@ export const getPlayerTeamDetailsWithFilters = async (
   return playerTeamDetails;
 };
 
+/**
+ * There are no draws, therefore if failed to parse demo in a best_of != 1, we will make the draws
+ * be x wins and x losses. Therefore wins + losses == matches_played should be ok.
+ * @param steam_id
+ * @param param1
+ * @returns
+ */
 export const getPlayerGameDetailsWithFilters = async (
   steam_id: string,
   { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
@@ -295,7 +302,7 @@ export const getPlayerGameDetailsWithFilters = async (
       value: season_ids
     },
     {
-      column: "l.id",
+      column: "m.league_id",
       value: league_ids
     },
     { column: "m.stage", value: stages },
@@ -304,39 +311,58 @@ export const getPlayerGameDetailsWithFilters = async (
   ]);
 
   const baseQuery = `
-    WITH TeamScores AS (
+    WITH PlayerMatches AS (
       SELECT 
-        t1.game_id,
-        t1.team_id AS team1_id,
-        t1.score AS team1_score,
-        t2.team_id AS team2_id,
-        t2.score AS team2_score
-      FROM TeamGameScores t1
-      JOIN TeamGameScores t2 ON t1.game_id = t2.game_id AND t1.team_id < t2.team_id
+        m.id AS match_id,
+        m.best_of,
+        slt.team_id AS player_team_id,
+        opp_tgs.team_id AS opponent_team_id,
+        mg.id AS game_id,
+        CASE 
+          WHEN tgs.score > opp_tgs.score THEN 1 
+          ELSE 0 
+        END AS game_win
+      FROM SteamPlayers p
+      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
+      JOIN SeasonLeagueTeams slt ON slt.season_id = stp.season_id AND stp.team_id = slt.team_id
+      JOIN MatchTeams mt ON mt.team_id = slt.team_id AND mt.season_id = slt.season_id AND mt.league_id = slt.league_id
+      JOIN Matches m ON m.id = mt.match_id
+      JOIN MatchGames mg ON mg.match_id = m.id
+      JOIN PlayerStats ps ON ps.steam_id = p.steam_id AND ps.game_id = mg.id
+      JOIN TeamGameScores tgs ON tgs.match_id = m.id AND tgs.team_id = slt.team_id AND mg.id = tgs.game_id
+      JOIN TeamGameScores opp_tgs ON opp_tgs.match_id = m.id AND opp_tgs.team_id != slt.team_id AND mg.id = opp_tgs.game_id
+      WHERE ${query}
+    ),
+    GameWinsPerMatch AS (
+      SELECT
+        match_id,
+        player_team_id,
+        opponent_team_id,
+        best_of,
+        SUM(game_win) AS player_game_wins,
+        COUNT(*) - SUM(game_win) AS opponent_game_wins
+      FROM PlayerMatches
+      GROUP BY match_id, player_team_id, opponent_team_id, best_of
     )
-    SELECT 
-      COUNT(DISTINCT mg.id) AS matches_played,
-      COUNT(DISTINCT CASE 
-        WHEN ps.team = 1 AND ts.team1_score > ts.team2_score THEN mg.id
-        WHEN ps.team = 2 AND ts.team2_score > ts.team1_score THEN mg.id
-      END) AS wins,
-      COUNT(DISTINCT CASE 
-        WHEN ps.team = 1 AND ts.team1_score < ts.team2_score THEN mg.id
-        WHEN ps.team = 2 AND ts.team2_score < ts.team1_score THEN mg.id
-      END) AS losses,
-      COUNT(DISTINCT CASE 
-        WHEN ts.team1_score = ts.team2_score THEN mg.id
-      END) AS draws
-    FROM SteamPlayers p
-    JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    JOIN MatchGames mg ON mg.id = ps.game_id
-    JOIN Matches m ON m.id = mg.match_id
-    JOIN Leagues l ON l.id = m.league_id
-    JOIN TeamScores ts ON ts.game_id = mg.id
-    JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
-    JOIN Teams t ON t.id = stp.team_id
-    WHERE ${query}
+    SELECT
+      COUNT(*) AS matches_played,
+      SUM(
+        CASE 
+          WHEN player_game_wins > opponent_game_wins THEN 1 
+          WHEN best_of != 1 AND player_game_wins = opponent_game_wins THEN player_game_wins
+          ELSE 0 
+        END
+      ) AS wins,
+      SUM(
+        CASE 
+          WHEN player_game_wins < opponent_game_wins THEN 1
+          WHEN best_of != 1 AND player_game_wins = opponent_game_wins THEN opponent_game_wins
+          ELSE 0 
+        END
+      ) AS losses
+    FROM GameWinsPerMatch;
   `;
+
   const playerDetails = await runQuery<
     Array<PlayerGameDetailsByFilters | undefined>
   >(baseQuery, queryParams);

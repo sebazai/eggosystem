@@ -26,14 +26,6 @@ export const PlayerWinsLosses = ({ steamId }: { steamId: string }) => {
         <div className="text-muted-foreground text-sm">L</div>
         <div className="text-lg font-semibold text-red-500">{total.losses}</div>
       </div>
-      {total.draws !== 0 && (
-        <div className="text-center">
-          <div className="text-muted-foreground text-sm">Draw</div>
-          <div className="text-lg font-semibold text-blue-500">
-            {total.draws}
-          </div>
-        </div>
-      )}
       <div className="text-center">
         <div className="text-muted-foreground text-sm">Win%</div>
         <div className="text-lg font-semibold">{winPercentage.toFixed(1)}%</div>
