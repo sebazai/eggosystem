@@ -40,16 +40,14 @@ const parseQueryFilterParams = (
     return parsedValues.length > 0 ? parsedValues : null;
   };
 
-  const parsedParams: ParsedParams = {
+  const parsedParams = {
     season_ids: parseArray(req.query.season_ids?.toString()),
     league_ids: parseArray(req.query.league_ids?.toString()),
     team_ids: parseArray(req.query.team_ids?.toString()),
     stages: parseArray(req.query.stages?.toString()),
     map_ids: parseArray(req.query.map_ids?.toString()),
-    leaderboards:
-      req.params.leaderboards === "any" ? null : req.params.leaderboards,
     playerName: req.query.playerName?.toString() || null
-  };
+  } satisfies ParsedParams;
 
   req.parsedParams = parsedParams;
   next();

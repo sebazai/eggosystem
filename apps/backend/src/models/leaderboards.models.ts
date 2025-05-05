@@ -1,8 +1,8 @@
-import type { ParsedParams } from "@eggosystem/types";
+import { type LeaderboardResponse, type ParsedParams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 
-const leaderboardExpressions: { [key: string]: string } = {
+const leaderboardExpressions: { [K in keyof LeaderboardResponse]: string } = {
   // SUM stats
   kills: "sum(ps.kills)",
   assists: "sum(ps.assists)",
@@ -32,15 +32,19 @@ const leaderboardExpressions: { [key: string]: string } = {
   kd: "sum(ps.kills) / GREATEST(sum(ps.deaths), 1)" // Safer division
 };
 
-// Function to get a single leaderboard
-export const getLeaderboard = async ({
+/**
+ * Single leaderboard, we only wish to have leaderboard for players in their primary team.
+ * @param param0
+ * @returns
+ */
+export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
   season_ids,
   league_ids,
   team_ids,
   stages,
   map_ids,
   leaderboards
-}: ParsedParams): Promise<unknown[]> => {
+}: ParsedParams & { leaderboards: K }) => {
   if (!leaderboards) {
     throw new Error("Leaderboards type is required");
   }
@@ -53,38 +57,43 @@ export const getLeaderboard = async ({
   const { query, queryParams } = generateQueryWithFilters([
     { column: "stp.team_id", value: team_ids },
     { column: "m.season_id", value: season_ids },
-    { column: "l.id", value: league_ids },
+    { column: "m.league_id", value: league_ids },
     { column: "m.stage", value: stages },
     { column: "mg.map_id", value: map_ids }
   ]);
 
-  // Use INNER JOIN for team-related tables when filtering by team_id,
-  // otherwise use LEFT JOIN to include all players
-  const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
-
   const baseQuery = `
     SELECT 
-      sp.steam_id,
-      sp.nickname,
-      t.name as team_name,
-      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) as team_logo,
-      COUNT(DISTINCT mg.id) as matches_played,
-      ${leaderboardExpression} as ${leaderboards}
-    FROM PlayerStats ps
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
-    INNER JOIN Leagues l ON l.id = m.league_id
-    ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
-    ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
+      p.steam_id,
+      p.nickname,
+      t.name AS team_name,
+      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) AS team_logo,
+      COUNT(DISTINCT mg.id) AS matches_played,
+      ${leaderboardExpression} AS ${leaderboards}
+    FROM SteamPlayers p
+    JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+    JOIN MatchGames mg ON mg.id = ps.game_id
+    JOIN Matches m ON m.id = mg.match_id
+    JOIN MatchTeams mt ON mt.match_id = m.id
+    JOIN Teams t ON t.id = mt.team_id
+    JOIN SeasonTeamPlayers stp 
+      ON stp.steam_id = p.steam_id 
+    AND stp.team_id = mt.team_id
+    AND stp.season_id = m.season_id
+    AND stp.role = 'primary'
     WHERE ${query}
-    GROUP BY sp.steam_id, sp.nickname, t.name, t.team_logo
-    HAVING matches_played > 1
+    GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
+    HAVING COUNT(DISTINCT mg.id) > 1
     ORDER BY ${leaderboards} DESC
-    LIMIT 5
-  `;
+    LIMIT 5;
+`;
 
-  return runQuery(baseQuery, queryParams);
+  const result = await runQuery<Array<LeaderboardResponse[K]>>(
+    baseQuery,
+    queryParams
+  );
+
+  return { [leaderboards]: result };
 };
 
 // Get available leaderboard types
