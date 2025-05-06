@@ -1,4 +1,5 @@
 import { createNextUrl } from "@/lib/utils";
+import Link from "next/link";
 import Image from "next/image";
 
 export const FooterSponsors = () => {
@@ -6,26 +7,32 @@ export const FooterSponsors = () => {
     <div>
       <h2>Sponsors</h2>
       <div className="mt-4 space-y-6 flex flex-col items-center md:items-start lg:items-center dark:invert-0 invert">
-        <Image
-          src={createNextUrl("/images/sponsors/elisa-esports-footer.png")}
-          alt="Elisa Esports"
-          width={200}
-          height={119}
-        />
+        <Link href={"https://elisaesports.com/"} target="_blank">
+          <Image
+            src={createNextUrl("/images/sponsors/elisa-esports-footer.png")}
+            alt="Elisa Esports"
+            width={200}
+            height={119}
+          />
+        </Link>
 
-        <Image
-          src={createNextUrl("/images/sponsors/tnnet-footer.png")}
-          alt="TNNet"
-          width={100}
-          height={19}
-        />
+        <Link href={"https://www.autoklinikka.fi/"} target="_blank">
+          <Image
+            src={createNextUrl("/images/sponsors/tnnet-footer.png")}
+            alt="TNNet"
+            width={100}
+            height={19}
+          />
+        </Link>
 
-        <Image
-          src={createNextUrl("/images/sponsors/atflow-footer.png")}
-          alt="Atflow"
-          width={120}
-          height={30}
-        />
+        <Link href={"https://atflow.fi/"} target="_blank">
+          <Image
+            src={createNextUrl("/images/sponsors/atflow-footer.png")}
+            alt="Atflow"
+            width={120}
+            height={30}
+          />
+        </Link>
       </div>
     </div>
   );

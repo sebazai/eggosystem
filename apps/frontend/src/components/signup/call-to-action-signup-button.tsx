@@ -12,7 +12,7 @@ export const SignupButton = () => {
       }}
       className="text-lg px-8 py-12"
     >
-      Register Your Company
+      Register Your Organization
     </Button>
   );
 };
