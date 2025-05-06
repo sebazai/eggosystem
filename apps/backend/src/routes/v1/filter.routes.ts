@@ -1,10 +1,17 @@
 import { Router } from "express";
-import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { knex } from "../../db/knex"; // Your Knex instance
+import {
+  getTeamDetailsByFiltersController,
+  getTeamsByFiltersController,
+  getTeamMapStatsByFiltersController,
+  getTeamMatchHistoryByFiltersController,
+  getTeamByFiltersController
+} from "../../controllers/teams.controllers";
+import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 const router = Router();
 
-router.get("/", parseQueryFilterParams, async (req, res) => {
+router.get("/", async (req, res) => {
   const { season_ids, league_ids, team_ids, stages, map_ids } =
     req.parsedParams;
 
@@ -73,4 +80,26 @@ router.get("/", parseQueryFilterParams, async (req, res) => {
   res.json(grouped);
 });
 
+// Teams by filters
+router.get("/teams", getTeamsByFiltersController);
+router.get(
+  "/teams/:team_id",
+  validateNumericParams(),
+  getTeamByFiltersController
+);
+router.get(
+  "/teams/:team_id/details",
+  validateNumericParams(),
+  getTeamDetailsByFiltersController
+);
+router.get(
+  "/teams/:team_id/match-history",
+  validateNumericParams(),
+  getTeamMatchHistoryByFiltersController
+);
+router.get(
+  "/teams/:team_id/map-stats",
+  validateNumericParams(),
+  getTeamMapStatsByFiltersController
+);
 export default router;

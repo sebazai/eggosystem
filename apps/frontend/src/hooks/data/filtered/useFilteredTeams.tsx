@@ -8,12 +8,12 @@ import {
   type FilterParamsQuery
 } from "@/lib/utils";
 
-export const useTeams = (params: FilterParamsQuery) => {
+export const useFilteredTeams = (params: FilterParamsQuery) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
   // Use SWR to fetch data from the backend
   const { data, error, isLoading, isValidating } = useSWR<TeamStats[]>(
-    `/api/v1/teams/filtered?${sortedQuery}`, // Skip fetch if using mock data
+    `/api/v1/filters/teams?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false

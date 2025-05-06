@@ -2,7 +2,6 @@ import { Router } from "express";
 import {
   getAllTeams,
   getTeamsByFiltersController,
-  getTeamDetailsController,
   getTopTeamsController,
   getTeamByIdController,
   getTeamsWithoutOrgController
@@ -17,11 +16,5 @@ router.get("/", getAllTeams);
 router.get("/org-missing", getTeamsWithoutOrgController);
 router.get("/topteams", parseQueryFilterParams, getTopTeamsController);
 router.get("/:teamId", validateNumericParams(), getTeamByIdController);
-router.get(
-  "/:teamId/details",
-  parseQueryFilterParams,
-  validateNumericParams(),
-  getTeamDetailsController
-);
 
 export default router;

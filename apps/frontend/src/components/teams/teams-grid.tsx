@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTeams } from "@/hooks/data/useTeams";
+import { useFilteredTeams } from "@/hooks/data/filtered/useFilteredTeams";
 import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { ContentContainer } from "../layout/content-container";
 import type { TeamStats } from "@eggosystem/types";
@@ -15,7 +15,7 @@ interface TeamsGridProps {
 
 export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
   // Get teams data based on filters
-  const { teams, isLoading, error } = useTeams(filterQueryParams);
+  const { teams, isLoading, error } = useFilteredTeams(filterQueryParams);
 
   if (isLoading) {
     return (
@@ -49,24 +49,10 @@ export const TeamsGrid = ({ filterQueryParams }: TeamsGridProps) => {
 };
 
 const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
-  const [imageError, setImageError] = useState(false);
   const params = useSearchParams();
-  const defaultLogoPath = "/teams/nologo.svg";
 
-  // Use createTeamLogoUrl function for team logos
-  let logoUrl = defaultLogoPath;
-
-  if (!imageError && team.team_logo && team.team_logo.trim() !== "") {
-    try {
-      logoUrl = createTeamLogoUrl(team.team_logo);
-    } catch (error) {
-      console.error("Error creating team logo URL:", error);
-    }
-  }
-
-  // Ensure win percentage is not greater than 100%
+  const logoUrl = createTeamLogoUrl(team.team_logo);
   const winPercentage = Math.min(team.win_percentage, 100);
-
   return (
     <Link
       href={{ pathname: `/teams/${team.id}`, query: params.toString() }}
@@ -79,12 +65,13 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
             alt={`${team.name} logo`}
             width={60}
             height={60}
-            className="bg-card object-contain"
-            onError={() => setImageError(true)}
+            className="object-contain"
           />
           <div>
             <h3 className="text-lg font-bold">{team.name}</h3>
-            <p className="text-sm text-muted-foreground">{team.league_name}</p>
+            <p className="text-sm text-muted-foreground">
+              {team.latest_season_name} {team.latest_league_name}
+            </p>
           </div>
         </div>
       </div>
@@ -92,10 +79,7 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
       <div className="p-4">
         <div className="grid grid-cols-3 gap-4">
           <StatBox label="Matches" value={team.matches_played.toString()} />
-          <StatBox
-            label="Record"
-            value={`${team.wins}/${team.losses}/${team.ties}`}
-          />
+          <StatBox label="Record" value={`${team.wins}/${team.losses}`} />
           <StatBox
             label="Win %"
             value={`${winPercentage.toFixed(1)}%`}

@@ -1,10 +1,12 @@
+import { SteamPlayer } from "../db";
+
 export interface PlayerStatsTable {
-  steam_id: string;
-  nickname: string;
-  matches_played: number;
+  steam_id: SteamPlayer["steam_id"];
+  nickname: SteamPlayer["nickname"];
+  maps_played: number;
   kills: number;
-  deaths: number;
   assists: number;
+  deaths: number;
   flash_assists: number;
   awp_kills: number;
   utility_damage: number;

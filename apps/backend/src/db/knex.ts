@@ -9,8 +9,8 @@ const db = knex({
   connection: {
     ...dbEnvConfig
   },
-  pool: { min: 0, max: 10 },
-  debug: process.env.NODE_ENV === "development"
+  pool: { min: 5, max: 25 }
+  // debug: process.env.NODE_ENV === "development"
 });
 
 export { db as knex };

@@ -26,7 +26,7 @@ const includeExactPaths = [
   "/players"
 ];
 const includePrefixPaths: string[] = ["/teams"];
-const excludePrefixPaths: string[] = ["/players/"];
+const excludePrefixPaths: string[] = ["/players/", "/teams/"];
 export const FilterProvider = ({
   appId,
   children

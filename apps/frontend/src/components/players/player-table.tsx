@@ -17,6 +17,7 @@ import { TablePagination } from "../tables/table-pagination";
 
 interface PlayerTableProps {
   filterQueryParams: FilterParamsQuery;
+  initialPageSize?: number;
 }
 
 type SortDirection = "asc" | "desc";
@@ -40,7 +41,8 @@ const COLUMN_TOOLTIPS: Record<string, string> = {
 };
 
 export const PlayerTable: React.FC<PlayerTableProps> = ({
-  filterQueryParams
+  filterQueryParams,
+  initialPageSize
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -48,7 +50,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
 
   // Pagination state (state-only pagination to prevent scroll issues)
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(initialPageSize ?? 20);
 
   // Get players data based on filters
   const { players, isLoading, isError, isValidating } = usePlayerStats({
@@ -345,7 +347,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       <TableDataCell
                         responsive={columnResponsive.matches_played}
                       >
-                        {player.matches_played}
+                        {player.maps_played}
                       </TableDataCell>
                       <TableDataCell responsive={columnResponsive.kills}>
                         {player.kills}
@@ -404,7 +406,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
           </table>
         </div>
 
-        {players && players.length > 10 && (
+        {players && players.length > (initialPageSize ?? 0) && (
           <TablePagination
             currentPage={currentPage}
             pageSize={pageSize}

@@ -91,7 +91,7 @@ export const getPlayersByFilters = async ({
     SELECT 
       p.steam_id,
       p.nickname, 
-      COUNT(DISTINCT ps.game_id) as matches_played,
+      COUNT(DISTINCT ps.game_id) as maps_played,
       SUM(ps.kills) as kills,
       SUM(ps.assists) as assists,
       SUM(ps.deaths) as deaths,

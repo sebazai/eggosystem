@@ -3,7 +3,8 @@ import { dbEnvConfig } from "../configs/db-env";
 
 const dbPool = createPool({
   ...dbEnvConfig,
-  connectionLimit: 10, // Adjust based on load
+  connectionLimit: 50,
+  queueLimit: 500,
   dateStrings: true,
   // debug: process.env.NODE_ENV !== "production",
   decimalNumbers: true,
