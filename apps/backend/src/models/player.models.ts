@@ -61,7 +61,7 @@ export const getPlayersByFilters = async ({
 }: ParsedParams) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
-      column: "stp.team_id",
+      column: "mt.team_id",
       value: team_ids
     },
     {
@@ -69,7 +69,7 @@ export const getPlayersByFilters = async ({
       value: season_ids
     },
     {
-      column: "l.id",
+      column: "m.league_id",
       value: league_ids
     },
     { column: "m.stage", value: stages },
@@ -83,9 +83,8 @@ export const getPlayersByFilters = async ({
   if (playerName) {
     queryParams.push(`%${playerName}%`);
   }
-  // Use INNER JOIN for team-related tables when filtering by team_id,
-  // otherwise use LEFT JOIN to include all players
-  const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
+
+  const teamIdsJoin = team_ids && team_ids.length > 0;
 
   const baseQuery = `
     SELECT 
@@ -109,9 +108,7 @@ export const getPlayersByFilters = async ({
     INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN Leagues l ON m.league_id = l.id
-    ${teamJoinType} JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
-    ${teamJoinType} JOIN Teams t ON t.id = stp.team_id
+    ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
     ${whereClause}
     GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC
