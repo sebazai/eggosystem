@@ -12,6 +12,8 @@ import { SponsorContainer } from "@/components/sponsors/sponsor-container";
 import { CsSupportingOrgs } from "@/components/sponsors/cs-supporting-orgs";
 import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
+import { createNextUrl } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -72,42 +74,54 @@ export default async function Home() {
               📊 All-Time Highlights For Counter-Strike
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-              <Card>
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                    {data.total_organizations}+
-                  </p>
-                  <p className="text-sm text-muted-foreground">Organizations</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                    {data.total_teams}+
-                  </p>
-                  <p className="text-sm text-muted-foreground">Unique Teams</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                    {data.unique_players}+
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Unique Players
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
-                    {data.total_games}+
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Total Games Played
-                  </p>
-                </CardContent>
-              </Card>
+              <Link href={createNextUrl("/organizations")}>
+                <Card className="hover:bg-kanaliiga-light-brown/20">
+                  <CardContent className="p-2 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                      {data.total_organizations}+
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Organizations
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href={createNextUrl("/teams")}>
+                <Card className="hover:bg-kanaliiga-light-brown/20">
+                  <CardContent className="p-2 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                      {data.total_teams}+
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Unique Teams
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href={createNextUrl("/players")}>
+                <Card className="hover:bg-kanaliiga-light-brown/20">
+                  <CardContent className="p-2 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                      {data.unique_players}+
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Unique Players
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link href={createNextUrl("/matches")}>
+                <Card className="hover:bg-kanaliiga-light-brown/20">
+                  <CardContent className="p-2 sm:p-4 text-center">
+                    <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
+                      {data.total_games}+
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Total Games Played
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             </div>
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
