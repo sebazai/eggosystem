@@ -6,8 +6,7 @@ import { ItemFilter } from "./item-filter";
 import type { League, Season, Team, Map } from "@eggosystem/types";
 import { StageFilter } from "./stage-filter";
 import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
-import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { FilterParamsQuery } from "@/lib/utils";
 
 interface MultiFiltersProps extends FilterParamsQuery {
@@ -22,7 +21,7 @@ interface MultiFiltersProps extends FilterParamsQuery {
 
 export const MultiFilters = (props: MultiFiltersProps) => {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const pathname = usePathname();
 
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
@@ -49,7 +48,8 @@ export const MultiFilters = (props: MultiFiltersProps) => {
 
     params.delete(key);
     values.forEach((v) => params.append(key, v.toString()));
-    router.push(`?${params.toString()}`);
+    const newUrl = `${pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", newUrl);
   };
 
   // How many props are passed to FancyMultiSelect?

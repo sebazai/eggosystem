@@ -5,7 +5,7 @@ import {
   getParamArray,
   type FilterParamsQuery
 } from "@/lib/utils";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, createContext, useContext } from "react";
 import useSWR from "swr";
 
@@ -36,7 +36,6 @@ export const FilterProvider = ({
 }) => {
   const path = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [ready, setReady] = useState(false);
 
   const { data, error, isValidating, isLoading } = useSWR<
@@ -59,7 +58,8 @@ export const FilterProvider = ({
     ) {
       const params = new URLSearchParams();
       params.append("seasons", data.season_id.toString());
-      router.replace(`?${params.toString()}`, { scroll: false });
+      const newUrl = `${path}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
     }
     if (
       (searchParams.size !== 0 ||
@@ -70,7 +70,7 @@ export const FilterProvider = ({
     ) {
       setReady(true);
     }
-  }, [searchParams, data?.season_id, router, ready, path]);
+  }, [searchParams, data?.season_id, ready, path]);
 
   const filterParams = useMemo(() => {
     if (!ready) return null;

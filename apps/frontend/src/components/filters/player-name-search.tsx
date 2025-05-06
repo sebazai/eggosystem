@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 
 interface PlayerNameFilterProps {
@@ -14,7 +14,7 @@ export const PlayerNameFilter: React.FC<PlayerNameFilterProps> = ({
   initialPlayerName = ""
 }) => {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const pathname = usePathname();
   const [playerName, setPlayerName] = useState(initialPlayerName);
   const [debouncedPlayerName, setDebouncedPlayerName] =
     useState(initialPlayerName);
@@ -38,8 +38,9 @@ export const PlayerNameFilter: React.FC<PlayerNameFilterProps> = ({
       params.delete("playerName");
     }
 
-    router.push(`?${params.toString()}`);
-  }, [debouncedPlayerName, router, searchParams]);
+    const newUrl = `${pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", newUrl);
+  }, [debouncedPlayerName, pathname, searchParams]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

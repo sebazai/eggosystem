@@ -76,7 +76,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
       },
       {
         key: "matches_played",
-        label: "GP",
+        label: "Maps Played",
         sortable: true,
         responsive: "hidden md:table-cell"
       },

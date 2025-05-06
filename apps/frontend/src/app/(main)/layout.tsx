@@ -10,7 +10,6 @@ import SkipToContent from "@/components/layout/skip-to-content";
 import { KfcRain } from "@/components/layout/kfc-rain";
 import ScrollToTop from "@/components/layout/scroll-to-top";
 import { AuthProvider } from "@/context/AuthContext";
-import { FilterProvider } from "@/context/FilterContext";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
@@ -117,29 +116,28 @@ export default function RootLayout({
           poppinsFont.variable
         )}
       >
-        <AuthProvider>
-          <AcceptPolicyProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              // enableSystem
-              disableTransitionOnChange
-            >
-              <Suspense>
-                <FilterProvider appId="730">
-                  <SkipToContent />
-                  <KfcRain />
-                  <ScrollToTop />
-                  <div className="flex flex-col min-h-svh min-w-[200px] w-full">
-                    <Navigation />
-                    <main id="main-content">{children}</main>
-                    <Footer />
-                  </div>
-                </FilterProvider>
-              </Suspense>
-            </ThemeProvider>
-          </AcceptPolicyProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          // enableSystem
+          disableTransitionOnChange
+        >
+          <Suspense>
+            <SkipToContent />
+            <KfcRain />
+            <ScrollToTop />
+            <div className="flex flex-col min-h-svh min-w-[200px] w-full">
+              <AuthProvider>
+                <Navigation />
+                <AcceptPolicyProvider>
+                  <main id="main-content">{children}</main>
+                </AcceptPolicyProvider>
+              </AuthProvider>
+              <Footer />
+            </div>
+          </Suspense>
+        </ThemeProvider>
+
         <Toaster richColors />
       </body>
     </html>

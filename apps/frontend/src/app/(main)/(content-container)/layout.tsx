@@ -1,3 +1,5 @@
+import { FilterProvider } from "@/context/FilterContext";
+
 export default function Layout({
   children
 }: Readonly<{
@@ -6,7 +8,7 @@ export default function Layout({
   return (
     <div className="flex flex-grow justify-center w-full">
       <div className="w-full max-w-screen-2xl px-4 sm:px-8 lg:px-16">
-        {children}
+        <FilterProvider appId="730">{children}</FilterProvider>
       </div>
     </div>
   );
