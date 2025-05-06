@@ -1,11 +1,11 @@
 "use client";
 
 import { expressFetcher } from "@/lib/utils";
-import type { MatchTopPlayerAwards } from "@eggosystem/types";
+import type { MatchOrGameTopPlayerAwards } from "@eggosystem/types";
 import useSWR from "swr";
 
 export function useMatchTopPlayers(matchId: number) {
-  const { data, error, isValidating } = useSWR<MatchTopPlayerAwards>(
+  const { data, error, isValidating } = useSWR<MatchOrGameTopPlayerAwards>(
     `/api/v1/matches/${matchId}/topplayers`,
     expressFetcher,
     {

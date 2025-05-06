@@ -2,12 +2,42 @@ import request from "supertest";
 import express from "express";
 import matchRouter from "../../routes/v1/match.routes";
 
-import type { MatchMapsPlayed, MatchTopPlayerAwards } from "@eggosystem/types";
+import type { MatchMapsPlayed, MatchTeamStats } from "@eggosystem/types";
 
 describe("Match Routes", () => {
   const app = express();
   app.use(express.json());
-  app.use(matchRouter);
+  app.use("/matches", matchRouter);
+
+  describe("GET /matches/:game_id/teamstats", () => {
+    it("should return team stats for game id 10107", async () => {
+      const expectedStats = [
+        {
+          team_id: 2035,
+          name: "PV - 2",
+          first_kills: 39,
+          clutches_won: 4,
+          plants: 18,
+          trades: 44
+        },
+        {
+          team_id: 2060,
+          name: "Prove Testaa",
+          first_kills: 35,
+          clutches_won: 1,
+          plants: 22,
+          trades: 46
+        }
+      ] satisfies MatchTeamStats[];
+
+      const response = await request(app)
+        .get("/matches/10107/teamstats")
+        .expect("Content-Type", /json/)
+        .expect(200);
+
+      expect(response.body).toEqual(expectedStats);
+    });
+  });
 
   describe("GET /matches/:match_id/mapsplayed", () => {
     it("should return maps played for match id 7398", async () => {
@@ -36,7 +66,7 @@ describe("Match Routes", () => {
       ] satisfies MatchMapsPlayed[];
 
       const response = await request(app)
-        .get("/7398/mapsplayed")
+        .get("/matches/7398/mapsplayed")
         .expect("Content-Type", /json/)
         .expect(200);
 
@@ -45,83 +75,11 @@ describe("Match Routes", () => {
 
     it("should handle non-existent match id", async () => {
       const response = await request(app)
-        .get("/99999/mapsplayed")
+        .get("/matches/99999/mapsplayed")
         .expect("Content-Type", /json/)
         .expect(200);
 
       expect(response.body).toEqual([]);
-    });
-  });
-
-  describe("GET /matches/:match_id/games/:game_id/topplayers", () => {
-    it("should return top players for match 7750 and game id 10340", async () => {
-      const expectedTopPlayers = {
-        most_kills: {
-          steam_id: "76561198077435075",
-          nickname: "tobbbles",
-          team_id: 53,
-          value: 29
-        },
-        most_adr: {
-          steam_id: "76561198077435075",
-          nickname: "tobbbles",
-          team_id: 53,
-          value: 102.8
-        },
-        most_assists: {
-          steam_id: "76561197970957130",
-          nickname: "kuula",
-          team_id: 53,
-          value: 8
-        },
-        most_awp_kills: {
-          steam_id: "76561198001857963",
-          nickname: "meppi",
-          team_id: 53,
-          value: 10
-        },
-        most_utility_damage: {
-          steam_id: "76561197996849404",
-          nickname: "Pronssi",
-          team_id: 18,
-          value: 300
-        },
-        most_first_kills: {
-          steam_id: "76561198001857963",
-          nickname: "meppi",
-          team_id: 53,
-          value: 7
-        },
-        most_flash_assists: {
-          steam_id: "76561198030886203",
-          nickname: "defektro",
-          team_id: 53,
-          value: 2
-        },
-        most_mates_flashed: {
-          steam_id: "76561197967885016",
-          nickname: "enzoj",
-          team_id: 53,
-          value: 10
-        }
-      } satisfies MatchTopPlayerAwards;
-
-      const response = await request(app)
-        .get("/7750/games/10340/topplayers")
-        .expect("Content-Type", /json/)
-        .expect(200);
-
-      expect(response.body).toEqual(expectedTopPlayers);
-    });
-
-    it("should handle non-existent match id", async () => {
-      try {
-        await request(app).get("/99999/topplayers");
-      } catch (error) {
-        expect(error).toEqual({
-          message: "Could not find season for match id"
-        });
-      }
     });
   });
 });

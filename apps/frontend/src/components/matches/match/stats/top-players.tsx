@@ -2,8 +2,8 @@ import { NextImageFallback } from "@/components/layout/image-with-fallback";
 import { createTeamLogoUrl } from "@/lib/utils";
 import type {
   MatchInfo,
-  MatchTopPlayerAwards,
-  MatchTopPlayerAwardsValue
+  MatchOrGameTopPlayerAwards,
+  TopPlayerAwardsValue
 } from "@eggosystem/types";
 import Link from "next/link";
 import React from "react";
@@ -14,7 +14,7 @@ interface TopPlayerFilters {
 }
 
 interface TopPlayerProps {
-  topPlayers: MatchTopPlayerAwards;
+  topPlayers: MatchOrGameTopPlayerAwards;
   teams: MatchInfo["teams"];
   topPlayerFilters: TopPlayerFilters;
 }
@@ -22,7 +22,7 @@ interface TopPlayerProps {
 const roundToOneDecimal = (num: number) =>
   num % 1 === 0 ? num : parseFloat(num.toFixed(1));
 
-const awardNames: Record<keyof MatchTopPlayerAwards, string> = {
+const awardNames: Record<keyof MatchOrGameTopPlayerAwards, string> = {
   most_kills: "Most Kills",
   most_adr: "Highest ADR",
   most_assists: "Most Assists",
@@ -48,8 +48,8 @@ export const TopPlayers = ({
           <div className="text-muted-foreground text-sm text-right">Score</div>
           {(
             Object.entries(topPlayers) as [
-              keyof MatchTopPlayerAwards,
-              MatchTopPlayerAwardsValue
+              keyof MatchOrGameTopPlayerAwards,
+              TopPlayerAwardsValue
             ][]
           ).map(([key, value]) => {
             const awardsKey = key;

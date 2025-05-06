@@ -2,10 +2,8 @@ import { Router } from "express";
 import {
   getMatchesController,
   getMatchPlayerStatsController,
-  getMatchGamePlayerStatsController,
   getMatchTeamStatsController,
-  getTopPlayersController,
-  getGameTopPlayersController,
+  getMatchTopPlayersController,
   getMatchGamesController,
   getMatchInfoController,
   getMatchController,
@@ -33,11 +31,7 @@ router.get(
   validateNumericParams(),
   getMatchPlayerStatsController
 );
-router.get(
-  "/:match_id/games/:game_id/playerstats",
-  validateNumericParams(),
-  getMatchGamePlayerStatsController
-);
+
 router.get(
   "/:match_id/teamstats",
   validateNumericParams(),
@@ -46,13 +40,9 @@ router.get(
 router.get(
   "/:match_id/topplayers",
   validateNumericParams(),
-  getTopPlayersController
+  getMatchTopPlayersController
 );
-router.get(
-  "/:match_id/games/:game_id/topplayers",
-  validateNumericParams(),
-  getGameTopPlayersController
-);
+
 router.get("/", getMatchesController);
 
 export default router;

@@ -4,15 +4,15 @@ import React from "react";
 
 import { useRouter } from "next/navigation";
 import type { MatchInfo } from "@eggosystem/types";
-import { useMatchGamePlayerStats } from "@/hooks/data/useMatchGamePlayerStats";
+import { useGamePlayerStats } from "@/hooks/data/useGamePlayerStats";
 import { MatchMapPicks } from "../stats/map-picks";
 import { TeamStatistics } from "../stats/team-statistics";
-import { useMatchGameTeamStats } from "@/hooks/data/useMatchGameTeamStats";
+import { useGameTeamStats } from "@/hooks/data/useGameTeamStats";
 import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
 import { RoundInfo } from "../stats/round-info";
 import { PlayerStatistics } from "../stats/player-stats-grid";
 import { TopPlayers } from "../stats/top-players";
-import { useMatchGameTopPlayers } from "@/hooks/data/useMatchGameTopPlayers";
+import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
 
 interface MatchStatsProps {
   matchId: number;
@@ -33,9 +33,9 @@ export const GameStats = ({ matchId, gameId, matchInfo }: MatchStatsProps) => {
     router.push(newUrl, { scroll: false });
   };
 
-  const { teamStats } = useMatchGameTeamStats(gameId);
-  const { playerStats } = useMatchGamePlayerStats(matchId, gameId);
-  const { topPlayers } = useMatchGameTopPlayers(matchId, gameId);
+  const { teamStats } = useGameTeamStats(gameId);
+  const { playerStats } = useGamePlayerStats(gameId);
+  const { topPlayers } = useGameTopPlayers(gameId);
   const { roundInfo } = useGameRoundInfo(gameId);
 
   const baseFilter = {

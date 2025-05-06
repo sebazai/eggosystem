@@ -1,6 +1,6 @@
-import type { MatchTeamStats } from "@eggosystem/types";
+import type { GameTeamStats, MatchTeamStats } from "@eggosystem/types";
 import { TeamStatBox } from "./team-stat-box";
-import { useMatchGameTeamRoundBreakdowns } from "@/hooks/data/useMatchGameTeamRoundBreakdowns";
+import { useGameTeamRoundBreakdowns } from "@/hooks/data/useGameTeamRoundBreakdowns";
 
 export interface TeamStatsFilters {
   seasons: string;
@@ -8,7 +8,7 @@ export interface TeamStatsFilters {
 }
 
 interface TeamStatisticsProps {
-  teamStats: MatchTeamStats[];
+  teamStats: (MatchTeamStats | GameTeamStats)[];
   teamStatsFilters: TeamStatsFilters;
   gameId?: number;
 }
@@ -21,7 +21,7 @@ export const TeamStatistics = ({
   const [teamOneStats, teamTwoStats] = teamStats;
   const teamOneId = teamOneStats?.team_id;
   const teamTwoId = teamTwoStats?.team_id;
-  const { teamsRoundBreakdown } = useMatchGameTeamRoundBreakdowns(gameId);
+  const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(gameId);
   return (
     <div className="mb-4 bg-card">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[1px]">

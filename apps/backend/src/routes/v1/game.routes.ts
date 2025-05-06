@@ -7,9 +7,11 @@ import {
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
-  getMatchGameTeamRoundBreakdownController,
+  getGameTeamRoundBreakdownController,
   getGameRoundInfoController,
-  getMatchGameTeamStatsController
+  getGameTeamStatsController,
+  getGamePlayerStatsController,
+  getGameTopPlayersController
 } from "../../controllers/games.controllers";
 
 const router = Router();
@@ -41,9 +43,14 @@ router.get(
 );
 
 router.get(
+  "/:game_id/topplayers",
+  validateNumericParams(),
+  getGameTopPlayersController
+);
+router.get(
   "/:game_id/breakdown",
   validateNumericParams(),
-  getMatchGameTeamRoundBreakdownController
+  getGameTeamRoundBreakdownController
 );
 router.get(
   "/:game_id/roundinfo",
@@ -53,7 +60,12 @@ router.get(
 router.get(
   "/:game_id/teamstats",
   validateNumericParams(),
-  getMatchGameTeamStatsController
+  getGameTeamStatsController
+);
+router.get(
+  "/:game_id/playerstats",
+  validateNumericParams(),
+  getGamePlayerStatsController
 );
 
 export default router;

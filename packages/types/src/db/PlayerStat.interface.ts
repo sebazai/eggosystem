@@ -4,7 +4,6 @@ export interface PlayerStats {
   id: number;
   steam_id: SteamPlayer["steam_id"];
   game_id: MatchGame["id"];
-  team: number; // 1 = CT, 2 = T
   kills: number;
   deaths: number;
   assists: number;

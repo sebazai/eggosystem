@@ -1,7 +1,4 @@
-import type {
-  MatchGameTeamRoundBreakdown,
-  MatchTeamStats
-} from "@eggosystem/types";
+import type { GameTeamRoundBreakdown, MatchTeamStats } from "@eggosystem/types";
 import Link from "next/link";
 import { RoundBreakdown } from "./round-breakdown";
 import type { TeamStatsFilters } from "./team-statistics";
@@ -13,7 +10,7 @@ export const TeamStatBox = ({
 }: {
   team: MatchTeamStats;
   teamStatsFilters: TeamStatsFilters;
-  roundBreakDown?: MatchGameTeamRoundBreakdown;
+  roundBreakDown?: GameTeamRoundBreakdown;
 }) => {
   return (
     <div className="p-4">

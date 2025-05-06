@@ -2,10 +2,8 @@ import { type Request, type Response } from "express";
 import {
   getMatches,
   getMatchPlayerStats,
-  getMatchGamePlayerStats,
   getMatchTeamStats,
   getMatchTopPlayers,
-  getGameTopPlayers,
   getMatchesByFilters,
   getMatchGames,
   getMatchInfo,
@@ -74,22 +72,12 @@ export const getFilteredMatchesController = async (
   res.json(matches);
 };
 
-export const getTopPlayersController = async (
+export const getMatchTopPlayersController = async (
   req: RequestWithParams<{ match_id: string }>,
   res: Response
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
   const topplayers = await getMatchTopPlayers(match_id);
-  res.json(topplayers);
-};
-
-export const getGameTopPlayersController = async (
-  req: RequestWithParams<{ match_id: string; game_id: string }>,
-  res: Response
-) => {
-  const match_id = parseInt(req.params.match_id, 10);
-  const game_id = parseInt(req.params.game_id, 10);
-  const topplayers = await getGameTopPlayers(match_id, game_id);
   res.json(topplayers);
 };
 
@@ -100,18 +88,6 @@ export const getMatchPlayerStatsController = async (
   const match_id = parseInt(req.params.match_id, 10);
 
   const playerstats = await getMatchPlayerStats(match_id);
-
-  res.json(playerstats);
-};
-
-export const getMatchGamePlayerStatsController = async (
-  req: RequestWithParams<{ match_id: string; game_id: string }>,
-  res: Response
-) => {
-  const match_id = parseInt(req.params.match_id, 10);
-  const game_id = parseInt(req.params.game_id, 10);
-
-  const playerstats = await getMatchGamePlayerStats(match_id, game_id);
 
   res.json(playerstats);
 };

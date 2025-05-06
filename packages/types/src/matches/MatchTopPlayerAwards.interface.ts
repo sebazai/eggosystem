@@ -1,19 +1,19 @@
 import { SteamPlayer, Team, Nullable } from "@eggosystem/types";
 
-export interface MatchTopPlayerAwardsValue {
+export interface TopPlayerAwardsValue {
   steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
   value: Nullable<number>;
   team_id: Team["id"];
 }
 
-export interface MatchTopPlayerAwards {
-  most_kills: Nullable<MatchTopPlayerAwardsValue>;
-  most_adr: Nullable<MatchTopPlayerAwardsValue>;
-  most_assists: Nullable<MatchTopPlayerAwardsValue>;
-  most_awp_kills: Nullable<MatchTopPlayerAwardsValue>;
-  most_utility_damage: Nullable<MatchTopPlayerAwardsValue>;
-  most_first_kills: Nullable<MatchTopPlayerAwardsValue>;
-  most_flash_assists: Nullable<MatchTopPlayerAwardsValue>;
-  most_mates_flashed: Nullable<MatchTopPlayerAwardsValue>;
+export interface MatchOrGameTopPlayerAwards {
+  most_kills: Nullable<TopPlayerAwardsValue>;
+  most_adr: Nullable<TopPlayerAwardsValue>;
+  most_assists: Nullable<TopPlayerAwardsValue>;
+  most_awp_kills: Nullable<TopPlayerAwardsValue>;
+  most_utility_damage: Nullable<TopPlayerAwardsValue>;
+  most_first_kills: Nullable<TopPlayerAwardsValue>;
+  most_flash_assists: Nullable<TopPlayerAwardsValue>;
+  most_mates_flashed: Nullable<TopPlayerAwardsValue>;
 }

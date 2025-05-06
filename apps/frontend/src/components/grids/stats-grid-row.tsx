@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { createNextUrl } from "@/lib/utils";
+import { createTeamLogoUrl } from "@/lib/utils";
+import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface StatsGridRowProps {
   linkUrl: string;
@@ -44,8 +44,8 @@ export const StatsGridRow = ({
           {placement}
         </span>
         {teamLogo && (
-          <Image
-            src={createNextUrl(`/teams/${teamLogo}`)}
+          <NextImageFallback
+            src={createTeamLogoUrl(teamLogo)}
             alt={`${teamName} logo`}
             width={20}
             height={20}

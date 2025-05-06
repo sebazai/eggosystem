@@ -1,11 +1,17 @@
 import {
-  type MatchTeamStats,
+  type GameTeamStats,
   type MapRoundInfo,
-  type MatchGameTeamRoundBreakdown
+  type GameTeamRoundBreakdown,
+  type GamePlayerStats,
+  type MatchOrGameTopPlayerAwards
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import {
+  fetchPlayerStatsForMatchOrGame,
+  matchTopStats
+} from "../shared/fetch-stat";
 
-export const getMatchGameTeamRoundBreakdown = async (game_id: number) => {
+export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
    SELECT 
     rw.team_id,
@@ -37,9 +43,7 @@ export const getMatchGameTeamRoundBreakdown = async (game_id: number) => {
   ORDER BY rw.team_id;
   `;
 
-  const data = await runQuery<Array<MatchGameTeamRoundBreakdown>>(query, [
-    game_id
-  ]);
+  const data = await runQuery<Array<GameTeamRoundBreakdown>>(query, [game_id]);
   return data;
 };
 
@@ -62,34 +66,59 @@ export const getGameRoundInfo = async (game_id: number) => {
   return runQuery<MapRoundInfo[]>(query, [game_id]);
 };
 
-export const getMatchGameTeamStats = async (game_id: number) => {
+export const getGameTeamStats = async (game_id: number) => {
   const query = `
       SELECT 
-          tms.team_id,
+          stp.team_id,
           t.name,
-          tms.score,
-          tms.halftime_score as team_ht_score,
-          tms.starting_side,
-          COALESCE(SUM(ps.first_kills), 0) as first_kills,
-          COALESCE(SUM(ps.clutches_won), 0) as clutches_won,
-          COALESCE(SUM(ps.plants), 0) as plants,
-          COALESCE(SUM(ps.trades), 0) as trades
-      FROM MatchGames mmp
-      JOIN TeamGameScores tms ON tms.game_id = mmp.id
-      JOIN Teams t ON t.id = tms.team_id
-      LEFT JOIN PlayerStats ps ON ps.game_id = mmp.id 
-          AND ((ps.team = 1 AND tms.team_id = (
-              SELECT team_id FROM TeamGameScores 
-              WHERE game_id = mmp.id 
-              ORDER BY team_id ASC LIMIT 1
-          )) OR (ps.team = 2 AND tms.team_id = (
-              SELECT team_id FROM TeamGameScores 
-              WHERE game_id = mmp.id 
-              ORDER BY team_id DESC LIMIT 1
-          )))
-      WHERE mmp.id = ?
-      GROUP BY tms.team_id, t.name, tms.score, tms.halftime_score, tms.starting_side
-      ORDER BY tms.team_id`;
+          SUM(ps.first_kills) as first_kills,
+          SUM(ps.clutches_won) as clutches_won,
+          SUM(ps.plants) as plants,
+          SUM(ps.trades) as trades
+      FROM PlayerStats ps
+      INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
+      INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
+      INNER JOIN Teams t ON t.id = stp.team_id
+      WHERE ps.game_id = ?
+      GROUP BY stp.team_id`;
+  return runQuery<GameTeamStats[]>(query, [game_id]);
+};
 
-  return runQuery<MatchTeamStats[]>(query, [game_id]);
+export const getGamePlayerStats = async (game_id: number) => {
+  const query = `SELECT
+        p.steam_id,
+        p.nickname,
+        stp.team_id,
+        ps.kills,
+        ps.headshots,
+        ps.assists,
+        ps.flash_assists,
+        ps.deaths,
+        ps.kast as kast_percentage,
+        ps.adr,
+        ps.enemies_flashed,
+        ps.hs_percent,
+        ps.kana_rating
+      FROM PlayerStats ps
+      INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
+      INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
+      WHERE ps.game_id = ?
+      ORDER BY stp.team_id, ps.kills DESC, ps.deaths ASC`;
+
+  return runQuery<GamePlayerStats[]>(query, [game_id]);
+};
+
+export const getGameTopPlayers = async (game_id: number) => {
+  const queries = matchTopStats.map((stat) =>
+    fetchPlayerStatsForMatchOrGame(game_id, "mg.id = ?", stat)
+  );
+  const queryResults = await Promise.all(queries);
+
+  return Object.assign({}, ...queryResults) as MatchOrGameTopPlayerAwards;
 };
