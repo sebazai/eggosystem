@@ -4,7 +4,6 @@ import {
   getMatchPlayerStats,
   getMatchGamePlayerStats,
   getMatchTeamStats,
-  getMatchGameTeamStats,
   getMatchTopPlayers,
   getGameTopPlayers,
   getMatchesByFilters,
@@ -123,16 +122,6 @@ export const getMatchTeamStatsController = async (
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
   const teamstats = await getMatchTeamStats(match_id);
-  res.json(teamstats);
-};
-
-export const getMatchGameTeamStatsController = async (
-  req: RequestWithParams<{ match_id: string; game_id: string }>,
-  res: Response
-) => {
-  const match_id = parseInt(req.params.match_id, 10);
-  const game_id = parseInt(req.params.game_id, 10);
-  const teamstats = await getMatchGameTeamStats(match_id, game_id);
   res.json(teamstats);
 };
 

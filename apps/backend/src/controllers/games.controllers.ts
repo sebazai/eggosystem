@@ -2,7 +2,8 @@ import { type Response } from "express";
 import { type RequestWithParams } from "@eggosystem/types";
 import {
   getGameRoundInfo,
-  getMatchGameTeamRoundBreakdown
+  getMatchGameTeamRoundBreakdown,
+  getMatchGameTeamStats
 } from "../models/game.models";
 
 export const getMatchGameTeamRoundBreakdownController = async (
@@ -24,4 +25,13 @@ export const getGameRoundInfoController = async (
   const game_id = parseInt(req.params.game_id, 10);
   const roundInfo = await getGameRoundInfo(game_id);
   res.json(roundInfo);
+};
+
+export const getMatchGameTeamStatsController = async (
+  req: RequestWithParams<{ match_id: string; game_id: string }>,
+  res: Response
+) => {
+  const game_id = parseInt(req.params.game_id, 10);
+  const teamstats = await getMatchGameTeamStats(game_id);
+  res.json(teamstats);
 };

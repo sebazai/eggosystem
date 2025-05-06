@@ -2,11 +2,7 @@ import request from "supertest";
 import express from "express";
 import matchRouter from "../../routes/v1/match.routes";
 
-import type {
-  MatchMapsPlayed,
-  MatchTeamStats,
-  MatchTopPlayerAwards
-} from "@eggosystem/types";
+import type { MatchMapsPlayed, MatchTopPlayerAwards } from "@eggosystem/types";
 
 describe("Match Routes", () => {
   const app = express();
@@ -126,51 +122,6 @@ describe("Match Routes", () => {
           message: "Could not find season for match id"
         });
       }
-    });
-  });
-
-  describe("GET /matches/:match_id/games/:game_id/teamstats", () => {
-    it("should return team stats for match id 7750 and game id 10340", async () => {
-      const expectedTeamStats = [
-        {
-          team_id: 18,
-          name: "Efecte Gaming Club",
-          score: 16,
-          starting_side: "T",
-          team_ht_score: 6,
-          first_kills: 13,
-          clutches_won: 1,
-          plants: 7,
-          trades: 21
-        },
-        {
-          team_id: 53,
-          name: "Polar Squad",
-          score: 14,
-          starting_side: "CT",
-          team_ht_score: 9,
-          first_kills: 17,
-          clutches_won: 1,
-          plants: 5,
-          trades: 17
-        }
-      ] satisfies MatchTeamStats[];
-
-      const response = await request(app)
-        .get("/7750/games/10340/teamstats")
-        .expect("Content-Type", /json/)
-        .expect(200);
-
-      expect(response.body).toEqual(expectedTeamStats);
-    });
-
-    it("should handle non-existent match id", async () => {
-      const response = await request(app)
-        .get("/99999/teamstats")
-        .expect("Content-Type", /json/)
-        .expect(200);
-
-      expect(response.body).toEqual([]);
     });
   });
 });

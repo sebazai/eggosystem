@@ -8,7 +8,8 @@ import {
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
   getMatchGameTeamRoundBreakdownController,
-  getGameRoundInfoController
+  getGameRoundInfoController,
+  getMatchGameTeamStatsController
 } from "../../controllers/games.controllers";
 
 const router = Router();
@@ -48,6 +49,11 @@ router.get(
   "/:game_id/roundinfo",
   validateNumericParams(),
   getGameRoundInfoController
+);
+router.get(
+  "/:game_id/teamstats",
+  validateNumericParams(),
+  getMatchGameTeamStatsController
 );
 
 export default router;

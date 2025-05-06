@@ -33,7 +33,7 @@ export const GameStats = ({ matchId, gameId, matchInfo }: MatchStatsProps) => {
     router.push(newUrl, { scroll: false });
   };
 
-  const { teamStats } = useMatchGameTeamStats(matchId, gameId);
+  const { teamStats } = useMatchGameTeamStats(gameId);
   const { playerStats } = useMatchGamePlayerStats(matchId, gameId);
   const { topPlayers } = useMatchGameTopPlayers(matchId, gameId);
   const { roundInfo } = useGameRoundInfo(gameId);

@@ -1,3 +1,5 @@
+"use client";
+
 import { createNextUrl } from "@/lib/utils";
 import Image, { type ImageProps } from "next/image";
 

@@ -1,4 +1,5 @@
 import {
+  type MatchTeamStats,
   type MapRoundInfo,
   type MatchGameTeamRoundBreakdown
 } from "@eggosystem/types";
@@ -59,4 +60,36 @@ export const getGameRoundInfo = async (game_id: number) => {
       ORDER BY round_number ASC
     `;
   return runQuery<MapRoundInfo[]>(query, [game_id]);
+};
+
+export const getMatchGameTeamStats = async (game_id: number) => {
+  const query = `
+      SELECT 
+          tms.team_id,
+          t.name,
+          tms.score,
+          tms.halftime_score as team_ht_score,
+          tms.starting_side,
+          COALESCE(SUM(ps.first_kills), 0) as first_kills,
+          COALESCE(SUM(ps.clutches_won), 0) as clutches_won,
+          COALESCE(SUM(ps.plants), 0) as plants,
+          COALESCE(SUM(ps.trades), 0) as trades
+      FROM MatchGames mmp
+      JOIN TeamGameScores tms ON tms.game_id = mmp.id
+      JOIN Teams t ON t.id = tms.team_id
+      LEFT JOIN PlayerStats ps ON ps.game_id = mmp.id 
+          AND ((ps.team = 1 AND tms.team_id = (
+              SELECT team_id FROM TeamGameScores 
+              WHERE game_id = mmp.id 
+              ORDER BY team_id ASC LIMIT 1
+          )) OR (ps.team = 2 AND tms.team_id = (
+              SELECT team_id FROM TeamGameScores 
+              WHERE game_id = mmp.id 
+              ORDER BY team_id DESC LIMIT 1
+          )))
+      WHERE mmp.id = ?
+      GROUP BY tms.team_id, t.name, tms.score, tms.halftime_score, tms.starting_side
+      ORDER BY tms.team_id`;
+
+  return runQuery<MatchTeamStats[]>(query, [game_id]);
 };

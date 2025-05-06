@@ -4,9 +4,9 @@ import { expressFetcher } from "@/lib/utils";
 import type { MatchTeamStats } from "@eggosystem/types";
 import useSWR from "swr";
 
-export function useMatchGameTeamStats(matchId: number, gameId: number) {
+export function useMatchGameTeamStats(gameId: number) {
   const { data, error, isValidating } = useSWR<MatchTeamStats[]>(
-    `/api/v1/matches/${matchId}/games/${gameId}/teamstats`,
+    `/api/v1/games/${gameId}/teamstats`,
     expressFetcher,
     { revalidateOnFocus: false }
   );

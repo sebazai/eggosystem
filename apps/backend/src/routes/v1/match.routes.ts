@@ -4,7 +4,6 @@ import {
   getMatchPlayerStatsController,
   getMatchGamePlayerStatsController,
   getMatchTeamStatsController,
-  getMatchGameTeamStatsController,
   getTopPlayersController,
   getGameTopPlayersController,
   getMatchGamesController,
@@ -43,11 +42,6 @@ router.get(
   "/:match_id/teamstats",
   validateNumericParams(),
   getMatchTeamStatsController
-);
-router.get(
-  "/:match_id/games/:game_id/teamstats",
-  validateNumericParams(),
-  getMatchGameTeamStatsController
 );
 router.get(
   "/:match_id/topplayers",
