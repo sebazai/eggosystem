@@ -1,13 +1,23 @@
 import { Router } from "express";
 import { knex } from "../../db/knex"; // Your Knex instance
 import {
-  getTeamDetailsByFiltersController,
-  getTeamsByFiltersController,
-  getTeamMapStatsByFiltersController,
-  getTeamMatchHistoryByFiltersController,
-  getTeamByFiltersController
+  getFilteredTeamIdDetailsController,
+  getFilteredTeamsController,
+  getFilteredTeamMapStatsController,
+  getFilteredTeamMatchHistoryController,
+  getFilteredTeamIdController,
+  getFilteredTopTeamsController
 } from "../../controllers/teams.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import { getFilteredMultipleLeaderboardsController } from "../../controllers/leaderboards.controllers";
+import {
+  getFilteredPlayerStatisticsController,
+  getFilteredPlayerGameDetailsController,
+  getFilteredPlayerTeamDetailsController,
+  getFilteredPlayerMatchHistoryController,
+  getFilteredPlayersStatsController
+} from "../../controllers/players.controllers";
+import { getFilteredMatchesController } from "../../controllers/matches.controllers";
 
 const router = Router();
 
@@ -80,26 +90,50 @@ router.get("/", async (req, res) => {
   res.json(grouped);
 });
 
-// Teams by filters
-router.get("/teams", getTeamsByFiltersController);
+// Player
+router.get("/players/stats", getFilteredPlayersStatsController);
+router.get(
+  "/players/:steam_id/statistics",
+  getFilteredPlayerStatisticsController
+);
+router.get(
+  "/players/:steam_id/game-details",
+  getFilteredPlayerGameDetailsController
+);
+router.get("/players/:steam_id/teams", getFilteredPlayerTeamDetailsController);
+router.get(
+  "/players/:steam_id/match-history",
+  getFilteredPlayerMatchHistoryController
+);
+
+// Leaderboard
+router.get("/leaderboards/multiple", getFilteredMultipleLeaderboardsController);
+
+// Matches
+router.get("/matches/recent", getFilteredMatchesController);
+
+// Teams
+router.get("/teams/topteams", getFilteredTopTeamsController);
+router.get("/teams", getFilteredTeamsController);
 router.get(
   "/teams/:team_id",
   validateNumericParams(),
-  getTeamByFiltersController
+  getFilteredTeamIdController
 );
 router.get(
   "/teams/:team_id/details",
   validateNumericParams(),
-  getTeamDetailsByFiltersController
+  getFilteredTeamIdDetailsController
 );
 router.get(
   "/teams/:team_id/match-history",
   validateNumericParams(),
-  getTeamMatchHistoryByFiltersController
+  getFilteredTeamMatchHistoryController
 );
 router.get(
   "/teams/:team_id/map-stats",
   validateNumericParams(),
-  getTeamMapStatsByFiltersController
+  getFilteredTeamMapStatsController
 );
+
 export default router;

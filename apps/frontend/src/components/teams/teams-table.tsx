@@ -1,12 +1,12 @@
 import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 
 import { PlayerTable } from "../players/player-table";
-import Image from "next/image";
 import { ContentContainer } from "@/components/layout/content-container";
 import { TeamMatchHistory } from "./team-match-history";
 import { TeamMapStats } from "./team-map-stats";
 import { TeamWinLossDetails } from "./team-win-loss";
 import { useFilteredTeamById } from "@/hooks/data/filtered/useFilteredTeam";
+import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface TeamTableProps {
   filterQueryParams: FilterParamsQuery;
@@ -45,7 +45,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-4">
-            <Image
+            <NextImageFallback
               src={createTeamLogoUrl(team.team_logo)}
               alt={team.name}
               width={80}

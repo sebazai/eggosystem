@@ -1,21 +1,22 @@
 import request from "supertest";
 
 import express from "express";
-import teams from "../../routes/v1/team.routes";
+import filtered from "../../../routes/v1/filter.routes";
 import {
   type TopTeamsByFilters,
   type TopTeamsByFiltersRaw
 } from "@eggosystem/types";
+import parseQueryFilterParams from "../../../middlewares/parse-query-filter-params.middleware";
 
-describe("GET /api/v1/teams/topteams", () => {
+describe("GET /api/v1/filters/teams/topteams", () => {
   const app = express();
   app.use(express.json());
-  app.use(teams);
+  app.use("/filters", parseQueryFilterParams, filtered);
 
   // Test successful responses
   it("should return top teams for Masters league in season 11", async () => {
     const response = await request(app).get(
-      "/topteams?league_ids=1&season_ids=11"
+      "/filters/teams/topteams?league_ids=1&season_ids=11"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -54,7 +55,7 @@ describe("GET /api/v1/teams/topteams", () => {
 
   it("should return top teams for Masters league playoffs in season 11", async () => {
     const response = await request(app).get(
-      "/topteams?league_ids=1&season_ids=11&stages=2"
+      "/filters/teams/topteams?league_ids=1&season_ids=11&stages=2"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -63,7 +64,7 @@ describe("GET /api/v1/teams/topteams", () => {
 
   it("should return top teams for specific map in Masters league", async () => {
     const response = await request(app).get(
-      "/topteams?league_ids=1&season_ids=11&map_ids=1"
+      "/filters/teams/topteams?league_ids=1&season_ids=11&map_ids=1"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -73,7 +74,7 @@ describe("GET /api/v1/teams/topteams", () => {
   // Test sorting and ranking
   it("should return teams sorted by kana rating in descending order", async () => {
     const response = await request(app).get(
-      "/topteams?league_ids=1&season_ids=11"
+      "/filters/teams/topteams?league_ids=1&season_ids=11"
     );
     expect(response.status).toBe(200);
 
@@ -96,7 +97,7 @@ describe("GET /api/v1/teams/topteams", () => {
 
   it("should assign ranks correctly from 1 to 5", async () => {
     const response = await request(app).get(
-      "/topteams?league_ids=1&season_ids=11"
+      "/filters/teams/topteams?league_ids=1&season_ids=11"
     );
     expect(response.status).toBe(200);
 

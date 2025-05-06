@@ -21,7 +21,7 @@ export const usePlayerStats = ({ player_name, ...params }: UsePlayersProps) => {
     : "";
 
   const { data, error, isValidating, isLoading } = useSWR<PlayerStatsTable[]>(
-    `/api/v1/players/stats?${sortedQuery}${playerNameQuery}`,
+    `/api/v1/filters/players/stats?${sortedQuery}${playerNameQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false,

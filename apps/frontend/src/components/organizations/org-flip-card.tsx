@@ -10,10 +10,10 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import Image from "next/image";
 import type { Organizations } from "@eggosystem/types";
 import { createTeamLogoUrl } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface OrganizationFlipCardProps {
   organization: Organizations;
@@ -110,9 +110,11 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
               <CardTitle>{companyName}</CardTitle>
             </CardHeader>
             <CardContent className="relative flex-1 m-5">
-              {!imageSrc.includes("nologo.svg") && (
-                <Image src={imageSrc} alt={companyName.concat(" logo")} fill />
-              )}
+              <NextImageFallback
+                src={imageSrc}
+                alt={companyName.concat(" logo")}
+                fill
+              />
             </CardContent>
           </Card>
         </div>

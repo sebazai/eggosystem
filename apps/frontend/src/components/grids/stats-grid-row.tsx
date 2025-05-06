@@ -45,7 +45,7 @@ export const StatsGridRow = ({
         </span>
         {teamLogo && (
           <Image
-            src={createNextUrl(teamLogo)}
+            src={createNextUrl(`/teams/${teamLogo}`)}
             alt={`${teamName} logo`}
             width={20}
             height={20}

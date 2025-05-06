@@ -5,46 +5,18 @@ import {
   getIsPlayerProfilePublic,
   getPlayerSteamAppIdHours,
   getPlayerSteamAppIdRank,
-  getPlayerPlatformRank,
-  getPlayerStatsByFiltersController,
-  getPlayerStatsController,
-  getPlayerMatchHistoryController,
-  getPlayerGameDetailsController,
-  getPlayerTeamDetailsController
+  getPlayerPlatformRank
 } from "../../controllers/players.controllers";
-
-// import parseQueryParams from "../../middlewares/parseQueryParams";
-import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 // New Router instance
 const router = Router();
 
 // Player routes
-router.get("/stats", parseQueryFilterParams, getPlayerStatsByFiltersController);
 router.get("/:steam_id", getPlayerBySteamIdController);
 router.get("/:steam_id/details", getPlayerDetailsBySteamIdController);
 router.get("/:steam_id/public", getIsPlayerProfilePublic);
-router.get(
-  "/:steam_id/statistics",
-  parseQueryFilterParams,
-  getPlayerStatsController
-);
-router.get(
-  "/:steam_id/game-details",
-  parseQueryFilterParams,
-  getPlayerGameDetailsController
-);
-router.get(
-  "/:steam_id/teams",
-  parseQueryFilterParams,
-  getPlayerTeamDetailsController
-);
-router.get(
-  "/:steam_id/match-history",
-  parseQueryFilterParams,
-  getPlayerMatchHistoryController
-);
+
 router.get(
   "/:steam_id/app/:app_id/hours",
   validateNumericParams(["app_id"]),

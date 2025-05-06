@@ -9,7 +9,7 @@ interface RequestWithParsedParams extends Request {
 }
 
 // Import controller directly
-import { getMultipleLeaderboardsController } from "../../controllers/leaderboards.controllers";
+import { getFilteredMultipleLeaderboardsController } from "../../controllers/leaderboards.controllers";
 
 // Mock middleware for multiple leaderboards endpoint
 const mockMultipleLeaderboardsMiddleware = (
@@ -36,7 +36,10 @@ app.use(
   "/multiple",
   mockMultipleLeaderboardsMiddleware as RequestHandler,
   (req, res) =>
-    getMultipleLeaderboardsController(req as RequestWithParsedParams, res)
+    getFilteredMultipleLeaderboardsController(
+      req as RequestWithParsedParams,
+      res
+    )
 );
 
 describe("Leaderboards Routes", () => {

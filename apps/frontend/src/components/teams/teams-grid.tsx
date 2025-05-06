@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useFilteredTeams } from "@/hooks/data/filtered/useFilteredTeams";
 import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { ContentContainer } from "../layout/content-container";
 import type { TeamStats } from "@eggosystem/types";
 import { useSearchParams } from "next/navigation";
+import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface TeamsGridProps {
   filterQueryParams: FilterParamsQuery;
@@ -60,7 +60,7 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
     >
       <div className="bg-kanaliiga-light-brown/20 p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <Image
+          <NextImageFallback
             src={logoUrl}
             alt={`${team.name} logo`}
             width={60}

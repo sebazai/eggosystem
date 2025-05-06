@@ -14,7 +14,7 @@ interface UsePlayerStatsProps extends FilterParamsQuery {
 
 export const usePlayerStats = ({ steamId, ...params }: UsePlayerStatsProps) => {
   const sortedQuery = generateFiltersParamQuery(params);
-  const apiUrl = `/api/v1/players/${steamId}/statistics?${sortedQuery}`;
+  const apiUrl = `/api/v1/filters/players/${steamId}/statistics?${sortedQuery}`;
 
   const { data, error, isValidating, isLoading } = useSWR<PlayerStatsResult>(
     apiUrl,

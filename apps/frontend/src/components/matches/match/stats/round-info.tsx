@@ -1,3 +1,4 @@
+import { NextImageFallback } from "@/components/layout/image-with-fallback";
 import {
   Popover,
   PopoverContent,
@@ -17,7 +18,6 @@ import {
   type MapRoundInfo,
   type MapRoundStat
 } from "@eggosystem/types";
-import Image from "next/image";
 import React from "react";
 
 interface RoundInfoProps {
@@ -89,14 +89,14 @@ const RoundRows = ({
   return (
     <div className="flex gap-1">
       <div className="border-r-1 pr-4">
-        <Image
+        <NextImageFallback
           className="min-w-8 min-h-8 max-w-8 max-h-8 mb-4"
           src={createTeamLogoUrl(teamOne.logo)}
           alt={teamOne.name}
           width={100}
           height={100}
         />
-        <Image
+        <NextImageFallback
           className="min-w-8 min-h-8 max-w-8 max-h-8 mb-4"
           src={createTeamLogoUrl(teamTwo.logo)}
           alt={teamTwo.name}

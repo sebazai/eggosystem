@@ -29,7 +29,7 @@ export const getTeamByIdController = async (
   res.json(team);
 };
 
-export const getTeamsByFiltersController = async (
+export const getFilteredTeamsController = async (
   req: Request,
   res: Response
 ) => {
@@ -44,7 +44,7 @@ export const getTeamsByFiltersController = async (
   res.json(teams);
 };
 
-export const getTeamMatchHistoryByFiltersController = async (
+export const getFilteredTeamMatchHistoryController = async (
   req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
@@ -61,7 +61,7 @@ export const getTeamMatchHistoryByFiltersController = async (
   res.json(result);
 };
 
-export const getTeamByFiltersController = async (
+export const getFilteredTeamIdController = async (
   req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
@@ -77,7 +77,7 @@ export const getTeamByFiltersController = async (
   res.json(team);
 };
 
-export const getTeamDetailsByFiltersController = async (
+export const getFilteredTeamIdDetailsController = async (
   req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
@@ -99,7 +99,7 @@ export const getTeamDetailsByFiltersController = async (
   res.json(team);
 };
 
-export const getTeamMapStatsByFiltersController = async (
+export const getFilteredTeamMapStatsController = async (
   req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
@@ -115,7 +115,7 @@ export const getTeamMapStatsByFiltersController = async (
   res.json(map_stats);
 };
 
-export const getTopTeamsController = async (
+export const getFilteredTopTeamsController = async (
   req: Request,
   res: Response
 ): Promise<void> => {

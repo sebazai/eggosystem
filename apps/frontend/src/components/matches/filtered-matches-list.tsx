@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ContentContainer } from "../layout/content-container";
 import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
-import { useRecentMatches } from "@/hooks/data/useRecentMatches";
+import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
+import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface FilteredMatchesListProps {
   filterQueryParams: FilterParamsQuery;
@@ -59,7 +59,7 @@ export const FilteredMatchesList = ({
                     <div className="min-w-0 text-right xs:break-normal break-words text-sm sm:text-base mr-1">
                       {match.team1_name}
                     </div>
-                    <Image
+                    <NextImageFallback
                       src={createTeamLogoUrl(match.team1_logo)}
                       alt={match.team1_name}
                       width={24}
@@ -71,7 +71,7 @@ export const FilteredMatchesList = ({
                     {match.team1_score} - {match.team2_score}
                   </div>
                   <div className="flex items-center justify-start ml-1 min-w-0">
-                    <Image
+                    <NextImageFallback
                       src={createTeamLogoUrl(match.team2_logo)}
                       alt={match.team2_name}
                       width={24}

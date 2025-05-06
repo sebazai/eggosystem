@@ -8,7 +8,7 @@ import { FaceITLevelIcon } from "../profile/faceit-level";
 import { CS2PremierRankBadge } from "../profile/cs2-premier-rank";
 import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
 import { useFaceITRank } from "@/hooks/data/useFaceITRank";
-import { usePlayerTeamDetails } from "@/hooks/data/usePlayerTeamDetails";
+import { usePlayerTeamDetails } from "@/hooks/data/filtered/usePlayerTeamDetails";
 import { ContentContainer } from "../layout/content-container";
 import { useFilters } from "@/context/FilterContext";
 import { PlayerWinsLosses } from "./player-game-wins-losses";
@@ -95,7 +95,11 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
                   className="flex items-center gap-2 hover:text-kanaliiga-orange transition-colors"
                 >
                   <Image
-                    src={playerTeam?.team_logo || "/teams/nologo.svg"}
+                    src={
+                      playerTeam?.team_logo
+                        ? `/teams/${playerTeam?.team_logo}`
+                        : "/teams/nologo.png"
+                    }
                     alt={playerTeam?.team_name || "No team"}
                     width={20}
                     height={20}

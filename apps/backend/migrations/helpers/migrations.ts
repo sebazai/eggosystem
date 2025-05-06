@@ -77,7 +77,7 @@ export const migrateCompanies = async () => {
         return null;
       }
 
-      return `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.svg', '${cleanWWWPage(company.yrityksen_internet_sivut)}');`;
+      return `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('${company.yritys}', 'Finland', '${company.yrityksen_y_tunnus}', 'nologo.png', '${cleanWWWPage(company.yrityksen_internet_sivut)}');`;
     }
   );
 

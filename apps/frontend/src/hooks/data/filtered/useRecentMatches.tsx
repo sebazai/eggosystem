@@ -12,7 +12,7 @@ export const useRecentMatches = (params: FilterParamsQuery) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
   const { data, error, isValidating } = useSWR<MatchesByFilters[]>(
-    `/api/v1/matches/recent?${sortedQuery}`,
+    `/api/v1/filters/matches/recent?${sortedQuery}`,
     expressFetcher,
     { revalidateOnFocus: false }
   );

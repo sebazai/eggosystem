@@ -375,7 +375,7 @@ export const getTopTeams = async ({
       SELECT 
         t.id as team_id,
         t.name as team_name,
-        CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) as team_logo,
+        t.team_logo,
         l.name as league_name,
         l.id as league_id,
         l.sort_priority as league_sort_priority,

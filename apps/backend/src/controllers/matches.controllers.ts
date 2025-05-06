@@ -65,7 +65,7 @@ export const getMatchInfoController = async (
   res.json(match);
 };
 
-export const getMatchesByFiltersController = async (
+export const getFilteredMatchesController = async (
   req: Request,
   res: Response
 ) => {

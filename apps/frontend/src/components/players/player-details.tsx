@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import { usePlayerStats } from "@/hooks/data/usePlayerStats";
+import { usePlayerStats } from "@/hooks/data/filtered/usePlayerStats";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -14,7 +14,7 @@ import {
   TooltipProvider
 } from "@/components/ui/tooltip";
 import { TablePagination } from "../tables/table-pagination";
-import { usePlayerMatchHistory } from "@/hooks/data/usePlayerMatchHistory";
+import { usePlayerMatchHistory } from "@/hooks/data/filtered/usePlayerMatchHistory";
 import { PlayerDetailsHeader } from "./player-details-header";
 import { useFilters } from "@/context/FilterContext";
 

@@ -1,6 +1,6 @@
+import { NextImageFallback } from "@/components/layout/image-with-fallback";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import type { MatchTeamInfo } from "@eggosystem/types";
-import Image from "next/image";
 
 interface MatchHeaderProps {
   team1: MatchTeamInfo;
@@ -49,7 +49,7 @@ export function MatchHeader({
                 {team1.name}
               </span>
               <div className="h-8 w-8 relative hidden xs:block">
-                <Image
+                <NextImageFallback
                   src={createTeamLogoUrl(team1.logo)}
                   alt={`${team1.name} logo`}
                   fill
@@ -85,7 +85,7 @@ export function MatchHeader({
           <div className="flex flex-col items-end">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 relative hidden xs:block">
-                <Image
+                <NextImageFallback
                   src={createTeamLogoUrl(team2.logo)}
                   alt={`${team2.name} logo`}
                   fill

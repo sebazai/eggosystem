@@ -262,7 +262,7 @@ export const getPlayerTeamDetailsWithFilters = async (
       p.nickname,
       t.name AS team_name,
       t.id AS team_id,
-      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) AS team_logo
+      t.team_logo
     FROM SteamPlayers p
     JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id
     JOIN Seasons s ON s.id = stp.season_id

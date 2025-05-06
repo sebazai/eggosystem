@@ -4,10 +4,10 @@ import type {
   MatchTeamInfo,
   MatchInfo
 } from "@eggosystem/types";
-import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { useSearchParams } from "next/navigation";
+import { NextImageFallback } from "@/components/layout/image-with-fallback";
 
 interface PlayerStatsFilters {
   seasons: string;
@@ -72,7 +72,7 @@ export const PlayerStatistics = ({
                 }}
                 className="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors"
               >
-                <Image
+                <NextImageFallback
                   src={createTeamLogoUrl(team.logo)}
                   alt={team.name}
                   className="w-6 h-6"

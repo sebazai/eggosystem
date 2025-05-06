@@ -1,11 +1,8 @@
 import { type Request, type Response } from "express";
-import {
-  getLeaderboard,
-  getLeaderboardTypes
-} from "../models/leaderboards.models";
+import { getLeaderboard } from "../models/leaderboards.models";
 import { type LeaderboardResponse } from "@eggosystem/types";
 
-export const getMultipleLeaderboardsController = async (
+export const getFilteredMultipleLeaderboardsController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -51,12 +48,4 @@ export const getMultipleLeaderboardsController = async (
   }, {} as LeaderboardResponse);
 
   res.json(mergedObject);
-};
-
-export const getLeaderboardTypesController = async (
-  _req: Request,
-  res: Response
-): Promise<void> => {
-  const types = getLeaderboardTypes();
-  res.json(types);
 };

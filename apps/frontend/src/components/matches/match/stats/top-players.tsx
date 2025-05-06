@@ -1,10 +1,10 @@
+import { NextImageFallback } from "@/components/layout/image-with-fallback";
 import { createTeamLogoUrl } from "@/lib/utils";
 import type {
   MatchInfo,
   MatchTopPlayerAwards,
   MatchTopPlayerAwardsValue
 } from "@eggosystem/types";
-import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -71,7 +71,7 @@ export const TopPlayers = ({
                       onClick={(e) => e.stopPropagation()}
                       className="hover:opacity-80 transition-opacity"
                     >
-                      <Image
+                      <NextImageFallback
                         src={createTeamLogoUrl(team.logo)}
                         alt={team.name}
                         width={16}

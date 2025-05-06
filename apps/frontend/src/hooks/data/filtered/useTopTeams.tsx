@@ -15,7 +15,7 @@ export const useTopTeams = (params: FilterParamsQuery) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
   const { data, error, isValidating } = useSWR<TopTeamsByFiltersRaw[]>(
-    `/api/v1/teams/topteams?${sortedQuery}`,
+    `/api/v1/filters/teams/topteams?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false

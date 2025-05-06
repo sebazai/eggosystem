@@ -15,15 +15,10 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
   const { data, error, isValidating } = useSWR<LeaderboardResponse>(
-    `/api/v1/leaderboards/multiple?${sortedQuery}`,
+    `/api/v1/filters/leaderboards/multiple?${sortedQuery}`,
     expressFetcher,
     {
-      revalidateOnFocus: false,
-      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
-        if (retryCount >= 3) return;
-
-        setTimeout(() => revalidate({ retryCount }), 3000);
-      }
+      revalidateOnFocus: false
     }
   );
 

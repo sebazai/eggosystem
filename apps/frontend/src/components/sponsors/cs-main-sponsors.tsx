@@ -4,7 +4,7 @@ import Image from "next/image";
 export const CsMainSponsors = () => {
   return (
     <Image
-      src={createNextUrl("/images/supermetrics.png")}
+      src={createNextUrl("/images/sponsors/supermetrics.png")}
       className="w-[150px] h-[23px] sm:w-[300px] sm:h-[46px]"
       alt="Supermetrics"
       width={150}

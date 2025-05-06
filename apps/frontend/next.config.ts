@@ -8,14 +8,6 @@ const nextConfig: NextConfig = {
   eslint: {
     dirs: ["src"],
     ignoreDuringBuilds: true
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "stats.kanaliiga.fi"
-      }
-    ]
   }
 };
 

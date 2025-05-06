@@ -255,7 +255,7 @@ test.describe("Leaderboards Page", () => {
 
     // Mock the leaderboards endpoint
     await page.route(
-      "**/api/v1/leaderboards/multiple**",
+      "**/api/v1/filters/leaderboards/multiple**",
       async (route: Route) => {
         console.log("Mocking leaderboards endpoint: " + route.request().url());
         await route.fulfill({

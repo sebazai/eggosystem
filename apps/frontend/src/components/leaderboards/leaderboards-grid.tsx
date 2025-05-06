@@ -1,4 +1,4 @@
-import { useLeaderboards } from "@/hooks/data/useLeaderboards";
+import { useLeaderboards } from "@/hooks/data/filtered/useLeaderboards";
 import { type FilterParamsQuery } from "@/lib/utils";
 import { StatsGrid } from "../grids/stats-grid";
 import { StatsGridRow } from "../grids/stats-grid-row";

@@ -1,5 +1,5 @@
 import { useFilters } from "@/context/FilterContext";
-import { usePlayerGameDetails } from "@/hooks/data/usePlayerGameDetails";
+import { usePlayerGameDetails } from "@/hooks/data/filtered/usePlayerGameDetails";
 
 export const PlayerWinsLosses = ({ steamId }: { steamId: string }) => {
   const { filterParams } = useFilters();

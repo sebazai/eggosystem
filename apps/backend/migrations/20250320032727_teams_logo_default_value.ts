@@ -1,9 +1,9 @@
 import type { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
-  // set Teams table team_logo default value to "nologo.svg"
+  // set Teams table team_logo default value to "nologo.png"
   await knex.schema.alterTable("Teams", (table) => {
-    table.string("team_logo").notNullable().defaultTo("nologo.svg").alter();
+    table.string("team_logo").notNullable().defaultTo("nologo.png").alter();
     // set name to be unique
     table.unique("name");
   });

@@ -1,4 +1,4 @@
-import { useTopTeams } from "@/hooks/data/useTopTeams";
+import { useTopTeams } from "@/hooks/data/filtered/useTopTeams";
 import { type FilterParamsQuery } from "@/lib/utils";
 import { StatsGrid } from "../grids/stats-grid";
 import { StatsGridRow } from "../grids/stats-grid-row";

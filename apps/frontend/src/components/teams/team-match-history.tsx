@@ -3,10 +3,10 @@ import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import Image from "next/image";
 import { useState, useMemo } from "react";
 import { TablePagination } from "../tables/table-pagination";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
+import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface TeamMatchHistoryProps {
   teamId: number;
@@ -135,7 +135,7 @@ export const TeamMatchHistory = ({
                     >
                       <td className="px-3 py-2 text-left">
                         <div className="flex items-center gap-2">
-                          <Image
+                          <NextImageFallback
                             src={createTeamLogoUrl(match.opponent_logo)}
                             alt={match.opponent_name}
                             width={20}

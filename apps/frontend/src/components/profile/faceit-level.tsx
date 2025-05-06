@@ -8,7 +8,7 @@ export const FaceITLevelIcon = ({ level }: { level: number }) => {
   return (
     <Image
       alt={`FaceIT level ${level}`}
-      src={createNextUrl(`/images/faceit${level}.svg`)}
+      src={createNextUrl(`/images/faceit/faceit${level}.svg`)}
       width={30}
       height={30}
     />

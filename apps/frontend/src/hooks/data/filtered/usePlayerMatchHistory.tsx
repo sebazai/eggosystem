@@ -5,28 +5,28 @@ import {
   generateFiltersParamQuery,
   type FilterParamsQuery
 } from "@/lib/utils";
-import type { PlayerTeamDetailsByFilters } from "@eggosystem/types";
+import type { MatchHistoryResult } from "@eggosystem/types";
 import useSWR from "swr";
 
-interface UsePlayerTeamDetailsProps extends FilterParamsQuery {
+interface UsePlayerMatchHistoryProps extends FilterParamsQuery {
   steamId: string;
 }
 
-export const usePlayerTeamDetails = ({
+export const usePlayerMatchHistory = ({
   steamId,
   ...params
-}: UsePlayerTeamDetailsProps) => {
+}: UsePlayerMatchHistoryProps) => {
   const sortedQuery = generateFiltersParamQuery(params);
-  const apiUrl = `/api/v1/players/${steamId}/teams?${sortedQuery}`;
+  const apiUrl = `/api/v1/filters/players/${steamId}/match-history?${sortedQuery}`;
 
   const { data, error, isValidating, isLoading } = useSWR<
-    Array<PlayerTeamDetailsByFilters>
+    Array<MatchHistoryResult>
   >(apiUrl, expressFetcher, {
     revalidateOnFocus: false
   });
 
   return {
-    playerTeamDetails: data,
+    matchHistory: data,
     isLoading,
     isError: error,
     isValidating

@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { cn, type FilterParamsQuery } from "@/lib/utils";
-import { usePlayerStats } from "@/hooks/data/usePlayersStats";
+import { usePlayerStats } from "@/hooks/data/filtered/usePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Tooltip,

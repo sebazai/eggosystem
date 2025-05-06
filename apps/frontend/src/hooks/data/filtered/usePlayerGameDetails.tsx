@@ -17,7 +17,7 @@ export const usePlayerGameDetails = ({
   ...params
 }: UsePlayerGameDetailsProps) => {
   const sortedQuery = generateFiltersParamQuery(params);
-  const apiUrl = `/api/v1/players/${steamId}/game-details?${sortedQuery}`;
+  const apiUrl = `/api/v1/filters/players/${steamId}/game-details?${sortedQuery}`;
 
   const { data, error, isValidating, isLoading } =
     useSWR<PlayerGameDetailsByFilters>(apiUrl, expressFetcher, {

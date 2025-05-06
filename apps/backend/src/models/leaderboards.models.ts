@@ -67,7 +67,7 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
       p.steam_id,
       p.nickname,
       t.name AS team_name,
-      CONCAT('/teams/', COALESCE(t.team_logo, 'nologo.svg')) AS team_logo,
+      t.team_logo AS team_logo,
       COUNT(DISTINCT mg.id) AS matches_played,
       ${leaderboardExpression} AS ${leaderboards}
     FROM SteamPlayers p
@@ -94,9 +94,4 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
   );
 
   return { [leaderboards]: result };
-};
-
-// Get available leaderboard types
-export const getLeaderboardTypes = (): string[] => {
-  return Object.keys(leaderboardExpressions);
 };

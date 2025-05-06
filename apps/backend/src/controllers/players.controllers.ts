@@ -98,7 +98,7 @@ export const getPlayerPlatformRank = async (req: Request, res: Response) => {
   res.status(400).json({ message: "Unknown platform enum" });
 };
 
-export const getPlayerStatsByFiltersController = async (
+export const getFilteredPlayersStatsController = async (
   req: Request,
   res: Response
 ) => {
@@ -109,7 +109,7 @@ export const getPlayerStatsByFiltersController = async (
   res.status(200).json(playerStats);
 };
 
-export const getPlayerMatchHistoryController = async (
+export const getFilteredPlayerMatchHistoryController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ) => {
@@ -131,7 +131,7 @@ export const getPlayerMatchHistoryController = async (
   res.status(200).json(matchHistory);
 };
 
-export const getPlayerTeamDetailsController = async (
+export const getFilteredPlayerTeamDetailsController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ) => {
@@ -146,7 +146,7 @@ export const getPlayerTeamDetailsController = async (
   res.status(200).json(playerTeamDetails);
 };
 
-export const getPlayerGameDetailsController = async (
+export const getFilteredPlayerGameDetailsController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ) => {
@@ -167,7 +167,7 @@ export const getPlayerGameDetailsController = async (
   res.status(200).json(data);
 };
 
-export const getPlayerStatsController = async (
+export const getFilteredPlayerStatisticsController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ): Promise<void> => {

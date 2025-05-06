@@ -63,7 +63,7 @@ interface NavbarProps {
 const defaultProps: NavbarProps = {
   logo: {
     url: "/",
-    src: createNextUrl("/images/kanaliiga-logo-1800px.png"),
+    src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
     alt: "Kanaliiga logo"
   },
   menu: [
