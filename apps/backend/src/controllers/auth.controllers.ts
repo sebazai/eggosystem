@@ -1,4 +1,4 @@
-import { type UserPayload } from "@eggosystem/types";
+import { type SteamUserPayload } from "@eggosystem/types";
 import { type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
 import { v4 as uuid } from "uuid";
@@ -7,7 +7,8 @@ import {
   generateTokens,
   setCookies,
   getPermissionsForAccountId,
-  flushPermissionsForAccountId
+  flushPermissionsAndRolesForAccountId,
+  getRolesForAccountId
 } from "../services/auth.services";
 import { redisClient } from "../utils/redisClient";
 import { getJWTValues } from "../configs/jwt-keys";
@@ -19,13 +20,15 @@ export const login = async (req: Request, res: Response) => {
     throw new Error("No user");
   }
 
-  const user = req.user as UserPayload;
+  const user = req.user as SteamUserPayload;
   const jti = uuid();
 
   const permissions = await getPermissionsForAccountId(user.account_id);
+  const roles = await getRolesForAccountId(user.account_id);
   const userWithPermissions = {
     ...user,
-    permissions
+    permissions,
+    roles
   };
 
   const { accessToken, refreshToken } = generateTokens(
@@ -96,7 +99,7 @@ export const logout = async (req: Request, res: Response) => {
         }
       );
       await redisClient.del(decoded.jti!);
-      await flushPermissionsForAccountId(decoded.account_id);
+      await flushPermissionsAndRolesForAccountId(decoded.account_id);
     } catch (_err) {
       // NO-op
     }

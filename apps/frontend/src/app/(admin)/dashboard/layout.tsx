@@ -1,129 +1,53 @@
-import "../../globals.css";
-import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger
+} from "@/components/ui/sidebar";
+import { requireRole } from "@/lib/dashboard/requireRole";
 
-import { cn } from "@/lib/utils";
-import { AuthProvider } from "@/context/AuthContext";
-import { Suspense } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
-import { ThemeProvider } from "@/providers/theme-provider";
+export default async function Page() {
+  const unverifiedUser = await requireRole();
 
-const META_THEME_COLORS = {
-  light: "#ffffff",
-  dark: "#09090b"
-};
-
-const kanaHeadingFonts = localFont({
-  fallback: ["system-ui", "arial"],
-  src: [
-    {
-      path: "../../../../public/fonts/NEXT_ART_Heavy.otf",
-      weight: "400",
-      style: "normal"
-    }
-  ],
-  variable: "--font-headings"
-});
-
-const kanaFonts = localFont({
-  fallback: ["system-ui", "arial"],
-  src: [
-    {
-      path: "../../../../public/fonts/VeraMono.ttf",
-      weight: "400",
-      style: "normal"
-    },
-    {
-      path: "../../../../public/fonts/VeraMoIt.ttf",
-      weight: "400",
-      style: "italic"
-    },
-    {
-      path: "../../../../public/fonts/VeraMoBd.ttf",
-      weight: "700",
-      style: "normal"
-    },
-    {
-      path: "../../../../public/fonts/VeraMoBI.ttf",
-      weight: "700",
-      style: "italic"
-    }
-  ],
-  variable: "--font-body"
-});
-
-const poppinsFont = localFont({
-  fallback: ["system-ui", "arial"],
-  src: [
-    {
-      path: "../../../../public/fonts/poppins/Poppins-Regular.ttf",
-      weight: "400",
-      style: "normal"
-    },
-    {
-      path: "../../../../public/fonts/poppins/Poppins-Bold.ttf",
-      weight: "700",
-      style: "normal"
-    }
-  ],
-  variable: "--font-poppins"
-});
-
-export const metadata: Metadata = {
-  title: { default: "Kanahub", template: "%s | Kanahub dashboard" },
-  description: "Kanaliiga dashboard"
-};
-
-export const viewport: Viewport = {
-  themeColor: META_THEME_COLORS.light,
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1
-};
-
-export default function RootLayout({
-  children
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-            try {
-              if (localStorage.theme === 'dark' || ((!('theme' in localStorage) || localStorage.theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.querySelector('meta[name="theme-color"]').setAttribute('content', '${META_THEME_COLORS.dark}')
-              }
-            } catch (_) {}
-          `
-          }}
-        />
-      </head>
-      <body
-        className={cn(
-          `min-h-svh flex flex-col antialiased bg-kana`,
-          kanaFonts.variable,
-          kanaHeadingFonts.variable,
-          poppinsFont.variable
-        )}
-      >
-        <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
-          <Suspense>
-            <div className="flex flex-col min-h-svh min-w-[200px] w-full">
-              <AuthProvider>
-                <AcceptPolicyProvider>
-                  <main id="main-content">{children}</main>
-                </AcceptPolicyProvider>
-              </AuthProvider>
-            </div>
-          </Suspense>
-        </ThemeProvider>
-
-        <Toaster richColors />
-      </body>
-    </html>
+    <SidebarProvider>
+      <AppSidebar roles={unverifiedUser.roles} />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b">
+          <div className="flex items-center gap-2 px-3">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">Kanahub dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+            <div className="aspect-video rounded-xl bg-muted/50" />
+            <div className="aspect-video rounded-xl bg-muted/50" />
+            <div className="aspect-video rounded-xl bg-muted/50" />
+          </div>
+          <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

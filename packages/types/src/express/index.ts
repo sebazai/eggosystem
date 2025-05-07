@@ -15,10 +15,13 @@ export interface ParsedParams {
   playerName?: Nullable<string>;
 }
 
+export type SteamUserPayload = Omit<UserPayload, "roles" | "permissions">;
+
 export interface UserPayload {
   account_id: Account["id"];
   provider_id: SteamPlayer["steam_id"];
   permissions: string[];
+  roles: string[];
   nickname: SteamPlayer["nickname"];
   provider: LinkedAccount["provider"];
 }

@@ -14,6 +14,7 @@ export const expressjwt = jest.fn((): ExpressJwtMiddleware => {
         provider_id: "76561198049745649",
         nickname: "subu",
         permissions: [],
+        roles: [],
         account_id: 1,
         provider: "steam"
       } satisfies UserPayload; // Simulated authenticated user

@@ -22,6 +22,7 @@ describe("checkPermission middleware", () => {
         account_id: 123,
         provider_id: "",
         permissions: [],
+        roles: [],
         nickname: "",
         provider: "steam"
       }

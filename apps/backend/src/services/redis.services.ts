@@ -4,6 +4,10 @@ import { redisClient } from "../utils/redisClient";
 
 const redisKeysToClear = ["hours", "rank", "faceit-cs2-rank"];
 
+/**
+ * In case Captain has tried to fetch user data in signup form.
+ * @param steamId
+ */
 export const clearPossibleRedisCacheForNewUser = async (steamId: string) => {
   const games = await runQuery<Game[]>("SELECT * FROM Games");
   for (const game of games) {

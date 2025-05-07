@@ -1328,7 +1328,10 @@ describe("Season team registration services", () => {
       );
     });
     it("should flush permissions from redis four times", async () => {
-      const authSpy = jest.spyOn(authServices, "flushPermissionsForAccountId");
+      const authSpy = jest.spyOn(
+        authServices,
+        "flushPermissionsAndRolesForAccountId"
+      );
       const formData = _.cloneDeep(validSignupData);
       await registrationServices.setCaptainPermissionsForSeason(
         1,

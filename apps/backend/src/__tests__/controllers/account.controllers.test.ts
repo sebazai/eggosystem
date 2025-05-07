@@ -35,6 +35,7 @@ describe("updateProfile Controller", () => {
         account_id: 1,
         provider_id: "12345",
         permissions: [],
+        roles: [],
         nickname: "hehe",
         provider: "steam"
       },

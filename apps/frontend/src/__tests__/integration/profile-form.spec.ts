@@ -65,7 +65,8 @@ test.describe("Profile Form", () => {
             // No acceptedPrivacyPolicy - user hasn't accepted it yet
             acceptedPrivacyPolicy: false,
             acceptedMarketing: false,
-            isPersonalEmail: false
+            isPersonalEmail: false,
+            roles: []
           } satisfies UserFullPayload
         })
       });
@@ -282,7 +283,8 @@ test.describe("Profile Form", () => {
             nickname: "Test User",
             acceptedPrivacyPolicy: false,
             acceptedMarketing: false,
-            isPersonalEmail: false
+            isPersonalEmail: false,
+            roles: []
           } satisfies UserFullPayload
         })
       });

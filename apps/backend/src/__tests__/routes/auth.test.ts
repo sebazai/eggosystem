@@ -76,6 +76,10 @@ describe("GET /steam/return", () => {
     jest
       .spyOn(authServices, "getPermissionsForAccountId")
       .mockResolvedValue([]);
+    jest.spyOn(authServices, "getRolesForAccountId").mockResolvedValue([]);
+  });
+
+  it("should redirect to the valid returnUrl from cookie", async () => {
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token")
@@ -107,9 +111,6 @@ describe("GET /steam/return", () => {
   });
 
   it("should default to /login-success if no returnUrl is provided", async () => {
-    jest
-      .spyOn(authServices, "getPermissionsForAccountId")
-      .mockResolvedValue([]);
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token");
@@ -119,9 +120,6 @@ describe("GET /steam/return", () => {
   });
 
   it("should default to /login-success if returnUrl is invalid", async () => {
-    jest
-      .spyOn(authServices, "getPermissionsForAccountId")
-      .mockResolvedValue([]);
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token")

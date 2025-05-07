@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,11 +13,14 @@ import {
   SidebarProvider,
   SidebarTrigger
 } from "@/components/ui/sidebar";
+import { requireRole } from "@/lib/dashboard/requireRole";
 
-export default function Page() {
+export default async function Page() {
+  const unverifiedUser = await requireRole();
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar roles={unverifiedUser.roles} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-3">

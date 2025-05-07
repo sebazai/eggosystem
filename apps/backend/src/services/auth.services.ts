@@ -12,9 +12,13 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { getJWTValues } from "../configs/jwt-keys";
 
-export const flushPermissionsForAccountId = async (accountId: number) => {
-  const redisKey = `permissions-${accountId}`;
-  await redisClient.del(redisKey);
+export const flushPermissionsAndRolesForAccountId = async (
+  accountId: number
+) => {
+  const redisPermissionKey = `permissions-${accountId}`;
+  const redisRoleKey = `roles-${accountId}`;
+  await redisClient.del(redisPermissionKey);
+  await redisClient.del(redisRoleKey);
 };
 
 export const getDBPermissionsForAccountId = async (
@@ -74,6 +78,24 @@ export const getPermissionsForAccountId = async (
     return permissions;
   }
   return [];
+};
+
+export const getRolesForAccountId = async (accountId: number) => {
+  const rolesResult = await runQuery<
+    Array<{
+      role_name: Role["role_name"];
+    }>
+  >(
+    `
+    SELECT DISTINCT r.role_name
+      FROM Accounts a
+      JOIN AccountRoles ar ON ar.account_id = a.id
+      JOIN Roles r ON r.id = ar.role_id
+      WHERE a.id = ?
+    `,
+    [accountId]
+  );
+  return rolesResult.map((role) => role.role_name);
 };
 
 export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {

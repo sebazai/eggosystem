@@ -13,6 +13,7 @@ import {
   getLatestUserProfileMarketingConsent,
   getUserProfileAcceptanceForVersion
 } from "../../models/account.models";
+import { getRolesForAccountId } from "../../services/auth.services";
 
 const router = Router();
 
@@ -98,6 +99,9 @@ router.get("/me", authenticateJWT, async (req, res) => {
       process.env.PRIVACY_POLICY_VERSION
     );
 
+    // Used as frontend "validation"
+    const roles = await getRolesForAccountId(userInDb.account_id);
+
     const hasMarketingConsent = userPolicy
       ? userPolicy.accepted_marketing
       : // Tick the marketing box if privacy_policy version changes and user had it ticked.
@@ -112,7 +116,8 @@ router.get("/me", authenticateJWT, async (req, res) => {
         ? userPolicy.accepted_privacy_policy
         : false,
       acceptedMarketing: hasMarketingConsent,
-      isPersonalEmail: userInDb.is_work_email_personal_email
+      isPersonalEmail: userInDb.is_work_email_personal_email,
+      roles
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
     return;

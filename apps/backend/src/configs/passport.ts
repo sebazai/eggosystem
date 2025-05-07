@@ -6,7 +6,7 @@ import {
   createAccountForSteam
 } from "../models/auth.models";
 import { clearPossibleRedisCacheForNewUser } from "../services/redis.services";
-import type { UserPayload } from "@eggosystem/types";
+import type { SteamUserPayload } from "@eggosystem/types";
 
 passport.use(
   new steam.Strategy(
@@ -31,7 +31,7 @@ passport.use(
             provider_id: profile.id,
             nickname: profile.displayName,
             provider: "steam"
-          } satisfies Omit<UserPayload, "permissions">);
+          } satisfies SteamUserPayload);
         } catch (error) {
           return done(error);
         }
@@ -42,7 +42,7 @@ passport.use(
         provider_id: profile.id,
         nickname: userInDb.nickname,
         provider: "steam"
-      } satisfies Omit<UserPayload, "permissions">;
+      } satisfies SteamUserPayload;
 
       return done(null, user);
     }

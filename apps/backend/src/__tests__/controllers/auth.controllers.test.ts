@@ -16,6 +16,7 @@ describe("AuthControllers utils", () => {
         nickname: "enzoj",
         provider: "steam",
         permissions: [],
+        roles: [],
         account_id: 1
       } satisfies UserPayload;
       const jti = "123123";
@@ -34,6 +35,7 @@ describe("AuthControllers utils", () => {
           provider: "steam",
           provider_id: "12345",
           permissions: [],
+          roles: [],
           nickname: "enzoj",
           jti: "123123"
         },
@@ -47,6 +49,7 @@ describe("AuthControllers utils", () => {
           provider: "steam",
           provider_id: "12345",
           permissions: [],
+          roles: [],
           nickname: "enzoj",
           jti: "123123"
         },
@@ -91,6 +94,7 @@ describe("AuthControllers", () => {
           provider: "steam",
           provider_id: "12345",
           permissions: [],
+          roles: [],
           nickname: "enzoj"
         } satisfies UserPayload
       };
@@ -106,6 +110,7 @@ describe("AuthControllers", () => {
           provider_id: "12345",
           nickname: "enzoj",
           permissions: [],
+          roles: [],
           provider: "steam",
           account_id: 1
         } satisfies UserPayload,

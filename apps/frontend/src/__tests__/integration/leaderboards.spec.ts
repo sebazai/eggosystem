@@ -148,7 +148,8 @@ test.describe("Leaderboards Page", () => {
             provider: "steam",
             acceptedPrivacyPolicy: true,
             acceptedMarketing: false,
-            isPersonalEmail: false
+            isPersonalEmail: false,
+            roles: []
           } satisfies UserFullPayload
         })
       });
