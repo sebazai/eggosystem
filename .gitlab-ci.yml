@@ -1,9 +1,11 @@
 image: node:22-slim
 
 variables:
+  # Docker configuration
   DOCKER_HOST: tcp://docker:2375
   DOCKER_TLS_CERTDIR: ""
   DOCKER_DRIVER: overlay2
+  # Other global variables
   PNPM_HOME: $CI_PROJECT_DIR/.pnpm-store
   TRIVY_VERSION: "0.59.1" # Set the Trivy version here
   TRIVY_SEVERITY: "HIGH,CRITICAL,MEDIUM"
@@ -42,7 +44,7 @@ variables:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
-    - pnpm config set registry http://172.17.0.1:4873 #verdaccio
+    - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
 
 # Sadly gitlab changes do not support with anchors or references to make these DRY
@@ -106,41 +108,34 @@ variables:
     - if: $CI_MERGE_REQUEST_ID
       <<: *all-app-changes
 
-# Define common configurations using anchors
-.common-docker-build: &common-docker-build
+# Define a base Docker build configuration without rules
+.docker-build-base: &docker-build-base
   stage: build-docker
   image: docker:27.5.1-alpine3.21
+  # Define global services for the entire pipeline
+  services:
+    - name: docker:28.1.1-dind-alpine3.21
+      alias: docker
   needs: []
   dependencies: []
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker buildx create --use --name mybuilder --driver docker-container
+    - docker buildx inspect --bootstrap
+
+# Common configuration for MR Docker builds
+.common-docker-build: &common-docker-build
+  <<: *docker-build-base
   rules:
     - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *all-app-changes
     - if: $CI_PIPELINE_SOURCE == "web"
       when: manual
-  services:
-    - docker:27.5.1-dind-alpine3.21
-  #cache:
-  #  paths:
-  #    - .trivycache/
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
-    - apk update && apk add jq
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
-    - docker buildx inspect --bootstrap
 
-.common-docker-scan: &common-docker-scan
-  script: &docker-scan-script
-    - echo "Building Docker image..."
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA . -f $DOCKERFILE_DEV
-    - docker build -t $CI_REGISTRY/$IMAGE_NAME . -f $DOCKERFILE
-    - ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json $CI_REGISTRY/$IMAGE_NAME
-    - ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
-  artifacts: &docker-scan-artifacts
-    paths:
-      - gl-codeclimate-image-$IMAGE_NAME.json
-      - gl-codeclimate-fs-$IMAGE_NAME.json
+# Common configuration for main branch Docker builds
+.common-docker-push: &common-docker-push
+  <<: *docker-build-base
+  # These jobs should only run on main branch
 
 stages:
   - install
@@ -161,7 +156,7 @@ install:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
-    - pnpm config set registry http://172.17.0.1:4873 #verdaccio aridivereci!
+    - pnpm config set registry http://172.17.0.1:4873 #172.17.0.1 aridivereci!
   script:
     - pnpm install --frozen-lockfile
 
@@ -279,43 +274,36 @@ build-dockerfile:backend:
     DOCKERFILE_DEV: apps/backend/Dockerfile.dev
     DOCKERFILE: apps/backend/Dockerfile
     DOCKERFILE_MIGRATIONS: apps/backend/Dockerfile.migrations.dev
-    DOCKER_DRIVER: overlay2
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
+  parallel:
+    matrix:
+      - BUILD_TYPE: [dev, production, migrations]
   script:
-    # Build backend dev image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
-      --build-arg CI=true
-      -t eggo-backend:dev
-      -f $DOCKERFILE_DEV .
-
-      # Build backend image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
-      --build-arg CI=true
-      -t eggo-backend:latest
-      -f $DOCKERFILE .
-      # Build backend migrations
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
-      --build-arg CI=true
-      -t eggo-migrations:dev
-      -f $DOCKERFILE_MIGRATIONS .
-    # Run Trivy scans
-    #- ./trivy image --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-backend:latest
-    #- ./trivy filesystem --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json .
-  #artifacts:
-  #  paths:
-  #    - gl-codeclimate-image-$IMAGE_NAME.json
-  #    - gl-codeclimate-fs-$IMAGE_NAME.json
-  #    - docker-images/
+    - |
+      if [ "$BUILD_TYPE" == "dev" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache \
+          --build-arg CI=true \
+          -t eggo-backend:dev \
+          -f $DOCKERFILE_DEV .
+      elif [ "$BUILD_TYPE" == "production" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache \
+          --build-arg CI=true \
+          -t eggo-backend:latest \
+          -f $DOCKERFILE .
+      elif [ "$BUILD_TYPE" == "migrations" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev \
+          --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache \
+          --build-arg CI=true \
+          -t eggo-migrations:dev \
+          -f $DOCKERFILE_MIGRATIONS .
+      fi
 
 # Frontend job
 build-dockerfile:frontend:
@@ -324,152 +312,129 @@ build-dockerfile:frontend:
     IMAGE_NAME: eggo-frontend
     DOCKERFILE_DEV: apps/frontend/Dockerfile.dev
     DOCKERFILE: apps/frontend/Dockerfile
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
     ENV_ID: mr-${CI_MERGE_REQUEST_IID}
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
     CACHE_TAG: ${CI_COMMIT_REF_SLUG}
+  parallel:
+    matrix:
+      - BUILD_TYPE: [dev, production]
   script:
-    # Build dev image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
-      --build-arg CI=true
-      -t $REGISTRY/eggo-frontend:cache
-      -f $DOCKERFILE_DEV .
-    # Build production image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache,mode=max,compression=zstd
-      --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
-      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
-      --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
-      --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID
-      --build-arg CI=true
-      -t eggo-frontend
-      -f $DOCKERFILE .
-
-    # Run Trivy scans in parallel using background processes
-    #- ./trivy image --cache-dir .trivycache/ --exit-code 0 --scanners vuln --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-image-$IMAGE_NAME.json eggo-frontend &
-    #- ./trivy filesystem --cache-dir .trivycache/ --scanners misconfig,vuln --exit-code 0 --severity ${TRIVY_SEVERITY} --format template --template "@contrib/gitlab-codequality.tpl" -o gl-codeclimate-fs-$IMAGE_NAME.json . &
-    #- wait
-  #artifacts:
-  #  paths:
-  #    - gl-codeclimate-image-$IMAGE_NAME.json
-  #    - gl-codeclimate-fs-$IMAGE_NAME.json
-  #    - docker-images/
+    - |
+      if [ "$BUILD_TYPE" == "dev" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
+          --build-arg CI=true \
+          -t $REGISTRY/eggo-frontend:cache \
+          -f $DOCKERFILE_DEV .
+      elif [ "$BUILD_TYPE" == "production" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
+          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
+          --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
+          --build-arg CI=true \
+          -t eggo-frontend \
+          -f $DOCKERFILE .
+      fi
 
 push-dockerfile:backend:
+  <<: *common-docker-push
   stage: build-docker
-  tags:
-    - shell
-  image: docker:27.5.1-alpine3.21
-  services:
-    - docker:27.5.1-dind-alpine3.21
   extends: [.main-backend]
   variables:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
-    - docker buildx inspect --bootstrap
+  parallel:
+    matrix:
+      - BUILD_TYPE: [dev, production]
   script:
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd
-      --build-arg CI=true
-      -t $REGISTRY/eggo-backend:dev
-      -f apps/backend/Dockerfile.dev .
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max,compression=zstd
-      --build-arg CI=true
-      --push
-      -t $REGISTRY/eggo-backend:latest
-      -t $REGISTRY/eggo-backend:staging
-      -f apps/backend/Dockerfile .
+    - |
+      if [ "$BUILD_TYPE" == "dev" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd \
+          --build-arg CI=true \
+          -t $REGISTRY/eggo-backend:dev \
+          -f apps/backend/Dockerfile.dev .
+      elif [ "$BUILD_TYPE" == "production" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max,compression=zstd \
+          --build-arg CI=true \
+          --push \
+          -t $REGISTRY/eggo-backend:latest \
+          -t $REGISTRY/eggo-backend:staging \
+          -f apps/backend/Dockerfile .
+      fi
 
 push-dockerfile:migrations:
+  <<: *common-docker-push
   stage: build-docker
-  tags:
-    - shell
-  image: docker:27.5.1-alpine3.21
-  services:
-    - docker:27.5.1-dind-alpine3.21
   extends: [.main-backend]
   variables:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
-    - docker buildx inspect --bootstrap
+  parallel:
+    matrix:
+      - BUILD_TYPE: [dev]
   script:
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
-      --build-arg CI=true
-      --push
-      -t $REGISTRY/eggo-migrations:dev
-      -f apps/backend/Dockerfile.migrations.dev .
+    - |
+      if [ "$BUILD_TYPE" == "dev" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-migrations:${ENV_ID}
+          --build-arg CI=true \
+          --push \
+          -t $REGISTRY/eggo-migrations:${ENV_ID} \
+          -f apps/backend/Dockerfile.migrations.dev .
+      fi
 
 push-dockerfile:frontend:
+  <<: *common-docker-push
   stage: build-docker
-  image: docker:27.5.1-alpine3.21
-  tags:
-    - shell
-  services:
-    - docker:27.5.1-dind-alpine3.21
   extends: [.main-frontend]
   variables:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
-    - docker buildx inspect --bootstrap
+  parallel:
+    matrix:
+      - BUILD_TYPE: [dev, staging, latest]
   script:
-    # Build and cache dev image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd
-      --build-arg CI=true
-      -f apps/frontend/Dockerfile.dev .
-    # Build and push staging image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max,compression=zstd
-      --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL
-      --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL
-      --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL
-      --build-arg CI=true
-      --push
-      -t $REGISTRY/eggo-frontend:staging
-      -f apps/frontend/Dockerfile .
-    # Build and push latest image
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max,compression=zstd
-      --build-arg CI=true
-      --push
-      -t $REGISTRY/eggo-frontend:latest
-      -f apps/frontend/Dockerfile .
+    - |
+      if [ "$BUILD_TYPE" == "dev" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
+          --build-arg CI=true \
+          -f apps/frontend/Dockerfile.dev .
+      elif [ "$BUILD_TYPE" == "staging" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg CI=true \
+          --push \
+          -t $REGISTRY/eggo-frontend:staging \
+          -f apps/frontend/Dockerfile .
+      elif [ "$BUILD_TYPE" == "latest" ]; then
+        docker buildx build \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max,compression=zstd \
+          --build-arg CI=true \
+          --push \
+          -t $REGISTRY/eggo-frontend:latest \
+          -f apps/frontend/Dockerfile .
+      fi
 
 deploy-prod:
   image: alpine:latest
@@ -536,6 +501,7 @@ deploy-staging:
       echo "=============================================="
 
 deploy-ondemand:
+  <<: *docker-build-base
   image: docker:27.5.1-alpine3.21
   stage: on-demand-env
   needs:
@@ -544,8 +510,6 @@ deploy-ondemand:
     - job: build-dockerfile:frontend
       artifacts: false
   allow_failure: true # Make on-demand jobs optional for merge requests
-  services:
-    - docker:27.5.1-dind-alpine3.21
   variables:
     <<: *overwrite-variables
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
@@ -553,8 +517,10 @@ deploy-ondemand:
   before_script:
     - apk add --no-cache gettext curl jq bash
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker buildx create --name mybuilder
-    - docker buildx use mybuilder
+    - docker buildx create --use --name mybuilder --driver docker-container
+    - docker buildx inspect --bootstrap
+  # Build steps are kept as is due to their uniqueness
+  script:
     # Build backend mr-id image
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest
@@ -588,7 +554,6 @@ deploy-ondemand:
       --push
       -t $REGISTRY/eggo-frontend:${ENV_ID}
       -f apps/frontend/Dockerfile .
-  script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64_ONDEMAND | base64 -d)
     - if [ -z "$PORTAINER_TOKEN" ]; then echo "PORTAINER_TOKEN is empty!"; else echo "PORTAINER_TOKEN is set"; fi
     - envsubst < docker-compose.ondemand.yml > docker-compose.yml
