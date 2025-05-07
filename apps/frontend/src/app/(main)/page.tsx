@@ -17,7 +17,7 @@ import { createNextUrl } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Welcome to Kanaliiga",
+    title: "Kanahub by Kanaliiga",
     description:
       "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ companies annually. Join us for a season of competitive gaming and community building."
   };

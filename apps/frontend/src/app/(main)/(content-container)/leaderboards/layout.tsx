@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Leaderboards",
-  description: "Player statistics and rankings in Kanaliiga"
+  title: "Leaderboards"
 };
 
 export default function LeaderboardsLayout({

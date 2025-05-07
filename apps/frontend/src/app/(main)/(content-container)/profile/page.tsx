@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "User profile",
-  description: "User profile page"
+  description: "Kanahub profile page"
 };
 
 export default async function ProfilePage() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import {
   Card,
   CardHeader,
@@ -22,12 +22,12 @@ interface OrganizationFlipCardProps {
 const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
   organization
 }) => {
-  const router = useRouter();
+  // const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
   const companyName = organization.name;
   const imageSrc = createTeamLogoUrl(organization.logo);
-  const orgPage = `/organizations/${organization.id}`;
+  // const orgPage = `/organizations/${organization.id}`;
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -51,17 +51,17 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
   ) => {
     e.preventDefault();
 
-    if (e.type === "click") {
-      router.push(orgPage); // Always navigate on mouse click
-    }
+    // if (e.type === "click") {
+    //   router.push(orgPage); // Always navigate on mouse click
+    // }
 
     if (e.type === "keydown") {
       const key = (e as React.KeyboardEvent<HTMLDivElement>).key;
 
       if (key === " " || (key === "Enter" && !isFlipped)) {
         setIsFlipped(true);
-      } else if (key === "Enter" && isFlipped) {
-        router.push(orgPage);
+        // } else if (key === "Enter" && isFlipped) {
+        //   router.push(orgPage);
       } else if (key === "Escape" && isFlipped) {
         setIsFlipped(false);
       }
@@ -72,8 +72,8 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
     if (e.key === " " || (e.key === "Enter" && !isFlipped)) {
       e.preventDefault();
       toggleFlip(e);
-    } else if (e.key === "Enter" && isFlipped) {
-      router.push(orgPage);
+      // } else if (e.key === "Enter" && isFlipped) {
+      //   router.push(orgPage);
     } else if (e.key === "Escape" && isFlipped) {
       setIsFlipped(false); // Allow Escape key to unflip the card
     }
