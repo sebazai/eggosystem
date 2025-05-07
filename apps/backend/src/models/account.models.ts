@@ -39,7 +39,8 @@ export const updateAccount = async (
       hasWorkEmailChanged || !formData.work_email
         ? false
         : existingAccount.work_email_verified,
-    discord: formData.discord ?? null
+    discord: formData.discord ?? null,
+    is_work_email_personal_email: formData.isPersonalEmail || false
   } satisfies UpdateUserProfile;
 
   const userPolicyAcceptancePayload = {
@@ -92,7 +93,7 @@ export const updateAccount = async (
     if (hasWorkEmailChanged) {
       return {
         message:
-          "Profile updated successfully. Please verify your work email. Remember to check junk folder as well."
+          "Profile updated successfully. Please verify your email. Remember to check junk folder as well."
       };
     }
 
@@ -125,6 +126,7 @@ export const updateAccountData = async (
         work_email_token = ?, 
         work_email_token_expires_at = ?, 
         work_email_verified = ?,
+        is_work_email_personal_email = ?,
         discord = ? 
       WHERE id = ?`,
     [
@@ -133,6 +135,7 @@ export const updateAccountData = async (
       updatedUser.work_email_token,
       updatedUser.work_email_token_expires_at,
       updatedUser.work_email_verified,
+      updatedUser.is_work_email_personal_email,
       updatedUser.discord,
       accountId
     ],

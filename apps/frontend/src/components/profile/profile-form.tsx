@@ -18,7 +18,12 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { ContentContainer } from "../layout/content-container";
 import { SteamLoginButton } from "@/components/profile/steam-login";
-import { accountSchema, type AccountUpdateValues } from "@eggosystem/types";
+import {
+  accountSchema,
+  type Account,
+  type AccountUpdateValues,
+  type UserFullPayload
+} from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
@@ -42,34 +47,9 @@ export default function ProfileForm() {
   const pathname = usePathname(); // Get current pathname
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const form = useForm({
-    resolver: zodResolver(accountSchema),
-    defaultValues: {
-      nickname: "",
-      full_name: "",
-      work_email: "",
-      isPersonalEmail: false,
-      discord: "",
-      acceptPrivacyPolicy: false,
-      acceptMarketing: false
-    }
-  });
   const auth = useAuth();
+  const user = auth.user;
   const { emailsVerified } = useEmailsVerified(auth.user?.account_id);
-
-  useEffect(() => {
-    if (auth.user) {
-      form.setValue("nickname", auth.user.nickname);
-      form.setValue("full_name", auth.user.fullName || "");
-      form.setValue("work_email", auth.user.workEmail || "");
-      form.setValue("discord", auth.user.discord || "");
-      form.setValue(
-        "acceptPrivacyPolicy",
-        Boolean(auth.user.acceptedPrivacyPolicy)
-      );
-      form.setValue("acceptMarketing", Boolean(auth.user.acceptedMarketing));
-    }
-  }, [auth.user, form]);
 
   useEffect(() => {
     const requiresPolicyAcceptance = searchParams.get(
@@ -93,13 +73,24 @@ export default function ProfileForm() {
   if (auth.loading) {
     return <ContentContainer>Loading...</ContentContainer>;
   }
-  if (!auth.user) {
+  if (!user) {
     return (
       <ContentContainer classNames="flex-col space-y-4">
         <div>Please log in to view your profile.</div> <SteamLoginButton />
       </ContentContainer>
     );
   }
+
+  const requestNewVerificationLinks = async (accountId: number) => {
+    try {
+      const value = await requestNewEmailVerificationLinks(accountId);
+      if (value) {
+        toast.success(value.message);
+      }
+    } catch (_err) {
+      toast.error("Failed to send new links.");
+    }
+  };
 
   async function onSubmit(data: AccountUpdateValues) {
     setSuccessMessage(null);
@@ -132,19 +123,77 @@ export default function ProfileForm() {
   }
 
   return (
+    <>
+      {successMessage && (
+        <div
+          className="text-green-300 mb-4 font-semibold"
+          data-testid="profile-success-message"
+        >
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="text-red-500 mb-4 font-semibold">{errorMessage}</div>
+      )}
+
+      <ProfileFormInputs
+        nickname={user.nickname}
+        fullName={user.fullName}
+        workEmail={user.workEmail}
+        acceptedPrivacyPolicy={user.acceptedPrivacyPolicy}
+        acceptedMarketing={user.acceptedMarketing}
+        isPersonalEmail={user.isPersonalEmail}
+        discord={user.discord}
+        onSubmit={onSubmit}
+        emailsVerified={emailsVerified}
+        requestNewEmailVerificationLinks={() =>
+          requestNewVerificationLinks(user.account_id)
+        }
+      />
+    </>
+  );
+}
+
+const ProfileFormInputs = ({
+  acceptedPrivacyPolicy,
+  fullName,
+  nickname,
+  workEmail,
+  acceptedMarketing,
+  discord,
+  isPersonalEmail,
+  onSubmit,
+  emailsVerified,
+  requestNewEmailVerificationLinks
+}: Partial<UserFullPayload> & {
+  onSubmit: (data: AccountUpdateValues) => void;
+  emailsVerified?: Pick<
+    Account,
+    "work_email_verified" | "work_email_token_expires_at"
+  >;
+  requestNewEmailVerificationLinks: () => void;
+}) => {
+  const form = useForm({
+    resolver: zodResolver(accountSchema),
+    defaultValues: {
+      nickname,
+      full_name: fullName ?? "",
+      work_email: workEmail ?? "",
+      isPersonalEmail: Boolean(isPersonalEmail),
+      discord: discord ?? "",
+      acceptPrivacyPolicy: Boolean(acceptedPrivacyPolicy),
+      acceptMarketing: Boolean(acceptedMarketing)
+    }
+  });
+
+  const workEmailDirty = !!form.formState.dirtyFields.work_email;
+
+  return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4 max-w-md"
       >
-        {successMessage && (
-          <div className="font-semibold" data-testid="profile-success-message">
-            {successMessage}
-          </div>
-        )}
-        {errorMessage && (
-          <div className="text-red-500 font-semibold">{errorMessage}</div>
-        )}
         <FormField
           control={form.control}
           name="nickname"
@@ -179,7 +228,7 @@ export default function ProfileForm() {
             <FormItem>
               <RequiredFormLabel required>
                 Work email{" "}
-                {emailsVerified?.work_email_verified ? (
+                {emailsVerified?.work_email_verified && !workEmailDirty ? (
                   <EmailVerifiedIcon />
                 ) : null}
               </RequiredFormLabel>
@@ -203,6 +252,9 @@ export default function ProfileForm() {
             <FormItem className="flex items-center space-x-2">
               <FormControl>
                 <Checkbox
+                  disabled={
+                    emailsVerified?.work_email_verified && !workEmailDirty
+                  }
                   checked={field.value}
                   onCheckedChange={field.onChange}
                 />
@@ -282,18 +334,7 @@ export default function ProfileForm() {
           <Button type="submit">Save Changes</Button>
           {emailsVerified?.work_email_token_expires_at ? (
             <Button
-              onClick={async () => {
-                try {
-                  const value = await requestNewEmailVerificationLinks(
-                    auth.user?.account_id
-                  );
-                  if (value) {
-                    toast.success(value.message);
-                  }
-                } catch (_err) {
-                  toast.error("Failed to send new links.");
-                }
-              }}
+              onClick={() => requestNewEmailVerificationLinks()}
               type="button"
               variant={"secondary"}
             >
@@ -304,4 +345,4 @@ export default function ProfileForm() {
       </form>
     </Form>
   );
-}
+};

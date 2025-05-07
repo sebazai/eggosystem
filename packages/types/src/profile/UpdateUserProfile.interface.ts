@@ -7,5 +7,6 @@ export interface UpdateUserProfile {
   work_email_token: Nullable<string>;
   work_email_token_expires_at: Nullable<Date>;
   work_email_verified: boolean;
+  is_work_email_personal_email: boolean;
   discord: Nullable<string>;
 }

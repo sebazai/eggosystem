@@ -114,7 +114,8 @@ router.get("/me", authenticateJWT, async (req, res) => {
       acceptedPrivacyPolicy: userPolicy
         ? userPolicy.accepted_privacy_policy
         : false,
-      acceptedMarketing: hasMarketingConsent
+      acceptedMarketing: hasMarketingConsent,
+      isPersonalEmail: userInDb.is_work_email_personal_email
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
     return;

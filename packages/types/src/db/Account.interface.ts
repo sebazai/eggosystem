@@ -8,6 +8,7 @@ export interface Account {
   work_email_verified: boolean;
   work_email_token_expires_at?: Nullable<string>;
   discord?: Nullable<string>;
+  is_work_email_personal_email: boolean;
   updated_at: string;
   created_at: string;
 }

@@ -14,7 +14,8 @@ const mockedAccount = {
   work_email: "new@kana.fi",
   work_email_verified: false,
   updated_at: "",
-  created_at: ""
+  created_at: "",
+  is_work_email_personal_email: false
 } satisfies Account;
 
 describe("updateProfile Controller", () => {
@@ -119,7 +120,7 @@ describe("updateProfile Controller", () => {
     expect(statusMock).toHaveBeenCalledWith(200);
     expect(jsonMock).toHaveBeenCalledWith({
       message:
-        "Profile updated successfully. Please verify your work email. Remember to check junk folder as well."
+        "Profile updated successfully. Please verify your email. Remember to check junk folder as well."
     });
   });
 

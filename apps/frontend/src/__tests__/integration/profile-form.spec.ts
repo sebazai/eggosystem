@@ -67,7 +67,8 @@ test.describe("Profile Form", () => {
             fullName: "Test user",
             workEmail: "test@user.fi",
             discord: "tester",
-            acceptedMarketing: false
+            acceptedMarketing: false,
+            isPersonalEmail: false
           } satisfies UserFullPayload
         })
       });
@@ -253,7 +254,8 @@ test.describe("Profile Form", () => {
             acceptedMarketing: false,
             fullName: "John Doe",
             discord: undefined,
-            workEmail: undefined
+            workEmail: undefined,
+            isPersonalEmail: false
           } satisfies UserFullPayload
         })
       });

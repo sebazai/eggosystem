@@ -150,7 +150,8 @@ test.describe("Leaderboards Page", () => {
             acceptedMarketing: false,
             fullName: "Hobo Nobo",
             discord: "Testerino",
-            workEmail: "testerino@hobo.nobo"
+            workEmail: "testerino@hobo.nobo",
+            isPersonalEmail: false
           } satisfies UserFullPayload
         })
       });
