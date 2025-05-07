@@ -33,7 +33,11 @@ export const isPlayerApprovedForSeasonTeamManually = async (
       | undefined
     >
   >(
-    `SELECT employment_approved_by_organizer FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id = ?`,
+    `SELECT stp.employment_approved_by_organizer 
+     FROM SeasonTeamPlayers stp 
+       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
+       JOIN Accounts a ON sp.account_id = a.id
+      WHERE stp.season_id = ? AND stp.team_id = ? AND stp.steam_id = ? AND a.work_email IS NOT NULL`,
     [season_id, team_id, steam_id]
   );
   if (!result) {

@@ -13,7 +13,7 @@ import {
   type SignupNewTeamType,
   type SteamPlayer,
   type Team,
-  UpdateSeasonTeamRegistration
+  type UpdateSeasonTeamRegistration
 } from "@eggosystem/types";
 import {
   cleanupTestUsers,
@@ -429,144 +429,252 @@ describe("Season team registration services", () => {
     });
   });
   describe("validatePlayersFromDBForSignup", () => {
-    beforeEach(() => {
-      const formData = _.cloneDeep(validSignupData);
-      updateFetchMock([
-        {
-          urlContains: "GetPlayerSummaries",
-          response: {
+    describe("approved by organizer", () => {
+      beforeEach(async () => {
+        await unsetSeasonTeamRegistration();
+        const formData = _.cloneDeep(validSignupData);
+        updateFetchMock([
+          {
+            urlContains: "GetPlayerSummaries",
             response: {
-              players: formData.players.map((player) => {
-                return { steamid: player.steamId, communityvisibilitystate: 3 };
-              })
-            }
-          } satisfies ISteamUserResponse
-        }
-      ]);
-    });
-    afterEach(async () => {
-      await cleanupTestUsers();
-      await insertTestUsersForSignup();
-    });
-    it("should fail if a player steam id in form is not present in database", async () => {
-      const steamIdToRemove = validSignupData.players[3].steamId;
-      const formData = _.cloneDeep(validSignupData);
-      await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
-        steamIdToRemove
-      ]);
-      try {
-        await registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-      } catch (error) {
-        const badReqError = error as BadRequestError;
-        expect(badReqError.message).toEqual(
-          "Could not find players in database that is provided in the form"
-        );
-      }
-    });
-    it("Should fail if profiles are not public", async () => {
-      const formData = _.cloneDeep(validSignupData);
-      try {
-        await registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-      } catch (error) {
-        const asBadreq = error as BadRequestError;
-        expect(asBadreq.message).toEqual(
-          "Steam IDs 12345678901234569, 12345678901234570 are not public."
-        );
-      }
-    });
-    it("Should fail if not accepted privacy policy", async () => {
-      const formData = _.cloneDeep(validSignupData);
-      await runQuery(
-        "UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ? WHERE account_id = ?",
-        [false, formData.players[4].accountId]
-      );
-      try {
-        await registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-      } catch (error) {
-        const asBadreq = error as BadRequestError;
-        expect(asBadreq.message).toEqual(
-          "Player 12345678901234570 has not accepted privacy policy."
-        );
-      }
-    });
-    it("Should fail if user has no work e-mail and has not been approved by organizer", async () => {
-      const formData = _.cloneDeep(validSignupData);
-      await runQuery("UPDATE Accounts SET work_email = ? WHERE id = ?", [
-        null,
-        formData.players[2].accountId
-      ]);
-      try {
-        await registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-      } catch (error) {
-        const asBadreq = error as BadRequestError;
-        expect(asBadreq.message).toEqual(
-          "Player 12345678901234568 does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord."
-        );
-      }
-    });
-    it("Should fail if no full_name in profile", async () => {
-      const formData = _.cloneDeep(validSignupData);
-      await runQuery("UPDATE Accounts SET full_name = ? WHERE id = ?", [
-        null,
-        formData.players[2].accountId
-      ]);
-      try {
-        await registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.players
-        );
-      } catch (error) {
-        const asBadreq = error as BadRequestError;
-        expect(asBadreq.message).toEqual(
-          "Player 12345678901234568 profile data missing."
-        );
-      }
-    });
-    it("Should pass if missing work e-mail in profile and manually approved by organizer", async () => {
-      const formData = _.cloneDeep(validSignupData);
-      await registrationModels.insertSeasonTeamRegistration(
-        seasonDetails.id,
-        formData.teamId,
-        {
-          captain_steam_id: formData.players[0].steamId,
-          co_captain_steam_id: formData.players[1].steamId,
-          external_platform_id: formData.teamExternalId,
-          terms_and_conditions_approved:
-            formData.captainHasReadTermAndConditions
-        }
-      );
-      await setSeasonTeamPlayers(seasonDetails.id);
-      await runQuery("UPDATE Accounts SET work_email = ? WHERE id = ?", [
-        null,
-        formData.players[2].accountId
-      ]);
-      await runQuery(
-        "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = ? WHERE steam_id = ?",
-        [true, formData.players[2].steamId]
-      );
+              response: {
+                players: formData.players.map((player) => {
+                  return {
+                    steamid: player.steamId,
+                    communityvisibilitystate: 3
+                  };
+                })
+              }
+            } satisfies ISteamUserResponse
+          }
+        ]);
 
-      await registrationServices.validatePlayersFromDBForSignup(
-        seasonDetails.id,
-        formData.teamId,
-        formData.players
-      );
+        await registrationModels.insertSeasonTeamRegistration(
+          seasonDetails.id,
+          formData.teamId,
+          {
+            captain_steam_id: formData.players[0].steamId,
+            co_captain_steam_id: formData.players[1].steamId,
+            external_platform_id: formData.teamExternalId,
+            terms_and_conditions_approved:
+              formData.captainHasReadTermAndConditions
+          }
+        );
+        await setSeasonTeamPlayers(seasonDetails.id);
+
+        await runQuery(
+          "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = ? WHERE steam_id = ?",
+          [true, formData.players[2].steamId]
+        );
+        await runQuery(
+          "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = ? WHERE steam_id = ?",
+          [true, formData.players[1].steamId]
+        );
+      });
+
+      afterEach(async () => {
+        await cleanupTestUsers();
+        await insertTestUsersForSignup();
+      });
+
+      it("Should pass if user has work e-mail, it is marked as personal, it has been verified, and organizer has approved him.", async () => {
+        const formData = _.cloneDeep(validSignupData);
+
+        await runQuery(
+          "UPDATE Accounts SET is_work_email_personal_email = ? WHERE id = ?",
+          [true, formData.players[1].accountId]
+        );
+
+        await registrationServices.validatePlayersFromDBForSignup(
+          seasonDetails.id,
+          formData.teamId,
+          formData.players
+        );
+      });
+      it("Should fail if NULL work e-mail in profile and manually approved by organizer", async () => {
+        try {
+          const formData = _.cloneDeep(validSignupData);
+          await runQuery("UPDATE Accounts SET work_email = ? WHERE id = ?", [
+            null,
+            formData.players[2].accountId
+          ]);
+
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const err = error as BadRequestError;
+          expect(err.message).toEqual(
+            "Player 12345678901234568 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+          );
+        }
+      });
+    });
+    describe("others", () => {
+      beforeEach(() => {
+        const formData = _.cloneDeep(validSignupData);
+        updateFetchMock([
+          {
+            urlContains: "GetPlayerSummaries",
+            response: {
+              response: {
+                players: formData.players.map((player) => {
+                  return {
+                    steamid: player.steamId,
+                    communityvisibilitystate: 3
+                  };
+                })
+              }
+            } satisfies ISteamUserResponse
+          }
+        ]);
+      });
+      afterEach(async () => {
+        await cleanupTestUsers();
+        await insertTestUsersForSignup();
+      });
+
+      it("should fail if a player steam id in form is not present in database", async () => {
+        const steamIdToRemove = validSignupData.players[3].steamId;
+        const formData = _.cloneDeep(validSignupData);
+        await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
+          steamIdToRemove
+        ]);
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const badReqError = error as BadRequestError;
+          expect(badReqError.message).toEqual(
+            "Could not find players in database that is provided in the form"
+          );
+        }
+      });
+      it("Should fail if profiles are not public", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const asBadreq = error as BadRequestError;
+          expect(asBadreq.message).toEqual(
+            "Steam IDs 12345678901234569, 12345678901234570 are not public."
+          );
+        }
+      });
+      it("Should fail if not accepted privacy policy", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        await runQuery(
+          "UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ? WHERE account_id = ?",
+          [false, formData.players[4].accountId]
+        );
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const asBadreq = error as BadRequestError;
+          expect(asBadreq.message).toEqual(
+            "Player 12345678901234570 has not accepted privacy policy."
+          );
+        }
+      });
+      it("Should fail if user has no work e-mail and has not been approved by organizer", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        await runQuery("UPDATE Accounts SET work_email = ? WHERE id = ?", [
+          null,
+          formData.players[3].accountId
+        ]);
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const asBadreq = error as BadRequestError;
+          expect(asBadreq.message).toEqual(
+            "Player 12345678901234569 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+          );
+        }
+      });
+      it("Should fail if user has work e-mail, and it has not been verified nor been approved by organizer", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        await runQuery(
+          "UPDATE Accounts SET work_email_verified = ? WHERE id = ?",
+          [false, formData.players[2].accountId]
+        );
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const asBadreq = error as BadRequestError;
+          expect(asBadreq.message).toEqual(
+            "Player 12345678901234568 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+          );
+        }
+      });
+      it("Should pass if user has work e-mail, and it has been verified", async () => {
+        const formData = _.cloneDeep(validSignupData);
+
+        await registrationServices.validatePlayersFromDBForSignup(
+          seasonDetails.id,
+          formData.teamId,
+          formData.players
+        );
+      });
+      it("Should not pass if user has work e-mail, it is marked as personal, it has been verified.", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        await runQuery(
+          "UPDATE Accounts SET is_work_email_personal_email = ? WHERE id = ?",
+          [true, formData.players[3].accountId]
+        );
+
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const asBadreq = error as BadRequestError;
+          expect(asBadreq.message).toEqual(
+            "Player 12345678901234569 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+          );
+        }
+      });
+      it("Should fail if no full_name in profile", async () => {
+        const formData = _.cloneDeep(validSignupData);
+        await runQuery("UPDATE Accounts SET full_name = ? WHERE id = ?", [
+          null,
+          formData.players[2].accountId
+        ]);
+        try {
+          await registrationServices.validatePlayersFromDBForSignup(
+            seasonDetails.id,
+            formData.teamId,
+            formData.players
+          );
+        } catch (error) {
+          const asBadreq = error as BadRequestError;
+          expect(asBadreq.message).toEqual(
+            "Player 12345678901234568 profile data missing."
+          );
+        }
+      });
     });
   });
   describe("addPlayersForTeamInSeason", () => {

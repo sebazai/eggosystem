@@ -205,7 +205,7 @@ export const validatePlayersFromDBForSignup = async (
         );
       if (!manuallyApprovedPlayer.employment_approved_by_organizer) {
         throw new BadRequestError(
-          `Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord.`
+          `Player ${playerData.steam_id} does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord.`
         );
       }
     }
