@@ -26,7 +26,6 @@ export interface UserPayload {
 export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
   fullName: Account["full_name"];
   workEmail: Account["work_email"];
-  email: Account["email"];
   discord: Account["discord"];
   acceptedPrivacyPolicy: boolean;
   acceptedMarketing: boolean;

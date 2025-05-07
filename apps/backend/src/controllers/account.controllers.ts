@@ -29,38 +29,17 @@ export const sendVerificationEmails = async (
   const oneDayInMillis = getOneDayLaterInMillis();
 
   if (
-    !account.email_verified &&
-    account.email &&
-    account.email_token &&
-    account.email_token_expires_at
-  ) {
-    await redisClient.del(`verify:email:${account.email_token}`);
-    const token = uuid.v4();
-    await handleEmailVerification(
-      accountId,
-      account.email,
-      "verify:email",
-      token,
-      oneDayInMillis
-    );
-    await runQuery(
-      "UPDATE Accounts SET email_token = ?, email_token_expires_at = ? WHERE id = ?",
-      [token, new Date(oneDayInMillis), account.id]
-    );
-  }
-
-  if (
     !account.work_email_verified &&
     account.work_email &&
     account.work_email_token &&
     account.work_email_token_expires_at
   ) {
-    await redisClient.del(`verify:email:${account.work_email_token}`);
+    await redisClient.del(`verify:work-email:${account.work_email_token}`);
     const token = uuid.v4();
     await handleEmailVerification(
       accountId,
       account.work_email,
-      "verify:work_email",
+      "verify:work-email",
       token,
       oneDayInMillis
     );
@@ -86,17 +65,11 @@ export const emailsVerifiedController = async (
 
   const [data] = await runQuery<
     Array<
-      | Pick<
-          Account,
-          | "email_verified"
-          | "email_token_expires_at"
-          | "work_email_verified"
-          | "work_email_token_expires_at"
-        >
+      | Pick<Account, "work_email_verified" | "work_email_token_expires_at">
       | undefined
     >
   >(
-    `SELECT email_verified, email_token_expires_at, work_email_verified, work_email_token_expires_at 
+    `SELECT work_email_verified, work_email_token_expires_at 
       FROM Accounts WHERE id = ?`,
     [accountId]
   );
@@ -141,12 +114,6 @@ export const updateAccountProfileController = async (
   res.status(200).json(result);
 };
 
-interface RedisEmailVerificationToken {
-  accountId: string;
-  email: string;
-  expirationTime: string;
-}
-
 interface RedisWorkEmailVerificationToken {
   accountId: string;
   work_email: string;
@@ -163,28 +130,7 @@ export const verifyEmailController = async (
     return;
   }
 
-  const redisEmailKey = `verify:email:${token}`;
-  const redisWorkEmailKey = `verify:work_email:${token}`;
-
-  const emailData = await redisClient.get(redisEmailKey);
-  if (emailData) {
-    const parsedData: RedisEmailVerificationToken = JSON.parse(emailData);
-    if (new Date() > new Date(parsedData.expirationTime)) {
-      res.status(400).json({ message: "Invalid or expired token." });
-      return;
-    }
-    await runQuery(
-      `UPDATE Accounts
-      SET email_verified = true,
-          email_token = NULL,
-          email_token_expires_at = NULL
-      WHERE id = ?`,
-      [parsedData.accountId]
-    );
-    await redisClient.del(redisEmailKey);
-    res.status(200).json({ message: "Email verified successfully" });
-    return;
-  }
+  const redisWorkEmailKey = `verify:work-email:${token}`;
 
   const workEmailData = await redisClient.get(redisWorkEmailKey);
   if (workEmailData) {
@@ -208,28 +154,8 @@ export const verifyEmailController = async (
   }
 
   try {
-    const [account] = await runQuery<Array<{ id: number } | undefined>>(
-      `SELECT id FROM Accounts WHERE email_token = ? LIMIT 1`,
-      [token]
-    );
-
-    if (account) {
-      await runQuery(
-        `
-        UPDATE Accounts
-        SET email_verified = true,
-            email_token = NULL,
-            email_token_expires_at = NULL
-        WHERE id = ?
-      `,
-        [account.id]
-      );
-      res.status(200).json({ message: "Email verified successfully" });
-      return;
-    }
-
     const [workAccount] = await runQuery<Array<{ id: number } | undefined>>(
-      `SELECT id FROM Accounts WHERE email_token = ? LIMIT 1`,
+      `SELECT id FROM Accounts WHERE work_email_token = ? LIMIT 1`,
       [token]
     );
 

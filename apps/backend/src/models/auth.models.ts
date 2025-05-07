@@ -16,7 +16,6 @@ export const getAuthUserBySteamId = async (steamId: string) => {
       a.full_name, 
       a.work_email, 
       a.discord, 
-      a.email, 
       la.provider 
     FROM LinkedAccounts la 
       JOIN Accounts a ON la.account_id = a.id 

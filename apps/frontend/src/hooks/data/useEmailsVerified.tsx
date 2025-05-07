@@ -6,13 +6,7 @@ import { clientApiFetch } from "@/lib/apiClient";
 
 export const useEmailsVerified = (accountId?: number) => {
   const { data, error, isLoading, isValidating } = useSWR<
-    Pick<
-      Account,
-      | "email_verified"
-      | "email_token_expires_at"
-      | "work_email_verified"
-      | "work_email_token_expires_at"
-    >,
+    Pick<Account, "work_email_verified" | "work_email_token_expires_at">,
     Error
   >(
     accountId ? `/api/v1/accounts/${accountId}/emails-verified` : null,

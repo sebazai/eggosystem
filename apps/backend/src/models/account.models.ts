@@ -20,15 +20,12 @@ export const updateAccount = async (
 ) => {
   const existingAccount = await getAccountById(accountId);
 
-  const emailVerificationToken = uuid.v4();
   const workEmailVerificationToken = uuid.v4();
 
   const oneDayLater = getOneDayLaterInMillis();
 
   const hasWorkEmailChanged =
     formData.work_email && formData.work_email !== existingAccount.work_email;
-  const hasEmailChanged =
-    formData.email && formData.email !== existingAccount.email;
 
   const updatedUser = {
     nickname: formData.nickname,
@@ -42,13 +39,6 @@ export const updateAccount = async (
       hasWorkEmailChanged || !formData.work_email
         ? false
         : existingAccount.work_email_verified,
-    email: formData.email ? formData.email : null,
-    email_token: hasEmailChanged ? emailVerificationToken : null,
-    email_token_expires_at: hasEmailChanged ? new Date(oneDayLater) : null,
-    email_verified:
-      hasEmailChanged || !formData.email
-        ? false
-        : existingAccount.email_verified,
     discord: formData.discord ?? null
   } satisfies UpdateUserProfile;
 
@@ -87,23 +77,11 @@ export const updateAccount = async (
 
     await connection.commit();
 
-    if (hasEmailChanged && formData.email) {
-      handleEmailVerification(
-        accountId,
-        formData.email,
-        "verify:email",
-        workEmailVerificationToken,
-        oneDayLater
-      ).catch((err) => {
-        console.error("Failed to send verification email:", err);
-      });
-    }
-
     if (hasWorkEmailChanged && formData.work_email) {
       handleEmailVerification(
         accountId,
         formData.work_email,
-        "verify:work_email",
+        "verify:work-email",
         workEmailVerificationToken,
         oneDayLater
       ).catch((err) => {
@@ -111,23 +89,10 @@ export const updateAccount = async (
       });
     }
 
-    const baseMsg = "Profile updated successfully.";
-    const rememberJunk = "Remember to check junk folder as well.";
-    if (hasWorkEmailChanged && hasEmailChanged) {
-      return {
-        message: `${baseMsg} Please verify both your emails. ${rememberJunk}`
-      };
-    }
-
     if (hasWorkEmailChanged) {
       return {
-        message: `${baseMsg} Please verify your work email. ${rememberJunk}`
-      };
-    }
-
-    if (hasEmailChanged) {
-      return {
-        message: `${baseMsg} Please verify your personal email. ${rememberJunk}`
+        message:
+          "Profile updated successfully. Please verify your work email. Remember to check junk folder as well."
       };
     }
 
@@ -159,11 +124,7 @@ export const updateAccountData = async (
         work_email = ?, 
         work_email_token = ?, 
         work_email_token_expires_at = ?, 
-        work_email_verified = ?, 
-        email = ?, 
-        email_token = ?, 
-        email_token_expires_at = ?, 
-        email_verified = ?, 
+        work_email_verified = ?,
         discord = ? 
       WHERE id = ?`,
     [
@@ -172,10 +133,6 @@ export const updateAccountData = async (
       updatedUser.work_email_token,
       updatedUser.work_email_token_expires_at,
       updatedUser.work_email_verified,
-      updatedUser.email,
-      updatedUser.email_token,
-      updatedUser.email_token_expires_at,
-      updatedUser.email_verified,
       updatedUser.discord,
       accountId
     ],

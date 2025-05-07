@@ -134,16 +134,6 @@ SET p.full_name = tpn.new_player_name;
 -- Step 3: Drop temporary table
 DROP TEMPORARY TABLE TempPlayerNames;
 UPDATE Accounts
-SET email = CONCAT(
-        LOWER(SUBSTRING_INDEX(full_name, ' ', 1)),
-        '.',
-        LOWER(SUBSTRING_INDEX(full_name, ' ', -1)),
-        FLOOR(RAND() * 9999) + 1,
-        '@kanamail.fi'
-    )
-WHERE full_name IS NOT NULL
-    AND full_name LIKE '% %';
-UPDATE Accounts
 SET work_email = CONCAT(
         LOWER(SUBSTRING_INDEX(full_name, ' ', 1)),
         '.',

@@ -12,7 +12,6 @@ jest.mock("../../db/mysqlConnection", () => ({
 const mockedAccount = {
   id: 1,
   work_email: "new@kana.fi",
-  email_verified: false,
   work_email_verified: false,
   updated_at: "",
   created_at: ""

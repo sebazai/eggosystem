@@ -150,8 +150,7 @@ test.describe("Leaderboards Page", () => {
             acceptedMarketing: false,
             fullName: "Hobo Nobo",
             discord: "Testerino",
-            email: "john.doe@gmail.com",
-            workEmail: undefined
+            workEmail: "testerino@hobo.nobo"
           } satisfies UserFullPayload
         })
       });
@@ -277,7 +276,7 @@ test.describe("Leaderboards Page", () => {
     await _navigateWithRetry(page, "/leaderboards");
 
     // Wait for all network requests to finish (adding a delay)
-    await page.waitForTimeout(10000);
+    await page.waitForTimeout(20000);
 
     // Take a screenshot for debugging
     await page.screenshot({

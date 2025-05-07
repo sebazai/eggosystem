@@ -6,7 +6,6 @@ export interface AuthSteamUser {
   provider: LinkedAccount["provider"];
   nickname: SteamPlayer["nickname"];
   full_name: Account["full_name"];
-  email: Account["email"];
   work_email: Account["work_email"];
   discord: Account["discord"];
 }

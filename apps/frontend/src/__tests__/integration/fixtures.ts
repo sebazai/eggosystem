@@ -47,7 +47,7 @@ export const test = base.extend<CustomFixtures>({
               id: "test-user-id",
               steamId: "76561198012345678",
               name: "Test User",
-              email: "test@example.com",
+              work_email: "test@example.com",
               image: "https://placekitten.com/200/200"
             },
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()

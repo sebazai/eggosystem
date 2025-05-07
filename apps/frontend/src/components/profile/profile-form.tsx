@@ -47,7 +47,6 @@ export default function ProfileForm() {
       nickname: "",
       full_name: "",
       work_email: "",
-      email: "",
       discord: "",
       acceptPrivacyPolicy: false,
       acceptMarketing: false
@@ -61,7 +60,6 @@ export default function ProfileForm() {
       form.setValue("nickname", auth.user.nickname);
       form.setValue("full_name", auth.user.fullName || "");
       form.setValue("work_email", auth.user.workEmail || "");
-      form.setValue("email", auth.user.email || "");
       form.setValue("discord", auth.user.discord || "");
       form.setValue(
         "acceptPrivacyPolicy",
@@ -199,31 +197,12 @@ export default function ProfileForm() {
 
         <FormField
           control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Personal email{" "}
-                {emailsVerified?.email_verified ? <EmailVerifiedIcon /> : null}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="email"
-                  placeholder="personal@email.com"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="discord"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Discord</FormLabel>
+              <FormLabel>
+                Discord (required for captains & co-captains)
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Discord username" {...field} />
               </FormControl>
@@ -279,8 +258,7 @@ export default function ProfileForm() {
 
         <div className="flex gap-4">
           <Button type="submit">Save Changes</Button>
-          {emailsVerified?.email_token_expires_at ||
-          emailsVerified?.work_email_token_expires_at ? (
+          {emailsVerified?.work_email_token_expires_at ? (
             <Button
               onClick={async () => {
                 try {
