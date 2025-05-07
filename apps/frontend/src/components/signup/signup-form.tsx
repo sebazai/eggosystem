@@ -90,6 +90,7 @@ export const SignupForm = ({
         captain: false,
         coCaptain: false,
         hasValidData: undefined,
+        hasValidWorkEmail: undefined,
         isProfilePublic: undefined,
         hours: undefined,
         rank: undefined,
