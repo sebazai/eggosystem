@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   FormField,
   FormItem,
-  FormLabel,
   FormControl,
   FormMessage
 } from "@/components/ui/form";
@@ -15,6 +14,7 @@ import type { MultiSelect } from "@/types/MultiSelectType";
 import type { SignupFormValues } from "@eggosystem/types";
 import { useState } from "react";
 import type { Control, UseFormResetField } from "react-hook-form";
+import { RequiredFormLabel } from "../ui/required-form-label";
 
 interface TabOrganizationProps {
   watchOrgId: number;
@@ -70,7 +70,7 @@ export const TabOrganization = ({
         name="organizationId"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Organization</FormLabel>
+            <RequiredFormLabel required>Organization</RequiredFormLabel>
             <FormControl>
               <FancySelect<number>
                 disabled={isEditMode}
@@ -116,7 +116,9 @@ export const TabOrganization = ({
             name="newOrganization.name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Organization name</FormLabel>
+                <RequiredFormLabel required>
+                  Organization name
+                </RequiredFormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Insert organization name" />
                 </FormControl>
@@ -129,9 +131,9 @@ export const TabOrganization = ({
             name="newOrganization.organization_code"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Business ID</FormLabel>
+                <RequiredFormLabel required>Business ID</RequiredFormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Insert y-tunnus" />
+                  <Input {...field} placeholder="Insert y-tunnus (2992559-2)" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -142,7 +144,7 @@ export const TabOrganization = ({
             name="newOrganization.website"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Website</FormLabel>
+                <RequiredFormLabel required>Website</RequiredFormLabel>
                 <FormControl>
                   <Input
                     {...field}

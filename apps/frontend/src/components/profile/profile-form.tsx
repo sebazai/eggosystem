@@ -6,13 +6,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Form,
   FormField,
   FormItem,
   FormControl,
-  FormMessage
+  FormMessage,
+  FormLabel
 } from "@/components/ui/form";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -24,6 +24,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
 import { EmailVerifiedIcon } from "./email-verified-tooltip";
 import { toast } from "sonner";
+import { RequiredFormLabel } from "../ui/required-form-label";
 
 const requestNewEmailVerificationLinks = async (accountId?: number) => {
   if (accountId) {
@@ -137,10 +138,7 @@ export default function ProfileForm() {
         className="space-y-4 max-w-md"
       >
         {successMessage && (
-          <div
-            className="text-green-500 font-semibold"
-            data-testid="profile-success-message"
-          >
+          <div className="font-semibold" data-testid="profile-success-message">
             {successMessage}
           </div>
         )}
@@ -152,7 +150,7 @@ export default function ProfileForm() {
           name="nickname"
           render={({ field }) => (
             <FormItem>
-              <Label>Steam nickname</Label>
+              <RequiredFormLabel required>Kana nickname</RequiredFormLabel>
               <FormControl>
                 <Input placeholder="Your Steam name" {...field} />
               </FormControl>
@@ -166,7 +164,7 @@ export default function ProfileForm() {
           name="full_name"
           render={({ field }) => (
             <FormItem>
-              <Label>Full Name</Label>
+              <RequiredFormLabel required>Full Name</RequiredFormLabel>
               <FormControl>
                 <Input placeholder="Your Full Name" {...field} />
               </FormControl>
@@ -180,12 +178,12 @@ export default function ProfileForm() {
           name="work_email"
           render={({ field }) => (
             <FormItem>
-              <Label>
+              <RequiredFormLabel required>
                 Work email{" "}
                 {emailsVerified?.work_email_verified ? (
                   <EmailVerifiedIcon />
                 ) : null}
-              </Label>
+              </RequiredFormLabel>
               <FormControl>
                 <Input
                   autoComplete="work-email"
@@ -204,10 +202,10 @@ export default function ProfileForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <Label>
+              <FormLabel>
                 Personal email{" "}
                 {emailsVerified?.email_verified ? <EmailVerifiedIcon /> : null}
-              </Label>
+              </FormLabel>
               <FormControl>
                 <Input
                   type="email"
@@ -225,9 +223,9 @@ export default function ProfileForm() {
           name="discord"
           render={({ field }) => (
             <FormItem>
-              <Label>Discord (Optional)</Label>
+              <FormLabel>Discord</FormLabel>
               <FormControl>
-                <Input placeholder="Discord Username" {...field} />
+                <Input placeholder="Discord username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -246,7 +244,10 @@ export default function ProfileForm() {
                   data-testid="privacy-policy-checkbox"
                 />
               </FormControl>
-              <Label className="flex flex-wrap items-center gap-2">
+              <RequiredFormLabel
+                required
+                className="flex flex-wrap items-center gap-2"
+              >
                 I have read and accept the
                 <Link
                   href="/privacy-policy"
@@ -254,7 +255,7 @@ export default function ProfileForm() {
                 >
                   Privacy Policy
                 </Link>
-              </Label>
+              </RequiredFormLabel>
               <FormMessage />
             </FormItem>
           )}
@@ -271,7 +272,7 @@ export default function ProfileForm() {
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <Label>Receive marketing emails (optional)</Label>
+              <FormLabel>Receive marketing emails (optional)</FormLabel>
             </FormItem>
           )}
         />

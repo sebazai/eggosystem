@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   FormField,
   FormItem,
-  FormLabel,
   FormControl,
   FormMessage,
   FormDescription
@@ -19,6 +18,7 @@ import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 import { useTeamsWithoutOrgs } from "@/hooks/data/useTeamsWithoutOrgs";
 import { ContentContainer } from "../layout/content-container";
 import { Checkbox } from "../ui/checkbox";
+import { RequiredFormLabel } from "../ui/required-form-label";
 
 interface TabTeamProps {
   watchTeamId: number;
@@ -121,7 +121,7 @@ export const TabTeam = ({
         name="teamId"
         render={({ field }) => (
           <FormItem className="mb-2 sm:mb-4">
-            <FormLabel>Team</FormLabel>
+            <RequiredFormLabel required>Team</RequiredFormLabel>
             <FormControl>
               <FancySelect<number>
                 disabled={isEditMode}
@@ -182,7 +182,7 @@ export const TabTeam = ({
             name="newTeam.name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Team name</FormLabel>
+                <RequiredFormLabel required>Team name</RequiredFormLabel>
                 <FormControl>
                   <Input {...field} placeholder="Insert team name" />
                 </FormControl>
@@ -199,7 +199,9 @@ export const TabTeam = ({
           name="teamExternalId"
           render={({ field }) => (
             <FormItem className="pt-2">
-              <FormLabel>{`Team ${platformText} id`}</FormLabel>
+              <RequiredFormLabel
+                required
+              >{`Team ${platformText} id`}</RequiredFormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
