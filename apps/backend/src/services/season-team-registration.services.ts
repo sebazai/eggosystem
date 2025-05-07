@@ -430,7 +430,8 @@ export const handleSignupFormForSeasonUpdate = async (
     {
       captain_steam_id: captainSteamId,
       co_captain_steam_id: coCaptainSteamId,
-      external_platform_id: formData.teamExternalId ?? null
+      external_platform_id: formData.teamExternalId ?? null,
+      terms_and_conditions_approved: formData.captainHasReadTermAndConditions
     },
     oldCaptain,
     oldCoCaptain,
@@ -503,7 +504,9 @@ export const handleSignupFormForSeason = async (
           {
             captain_steam_id: captainSteamId,
             co_captain_steam_id: coCaptainSteamId,
-            external_platform_id: formData.teamExternalId
+            external_platform_id: formData.teamExternalId,
+            terms_and_conditions_approved:
+              formData.captainHasReadTermAndConditions
           },
           formData.players,
           connection
@@ -537,7 +540,9 @@ export const handleSignupFormForSeason = async (
         {
           captain_steam_id: captainSteamId,
           co_captain_steam_id: coCaptainSteamId,
-          external_platform_id: formData.teamExternalId
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved:
+            formData.captainHasReadTermAndConditions
         },
         formData.players,
         connection
@@ -585,7 +590,8 @@ export const handleSignupFormForSeason = async (
       {
         captain_steam_id: captainSteamId,
         co_captain_steam_id: coCaptainSteamId,
-        external_platform_id: formData.teamExternalId
+        external_platform_id: formData.teamExternalId,
+        terms_and_conditions_approved: formData.captainHasReadTermAndConditions
       },
       formData.players,
       connection

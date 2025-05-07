@@ -105,8 +105,8 @@ export const setSeasonTeamRegistration = async (
   teamId?: number
 ) => {
   await runQuery(
-    "INSERT INTO SeasonTeamRegistrations (season_id, team_id) VALUES (?, ?)",
-    [seasonId ?? 1, teamId ?? validSignupData.teamId]
+    "INSERT INTO SeasonTeamRegistrations (season_id, team_id, terms_and_conditions_approved) VALUES (?, ?, ?)",
+    [seasonId ?? 1, teamId ?? validSignupData.teamId, true]
   );
 };
 

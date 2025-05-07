@@ -25,6 +25,7 @@ import { useEmailsVerified } from "@/hooks/data/useEmailsVerified";
 import { EmailVerifiedIcon } from "./email-verified-tooltip";
 import { toast } from "sonner";
 import { RequiredFormLabel } from "../ui/required-form-label";
+import { TooltipIcon } from "../icons";
 
 const requestNewEmailVerificationLinks = async (accountId?: number) => {
   if (accountId) {
@@ -47,6 +48,7 @@ export default function ProfileForm() {
       nickname: "",
       full_name: "",
       work_email: "",
+      isPersonalEmail: false,
       discord: "",
       acceptPrivacyPolicy: false,
       acceptMarketing: false
@@ -150,21 +152,20 @@ export default function ProfileForm() {
             <FormItem>
               <RequiredFormLabel required>Kana nickname</RequiredFormLabel>
               <FormControl>
-                <Input placeholder="Your Steam name" {...field} />
+                <Input placeholder="Your Kana nickname..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="full_name"
           render={({ field }) => (
             <FormItem>
-              <RequiredFormLabel required>Full Name</RequiredFormLabel>
+              <RequiredFormLabel required>Full name</RequiredFormLabel>
               <FormControl>
-                <Input placeholder="Your Full Name" {...field} />
+                <Input placeholder="John Doe" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -186,11 +187,32 @@ export default function ProfileForm() {
                 <Input
                   autoComplete="work-email"
                   type="email"
-                  placeholder="work@email.com"
+                  placeholder="john.doe@kanaliiga.fi"
                   {...field}
                 />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isPersonalEmail"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel>I have no work email, this is my personal</FormLabel>{" "}
+              <TooltipIcon
+                text={
+                  "We use personal work emails for the identification that the player is working for the registered company."
+                }
+              />
             </FormItem>
           )}
         />

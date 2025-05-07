@@ -13,6 +13,7 @@ export const accountSchema = z.object({
         "Full name must contain a first name and a last name, separated by a space."
     }),
   work_email: z.string().email(),
+  isPersonalEmail: z.boolean().optional(),
   discord: z.string().optional(),
   acceptPrivacyPolicy: z.boolean().refine((val) => val === true, {
     message: "You must accept the privacy policy"

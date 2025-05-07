@@ -1,10 +1,16 @@
-import { AlertTriangle } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from "./ui/tooltip";
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 function Spinner() {
   return (
@@ -14,24 +20,47 @@ function Spinner() {
   );
 }
 
-const WarningTooltipIcon = ({ text }: { text: string }) => {
+type TooltipIconProps = {
+  text: string;
+  icon?: React.ReactNode;
+};
+
+const TooltipIcon = ({ text, icon }: TooltipIconProps) => {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          {icon ?? <InfoIcon className="min-w-4 min-h-4 w-4 h-4" />}
+        </PopoverTrigger>
+        <PopoverContent
+          side="top"
+          className="text-sm rounded shadow-lg z-[100]"
+        >
+          <span className="w-50 block">{text}</span>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="text-yellow-500 cursor-default">
-            <AlertTriangle className="w-5 h-5" />
-          </span>
+          {icon ?? <InfoIcon className="min-w-4 min-h-4 w-4 h-4" />}
         </TooltipTrigger>
         <TooltipContent
           side="top"
           className="shadow-md border rounded-md px-3 py-2 text-sm"
         >
-          {text}
+          <span className="w-100 block">{text}</span>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 };
 
-export { Spinner, WarningTooltipIcon };
+export default TooltipIcon;
+
+export { Spinner, TooltipIcon };

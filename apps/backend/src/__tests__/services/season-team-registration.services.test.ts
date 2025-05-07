@@ -12,7 +12,8 @@ import {
   type SignupNewOrganizationType,
   type SignupNewTeamType,
   type SteamPlayer,
-  type Team
+  type Team,
+  UpdateSeasonTeamRegistration
 } from "@eggosystem/types";
 import {
   cleanupTestUsers,
@@ -388,7 +389,9 @@ describe("Season team registration services", () => {
         {
           captain_steam_id: formData.players[0].steamId,
           co_captain_steam_id: formData.players[1].steamId,
-          external_platform_id: formData.teamExternalId
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved:
+            formData.captainHasReadTermAndConditions
         } satisfies InsertSeasonTeamRegistration,
         formData.players
       );
@@ -403,8 +406,9 @@ describe("Season team registration services", () => {
         {
           captain_steam_id: formData.players[0].steamId,
           co_captain_steam_id: formData.players[1].steamId,
-          external_platform_id: formData.teamExternalId
-        },
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved: true
+        } satisfies InsertSeasonTeamRegistration,
         undefined
       );
       expect(addPlayers).toHaveBeenCalledWith(
@@ -543,7 +547,9 @@ describe("Season team registration services", () => {
         {
           captain_steam_id: formData.players[0].steamId,
           co_captain_steam_id: formData.players[1].steamId,
-          external_platform_id: formData.teamExternalId
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved:
+            formData.captainHasReadTermAndConditions
         }
       );
       await setSeasonTeamPlayers(seasonDetails.id);
@@ -1336,12 +1342,13 @@ describe("Season team registration services", () => {
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
       await runQuery(
-        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id, terms_and_conditions_approved) VALUES (?, ?, ?, ?, ?)",
         [
           seasonDetails.id,
           validSignupData.teamId,
           validSignupData.players[0].steamId,
-          validSignupData.players[1].steamId
+          validSignupData.players[1].steamId,
+          true
         ]
       );
       await setSeasonTeamPlayers();
@@ -1431,8 +1438,9 @@ describe("Season team registration services", () => {
         {
           captain_steam_id: formData.players[3].steamId,
           co_captain_steam_id: formData.players[1].steamId,
-          external_platform_id: formData.teamExternalId
-        },
+          external_platform_id: formData.teamExternalId,
+          terms_and_conditions_approved: true
+        } satisfies UpdateSeasonTeamRegistration,
         undefined
       );
       expect(updateAddPlayers).toHaveBeenCalledWith(
@@ -1487,12 +1495,13 @@ describe("Season team registration services", () => {
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
       await runQuery(
-        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id, terms_and_conditions_approved) VALUES (?, ?, ?, ?, ?)",
         [
           seasonDetails.id,
           validSignupData.teamId,
           validSignupData.players[0].steamId,
-          validSignupData.players[1].steamId
+          validSignupData.players[1].steamId,
+          true
         ]
       );
       await setSeasonTeamPlayers();

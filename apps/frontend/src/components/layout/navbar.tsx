@@ -192,6 +192,7 @@ export const Navigation = (props: NavbarProps) => {
                 alt={logo.alt}
                 width={isScrolled || pathname === "/" ? 80 : 153}
                 height={isScrolled || pathname === "/" ? 80 : 175}
+                priority
               />
             </Link>
           )}

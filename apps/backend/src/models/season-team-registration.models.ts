@@ -160,7 +160,8 @@ const transformTeamSignupData = (rows: TeamSignupQueryData[]) => {
     teamExternalId: external_platform_id ?? undefined,
     newOrganization: undefined,
     newTeam: undefined,
-    players
+    players,
+    captainHasReadTermAndConditions: true
   } satisfies SignupFormValues;
 };
 

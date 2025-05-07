@@ -38,12 +38,12 @@ import type {
 } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 import { playerSchema } from "@eggosystem/types";
-import { TriangleAlert } from "lucide-react";
+import { AlertTriangle, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./signup-player-alert";
 import { FaceITLevelIcon } from "../profile/faceit-level";
 import { CS2PremierRankBadge } from "../profile/cs2-premier-rank";
-import { Spinner, WarningTooltipIcon } from "../icons";
+import { Spinner, TooltipIcon } from "../icons";
 import Link from "next/link";
 
 interface TabPlayersProps {
@@ -480,9 +480,12 @@ export const TabPlayers = ({
                       />
                     )}
                     {isHardCarry && (
-                      <WarningTooltipIcon
+                      <TooltipIcon
                         text={
                           "Note: Player is Hard carry for the team - make sure he plays all games"
+                        }
+                        icon={
+                          <AlertTriangle className="text-yellow-500 min-w-5 min-h-5" />
                         }
                       />
                     )}

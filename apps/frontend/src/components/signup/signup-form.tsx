@@ -3,7 +3,14 @@ import { RequiresSteamLogin } from "@/components/layout/requires-steam-login";
 import { ContentContainer } from "@/components/layout/content-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Form } from "@/components/ui/form";
+import Link from "next/link";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel
+} from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { useEffect, useMemo, useState } from "react";
@@ -26,6 +33,7 @@ import {
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/copy-input";
 import { envConfig } from "@/configs/env";
+import { Checkbox } from "../ui/checkbox";
 
 interface SignupFormProps {
   seasonId: string;
@@ -182,6 +190,10 @@ export const SignupForm = ({
     validExternalTeamId
   ]);
 
+  const hasAcceptedTermsAndConditions = watch(
+    "captainHasReadTermAndConditions"
+  );
+
   const validOrganizationSelection = Boolean(
     (validOrgId.success && validOrgId.data.organizationId !== -1) ||
       (validOrg.success &&
@@ -277,7 +289,10 @@ export const SignupForm = ({
   };
 
   const canSubmit =
-    validOrganizationSelection && validTeamSelection && validPlayerSelection;
+    validOrganizationSelection &&
+    validTeamSelection &&
+    validPlayerSelection &&
+    hasAcceptedTermsAndConditions;
 
   return (
     <Form {...form}>
@@ -410,6 +425,35 @@ export const SignupForm = ({
             >
               Submit
             </Button>
+            <FormField
+              control={control}
+              name={"captainHasReadTermAndConditions"}
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={(checked) =>
+                        setValue(
+                          "captainHasReadTermAndConditions",
+                          Boolean(checked)
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormLabel className="cursor-pointer">
+                    I have read and understood the
+                    <Link
+                      className="text-kanaliiga-orange hover:underline"
+                      href={"https://wiki.kanaliiga.fi/CS2/Registration"}
+                      target="_blank"
+                    >
+                      terms and conditions
+                    </Link>
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
       </form>

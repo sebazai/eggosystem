@@ -4,6 +4,7 @@ export const validSignupData: SignupFormValues = {
   organizationId: 102,
   teamId: 2,
   teamExternalId: "team-123",
+  captainHasReadTermAndConditions: true,
   players: [
     {
       accountId: 99999,
@@ -42,6 +43,7 @@ export const invalidSignupData = {
   organizationId: -1,
   teamId: -1,
   teamExternalId: "team-123",
+  captainHasReadTermAndConditions: true,
   players: [
     {
       accountId: 1,

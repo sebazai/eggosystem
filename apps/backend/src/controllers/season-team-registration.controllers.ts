@@ -76,8 +76,9 @@ export const updateTeamSignupDetails = async (
 
   const teamIdNum = Number(teamId);
 
-  const result = await updateSignupForSeason(season, teamIdNum, formData);
-  res.json(result);
+  await updateSignupForSeason(season, teamIdNum, formData);
+  // These should not change on an update.
+  res.json({ team_id: teamIdNum, organization_id: formData.organizationId });
 };
 
 export const addSignupForSeasonController = async (
