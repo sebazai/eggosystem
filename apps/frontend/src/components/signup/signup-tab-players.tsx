@@ -298,10 +298,15 @@ export const TabPlayers = ({
             }
           });
 
-          setPromiseErrors((prev) => ({
-            ...prev,
-            [steam_id]: errorReasonsMessage
-          }));
+          setPromiseErrors((prev) => {
+            if (errorReasonsMessage.length > 0) {
+              return {
+                ...prev,
+                [steam_id]: errorReasonsMessage
+              };
+            }
+            return prev;
+          });
 
           setLoadingStates((prev) => ({ ...prev, [index]: false }));
         }

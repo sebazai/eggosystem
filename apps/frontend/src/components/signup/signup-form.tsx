@@ -25,6 +25,7 @@ import {
 } from "@eggosystem/types";
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/copy-input";
+import { envConfig } from "@/configs/env";
 
 interface SignupFormProps {
   seasonId: string;
@@ -242,6 +243,10 @@ export const SignupForm = ({
       setEditUrl(
         `${process.env.NEXT_PUBLIC_BASE_URL}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
       );
+      await fetch(`${envConfig.CLIENT_API_URL}/api/v1/auth/refresh`, {
+        method: "POST",
+        credentials: "include"
+      });
     } catch (error: unknown) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);

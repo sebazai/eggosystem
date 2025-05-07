@@ -81,10 +81,10 @@ export const updateTeamSignupDetails = async (
 };
 
 export const addSignupForSeasonController = async (
-  req: RequestWithParamsAndBody<{ id: string }, SignupFormValues>,
+  req: RequestWithParamsAndBody<{ season_id: string }, SignupFormValues>,
   res: Response
 ) => {
-  const id = Number(req.params.id);
+  const id = Number(req.params.season_id);
   // Ensure season exists, otherwise throw error
 
   const season = await getValidSeason(id);

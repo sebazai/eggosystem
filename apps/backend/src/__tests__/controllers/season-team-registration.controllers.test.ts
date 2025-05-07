@@ -24,7 +24,7 @@ import { validSignupData } from "../../__utils__/fixtures/signupFormData";
 import { type BadRequestError } from "../../utils/errors";
 
 describe("addSignupForSeason - database transaction testing", () => {
-  let req: RequestWithParamsAndBody<{ id: string }, SignupFormValues>;
+  let req: RequestWithParamsAndBody<{ season_id: string }, SignupFormValues>;
   let res: Response;
   const mockConnection = {
     beginTransaction: jest.fn(),
@@ -39,9 +39,12 @@ describe("addSignupForSeason - database transaction testing", () => {
 
   beforeEach(() => {
     req = {
-      params: { id: "1" },
+      params: { season_id: "1" },
       body: _.cloneDeep(validSignupData)
-    } as unknown as RequestWithParamsAndBody<{ id: string }, SignupFormValues>;
+    } as unknown as RequestWithParamsAndBody<
+      { season_id: string },
+      SignupFormValues
+    >;
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn()
