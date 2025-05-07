@@ -26,7 +26,10 @@ export async function generateMetadata({
   }
   const data = await result.json();
   return {
-    title: `Team registration for ${data.full_name}`
+    title: {
+      default: `Team registration for ${data.full_name}`,
+      template: "%s | Kanahub by Kanaliiga"
+    }
   };
 }
 

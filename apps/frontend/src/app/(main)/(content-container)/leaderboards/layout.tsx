@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Leaderboards"
+  title: { default: "Leaderboards", template: "%s | Kanahub by Kanaliiga" }
 };
 
 export default function LeaderboardsLayout({

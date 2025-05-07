@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Top teams",
+  title: { default: "Top teams", template: "%s | Kanahub by Kanaliiga" },
   description: "The teams that perform well in Kanaliiga"
 };
 
