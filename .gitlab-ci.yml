@@ -111,7 +111,7 @@ variables:
 # Define a base Docker build configuration without rules
 .docker-build-base: &docker-build-base
   stage: build-docker
-  image: docker:27.5.1-alpine3.21
+  image: docker:28.1.1-alpine3.21
   # Define global services for the entire pipeline
   services:
     - name: docker:28.1.1-dind-alpine3.21
@@ -380,21 +380,15 @@ push-dockerfile:migrations:
   extends: [.main-backend]
   variables:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
-  parallel:
-    matrix:
-      - BUILD_TYPE: [dev]
   script:
-    - |
-      if [ "$BUILD_TYPE" == "dev" ]; then
-        docker buildx build \
-          --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev \
-          --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache \
-          --cache-from type=registry,ref=$REGISTRY/eggo-migrations:${ENV_ID}
-          --build-arg CI=true \
-          --push \
-          -t $REGISTRY/eggo-migrations:${ENV_ID} \
-          -f apps/backend/Dockerfile.migrations.dev .
-      fi
+    - docker buildx build
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
+      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
+      --build-arg CI=true
+      --push
+      -t $REGISTRY/eggo-migrations:dev
+      -f apps/backend/Dockerfile.migrations.dev .
 
 push-dockerfile:frontend:
   <<: *common-docker-push
