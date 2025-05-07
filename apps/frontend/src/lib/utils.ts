@@ -94,6 +94,13 @@ export const createNextUrl = (url: string) => {
   return url;
 };
 
+export const createDashboardNextUrl = (url: string) => {
+  if (process.env.NEXT_PUBLIC_BASE_PATH) {
+    return `${process.env.NEXT_PUBLIC_BASE_PATH}/dashboard/${url}`;
+  }
+  return `/dashboard/${url}`;
+};
+
 export const createTeamLogoUrl = (url: string) => {
   if (!url) return "";
 
