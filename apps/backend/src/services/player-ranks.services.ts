@@ -1,4 +1,8 @@
-import { type SeasonPlayerRank, SeasonPlatform } from "@eggosystem/types";
+import {
+  type SeasonPlayerRank,
+  CS2LeetifyAvgRank,
+  SeasonPlatform
+} from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import _ from "lodash";
 import { expireIn30Days, redisClient } from "../utils/redisClient";
@@ -6,7 +10,6 @@ import {
   getPlayerHoursForSeason,
   getPlayerRankForSeason
 } from "../models/season-player-ranks.models";
-import { convertCSGORankToCS2 } from "../utils/ranks";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
@@ -66,62 +69,85 @@ export const getPlayerAppIdRank = async (
 };
 
 export const getCSRank = async (steam_id: string, season_id?: number) => {
-  const redisKey = `730-${steam_id}-rank`;
-
-  const rankInRedis = await redisClient.get(redisKey);
-  if (rankInRedis) {
-    return { rank: Number(rankInRedis) };
-  }
-
-  const leetifyRank = await getCS2RankFromLeetify(steam_id);
-  if (leetifyRank) {
-    await redisClient.set(redisKey, leetifyRank.rank, "EX", expireIn30Days);
-    return leetifyRank;
-  }
-
   // If someone added the rank to database for season, we use that one
   if (season_id) {
     const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
     if (rankFromDb) {
-      await redisClient.set(redisKey, rankFromDb.rank, "EX", expireIn30Days);
       return rankFromDb;
     }
+  }
+
+  const redisKey = `730-${steam_id}-rank`;
+  const rankInRedis = await redisClient.get(redisKey);
+  if (rankInRedis) {
+    return JSON.parse(rankInRedis) as CS2LeetifyAvgRank;
+  }
+
+  const leetifyRank = await getCS2RankFromLeetify(steam_id);
+  if (leetifyRank) {
+    await redisClient.set(
+      redisKey,
+      JSON.stringify(leetifyRank),
+      "EX",
+      expireIn30Days
+    );
+    return leetifyRank;
   }
 
   // FALLBACK: Try to get latest known cs2_rank for the latest season from database
   const result = await runQuery<
     Array<{
       cs2_rank: SeasonPlayerRank["cs2_rank"];
-      csgo_rank: SeasonPlayerRank["csgo_rank"];
+      rank_updated_at: SeasonPlayerRank["rank_updated_at"];
     }>
   >(
-    "SELECT cs2_rank, csgo_rank FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC",
+    "SELECT cs2_rank, rank_updated_at FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC",
     [steam_id]
   );
   if (!_.isEmpty(result)) {
-    const firstCS2Rank = result.find((rank) => rank.cs2_rank);
-    if (firstCS2Rank?.cs2_rank) {
+    const cs2RanksInKanaliiga = result
+      .filter(
+        (
+          rank
+        ): rank is {
+          cs2_rank: number;
+          rank_updated_at: SeasonPlayerRank["rank_updated_at"];
+        } => rank.cs2_rank !== null && rank.cs2_rank > 0
+      )
+      .sort((a, b) => {
+        if (a.rank_updated_at === null) return 1;
+        if (b.rank_updated_at === null) return -1;
+
+        return (
+          new Date(b.rank_updated_at).getTime() -
+          new Date(a.rank_updated_at).getTime()
+        );
+      });
+
+    if (cs2RanksInKanaliiga.length > 0) {
+      const totalSkillLevel = cs2RanksInKanaliiga.reduce(
+        (sum, g) => sum + g.cs2_rank,
+        0
+      );
+
+      const averageSkillLevel = totalSkillLevel / cs2RanksInKanaliiga.length;
+      const data = {
+        average_rank: Math.round(averageSkillLevel),
+        rank_updated_at: cs2RanksInKanaliiga[0].rank_updated_at
+      } satisfies CS2LeetifyAvgRank;
       await redisClient.set(
         redisKey,
-        firstCS2Rank.cs2_rank,
+        JSON.stringify(data),
         "EX",
         expireIn30Days
       );
-      return { rank: firstCS2Rank.cs2_rank };
-    }
-    const firstCSGORank = result.find((rank) => rank.csgo_rank);
-    if (firstCSGORank?.csgo_rank) {
-      const convertedToCS2 = convertCSGORankToCS2(firstCSGORank.csgo_rank);
-      await redisClient.set(
-        redisKey,
-        convertedToCS2.rank,
-        "EX",
-        expireIn30Days
-      );
-      return { rank: convertedToCS2.rank };
+      return data;
     }
   }
-  return { rank: -1 };
+  return {
+    average_rank: -1,
+    rank_updated_at: null
+  } satisfies CS2LeetifyAvgRank;
 };
 
 export const getPlayerRankForPlatform = async (

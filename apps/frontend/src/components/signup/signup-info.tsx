@@ -80,9 +80,7 @@ export const SignupInfo = ({
             <p>
               If a player has only one of the ranks present, we will use magic
               to determine the player&apos;s other rank based on the other
-              players who are participating in the season. In addition, we will
-              update ranks before dividing teams to leagues, so feel free to
-              grind.
+              players who are participating in the season.
             </p>
           )}
           <p>

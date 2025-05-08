@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import type {
+  CS2LeetifyAvgRank,
   FaceITCSRank,
   Game,
   PlayerDetailsBySteamId,
@@ -195,7 +196,7 @@ export const TabPlayers = ({
             }>(
               `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
             ),
-            clientApiFetch<{ rank: number }>(
+            clientApiFetch<CS2LeetifyAvgRank>(
               `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
             ),
             clientApiFetch<unknown>(
@@ -230,7 +231,7 @@ export const TabPlayers = ({
           }
 
           if (rankData.status === "fulfilled") {
-            setValue(`players.${index}.rank`, rankData.value.rank);
+            setValue(`players.${index}.rank`, rankData.value.average_rank);
           }
 
           if (externalRankData.status === "fulfilled") {

@@ -354,14 +354,16 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               },
               {
                 isCs2: true,
                 dataSource: "faceit",
                 elo: 2333,
                 rankType: null,
-                skillLevel: null
+                skillLevel: null,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -693,14 +695,16 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               },
               {
                 isCs2: true,
                 dataSource: "faceit",
                 elo: 2333,
                 rankType: null,
-                skillLevel: null
+                skillLevel: null,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -774,7 +778,7 @@ describe("Season team registration services", () => {
         );
       }
     });
-    it("Should pass if app id rank is present but external platform rank not", async () => {
+    it("Should pass with average app rank within the last year, and external platform rank not present", async () => {
       updateFetchMock([
         {
           urlContains: "https://api.cs-prod.leetify.com/api/profile/id",
@@ -784,7 +788,22 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23000,
+                gameFinishedAt: new Date().toISOString()
+              },
+              {
+                isCs2: true,
+                dataSource: "matchmaking",
+                rankType: 11,
+                skillLevel: 21000,
+                gameFinishedAt: new Date().toISOString()
+              },
+              {
+                isCs2: true,
+                dataSource: "matchmaking",
+                rankType: 11,
+                skillLevel: 21000,
+                gameFinishedAt: "2023-12-28T21:14:32.000Z"
               }
             ]
           } satisfies LeetifyResponse
@@ -817,7 +836,7 @@ describe("Season team registration services", () => {
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
           [formData.players[4].steamId, seasonDetails.id]
         );
-        expect(rankForSeason.cs2_rank).toEqual(23430);
+        expect(rankForSeason.cs2_rank).toEqual(22000);
         expect(rankForSeason.cs_hours).toEqual(112);
         expect(rankForSeason.faceit_elo).toEqual(-1);
         expect(rankForSeason.faceit_level).toEqual(-1);
@@ -840,7 +859,8 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -894,7 +914,8 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -993,14 +1014,16 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               },
               {
                 isCs2: true,
                 dataSource: "faceit",
                 elo: 2333,
                 rankType: null,
-                skillLevel: null
+                skillLevel: null,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -1058,7 +1081,7 @@ describe("Season team registration services", () => {
         ]);
       }
     });
-    it("Should fallback to latest old season rank if no current season rank can be determined", async () => {
+    it("Should fallback to latest old seasons average rank if no current season rank can be determined", async () => {
       updateFetchMock([
         {
           urlContains:
@@ -1069,14 +1092,16 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               },
               {
                 isCs2: true,
                 dataSource: "faceit",
                 elo: 2333,
                 rankType: null,
-                skillLevel: null
+                skillLevel: null,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -1105,11 +1130,11 @@ describe("Season team registration services", () => {
       const formData = _.cloneDeep(validSignupData);
       const idToRemove2 = await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
-        [formData.players[4].steamId, 14, 9998]
+        [formData.players[4].steamId, 14, 5000]
       );
       const idToRemove = await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
-        [formData.players[4].steamId, 11, 9999]
+        [formData.players[4].steamId, 11, 10000]
       );
 
       try {
@@ -1124,7 +1149,7 @@ describe("Season team registration services", () => {
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
           [formData.players[4].steamId, seasonDetails.id]
         );
-        expect(rankForSeason.cs2_rank).toEqual(9998);
+        expect(rankForSeason.cs2_rank).toEqual(7500);
         expect(rankForSeason.cs_hours).toEqual(112);
         // 5 times for app id rank, 5 times for hours
         expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(10);
@@ -1140,7 +1165,7 @@ describe("Season team registration services", () => {
         ]);
       }
     });
-    it("Should fall back to csgo rank if cs2 not present, and apply decay on csgo rank", async () => {
+    it("Should fall back to csgo faceit rank if cs2 faceit rank not present, and apply decay on csgo faceit rank", async () => {
       const faceitReturnEloCsGo = 2700;
       const faceitReturnLevelCsGo = 9;
       updateFetchMock([
@@ -1153,7 +1178,8 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse
@@ -1503,14 +1529,16 @@ describe("Season team registration services", () => {
                 isCs2: true,
                 dataSource: "matchmaking",
                 rankType: 11,
-                skillLevel: 23430
+                skillLevel: 23000,
+                gameFinishedAt: new Date().toISOString()
               },
               {
                 isCs2: true,
                 dataSource: "faceit",
                 elo: 2333,
                 rankType: null,
-                skillLevel: null
+                skillLevel: null,
+                gameFinishedAt: new Date().toISOString()
               }
             ]
           } satisfies LeetifyResponse

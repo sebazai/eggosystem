@@ -144,9 +144,10 @@ describe("addSignupForSeason - database transaction testing", () => {
       .mockResolvedValue({
         insertId: 1
       });
-    jest
-      .spyOn(leetifyService, "getCS2RankFromLeetify")
-      .mockResolvedValue({ rank: 666 });
+    jest.spyOn(leetifyService, "getCS2RankFromLeetify").mockResolvedValue({
+      average_rank: 666,
+      rank_updated_at: new Date().toISOString()
+    });
     jest.spyOn(steamServices, "getSteamHoursForAppId").mockResolvedValue({
       appid: 730,
       playtime_forever: 1000

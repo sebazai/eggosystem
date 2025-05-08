@@ -103,20 +103,8 @@ export default function ProfileForm() {
           body: JSON.stringify(data)
         }
       );
-
-      const returnTo = searchParams.get("returnTo");
-      const message = returnTo
-        ? `${returnValue.message} Redirecting you to ${returnTo}...`
-        : `${returnValue.message}`;
-
-      setSuccessMessage(message);
-
+      setSuccessMessage(`${returnValue.message}`);
       await auth.checkAuth();
-      if (returnTo) {
-        setTimeout(() => {
-          router.push(returnTo);
-        }, 2000);
-      }
     } catch (_error) {
       setErrorMessage("There was an error updating your profile.");
     }
