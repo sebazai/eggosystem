@@ -624,22 +624,23 @@ export const TabPlayers = ({
                     </SignupPlayerNotification>
                   )}
 
-                  {player.hasValidWorkEmail === false && (
-                    <SignupPlayerNotification>
-                      <div>
-                        <span>
-                          Player does not have a valid work e-mail, open a
-                          ticket in Discord. See{" "}
-                          <Link
-                            target="_blank"
-                            href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"
-                          >
-                            registration info
-                          </Link>
-                        </span>
-                      </div>
-                    </SignupPlayerNotification>
-                  )}
+                  {player.hasValidWorkEmail === false &&
+                    player.hasValidData !== false && (
+                      <SignupPlayerNotification>
+                        <div>
+                          <span>
+                            Player does not have a valid work e-mail, open a
+                            ticket in Discord. See{" "}
+                            <Link
+                              target="_blank"
+                              href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"
+                            >
+                              registration info
+                            </Link>
+                          </span>
+                        </div>
+                      </SignupPlayerNotification>
+                    )}
 
                   {player.isProfilePublic === false && (
                     <SignupPlayerNotification>
