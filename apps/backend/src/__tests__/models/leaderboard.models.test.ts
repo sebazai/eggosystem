@@ -145,16 +145,16 @@ describe("getLeaderboard", () => {
           kast: 80.6667
         },
         {
-          steam_id: "76561197995177764",
-          nickname: "MAd",
+          steam_id: "76561198310132063",
+          nickname: "Huurteinen",
           team_name: "Valtori",
           team_logo: "S15_2184.png",
           matches_played: 2,
           kast: 80.5
         },
         {
-          steam_id: "76561198310132063",
-          nickname: "Huurteinen",
+          steam_id: "76561197995177764",
+          nickname: "MAd",
           team_name: "Valtori",
           team_logo: "S15_2184.png",
           matches_played: 2,

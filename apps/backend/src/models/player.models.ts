@@ -145,6 +145,8 @@ export const getPlayerMatchHistoryByFilters = async (
     { column: "sp.steam_id", value: [steam_id] }
   ]);
 
+  const mapFiltersPresent = map_ids && map_ids.length > 0;
+
   const matchHistoryQuery = `
       SELECT
         m.id AS match_id,
@@ -175,12 +177,12 @@ export const getPlayerMatchHistoryByFilters = async (
         -- Score or Win Count
         CASE
           WHEN m.best_of = 1 THEN MAX(tgs.score)
-          ELSE COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)
+          ELSE  ${!mapFiltersPresent ? "COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)" : "MAX(tgs.score)"}
         END AS score,
 
         CASE
           WHEN m.best_of = 1 THEN MAX(opp_tgs.score)
-          ELSE COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)
+          ELSE ${!mapFiltersPresent ? "COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)" : "MAX(opp_tgs.score)"}
         END AS opponent_score,
 
         -- PlayerStats aggregates
@@ -215,9 +217,9 @@ export const getPlayerMatchHistoryByFilters = async (
       WHERE ${query}
 
       GROUP BY
-        m.id,
+        ${!mapFiltersPresent ? "m.id," : ""}
         CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END,
-        m.best_of,
+        ${!mapFiltersPresent ? "m.best_of," : ""}
         m.season_id,
         s.name,
         m.league_id,

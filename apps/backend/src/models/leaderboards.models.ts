@@ -84,7 +84,7 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
     WHERE ${query}
     GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
     HAVING COUNT(DISTINCT mg.id) > 1
-    ORDER BY ${leaderboards} DESC
+    ORDER BY ${leaderboards} DESC, p.nickname ASC
     LIMIT 5;
 `;
 
