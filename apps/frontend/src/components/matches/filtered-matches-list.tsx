@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { ContentContainer } from "../layout/content-container";
-import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
+import {
+  createNextUrl,
+  createTeamLogoUrl,
+  type FilterParamsQuery
+} from "@/lib/utils";
 import { useRecentMatches } from "@/hooks/data/filtered/useRecentMatches";
 import { NextImageFallback } from "../layout/image-with-fallback";
 
@@ -39,9 +43,9 @@ export const FilteredMatchesList = ({
     <div>
       {Object.entries(groupedMatches).map(([date, matchesForDate]) => (
         <div key={date}>
-          <h2 className="text-left text-sm mb-4">{date}</h2>
+          <h2 className="text-left text-sm mb-2 sm:mb-4">{date}</h2>
           {matchesForDate.map((match, index) => (
-            <div key={index} className="mb-2">
+            <div key={index} className="mb-2 sm:mb-4">
               <Link
                 className="no-underline"
                 href="/matches/[id]"
@@ -51,10 +55,7 @@ export const FilteredMatchesList = ({
                     : `/matches/${match.match_id}`
                 }
               >
-                <div
-                  className="grid grid-cols-[1fr_auto_1fr] min-h-[50px] items-center gap-2 bg-background-95 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md"
-                  style={{ backgroundColor: "hsla(0, 0%, 10%, 0.7)" }}
-                >
+                <div className="grid grid-cols-[1fr_auto_1fr] min-h-15 md:min-h-18 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md">
                   <div className="flex items-center justify-end min-w-0">
                     <div className="min-w-0 text-right xs:break-normal break-words text-sm sm:text-base mr-1">
                       {match.team1_name}
@@ -67,9 +68,18 @@ export const FilteredMatchesList = ({
                       className="ml-1 object-contain hidden xxs:block"
                     />
                   </div>
-                  <div className="text-sm bg-secondary h-full min-w-15 md:min-w-18 items-center justify-center flex">
-                    {match.team1_score} - {match.team2_score}
+                  <div className="relative h-full min-w-15 md:min-w-18 flex items-center justify-center bg-cover bg-center">
+                    <div
+                      className="absolute inset-0 bg-cover bg-center opacity-15"
+                      style={{
+                        backgroundImage: `url(${createNextUrl(`/images/maps/${match.map_name}.png`)})`
+                      }}
+                    />
+                    <div className="relative z-10 font-black text-md sm:text-lg">
+                      {match.team1_score} - {match.team2_score}
+                    </div>
                   </div>
+
                   <div className="flex items-center justify-start ml-1 min-w-0">
                     <NextImageFallback
                       src={createTeamLogoUrl(match.team2_logo)}

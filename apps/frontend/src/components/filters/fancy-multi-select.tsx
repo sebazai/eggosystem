@@ -290,7 +290,7 @@ export function FancySelect<T>({
           {isOpen && (
             <div
               ref={scrollContainerRef}
-              className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto"
+              className="absolute top-0 z-20 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto"
             >
               <CommandGroup title="Select an option">
                 {isMulti && currentSelection.length > 0 && (
