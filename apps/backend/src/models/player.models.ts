@@ -108,7 +108,13 @@ export const getPlayersByFilters = async ({
     INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
+    ${
+      teamIdsJoin
+        ? `
+        INNER JOIN MatchTeams mt ON mt.match_id = m.id 
+        INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id`
+        : ""
+    }
     ${whereClause}
     GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC

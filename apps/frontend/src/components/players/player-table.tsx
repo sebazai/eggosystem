@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { cn, type FilterParamsQuery } from "@/lib/utils";
-import { usePlayerStats } from "@/hooks/data/filtered/usePlayersStats";
+import { useMultiplePlayersStats } from "@/hooks/data/filtered/useMultiplePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Tooltip,
@@ -53,10 +53,12 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   const [pageSize, setPageSize] = useState(initialPageSize ?? 20);
 
   // Get players data based on filters
-  const { players, isLoading, isError, isValidating } = usePlayerStats({
-    player_name: playerName || null,
-    ...filterQueryParams
-  });
+  const { players, isLoading, isError, isValidating } = useMultiplePlayersStats(
+    {
+      player_name: playerName || null,
+      ...filterQueryParams
+    }
+  );
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: SortDirection;

@@ -12,7 +12,10 @@ interface UsePlayersProps extends FilterParamsQuery {
   player_name?: Nullable<string>;
 }
 
-export const usePlayerStats = ({ player_name, ...params }: UsePlayersProps) => {
+export const useMultiplePlayersStats = ({
+  player_name,
+  ...params
+}: UsePlayersProps) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
   // Add player name search parameter if provided
