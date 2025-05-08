@@ -1,7 +1,7 @@
 import { type Request, type Response } from "express";
 import {
   getPlayerDetailsBySteamId,
-  getPlayersByFilters,
+  getMultiplePlayerStatsByFilters,
   getPlayerStatsWithFilters,
   getPlayerBySteamId,
   getPlayerMatchHistoryByFilters,
@@ -104,7 +104,7 @@ export const getFilteredPlayersStatsController = async (
 ) => {
   const { parsedParams } = req;
 
-  const playerStats = await getPlayersByFilters(parsedParams);
+  const playerStats = await getMultiplePlayerStatsByFilters(parsedParams);
 
   res.status(200).json(playerStats);
 };

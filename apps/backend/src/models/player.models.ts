@@ -51,7 +51,7 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   return results.length > 0 ? results[0] : undefined;
 };
 
-export const getPlayersByFilters = async ({
+export const getMultiplePlayerStatsByFilters = async ({
   season_ids,
   league_ids,
   team_ids,

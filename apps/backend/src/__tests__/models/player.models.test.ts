@@ -1,8 +1,11 @@
-import { getPlayersByFilters } from "../../models/player.models";
+import {
+  getMultiplePlayerStatsByFilters,
+  getPlayerStatsWithFilters
+} from "../../models/player.models";
 
-describe("getPlayersByFilters", () => {
+describe("getMultiplePlayerStatsByFilters", () => {
   it("correct data with filters season 14 and team 1650", async () => {
-    const result = await getPlayersByFilters({
+    const result = await getMultiplePlayerStatsByFilters({
       season_ids: [14],
       team_ids: [1650],
       league_ids: null,
@@ -123,7 +126,7 @@ describe("getPlayersByFilters", () => {
     ]);
   });
   it("correct data with filters season 11 and teams 282 and 890", async () => {
-    const result = await getPlayersByFilters({
+    const result = await getMultiplePlayerStatsByFilters({
       season_ids: [11],
       team_ids: [282, 890],
       league_ids: null,
@@ -334,7 +337,7 @@ describe("getPlayersByFilters", () => {
     ]);
   });
   it("correct data with filters season 11, team 282, stage 1, map 5", async () => {
-    const result = await getPlayersByFilters({
+    const result = await getMultiplePlayerStatsByFilters({
       season_ids: [11],
       team_ids: [282],
       league_ids: null,
@@ -438,7 +441,7 @@ describe("getPlayersByFilters", () => {
   });
   describe("with playerName search nzoj (enzoj)", () => {
     it("correct data with filters season 11, stage 2, maps 2 & 8, team 53", async () => {
-      const result = await getPlayersByFilters({
+      const result = await getMultiplePlayerStatsByFilters({
         season_ids: [11],
         team_ids: [53],
         league_ids: null,
@@ -468,7 +471,7 @@ describe("getPlayersByFilters", () => {
       ]);
     });
     it("correct data with filters season 11, stage 2, maps 2 & 8", async () => {
-      const result = await getPlayersByFilters({
+      const result = await getMultiplePlayerStatsByFilters({
         season_ids: [11],
         team_ids: null,
         league_ids: null,
@@ -496,6 +499,255 @@ describe("getPlayersByFilters", () => {
           kd: 1.15
         }
       ]);
+    });
+  });
+});
+
+describe("getPlayerStatsByFilters", () => {
+  it("should return aggregated stats when player has played as primary and substitute in one season", async () => {
+    const result = await getPlayerStatsWithFilters("76561198129692076", {
+      season_ids: [14],
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: null
+    });
+    expect(result).toEqual({
+      steam_id: "76561198129692076",
+      nickname: "Mixu",
+      maps_played: 24,
+      kills: 485,
+      assists: 162,
+      deaths: 396,
+      flash_assists: 4,
+      awp_kills: 0,
+      utility_damage: 4182,
+      headshots: 223,
+      first_kills: 73,
+      first_deaths: 70,
+      adr: 97.2625,
+      kana_rating: 1.00125,
+      hs_percent: 47.2917,
+      clutches_won: 7,
+      clutches_lost: 40,
+      kast: 72.8333,
+      enemies_flashed: 215,
+      mates_flashed: 116,
+      self_flashes: 50,
+      total_damage: 54009,
+      flashes_thrown: 195,
+      total_ef_duration: 566.6,
+      kd: 1.22,
+      multikill_2k: 0,
+      multikill_3k: 0,
+      multikill_4k: 0,
+      multikill_5k: 0,
+      rounds_played: 24
+    });
+  });
+  it("should return team specific stats when player has played in two teams during one season", async () => {
+    const result = await getPlayerStatsWithFilters("76561198129692076", {
+      season_ids: [14],
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: [2008]
+    });
+    expect(result).toEqual({
+      steam_id: "76561198129692076",
+      nickname: "Mixu",
+      maps_played: 19,
+      kills: 432,
+      assists: 138,
+      deaths: 314,
+      flash_assists: 4,
+      awp_kills: 0,
+      utility_damage: 3799,
+      headshots: 195,
+      first_kills: 64,
+      first_deaths: 57,
+      adr: 107.31053,
+      kana_rating: 1.081053,
+      hs_percent: 45.2105,
+      clutches_won: 7,
+      clutches_lost: 33,
+      kast: 74,
+      enemies_flashed: 187,
+      mates_flashed: 108,
+      self_flashes: 46,
+      total_damage: 47754,
+      flashes_thrown: 167,
+      total_ef_duration: 494.8,
+      kd: 1.38,
+      multikill_2k: 0,
+      multikill_3k: 0,
+      multikill_4k: 0,
+      multikill_5k: 0,
+      rounds_played: 19
+    });
+  });
+  it("player with two different teams in two different season using double season filter aggregates scores", async () => {
+    const result = await getPlayerStatsWithFilters("76561197967885016", {
+      season_ids: [11, 14],
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: null
+    });
+    expect(result).toEqual({
+      steam_id: "76561197967885016",
+      nickname: "enzoj",
+      maps_played: 41,
+      kills: 670,
+      assists: 217,
+      deaths: 704,
+      flash_assists: 67,
+      awp_kills: 18,
+      utility_damage: 6834,
+      headshots: 328,
+      first_kills: 116,
+      first_deaths: 131,
+      adr: 78.54878,
+      kana_rating: 0.882927,
+      hs_percent: 52.4146,
+      clutches_won: 5,
+      clutches_lost: 19,
+      kast: 72.7073,
+      enemies_flashed: 817,
+      mates_flashed: 473,
+      self_flashes: 272,
+      total_damage: 76616,
+      flashes_thrown: 883,
+      total_ef_duration: 2330.5,
+      kd: 0.95,
+      multikill_2k: 1,
+      multikill_3k: 0,
+      multikill_4k: 0,
+      multikill_5k: 0,
+      rounds_played: 41
+    });
+  });
+  it("player with double season but league specific filter", async () => {
+    const result = await getPlayerStatsWithFilters("76561197967885016", {
+      season_ids: [11, 14],
+      league_ids: [7],
+      map_ids: null,
+      stages: null,
+      team_ids: null
+    });
+    expect(result).toEqual({
+      steam_id: "76561197967885016",
+      nickname: "enzoj",
+      maps_played: 24,
+      kills: 438,
+      assists: 117,
+      deaths: 453,
+      flash_assists: 54,
+      awp_kills: 17,
+      utility_damage: 5535,
+      headshots: 193,
+      first_kills: 71,
+      first_deaths: 76,
+      adr: 77.4875,
+      kana_rating: 0.925,
+      hs_percent: 46.5,
+      clutches_won: 3,
+      clutches_lost: -3,
+      kast: 73.25,
+      enemies_flashed: 516,
+      mates_flashed: 239,
+      self_flashes: 184,
+      total_damage: 49840,
+      flashes_thrown: 612,
+      total_ef_duration: 1597.8,
+      kd: 0.97,
+      multikill_2k: 0,
+      multikill_3k: 0,
+      multikill_4k: 0,
+      multikill_5k: 0,
+      rounds_played: 24
+    });
+  });
+  it("with season, stage and mapid filters", async () => {
+    const result = await getPlayerStatsWithFilters("76561197967885016", {
+      season_ids: [11, 14],
+      league_ids: null,
+      map_ids: [8],
+      stages: [2],
+      team_ids: null
+    });
+    expect(result).toEqual({
+      steam_id: "76561197967885016",
+      nickname: "enzoj",
+      maps_played: 2,
+      kills: 22,
+      assists: 8,
+      deaths: 28,
+      flash_assists: 2,
+      awp_kills: 2,
+      utility_damage: 132,
+      headshots: 11,
+      first_kills: 3,
+      first_deaths: 6,
+      adr: 65.7,
+      kana_rating: 0.8,
+      hs_percent: 72.5,
+      clutches_won: 0,
+      clutches_lost: 0,
+      kast: 66.5,
+      enemies_flashed: 27,
+      mates_flashed: 10,
+      self_flashes: 9,
+      total_damage: 2486,
+      flashes_thrown: 28,
+      total_ef_duration: 88.6,
+      kd: 0.79,
+      multikill_2k: 1,
+      multikill_3k: 0,
+      multikill_4k: 0,
+      multikill_5k: 0,
+      rounds_played: 2
+    });
+  });
+  it("with wrong team filter", async () => {
+    const result = await getPlayerStatsWithFilters("76561197967885016", {
+      season_ids: [11, 14],
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: [2109]
+    });
+    expect(result).toEqual({
+      steam_id: null,
+      nickname: null,
+      maps_played: 0,
+      kills: null,
+      assists: null,
+      deaths: null,
+      flash_assists: null,
+      awp_kills: null,
+      utility_damage: null,
+      headshots: null,
+      first_kills: null,
+      first_deaths: null,
+      adr: null,
+      kana_rating: null,
+      hs_percent: null,
+      clutches_won: null,
+      clutches_lost: null,
+      kast: null,
+      enemies_flashed: null,
+      mates_flashed: null,
+      self_flashes: null,
+      total_damage: null,
+      flashes_thrown: null,
+      total_ef_duration: null,
+      kd: null,
+      multikill_2k: null,
+      multikill_3k: null,
+      multikill_4k: null,
+      multikill_5k: null,
+      rounds_played: 0
     });
   });
 });
