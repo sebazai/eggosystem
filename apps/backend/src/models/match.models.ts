@@ -126,6 +126,7 @@ export const getMatchesByFilters = async ({
           m.match_date,
           l.name AS league_name,
           m.stage,
+          map.name AS map_name,
           t1.name AS team1_name,
           t1.team_logo AS team1_logo,
           t2.name AS team2_name,
@@ -144,6 +145,7 @@ export const getMatchesByFilters = async ({
           END AS team2_score
       FROM Matches m
       JOIN MatchGames mmp ON m.id = mmp.match_id
+      JOIN Maps map ON map.id = mmp.map_id
       JOIN Leagues l ON m.league_id = l.id
       JOIN TeamGameScores tms1 ON mmp.id = tms1.game_id
       JOIN Teams t1 ON tms1.team_id = t1.id
