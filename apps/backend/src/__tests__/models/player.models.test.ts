@@ -2,7 +2,8 @@ import {
   getMultiplePlayerStatsByFilters,
   getPlayerGameDetailsWithFilters,
   getPlayerMatchHistoryByFilters,
-  getPlayerStatsWithFilters
+  getPlayerStatsWithFilters,
+  getPlayerTeamDetailsWithFilters
 } from "../../models/player.models";
 
 describe("getMultiplePlayerStatsByFilters", () => {
@@ -521,6 +522,70 @@ describe("getMultiplePlayerStatsByFilters", () => {
         }
       ]);
     });
+  });
+});
+
+describe("getPlayerTeamDetailsWithFilters", () => {
+  it("should return 7dos and PS for enzoj", async () => {
+    const result = await getPlayerTeamDetailsWithFilters("76561197967885016", {
+      season_ids: null,
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: null
+    });
+    expect(result).toEqual([
+      {
+        steam_id: "76561197967885016",
+        nickname: "enzoj",
+        team_name: "7dos",
+        team_id: 1650,
+        team_logo: "S14_2058.png"
+      },
+      {
+        steam_id: "76561197967885016",
+        nickname: "enzoj",
+        team_name: "Polar Squad",
+        team_id: 53,
+        team_logo: "S13_1935.png"
+      }
+    ]);
+  });
+  it("should return 7dos for enzoj in season 14", async () => {
+    const result = await getPlayerTeamDetailsWithFilters("76561197967885016", {
+      season_ids: [14],
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: null
+    });
+    expect(result).toEqual([
+      {
+        steam_id: "76561197967885016",
+        nickname: "enzoj",
+        team_name: "7dos",
+        team_id: 1650,
+        team_logo: "S14_2058.png"
+      }
+    ]);
+  });
+  it("should return 7dos for enzoj with team 1650", async () => {
+    const result = await getPlayerTeamDetailsWithFilters("76561197967885016", {
+      season_ids: null,
+      league_ids: null,
+      map_ids: null,
+      stages: null,
+      team_ids: [1650]
+    });
+    expect(result).toEqual([
+      {
+        steam_id: "76561197967885016",
+        nickname: "enzoj",
+        team_name: "7dos",
+        team_id: 1650,
+        team_logo: "S14_2058.png"
+      }
+    ]);
   });
 });
 
