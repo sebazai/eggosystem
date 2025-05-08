@@ -22,7 +22,7 @@ export default function AllMatches() {
           leagues={filterParams.leagues}
           stages={filterParams.stages}
           teams={filterParams.teams}
-          maps={null}
+          maps={filterParams.maps}
         />
       </div>
 

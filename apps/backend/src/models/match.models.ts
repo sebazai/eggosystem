@@ -118,6 +118,8 @@ export const getMatchesByFilters = async ({
     { column: "mmp.map_id", value: map_ids }
   ]);
 
+  const mapFilterPresent = map_ids && map_ids.length > 0;
+
   const baseQuery = `
       SELECT 
           m.id AS match_id,
@@ -133,30 +135,23 @@ export const getMatchesByFilters = async ({
             ELSE NULL
           END AS game_id,
           CASE 
-              WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)
+              ${!mapFilterPresent ? "WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score > tms2.score THEN 1 ELSE 0 END)" : "WHEN 1=1 THEN tms1.score"}
               ELSE tms1.score
           END AS team1_score,
           CASE 
-              WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)
+              ${!mapFilterPresent ? "WHEN m.best_of != 1 THEN SUM(CASE WHEN tms1.score < tms2.score THEN 1 ELSE 0 END)" : "WHEN 1=1 THEN tms2.score"}
               ELSE tms2.score
           END AS team2_score
-      FROM 
-          Matches m
-      JOIN 
-          MatchGames mmp ON m.id = mmp.match_id
-      JOIN 
-          Leagues l ON m.league_id = l.id
-      JOIN 
-          TeamGameScores tms1 ON mmp.id = tms1.game_id
-      JOIN 
-          Teams t1 ON tms1.team_id = t1.id
-      JOIN 
-          TeamGameScores tms2 ON mmp.id = tms2.game_id AND tms1.team_id < tms2.team_id
-      JOIN 
-          Teams t2 ON tms2.team_id = t2.id
+      FROM Matches m
+      JOIN MatchGames mmp ON m.id = mmp.match_id
+      JOIN Leagues l ON m.league_id = l.id
+      JOIN TeamGameScores tms1 ON mmp.id = tms1.game_id
+      JOIN Teams t1 ON tms1.team_id = t1.id
+      JOIN TeamGameScores tms2 ON mmp.id = tms2.game_id AND tms1.team_id < tms2.team_id
+      JOIN Teams t2 ON tms2.team_id = t2.id
       WHERE ${query}
       GROUP BY 
-          m.id, m.match_date, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo
+          ${!mapFilterPresent ? "m.id, m.match_date, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo" : "mmp.id, l.name, m.stage, t1.name, t1.team_logo, t2.name, t2.team_logo"}
       ORDER BY 
           m.match_date DESC ${query === "1=1" ? "LIMIT 500" : "LIMIT 100"}`;
   return runQuery<MatchesByFilters[]>(baseQuery, queryParams);

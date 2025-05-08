@@ -5,7 +5,7 @@ import { ContentContainer } from "@/components/layout/content-container";
 import { TeamMatchHistory } from "./team-match-history";
 import { TeamMapStats } from "./team-map-stats";
 import { TeamWinLossDetails } from "./team-win-loss";
-import { useFilteredTeamById } from "@/hooks/data/filtered/useFilteredTeam";
+import { useFilteredTeamById } from "@/hooks/data/filtered/useFilteredTeamById";
 import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface TeamTableProps {
