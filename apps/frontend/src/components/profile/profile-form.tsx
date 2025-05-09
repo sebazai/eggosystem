@@ -180,7 +180,7 @@ const ProfileFormInputs = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 max-w-md"
+        className="space-y-4 max-w-md mx-2"
       >
         <FormField
           control={form.control}

@@ -252,12 +252,9 @@ export const TabPlayers = ({
             setValue(`players.${index}.hasValidData`, hasValidDataBool);
 
             const isValidWorkEmail = Boolean(data.is_valid_work_email);
-            if (isValidWorkEmail) {
-              setValue(
-                `players.${index}.hasValidWorkEmail`,
-                Boolean(data.is_valid_work_email)
-              );
-            } else {
+            setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
+
+            if (!isValidWorkEmail) {
               // Check if organizer has approved manually
               if (watchTeamId) {
                 const approvedByOrganizer = await clientApiFetch<{

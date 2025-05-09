@@ -17,7 +17,7 @@ export default async function TeamSignupEditPage({
   return (
     <div>
       <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-4">
-        <div className="min-w-xxs sm:min-w-xl space-y-6">
+        <div className="sm:min-w-xl space-y-6">
           <SignupEditForm
             seasonId={season}
             teamId={teamId}

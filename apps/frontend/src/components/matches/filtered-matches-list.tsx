@@ -52,8 +52,8 @@ export const FilteredMatchesList = ({
                 }
               >
                 <div className="grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md">
-                  <div className="flex items-center justify-end min-w-0">
-                    <div className="min-w-0 text-right xs:break-normal break-words text-sm sm:text-base mr-1">
+                  <div className="flex items-center justify-end">
+                    <div className="text-right xs:break-normal break-words text-sm sm:text-base mr-1">
                       {match.team1_name}
                     </div>
                     <NextImageFallback
@@ -74,7 +74,7 @@ export const FilteredMatchesList = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-start ml-1 min-w-0">
+                  <div className="flex items-center justify-start ml-1">
                     <NextImageFallback
                       src={createTeamLogoUrl(match.team2_logo)}
                       alt={match.team2_name}
@@ -82,7 +82,7 @@ export const FilteredMatchesList = ({
                       height={30}
                       className="w-6 h-6 sm:w-8 sm:h-8 mr-1 object-contain hidden xxs:block"
                     />
-                    <div className="min-w-0 text-left xs:break-normal break-words text-sm sm:text-base ml-1">
+                    <div className="text-left xs:break-normal break-words text-sm sm:text-base ml-1">
                       {match.team2_name}
                     </div>
                   </div>

@@ -4,13 +4,7 @@ import { ContentContainer } from "@/components/layout/content-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { useEffect, useMemo, useState } from "react";
@@ -34,6 +28,7 @@ import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/copy-input";
 import { envConfig } from "@/configs/env";
 import { Checkbox } from "../ui/checkbox";
+import { RequiredFormLabel } from "../ui/required-form-label";
 
 interface SignupFormProps {
   seasonId: string;
@@ -307,7 +302,7 @@ export const SignupForm = ({
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              className="space-y-6"
+              className="space-y-2 md:space-y-6"
             >
               <TabsList className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 h-full w-full">
                 <TabsTrigger
@@ -430,7 +425,7 @@ export const SignupForm = ({
               control={control}
               name={"captainHasReadTermAndConditions"}
               render={({ field }) => (
-                <FormItem className="flex items-center gap-2">
+                <FormItem className="flex items-center gap-4">
                   <FormControl>
                     <Checkbox
                       checked={field.value}
@@ -442,16 +437,16 @@ export const SignupForm = ({
                       }
                     />
                   </FormControl>
-                  <FormLabel className="cursor-pointer">
+                  <RequiredFormLabel className="flex flex-wrap items-center gap-2">
                     I have read and understood the
                     <Link
-                      className="text-kanaliiga-orange hover:underline"
+                      className="text-kanaliiga-orange hover:underline whitespace-nowrap"
                       href={"https://wiki.kanaliiga.fi/CS2/Registration"}
                       target="_blank"
                     >
                       terms and conditions
                     </Link>
-                  </FormLabel>
+                  </RequiredFormLabel>
                 </FormItem>
               )}
             />
