@@ -69,18 +69,28 @@ export function MatchHeader({
         {/* Score */}
         <div className="flex flex-col items-center gap-1">
           <div className="flex items-center gap-4">
-            <span className="text-xl xs:text-4xl font-bold">{team1.score}</span>
-            <span className="text-xs xs:text-lg text-zinc-400 uppercase">
-              &mdash;
+            <span
+              className={cn(
+                "text-xl xs:text-4xl font-bold",
+                team1.score > team2.score && "text-green-600"
+              )}
+            >
+              {team1.score}
             </span>
-            <span className="text-xl xs:text-4xl font-bold">{team2.score}</span>
+            <span className="text-xs xs:text-lg">&mdash;</span>
+            <span
+              className={cn(
+                "text-xl xs:text-4xl font-bold",
+                team1.score > team2.score && "text-red-600"
+              )}
+            >
+              {team2.score}
+            </span>
           </div>
-          <div className="text-tiny md:text-sm text-zinc-400">
+          <div className="text-tiny md:text-sm">
             {formattedStart}–{formattedEnd}
           </div>
-          <div className="text-xxs sm:text-sm text-zinc-400">
-            {formattedDate}
-          </div>
+          <div className="text-xxs sm:text-sm">{formattedDate}</div>
         </div>
 
         {/* Team 2 */}

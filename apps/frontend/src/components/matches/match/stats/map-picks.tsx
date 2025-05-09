@@ -34,18 +34,18 @@ export const MatchMapPicks = ({
                   }}
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-l from-white/60 via-white/30 dark:from-black/60 dark:via-black/30 to-transparent" />
 
-                <div className="absolute bottom-1 left-1 right-1 text-muted-foreground text-xs sm:text-sm font-semibold z-10">
+                <div className="absolute bottom-1 left-1 right-1 text-xs sm:text-sm font-semibold z-10">
                   {mapToReadableName(map.map_name)}
                 </div>
 
                 <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
-                  <span className="text-white text-lg w-6 font-black text-center">
+                  <span className="text-lg w-6 font-black text-center">
                     {map.team1_score}
                   </span>
-                  <span className="text-white text-md">-</span>
-                  <span className="text-white text-lg w-6 font-black text-center">
+                  <span className="text-md">-</span>
+                  <span className="text-lg w-6 font-black text-center">
                     {map.team2_score}
                   </span>
                 </div>
