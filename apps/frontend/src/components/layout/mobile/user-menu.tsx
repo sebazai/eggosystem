@@ -3,6 +3,7 @@ import { SteamLoginButton } from "@/components/profile/steam-login";
 import { useAuth } from "@/context/AuthContext";
 import { SettingsIcon } from "lucide-react";
 import Link from "next/link";
+import { ModeToggle } from "../theme-toggle";
 
 interface MobileUserMenuProps {
   setIsSheetOpen: (isOpen: boolean) => void;
@@ -11,7 +12,7 @@ interface MobileUserMenuProps {
 export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
   const { user, logout } = useAuth();
   return (
-    <div className="flex items-center justify-between p-4">
+    <div className="flex flex-wrap items-center gap-4 justify-between p-4">
       {user ? (
         <MobileLogOut logOutUser={() => logout()} />
       ) : (
@@ -25,6 +26,9 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
           </Link>
         </div>
       ) : null}
+      <div>
+        <ModeToggle />
+      </div>
     </div>
   );
 };

@@ -51,7 +51,7 @@ export const FilteredMatchesList = ({
                     : `/matches/${match.match_id}`
                 }
               >
-                <div className="grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:bg-background-90 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md">
+                <div className="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted">
                   <div className="flex items-center justify-end">
                     <div className="text-right xs:break-normal break-words text-sm sm:text-base mr-1">
                       {match.team1_name}
