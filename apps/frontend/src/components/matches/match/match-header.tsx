@@ -26,7 +26,11 @@ export function MatchHeader({
 
   const formatDate = (date: Date) =>
     date
-      .toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+      .toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "2-digit"
+      })
       .toUpperCase();
 
   const formattedStart = formatTime(startDate);
@@ -42,26 +46,23 @@ export function MatchHeader({
     >
       <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
         {/* Team 1 */}
-        <div className="flex items-center gap-4 flex-1">
-          <div className="flex flex-col items-start">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold px-2 py-1 text-kanaliiga-orange">
-                {team1.name}
-              </span>
-              <div className="h-8 w-8 relative hidden xs:block">
-                <NextImageFallback
-                  src={createTeamLogoUrl(team1.logo)}
-                  alt={`${team1.name} logo`}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
-            {team1.rank && (
-              <span className="text-sm text-zinc-400">
-                Ranking #{team1.rank}
-              </span>
-            )}
+        <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start">
+            <span className="text-md md:text-xl font-bold px-2 py-1">
+              {team1.name}
+            </span>
+
+            <span className="text-xs md:text-sm text-zinc-400 px-2">
+              Ranking #{team1.rank}
+            </span>
+          </div>
+          <div className="h-10 w-10 md:h-14 md:w-14 relative">
+            <NextImageFallback
+              src={createTeamLogoUrl(team1.logo)}
+              alt={`${team1.name} logo`}
+              fill
+              className="object-contain"
+            />
           </div>
         </div>
 
@@ -70,37 +71,36 @@ export function MatchHeader({
           <div className="flex items-center gap-4">
             <span className="text-xl xs:text-4xl font-bold">{team1.score}</span>
             <span className="text-xs xs:text-lg text-zinc-400 uppercase">
-              vs
+              &mdash;
             </span>
             <span className="text-xl xs:text-4xl font-bold">{team2.score}</span>
           </div>
-          <div className="text-sm text-zinc-400">
+          <div className="text-tiny md:text-sm text-zinc-400">
             {formattedStart}–{formattedEnd}
           </div>
-          <div>{formattedDate}</div>
+          <div className="text-xxs sm:text-sm text-zinc-400">
+            {formattedDate}
+          </div>
         </div>
 
         {/* Team 2 */}
-        <div className="flex items-center gap-4 flex-1 justify-end">
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 relative hidden xs:block">
-                <NextImageFallback
-                  src={createTeamLogoUrl(team2.logo)}
-                  alt={`${team2.name} logo`}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-xl font-bold px-2 py-1 text-kanaliiga-orange">
-                {team2.name}
-              </span>
-            </div>
-            {team2.rank && (
-              <span className="text-sm text-zinc-400">
-                Ranking #{team2.rank}
-              </span>
-            )}
+        <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start">
+            <span className="text-md md:text-xl font-bold px-2 py-1">
+              {team2.name}
+            </span>
+
+            <span className="text-xs md:text-sm text-zinc-400 px-2">
+              Ranking #{team2.rank}
+            </span>
+          </div>
+          <div className="h-10 w-10 md:h-14 md:w-14 relative">
+            <NextImageFallback
+              src={createTeamLogoUrl(team2.logo)}
+              alt={`${team2.name} logo`}
+              fill
+              className="object-contain"
+            />
           </div>
         </div>
       </div>

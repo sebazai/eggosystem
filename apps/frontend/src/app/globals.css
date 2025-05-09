@@ -85,6 +85,8 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
 }
 
 @theme inline {
+  --text-tiny: 0.5rem;
+  --text-xxs: 0.625rem;
   --breakpoint-xxs: 22rem;
   --breakpoint-xs: 30rem;
   --breakpoint-3xl: 120rem;
@@ -155,6 +157,10 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  html {
+    font-size: 14px;
   }
 
   body > * {

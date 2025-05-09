@@ -69,7 +69,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   }
 
   return (
-    <CardContainer>
+    <>
       <div className="px-4 pt-4">
         <AutoBreadcrumbs />
       </div>
@@ -81,7 +81,9 @@ export default async function Layout({ children, params }: LayoutProps) {
         matchStartTime={matchInfo.start_time}
         matchEndTime={matchInfo.end_time}
       />
-      <div className="p-2">{children}</div>
-    </CardContainer>
+      <CardContainer classNames="rounded-none">
+        <div className="p-2">{children}</div>
+      </CardContainer>
+    </>
   );
 }
