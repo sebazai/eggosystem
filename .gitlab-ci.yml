@@ -143,6 +143,7 @@ stages:
   - security
   - test
   - build
+  - test-e2e
   - build-docker
   # - post-build
   - on-demand-env
@@ -261,6 +262,38 @@ build:backend:
   extends: [.prepare-pnpm, .mr-backend]
   script:
     - npx turbo run build --filter='!frontend' --cache=remote:rw
+
+test-e2e:frontend:
+  image: mcr.microsoft.com/playwright:v1.52.0-jammy
+  stage: test-e2e
+  services:
+    - name: bitnami/mariadb:11.4.2
+      alias: eggo-devdb
+  extends: [.mr-all-app]
+  variables:
+    <<: *overwrite-variables
+    MARIADB_MAX_ALLOWED_PACKET: 128M
+    MARIADB_INNODB_LOG_FILE_SIZE: 64M
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@10.8.1 --activate
+    - export $(grep -v '^#' .env.development | xargs)
+    - pnpm config set registry http://172.17.0.1:4873
+    - pnpm install --frozen-lockfile
+    - pnpm --filter="@eggosystem/types" build
+    - pnpm --filter=backend seed
+    - pnpm --filter=backend seed:test
+  script:
+    - unset NODE_ENV
+    - pnpm --filter=frontend test:e2e
+  allow_failure: true
+  artifacts:
+    when: always
+    paths:
+      - apps/frontend/playwright-report/
+      - apps/frontend/test-results/
+    reports:
+      junit: apps/frontend/test-results/junit-report.xml
 
 # Backend job
 build-dockerfile:backend:

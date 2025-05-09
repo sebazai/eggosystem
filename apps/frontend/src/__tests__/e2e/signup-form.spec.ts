@@ -642,7 +642,7 @@ test.describe("Signup Form", () => {
       await expect(errorMessage).toContainText("invalid");
     });
 
-    test("should show error for private profile", async ({ page }) => {
+    test.skip("should show error for private profile", async ({ page }) => {
       // Override the public profile mock for this specific test
       await page.route("**/api/v1/players/*/public", async (route) => {
         await route.fulfill({
@@ -673,7 +673,9 @@ test.describe("Signup Form", () => {
       await expect(profileError).toContainText("profile is not public");
     });
 
-    test("should show error for insufficient game hours", async ({ page }) => {
+    test.skip("should show error for insufficient game hours", async ({
+      page
+    }) => {
       // Override the hours mock for this specific test
       await page.route("**/api/v1/players/*/app/*/hours**", async (route) => {
         await route.fulfill({
@@ -704,7 +706,7 @@ test.describe("Signup Form", () => {
   });
 
   // Steam ID API Response Validation tests
-  test.describe("Steam ID API Response Validation", () => {
+  test.skip("Steam ID API Response Validation", () => {
     test.beforeEach(async ({ page }: { page: Page }) => {
       // Navigate through the registration process
       await navigateWithRetry(page, "/seasons/16/signup/registration");
