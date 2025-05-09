@@ -11,14 +11,8 @@ export const useMatchMaps = (matchId: number) => {
     { revalidateOnFocus: false }
   );
 
-  // Format map names: remove "de_" prefix and capitalize
-  const formattedMaps = data?.map((map) => ({
-    ...map,
-    map_name: map.map_name.replace("de_", "").toUpperCase()
-  }));
-
   return {
-    maps: formattedMaps,
+    maps: data,
     isLoading: !data && !error,
     isError: error,
     isValidating

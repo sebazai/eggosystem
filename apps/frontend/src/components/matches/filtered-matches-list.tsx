@@ -84,28 +84,6 @@ export const FilteredMatchesList = ({
                   </div>
                 </div>
               </Link>
-              {/* <div className="flex flex-wrap justify-center gap-2 mt-1">
-                {match.map_name.split(",").map((map) => (
-                  <div
-                    key={`${map}-${match.match_id}`}
-                    className="relative flex-1 min-w-[120px] max-w-[calc(33.33%-0.5rem)] h-10 rounded-lg overflow-hidden"
-                  >
-                    <div
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url(${createNextUrl(`/images/maps/${map.trim()}.png`)})`,
-                        filter: "brightness(0.5)"
-                      }}
-                    />
-
-                    <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/60 to-transparent" />
-
-                    <div className="absolute bottom-1 left-1 right-1 text-muted-foreground text-xs sm:text-sm font-semibold z-10">
-                      {mapToReadableName(map)}
-                    </div>
-                  </div>
-                ))}
-              </div> */}
             </div>
           ))}
         </div>
