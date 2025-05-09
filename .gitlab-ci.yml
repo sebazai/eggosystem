@@ -284,7 +284,7 @@ test-e2e:frontend:
     - pnpm --filter="@eggosystem/types" build
     - pnpm --filter=backend seed # Run regular seeding
     - pnpm --filter=backend seed:e2e # Run seeding for test environment
-    - pnpm --filter=backend dev
+    - pnpm --filter=backend dev &
   script:
     - unset NODE_ENV
     - pnpm --filter=frontend test:e2e
