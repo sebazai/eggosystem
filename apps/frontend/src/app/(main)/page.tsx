@@ -87,7 +87,7 @@ export default async function Home() {
                 </Card>
               </Link>
               <Link href={createNextUrl("/teams")}>
-                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.total_teams}+
@@ -99,7 +99,7 @@ export default async function Home() {
                 </Card>
               </Link>
               <Link href={createNextUrl("/players")}>
-                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.unique_players}+
@@ -111,7 +111,7 @@ export default async function Home() {
                 </Card>
               </Link>
               <Link href={createNextUrl("/matches")}>
-                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.total_games}+
