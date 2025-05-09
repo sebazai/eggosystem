@@ -61,12 +61,16 @@ export const FilteredMatchesList = ({
                       alt={match.team1_name}
                       width={30}
                       height={30}
-                      className="w-6 h-6 sm:w-8 sm:h-8 ml-1 object-contain hidden xxs:block"
+                      className="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                     />
                   </div>
-                  <div className="relative h-full min-w-15 md:min-w-18 flex items-center justify-center bg-cover bg-center bg-kanaliiga-orange/20">
-                    <div className="relative z-10 font-black text-md sm:text-lg">
-                      {match.team1_score} - {match.team2_score}
+                  <div className="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-orange/20 rounded-xs">
+                    <div className="z-10 w-7 font-black text-md sm:text-lg text-center">
+                      {match.team1_score}
+                    </div>
+                    <span className="mx-1 md:mx-2">&mdash;</span>
+                    <div className="z-10 w-7 font-black text-md sm:text-lg text-center">
+                      {match.team2_score}
                     </div>
                   </div>
 

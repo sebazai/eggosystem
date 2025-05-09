@@ -40,12 +40,12 @@ export const MatchMapPicks = ({
                   {mapToReadableName(map.map_name)}
                 </div>
 
-                <div className="flex items-center gap-3 p-3 z-10 w-full justify-end">
-                  <span className="text-muted-foreground text-lg">
+                <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
+                  <span className="text-white text-lg w-6 font-black text-center">
                     {map.team1_score}
                   </span>
-                  <span className="text-muted-foreground text-lg">-</span>
-                  <span className="text-muted-foreground text-lg">
+                  <span className="text-white text-md">-</span>
+                  <span className="text-white text-lg w-6 font-black text-center">
                     {map.team2_score}
                   </span>
                 </div>
