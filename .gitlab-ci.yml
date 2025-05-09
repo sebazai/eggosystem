@@ -281,8 +281,9 @@ test-e2e:frontend:
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - pnpm --filter="@eggosystem/types" build
-    - pnpm --filter=backend seed
-    - pnpm --filter=backend seed:test
+    - pnpm --filter=backend seed # Run regular seeding
+    - pnpm --filter=backend seed:e2e # Run seeding for test environment
+    - pnpm --filter=backend dev
   script:
     - unset NODE_ENV
     - pnpm --filter=frontend test:e2e
