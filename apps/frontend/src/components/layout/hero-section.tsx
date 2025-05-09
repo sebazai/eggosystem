@@ -209,7 +209,8 @@ export default function HeroSection({ device }: HeroSectionProps) {
                   onClick={() => {
                     router.push("/seasons/16/signup");
                   }}
-                  className="text-lg py-2 px-6 sm:px-10 sm:py-8 hover:bg-primary/80 transition-colors duration-300"
+                  variant="outline"
+                  className="text-lg py-2 px-6 sm:px-10 sm:py-8"
                 >
                   Sign Up Now
                 </Button>
