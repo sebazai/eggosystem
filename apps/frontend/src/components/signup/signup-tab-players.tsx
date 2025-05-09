@@ -416,6 +416,7 @@ export const TabPlayers = ({
                               className="w-full"
                               onClick={(e) => e.stopPropagation()}
                               disabled={loadingStates[index]}
+                              data-testid={`steam-id-input-${index}`}
                               onChange={(e) => {
                                 const newValue = e.target.value;
                                 const oldValue = field.value;
@@ -459,7 +460,7 @@ export const TabPlayers = ({
                             )}
                           </div>
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage data-testid={`steam-id-error-${index}`} />
                       </FormItem>
                     )}
                   />
@@ -562,6 +563,7 @@ export const TabPlayers = ({
                             {...field}
                             onClick={(e) => e.stopPropagation()}
                             disabled={true}
+                            data-testid={`player-name-${index}`}
                           />
                         </FormControl>
                         <FormMessage />
@@ -578,7 +580,11 @@ export const TabPlayers = ({
                         <FormItem className="py-1 sm:py-2">
                           <FormLabel>Discord</FormLabel>
                           <FormControl>
-                            <Input disabled={true} {...field} />
+                            <Input
+                              disabled={true}
+                              {...field}
+                              data-testid={`player-discord-${index}`}
+                            />
                           </FormControl>
                           <FormDescription className="text-primary text-xs pb-1">
                             {player.discord ? (
@@ -662,13 +668,17 @@ export const TabPlayers = ({
                     )}
 
                   {player.isProfilePublic === false && (
-                    <SignupPlayerNotification>
+                    <SignupPlayerNotification
+                      data-testid={`profile-privacy-error-${index}`}
+                    >
                       Player steam profile is not public
                     </SignupPlayerNotification>
                   )}
 
                   {player.hours === -1 && (
-                    <SignupPlayerNotification>
+                    <SignupPlayerNotification
+                      data-testid={`hours-error-${index}`}
+                    >
                       Could not detect the hours for the player. Please open a
                       ticket in the Kanaliiga Discord.
                     </SignupPlayerNotification>
@@ -677,7 +687,9 @@ export const TabPlayers = ({
                   {player.rank === -1 &&
                     player.externalRank === -1 &&
                     platform !== SeasonPlatform.Kanaliiga && (
-                      <SignupPlayerNotification>
+                      <SignupPlayerNotification
+                        data-testid={`rank-error-${index}`}
+                      >
                         {`Could not detect external ${platform.toLocaleUpperCase()} or game internal rank for the player. Please open a
                       ticket in the Kanaliiga Discord.`}
                       </SignupPlayerNotification>

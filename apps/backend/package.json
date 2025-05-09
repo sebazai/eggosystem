@@ -16,6 +16,7 @@
     "migrate:make": "knex migrate:make",
     "seed": "knex seed:run --specific=dev_seed.ts ",
     "reseed": "knex seed:run --specific=reset_seed.ts && knex seed:run",
+    "seed:e2e": "knex seed:run --specific=e2e_test_seed.ts",
     "check-types": "tsc --noEmit"
   },
   "keywords": [

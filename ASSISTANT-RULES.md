@@ -60,3 +60,19 @@ This document defines rules and preferences for the AI assistant when interactin
 - **Dynamic JOIN Types**: Use dynamic JOIN types based on filter presence. For team filtering, use: `const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";` to prevent data exclusion when filters aren't applied.
 - **Leagues Table References**: When filtering by league_ids, always join to the Leagues table explicitly and use `l.id` instead of `m.league_id` in WHERE clauses.
 - **Query Debugging**: Include query and parameter logging for easier debugging of SQL queries, especially for filtering operations.
+
+## 6. Frontend Testing Best Practices
+
+- **Data-Testid Attributes**: Always use `data-testid` attributes for elements that need to be selected in tests. Never rely on text content, labels, or generic selectors that could change.
+- **Test Selector Stability**: For custom components like dropdowns, add `data-testid` attributes to all interactive parts (inputs, toggles, options).
+- **Mocking API Responses**: When testing components that make API calls, always mock the backend responses with realistic data matching the expected API schema.
+- **Form Testing**: When testing multi-step forms:
+  - Mock all API endpoints the form will call during the process
+  - Add specific test identifiers to form fields, buttons, and validation messages
+  - Check for both enabled/disabled states of navigation buttons
+  - Test form validation by attempting both valid and invalid inputs
+- **Dropdown Testing**: When testing custom dropdown components like FancySelect:
+  - Use `data-testid` attributes with the format `${filter}-dropdown-toggle`, `${filter}-add-new`, etc.
+  - Test the open/close state of dropdowns and selection of options
+  - Test "Add new" or "Other" options if available
+- **Component Interaction**: When testing component interactions, favor data-testid selectors over getByRole or getByText for better stability.

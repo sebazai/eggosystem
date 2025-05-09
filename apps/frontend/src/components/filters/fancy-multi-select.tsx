@@ -201,6 +201,7 @@ export function FancySelect<T>({
       className="overflow-visible bg-transparent"
       ref={containerRef}
       shouldFilter={false}
+      data-testid={`fancy-select-${filter}`}
     >
       <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
@@ -263,10 +264,12 @@ export function FancySelect<T>({
                 : placeholder
             }
             className="ml-2 flex-1 bg-transparent min-w-[50px] outline-none placeholder:text-muted-foreground"
+            data-testid={`${filter}-input`}
           />
           <div
             onClick={() => (isOpen ? setOpen(null) : setOpen(filter))}
             className="ml-2 text-muted-foreground hover:text-ring focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex items-center cursor-pointer"
+            data-testid={`${filter}-dropdown-toggle`}
           >
             {isValidating && !disabled && (
               <div className="relative">
@@ -291,6 +294,7 @@ export function FancySelect<T>({
             <div
               ref={scrollContainerRef}
               className="absolute top-0 z-20 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in max-h-50 overflow-y-auto"
+              data-testid={`${filter}-dropdown`}
             >
               <CommandGroup title="Select an option">
                 {isMulti && currentSelection.length > 0 && (
@@ -302,6 +306,7 @@ export function FancySelect<T>({
                     }}
                     onSelect={handleClearAll}
                     className="cursor-pointer font-semibold"
+                    data-testid={`${filter}-clear-all`}
                   >
                     Clear filters...
                   </CommandItem>
@@ -318,6 +323,7 @@ export function FancySelect<T>({
                       handleSelected({ label: "Other", value: -1 as T });
                     }}
                     className="cursor-pointer"
+                    data-testid={`${filter}-add-new`}
                   >
                     {allowOtherText}
                   </CommandItem>
@@ -332,6 +338,7 @@ export function FancySelect<T>({
                     }}
                     onSelect={() => handleSelected(item)}
                     className="cursor-pointer"
+                    data-testid={`${filter}-option-${item.value}`}
                   >
                     {item.label}
                   </CommandItem>
@@ -348,6 +355,7 @@ export function FancySelect<T>({
                       setInputValue("");
                     }}
                     className="cursor-pointer"
+                    data-testid={`${filter}-no-results`}
                   >
                     No results (Clear search)
                   </CommandItem>

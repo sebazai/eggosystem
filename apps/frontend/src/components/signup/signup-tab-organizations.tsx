@@ -121,6 +121,7 @@ export const TabOrganization = ({
         className="mt-5 w-full"
         disabled={!validOrganizationSelection}
         onClick={() => onNext("team")}
+        data-testid="team-selection-button"
       >
         Team selection
       </Button>

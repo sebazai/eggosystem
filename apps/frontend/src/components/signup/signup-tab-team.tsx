@@ -165,6 +165,7 @@ export const TabTeam = ({
           checked={fetchTeamsWithoutOrg}
           disabled={isEditMode}
           onCheckedChange={(checked) => setFetchTeamsWithoutOrg(!!checked)}
+          data-testid="toggle-teams-without-org"
         />
         <label
           htmlFor="toggleTeamsWithoutOrg"
@@ -176,7 +177,7 @@ export const TabTeam = ({
 
       {/* Custom Team Input (Only if "Other" is selected) */}
       {watchTeamId === -1 && (
-        <div className="pt-2 space-y-4">
+        <div className="pt-2 space-y-4" data-testid="new-team-fields">
           <FormField
             control={control}
             name="newTeam.name"
@@ -184,7 +185,11 @@ export const TabTeam = ({
               <FormItem>
                 <RequiredFormLabel required>Team name</RequiredFormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Insert team name" />
+                  <Input
+                    {...field}
+                    placeholder="Insert team name"
+                    data-testid="team-name-input"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -213,6 +218,7 @@ export const TabTeam = ({
                     }}
                     placeholder={`Team ${platformText} id`}
                     className="pr-10"
+                    data-testid="team-external-id-input"
                   />
                   {fetchingExternalData && (
                     <div className="absolute inset-y-0 right-2 flex items-center">
@@ -221,7 +227,10 @@ export const TabTeam = ({
                   )}
                 </div>
               </FormControl>
-              <FormDescription className="text-primary text-xs">
+              <FormDescription
+                className="text-primary text-xs"
+                data-testid="faceitIdHelp"
+              >
                 https://www.faceit.com/fi/teams/ID
               </FormDescription>
               <FormMessage />
@@ -234,6 +243,7 @@ export const TabTeam = ({
         className="mt-2 w-full"
         disabled={!validTeamSelection}
         onClick={() => onNext("players")}
+        data-testid="go-to-lineup-button"
       >
         Go to lineup
       </Button>

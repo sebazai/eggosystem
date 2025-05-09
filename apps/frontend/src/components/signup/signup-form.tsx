@@ -473,6 +473,7 @@ export const SignupForm = ({
                           Boolean(checked)
                         )
                       }
+                      data-testid="terms-conditions-checkbox"
                     />
                   </FormControl>
                   <RequiredFormLabel className="flex flex-wrap items-center gap-2">

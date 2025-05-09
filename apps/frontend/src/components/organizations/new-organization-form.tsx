@@ -22,7 +22,7 @@ export const NewOrganizationForm = <T extends FieldValues>({
   websiteKey
 }: NewOrganizationFormProps<T>) => {
   return (
-    <div className="pt-4 space-y-4">
+    <div className="pt-4 space-y-4" data-testid="new-organization-fields">
       <FormField
         control={control}
         name={nameKey}
@@ -30,7 +30,11 @@ export const NewOrganizationForm = <T extends FieldValues>({
           <FormItem>
             <RequiredFormLabel required>Organization name</RequiredFormLabel>
             <FormControl>
-              <Input {...field} placeholder="Insert organization name" />
+              <Input
+                {...field}
+                placeholder="Insert organization name"
+                data-testid="organization-name-input"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -43,7 +47,11 @@ export const NewOrganizationForm = <T extends FieldValues>({
           <FormItem>
             <RequiredFormLabel required>Business ID</RequiredFormLabel>
             <FormControl>
-              <Input {...field} placeholder="Insert y-tunnus (2992559-2)" />
+              <Input
+                {...field}
+                placeholder="Insert y-tunnus (2992559-2)"
+                data-testid="organization-business-id-input"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -56,7 +64,11 @@ export const NewOrganizationForm = <T extends FieldValues>({
           <FormItem>
             <RequiredFormLabel required>Website</RequiredFormLabel>
             <FormControl>
-              <Input {...field} placeholder="Example: https://kanaliiga.fi/" />
+              <Input
+                {...field}
+                placeholder="Example: https://kanaliiga.fi/"
+                data-testid="organization-website-input"
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
