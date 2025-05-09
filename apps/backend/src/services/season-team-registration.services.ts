@@ -118,7 +118,7 @@ export const addPlayersForTeamInSeason = async (
       },
       connection
     );
-    const [{ rank }, { hours }, externalRank] = await Promise.all([
+    const [rank, { hours }, externalRank] = await Promise.all([
       getPlayerAppIdRank(player.steam_id, appId),
       getPlayerHoursForSteamAppId(player.steam_id, appId),
       getPlayerRankForPlatform(player.steam_id, platform)
@@ -127,13 +127,17 @@ export const addPlayersForTeamInSeason = async (
     if (hours === -1) {
       throw new BadRequestError(`Player ${player.steam_id} hours not found.`);
     }
-    if (rank === -1 && externalRank && externalRank.faceit_elo === -1) {
+    if (
+      rank.average_rank === -1 &&
+      externalRank &&
+      externalRank.faceit_elo === -1
+    ) {
       throw new BadRequestError(
         `Player ${player.steam_id} has no app id rank or ${platform} rank.`
       );
     }
 
-    if (rank === -1 && !externalRank) {
+    if (rank.average_rank === -1 && !externalRank) {
       throw new BadRequestError(
         `Player ${player.steam_id} rank not found for app ${appId}.`
       );
@@ -143,7 +147,7 @@ export const addPlayersForTeamInSeason = async (
       await insertFaceITPlayerRankForSeason(
         player.steam_id,
         seasonId,
-        rank,
+        rank.average_rank,
         hours,
         externalRank,
         connection
@@ -152,7 +156,7 @@ export const addPlayersForTeamInSeason = async (
       await insertCSPlayerRankForSeason(
         player.steam_id,
         seasonId,
-        rank,
+        rank.average_rank,
         hours,
         connection
       );

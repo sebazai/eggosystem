@@ -2,12 +2,12 @@ import { type Request, type Response } from "express";
 import {
   getTeams,
   getTeamsByFilters,
-  getTeamMatches,
+  getTeamMatchesByFilters,
   getTeamMapStats,
-  getTopTeams,
+  getFilteredTopTeams,
   getTeamById,
   getTeamsWithoutOrgs,
-  getTeamByFilters
+  getOneTeamByFilters
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
@@ -34,13 +34,13 @@ export const getFilteredTeamsController = async (
   res: Response
 ) => {
   const { season_ids, league_ids, team_ids } = req.parsedParams;
-  const teams = await getTeamsByFilters(
+  const teams = await getTeamsByFilters({
     season_ids,
     league_ids,
     team_ids,
-    null,
-    null
-  );
+    stages: null,
+    map_ids: null
+  });
   res.json(teams);
 };
 
@@ -51,13 +51,13 @@ export const getFilteredTeamMatchHistoryController = async (
   const teamId = Number(req.params.team_id);
   const { season_ids, league_ids, map_ids, stages } = req.parsedParams;
 
-  const result = await getTeamMatches(
-    teamId,
+  const result = await getTeamMatchesByFilters({
+    team_ids: [teamId],
     season_ids,
     league_ids,
     map_ids,
     stages
-  );
+  });
   res.json(result);
 };
 
@@ -68,7 +68,7 @@ export const getFilteredTeamIdController = async (
   const teamId = parseInt(req.params.team_id);
   const { season_ids, league_ids } = req.parsedParams;
 
-  const [team] = await getTeamByFilters(teamId, season_ids, league_ids);
+  const [team] = await getOneTeamByFilters(teamId, season_ids, league_ids);
 
   if (!team) {
     throw new NotFoundError("Team not found");
@@ -84,13 +84,13 @@ export const getFilteredTeamIdDetailsController = async (
   const teamId = parseInt(req.params.team_id);
   const { season_ids, league_ids, map_ids, stages } = req.parsedParams;
 
-  const [team] = await getTeamsByFilters(
+  const [team] = await getTeamsByFilters({
     season_ids,
     league_ids,
-    [teamId],
+    team_ids: [teamId],
     map_ids,
     stages
-  );
+  });
 
   if (!team) {
     throw new NotFoundError("Team not found");
@@ -104,14 +104,7 @@ export const getFilteredTeamMapStatsController = async (
   res: Response
 ) => {
   const teamId = Number(req.params.team_id);
-  const { season_ids, league_ids, map_ids, stages } = req.parsedParams;
-  const map_stats = await getTeamMapStats(
-    teamId,
-    season_ids,
-    league_ids,
-    map_ids,
-    stages
-  );
+  const map_stats = await getTeamMapStats(teamId, req.parsedParams);
   res.json(map_stats);
 };
 
@@ -119,7 +112,7 @@ export const getFilteredTopTeamsController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const topTeams = await getTopTeams(req.parsedParams);
+  const topTeams = await getFilteredTopTeams(req.parsedParams);
 
   res.json(topTeams);
 };

@@ -1,4 +1,4 @@
-import { type FaceITCSRank } from "@eggosystem/types";
+import { type SeasonPlayerRank, type FaceITCSRank } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
@@ -14,12 +14,26 @@ export const getPlayerHoursForSeason = async (
   return hours;
 };
 
+/**
+ * If admin added rank, we can get the rank for season in signup, though not average.
+ * @param steam_id
+ * @param season_id
+ * @returns
+ */
 export const getPlayerRankForSeason = async (
   steam_id: string,
   season_id: number
 ) => {
-  const [rank] = await runQuery<Array<{ rank: number } | undefined>>(
-    "SELECT cs2_rank as rank FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ? LIMIT 1",
+  const [rank] = await runQuery<
+    Array<
+      | {
+          average_rank: number;
+          rank_updated_at: SeasonPlayerRank["rank_updated_at"];
+        }
+      | undefined
+    >
+  >(
+    "SELECT cs2_rank AS average_rank, rank_updated_at FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ? LIMIT 1",
     [steam_id, season_id]
   );
 

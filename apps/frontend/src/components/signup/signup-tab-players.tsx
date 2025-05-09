@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
 import type {
+  CS2LeetifyAvgRank,
   FaceITCSRank,
   Game,
   PlayerDetailsBySteamId,
@@ -195,7 +196,7 @@ export const TabPlayers = ({
             }>(
               `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
             ),
-            clientApiFetch<{ rank: number }>(
+            clientApiFetch<CS2LeetifyAvgRank>(
               `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
             ),
             clientApiFetch<unknown>(
@@ -230,7 +231,7 @@ export const TabPlayers = ({
           }
 
           if (rankData.status === "fulfilled") {
-            setValue(`players.${index}.rank`, rankData.value.rank);
+            setValue(`players.${index}.rank`, rankData.value.average_rank);
           }
 
           if (externalRankData.status === "fulfilled") {
@@ -251,12 +252,9 @@ export const TabPlayers = ({
             setValue(`players.${index}.hasValidData`, hasValidDataBool);
 
             const isValidWorkEmail = Boolean(data.is_valid_work_email);
-            if (isValidWorkEmail) {
-              setValue(
-                `players.${index}.hasValidWorkEmail`,
-                Boolean(data.is_valid_work_email)
-              );
-            } else {
+            setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
+
+            if (!isValidWorkEmail) {
               // Check if organizer has approved manually
               if (watchTeamId) {
                 const approvedByOrganizer = await clientApiFetch<{
@@ -623,22 +621,23 @@ export const TabPlayers = ({
                     </SignupPlayerNotification>
                   )}
 
-                  {player.hasValidWorkEmail === false && (
-                    <SignupPlayerNotification>
-                      <div>
-                        <span>
-                          Player does not have a valid work e-mail, open a
-                          ticket in Discord. See{" "}
-                          <Link
-                            target="_blank"
-                            href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"
-                          >
-                            registration info
-                          </Link>
-                        </span>
-                      </div>
-                    </SignupPlayerNotification>
-                  )}
+                  {player.hasValidWorkEmail === false &&
+                    player.hasValidData !== false && (
+                      <SignupPlayerNotification>
+                        <div>
+                          <span>
+                            Player does not have a valid work e-mail, open a
+                            ticket in Discord. See{" "}
+                            <Link
+                              target="_blank"
+                              href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"
+                            >
+                              registration info
+                            </Link>
+                          </span>
+                        </div>
+                      </SignupPlayerNotification>
+                    )}
 
                   {player.isProfilePublic === false && (
                     <SignupPlayerNotification>

@@ -81,7 +81,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         matchStartTime={matchInfo.start_time}
         matchEndTime={matchInfo.end_time}
       />
-      <div className="p-2 md:p-6">{children}</div>
+      <div className="p-2">{children}</div>
     </CardContainer>
   );
 }

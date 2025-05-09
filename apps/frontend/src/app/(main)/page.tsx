@@ -75,7 +75,7 @@ export default async function Home() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
               <Link href={createNextUrl("/organizations")}>
-                <Card className="hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.total_organizations}+
@@ -87,7 +87,7 @@ export default async function Home() {
                 </Card>
               </Link>
               <Link href={createNextUrl("/teams")}>
-                <Card className="hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.total_teams}+
@@ -99,7 +99,7 @@ export default async function Home() {
                 </Card>
               </Link>
               <Link href={createNextUrl("/players")}>
-                <Card className="hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.unique_players}+
@@ -111,7 +111,7 @@ export default async function Home() {
                 </Card>
               </Link>
               <Link href={createNextUrl("/matches")}>
-                <Card className="hover:bg-kanaliiga-light-brown/20">
+                <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/20">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
                       {data.total_games}+

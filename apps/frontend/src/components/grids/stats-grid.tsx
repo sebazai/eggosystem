@@ -69,9 +69,7 @@ const StatGridSkeleton = () => (
           {Array.from({ length: 5 }).map((_, playerIndex) => (
             <div
               key={playerIndex}
-              className={`flex items-center justify-between py-3 px-2 ${
-                playerIndex < 3 ? "bg-[#1e1e1e] rounded-sm mb-1" : ""
-              }`}
+              className={`flex items-center justify-between py-3 px-2`}
             >
               <div className="flex items-center gap-3 flex-1">
                 <Skeleton className="h-6 w-6" />

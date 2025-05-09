@@ -1,4 +1,5 @@
 import { useMatchMaps } from "@/hooks/data/useMatchMaps";
+import { createNextUrl, mapToReadableName } from "@/lib/utils";
 
 interface MatchMapPicksProps {
   matchId: number;
@@ -22,23 +23,29 @@ export const MatchMapPicks = ({
             return (
               <div
                 key={index}
-                className={`flex items-center mb-[2px] bg-card cursor-pointer hover:bg-accent/50 ${
-                  gameId === map.id ? "bg-kanaliiga-orange/10" : ""
-                }`}
+                className="relative flex flex-1 min-h-10 items-center cursor-pointer overflow-hidden rounded my-1 border-1 border-transparent hover:border-1 hover:border-kanaliiga-orange"
                 onClick={() => handleMapSelect(map.id ?? undefined)}
               >
-                <div className="w-32 p-3">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {map.map_name}
-                  </div>
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${createNextUrl(`/images/maps/${map.map_name}.png`)})`,
+                    filter: "brightness(0.6)"
+                  }}
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-l from-black/80 via-black/60 to-transparent" />
+
+                <div className="absolute bottom-1 left-1 right-1 text-muted-foreground text-xs sm:text-sm font-semibold z-10">
+                  {mapToReadableName(map.map_name)}
                 </div>
 
-                <div className="flex items-center gap-3 p-3">
-                  <span className="text-muted-foreground text-lg">
+                <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
+                  <span className="text-white text-lg w-6 font-black text-center">
                     {map.team1_score}
                   </span>
-                  <span className="text-muted-foreground text-lg">-</span>
-                  <span className="text-muted-foreground text-lg">
+                  <span className="text-white text-md">-</span>
+                  <span className="text-white text-lg w-6 font-black text-center">
                     {map.team2_score}
                   </span>
                 </div>
@@ -76,7 +83,7 @@ export const MatchMapPicks = ({
                     PICK
                   </span>
                   <div className="text-sm text-muted-foreground">
-                    {mapInfo.map_name}
+                    {mapToReadableName(mapInfo.map_name)}
                   </div>
                 </div>
               </div>
@@ -102,7 +109,7 @@ export const MatchMapPicks = ({
               className={`px-3 py-1 ${gameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
               onClick={() => handleMapSelect(map.id)}
             >
-              {map.map_name}
+              {mapToReadableName(map.map_name)}
             </button>
           ))}
         </div>

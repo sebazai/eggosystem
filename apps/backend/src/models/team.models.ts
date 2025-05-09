@@ -11,6 +11,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { buildInsertQueryParts } from "../db/utils";
 import { generateQueryWithFilters } from "../utils/queryFilter";
+import { BadRequestError } from "../utils/errors";
 
 export const getTeams = async () => {
   return runQuery<Team[]>(
@@ -28,7 +29,7 @@ export const getTeamById = async (teamId: number) => {
 /**
  * Fetches the team name, id, logo and the latest season/league based on filters.
  */
-export const getTeamByFilters = async (
+export const getOneTeamByFilters = async (
   teamId: number,
   season_ids: ParsedParams["season_ids"],
   league_ids: ParsedParams["league_ids"]
@@ -59,13 +60,13 @@ export const getTeamByFilters = async (
 /**
  * Can be used to fetch one or more teams by filters
  */
-export const getTeamsByFilters = async (
-  season_ids: ParsedParams["season_ids"],
-  league_ids: ParsedParams["league_ids"],
-  team_ids: ParsedParams["team_ids"],
-  map_ids: ParsedParams["map_ids"],
-  stages: ParsedParams["stages"]
-) => {
+export const getTeamsByFilters = async ({
+  season_ids,
+  league_ids,
+  team_ids,
+  map_ids,
+  stages
+}: ParsedParams) => {
   const { query: season, queryParams: querySeason } = generateQueryWithFilters([
     { column: "s.id", value: season_ids },
     { column: "l.id", value: league_ids },
@@ -157,13 +158,21 @@ export const getTeamsByFilters = async (
 };
 
 // Get match history for a team
-export const getTeamMatches = async (
-  teamId: number,
-  season_ids: ParsedParams["season_ids"],
-  league_ids: ParsedParams["league_ids"],
-  map_ids: ParsedParams["map_ids"],
-  stages: ParsedParams["stages"]
-) => {
+export const getTeamMatchesByFilters = async ({
+  season_ids,
+  league_ids,
+  stages,
+  team_ids,
+  map_ids
+}: ParsedParams) => {
+  if (!team_ids || team_ids.length > 1) {
+    throw new BadRequestError("Too many team ids present");
+  }
+  const [teamId] = team_ids;
+  if (!teamId) {
+    throw new BadRequestError("Please provide team id to filter matches for");
+  }
+
   const { query, queryParams } = generateQueryWithFilters([
     {
       column: "m.season_id",
@@ -308,10 +317,7 @@ export const insertTeam = async (
 
 export const getTeamMapStats = async (
   teamId: number,
-  season_ids: ParsedParams["season_ids"],
-  league_ids: ParsedParams["league_ids"],
-  map_ids: ParsedParams["map_ids"],
-  stages: ParsedParams["stages"]
+  { season_ids, league_ids, map_ids, stages }: ParsedParams
 ) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
@@ -357,7 +363,7 @@ export const getTeamMapStats = async (
   return runQuery<TeamMapStats[]>(baseQuery, params);
 };
 
-export const getTopTeams = async ({
+export const getFilteredTopTeams = async ({
   stages,
   map_ids,
   league_ids,

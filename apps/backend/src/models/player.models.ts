@@ -51,7 +51,7 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   return results.length > 0 ? results[0] : undefined;
 };
 
-export const getPlayersByFilters = async ({
+export const getMultiplePlayerStatsByFilters = async ({
   season_ids,
   league_ids,
   team_ids,
@@ -108,7 +108,13 @@ export const getPlayersByFilters = async ({
     INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id
     INNER JOIN Matches m ON m.id = mg.match_id
-    ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
+    ${
+      teamIdsJoin
+        ? `
+        INNER JOIN MatchTeams mt ON mt.match_id = m.id 
+        INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id`
+        : ""
+    }
     ${whereClause}
     GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC
@@ -138,6 +144,8 @@ export const getPlayerMatchHistoryByFilters = async (
     { column: "mg.map_id", value: map_ids },
     { column: "sp.steam_id", value: [steam_id] }
   ]);
+
+  const mapFiltersPresent = map_ids && map_ids.length > 0;
 
   const matchHistoryQuery = `
       SELECT
@@ -169,12 +177,12 @@ export const getPlayerMatchHistoryByFilters = async (
         -- Score or Win Count
         CASE
           WHEN m.best_of = 1 THEN MAX(tgs.score)
-          ELSE COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)
+          ELSE  ${!mapFiltersPresent ? "COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)" : "MAX(tgs.score)"}
         END AS score,
 
         CASE
           WHEN m.best_of = 1 THEN MAX(opp_tgs.score)
-          ELSE COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)
+          ELSE ${!mapFiltersPresent ? "COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)" : "MAX(opp_tgs.score)"}
         END AS opponent_score,
 
         -- PlayerStats aggregates
@@ -209,9 +217,9 @@ export const getPlayerMatchHistoryByFilters = async (
       WHERE ${query}
 
       GROUP BY
-        m.id,
+        ${!mapFiltersPresent ? "m.id," : ""}
         CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END,
-        m.best_of,
+        ${!mapFiltersPresent ? "m.best_of," : ""}
         m.season_id,
         s.name,
         m.league_id,

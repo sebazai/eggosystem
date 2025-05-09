@@ -36,6 +36,7 @@ import {
   usePathname,
   useSearchParams
 } from "next/navigation";
+import { ModeToggle } from "./theme-toggle";
 
 interface MenuItemLink {
   title: string;
@@ -201,7 +202,8 @@ export const Navigation = (props: NavbarProps) => {
               {menu?.map((m) => renderMenuItem(m, params))}
             </NavigationMenuList>
           </NavigationMenu>
-          <div className="ml-auto">
+          <div className="ml-auto space-x-4">
+            <ModeToggle />
             <UserMenuDropdown />
           </div>
         </div>

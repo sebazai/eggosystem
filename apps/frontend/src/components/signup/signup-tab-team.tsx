@@ -115,7 +115,7 @@ export const TabTeam = ({
     setOpenFilter((prev: string | null) => (prev === filter ? null : filter));
   };
   return (
-    <TabsContent className="space-y-2" value="team">
+    <TabsContent className="space-y-4 md:space-y-6" value="team">
       <FormField
         control={control}
         name="teamId"

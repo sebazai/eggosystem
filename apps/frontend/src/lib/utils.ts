@@ -7,6 +7,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const mapToReadableName = (map: string) => {
+  return map.split("_")[1]?.toUpperCase();
+};
+
 export const getParamArray = (
   searchParams: ReadonlyURLSearchParams,
   key: string

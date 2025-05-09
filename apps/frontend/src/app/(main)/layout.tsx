@@ -110,7 +110,7 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          `min-h-svh flex flex-col antialiased bg-kana`,
+          `antialiased bg-kana`,
           kanaFonts.variable,
           kanaHeadingFonts.variable,
           poppinsFont.variable
@@ -119,18 +119,20 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          // enableSystem
+          enableSystem
           disableTransitionOnChange
         >
           <Suspense>
             <SkipToContent />
             <KfcRain />
             <ScrollToTop />
-            <div className="flex flex-col min-h-svh min-w-[200px] w-full">
+            <div className="min-h-svh min-w-[320px] w-full">
               <AuthProvider>
                 <Navigation />
                 <AcceptPolicyProvider>
-                  <main id="main-content">{children}</main>
+                  <main className="w-full" id="main-content">
+                    {children}
+                  </main>
                 </AcceptPolicyProvider>
               </AuthProvider>
               <Footer />

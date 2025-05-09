@@ -78,9 +78,9 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
                         level={faceItRank.faceItRank.faceit_level}
                       />
                     ) : null}
-                    {cs2PremierRank.cs2Rank?.rank ? (
+                    {cs2PremierRank.cs2Rank?.average_rank ? (
                       <CS2PremierRankBadge
-                        rankScore={cs2PremierRank.cs2Rank.rank}
+                        rankScore={cs2PremierRank.cs2Rank.average_rank}
                       />
                     ) : null}
                   </>

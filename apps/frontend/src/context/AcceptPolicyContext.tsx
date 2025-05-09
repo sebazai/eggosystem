@@ -23,10 +23,7 @@ export const AcceptPolicyProvider = ({
       !pathname.includes("profile") &&
       !pathname.includes("privacy-policy")
     ) {
-      const urlEncodedPath = encodeURIComponent(pathname);
-      router.push(
-        `/profile?acceptPrivacyPolicyRequired=1&returnTo=${urlEncodedPath}`
-      );
+      router.push(`/profile?acceptPrivacyPolicyRequired=1`);
     }
   }, [user, router, pathname]);
 
