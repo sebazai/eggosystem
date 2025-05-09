@@ -2,22 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { ArrowUpCircle } from "lucide-react"; // Optional icon library
+import { useScrolled } from "@/hooks/useScrolled";
 
 const ScrollToTop = () => {
   const [show, setShow] = useState(false);
+  const { scrolledTo } = useScrolled();
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 500) {
-        setShow(true);
-      } else {
-        setShow(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    setShow(scrolledTo > 500);
+  }, [scrolledTo]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });

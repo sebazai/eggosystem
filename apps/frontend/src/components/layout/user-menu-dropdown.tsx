@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { DesktopLogOut } from "../profile/logout";
 import { SteamLoginButton } from "../profile/steam-login";
+import { ModeToggle } from "./theme-toggle";
 
 export default function UserDropdown() {
   const { user, logout } = useAuth();
@@ -25,7 +26,7 @@ export default function UserDropdown() {
           {user ? <UserCheckIcon /> : <UserIcon />}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Account</DropdownMenuLabel>
           <DropdownMenuItem className="cursor-pointer" asChild>
@@ -41,6 +42,9 @@ export default function UserDropdown() {
         <DropdownMenuGroup>
           {user && (
             <DropdownMenuItem>
+              <div>
+                <ModeToggle />
+              </div>
               <div>User: {user.nickname}</div>
             </DropdownMenuItem>
           )}

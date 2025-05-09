@@ -9,6 +9,7 @@ import Link from "next/link";
 import { CsMainSponsors } from "../sponsors/cs-main-sponsors";
 import { KanaMainPartners } from "../sponsors/kana-main-partners";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useScrolled } from "@/hooks/useScrolled";
 
 const overlays = [
   {
@@ -35,7 +36,7 @@ type HeroSectionProps = {
 export default function HeroSection({ device }: HeroSectionProps) {
   const [step, setStep] = useState(0);
   const [splashComplete, setSplashComplete] = useState(false);
-  const [hasScrolled, setHasScrolled] = useState(false);
+  const { isScrolled } = useScrolled();
 
   const [videoSrc, setVideoSrc] = useState<string>(
     device === "mobile"
@@ -79,15 +80,6 @@ export default function HeroSection({ device }: HeroSectionProps) {
       return () => clearInterval(interval);
     }
   }, [splashComplete]);
-
-  // Track scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      setHasScrolled(window.scrollY > 0);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -157,7 +149,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
       <motion.section
         className="relative w-full h-screen overflow-hidden max-w-screen-3xl mx-auto"
         style={{
-          marginTop: hasScrolled ? `calc(-1 * var(--nav-height))` : undefined
+          marginTop: isScrolled ? `calc(-1 * var(--nav-height))` : undefined
         }}
         id="cta"
         initial={{ opacity: 0 }}

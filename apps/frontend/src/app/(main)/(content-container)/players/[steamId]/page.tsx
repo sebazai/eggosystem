@@ -42,7 +42,6 @@ export default async function PlayerDetailsPage({
       </div>
 
       <div className="mb-3">
-        <h2 className="text-xl font-semibold mb-2">Filter Statistics</h2>
         <PlayerPageWithFilters steamId={steamId} />
       </div>
     </div>

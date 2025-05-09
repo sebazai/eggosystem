@@ -48,7 +48,7 @@ export function StatsGrid<T>({
           className="bg-card rounded-sm overflow-hidden"
           data-testid={`${testId}-section-${index}`}
         >
-          <div className="bg-kanaliiga-orange/30 p-4">
+          <div className="bg-kanaliiga-light-brown/30 p-4">
             {renderHeader(section)}
           </div>
           <div className="p-4">{renderRow(section, index)}</div>
@@ -62,7 +62,7 @@ const StatGridSkeleton = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
     {Array.from({ length: 4 }).map((_, index) => (
       <div key={index} className="bg-card rounded-sm overflow-hidden">
-        <div className="bg-kanaliiga-orange/30 p-4">
+        <div className="bg-kanaliiga-light-brown/30 p-4">
           <Skeleton className="h-8 w-40" />
         </div>
         <div className="p-4">

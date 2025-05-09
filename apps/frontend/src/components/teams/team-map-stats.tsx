@@ -25,26 +25,26 @@ export const TeamMapStats = ({
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-kanaliiga-light-brown/20 text-xs uppercase">
-                <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-muted-foreground">
+              <tr className="bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
+                <th className="px-3 py-2 text-left whitespace-nowrap font-semibold">
                   MAP
                 </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
                   PLAYED
                 </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
                   WINS
                 </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
                   LOSSES
                 </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
                   WIN %
                 </th>
-                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold">
                   AVG SCORE
                 </th>
-                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold text-muted-foreground">
+                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold">
                   AVG OPP SCORE
                 </th>
               </tr>

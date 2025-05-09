@@ -64,7 +64,7 @@ export const FilteredMatchesList = ({
                       className="w-8 h-8 sm:w-10 sm:h-10 ml-1 object-contain hidden xxs:block"
                     />
                   </div>
-                  <div className="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-orange/20 rounded-xs">
+                  <div className="relative h-full min-w-16 md:min-w-20 flex items-center justify-center bg-kanaliiga-light-brown/30 rounded-xs">
                     <div className="z-10 w-7 font-black text-md sm:text-lg text-center">
                       {match.team1_score}
                     </div>

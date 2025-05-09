@@ -257,18 +257,19 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="bg-card rounded-sm overflow-hidden">
+      <div className="bg-card overflow-hidden">
         <div className="overflow-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-[#2a1810] text-xs uppercase">
+              <tr className="bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
                 {columns.map((column) => (
                   <th
                     key={column.key}
                     className={cn(
-                      "px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange",
+                      "px-3 py-2 text-center whitespace-nowrap font-semibold",
                       {
-                        "cursor-pointer hover:bg-[#3a281a]": column.sortable
+                        "cursor-pointer hover:bg-kanaliiga-orange/50":
+                          column.sortable
                       },
                       column.responsive
                     )}
@@ -291,10 +292,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                           )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent
-                        side="top"
-                        className="bg-gray-900 border border-gray-700 text-white px-2 py-1 text-xs"
-                      >
+                      <TooltipContent side="top" className="px-2 py-1 text-xs">
                         {COLUMN_TOOLTIPS[column.key] || column.key}
                       </TooltipContent>
                     </Tooltip>
@@ -337,12 +335,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       <td
                         className={cn("px-3 py-2", columnResponsive.nickname)}
                       >
-                        <div
-                          className={cn("font-medium text-xs", {
-                            "text-white": index < 3,
-                            "text-foreground": index >= 3
-                          })}
-                        >
+                        <div className="font-medium text-xs text-foreground">
                           {player.nickname}
                         </div>
                       </td>

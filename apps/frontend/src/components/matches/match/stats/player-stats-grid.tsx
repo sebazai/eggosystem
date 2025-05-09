@@ -64,7 +64,7 @@ export const PlayerStatistics = ({
         return (
           <div key={team.id} className="flex flex-col">
             {/* Team name bar */}
-            <div className="flex items-center gap-2 p-3 mb-[1px] bg-kanaliiga-light-brown/20">
+            <div className="flex items-center gap-2 p-3 mb-[1px] bg-kanaliiga-light-brown/30">
               <Link
                 href={{
                   pathname: `/teams/${team.id}`,
@@ -84,7 +84,7 @@ export const PlayerStatistics = ({
             </div>
 
             {/* Stats header - Desktop */}
-            <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] items-center text-xs text-muted-foreground py-2 px-3 sticky top-0 bg-kanaliiga-light-brown/20">
+            <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] items-center text-xs text-muted-foreground py-2 px-3 sticky top-0 bg-kanaliiga-light-brown/30">
               <div className="text-left">PLAYER</div>
               <div className="text-center">K</div>
               <div className="text-center">D</div>
@@ -96,7 +96,7 @@ export const PlayerStatistics = ({
             </div>
 
             {/* Mobile Headers - only player columns */}
-            <div className="grid sm:hidden grid-cols-[2fr_repeat(4,1fr)] text-xs text-muted-foreground p-2 bg-kanaliiga-light-brown/20">
+            <div className="grid sm:hidden grid-cols-[2fr_repeat(4,1fr)] text-xs text-muted-foreground p-2 bg-kanaliiga-light-brown/30">
               <div>PLAYER</div>
               <div className="text-center">K</div>
               <div className="text-center">D</div>

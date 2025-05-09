@@ -58,7 +58,7 @@ const TeamCard: React.FC<{ team: TeamStats }> = ({ team }) => {
       href={{ pathname: `/teams/${team.id}`, query: params.toString() }}
       className="block bg-card rounded-md overflow-hidden hover:bg-kanaliiga-light-brown/10 transition-colors"
     >
-      <div className="bg-kanaliiga-light-brown/20 p-4 border-b border-border">
+      <div className="bg-kanaliiga-light-brown/30 p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <NextImageFallback
             src={logoUrl}
@@ -111,12 +111,12 @@ const StatBox: React.FC<{
 const TeamCardSkeleton: React.FC = () => {
   return (
     <div className="bg-card rounded-md overflow-hidden">
-      <div className="bg-kanaliiga-light-brown/20 p-4 border-b border-border">
+      <div className="bg-kanaliiga-light-brown/30 p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="w-[60px] h-[60px] bg-gray-800 animate-pulse" />
+          <div className="w-[60px] h-[60px] bg-kanaliiga-orange/20 animate-pulse" />
           <div className="space-y-2">
-            <div className="h-5 w-32 bg-gray-800 rounded animate-pulse" />
-            <div className="h-4 w-24 bg-gray-800 rounded animate-pulse" />
+            <div className="h-5 w-32 bg-kanaliiga-orange/20 rounded animate-pulse" />
+            <div className="h-4 w-24 bg-kanaliiga-orange/20 rounded animate-pulse" />
           </div>
         </div>
       </div>
@@ -125,8 +125,8 @@ const TeamCardSkeleton: React.FC = () => {
         <div className="grid grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="text-center space-y-2">
-              <div className="h-3 w-12 mx-auto bg-gray-800 rounded animate-pulse" />
-              <div className="h-5 w-8 mx-auto bg-gray-800 rounded animate-pulse" />
+              <div className="h-3 w-12 mx-auto bg-kanaliiga-orange/20 rounded animate-pulse" />
+              <div className="h-5 w-8 mx-auto bg-kanaliiga-orange/20 rounded animate-pulse" />
             </div>
           ))}
         </div>

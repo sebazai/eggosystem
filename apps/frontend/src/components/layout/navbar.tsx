@@ -36,7 +36,8 @@ import {
   usePathname,
   useSearchParams
 } from "next/navigation";
-import { ModeToggle } from "./theme-toggle";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { useScrolled } from "@/hooks/useScrolled";
 
 interface MenuItemLink {
   title: string;
@@ -120,26 +121,17 @@ export const Navigation = (props: NavbarProps) => {
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
   const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
 
-  const [isScrolled, setIsScrolled] = useState(false);
+  const { isScrolled } = useScrolled();
+
+  const isMobile = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const params = useSearchParams();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0);
-    };
-
-    const handleResize = () => {
-      if (window.innerWidth > 768) setIsSheetOpen(false);
-    };
-
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+    if (!isMobile) {
+      setIsSheetOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const logoEl = logoRef.current;
@@ -167,7 +159,7 @@ export const Navigation = (props: NavbarProps) => {
       );
       logoEl.removeEventListener("resize", updateNavHeightAndCheckMobile);
     };
-  }, [isScrolled]); // Runs when `isScrolled` changes
+  }, [isScrolled]);
 
   return (
     <div
@@ -203,7 +195,6 @@ export const Navigation = (props: NavbarProps) => {
             </NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto space-x-4">
-            <ModeToggle />
             <UserMenuDropdown />
           </div>
         </div>

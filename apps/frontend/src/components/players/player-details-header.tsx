@@ -29,10 +29,10 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-6 border-b border-border animate-pulse">
           <div className="flex items-center gap-4">
-            <div className="w-20 h-20 bg-kanaliiga-light-brown/20 rounded-full" />
+            <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full" />
             <div className="space-y-2">
-              <div className="h-6 w-40 bg-kanaliiga-light-brown/20 rounded" />
-              <div className="h-4 w-20 bg-kanaliiga-light-brown/20 rounded" />
+              <div className="h-6 w-40 bg-kanaliiga-light-brown/30 rounded" />
+              <div className="h-4 w-20 bg-kanaliiga-light-brown/30 rounded" />
             </div>
           </div>
         </div>
@@ -56,7 +56,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
     <div className="bg-card rounded-md overflow-hidden mb-3">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 bg-kanaliiga-light-brown/20 rounded-full flex items-center justify-center text-3xl font-bold">
+          <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl font-bold">
             {steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U"}
           </div>
           <div>
@@ -68,8 +68,8 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
               <div className="flex items-center gap-2">
                 {faceItRank.isLoading || cs2PremierRank.isLoading ? (
                   <div className="flex gap-1">
-                    <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/20 animate-pulse"></div>
-                    <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/20 animate-pulse"></div>
+                    <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/30 animate-pulse"></div>
+                    <div className="w-5 h-5 rounded-full bg-kanaliiga-light-brown/30 animate-pulse"></div>
                   </div>
                 ) : (
                   <>
