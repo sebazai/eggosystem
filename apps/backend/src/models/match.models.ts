@@ -126,7 +126,7 @@ export const getMatchesByFilters = async ({
           m.match_date,
           l.name AS league_name,
           m.stage,
-          map.name AS map_name,
+          ${!mapFilterPresent ? "GROUP_CONCAT(DISTINCT map.name SEPARATOR ',') AS map_name," : "map.name AS map_name,"}
           t1.name AS team1_name,
           t1.team_logo AS team1_logo,
           t2.name AS team2_name,

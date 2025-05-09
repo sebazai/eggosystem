@@ -1,6 +1,6 @@
 import {
   type SeasonPlayerRank,
-  CS2LeetifyAvgRank,
+  type CS2LeetifyAvgRank,
   SeasonPlatform
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
