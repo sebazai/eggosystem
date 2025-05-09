@@ -242,7 +242,6 @@ test:frontend:
   script:
     - unset NODE_ENV
     - pnpm --filter=frontend test:integration
-  allow_failure: true
   artifacts:
     when: always
     paths:
@@ -269,6 +268,8 @@ test-e2e:frontend:
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
+    - name: redis:7-alpine
+      alias: eggo-redis
   extends: [.mr-all-app]
   variables:
     <<: *overwrite-variables
@@ -287,7 +288,6 @@ test-e2e:frontend:
   script:
     - unset NODE_ENV
     - pnpm --filter=frontend test:e2e
-  allow_failure: true
   artifacts:
     when: always
     paths:
