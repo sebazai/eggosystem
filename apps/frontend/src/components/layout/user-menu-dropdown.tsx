@@ -26,9 +26,11 @@ export default function UserDropdown() {
           {user ? <UserCheckIcon /> : <UserIcon />}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-66">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Account</DropdownMenuLabel>
+          <DropdownMenuLabel className="flex items-center justify-between">
+            Account <ModeToggle />
+          </DropdownMenuLabel>
           <DropdownMenuItem className="cursor-pointer" asChild>
             <Link href="/profile">
               <UserIcon /> <span>Profile</span>
@@ -42,13 +44,9 @@ export default function UserDropdown() {
         <DropdownMenuGroup>
           {user && (
             <DropdownMenuItem>
-              <div>
-                <ModeToggle />
-              </div>
               <div>User: {user.nickname}</div>
             </DropdownMenuItem>
           )}
-
           {user ? (
             <DesktopLogOut logOutUser={() => logout()} />
           ) : (
