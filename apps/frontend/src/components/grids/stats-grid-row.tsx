@@ -34,7 +34,7 @@ export const StatsGridRow = ({
         query: searchParams.toString()
       }}
       data-testid="stats-row"
-      className="flex justify-between py-3 hover:bg-kanaliiga-light-brown/10 cursor-pointer"
+      className="flex justify-between py-3 px-1 hover:bg-kanaliiga-light-brown/20 hover:rounded-sm cursor-pointer"
     >
       <div className="flex items-center gap-5">
         <span
@@ -55,7 +55,7 @@ export const StatsGridRow = ({
 
         <div className="flex items-center gap-2">
           <span
-            className="font-bold text-kanaliiga-light-brown min-w-20"
+            className="font-bold text-kanaliiga-orange min-w-20"
             data-testid="object-name"
           >
             {columnOneText}

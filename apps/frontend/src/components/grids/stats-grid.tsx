@@ -27,15 +27,13 @@ export function StatsGrid<T>({
   if (isError)
     return (
       <ContentContainer>
-        {isError.message || "Error loading data."}
+        {isError?.message || "Error loading data."}
       </ContentContainer>
     );
   if (!data || data.length === 0)
     return (
       <div className="text-center p-8">
-        <h1 className="text-3xl font-bold text-kanaliiga-orange py-8">
-          No Results
-        </h1>
+        <h1 className="text-3xl font-bold py-8">No Results</h1>
         <p className="text-muted-foreground">{emptyMessage}</p>
       </div>
     );
@@ -45,13 +43,15 @@ export function StatsGrid<T>({
       {data.map((section, index) => (
         <div
           key={index}
-          className="bg-card rounded-sm overflow-hidden"
+          className="rounded-sm overflow-hidden"
           data-testid={`${testId}-section-${index}`}
         >
           <div className="bg-kanaliiga-light-brown/30 p-4">
             {renderHeader(section)}
           </div>
-          <div className="p-4">{renderRow(section, index)}</div>
+          <div className="dark:bg-kanaliiga-light-brown/5 bg-kanaliiga-light-brown/10 p-4">
+            {renderRow(section, index)}
+          </div>
         </div>
       ))}
     </div>
