@@ -10,6 +10,7 @@ import { CsMainSponsors } from "../sponsors/cs-main-sponsors";
 import { KanaMainPartners } from "../sponsors/kana-main-partners";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useScrolled } from "@/hooks/useScrolled";
+import { MotionSponsorContainer } from "../sponsors/sponsor-container";
 
 const overlays = [
   {
@@ -123,22 +124,12 @@ export default function HeroSection({ device }: HeroSectionProps) {
         </motion.p>
 
         {/* Sponsor Logos Row */}
-        <motion.div
-          className="flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 bg-white/70 rounded-lg mb-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-        >
+        <MotionSponsorContainer classNames="mb-10">
           <CsMainSponsors />
-        </motion.div>
-        <motion.div
-          className="flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 bg-white/70 rounded-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-        >
+        </MotionSponsorContainer>
+        <MotionSponsorContainer>
           <KanaMainPartners />
-        </motion.div>
+        </MotionSponsorContainer>
 
         <motion.div
           className="mt-10 w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"
