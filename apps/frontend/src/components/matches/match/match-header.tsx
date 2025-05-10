@@ -44,14 +44,13 @@ export function MatchHeader({
         className
       )}
     >
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <div className="mx-auto px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         {/* Team 1 */}
-        <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left">
+        <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left justify-self-start">
           <div className="flex flex-col items-center md:items-start">
-            <span className="text-md md:text-xl font-bold px-2 py-1">
+            <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
               {team1.name}
             </span>
-
             <span className="text-xs md:text-sm text-zinc-400 px-2">
               Ranking #{team1.rank}
             </span>
@@ -66,13 +65,13 @@ export function MatchHeader({
           </div>
         </div>
 
-        {/* Score */}
-        <div className="flex flex-col items-center gap-1">
-          <div className="flex items-center gap-4">
+        {/* Score (centered) */}
+        <div className="flex flex-col items-center gap-1 justify-self-center text-center">
+          <div className="flex items-center gap-2 sm:gap-4">
             <span
               className={cn(
                 "text-xl xs:text-4xl font-bold",
-                team1.score > team2.score && "text-green-600"
+                team1.score > team2.score ? "text-green-600" : "text-red-600"
               )}
             >
               {team1.score}
@@ -81,7 +80,7 @@ export function MatchHeader({
             <span
               className={cn(
                 "text-xl xs:text-4xl font-bold",
-                team1.score > team2.score && "text-red-600"
+                team2.score > team1.score ? "text-green-600" : "text-red-600"
               )}
             >
               {team2.score}
@@ -94,12 +93,11 @@ export function MatchHeader({
         </div>
 
         {/* Team 2 */}
-        <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left">
+        <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left justify-self-end">
           <div className="flex flex-col items-center md:items-start">
-            <span className="text-md md:text-xl font-bold px-2 py-1">
+            <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
               {team2.name}
             </span>
-
             <span className="text-xs md:text-sm text-zinc-400 px-2">
               Ranking #{team2.rank}
             </span>

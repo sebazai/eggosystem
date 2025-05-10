@@ -121,7 +121,7 @@ export const AutoBreadcrumbs = () => {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link className="text-xs" href="/">
+            <Link className="text-xxs sm:text-xs" href="/">
               Home
             </Link>
           </BreadcrumbLink>
@@ -131,7 +131,7 @@ export const AutoBreadcrumbs = () => {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link className="text-xs" href={crumb.href}>
+                <Link className="text-xxs sm:text-xs" href={crumb.href}>
                   {crumb.label}
                 </Link>
               </BreadcrumbLink>

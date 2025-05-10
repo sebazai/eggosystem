@@ -250,7 +250,7 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
       <PlayerDetailsHeader steamId={steamId} />
       {/* Stat Cards Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           <h2 className="text-xl font-semibold mb-3">Player Statistics</h2>
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -305,16 +305,16 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
 
       {/* Player match history section with detailed statistics */}
       <div className="bg-card rounded-md overflow-hidden">
-        <div className="p-4">
+        <div className="p-3 sm:p-6">
           <h2 className="text-xl font-semibold mb-2">Match History</h2>
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="p-6 text-center">
+              <div className="p-3 sm:p-6 text-center">
                 <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
                 <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
               </div>
             ) : matchHistory?.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground">
+              <div className="p-3 sm:p-6 text-center text-muted-foreground">
                 No match history available for this player with the current
                 filters.
               </div>
@@ -367,7 +367,7 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
                     </tr>
 
                     {/* Mobile headers */}
-                    <tr className="sm:hidden text-xs uppercase">
+                    <tr className="sm:hidden bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
                       <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-kanaliiga-orange">
                         OPPONENT
                       </th>
