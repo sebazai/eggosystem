@@ -114,7 +114,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           The Battle Begins.
         </motion.h1>
         <motion.p
-          className="text-sm xxs:text-lg lg:text-2xl text-white/70 mb-10 text-center"
+          className="text-sm xxs:text-lg lg:text-2xl mb-10 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0, duration: 4 }}
@@ -177,43 +177,37 @@ export default function HeroSection({ device }: HeroSectionProps) {
             {(step === 0 || step > 0) && (
               <motion.div
                 key={overlays[step]?.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: step === overlays.length ? 50 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: step === overlays.length ? -50 : -20 }}
                 transition={{ duration: 0.8 }}
-                className="text-center px-4"
+                className={cn(
+                  "text-center px-4",
+                  step === overlays.length &&
+                    "flex flex-col items-center justify-center"
+                )}
               >
                 <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4">
-                  {overlays[step]?.title}
+                  {step === overlays.length
+                    ? "Season Starts September 1st"
+                    : overlays[step]?.title}
                 </motion.h1>
 
-                <p className="text-sm xxs:text-lg lg:text-2xl text-white/70 mb-10 text-center">
-                  {overlays[step]?.subtitle}
-                </p>
-              </motion.div>
-            )}
-
-            {step === overlays.length && (
-              <motion.div
-                key="register-button"
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -50 }}
-                transition={{ duration: 0.8 }}
-                className="text-center flex flex-col items-center justify-center"
-              >
-                <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4">
-                  Season Starts September 1st
-                </motion.h1>
-                <Button
-                  onClick={() => {
-                    router.push("/seasons/16/signup");
-                  }}
-                  variant="outline"
-                  className="text-lg py-2 px-6 sm:px-10 sm:py-8"
-                >
-                  Sign Up Now
-                </Button>
+                {step === overlays.length ? (
+                  <Button
+                    onClick={() => {
+                      router.push("/seasons/16/signup");
+                    }}
+                    variant="outline"
+                    className="text-lg py-2 px-6 sm:px-10 sm:py-8"
+                  >
+                    Sign Up Now
+                  </Button>
+                ) : (
+                  <p className="text-sm xxs:text-lg lg:text-2xl text-white/70 mb-10 text-center">
+                    {overlays[step]?.subtitle}
+                  </p>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
