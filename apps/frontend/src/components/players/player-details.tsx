@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { cn } from "@/lib/utils";
+import { cn, mapToReadableNameCapitalFirst } from "@/lib/utils";
 import { usePlayerStats } from "@/hooks/data/filtered/usePlayerStats";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -432,7 +432,13 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
 
                           {/* Map & League - hidden on mobile */}
                           <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                            {match.map_name} • {match.league_name}
+                            {match.map_name
+                              .split(", ")
+                              .map((name) =>
+                                mapToReadableNameCapitalFirst(name)
+                              )
+                              .join(", ")}{" "}
+                            • {match.league_name}
                           </td>
 
                           {/* Score - hidden on mobile, shown on desktop */}

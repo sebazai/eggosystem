@@ -8,7 +8,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const mapToReadableName = (map: string) => {
-  return map.split("_")[1]?.toUpperCase();
+  return map.split("_")[1]?.toUpperCase() ?? map;
+};
+
+export const mapToReadableNameCapitalFirst = (map: string) => {
+  const mapSplit = map.split("_")[1];
+  if (mapSplit) {
+    const firstChar = mapSplit.charAt(0).toUpperCase();
+    const restOfMap = mapSplit.slice(1);
+    return firstChar.concat(restOfMap);
+  }
+  return map;
 };
 
 export const getParamArray = (

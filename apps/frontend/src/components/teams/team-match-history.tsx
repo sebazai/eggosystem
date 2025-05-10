@@ -1,4 +1,8 @@
-import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
+import {
+  createTeamLogoUrl,
+  mapToReadableNameCapitalFirst,
+  type FilterParamsQuery
+} from "@/lib/utils";
 
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -84,11 +88,11 @@ export const TeamMatchHistory = ({
                 <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold">
                   MAP
                 </th>
-                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  <div
-                    className="flex justify-center cursor-pointer hover:bg-kanaliiga-light-brown/30"
-                    onClick={() => handleSortClick("date")}
-                  >
+                <th
+                  className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold hover:bg-kanaliiga-light-brown/30 cursor-pointer"
+                  onClick={() => handleSortClick("date")}
+                >
+                  <div className="flex justify-center">
                     DATE
                     {sortConfig.key === "date" && (
                       <span className="ml-1">
@@ -169,7 +173,10 @@ export const TeamMatchHistory = ({
                         </span>
                       </td>
                       <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.maps}
+                        {match.maps
+                          .split(", ")
+                          .map((name) => mapToReadableNameCapitalFirst(name))
+                          .join(", ")}
                       </td>
                       <td className="hidden md:table-cell px-3 py-2 text-center">
                         {formattedDate}
