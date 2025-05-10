@@ -14,7 +14,7 @@ export const TeamWinLossDetails = ({
     filterQueryParams
   });
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3">
       <div className="text-center">
         <div className="text-muted-foreground text-sm">MP</div>
         <div className="text-lg font-semibold">{team?.matches_played ?? 0}</div>

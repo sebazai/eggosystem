@@ -1,5 +1,5 @@
 import { useFilteredTeamMapStats } from "@/hooks/data/filtered/useFilteredTeamMapStats";
-import type { FilterParamsQuery } from "@/lib/utils";
+import { mapToReadableName, type FilterParamsQuery } from "@/lib/utils";
 
 interface TeamMapStatsProps {
   teamId: number;
@@ -65,7 +65,9 @@ export const TeamMapStats = ({
                     key={mapStat.map_id}
                     className="hover:bg-kanaliiga-light-brown/10"
                   >
-                    <td className="px-3 py-2 text-left">{mapStat.map_name}</td>
+                    <td className="px-3 py-2 text-left">
+                      {mapToReadableName(mapStat.map_name)}
+                    </td>
                     <td className="px-3 py-2 text-center">
                       {mapStat.maps_played}
                     </td>

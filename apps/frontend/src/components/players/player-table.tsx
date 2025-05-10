@@ -329,7 +329,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                   (player: PlayerStatsTable, index: number) => (
                     <tr
                       key={`${player.nickname}-${index}`}
-                      className="border-b border-border transition-colors hover:bg-kanaliiga-light-brown/10 cursor-pointer"
+                      className="border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10 cursor-pointer"
                       onClick={() => handleRowClick(player.steam_id)}
                     >
                       <td

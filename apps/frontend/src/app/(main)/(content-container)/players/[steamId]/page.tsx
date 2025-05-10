@@ -36,7 +36,7 @@ export default async function PlayerDetailsPage({
   const steamId = unwrappedParams.steamId;
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="mx-auto py-4 px-2">
       <div className="mb-3">
         <AutoBreadcrumbs />
       </div>

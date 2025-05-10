@@ -35,7 +35,7 @@ export default async function TeamDetailsPage({
   const teamId = Number(unwrappedParams.teamId);
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="mx-auto py-4 px-2">
       <AutoBreadcrumbs />
       <TeamPageWithFilters teamId={teamId} />
     </div>
