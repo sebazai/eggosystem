@@ -60,19 +60,6 @@ export const MatchMapPicks = ({
           <div className="grid grid-cols-2 xl:grid-cols-7 gap-[2px]">
             {maps?.map((mapInfo, index) => (
               <div key={index} className="relative bg-card p-3">
-                <div className="flex justify-between mb-2">
-                  <span
-                    className={`text-sm ${mapInfo.team1_score > mapInfo.team2_score ? "text-foreground" : "text-muted-foreground"}`}
-                  >
-                    {mapInfo.team1_score}
-                  </span>
-                  <span
-                    className={`text-sm ${mapInfo.team2_score > mapInfo.team1_score ? "text-foreground" : "text-muted-foreground"}`}
-                  >
-                    {mapInfo.team2_score}
-                  </span>
-                </div>
-
                 <div className="text-center">
                   <span
                     className={`text-xs mb-1 block text-green-500`}
@@ -93,7 +80,7 @@ export const MatchMapPicks = ({
       </div>
 
       <div className="p-2 mb-2 flex flex-col sm:flex-row justify-between items-center bg-card">
-        <h1 className="text-xl mb-2 sm:mb-0">MATCH STATS</h1>
+        <h1 className="mb-2 sm:mb-0">MATCH STATS</h1>
         <div className="flex flex-wrap gap-2 justify-center">
           {maps?.length !== 1 && (
             <button

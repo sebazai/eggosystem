@@ -14,7 +14,7 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --kanaliiga-light-brown: hsl(29, 56%, 58%);
   --background: hsl(0, 100%, 99%);
   --foreground: hsl(240 10% 3.9%);
-  --card: hsla(0, 0%, 95%, 0.9);
+  --card: hsl(30, 30%, 92%);
   --card-foreground: hsl(240 10% 3.9%);
   --popover: hsl(0, 100%, 99%);
   --popover-foreground: hsl(240 10% 3.9%);
@@ -52,7 +52,7 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --kanaliiga-light-brown: hsl(29, 56%, 58%);
   --background: hsl(240 3% 11%);
   --foreground: hsl(0 0% 98%);
-  --card: hsl(200, 0%, 15%);
+  --card: hsl(0, 2%, 8%); /* Kana harmaa */
   --card-foreground: hsl(0 0% 98%);
   --popover: hsl(240 3% 11%);
   --popover-foreground: hsl(0 0% 98%);
