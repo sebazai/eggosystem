@@ -203,6 +203,10 @@ export const getTeamMatchesByFilters = async ({
    match_game_scores AS (
     SELECT 
       m.id AS match_id,
+      CASE
+        WHEN m.best_of = 1 THEN mg.id
+        ELSE NULL
+      END AS game_id,
       m.match_date,
       m.best_of,
       team.team_id,
@@ -228,7 +232,20 @@ export const getTeamMatchesByFilters = async ({
     WHERE ${query}
     GROUP BY m.id, m.match_date, m.best_of, team.team_id, opponent.team_id, t1.name, t1.team_logo, t2.name, t2.team_logo
   )
-    SELECT mgs.match_id, mgs.match_date AS date, mmn.maps, mgs.team_id, mgs.team_name, mgs.team_logo, mgs.opponent_id, mgs.opponent_name, mgs.opponent_logo,
+    SELECT 
+      mgs.match_id, 
+      mgs.match_date AS date,
+      CASE
+        WHEN mgs.best_of = 1 THEN mgs.game_id
+        ELSE NULL
+      END AS game_id,
+      mmn.maps, 
+      mgs.team_id, 
+      mgs.team_name, 
+      mgs.team_logo, 
+      mgs.opponent_id, 
+      mgs.opponent_name, 
+      mgs.opponent_logo,
       CASE
         WHEN best_of = 1 THEN 
           CASE 
@@ -253,7 +270,7 @@ export const getTeamMatchesByFilters = async ({
       END AS opponent_score
     FROM match_game_scores mgs
     LEFT JOIN match_map_names mmn ON mgs.match_id = mmn.match_id
-    ORDER BY match_date DESC
+    ORDER BY match_date DESC, mgs.match_id, mgs.game_id
     `;
 
   const withMapFilters = `

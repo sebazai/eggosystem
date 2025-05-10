@@ -356,6 +356,167 @@ describe("getTeamMatchesByFilters", () => {
     });
     expect(result.length).toEqual(21);
   });
+  it("returns game_id for best of ones, but not for best of > 1", async () => {
+    const result = await getTeamMatchesByFilters({
+      team_ids: [1993],
+      season_ids: [14],
+      league_ids: null,
+      map_ids: null,
+      stages: null
+    });
+    expect(result).toEqual([
+      {
+        match_id: 9960,
+        date: "2024-10-24",
+        game_id: null,
+        maps: "de_mirage, de_ancient",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 2042,
+        opponent_name: "VILPE SENSE",
+        opponent_logo: "S14_2042.png",
+        result: "lost",
+        team_score: 0,
+        opponent_score: 2
+      },
+      {
+        match_id: 9931,
+        date: "2024-10-15",
+        game_id: null,
+        maps: "de_dust2, de_mirage",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 418,
+        opponent_name: "TEXA",
+        opponent_logo: "S15_2172.png",
+        result: "lost",
+        team_score: 0,
+        opponent_score: 2
+      },
+      {
+        match_id: 9698,
+        date: "2024-09-25",
+        game_id: 103910,
+        maps: "de_mirage",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 386,
+        opponent_name: "Nondest",
+        opponent_logo: "S15_2165.png",
+        result: "lost",
+        team_score: 2,
+        opponent_score: 13
+      },
+      {
+        match_id: 9699,
+        date: "2024-09-25",
+        game_id: 103911,
+        maps: "de_vertigo",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 386,
+        opponent_name: "Nondest",
+        opponent_logo: "S15_2165.png",
+        result: "lost",
+        team_score: 1,
+        opponent_score: 13
+      },
+      {
+        match_id: 9501,
+        date: "2024-09-16",
+        game_id: 103692,
+        maps: "de_mirage",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 850,
+        opponent_name: "lcp",
+        opponent_logo: "S14_2048.png",
+        result: "lost",
+        team_score: 4,
+        opponent_score: 13
+      },
+      {
+        match_id: 9502,
+        date: "2024-09-16",
+        game_id: 103693,
+        maps: "de_inferno",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 850,
+        opponent_name: "lcp",
+        opponent_logo: "S14_2048.png",
+        result: "lost",
+        team_score: 4,
+        opponent_score: 13
+      },
+      {
+        match_id: 9483,
+        date: "2024-09-12",
+        game_id: 103674,
+        maps: "de_ancient",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 1863,
+        opponent_name: "ALM Partners Tasetaikurit",
+        opponent_logo: "S15_2197.png",
+        result: "lost",
+        team_score: 8,
+        opponent_score: 13
+      },
+      {
+        match_id: 9484,
+        date: "2024-09-12",
+        game_id: 103675,
+        maps: "de_nuke",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 1863,
+        opponent_name: "ALM Partners Tasetaikurit",
+        opponent_logo: "S15_2197.png",
+        result: "lost",
+        team_score: 3,
+        opponent_score: 13
+      },
+      {
+        match_id: 9278,
+        date: "2024-09-04",
+        game_id: 103458,
+        maps: "de_anubis",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 1938,
+        opponent_name: "Frendy Fire",
+        opponent_logo: "S15_2259.png",
+        result: "lost",
+        team_score: 6,
+        opponent_score: 13
+      },
+      {
+        match_id: 9279,
+        date: "2024-09-04",
+        game_id: 103459,
+        maps: "de_mirage",
+        team_id: 1993,
+        team_name: "SOK Tilipäivä",
+        team_logo: "S14_1993.png",
+        opponent_id: 1938,
+        opponent_name: "Frendy Fire",
+        opponent_logo: "S15_2259.png",
+        result: "lost",
+        team_score: 8,
+        opponent_score: 13
+      }
+    ]);
+  });
 });
 
 describe("getTeamMapStats", () => {
