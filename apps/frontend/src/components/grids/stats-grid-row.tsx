@@ -49,7 +49,7 @@ export const StatsGridRow = ({
             alt={`${teamName} logo`}
             width={20}
             height={20}
-            className="rounded-full flex-shrink-0"
+            className="hidden rounded-full sm:block flex-shrink-0"
           />
         )}
 
@@ -61,7 +61,7 @@ export const StatsGridRow = ({
             {columnOneText}
           </span>
           {columnTwoText && (
-            <span className="hidden sm:block md:hidden text-muted-foreground text-sm min-w-15 break-all lg:block">
+            <span className="hidden xs:block md:hidden text-muted-foreground text-sm min-w-15 break-all lg:block">
               {columnTwoText}
             </span>
           )}
@@ -69,7 +69,7 @@ export const StatsGridRow = ({
       </div>
       <div className="flex items-center gap-2">
         <span
-          className="hidden text-muted-foreground text-xs xs:block min-w-10"
+          className="hidden text-muted-foreground text-xs xxs:block min-w-10"
           data-testid="maps-played"
         >
           {mapsPlayed} maps
