@@ -1,3 +1,3 @@
 # Migrations
 
-Everything used in migrations should exists in migrations folder.
+Everything used in migrations should exists in migrations folder
