@@ -27,6 +27,7 @@ const includeExactPaths = [
 ];
 const includePrefixPaths: string[] = ["/teams"];
 const excludePrefixPaths: string[] = ["/players/", "/teams/"];
+const alwaysActiveSeason: string[] = ["/leaderboards"];
 export const FilterProvider = ({
   appId,
   children
@@ -69,6 +70,16 @@ export const FilterProvider = ({
       !ready
     ) {
       setReady(true);
+    }
+    if (
+      alwaysActiveSeason.includes(path) &&
+      searchParams.size === 0 &&
+      data?.season_id
+    ) {
+      const params = new URLSearchParams();
+      params.append("seasons", data.season_id.toString());
+      const newUrl = `${path}?${params.toString()}`;
+      window.history.replaceState(null, "", newUrl);
     }
   }, [searchParams, data?.season_id, ready, path]);
 
