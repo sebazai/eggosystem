@@ -40,7 +40,8 @@ export const fetchPlayerStatsForMatchOrGame = async <
       JOIN SteamPlayers p ON p.steam_id = ps.steam_id 
       JOIN MatchGames mg ON mg.id = ps.game_id
       JOIN Matches m ON m.id = mg.match_id
-      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
+      JOIN MatchTeams mt ON mt.match_id = m.id
+      JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id AND stp.team_id = mt.team_id
       WHERE ${whereClause} 
       GROUP BY p.steam_id, p.nickname
       ORDER BY value DESC, p.nickname ASC 

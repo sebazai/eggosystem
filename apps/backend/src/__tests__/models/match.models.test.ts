@@ -1,4 +1,7 @@
-import { getMatchesByFilters } from "../../models/match.models";
+import {
+  getMatchesByFilters,
+  getMatchTopPlayers
+} from "../../models/match.models";
 
 describe("getMatchesByFilters", () => {
   it("returns scores for bo3 type of matches when a map filter is selected", async () => {
@@ -53,5 +56,61 @@ describe("getMatchesByFilters", () => {
     expect(result[0].team2_score).toEqual(0);
     expect(result[result.length - 1].team1_score).toEqual(6);
     expect(result[result.length - 1].team2_score).toEqual(13);
+  });
+});
+
+describe("getMatchTopPlayers", () => {
+  it("should pick the correct team id when a player has played substitute in same season", async () => {
+    const result = await getMatchTopPlayers(9416);
+    expect(result).toEqual({
+      most_kills: {
+        steam_id: 76561197987111310,
+        nickname: "Martas",
+        value: 27,
+        team_id: 2008
+      },
+      most_adr: {
+        steam_id: "76561198129692076",
+        nickname: "Mixu",
+        value: 139,
+        team_id: 2008
+      },
+      most_assists: {
+        steam_id: "76561198129692076",
+        nickname: "Mixu",
+        value: 12,
+        team_id: 2008
+      },
+      most_awp_kills: {
+        steam_id: "76561197977566559",
+        nickname: "⛧ SATAnic addict fish ⛧",
+        value: 5,
+        team_id: 1241
+      },
+      most_utility_damage: {
+        steam_id: "76561197977566559",
+        nickname: "⛧ SATAnic addict fish ⛧",
+        value: 213,
+        team_id: 1241
+      },
+      most_first_kills: {
+        steam_id: "76561198129692076",
+        nickname: "Mixu",
+        value: 6,
+        team_id: 2008
+      },
+      most_mates_flashed: {
+        steam_id: "76561198018195778",
+        nickname: "snowsplitter",
+        value: 17,
+        team_id: 2008
+      },
+      most_flash_assists: {
+        steam_id: "76561198176303197",
+        nickname: "asp",
+        value: 2,
+        team_id: 2008
+      }
+    });
   });
 });

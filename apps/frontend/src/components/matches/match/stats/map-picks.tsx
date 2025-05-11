@@ -79,27 +79,28 @@ export const MatchMapPicks = ({
         </div>
       </div>
 
-      <div className="p-2 mb-2 flex flex-col sm:flex-row justify-between items-center bg-card">
+      <div className="p-2 mb-2 flex flex-col sm:flex-row justify-between">
         <h1 className="mb-2 sm:mb-0">MATCH STATS</h1>
-        <div className="flex flex-wrap gap-2 justify-center">
-          {maps?.length !== 1 && (
+        {maps?.length !== 1 && (
+          <div className="flex flex-wrap gap-2 justify-center">
             <button
               className={`px-3 py-1 ${!gameId ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
               onClick={() => handleMapSelect(undefined)}
             >
               ALL MAPS
             </button>
-          )}
-          {maps?.map((map) => (
-            <button
-              key={map.id}
-              className={`px-3 py-1 ${gameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
-              onClick={() => handleMapSelect(map.id)}
-            >
-              {mapToReadableName(map.map_name)}
-            </button>
-          ))}
-        </div>
+
+            {maps?.map((map) => (
+              <button
+                key={map.id}
+                className={`px-3 py-1 ${gameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
+                onClick={() => handleMapSelect(map.id)}
+              >
+                {mapToReadableName(map.map_name)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

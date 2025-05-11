@@ -330,10 +330,7 @@ export function FancySelect<T>({
                       e.preventDefault();
                       e.stopPropagation();
                     }}
-                    onSelect={() => {
-                      setInputValue("");
-                      handleSelected(item);
-                    }}
+                    onSelect={() => handleSelected(item)}
                     className="cursor-pointer"
                   >
                     {item.label}

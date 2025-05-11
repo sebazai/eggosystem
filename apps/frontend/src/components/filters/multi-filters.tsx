@@ -6,8 +6,9 @@ import { ItemFilter } from "./item-filter";
 import type { League, Season, Team, Map } from "@eggosystem/types";
 import { StageFilter } from "./stage-filter";
 import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { FilterParamsQuery } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 interface MultiFiltersProps extends FilterParamsQuery {
   hideFilters?: {
@@ -22,6 +23,7 @@ interface MultiFiltersProps extends FilterParamsQuery {
 export const MultiFilters = (props: MultiFiltersProps) => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
@@ -127,6 +129,14 @@ export const MultiFilters = (props: MultiFiltersProps) => {
           handleOpen={handleOpen}
         />
       )}
+      <Button
+        variant={"secondary"}
+        onClick={() => {
+          router.replace(pathname);
+        }}
+      >
+        Clear all filters
+      </Button>
     </div>
   );
 };

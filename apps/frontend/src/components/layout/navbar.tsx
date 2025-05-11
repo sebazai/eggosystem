@@ -121,7 +121,7 @@ export const Navigation = (props: NavbarProps) => {
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
   const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
 
-  const { isScrolled } = useScrolled();
+  const { isScrolled, scrolledTo } = useScrolled();
 
   const isMobile = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -132,6 +132,15 @@ export const Navigation = (props: NavbarProps) => {
       setIsSheetOpen(false);
     }
   }, [isMobile]);
+
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const updateHeight = () => setHeight(window.innerHeight);
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   useEffect(() => {
     const logoEl = logoRef.current;
@@ -169,7 +178,9 @@ export const Navigation = (props: NavbarProps) => {
         `mb-3 sm:mb-10 pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
         pathname !== "/"
           ? "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs"
-          : "",
+          : scrolledTo > height
+            ? "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs"
+            : "",
         isScrolled || pathname !== "/" ? "sticky top-0" : "absolute top-0"
       )}
     >
@@ -189,7 +200,7 @@ export const Navigation = (props: NavbarProps) => {
               />
             </Link>
           )}
-          <NavigationMenu viewport={false}>
+          <NavigationMenu delayDuration={0} viewport={false}>
             <NavigationMenuList>
               {menu?.map((m) => renderMenuItem(m, params))}
             </NavigationMenuList>
@@ -328,7 +339,7 @@ const renderMobileMenuItem = (
   if (item.items) {
     return (
       <AccordionItem key={item.title} value={item.title} className="border-b-0">
-        <AccordionTrigger className="py-0 font-semibold text-[16px] hover:no-underline">
+        <AccordionTrigger className="py-0 font-semibold text-[14px] hover:no-underline">
           {item.title}
         </AccordionTrigger>
         <AccordionContent className="mt-2">
