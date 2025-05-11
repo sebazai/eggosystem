@@ -26,9 +26,9 @@ describe("GET /me", () => {
       "76561198049745649"
     );
     expect(response.body.user).toHaveProperty("nickname", "sububobi");
-    expect(response.body.user).toHaveProperty("fullName");
-    expect(response.body.user).toHaveProperty("workEmail");
-    expect(response.body.user).toHaveProperty("discord");
+    expect(response.body.user).not.toHaveProperty("fullName");
+    expect(response.body.user).not.toHaveProperty("workEmail");
+    expect(response.body.user).not.toHaveProperty("discord");
     expect(response.body.user).toHaveProperty("acceptedPrivacyPolicy");
     expect(response.body.user).toHaveProperty("acceptedMarketing");
   });

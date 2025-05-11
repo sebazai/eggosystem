@@ -1,4 +1,4 @@
-import type { UserFullPayload } from "@eggosystem/types";
+import type { UserFullPayload, UserProfilePayload } from "@eggosystem/types";
 import { test, expect } from "./fixtures";
 import type { Page, Route } from "@playwright/test";
 
@@ -148,11 +148,23 @@ test.describe("Leaderboards Page", () => {
             provider: "steam",
             acceptedPrivacyPolicy: true,
             acceptedMarketing: false,
-            fullName: "Hobo Nobo",
-            discord: "Testerino",
-            workEmail: "testerino@hobo.nobo",
             isPersonalEmail: false
           } satisfies UserFullPayload
+        })
+      });
+    });
+
+    await page.route("**/api/v1/accounts/profile", async (route: Route) => {
+      console.log("Mocking accounts/profile endpoint");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          details: {
+            fullName: "Hobo Nobo",
+            discord: "Testerino",
+            workEmail: "testerino@hobo.nobo"
+          } satisfies UserProfilePayload
         })
       });
     });

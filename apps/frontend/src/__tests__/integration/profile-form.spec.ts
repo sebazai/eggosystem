@@ -1,4 +1,4 @@
-import type { UserFullPayload } from "@eggosystem/types";
+import type { UserFullPayload, UserProfilePayload } from "@eggosystem/types";
 import { test, expect } from "./fixtures";
 import type { Page, Route, TestInfo } from "@playwright/test";
 
@@ -64,12 +64,24 @@ test.describe("Profile Form", () => {
             nickname: "TestStormer",
             // No acceptedPrivacyPolicy - user hasn't accepted it yet
             acceptedPrivacyPolicy: false,
-            fullName: "Test user",
-            workEmail: "test@user.fi",
-            discord: "tester",
             acceptedMarketing: false,
             isPersonalEmail: false
           } satisfies UserFullPayload
+        })
+      });
+    });
+
+    await page.route("**/api/v1/accounts/profile", async (route: Route) => {
+      console.log("Mocking accounts/profile endpoint");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          details: {
+            fullName: "Test user",
+            workEmail: "test@user.fi",
+            discord: "tester"
+          } satisfies UserProfilePayload
         })
       });
     });
@@ -252,11 +264,23 @@ test.describe("Profile Form", () => {
             nickname: "Test User",
             acceptedPrivacyPolicy: false,
             acceptedMarketing: false,
-            fullName: "John Doe",
-            discord: undefined,
-            workEmail: undefined,
             isPersonalEmail: false
           } satisfies UserFullPayload
+        })
+      });
+    });
+
+    await page.route("**/api/v1/accounts/profile", async (route: Route) => {
+      console.log("Mocking accounts/profile endpoint");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          details: {
+            fullName: "John Doe",
+            workEmail: undefined,
+            discord: undefined
+          } satisfies UserProfilePayload
         })
       });
     });

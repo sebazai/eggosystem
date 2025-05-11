@@ -108,9 +108,6 @@ router.get("/me", authenticateJWT, async (req, res) => {
       provider_id: userInDb.steam_id,
       provider: "steam",
       nickname: userInDb.nickname,
-      fullName: userInDb.full_name,
-      workEmail: userInDb.work_email,
-      discord: userInDb.discord,
       acceptedPrivacyPolicy: userPolicy
         ? userPolicy.accepted_privacy_policy
         : false,

@@ -24,12 +24,15 @@ export interface UserPayload {
 }
 
 export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
-  fullName: Account["full_name"];
-  workEmail: Account["work_email"];
-  discord: Account["discord"];
   acceptedPrivacyPolicy: boolean;
   acceptedMarketing: boolean;
   isPersonalEmail: Account["is_work_email_personal_email"];
+}
+
+export interface UserProfilePayload {
+  fullName: Account["full_name"];
+  workEmail: Account["work_email"];
+  discord: Account["discord"];
 }
 
 export type RequestWithParams<P> = Request<P>;

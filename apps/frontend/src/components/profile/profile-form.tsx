@@ -22,7 +22,8 @@ import {
   accountSchema,
   type Account,
   type AccountUpdateValues,
-  type UserFullPayload
+  type UserFullPayload,
+  type UserProfilePayload
 } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +32,8 @@ import { EmailVerifiedIcon } from "./email-verified-tooltip";
 import { toast } from "sonner";
 import { RequiredFormLabel } from "../ui/required-form-label";
 import { TooltipIcon } from "../icons";
+import { useAccountDetails } from "@/hooks/data/user/useAccountDetails";
+import { useSWRConfig } from "swr";
 
 const requestNewEmailVerificationLinks = async (accountId?: number) => {
   if (accountId) {
@@ -48,8 +51,10 @@ export default function ProfileForm() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const auth = useAuth();
+  const { account, isLoading: isLoadingProfile } = useAccountDetails();
   const user = auth.user;
   const { emailsVerified } = useEmailsVerified(auth.user?.account_id);
+  const { mutate } = useSWRConfig();
 
   useEffect(() => {
     const requiresPolicyAcceptance = searchParams.get(
@@ -70,10 +75,11 @@ export default function ProfileForm() {
     }
   }, [searchParams, pathname, router]);
 
-  if (auth.loading) {
+  if (auth.loading || isLoadingProfile) {
     return <ContentContainer>Loading...</ContentContainer>;
   }
-  if (!user) {
+
+  if (!user || !account) {
     return (
       <ContentContainer classNames="flex-col space-y-4">
         <div>Please log in to view your profile.</div> <SteamLoginButton />
@@ -105,6 +111,17 @@ export default function ProfileForm() {
       );
       setSuccessMessage(`${returnValue.message}`);
       await auth.checkAuth();
+      mutate(
+        "/api/v1/accounts/profile",
+        {
+          details: {
+            fullName: data.full_name,
+            discord: data.discord,
+            workEmail: data.work_email
+          }
+        },
+        { revalidate: false }
+      );
     } catch (_error) {
       setErrorMessage("There was an error updating your profile.");
     }
@@ -126,12 +143,12 @@ export default function ProfileForm() {
 
       <ProfileFormInputs
         nickname={user.nickname}
-        fullName={user.fullName}
-        workEmail={user.workEmail}
+        fullName={account.details.fullName}
+        workEmail={account.details.workEmail}
         acceptedPrivacyPolicy={user.acceptedPrivacyPolicy}
         acceptedMarketing={user.acceptedMarketing}
         isPersonalEmail={user.isPersonalEmail}
-        discord={user.discord}
+        discord={account.details.discord}
         onSubmit={onSubmit}
         emailsVerified={emailsVerified}
         requestNewEmailVerificationLinks={() =>
@@ -153,14 +170,15 @@ const ProfileFormInputs = ({
   onSubmit,
   emailsVerified,
   requestNewEmailVerificationLinks
-}: Partial<UserFullPayload> & {
-  onSubmit: (data: AccountUpdateValues) => void;
-  emailsVerified?: Pick<
-    Account,
-    "work_email_verified" | "work_email_token_expires_at"
-  >;
-  requestNewEmailVerificationLinks: () => void;
-}) => {
+}: Partial<UserFullPayload> &
+  UserProfilePayload & {
+    onSubmit: (data: AccountUpdateValues) => void;
+    emailsVerified?: Pick<
+      Account,
+      "work_email_verified" | "work_email_token_expires_at"
+    >;
+    requestNewEmailVerificationLinks: () => void;
+  }) => {
   const form = useForm({
     resolver: zodResolver(accountSchema),
     defaultValues: {
