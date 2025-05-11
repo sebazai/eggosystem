@@ -40,7 +40,9 @@ export default async function Home() {
   const statistics = await fetch(`${envConfig.API_URL}/api/v1/stats`, {
     cache: "no-cache"
   });
-  const data = statistics.ok ? await statistics.json() : defaultData;
+  const data: LandingPageStats = statistics.ok
+    ? await statistics.json()
+    : defaultData;
 
   const { device } = userAgent({ headers: await headers() });
   const deviceType = device?.type === "mobile" ? "mobile" : "desktop";

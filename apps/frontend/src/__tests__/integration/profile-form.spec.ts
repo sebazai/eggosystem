@@ -313,6 +313,25 @@ test.describe("Profile Form", () => {
       }
     );
 
+    await page.route("**/api/v1/stats", async (route: Route) => {
+      console.log("Mocking active season endpoint for app 730");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          unique_players: 0,
+          total_teams: 0,
+          total_games: 0,
+          total_organizations: 0
+        } satisfies {
+          unique_players: number;
+          total_teams: number;
+          total_games: number;
+          total_organizations: number;
+        })
+      });
+    });
+
     // Make sure we're on the profile page first
     await page.waitForSelector("form", { timeout: 20000 });
     expect(page.url()).toContain("profile");
