@@ -23,24 +23,22 @@ export const TablePagination = ({
         Showing {Math.min((currentPage - 1) * pageSize + 1, totalRows)} -{" "}
         {Math.min(currentPage * pageSize, totalRows)} of {totalRows} {type}
       </div>
-      <div className="flex flex-col xxs:flex-row items-center gap-6">
-        <button
-          className={cn(
-            "px-2 py-1 text-xs rounded border border-border",
-            currentPage === 1
-              ? "bg-muted text-muted-foreground cursor-not-allowed"
-              : "hover:bg-kanaliiga-light-brown/10"
-          )}
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          Prev
-        </button>
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-3">
+          <button
+            className={cn(
+              "px-2 py-1 text-xs rounded border border-border",
+              currentPage === 1
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "hover:bg-kanaliiga-light-brown/10"
+            )}
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Prev
+          </button>
 
-        {/* Page numbers */}
-        <div className="flex items-center gap-1">
           {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-            // Show first page, last page, current page, and pages around current
             let pageToShow = i + 1;
             if (totalPages > 5) {
               if (currentPage <= 3) {
@@ -67,21 +65,26 @@ export const TablePagination = ({
               </button>
             );
           })}
+
+          <button
+            className={cn(
+              "px-2 py-1 text-xs rounded border border-border",
+              currentPage === totalPages
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "hover:bg-kanaliiga-light-brown/10"
+            )}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
         </div>
 
-        <button
-          className={cn(
-            "px-2 py-1 text-xs rounded border border-border",
-            currentPage === totalPages
-              ? "bg-muted text-muted-foreground cursor-not-allowed"
-              : "hover:bg-kanaliiga-light-brown/10"
-          )}
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
+        <div className="text-xs text-muted-foreground">
+          Page {currentPage} of {totalPages}
+        </div>
       </div>
+
       <div>
         {/* Page size selector */}
         <select
