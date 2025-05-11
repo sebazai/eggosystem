@@ -166,6 +166,21 @@ test.describe("Profile Form", () => {
       });
     });
 
+    await newPage.route("**/api/v1/accounts/profile", async (route: Route) => {
+      console.log("Mocking accounts/profile endpoint");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          details: {
+            fullName: "Test user",
+            workEmail: "test@user.fi",
+            discord: "tester"
+          } satisfies UserProfilePayload
+        })
+      });
+    });
+
     // Navigate directly to the profile page
     await navigateWithRetry(newPage, "/profile");
 
@@ -247,7 +262,7 @@ test.describe("Profile Form", () => {
     await context.close();
   });
 
-  test.skip("should prevent navigation when privacy policy not accepted", async ({
+  test("should prevent navigation when privacy policy not accepted", async ({
     page
   }) => {
     // Mock auth/me with user that hasn't accepted privacy policy
@@ -360,10 +375,46 @@ test.describe("Profile Form", () => {
     ).toBeTruthy();
   });
 
-  test.skip("should allow navigation after accepting privacy policy", async ({
+  test("should allow navigation after accepting privacy policy", async ({
     page
   }) => {
     // Ensure we're on the profile page
+    await page.route("**/api/v1/accounts/profile", async (route: Route) => {
+      console.log("Mocking accounts/profile endpoint");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          details: {
+            fullName: undefined,
+            workEmail: undefined,
+            discord: undefined
+          } satisfies UserProfilePayload
+        })
+      });
+    });
+
+    await page.route("**/api/v1/accounts/update", async (route: Route) => {
+      const request = route.request();
+
+      console.log("Mocking accounts/update endpoint");
+      const data = JSON.parse(request.postData() || "{}");
+      expect(data.nickname).toEqual("Testi User");
+      expect(data.full_name).toEqual("Johnie Doe");
+      expect(data.work_email).toEqual("testi@example.com");
+      expect(data.discord).toEqual("");
+      expect(data.acceptPrivacyPolicy).toEqual(true);
+      expect(data.acceptMarketing).toEqual(false);
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          message: "Test message suxesful"
+        })
+      });
+    });
+
     await page.waitForSelector("form", { timeout: 20000 });
     expect(page.url()).toContain("profile");
 
@@ -374,9 +425,9 @@ test.describe("Profile Form", () => {
     });
 
     // Fill out required form fields
-    await page.fill('input[name="nickname"]', "Test User");
-    await page.fill('input[name="full_name"]', "John Doe");
-    await page.fill('input[name="work_email"]', "test@example.com");
+    await page.fill('input[name="nickname"]', "Testi User");
+    await page.fill('input[name="full_name"]', "Johnie Doe");
+    await page.fill('input[name="work_email"]', "testi@example.com");
 
     // Click the privacy policy checkbox using the data-testid
     await page.locator('[data-testid="privacy-policy-checkbox"]').click();
@@ -392,7 +443,28 @@ test.describe("Profile Form", () => {
     await page.locator('button[type="submit"]').click();
 
     // Wait a bit for any processing to complete
-    await page.waitForTimeout(2000);
+    await expect(page.getByText("Test message suxesful")).toBeVisible();
+
+    // Mock authentication for both endpoints for other tests
+    await page.route("**/api/v1/auth/me", async (route: Route) => {
+      console.log("Mocking auth/me endpoint with true privacy policy");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: {
+            account_id: 1,
+            provider_id: "76561198012345678",
+            provider: "steam",
+            nickname: "TestStormer",
+            // No acceptedPrivacyPolicy - user hasn't accepted it yet
+            acceptedPrivacyPolicy: true,
+            acceptedMarketing: false,
+            isPersonalEmail: false
+          } satisfies UserFullPayload
+        })
+      });
+    });
 
     // Take a screenshot after form submission
     await page.screenshot({
