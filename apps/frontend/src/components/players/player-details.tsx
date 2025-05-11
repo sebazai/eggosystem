@@ -394,7 +394,11 @@ export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
                           key={`${match.match_id}`}
                           className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
                           onClick={() =>
-                            router.push(`/matches/${match.match_id}`)
+                            router.push(
+                              match.game_id
+                                ? `/matches/${match.match_id}/games/${match.game_id}`
+                                : `/matches/${match.match_id}`
+                            )
                           }
                         >
                           <td className="px-3 py-2 text-left">
