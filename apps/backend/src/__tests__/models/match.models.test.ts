@@ -14,7 +14,7 @@ describe("getMatchesByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 10101,
+        match_id: 10098,
         match_date: "2024-11-27",
         league_name: "Masters",
         map_name: "de_nuke",
@@ -28,7 +28,7 @@ describe("getMatchesByFilters", () => {
         team2_score: 8
       },
       {
-        match_id: 10021,
+        match_id: 10018,
         match_date: "2024-10-30",
         league_name: "Masters",
         map_name: "de_nuke",

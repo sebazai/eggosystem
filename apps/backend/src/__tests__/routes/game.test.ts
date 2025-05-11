@@ -12,7 +12,7 @@ describe("Game Routes", () => {
   app.use(express.json());
   app.use(gameRouter);
   describe("GET /games/:game_id/teamstats", () => {
-    it("should return team stats for game id 10107", async () => {
+    it("should return team stats for game id 104729", async () => {
       const expectedStats = [
         {
           team_id: 2035,

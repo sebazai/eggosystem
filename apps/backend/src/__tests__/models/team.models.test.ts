@@ -314,7 +314,7 @@ describe("getTeamMatchesByFilters", () => {
     expect(result).toEqual([
       {
         game_id: 104404,
-        match_id: 9967,
+        match_id: 9964,
         date: "2024-10-23",
         maps: "de_ancient",
         best_of: 3,
@@ -330,7 +330,7 @@ describe("getTeamMatchesByFilters", () => {
       },
       {
         game_id: 104039,
-        match_id: 9797,
+        match_id: 9794,
         date: "2024-10-02",
         maps: "de_ancient",
         best_of: 1,
@@ -366,7 +366,7 @@ describe("getTeamMatchesByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 9960,
+        match_id: 9957,
         date: "2024-10-24",
         game_id: null,
         maps: "de_mirage, de_ancient",
@@ -381,7 +381,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 2
       },
       {
-        match_id: 9931,
+        match_id: 9928,
         date: "2024-10-15",
         game_id: null,
         maps: "de_dust2, de_mirage",
@@ -396,7 +396,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 2
       },
       {
-        match_id: 9698,
+        match_id: 9695,
         date: "2024-09-25",
         game_id: 103910,
         maps: "de_mirage",
@@ -411,7 +411,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9699,
+        match_id: 9696,
         date: "2024-09-25",
         game_id: 103911,
         maps: "de_vertigo",
@@ -426,7 +426,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9501,
+        match_id: 9498,
         date: "2024-09-16",
         game_id: 103692,
         maps: "de_mirage",
@@ -441,7 +441,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9502,
+        match_id: 9499,
         date: "2024-09-16",
         game_id: 103693,
         maps: "de_inferno",
@@ -456,7 +456,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9483,
+        match_id: 9480,
         date: "2024-09-12",
         game_id: 103674,
         maps: "de_ancient",
@@ -471,7 +471,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9484,
+        match_id: 9481,
         date: "2024-09-12",
         game_id: 103675,
         maps: "de_nuke",
@@ -486,7 +486,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9278,
+        match_id: 9275,
         date: "2024-09-04",
         game_id: 103458,
         maps: "de_anubis",
@@ -501,7 +501,7 @@ describe("getTeamMatchesByFilters", () => {
         opponent_score: 13
       },
       {
-        match_id: 9279,
+        match_id: 9276,
         date: "2024-09-04",
         game_id: 103459,
         maps: "de_mirage",
