@@ -72,6 +72,7 @@ services:
 
   eggo-prod-db:
     image: bitnami/mariadb:11.4.2
+    container_name: eggo-prod-db
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
@@ -96,6 +97,7 @@ services:
       retries: 10
     volumes:
       - ./my.cnf:/opt/bitnami/mariadb/conf/my.cnf
+      - ./db-data:/bitnami/mariadb
 
   eggo-prod-redis:
     image: redis:7-alpine
