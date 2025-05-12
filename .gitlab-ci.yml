@@ -449,6 +449,7 @@ deploy-prod:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
     - rsync -v ./docker-compose.prod.subst.yml ubuntu@$HUB_PROD_IP:~/docker/eggosystem/docker-compose.yml
+    - rsync -v ./conf/mariadb/my.cnf kanaliiga@$HUB_PROD_IP:~/docker/eggosystem/my.cnf
     - ssh ubuntu@$HUB_PROD_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh ubuntu@$HUB_PROD_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh ubuntu@$HUB_PROD_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
@@ -476,6 +477,7 @@ deploy-staging:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - envsubst < docker-compose.staging.yml > docker-compose.staging.subst.yml
     - rsync -v ./docker-compose.staging.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-staging/docker-compose.yml
+    - rsync -v ./conf/mariadb/my.cnf kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-staging/my.cnf
     - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml pull"
     - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml up -d"

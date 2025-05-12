@@ -105,7 +105,7 @@ services:
       timeout: 20s
       retries: 10
     volumes:
-      - ./conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
+      - /home/kanaliiga/docker/eggosystem-staging/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
 
   eggo-redis:
     image: redis:7-alpine
