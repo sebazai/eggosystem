@@ -1662,6 +1662,9 @@ describe("Season team registration services", () => {
         );
       });
       afterEach(async () => {
+        await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
+          "12345678912345601"
+        ]);
         await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
       });
       it("should add player to registration", async () => {
@@ -1701,6 +1704,9 @@ describe("Season team registration services", () => {
         await setSeasonTeamPlayer("12345678912345601");
       });
       afterEach(async () => {
+        await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
+          "12345678912345601"
+        ]);
         await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
       });
       it("should remove Nakki Kauppias from team registration", async () => {
@@ -1737,6 +1743,12 @@ describe("Season team registration services", () => {
         );
       });
       afterEach(async () => {
+        await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
+          "12345678912345601"
+        ]);
+        await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
+          "12345678912345603"
+        ]);
         await runQuery("DELETE FROM Accounts WHERE id = ?", [100000]);
         await runQuery("DELETE FROM Accounts WHERE id = ?", [100001]);
       });

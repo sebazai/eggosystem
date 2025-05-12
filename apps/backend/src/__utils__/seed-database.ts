@@ -84,6 +84,9 @@ export const insertTestUsersForSignup = async () => {
 
 export const cleanupTestUsers = async () => {
   for (const player of validSignupData.players) {
+    await runQuery("DELETE FROM SteamPlayers WHERE account_id = ?", [
+      player.accountId
+    ]);
     await runQuery("DELETE FROM Accounts WHERE id = ?", [player.accountId]);
   }
 };
