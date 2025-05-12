@@ -11,7 +11,7 @@ export default function PrivacyPolicy() {
     <div className="privacy-policy">
       <h1>Privacy Policy</h1>
       <p>Effective Date: 1st of April 2025</p>
-      <p>Last Updated: 29th of April 2025</p>
+      <p>Last Updated: 12th of May 2025</p>
 
       <h2>1. Introduction</h2>
       <p>
@@ -31,18 +31,16 @@ export default function PrivacyPolicy() {
           participation in games.
         </li>
         <li>
-          <strong>Team and Organization Association:</strong> Linked to your{" "}
-          <strong>Steam ID</strong> and stored permanently, even if you change
-          teams or organizations.
+          <strong>Team and Organization Association:</strong> Linked through
+          your <strong>Steam ID</strong>
         </li>
         <li>
           <strong>Performance and Game Data:</strong> Parsed from matches for
           ranking and statistical purposes.
         </li>
         <li>
-          <strong>Personal Email & Work Email & Full Name:</strong> Collected
-          with consent to verify your team/organization.{" "}
-          <strong>This information is never shared with third parties.</strong>
+          <strong>Personal Email or Work Email & Full Name:</strong> Collected
+          with consent to verify your team/organization.
         </li>
       </ul>
 
@@ -67,7 +65,7 @@ export default function PrivacyPolicy() {
             Steam ID, Nickname, Team and/or Organization Association &
             Performance Data:
           </strong>{" "}
-          Permanently stored for ranking history and statistical purposes.
+          Stored for ranking history and statistical purposes.
         </li>
         <li>
           <strong>Personal Email & Work Email & Full Name:</strong> Stored until
@@ -89,45 +87,78 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}
-          <strong>personal email, work email and full name</strong>. However,{" "}
-          <strong>
-            Steam ID, nickname, performance data, and team or organization
-            association cannot be deleted
-          </strong>{" "}
-          as they are essential for ranking history and statistical tracking.
+          <strong>personal email, work email, and full name</strong> at any
+          time. However,{" "}
+          <strong>Steam ID and nickname cannot be deleted</strong> due to their
+          essential role in maintaining ranking history and statistical
+          tracking. If you wish to have them anonymized, we can replace your
+          Steam ID and nickname with random identifiers, ensuring they can no
+          longer be traced back to you.
         </li>
       </ul>
+
+      <h2>6. Marketing Communications</h2>
       <p>
-        To exercise your rights, please contact us at{" "}
-        <a href="mailto:info@kanaliiga.fi">info@kanaliiga.fi</a>.
+        If you have opted in to receive marketing communications, we will use
+        your personal data to send you relevant updates, event notifications,
+        and promotions related to Kanaliiga Ry.
+      </p>
+      <p>
+        We will never share your personal data with third parties for marketing
+        purposes. All marketing communications will come exclusively from
+        Kanaliiga Ry and will not be shared with external organizations for
+        marketing purposes.
+      </p>
+      <p>
+        You can withdraw your consent at any time by updating your profile
+        settings or by clicking the unsubscribe link in any marketing email you
+        receive.
       </p>
 
-      <h2>6. Data Sharing with Third Parties</h2>
+      <h2>7. Data Sharing with Third Parties</h2>
       <p>
-        We may share certain data with third parties, but{" "}
-        <strong>
-          we never share your full name, work email or personal email with any
-          third party.
-        </strong>
+        We may share your personal data with third parties for the purposes
+        outlined in this Privacy Policy. This data sharing is based on our
+        legitimate interests in providing our services and facilitating the
+        organization of events, tournaments, and other activities related to the
+        Kanaliiga platform.
       </p>
-      <p>
-        We may share information, such as SteamID and nickname, to the
-        following:
-      </p>
+      <p>We may share the following data with trusted third parties:</p>
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
           <strong>eSports Partners (e.g., Faceit):</strong> To facilitate
-          tournament and game participation.
+          tournament and game participation, we may share your Steam ID,
+          nickname, and other relevant performance data.
         </li>
         <li>
-          <strong>Game Platforms (e.g., Steam):</strong> Where the games are
-          played.
+          <strong>Game Platforms (e.g., Steam):</strong> To verify your game
+          participation, we may share your Steam ID and nickname.
+        </li>
+        <li>
+          <strong>Tournament Organizers:</strong> To organize finals, live
+          tournaments, and other competitive events, we may share your Steam ID,
+          nickname, and other relevant data.
+        </li>
+        <li>
+          <strong>Other Kanaliiga Ry Services:</strong> Your data may also be
+          shared with other Kanaliiga Ry services that facilitate your
+          participation in community events, rankings, or other services related
+          to your involvement in the platform.
         </li>
       </ul>
-      <p>We do not sell or rent your data to third parties.</p>
+      <p>
+        We do not share your full name, work email, or personal email with third
+        parties unless necessary for event coordination or related services. Any
+        data sharing with third parties is solely to support your participation
+        in Kanaliiga events and to ensure proper management of the platform and
+        competitions.
+      </p>
 
-      <h2>7. Security Measures</h2>
-      <p>We implement strong security measures, including:</p>
+      <h2>8. Security Measures</h2>
+      <p>
+        We implement strong security measures to protect your personal data,
+        including:
+      </p>
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
           <strong>Access Control:</strong> Only authorized personnel can access
@@ -137,15 +168,21 @@ export default function PrivacyPolicy() {
           <strong>Encryption:</strong> Protecting data storage and
           transmissions.
         </li>
+        <li>
+          <strong>Audit Logging:</strong> We maintain audit logs for tables
+          containing personal data to track and monitor access and
+          modifications. Steam ID and nickname are excluded from this logging,
+          as they are not considered sensitive for these purposes.
+        </li>
       </ul>
 
-      <h2>8. Updates to This Privacy Policy</h2>
+      <h2>9. Updates to This Privacy Policy</h2>
       <p>
         We may update this Privacy Policy from time to time. Changes will be
         notified via a banner on our website.
       </p>
 
-      <h2>9. Contact Information</h2>
+      <h2>Contact Information</h2>
       <p>
         If you have any questions or requests regarding your personal data,
         please contact us at:
