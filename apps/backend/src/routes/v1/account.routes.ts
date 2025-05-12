@@ -7,11 +7,19 @@ import {
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
 import { type UserProfilePayload } from "@eggosystem/types";
+import {
+  auditReadEntity,
+  auditUpdateEntity
+} from "../../middlewares/audit-log.middleware";
 
 const router = Router();
 
-router.post("/update", updateAccountProfileController);
-router.get("/profile", async (req, res) => {
+router.post(
+  "/update",
+  auditUpdateEntity("Accounts"),
+  updateAccountProfileController
+);
+router.get("/profile", auditReadEntity("Accounts"), async (req, res) => {
   if (req.auth && req.auth.provider === "steam") {
     const userInDb = await getAuthUserBySteamId(req.auth.provider_id);
     if (!userInDb) {
