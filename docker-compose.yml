@@ -76,8 +76,6 @@ services:
       - MARIADB_USER=kanadbuser
       - MARIADB_PASSWORD=dev-pass
       - MARIADB_DATABASE=kanaliiga
-      - MARIADB_MAX_ALLOWED_PACKET=128M
-      - MARIADB_INNODB_LOG_FILE_SIZE=64M
     healthcheck:
       test:
         [
@@ -92,6 +90,8 @@ services:
         ]
       timeout: 20s
       retries: 10
+    volumes:
+      - ./conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
 
   migrations:
     image: eggo-migrations

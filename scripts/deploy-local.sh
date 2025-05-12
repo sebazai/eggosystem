@@ -121,14 +121,14 @@ services:
       MARIADB_USER: "ondemand_${ENV_ID}"
       MARIADB_PASSWORD: "${DB_ONDEMAND_PASSWORD}"
       MARIADB_DATABASE: kanaliiga
-      MARIADB_MAX_ALLOWED_PACKET: 128M
-      MARIADB_INNODB_LOG_FILE_SIZE: 64M
     networks:
       - web
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p\${MARIADB_ROOT_PASSWORD}"]
       timeout: 20s
       retries: 10
+    volumes:
+      - ./conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
 
   eggo-redis-${ENV_ID}:
     image: redis:7-alpine

@@ -203,8 +203,6 @@ test:backend:
     #   alias: eggo-redis
   variables:
     <<: *overwrite-variables
-    MARIADB_MAX_ALLOWED_PACKET: 128M
-    MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
@@ -233,8 +231,6 @@ test:frontend:
   extends: [.mr-frontend]
   variables:
     <<: *overwrite-variables
-    MARIADB_MAX_ALLOWED_PACKET: 128M
-    MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate

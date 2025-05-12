@@ -17,6 +17,8 @@ services:
       service: eggo-devdb
     networks:
       - eggo-dev
+    volumes:
+      - ../conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
 
   eggo-phpmyadmin:
     extends:
