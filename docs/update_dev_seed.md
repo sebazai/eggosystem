@@ -6,6 +6,7 @@ phpMyAdmin -> Export
 - REMOVE: Enclose in transaction
 - ADD: Disable foreign key check.
 - REMOVE: Enclose table and column names with back-quotes (Protects column and table names formed with special characters or keywords)
+- REMOVE: Add CREATE PROCEDURE / FUNCTION / EVENT statement
 
 - Export
 - Save to ./kana_dev_test_seed.sql
