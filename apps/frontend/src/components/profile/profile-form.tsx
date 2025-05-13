@@ -259,7 +259,9 @@ const ProfileFormInputs = ({
               <FormControl>
                 <Checkbox
                   disabled={
-                    emailsVerified?.work_email_verified && !workEmailDirty
+                    emailsVerified?.work_email_verified &&
+                    !workEmailDirty &&
+                    field.value
                   }
                   checked={field.value}
                   onCheckedChange={field.onChange}
