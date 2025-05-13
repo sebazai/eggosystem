@@ -261,7 +261,8 @@ const ProfileFormInputs = ({
                   disabled={
                     emailsVerified?.work_email_verified &&
                     !workEmailDirty &&
-                    field.value
+                    field.value &&
+                    isPersonalEmail
                   }
                   checked={field.value}
                   onCheckedChange={field.onChange}
