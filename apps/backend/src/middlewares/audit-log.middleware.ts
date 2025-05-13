@@ -33,34 +33,36 @@ export function auditAfterResponse(config: AuditConfig) {
       };
 
       try {
-        await runQuery(
-          `
-          INSERT INTO AuditLog (
-            action_type,
-            entity_type,
-            entity_id,
-            user_id,
-            request_data,
-            response_data,
-            response_status,
-            response_message,
-            user_agent,
-            metadata
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-          [
-            config.actionType ?? `${req.method} ${req.originalUrl}`,
-            entityType,
-            entityId,
-            userId,
-            req.body ? JSON.stringify(req.body) : null,
-            responseBody ? JSON.stringify(responseBody) : null,
-            res.statusCode,
-            res.statusMessage,
-            req.headers["user-agent"] || "",
-            JSON.stringify({ durationMs: duration })
-          ]
-        );
+        if (res.statusCode !== 304) {
+          await runQuery(
+            `
+            INSERT INTO AuditLog (
+              action_type,
+              entity_type,
+              entity_id,
+              user_id,
+              request_data,
+              response_data,
+              response_status,
+              response_message,
+              user_agent,
+              metadata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+            [
+              config.actionType ?? `${req.method} ${req.originalUrl}`,
+              entityType,
+              entityId,
+              userId,
+              req.body ? JSON.stringify(req.body) : null,
+              responseBody ? JSON.stringify(responseBody) : null,
+              res.statusCode,
+              res.statusMessage,
+              req.headers["user-agent"] || "",
+              JSON.stringify({ durationMs: duration })
+            ]
+          );
+        }
       } catch (err) {
         console.error("Audit log error:", err);
       }
