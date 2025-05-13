@@ -3,6 +3,16 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "../../routes/v1/auth.routes";
 import * as authServices from "../../services/auth.services";
+import jwt from "jsonwebtoken";
+
+jest.mock("jsonwebtoken", () => ({
+  sign: jest.fn((payload, secret, _options) => {
+    if (secret === "mock-refresh-private-key") {
+      return "mock-refresh-token";
+    }
+    return "mock-access-token";
+  })
+}));
 
 describe("GET /me", () => {
   const app = express();
@@ -62,7 +72,7 @@ describe("GET /steam/return", () => {
     process.env.PRIVACY_POLICY_VERSION = "1";
   });
 
-  it("should redirect to the valid returnUrl from cookie", async () => {
+  it("should redirect to the valid returnUrl from cookie and call jwt sign with correct params", async () => {
     jest
       .spyOn(authServices, "getPermissionsForAccountId")
       .mockResolvedValue([]);
@@ -71,6 +81,27 @@ describe("GET /steam/return", () => {
       .set("Authorization", "Bearer valid_token")
       .set("Cookie", "steam_returnUrl=/dashboard");
 
+    expect(jwt.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayName: "sububobi",
+        jti: expect.any(String),
+        permissions: [],
+        steamId: "76561198049745649"
+      }),
+      "mock-private-key",
+      { algorithm: "RS256", expiresIn: 1200 }
+    );
+
+    expect(jwt.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        displayName: "sububobi",
+        jti: expect.any(String),
+        permissions: [],
+        steamId: "76561198049745649"
+      }),
+      "mock-refresh-private-key",
+      { algorithm: "RS256", expiresIn: 604800 }
+    );
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe("https://example.com/dashboard");
   });
