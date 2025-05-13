@@ -1,6 +1,10 @@
 # Dependency directories
 **/node_modules
 
+# Development keys
+**/**.pem
+**/**.pem
+
 # Output of build tools
 dist/
 build/

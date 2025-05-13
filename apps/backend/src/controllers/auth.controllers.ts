@@ -6,13 +6,13 @@ import {
   clearCookies,
   generateTokens,
   setCookies,
-  getJWTValues,
   getPermissionsForAccountId,
   flushPermissionsForAccountId
 } from "../services/auth.services";
 import { redisClient } from "../utils/redisClient";
+import { getJWTValues } from "../configs/jwt-keys";
 
-const { JWT_REFRESH_SECRET, JWT_REFRESH_EXPIRES_IN } = getJWTValues();
+const { JWT_REFRESH_PUBLIC_KEY, JWT_REFRESH_EXPIRES_IN } = getJWTValues();
 
 export const login = async (req: Request, res: Response) => {
   if (!req.user) {
@@ -46,8 +46,12 @@ export const refreshToken = async (req: Request, res: Response) => {
   }
 
   try {
-    const decoded = <jwt.JwtPayload>(
-      jwt.verify(refreshToken, JWT_REFRESH_SECRET)
+    const decoded = <jwt.JwtPayload>jwt.verify(
+      refreshToken,
+      JWT_REFRESH_PUBLIC_KEY,
+      {
+        algorithms: ["RS256"]
+      }
     );
     const storedToken = await redisClient.get(decoded.jti!);
 
@@ -84,8 +88,12 @@ export const logout = async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.refresh_token;
   if (refreshToken) {
     try {
-      const decoded = <jwt.JwtPayload>(
-        jwt.verify(refreshToken, JWT_REFRESH_SECRET)
+      const decoded = <jwt.JwtPayload>jwt.verify(
+        refreshToken,
+        JWT_REFRESH_PUBLIC_KEY,
+        {
+          algorithms: ["RS256"]
+        }
       );
       await redisClient.del(decoded.jti!);
       await flushPermissionsForAccountId(decoded.account_id);

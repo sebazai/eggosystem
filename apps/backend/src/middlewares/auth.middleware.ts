@@ -1,8 +1,7 @@
 import { expressjwt } from "express-jwt";
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { getPermissionsForAccountId } from "../services/auth.services";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
+import { JWT_PUBLIC_KEY } from "../configs/jwt-keys";
 
 interface CheckPermissionOptions {
   staticPermissions?: string[];
@@ -77,8 +76,8 @@ export function checkPermission({
 }
 
 export const authenticateJWT = expressjwt({
-  secret: JWT_SECRET,
-  algorithms: ["HS256"],
+  secret: JWT_PUBLIC_KEY,
+  algorithms: ["RS256"],
   getToken: (req) => {
     if (
       req.headers.authorization &&

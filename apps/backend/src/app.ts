@@ -13,9 +13,6 @@ if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
-  if (!process.env.JWT_SECRET || !process.env.JWT_REFRESH_SECRET) {
-    throw new Error("No JWT_SECRET or JWT_REFRESH_SECRET found in env");
-  }
   if (
     !process.env.DB_HOST ||
     !process.env.DB_PORT ||

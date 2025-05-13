@@ -13,6 +13,17 @@ When adding new migrations, rebuild container to run the migrations. Remember to
 
 Start development env: `pnpm dev` - builds `packages/types` automatically
 
+### JWT Keys
+
+In root run:
+
+```
+ openssl genpkey -algorithm RSA -out apps/backend/private_access_token.pem
+ openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem
+ openssl genpkey -algorithm RSA -out apps/backend/private_refresh_token.pem
+ openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
+```
+
 ### Other way
 
 `docker compose up`

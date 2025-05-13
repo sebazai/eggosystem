@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import jwt from "jsonwebtoken";
 import * as uuid from "uuid";
+import * as jwtKeys from "../../configs/jwt-keys";
 
 import { redisClient } from "../../utils/redisClient";
 
@@ -24,8 +25,20 @@ describe("AuthControllers utils", () => {
         .spyOn(jwt, "sign")
         .mockImplementation(() => "mockedToken");
 
+      const tokenGenerationSpy = jest
+        .spyOn(jwtKeys, "getJWTValues")
+        .mockReturnValue({
+          JWT_PRIVATE_KEY: "your_jwt_secret",
+          JWT_PUBLIC_KEY: "public_access_token",
+          JWT_REFRESH_PRIVATE_KEY: "your_refresh_secret",
+          JWT_REFRESH_PUBLIC_KEY: "public_refresh_token",
+          JWT_EXPIRES_IN: 1200,
+          JWT_REFRESH_EXPIRES_IN: 1000
+        });
+
       const tokens = authServices.generateTokens(user, jti);
 
+      expect(tokenGenerationSpy).toHaveBeenCalledTimes(1);
       expect(signSpy).toHaveBeenCalledTimes(2);
       expect(signSpy).toHaveBeenNthCalledWith(
         1,
@@ -38,7 +51,7 @@ describe("AuthControllers utils", () => {
           jti: "123123"
         },
         "your_jwt_secret",
-        { expiresIn: 1200 }
+        { expiresIn: 1200, algorithm: "RS256" }
       );
       expect(signSpy).toHaveBeenNthCalledWith(
         2,
@@ -51,7 +64,7 @@ describe("AuthControllers utils", () => {
           jti: "123123"
         },
         "your_refresh_secret",
-        { expiresIn: 604800 }
+        { expiresIn: 1000, algorithm: "RS256" }
       );
 
       expect(tokens).toEqual({
