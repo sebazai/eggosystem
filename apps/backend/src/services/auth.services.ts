@@ -81,6 +81,12 @@ export const getPermissionsForAccountId = async (
 };
 
 export const getRolesForAccountId = async (accountId: number) => {
+  const redisKey = `roles-${accountId}`;
+  const rolesInRedis = await redisClient.get(redisKey);
+  if (rolesInRedis) {
+    return rolesInRedis.split(",");
+  }
+
   const rolesResult = await runQuery<
     Array<{
       role_name: Role["role_name"];
@@ -95,7 +101,11 @@ export const getRolesForAccountId = async (accountId: number) => {
     `,
     [accountId]
   );
-  return rolesResult.map((role) => role.role_name);
+  const roles = rolesResult.map((role) => role.role_name);
+  if (roles.length > 0) {
+    await redisClient.set(redisKey, roles.join(","), "EX", expireIn30Days);
+  }
+  return roles;
 };
 
 export const generateTokens = (user: jwt.JwtPayload, jti?: string) => {

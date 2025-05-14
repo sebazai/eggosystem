@@ -12,6 +12,8 @@ export async function requireRole(allowedRoles: string[] = ["admin"]) {
   const cookers = await cookies();
   const token = cookers.get("access_token");
 
+  console.log("Requiring role...");
+
   if (!token) {
     redirect(`${envConfig.CLIENT_API_URL}/api/v1/auth/steam`);
   }

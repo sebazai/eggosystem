@@ -1,3 +1,5 @@
+import { TeamManualPlayerApprovalForm } from "@/components/dashboard/registration/TeamManualPlayerApprovalForm";
+
 export default async function Page() {
-  return <div>test</div>;
+  return <TeamManualPlayerApprovalForm />;
 }

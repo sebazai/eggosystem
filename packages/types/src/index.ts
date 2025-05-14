@@ -19,3 +19,4 @@ export * from "./leaderboards/index";
 export * from "./teams/index";
 export * from "./games/index";
 export * from "./ranks/index";
+export * from "./dashboard/index";
