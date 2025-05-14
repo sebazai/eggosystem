@@ -1,13 +1,21 @@
 import type { Request, Response, NextFunction } from "express";
-import { getPermissionsForAccountId } from "../../services/auth.services";
-import { checkJWTPermissions } from "../../middlewares/auth.middleware";
+import {
+  getPermissionsForAccountId,
+  getRolesForAccountId
+} from "../../services/auth.services";
+import { checkPermissions } from "../../middlewares/auth.middleware";
 
 jest.mock("../../services/auth.services", () => ({
-  getPermissionsForAccountId: jest.fn()
+  getPermissionsForAccountId: jest.fn(),
+  getRolesForAccountId: jest.fn()
 }));
 
 const mockedGetPermissions = getPermissionsForAccountId as jest.MockedFunction<
   typeof getPermissionsForAccountId
+>;
+
+const mockedGetRoles = getRolesForAccountId as jest.MockedFunction<
+  typeof getRolesForAccountId
 >;
 
 describe("checkPermission middleware", () => {
@@ -38,7 +46,7 @@ describe("checkPermission middleware", () => {
   it("should forbid if no authentication", async () => {
     req.auth = undefined;
 
-    const middleware = checkJWTPermissions({});
+    const middleware = checkPermissions({});
     await middleware(req as Request, res as Response, next);
 
     expect(res.status).toHaveBeenCalledWith(403);
@@ -50,8 +58,9 @@ describe("checkPermission middleware", () => {
 
   it("should allow if static permission matches", async () => {
     mockedGetPermissions.mockResolvedValue(["admin:access"]);
+    mockedGetRoles.mockResolvedValue([]);
 
-    const middleware = checkJWTPermissions({
+    const middleware = checkPermissions({
       staticPermissions: ["admin:access"]
     });
     await middleware(req as Request, res as Response, next);
@@ -65,8 +74,9 @@ describe("checkPermission middleware", () => {
     mockedGetPermissions.mockResolvedValue([
       "captain:edit-registration:season-1:team-2"
     ]);
+    mockedGetRoles.mockResolvedValue([]);
 
-    const middleware = checkJWTPermissions({
+    const middleware = checkPermissions({
       role: "captain",
       action: "edit-registration",
       paramKeys: ["season_id", "team_id"]
@@ -81,8 +91,9 @@ describe("checkPermission middleware", () => {
   it("should return 400 if a required paramKey is missing", async () => {
     req.params = { season_id: "1" }; // team_id missing
     mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue([]);
 
-    const middleware = checkJWTPermissions({
+    const middleware = checkPermissions({
       role: "captain",
       action: "edit-registration",
       paramKeys: ["season_id", "team_id"]
@@ -98,9 +109,10 @@ describe("checkPermission middleware", () => {
   });
 
   it("should allow if fallback role matches", async () => {
-    mockedGetPermissions.mockResolvedValue(["moderator"]);
+    mockedGetPermissions.mockResolvedValue([]);
+    mockedGetRoles.mockResolvedValue(["moderator"]);
 
-    const middleware = checkJWTPermissions({ fallbackRoles: ["moderator"] });
+    const middleware = checkPermissions({ fallbackRoles: ["moderator"] });
 
     await middleware(req as Request, res as Response, next);
 
@@ -111,8 +123,9 @@ describe("checkPermission middleware", () => {
   it("should forbid if no permissions match", async () => {
     req.params = { season_id: "1", team_id: "2" };
     mockedGetPermissions.mockResolvedValue(["other:permission"]);
+    mockedGetRoles.mockResolvedValue(["captain"]);
 
-    const middleware = checkJWTPermissions({
+    const middleware = checkPermissions({
       staticPermissions: ["admin:access"],
       role: "captain",
       action: "edit-registration",
