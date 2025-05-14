@@ -26,6 +26,8 @@ services:
       SMTP_PASSWORD: $SMTP_PASSWORD
     networks:
       - web
+    volumes:
+      - ./public_access_token.pem:/usr/src/app/apps/backend/dist/public_access_token.pem
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe.entrypoints=http"
