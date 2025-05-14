@@ -484,7 +484,8 @@ test.describe("Profile Form", () => {
             // No acceptedPrivacyPolicy - user hasn't accepted it yet
             acceptedPrivacyPolicy: true,
             acceptedMarketing: false,
-            isPersonalEmail: false
+            isPersonalEmail: false,
+            roles: []
           } satisfies UserFullPayload
         })
       });
