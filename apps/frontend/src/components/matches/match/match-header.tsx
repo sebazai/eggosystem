@@ -1,6 +1,10 @@
+"use client";
+
 import { NextImageFallback } from "@/components/layout/image-with-fallback";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import type { MatchTeamInfo } from "@eggosystem/types";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 interface MatchHeaderProps {
   team1: MatchTeamInfo;
@@ -19,6 +23,9 @@ export function MatchHeader({
   matchDate,
   className
 }: MatchHeaderProps) {
+  const search = useSearchParams();
+  const searchParams = search.size !== 0 ? search.toString() : "";
+
   const startDate = new Date(`${matchDate}T${matchStartTime}`);
   const endDate = new Date(`${matchDate}T${matchEndTime}`);
 
@@ -38,78 +45,72 @@ export function MatchHeader({
   const formattedDate = formatDate(startDate);
 
   return (
-    <div
-      className={cn(
-        "w-full dark:bg-kanaliiga-orange/30 bg-kanaliiga-orange/50",
-        className
-      )}
-    >
-      <div className="mx-auto px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+    <div className={cn("w-full dark:bg-[#2a1314] bg-[#2a1314]", className)}>
+      <div className="mx-auto grid grid-cols-[1fr_auto_auto_auto_1fr] items-center">
         {/* Team 1 */}
-        <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left justify-self-start">
-          <div className="flex flex-col items-center md:items-start">
-            <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
-              {team1.name}
-            </span>
-            <span className="text-xs md:text-sm text-zinc-400 px-2">
-              Ranking #{team1.rank}
-            </span>
-          </div>
-          <div className="h-10 w-10 md:h-14 md:w-14 relative">
-            <NextImageFallback
-              src={createTeamLogoUrl(team1.logo)}
-              alt={`${team1.name} logo`}
-              fill
-              className="object-contain"
-            />
-          </div>
+        <div className="flex items-center justify-end">
+          <Link
+            href={{
+              pathname: `/teams/${team1.id}`,
+              query: searchParams
+            }}
+            className="flex items-center gap-2 hover:opacity-90 px-5 py-3"
+          >
+            <div className="text-right">
+              <div className="text-xl font-bold">{team1.name}</div>
+              <div className="text-xs text-zinc-400">Ranking #{team1.rank}</div>
+            </div>
+            <div className="h-14 w-14 relative">
+              <NextImageFallback
+                src={createTeamLogoUrl(team1.logo)}
+                alt={`${team1.name} logo`}
+                fill
+                className="object-contain"
+              />
+            </div>
+          </Link>
         </div>
 
-        {/* Score (centered) */}
-        <div className="flex flex-col items-center gap-1 justify-self-center text-center">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <span
-              className={cn(
-                "text-xl xs:text-4xl font-bold",
-                team1.score > team2.score ? "text-green-600" : "text-red-600"
-              )}
-            >
-              {team1.score}
-            </span>
-            <span className="text-xs xs:text-lg">&mdash;</span>
-            <span
-              className={cn(
-                "text-xl xs:text-4xl font-bold",
-                team2.score > team1.score ? "text-green-600" : "text-red-600"
-              )}
-            >
-              {team2.score}
-            </span>
-          </div>
-          <div className="text-tiny md:text-sm">
+        {/* Team 1 Score Box */}
+        <div className="bg-[#561a1c] py-3 px-6">
+          <div className="text-5xl font-bold text-white">{team1.score}</div>
+        </div>
+
+        {/* Time Box (centered) */}
+        <div className="flex flex-col items-center justify-center py-3 px-5 bg-[#3d1517] text-xs text-zinc-400">
+          <div>
             {formattedStart}–{formattedEnd}
           </div>
-          <div className="text-xxs sm:text-sm">{formattedDate}</div>
+          <div>{formattedDate}</div>
+        </div>
+
+        {/* Team 2 Score Box */}
+        <div className="bg-[#561a1c] py-3 px-6">
+          <div className="text-5xl font-bold text-white">{team2.score}</div>
         </div>
 
         {/* Team 2 */}
-        <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left justify-self-end">
-          <div className="flex flex-col items-center md:items-start">
-            <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
-              {team2.name}
-            </span>
-            <span className="text-xs md:text-sm text-zinc-400 px-2">
-              Ranking #{team2.rank}
-            </span>
-          </div>
-          <div className="h-10 w-10 md:h-14 md:w-14 relative">
-            <NextImageFallback
-              src={createTeamLogoUrl(team2.logo)}
-              alt={`${team2.name} logo`}
-              fill
-              className="object-contain"
-            />
-          </div>
+        <div className="flex items-center justify-start">
+          <Link
+            href={{
+              pathname: `/teams/${team2.id}`,
+              query: searchParams
+            }}
+            className="flex items-center gap-2 hover:opacity-90 px-5 py-3"
+          >
+            <div className="h-14 w-14 relative">
+              <NextImageFallback
+                src={createTeamLogoUrl(team2.logo)}
+                alt={`${team2.name} logo`}
+                fill
+                className="object-contain"
+              />
+            </div>
+            <div>
+              <div className="text-xl font-bold">{team2.name}</div>
+              <div className="text-xs text-zinc-400">Ranking #{team2.rank}</div>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
