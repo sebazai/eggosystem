@@ -471,16 +471,16 @@ deploy-staging:
     - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan $PROD_SERVER_IP >> ~/.ssh/known_hosts
+    - ssh-keyscan $HUB_DEV_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - envsubst < docker-compose.staging.yml > docker-compose.staging.subst.yml
-    - rsync -v ./docker-compose.staging.subst.yml kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-staging/docker-compose.yml
-    - rsync -v ./conf/mariadb/my.cnf kanaliiga@$PROD_SERVER_IP:~/docker/eggosystem-staging/my.cnf
-    - ssh kanaliiga@$PROD_SERVER_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml pull"
-    - ssh kanaliiga@$PROD_SERVER_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml up -d"
+    - rsync -v ./docker-compose.staging.subst.yml ubuntu@$HUB_DEV_IP:~/docker/eggosystem-staging/docker-compose.yml
+    - rsync -v ./conf/mariadb/my.cnf ubuntu@$HUB_DEV_IP:~/docker/eggosystem-staging/my.cnf
+    - ssh ubuntu@$HUB_DEV_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh ubuntu@$HUB_DEV_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml pull"
+    - ssh ubuntu@$HUB_DEV_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml up -d"
     - |
       echo ""
       echo "=============================================="
@@ -489,7 +489,6 @@ deploy-staging:
       echo "📱 Frontend: https://${HUBDEV_PUBLIC_URL}"
       echo "🔌 API: https://${HUBDEV_PUBLIC_URL}/api/v1"
       echo "🗄️ phpMyAdmin: https://${HUBDEV_PUBLIC_URL}/mysadmin/"
-      echo "🐳 Portainer: ${PORTAINER_URL}/#/stacks"
       echo "=============================================="
 
 deploy-ondemand:
