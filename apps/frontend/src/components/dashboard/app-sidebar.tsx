@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import { GalleryVerticalEnd } from "lucide-react";
+import Link from "next/link";
 
 import {
   Sidebar,
@@ -23,7 +24,7 @@ const data = {
   navMain: [
     {
       title: "Kanahub",
-      url: process.env.NEXT_PUBLIC_BASE_URL,
+      url: process.env.NEXT_PUBLIC_BASE_URL!,
       items: [
         {
           title: "Organizations",
@@ -110,7 +111,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <Link href="/">
                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                   <GalleryVerticalEnd className="size-4" />
                 </div>
@@ -118,7 +119,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   <span className="font-medium">Kanahub</span>
                   <span className="">v1.0.0</span>
                 </div>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -138,16 +139,16 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
               return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url} className="font-medium">
+                    <Link href={item.url} className="font-medium">
                       {item.title}
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                   {item.items?.length ? (
                     <SidebarMenuSub>
                       {item.items.map((item) => (
                         <SidebarMenuSubItem key={item.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={item.url}>{item.title}</a>
+                            <Link href={item.url}>{item.title}</Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}
