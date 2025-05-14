@@ -28,7 +28,9 @@ services:
       - web
     volumes:
       - ./public_access_token.pem:/usr/src/app/apps/backend/dist/public_access_token.pem
+      - ./public_refresh_token.pem:/usr/src/app/apps/backend/dist/public_refresh_token.pem
       - ./private_access_token.pem:/usr/src/app/apps/backend/dist/private_access_token.pem
+      - ./private_refresh_token.pem:/usr/src/app/apps/backend/dist/private_refresh_token.pem
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe.entrypoints=http"
