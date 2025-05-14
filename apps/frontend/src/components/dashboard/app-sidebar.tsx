@@ -49,12 +49,12 @@ const data = {
           url: "#"
         },
         {
-          title: "Ranks",
+          title: "Add rank",
           url: "#"
         },
         {
-          title: "Approval",
-          url: "#"
+          title: "Add manual approval",
+          url: createDashboardNextUrl("/registration/approval")
         },
         {
           title: "Player test",

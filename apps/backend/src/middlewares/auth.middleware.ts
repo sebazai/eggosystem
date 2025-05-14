@@ -1,6 +1,9 @@
 import { expressjwt } from "express-jwt";
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { getPermissionsForAccountId } from "../services/auth.services";
+import {
+  getPermissionsForAccountId,
+  getRolesForAccountId
+} from "../services/auth.services";
 import { JWT_PUBLIC_KEY } from "../configs/jwt-keys";
 
 interface CheckPermissionOptions {
@@ -11,7 +14,12 @@ interface CheckPermissionOptions {
   fallbackRoles?: string[];
 }
 
-export function checkPermission({
+/**
+ * Not stateless. Checks permissions from Redis / DB.
+ * @param param0
+ * @returns
+ */
+export function checkPermissions({
   staticPermissions,
   role,
   action,
@@ -34,8 +42,78 @@ export function checkPermission({
       req.auth.account_id
     );
 
+    const roles = await getRolesForAccountId(req.auth.account_id);
+
     // Static permission check
     if (staticPermissions?.some((perm) => permissions.includes(perm))) {
+      return next();
+    }
+
+    // Build dynamic permission
+    if (role && action && paramKeys.length > 0) {
+      const scopeParts: string[] = [];
+
+      for (const key of paramKeys) {
+        const value = req.params[key];
+        if (!value) {
+          res
+            .status(400)
+            .json({ error: { message: `Missing route param: ${key}` } });
+          return;
+        }
+
+        // key = "season_id" -> scope part = "season-<id>"
+        const scopePart = key.replace("_id", "") + "-" + value;
+        scopeParts.push(scopePart);
+      }
+
+      const dynamicPermission = `${role}:${action}:${scopeParts.join(":")}`;
+
+      if (permissions.includes(dynamicPermission)) {
+        return next();
+      }
+    }
+
+    if (fallbackRoles.some((role) => roles.includes(role))) {
+      return next();
+    }
+
+    res
+      .status(403)
+      .json({ error: { message: "Forbidden: Insufficient permissions" } });
+    return;
+  };
+}
+
+/**
+ * Stateless permission check from JWT token. Used in non-critical endpoints.
+ * @param param0
+ * @returns
+ */
+export function checkJWTPermissions({
+  staticPermissions,
+  role,
+  action,
+  paramKeys = [],
+  fallbackRoles = []
+}: CheckPermissionOptions): RequestHandler {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    if (!req.auth) {
+      res
+        .status(403)
+        .json({ error: { message: "Forbidden: Requires authentication" } });
+      return;
+    }
+
+    const permissions = req.auth.permissions;
+    const roles = req.auth.roles;
+
+    // Static permission check
+    if (staticPermissions?.some((perm) => roles.includes(perm))) {
       return next();
     }
 

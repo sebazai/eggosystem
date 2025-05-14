@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateJWT } from "../middlewares/auth.middleware";
+import dashboardRouter from "./v1/dashboard/index";
 import authRouter from "./v1/auth.routes";
 import playerRouter from "./v1/player.routes";
 import matchRouter from "./v1/match.routes";
@@ -20,6 +21,8 @@ import parseQueryFilterParams from "../middlewares/parse-query-filter-params.mid
 
 // Create a new Router instance
 const v1Router = Router();
+
+v1Router.use("/dashboard", authenticateJWT, dashboardRouter);
 
 // Mount the routers
 v1Router.use("/auth", authRouter);

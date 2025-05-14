@@ -9,7 +9,7 @@ import {
 } from "../../controllers/season-team-registration.controllers";
 import {
   authenticateJWT,
-  checkPermission
+  checkJWTPermissions
 } from "../../middlewares/auth.middleware";
 
 const router = Router();
@@ -23,7 +23,7 @@ router.get(
   "/season/:season_id/signup/team/:team_id",
   validateNumericParams(),
   authenticateJWT,
-  checkPermission({
+  checkJWTPermissions({
     role: "captain",
     action: "edit-registration",
     paramKeys: ["season_id", "team_id"],
@@ -41,7 +41,7 @@ router.put(
   "/season/:season_id/signup/team/:team_id",
   validateNumericParams(),
   authenticateJWT,
-  checkPermission({
+  checkJWTPermissions({
     role: "captain",
     action: "edit-registration",
     paramKeys: ["season_id", "team_id"],
