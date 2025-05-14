@@ -468,7 +468,7 @@ deploy-staging:
   before_script:
     - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
+    - echo "$HUB_PROD_SSH" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan $HUB_DEV_IP >> ~/.ssh/known_hosts
