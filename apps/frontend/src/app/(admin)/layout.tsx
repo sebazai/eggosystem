@@ -8,7 +8,6 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { ThemeProvider } from "@/providers/theme-provider";
-import { DashboardAuthProvider } from "@/context/DashboardAuthProvider";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -116,9 +115,7 @@ export default function RootLayout({
             <div className="flex flex-col min-h-svh min-w-[200px] w-full">
               <AuthProvider>
                 <AcceptPolicyProvider>
-                  <DashboardAuthProvider>
-                    <main id="main-content">{children}</main>
-                  </DashboardAuthProvider>
+                  <main id="main-content">{children}</main>
                 </AcceptPolicyProvider>
               </AuthProvider>
             </div>

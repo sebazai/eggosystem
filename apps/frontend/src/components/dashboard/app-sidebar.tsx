@@ -1,3 +1,4 @@
+"use client";
 import * as React from "react";
 import { GalleryVerticalEnd } from "lucide-react";
 
@@ -15,6 +16,8 @@ import {
   SidebarRail
 } from "@/components/ui/sidebar";
 import { createDashboardNextUrl } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { Spinner } from "../icons";
 
 const data = {
   navMain: [
@@ -94,11 +97,13 @@ const data = {
   ]
 };
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  roles: string[];
-}
+export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const auth = useAuth();
 
-export function AppSidebar({ roles, ...props }: AppSidebarProps) {
+  if (!auth.user) {
+    return <Spinner />;
+  }
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -124,7 +129,9 @@ export function AppSidebar({ roles, ...props }: AppSidebarProps) {
             {data.navMain.map((item) => {
               if (
                 item.requiredRoles &&
-                !roles.some((role) => item.requiredRoles?.includes(role))
+                !auth.user?.roles.some((role) =>
+                  item.requiredRoles?.includes(role)
+                )
               ) {
                 return;
               }
