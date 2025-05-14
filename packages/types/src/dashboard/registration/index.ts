@@ -1,6 +1,6 @@
 import * as z from "zod";
 
-const CREATE_NEW_TEAM_VALUE = "__create__";
+export const CREATE_NEW_TEAM_VALUE = "__create__";
 
 export const teamManualPlayerApprovalFormSchema = z
   .object({

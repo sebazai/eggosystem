@@ -16,16 +16,11 @@ import {
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
 import {
+  CREATE_NEW_TEAM_VALUE,
   teamManualPlayerApprovalFormSchema,
   type TeamManualPlayerApprovalFormSchemaType
 } from "@eggosystem/types";
-
-const CREATE_NEW_TEAM_VALUE = "__create__";
-
-const teams = [
-  { id: 1, name: "Team Alpha" },
-  { id: 2, name: "Team Bravo" }
-];
+import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
 
 export function TeamManualPlayerApprovalForm() {
   const {
@@ -37,6 +32,8 @@ export function TeamManualPlayerApprovalForm() {
   } = useForm<TeamManualPlayerApprovalFormSchemaType>({
     resolver: zodResolver(teamManualPlayerApprovalFormSchema)
   });
+
+  const { teams } = useSelectableTeams();
 
   const selectedTeamId = watch("teamId");
 
@@ -83,7 +80,7 @@ export function TeamManualPlayerApprovalForm() {
             <SelectItem value={CREATE_NEW_TEAM_VALUE}>
               ➕ Create New Team
             </SelectItem>
-            {teams.map((team) => (
+            {teams?.map((team) => (
               <SelectItem key={team.id} value={String(team.id)}>
                 {team.name}
               </SelectItem>
