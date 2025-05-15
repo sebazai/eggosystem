@@ -124,7 +124,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       730,
       SeasonPlatform.Kanaliiga,
       2,
-      req.body.players,
+      req.body.players.map((player) => player.steamId),
       mockConnection
     );
 
@@ -245,7 +245,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       730,
       SeasonPlatform.Kanaliiga,
       666,
-      req.body.players,
+      req.body.players.map((player) => player.steamId),
       mockConnection
     );
 
@@ -297,7 +297,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       730,
       SeasonPlatform.Kanaliiga,
       1337,
-      req.body.players,
+      req.body.players.map((player) => player.steamId),
       mockConnection
     );
 

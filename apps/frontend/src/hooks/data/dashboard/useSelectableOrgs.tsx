@@ -17,8 +17,6 @@ export const useSelectableOrgs = () => {
     return { organizations: data, isLoading, error, isValidating };
   }
 
-  console.log(data);
-
   const selectableOrganizations = data
     .map((org) => ({
       id: org.id,

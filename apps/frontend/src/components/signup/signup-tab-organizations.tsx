@@ -7,7 +7,6 @@ import {
   FormControl,
   FormMessage
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 import type { MultiSelect } from "@/types/MultiSelectType";
@@ -15,6 +14,7 @@ import type { SignupFormValues } from "@eggosystem/types";
 import { useState } from "react";
 import type { Control, UseFormResetField } from "react-hook-form";
 import { RequiredFormLabel } from "../ui/required-form-label";
+import { NewOrganizationForm } from "../organizations/new-organization-form";
 
 interface TabOrganizationProps {
   watchOrgId: number;
@@ -110,52 +110,12 @@ export const TabOrganization = ({
 
       {/* Custom Organization Input (Only if "Other" is selected) */}
       {watchOrgId === -1 && (
-        <div className="pt-4 space-y-4">
-          <FormField
-            control={control}
-            name="newOrganization.name"
-            render={({ field }) => (
-              <FormItem>
-                <RequiredFormLabel required>
-                  Organization name
-                </RequiredFormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Insert organization name" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="newOrganization.organization_code"
-            render={({ field }) => (
-              <FormItem>
-                <RequiredFormLabel required>Business ID</RequiredFormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Insert y-tunnus (2992559-2)" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
-            name="newOrganization.website"
-            render={({ field }) => (
-              <FormItem>
-                <RequiredFormLabel required>Website</RequiredFormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Example: https://kanaliiga.fi/"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <NewOrganizationForm
+          control={control}
+          nameKey={"newOrganization.name"}
+          orgCodeKey={"newOrganization.organization_code"}
+          websiteKey={"newOrganization.website"}
+        />
       )}
       <Button
         className="mt-5 w-full"

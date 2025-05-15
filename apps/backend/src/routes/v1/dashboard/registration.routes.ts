@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addManuallyApprovedPlayers } from "../../../controllers/dashboard/registration.controllers";
+import { addManuallyApprovedPlayersController } from "../../../controllers/dashboard/registration.controllers";
 import { checkPermissions } from "../../../middlewares/auth.middleware";
 
 const router = Router();
@@ -10,7 +10,7 @@ router.post(
     staticPermissions: ["write:registration"],
     fallbackRoles: ["admin", "helpdesk"]
   }),
-  addManuallyApprovedPlayers
+  addManuallyApprovedPlayersController
 );
 
 export default router;

@@ -395,12 +395,13 @@ describe("Season team registration services", () => {
           terms_and_conditions_approved:
             formData.captainHasReadTermAndConditions
         } satisfies InsertSeasonTeamRegistration,
-        formData.players
+        formData.players.map((player) => player.steamId)
       );
       expect(validatePlayersInDb).toHaveBeenCalledWith(
         seasonDetails.id,
         formData.teamId,
-        formData.players
+        formData.players.map((player) => player.steamId),
+        undefined
       );
       expect(registrationInsert).toHaveBeenCalledWith(
         seasonDetails.id,
@@ -418,7 +419,7 @@ describe("Season team registration services", () => {
         seasonDetails.app_id,
         seasonDetails.platform,
         formData.teamId,
-        formData.players,
+        formData.players.map((player) => player.steamId),
         undefined
       );
       expect(captainPerm).toHaveBeenCalledWith(
@@ -490,7 +491,7 @@ describe("Season team registration services", () => {
         await registrationServices.validatePlayersFromDBForSignup(
           seasonDetails.id,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
       });
       it("Should fail if NULL work e-mail in profile and manually approved by organizer", async () => {
@@ -504,7 +505,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const err = error as BadRequestError;
@@ -548,7 +549,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const badReqError = error as BadRequestError;
@@ -563,7 +564,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const asBadreq = error as BadRequestError;
@@ -582,7 +583,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const asBadreq = error as BadRequestError;
@@ -601,7 +602,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const asBadreq = error as BadRequestError;
@@ -620,7 +621,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const asBadreq = error as BadRequestError;
@@ -635,7 +636,7 @@ describe("Season team registration services", () => {
         await registrationServices.validatePlayersFromDBForSignup(
           seasonDetails.id,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
       });
       it("Should not pass if user has work e-mail, it is marked as personal, it has been verified.", async () => {
@@ -649,7 +650,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const asBadreq = error as BadRequestError;
@@ -668,7 +669,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
-            formData.players
+            formData.players.map((player) => player.steamId)
           );
         } catch (error) {
           const asBadreq = error as BadRequestError;
@@ -731,7 +732,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           seasonDetails.platform,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
       } catch (error) {
         const asBadreq = error as BadRequestError;
@@ -769,7 +770,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           seasonDetails.platform,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
       } catch (error) {
         const asBadreq = error as BadRequestError;
@@ -830,7 +831,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           SeasonPlatform.FACEIT,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
         const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -894,7 +895,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           SeasonPlatform.FACEIT,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
       } catch (error) {
         const errorAsBadReq = error as BadRequestError;
@@ -982,7 +983,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           SeasonPlatform.FACEIT,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
         const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -1061,7 +1062,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           seasonDetails.platform,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
         const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -1143,7 +1144,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           seasonDetails.platform,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
         const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -1246,7 +1247,7 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           SeasonPlatform.FACEIT,
           formData.teamId,
-          formData.players
+          formData.players.map((player) => player.steamId)
         );
         const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
           "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -1569,7 +1570,7 @@ describe("Season team registration services", () => {
       expect(validatePlayersInDb).toHaveBeenCalledWith(
         seasonDetails.id,
         formData.teamId,
-        formData.players
+        formData.players.map((player) => player.steamId)
       );
       expect(registrationUpdate).toHaveBeenCalledWith(
         seasonDetails.id,
@@ -1585,7 +1586,7 @@ describe("Season team registration services", () => {
       expect(updateAddPlayers).toHaveBeenCalledWith(
         seasonDetails.id,
         2,
-        formData.players,
+        formData.players.map((player) => player.steamId),
         undefined
       );
       expect(captainPerm).toHaveBeenCalledWith(
@@ -1650,7 +1651,7 @@ describe("Season team registration services", () => {
         await registrationModels.updatePlayersForSeasonTeamRegistration(
           1,
           2,
-          validSignupData.players
+          validSignupData.players.map((player) => player.steamId)
         );
       expect(nothingChanged.added.length).toEqual(0);
       expect(nothingChanged.removed.length).toEqual(0);
@@ -1676,13 +1677,9 @@ describe("Season team registration services", () => {
             1,
             2,
             [
-              ...validSignupData.players,
-              {
-                nickname: "Nakki",
-                accountId: 100000,
-                steamId: "12345678912345601",
-                discord: "NotChanged"
-              }
+              ...validSignupData.players.map((player) => player.steamId),
+
+              "12345678912345601"
             ]
           );
         const [account] = await runQuery<Array<Account & SteamPlayer>>(
@@ -1717,7 +1714,7 @@ describe("Season team registration services", () => {
           await registrationModels.updatePlayersForSeasonTeamRegistration(
             1,
             2,
-            validSignupData.players
+            validSignupData.players.map((player) => player.steamId)
           );
         const [account] = await runQuery<Array<Account & SteamPlayer>>(
           "SELECT a.*, sp.* FROM Accounts a JOIN SteamPlayers sp ON sp.account_id = a.id WHERE a.id = ?",
@@ -1761,21 +1758,12 @@ describe("Season team registration services", () => {
             1,
             2,
             [
-              validSignupData.players[0],
-              validSignupData.players[1],
-              validSignupData.players[3],
-              validSignupData.players[4],
-              {
-                nickname: "Nakki",
-                accountId: 100000,
-                steamId: "12345678912345601",
-                discord: "NotChanged"
-              },
-              {
-                nickname: "saippua",
-                accountId: 100001,
-                steamId: "12345678912345603"
-              }
+              validSignupData.players[0].steamId,
+              validSignupData.players[1].steamId,
+              validSignupData.players[3].steamId,
+              validSignupData.players[4].steamId,
+              "12345678912345601",
+              "12345678912345603"
             ]
           );
         expect(addedOne.added.length).toEqual(2);

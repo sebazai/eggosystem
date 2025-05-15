@@ -4,11 +4,11 @@ import { ContentContainer } from "@/components/layout/content-container";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import { FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { useEffect, useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TabOrganization } from "./signup-tab-organizations";
@@ -291,7 +291,7 @@ export const SignupForm = ({
     hasAcceptedTermsAndConditions;
 
   return (
-    <Form {...form}>
+    <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
           <CardContent className="p-6 space-y-6">
@@ -453,6 +453,6 @@ export const SignupForm = ({
           </CardContent>
         </Card>
       </form>
-    </Form>
+    </FormProvider>
   );
 };

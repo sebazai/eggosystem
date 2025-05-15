@@ -4,7 +4,6 @@ import { buildInsertQueryParts } from "../db/utils";
 import type {
   InsertSeasonTeamRegistration,
   Organizations,
-  SignupPlayerType,
   SeasonDetails,
   SeasonTeamPlayer,
   SeasonTeamRegistration,
@@ -77,12 +76,13 @@ export const updateSeasonTeamRegistration = async (
 export const updatePlayersForSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
-  players: SignupPlayerType[],
+  playerSteamIds: string[],
   connection?: PoolConnection
 ) => {
   const existingPlayers = await runQuery<SeasonTeamPlayer[]>(
     `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ?`,
-    [seasonId, teamId]
+    [seasonId, teamId],
+    connection
   );
 
   if (existingPlayers.length === 0) {
@@ -91,14 +91,11 @@ export const updatePlayersForSeasonTeamRegistration = async (
     );
   }
 
-  const submittedById = _.keyBy(players, "steamId");
-  const existingById = _.keyBy(existingPlayers, "steam_id");
+  const submittedById = playerSteamIds;
+  const existingById = existingPlayers.map((player) => String(player.steam_id));
 
-  const submittedSteamIds = Object.keys(submittedById);
-  const existingSteamIds = Object.keys(existingById);
-
-  const steamIdsToDelete = _.difference(existingSteamIds, submittedSteamIds);
-  const steamIdsToAdd = _.difference(submittedSteamIds, existingSteamIds);
+  const steamIdsToDelete = _.difference(existingById, submittedById);
+  const steamIdsToAdd = _.difference(submittedById, existingById);
 
   if (steamIdsToDelete.length > 0) {
     const placeholders = steamIdsToDelete.map(() => "?").join(", ");
@@ -110,13 +107,12 @@ export const updatePlayersForSeasonTeamRegistration = async (
   }
 
   if (steamIdsToAdd.length > 0) {
-    const playersToAdd = steamIdsToAdd.map((id) => submittedById[id]);
     await Promise.all(
-      playersToAdd.map((player) =>
+      steamIdsToAdd.map((steamId) =>
         insertSeasonTeamPlayer(
           seasonId,
           teamId,
-          { steam_id: player.steamId },
+          { steam_id: steamId },
           connection
         )
       )

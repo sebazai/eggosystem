@@ -46,3 +46,18 @@ export const getActiveSeasonForAppId = async (app_id: number) => {
   );
   return activeSeason;
 };
+
+export const getActiveSignupSeasonForAppId = async (app_id: number) => {
+  const [activeSignupSeason] = await runQuery<
+    Array<{ season_id: number } | undefined>
+  >(
+    `SELECT s.id AS season_id
+     FROM Seasons s
+     JOIN Games g ON s.game_id = g.id
+     WHERE g.app_id = ? AND s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW())
+     ORDER BY s.id DESC
+     LIMIT 1;`,
+    [app_id]
+  );
+  return activeSignupSeason;
+};

@@ -5,7 +5,7 @@ export const CREATE_NEW_VALUE = "__create__";
 export const teamManualPlayerApprovalFormSchema = z
   .object({
     teamId: z.string().min(1, "Team is required"),
-    organizationId: z.string().min(1, "Organization is required"),
+    organizationId: z.string().min(1, "Organization is required").optional(),
     captainSteamId: z
       .string()
       .min(17, "Captain Steam ID should be 17 numbers")
@@ -21,6 +21,8 @@ export const teamManualPlayerApprovalFormSchema = z
       )
       .min(1, "At least one player must be added"),
     organizationName: z.string().optional(),
+    organizationCode: z.string().optional(),
+    organizationWebsite: z.string().url().optional(),
     newTeamName: z.string().optional()
   })
   .superRefine((data, ctx) => {
@@ -31,6 +33,28 @@ export const teamManualPlayerApprovalFormSchema = z
             path: ["organizationName"],
             code: z.ZodIssueCode.custom,
             message: "Organization name is required"
+          });
+        }
+        if (!data.organizationCode?.trim()) {
+          ctx.addIssue({
+            path: ["organizationCode"],
+            code: z.ZodIssueCode.custom,
+            message: "Organization code is required"
+          });
+        }
+        if (!data.organizationWebsite?.trim()) {
+          ctx.addIssue({
+            path: ["organizationWebsite"],
+            code: z.ZodIssueCode.custom,
+            message: "Organization website is required"
+          });
+        }
+      } else {
+        if (!data.organizationId?.trim()) {
+          ctx.addIssue({
+            path: ["organizationId"],
+            code: z.ZodIssueCode.custom,
+            message: "Organization id is required"
           });
         }
       }
@@ -84,7 +108,9 @@ const newTeamAndOrgSchema = z.object({
   ...baseSchema,
   type: z.literal("new-team-and-org"),
   newTeamName: z.string().min(1, "Team name is required"),
-  newOrganizationName: z.string().min(1, "Organization name is required")
+  newOrganizationName: z.string().min(1, "Organization name is required"),
+  newOrganizationCode: z.string(),
+  newOrganizationWebsite: z.string().url()
 });
 
 export type NewTeamAndOrgManualApprovalType = z.infer<

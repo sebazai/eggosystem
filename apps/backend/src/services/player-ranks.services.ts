@@ -153,8 +153,11 @@ export const getCSRank = async (steam_id: string, season_id?: number) => {
 
 export const getPlayerRankForPlatform = async (
   steam_id: string,
-  platform: SeasonPlatform
+  platform: SeasonPlatform | null
 ) => {
+  if (platform === null) {
+    return null;
+  }
   switch (platform) {
     case SeasonPlatform.FACEIT:
       return getFaceITCS2Rank(steam_id);

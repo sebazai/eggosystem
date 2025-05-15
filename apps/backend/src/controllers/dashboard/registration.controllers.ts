@@ -1,22 +1,24 @@
 import { postTeamManualPlayerApprovalSchema } from "@eggosystem/types";
 import { type Request, type Response } from "express";
 import * as z from "zod";
-import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
+import { addManuallyApprovedPartialSignupForSeason } from "../../models/dashboard/registration.models";
 
-export const addManuallyApprovedPlayers = async (
+export const addManuallyApprovedPlayersController = async (
   req: Request,
   res: Response
 ) => {
   try {
     const validatedData = postTeamManualPlayerApprovalSchema.parse(req.body);
 
-    await handlePreApprovedRegistration(validatedData);
+    const result =
+      await addManuallyApprovedPartialSignupForSeason(validatedData);
 
-    res.status(200).json({ success: true });
+    res.status(200).json(result);
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({ errors: error.errors });
       return;
     }
+    throw error;
   }
 };
