@@ -71,7 +71,9 @@ export function TeamManualPlayerApprovalForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-md">
       <div>
-        <Label htmlFor="teamId">Select Team or Create New</Label>
+        <Label className="pb-1" htmlFor="teamId">
+          Select Team or Create New
+        </Label>
         <Select onValueChange={(value) => setValue("teamId", value)}>
           <SelectTrigger>
             <SelectValue placeholder="Select a team" />
@@ -95,7 +97,9 @@ export function TeamManualPlayerApprovalForm() {
       {selectedTeamId === CREATE_NEW_TEAM_VALUE && (
         <>
           <div>
-            <Label htmlFor="organizationName">Organization Name</Label>
+            <Label className="pb-1" htmlFor="organizationName">
+              Organization Name
+            </Label>
             <Input id="organizationName" {...register("organizationName")} />
             {errors.organizationName && (
               <p className="text-red-500 text-sm mt-1">
@@ -105,7 +109,9 @@ export function TeamManualPlayerApprovalForm() {
           </div>
 
           <div>
-            <Label htmlFor="newTeamName">New Team Name</Label>
+            <Label className="pb-1" htmlFor="newTeamName">
+              New Team Name
+            </Label>
             <Input id="newTeamName" {...register("newTeamName")} />
             {errors.newTeamName && (
               <p className="text-red-500 text-sm mt-1">
@@ -117,7 +123,9 @@ export function TeamManualPlayerApprovalForm() {
       )}
 
       <div>
-        <Label htmlFor="captainSteamId">Captain Steam ID</Label>
+        <Label className="pb-1" htmlFor="captainSteamId">
+          Captain Steam ID
+        </Label>
         <Input id="captainSteamId" {...register("captainSteamId")} />
         {errors.captainSteamId && (
           <p className="text-red-500 text-sm mt-1">
@@ -127,7 +135,9 @@ export function TeamManualPlayerApprovalForm() {
       </div>
 
       <div>
-        <Label htmlFor="acceptedPlayerSteamId">Accepted Player Steam ID</Label>
+        <Label className="pb-1" htmlFor="acceptedPlayerSteamId">
+          Accepted Player Steam ID
+        </Label>
         <Input
           id="acceptedPlayerSteamId"
           {...register("acceptedPlayerSteamId")}
