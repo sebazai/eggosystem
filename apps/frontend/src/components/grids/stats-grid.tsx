@@ -49,9 +49,7 @@ export function StatsGrid<T>({
           <div className="bg-kanaliiga-light-brown/30 p-4">
             {renderHeader(section)}
           </div>
-          <div className="dark:bg-kanaliiga-light-brown/5 bg-kanaliiga-light-brown/10 p-4">
-            {renderRow(section, index)}
-          </div>
+          <div className="bg-white/10 p-4">{renderRow(section, index)}</div>
         </div>
       ))}
     </div>

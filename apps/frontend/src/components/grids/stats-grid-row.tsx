@@ -13,6 +13,7 @@ interface StatsGridRowProps {
   value: string;
   placement: string;
   unit?: string;
+  playerIndex?: number;
 }
 
 export const StatsGridRow = ({
@@ -24,9 +25,21 @@ export const StatsGridRow = ({
   placement,
   unit,
   teamLogo,
-  teamName
+  teamName,
+  playerIndex
 }: StatsGridRowProps) => {
   const searchParams = useSearchParams();
+  const isTop3 = playerIndex !== undefined && playerIndex < 3;
+  const isRest = playerIndex !== undefined && playerIndex >= 3;
+  const isFirst = playerIndex === 0;
+  const playerNameClass = isTop3
+    ? `font-bold min-w-20${isFirst ? " text-base" : ""}`
+    : isRest
+      ? "italic text-foreground min-w-20"
+      : "text-foreground min-w-20";
+  const rowClass = isTop3
+    ? `relative z-10 rounded shadow-md bg-black/30 flex justify-between py-3 px-1 ${isFirst ? "text-xl" : "text-sm"}`
+    : "flex justify-between py-3 px-1 cursor-pointer text-sm";
   return (
     <Link
       href={{
@@ -34,7 +47,7 @@ export const StatsGridRow = ({
         query: searchParams.toString()
       }}
       data-testid="stats-row"
-      className="flex justify-between py-3 px-1 hover:bg-kanaliiga-light-brown/20 hover:rounded-sm cursor-pointer"
+      className={`${rowClass} mb-2 last:mb-0 hover:bg-white/10 transition-colors`}
     >
       <div className="flex items-center gap-5">
         <span
@@ -54,10 +67,7 @@ export const StatsGridRow = ({
         )}
 
         <div className="flex items-center gap-2">
-          <span
-            className="font-bold text-kanaliiga-orange min-w-20"
-            data-testid="object-name"
-          >
+          <span className={playerNameClass} data-testid="object-name">
             {columnOneText}
           </span>
           {columnTwoText && (

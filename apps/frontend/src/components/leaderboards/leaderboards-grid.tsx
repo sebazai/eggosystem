@@ -37,7 +37,9 @@ export const LeaderboardsGrid = ({
       isError={isError}
       testId="leaderboards-grid"
       emptyMessage="No leaderboard data available for the selected filters."
-      renderHeader={(category) => <h2>{category.title}</h2>}
+      renderHeader={(category) => (
+        <h2 className="text-kanaliiga-orange">{category.title}</h2>
+      )}
       renderRow={(category) =>
         category.players?.length ? (
           category.players.map((player, index) => (
@@ -50,6 +52,7 @@ export const LeaderboardsGrid = ({
               mapsPlayed={player.matches_played}
               value={formatValue(player.value, category.unit)}
               unit={category.unit}
+              playerIndex={index}
             />
           ))
         ) : (
