@@ -5,5 +5,6 @@ export interface MatchTeamInfo {
   name: Team["name"];
   logo: Team["team_logo"];
   score: number;
-  rank: number;
+  rank: number | null;
+  accentColor?: string;
 }
