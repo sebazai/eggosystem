@@ -70,16 +70,13 @@ describe("GET /steam/return", () => {
   beforeEach(() => {
     process.env.FRONTEND_URL = "https://example.com";
     process.env.PRIVACY_POLICY_VERSION = "1";
-  });
-
-  it("should redirect to the valid returnUrl from cookie and call jwt sign with correct params", async () => {
     jest
       .spyOn(authServices, "getPermissionsForAccountId")
       .mockResolvedValue([]);
     jest.spyOn(authServices, "getRolesForAccountId").mockResolvedValue([]);
   });
 
-  it("should redirect to the valid returnUrl from cookie", async () => {
+  it("should redirect to the valid returnUrl from cookie and call jwt sign with correct params", async () => {
     const response = await request(app)
       .get("/steam/return")
       .set("Authorization", "Bearer valid_token")
