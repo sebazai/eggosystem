@@ -22,6 +22,7 @@ import parseQueryFilterParams from "../middlewares/parse-query-filter-params.mid
 // Create a new Router instance
 const v1Router = Router();
 
+// Dashboard
 v1Router.use("/dashboard", authenticateJWT, dashboardRouter);
 
 // Mount the routers

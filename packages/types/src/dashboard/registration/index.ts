@@ -5,10 +5,20 @@ export const CREATE_NEW_TEAM_VALUE = "__create__";
 export const teamManualPlayerApprovalFormSchema = z
   .object({
     teamId: z.string().min(1, "Team is required"),
-    captainSteamId: z.string().min(1, "Captain Steam ID is required"),
-    acceptedPlayerSteamId: z
+    captainSteamId: z
       .string()
-      .min(1, "Accepted Player Steam ID is required"),
+      .min(17, "Captain Steam ID should be 17 numbers")
+      .max(17, "Captain Steam ID should be 17 numbers"),
+    acceptedPlayerSteamIds: z
+      .array(
+        z.object({
+          name: z
+            .string()
+            .min(17, "Steam ID should be 17 numbers")
+            .max(17, "Steam ID should be 17 numbers")
+        })
+      )
+      .min(1, "At least one player must be added"),
     organizationName: z.string().optional(),
     newTeamName: z.string().optional()
   })
@@ -34,3 +44,24 @@ export const teamManualPlayerApprovalFormSchema = z
 export type TeamManualPlayerApprovalFormSchemaType = z.infer<
   typeof teamManualPlayerApprovalFormSchema
 >;
+
+export type NewTeamPayload = {
+  captainSteamId: string;
+  acceptedPlayerSteamId: string;
+  organizationName: string;
+  newTeamName: string;
+};
+
+export const isNewTeamPayload = (
+  payload: unknown
+): payload is NewTeamPayload => {
+  return (
+    typeof payload === "object" &&
+    payload !== null &&
+    "organizationName" in payload &&
+    typeof (payload as { organizationName: unknown }).organizationName ===
+      "string" &&
+    "newTeamName" in payload &&
+    typeof payload.newTeamName === "string"
+  );
+};

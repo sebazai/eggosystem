@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
@@ -24,40 +24,49 @@ import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
 
 export function TeamManualPlayerApprovalForm() {
   const {
+    control,
     register,
     handleSubmit,
     setValue,
     watch,
     formState: { errors, isSubmitting }
   } = useForm<TeamManualPlayerApprovalFormSchemaType>({
-    resolver: zodResolver(teamManualPlayerApprovalFormSchema)
+    resolver: zodResolver(teamManualPlayerApprovalFormSchema),
+    defaultValues: {
+      acceptedPlayerSteamIds: []
+    }
   });
 
   const { teams } = useSelectableTeams();
-
   const selectedTeamId = watch("teamId");
 
+  const { fields, append, remove } =
+    useFieldArray<TeamManualPlayerApprovalFormSchemaType>({
+      control,
+      name: "acceptedPlayerSteamIds"
+    });
+
   const onSubmit = async (data: TeamManualPlayerApprovalFormSchemaType) => {
+    const steamIds = data.acceptedPlayerSteamIds.map((p) => p.name);
+
     const payload =
       data.teamId === CREATE_NEW_TEAM_VALUE
         ? {
             captainSteamId: data.captainSteamId,
-            acceptedPlayerSteamId: data.acceptedPlayerSteamId,
+            acceptedPlayerSteamIds: steamIds,
             organizationName: data.organizationName,
             newTeamName: data.newTeamName
           }
         : {
             teamId: Number(data.teamId),
             captainSteamId: data.captainSteamId,
-            acceptedPlayerSteamId: data.acceptedPlayerSteamId
+            acceptedPlayerSteamIds: steamIds
           };
 
     try {
       await clientApiFetch("/api/v1/dashboard/registration/approved", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
@@ -69,7 +78,7 @@ export function TeamManualPlayerApprovalForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-md">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md">
       <div>
         <Label className="pb-1" htmlFor="teamId">
           Select Team or Create New
@@ -90,7 +99,9 @@ export function TeamManualPlayerApprovalForm() {
           </SelectContent>
         </Select>
         {errors.teamId && (
-          <p className="text-red-500 text-sm mt-1">{errors.teamId.message}</p>
+          <span className="text-red-500 text-sm mt-1">
+            {errors.teamId.message}
+          </span>
         )}
       </div>
 
@@ -102,9 +113,9 @@ export function TeamManualPlayerApprovalForm() {
             </Label>
             <Input id="organizationName" {...register("organizationName")} />
             {errors.organizationName && (
-              <p className="text-red-500 text-sm mt-1">
+              <span className="text-red-500 text-sm mt-1">
                 {errors.organizationName.message}
-              </p>
+              </span>
             )}
           </div>
 
@@ -114,9 +125,9 @@ export function TeamManualPlayerApprovalForm() {
             </Label>
             <Input id="newTeamName" {...register("newTeamName")} />
             {errors.newTeamName && (
-              <p className="text-red-500 text-sm mt-1">
+              <span className="text-red-500 text-sm mt-1">
                 {errors.newTeamName.message}
-              </p>
+              </span>
             )}
           </div>
         </>
@@ -128,24 +139,49 @@ export function TeamManualPlayerApprovalForm() {
         </Label>
         <Input id="captainSteamId" {...register("captainSteamId")} />
         {errors.captainSteamId && (
-          <p className="text-red-500 text-sm mt-1">
+          <span className="text-red-500 text-sm mt-1">
             {errors.captainSteamId.message}
-          </p>
+          </span>
         )}
       </div>
 
       <div>
-        <Label className="pb-1" htmlFor="acceptedPlayerSteamId">
-          Accepted Player Steam ID
-        </Label>
-        <Input
-          id="acceptedPlayerSteamId"
-          {...register("acceptedPlayerSteamId")}
-        />
-        {errors.acceptedPlayerSteamId && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.acceptedPlayerSteamId.message}
-          </p>
+        {fields.map((field, index) => (
+          <div key={field.id}>
+            <Label className="pb-1">
+              Accepted Player Steam ID #{index + 1}
+            </Label>
+            <Input
+              {...register(`acceptedPlayerSteamIds.${index}.name`)}
+              placeholder="Steam ID"
+            />
+            {errors.acceptedPlayerSteamIds?.[index]?.name && (
+              <span className="text-red-500 text-sm mt-1">
+                {errors.acceptedPlayerSteamIds[index]?.name?.message}
+              </span>
+            )}
+            <Button
+              className="my-2"
+              type="button"
+              onClick={() => remove(index)}
+              variant="secondary"
+            >
+              Remove
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          onClick={() => append({ name: "" })}
+          variant="outline"
+        >
+          ➕ Add another player
+        </Button>
+
+        {errors.acceptedPlayerSteamIds && (
+          <span className="text-red-500 text-sm mt-1">
+            {errors.acceptedPlayerSteamIds.message as string}
+          </span>
         )}
       </div>
 

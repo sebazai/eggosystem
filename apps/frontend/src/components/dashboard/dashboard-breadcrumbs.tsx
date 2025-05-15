@@ -48,7 +48,9 @@ export const DashboardBreadcrumbs = () => {
             <Link href="/dashboard">Kanahub dashboard</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator className="hidden md:block" />
+        {breadcrumbs.length > 0 && (
+          <BreadcrumbSeparator className="hidden md:block" />
+        )}
         {breadcrumbs.map((crumb, i) => (
           <React.Fragment key={crumb.href}>
             <BreadcrumbItem>
