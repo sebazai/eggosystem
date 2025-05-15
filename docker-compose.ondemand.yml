@@ -15,8 +15,8 @@ services:
       DB_NAME: kanaliiga
       DB_PORT: 3306
       BASE_PATH: "/${ENV_ID}"
-      FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
-      BACKEND_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
+      FRONTEND_URL: https://hubod.kanaliiga.fi/${ENV_ID}
+      BACKEND_URL: https://hubod.kanaliiga.fi/${ENV_ID}
       REDIS_HOST: eggo-redis-${ENV_ID}
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
@@ -36,14 +36,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubbe-${ENV_ID}.entrypoints=http"
-      - "traefik.http.routers.hubbe-${ENV_ID}.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}/api/v1`)"
+      - "traefik.http.routers.hubbe-${ENV_ID}.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}/api/v1`)"
       - "traefik.http.middlewares.hubbe-${ENV_ID}-strip.stripprefix.prefixes=/${ENV_ID}"
       - "traefik.http.routers.hubbe-${ENV_ID}.middlewares=hubbe-${ENV_ID}-strip"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.entrypoints=https"
-      - "traefik.http.routers.hubbe-${ENV_ID}-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}/api/v1`)"
+      - "traefik.http.routers.hubbe-${ENV_ID}-secure.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}/api/v1`)"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.middlewares=hubbe-${ENV_ID}-strip"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls=true"
-      - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls.domains[0].main=hubod.kanaliiga.fi"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.tls.certresolver=http"
       - "traefik.http.routers.hubbe-${ENV_ID}-secure.service=hubbe-${ENV_ID}"
       - "traefik.http.services.hubbe-${ENV_ID}.loadbalancer.server.port=3001"
@@ -56,10 +56,10 @@ services:
       - backend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
-      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
+      NEXT_PUBLIC_API_URL: https://hubod.kanaliiga.fi/${ENV_ID}
+      NEXT_PUBLIC_CLIENT_API_URL: https://hubod.kanaliiga.fi/${ENV_ID}
       NEXT_PUBLIC_BASE_PATH: /${ENV_ID}
-      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}
+      NEXT_PUBLIC_BASE_URL: https://hubod.kanaliiga.fi/${ENV_ID}
     networks:
       web:
         aliases:
@@ -67,11 +67,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.kanahub-${ENV_ID}.entrypoints=http"
-      - "traefik.http.routers.kanahub-${ENV_ID}.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}`)"
+      - "traefik.http.routers.kanahub-${ENV_ID}.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}`)"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.entrypoints=https"
-      - "traefik.http.routers.kanahub-${ENV_ID}-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}`)"
+      - "traefik.http.routers.kanahub-${ENV_ID}-secure.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}`)"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls=true"
-      - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls.domains[0].main=hubod.kanaliiga.fi"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.tls.certresolver=http"
       - "traefik.http.routers.kanahub-${ENV_ID}-secure.service=kanahub-${ENV_ID}"
       - "traefik.http.services.kanahub-${ENV_ID}.loadbalancer.server.port=3000"
@@ -138,21 +138,21 @@ services:
       PMA_PORT: 3306
       PMA_USER: root
       PMA_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
-      PMA_ABSOLUTE_URI: https://${HUBDEV_PUBLIC_URL}/${ENV_ID}/phpmyadmin/
+      PMA_ABSOLUTE_URI: https://hubod.kanaliiga.fi/${ENV_ID}/phpmyadmin/
     networks:
       - web
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.entrypoints=http"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}/phpmyadmin/`)"
+      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}/phpmyadmin/`)"
       - "traefik.http.middlewares.hubphpmyadmin-${ENV_ID}-auth.basicauth.users=${PHPMYADMIN_AUTH}"
       - "traefik.http.middlewares.hubphpmyadmin-${ENV_ID}-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.hubphpmyadmin-${ENV_ID}-stripprefix.stripprefix.prefixes=/${ENV_ID}/phpmyadmin"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.middlewares=hubphpmyadmin-${ENV_ID}-https-redirect"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.entrypoints=https"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/${ENV_ID}/phpmyadmin/`)"
+      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}/phpmyadmin/`)"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.tls=true"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.tls.domains[0].main=hubod.kanaliiga.fi"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.priority=100"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.priority=100"
       - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.middlewares=hubphpmyadmin-${ENV_ID}-stripprefix,hubphpmyadmin-${ENV_ID}-auth"
