@@ -88,11 +88,11 @@ export const expressFetcher = async <T>(
   return res.json();
 };
 
-export const createBaseUrl = () => {
+export const createBaseUrl = (path?: string) => {
   if (envConfig.BASE_PATH) {
-    return `${envConfig.BASE_URL}${envConfig.BASE_PATH}`;
+    return `${envConfig.BASE_URL}${envConfig.BASE_PATH}${path ?? ""}`;
   }
-  return envConfig.BASE_URL;
+  return `${envConfig.BASE_URL}${path ?? ""}`;
 };
 
 export const createNextUrl = (url: string) => {
