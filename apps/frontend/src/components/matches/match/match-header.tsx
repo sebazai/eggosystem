@@ -59,7 +59,7 @@ export function MatchHeader({
             <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
               {team1.name}
             </span>
-            <span className="text-xs md:text-sm text-zinc-400 px-2">
+            <span className="text-xs md:text-sm text-muted-foreground px-2">
               Ranking #{team1.rank}
             </span>
           </div>
@@ -79,7 +79,7 @@ export function MatchHeader({
           <div className="flex items-center justify-center px-2 py-4">
             <span
               className={cn(
-                "font-extrabold text-3xl md:text-5xl",
+                "font-extrabold text-4xl md:text-5xl",
                 team1ScoreColor
               )}
             >
@@ -87,7 +87,7 @@ export function MatchHeader({
             </span>
           </div>
           {/* Info */}
-          <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-tiny md:text-xs text-zinc-400">
+          <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground">
             <span>{`${formattedStart}–${formattedEnd}`}</span>
             <span>{formattedDate}</span>
           </div>
@@ -96,7 +96,7 @@ export function MatchHeader({
           <div className="flex items-center justify-center px-2 py-4">
             <span
               className={cn(
-                "font-extrabold text-3xl md:text-5xl",
+                "font-extrabold text-4xl md:text-5xl",
                 team2ScoreColor
               )}
             >
@@ -111,7 +111,7 @@ export function MatchHeader({
             <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
               {team2.name}
             </span>
-            <span className="text-xs md:text-sm text-zinc-400 px-2">
+            <span className="text-xs md:text-sm text-muted-foreground px-2">
               Ranking #{team2.rank}
             </span>
           </div>
