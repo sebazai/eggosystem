@@ -1,3 +1,4 @@
+import { LeaderboardsPage } from "@/components/leaderboards/leaderboards-page";
 import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 import React from "react";
@@ -7,6 +8,6 @@ export const metadata: Metadata = createPageMetadata({
   description: "The players that perform in Kanaliiga"
 });
 
-export default function LeaderboardsPage() {
+export default function Leaderboards() {
   return <LeaderboardsPage />;
 }
