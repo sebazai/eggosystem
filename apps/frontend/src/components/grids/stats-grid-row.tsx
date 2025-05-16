@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { cn, createTeamLogoUrl } from "@/lib/utils";
 import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface StatsGridRowProps {
@@ -30,16 +30,8 @@ export const StatsGridRow = ({
 }: StatsGridRowProps) => {
   const searchParams = useSearchParams();
   const isTop3 = playerIndex !== undefined && playerIndex < 3;
-  const isRest = playerIndex !== undefined && playerIndex >= 3;
   const isFirst = playerIndex === 0;
-  const playerNameClass = isTop3
-    ? `font-bold min-w-20${isFirst ? " text-base" : ""}`
-    : isRest
-      ? "italic text-foreground min-w-20"
-      : "text-foreground min-w-20";
-  const rowClass = isTop3
-    ? `relative z-10 rounded shadow-md bg-black/30 flex justify-between py-3 px-1 ${isFirst ? "text-xl" : "text-sm"}`
-    : "flex justify-between py-3 px-1 cursor-pointer text-sm";
+
   return (
     <Link
       href={{
@@ -47,7 +39,13 @@ export const StatsGridRow = ({
         query: searchParams.toString()
       }}
       data-testid="stats-row"
-      className={`${rowClass} mb-2 last:mb-0 hover:bg-white/10 transition-colors`}
+      className={cn(
+        "mb-2 last:mb-0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex justify-between py-3 px-1 cursor-pointer text-sm",
+        isFirst ? "font-black text-base" : "",
+        isTop3
+          ? "rounded shadow-md dark:shadow-md:white/30 bg-white/30 dark:bg-black/30"
+          : ""
+      )}
     >
       <div className="flex items-center gap-5">
         <span
@@ -67,7 +65,15 @@ export const StatsGridRow = ({
         )}
 
         <div className="flex items-center gap-2">
-          <span className={playerNameClass} data-testid="object-name">
+          <span
+            className={cn(
+              "min-w-20",
+              isTop3 ? "font-bold" : "text-foreground",
+              isFirst ? "text-base" : "",
+              playerIndex !== undefined && !isTop3 ? "italic" : ""
+            )}
+            data-testid="object-name"
+          >
             {columnOneText}
           </span>
           {columnTwoText && (

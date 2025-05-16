@@ -49,6 +49,7 @@ export const TopTeamsGrid = ({ filterQueryParams }: TopTeamsGridProps) => {
             columnOneText={team.team_name}
             mapsPlayed={team.matches_played}
             value={team.kana.toFixed(2)}
+            playerIndex={index}
           />
         ))
       }
