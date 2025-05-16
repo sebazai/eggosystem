@@ -118,5 +118,5 @@ export const createTeamLogoUrl = (url: string) => {
   }
 
   // Ensure the URL starts with a leading slash for Next.js image component
-  return createNextUrl(`/teams/${url}`);
+  return createNextUrl(`/team-images/${url}`);
 };

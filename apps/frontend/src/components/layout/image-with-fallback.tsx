@@ -18,7 +18,7 @@ function withImageFallback(WrappedComponent: typeof Image) {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-expect-error
           event.target.srcset = createNextUrl(
-            fallbackSrc ?? "/teams/nologo.png"
+            fallbackSrc ?? "/team-images/nologo.png"
           );
         }}
       />

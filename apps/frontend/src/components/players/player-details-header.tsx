@@ -13,6 +13,7 @@ import { ContentContainer } from "../layout/content-container";
 import { useFilters } from "@/context/FilterContext";
 import { PlayerWinsLosses } from "./player-game-wins-losses";
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
+import { createTeamLogoUrl } from "@/lib/utils";
 
 export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   const { filterParams } = useFilters();
@@ -97,8 +98,8 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
                   <Image
                     src={
                       playerTeam?.team_logo
-                        ? `/teams/${playerTeam?.team_logo}`
-                        : "/teams/nologo.png"
+                        ? createTeamLogoUrl(playerTeam.team_logo)
+                        : "/team-images/nologo.png"
                     }
                     alt={playerTeam?.team_name || "No team"}
                     width={20}

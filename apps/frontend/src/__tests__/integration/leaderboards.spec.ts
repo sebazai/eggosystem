@@ -31,35 +31,35 @@ const mockLeaderboardData = {
     {
       nickname: "toNppa",
       team_name: "AhlmanEdu",
-      team_logo: "/teams/S15_2199.png",
+      team_logo: "S15_2199.png",
       matches_played: 16,
       kana_rating: 1.296875
     },
     {
       nickname: "v1nssi",
       team_name: "AlppilaCS",
-      team_logo: "/teams/S14_2000.png",
+      team_logo: "S14_2000.png",
       matches_played: 15,
       kana_rating: 1.253333
     },
     {
       nickname: "sviki",
       team_name: "F9 Disruption",
-      team_logo: "/teams/S15_2195.png",
+      team_logo: "S15_2195.png",
       matches_played: 19,
       kana_rating: 1.237895
     },
     {
       nickname: "eRa-",
       team_name: "EA T20",
-      team_logo: "/teams/S15_2123.png",
+      team_logo: "S15_2123.png",
       matches_played: 18,
       kana_rating: 1.221667
     },
     {
       nickname: "dzig0d",
       team_name: "Gigantti Köriläät",
-      team_logo: "/teams/S14_2094.png",
+      team_logo: "S14_2094.png",
       matches_played: 8,
       kana_rating: 1.19875
     }
@@ -68,14 +68,14 @@ const mockLeaderboardData = {
     {
       nickname: "Player1",
       team_name: "Team A",
-      team_logo: "/teams/S14_2001.png",
+      team_logo: "S14_2001.png",
       kast: 75.5,
       matches_played: 10
     },
     {
       nickname: "Player2",
       team_name: "Team B",
-      team_logo: "/teams/S14_2002.png",
+      team_logo: "S14_2002.png",
       kast: 73.2,
       matches_played: 12
     }
@@ -84,14 +84,14 @@ const mockLeaderboardData = {
     {
       nickname: "Player4",
       team_name: "Team D",
-      team_logo: "/teams/S14_2004.png",
+      team_logo: "S14_2004.png",
       adr: 95.6,
       matches_played: 8
     },
     {
       nickname: "Player5",
       team_name: "Team E",
-      team_logo: "/teams/S14_2005.png",
+      team_logo: "S14_2005.png",
       adr: 92.1,
       matches_played: 14
     }
