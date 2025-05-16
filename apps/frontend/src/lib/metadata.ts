@@ -2,7 +2,11 @@ import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
 import { createNextUrl } from "./utils";
 
-export function createPageMetadata({ title, description }: Partial<Metadata>) {
+export function createPageMetadata({
+  title,
+  description,
+  openGraph
+}: Partial<Metadata>) {
   return {
     title,
     description: description ?? "Kanaliiga esports platform",
@@ -14,7 +18,8 @@ export function createPageMetadata({ title, description }: Partial<Metadata>) {
       description: description ?? "Kanaliiga esports platform",
       url: new URL(envConfig.BASE_URL),
       images: [createNextUrl("/images/kanaliiga/opengraph-image.png")],
-      siteName: "Kanahub by Kanaliiga"
+      siteName: "Kanahub by Kanaliiga",
+      ...openGraph
     }
   } satisfies Metadata;
 }

@@ -1,19 +1,22 @@
 import React from "react";
 import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
-import type { Metadata } from "next";
+import type { Metadata, ResolvedMetadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { Team } from "@eggosystem/types";
 import { TeamPageWithFilters } from "@/components/teams/team-page";
 import { createPageMetadata } from "@/lib/metadata";
+import { createTeamLogoUrl } from "@/lib/utils";
+import { teamLogoExists } from "@/lib/image-utils";
 
 interface TeamDetailsPageProps {
   params: Promise<{
     teamId: string;
   }>;
 }
-export async function generateMetadata({
-  params
-}: TeamDetailsPageProps): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: TeamDetailsPageProps,
+  parent: Promise<ResolvedMetadata>
+): Promise<Metadata> {
   const { teamId } = await params;
 
   const result = await fetch(`${envConfig.API_URL}/api/v1/teams/${teamId}`);
@@ -24,8 +27,16 @@ export async function generateMetadata({
     };
   }
   const data: Team = await result.json();
+  const previousImages = (await parent).openGraph?.images || [];
+  const teamLogoUrl = createTeamLogoUrl(data.team_logo);
+  const ogImages = (await teamLogoExists(teamLogoUrl))
+    ? [teamLogoUrl, ...previousImages]
+    : previousImages;
   return createPageMetadata({
-    title: `Team details for ${data.name}`
+    title: `Team details for ${data.name}`,
+    openGraph: {
+      images: ogImages
+    }
   });
 }
 
