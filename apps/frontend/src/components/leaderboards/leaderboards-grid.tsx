@@ -8,7 +8,7 @@ interface LeaderboardsGridProps {
 }
 
 const formatValue = (value: number, unit: string): string => {
-  if (unit === "%") return value.toFixed(2);
+  if (unit === "%") return value.toFixed(1);
   if (unit === "s") return value.toFixed(0);
   if (Number.isInteger(value)) return value.toString();
   return value.toFixed(2);

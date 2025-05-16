@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type React from "react";
 
 import { envConfig } from "@/configs/env";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,18 +24,18 @@ export async function generateMetadata({
   const data: SeasonDetails = await result.json();
   const teamData: Team = await teamResult.json();
   if (result.ok && teamResult.ok) {
-    return {
+    return createPageMetadata({
       title: `Edit team ${teamData.name} for ${data.full_name}`
-    };
+    });
   }
   if (result.ok && !teamResult.ok) {
-    return {
+    return createPageMetadata({
       title: `Team edit for ${data.full_name}`
-    };
+    });
   }
-  return {
+  return createPageMetadata({
     title: `Team edit for season`
-  };
+  });
 }
 
 export default async function Layout({ children }: LayoutProps) {

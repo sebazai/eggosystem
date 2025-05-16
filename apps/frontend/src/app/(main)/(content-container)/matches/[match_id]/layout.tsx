@@ -6,6 +6,7 @@ import { getMatchInfo } from "./utils";
 import { CardContainer } from "@/components/layout/card-container";
 import { ContentContainer } from "@/components/layout/content-container";
 import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -45,9 +46,9 @@ export async function generateMetadata({
       month: "short"
     })
     .toUpperCase();
-  return {
+  return createPageMetadata({
     title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`
-  };
+  });
 }
 
 export default async function Layout({ children, params }: LayoutProps) {

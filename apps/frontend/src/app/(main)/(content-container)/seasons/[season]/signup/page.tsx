@@ -2,6 +2,7 @@ import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
 import { SignupWelcome } from "@/components/signup/signup-welcome";
 import { CardContainer } from "@/components/layout/card-container";
+import { createPageMetadata } from "@/lib/metadata";
 
 type Props = {
   params: Promise<{ season: string }>;
@@ -19,9 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
   const data = await result.json();
-  return {
+  return createPageMetadata({
     title: `Sign up for ${data.full_name}`
-  };
+  });
 }
 
 export default async function SignupPage({ params }: Props) {

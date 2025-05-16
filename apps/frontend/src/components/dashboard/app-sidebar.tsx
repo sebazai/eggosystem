@@ -16,7 +16,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail
 } from "@/components/ui/sidebar";
-import { createDashboardNextUrl } from "@/lib/utils";
+import { createBaseUrl, createDashboardNextUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Spinner } from "../icons";
 interface SubMenuItem {
@@ -36,7 +36,7 @@ const data: { navMain: Array<MenuItem> } = {
   navMain: [
     {
       title: "Kanahub",
-      url: process.env.NEXT_PUBLIC_BASE_URL!,
+      url: createBaseUrl(),
       items: [
         {
           title: "Organizations",

@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/inputs/search-bar";
 import { Suspense } from "react";
 import { Spinner } from "@/components/icons";
 import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface OrganizationProps {
   searchParams: Promise<{ q?: string }>;
@@ -17,13 +18,13 @@ export async function generateMetadata({
   const { q } = await searchParams;
 
   if (q) {
-    return {
+    return createPageMetadata({
       title: `Search results for "${q}" in Organizations`
-    };
+    });
   }
-  return {
+  return createPageMetadata({
     title: "Organizations"
-  };
+  });
 }
 
 export default async function AllOrganizations(props: {

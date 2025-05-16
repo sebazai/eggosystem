@@ -13,6 +13,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
+import { createPageMetadata } from "@/lib/metadata";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -75,11 +76,11 @@ const poppinsFont = localFont({
   variable: "--font-poppins"
 });
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
   description: "Kanaliiga statistics and esports platform",
   applicationName: "Kanahub by Kanaliiga"
-};
+});
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,

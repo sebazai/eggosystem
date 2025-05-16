@@ -14,13 +14,14 @@ import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
+import { createPageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return {
+  return createPageMetadata({
     title: "Kanahub by Kanaliiga",
     description:
       "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ companies annually. Join us for a season of competitive gaming and community building."
-  };
+  });
 }
 
 interface LandingPageStats {

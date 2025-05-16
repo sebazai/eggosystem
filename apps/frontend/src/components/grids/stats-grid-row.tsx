@@ -41,7 +41,7 @@ export const StatsGridRow = ({
       data-testid="stats-row"
       className={cn(
         "mb-2 last:mb-0 hover:bg-black/10 dark:hover:bg-white/10 transition-colors flex justify-between py-3 px-1 cursor-pointer text-sm",
-        isFirst ? "font-black text-base" : "",
+        isFirst ? "font-black text-base md:text-lg" : "",
         isTop3
           ? "rounded shadow-md dark:shadow-md:white/30 bg-white/30 dark:bg-black/30"
           : ""

@@ -29,6 +29,7 @@ import { PlusIcon } from "lucide-react";
 import { NewOrganizationForm } from "@/components/organizations/new-organization-form";
 import { useState } from "react";
 import { CopyInput } from "@/components/inputs/copy-input";
+import { createBaseUrl } from "@/lib/utils";
 
 export function TeamManualPlayerApprovalForm() {
   const methods = useForm<TeamManualPlayerApprovalFormSchemaType>({
@@ -94,7 +95,7 @@ export function TeamManualPlayerApprovalForm() {
       );
 
       setRegisteredTeamUrl(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/seasons/${data.seasonId}/signup/team/${data.teamId}/edit`
+        `${createBaseUrl()}/seasons/${data.seasonId}/signup/team/${data.teamId}/edit`
       );
 
       toast.success("Registration submitted successfully");

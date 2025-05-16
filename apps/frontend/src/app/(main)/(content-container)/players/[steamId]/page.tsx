@@ -4,6 +4,7 @@ import { PlayerPageWithFilters } from "@/components/players/player-page";
 import type { Metadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { SteamPlayer } from "@eggosystem/types";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -24,9 +25,9 @@ export async function generateMetadata({
     };
   }
   const data: SteamPlayer = await result.json();
-  return {
+  return createPageMetadata({
     title: `Player details for ${data.nickname}`
-  };
+  });
 }
 
 export default async function PlayerDetailsPage({

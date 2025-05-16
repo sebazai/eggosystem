@@ -1,9 +1,10 @@
+import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: { default: "Recent matches", template: "%s | Kanahub by Kanaliiga" },
   description: "Recent matches played in Kanaliiga"
-};
+});
 
 interface LayoutProps {
   children: React.ReactNode;

@@ -1,3 +1,4 @@
+import { envConfig } from "@/configs/env";
 import type { Nullable } from "@eggosystem/types";
 import { clsx, type ClassValue } from "clsx";
 import type { ReadonlyURLSearchParams } from "next/navigation";
@@ -74,7 +75,7 @@ export const expressFetcher = async <T>(
   let [url, options] = args;
 
   // Prepend NEXT_PUBLIC_BASE_PATH if defined
-  const basePath = process.env.NEXT_PUBLIC_API_URL;
+  const basePath = envConfig.API_URL;
   if (typeof url === "string" && basePath) {
     url = `${basePath}${url}`;
   }
@@ -87,16 +88,23 @@ export const expressFetcher = async <T>(
   return res.json();
 };
 
+export const createBaseUrl = () => {
+  if (envConfig.BASE_PATH) {
+    return `${envConfig.BASE_URL}${envConfig.BASE_PATH}`;
+  }
+  return envConfig.BASE_URL;
+};
+
 export const createNextUrl = (url: string) => {
-  if (process.env.NEXT_PUBLIC_BASE_PATH) {
-    return `${process.env.NEXT_PUBLIC_BASE_PATH}${url}`;
+  if (envConfig.BASE_PATH) {
+    return `${envConfig.BASE_PATH}${url}`;
   }
   return url;
 };
 
 export const createDashboardNextUrl = (url: string) => {
-  if (process.env.NEXT_PUBLIC_BASE_PATH) {
-    return `${process.env.NEXT_PUBLIC_BASE_PATH}/dashboard/${url}`;
+  if (envConfig.BASE_PATH) {
+    return `${envConfig.BASE_PATH}/dashboard/${url}`;
   }
   return `/dashboard/${url}`;
 };

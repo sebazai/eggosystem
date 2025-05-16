@@ -1,10 +1,11 @@
-import { envConfig } from "@/configs/env";
+import { createPageMetadata } from "@/lib/metadata";
+import { createBaseUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Privacy Policy"
-};
+});
 
 export default function PrivacyPolicy() {
   return (
@@ -83,7 +84,7 @@ export default function PrivacyPolicy() {
         <li>
           <strong>Correction:</strong> If any information is incorrect, you can
           request a correction. You can also edit your personal data in{" "}
-          <Link href={`${envConfig.BASE_URL}/profile`}>your profile</Link>
+          <Link href={createBaseUrl()}>your profile</Link>
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}

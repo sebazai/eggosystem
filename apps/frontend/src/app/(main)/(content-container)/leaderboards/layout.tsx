@@ -1,8 +1,9 @@
+import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: { default: "Leaderboards", template: "%s | Kanahub by Kanaliiga" }
-};
+});
 
 export default function LeaderboardsLayout({
   children

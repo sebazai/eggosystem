@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { createPageMetadata } from "@/lib/metadata";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -70,10 +71,10 @@ const poppinsFont = localFont({
   variable: "--font-poppins"
 });
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: { default: "Kanahub", template: "%s | Kanahub dashboard" },
   description: "Kanaliiga dashboard"
-};
+});
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,

@@ -1,9 +1,10 @@
+import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: { default: "Top teams", template: "%s | Kanahub by Kanaliiga" },
   description: "The teams that perform well in Kanaliiga"
-};
+});
 
 export default function TopTeamsLayout({
   children

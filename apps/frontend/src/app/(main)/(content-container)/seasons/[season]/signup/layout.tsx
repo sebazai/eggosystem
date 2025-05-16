@@ -4,6 +4,7 @@ import type React from "react";
 
 import { envConfig } from "@/configs/env";
 import { ContentContainer } from "@/components/layout/content-container";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,12 +26,12 @@ export async function generateMetadata({
     };
   }
   const data = await result.json();
-  return {
+  return createPageMetadata({
     title: {
       default: `Team registration for ${data.full_name}`,
       template: "%s | Kanahub by Kanaliiga"
     }
-  };
+  });
 }
 
 export default async function Layout({ children, params }: LayoutProps) {

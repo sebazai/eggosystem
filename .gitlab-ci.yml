@@ -334,7 +334,7 @@ build-dockerfile:frontend:
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
           --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID \
-          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg CI=true \
           -t eggo-frontend \
           -f $DOCKERFILE .
@@ -547,7 +547,7 @@ deploy-ondemand:
       --build-arg NEXT_PUBLIC_API_URL=https://hubod.kanaliiga.fi/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://hubod.kanaliiga.fi/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
-      --build-arg NEXT_PUBLIC_BASE_URL=https://hubod.kanaliiga.fi/$ENV_ID
+      --build-arg NEXT_PUBLIC_BASE_URL=https://hubod.kanaliiga.fi
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-frontend:${ENV_ID}

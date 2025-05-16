@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { Team } from "@eggosystem/types";
 import { TeamPageWithFilters } from "@/components/teams/team-page";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface TeamDetailsPageProps {
   params: Promise<{
@@ -23,9 +24,9 @@ export async function generateMetadata({
     };
   }
   const data: Team = await result.json();
-  return {
+  return createPageMetadata({
     title: `Team details for ${data.name}`
-  };
+  });
 }
 
 export default async function TeamDetailsPage({

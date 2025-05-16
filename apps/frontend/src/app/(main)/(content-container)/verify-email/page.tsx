@@ -6,6 +6,7 @@ import {
   VerifyEmailErrorButton,
   VerifyEmailSuccessButton
 } from "./verify-email-buton";
+import { envConfig } from "@/configs/env";
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{
@@ -30,17 +31,14 @@ async function VerifyEmailContent({ token }: { token: string }) {
   let success = false;
 
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/verify-email`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ token }),
-        cache: "no-store" // don't cache
-      }
-    );
+    const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ token }),
+      cache: "no-store" // don't cache
+    });
 
     if (res.ok) {
       success = true;

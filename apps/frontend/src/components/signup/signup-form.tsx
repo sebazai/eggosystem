@@ -16,7 +16,7 @@ import { TabPlayers } from "./signup-tab-players";
 import { TabTeam } from "./signup-tab-team";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, createBaseUrl } from "@/lib/utils";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
@@ -249,7 +249,7 @@ export const SignupForm = ({
           : "Team registered succesfully, please remember to pay participation fee."
       );
       setEditUrl(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
+        `${createBaseUrl()}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
       );
       await fetch(`${envConfig.CLIENT_API_URL}/api/v1/auth/refresh`, {
         method: "POST",
