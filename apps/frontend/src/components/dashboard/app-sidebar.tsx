@@ -19,8 +19,20 @@ import {
 import { createDashboardNextUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Spinner } from "../icons";
+interface SubMenuItem {
+  title: string;
+  url: string;
+  requiredRoles?: string[];
+}
 
-const data = {
+interface MenuItem {
+  title: string;
+  url: string;
+  requiredRoles?: string[];
+  items: Array<SubMenuItem>;
+}
+
+const data: { navMain: Array<MenuItem> } = {
   navMain: [
     {
       title: "Kanahub",
@@ -28,25 +40,30 @@ const data = {
       items: [
         {
           title: "Organizations",
-          url: `${createDashboardNextUrl("/organizations")}`
+          url: `${createDashboardNextUrl("/organizations")}`,
+          requiredRoles: ["org-owner"]
         },
         {
           title: "Teams",
-          url: `${createDashboardNextUrl("/teams")}`
+          url: `${createDashboardNextUrl("/teams")}`,
+          requiredRoles: ["org-owner", "team-owner"]
         },
         {
           title: "Players",
-          url: `${createDashboardNextUrl("/players")}`
+          url: `${createDashboardNextUrl("/players")}`,
+          requiredRoles: []
         },
         {
           title: "Seasons",
-          url: `${createDashboardNextUrl("/seasons")}`
+          url: `${createDashboardNextUrl("/seasons")}`,
+          requiredRoles: ["helpdesk"]
         }
-      ]
+      ] satisfies Array<SubMenuItem>
     },
     {
       title: "Registration",
       url: "#",
+      requiredRoles: ["helpdesk"],
       items: [
         {
           title: "Teams",
@@ -68,12 +85,12 @@ const data = {
           title: "League sortter",
           url: "#"
         }
-      ]
+      ] satisfies Array<SubMenuItem>
     },
     {
       title: "Demo parser",
-      requiredRoles: ["enzoj"],
       url: "#",
+      requiredRoles: ["admin"],
       items: [
         {
           title: "Problems",
@@ -83,17 +100,18 @@ const data = {
           title: "Flagged matches",
           url: "#"
         }
-      ]
+      ] satisfies Array<SubMenuItem>
     },
     {
       title: "Helpdesk",
       url: "#",
+      requiredRoles: ["helpdesk"],
       items: [
         {
           title: "Substitute player",
           url: "#"
         }
-      ]
+      ] satisfies Array<SubMenuItem>
     }
   ]
 };
@@ -130,8 +148,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
             {data.navMain.map((item) => {
               if (
                 item.requiredRoles &&
-                !auth.user?.roles.some((role) =>
-                  item.requiredRoles?.includes(role)
+                !auth.user?.roles.some(
+                  (role) =>
+                    item.requiredRoles?.includes(role) || role === "admin"
                 )
               ) {
                 return;
@@ -145,13 +164,25 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuButton>
                   {item.items?.length ? (
                     <SidebarMenuSub>
-                      {item.items.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={item.url}>{item.title}</Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                      {item.items.map((item) => {
+                        if (
+                          item?.requiredRoles &&
+                          !auth.user?.roles.some(
+                            (role) =>
+                              item.requiredRoles?.includes(role) ||
+                              role === "admin"
+                          )
+                        ) {
+                          return;
+                        }
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton asChild>
+                              <Link href={item.url}>{item.title}</Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
                     </SidebarMenuSub>
                   ) : null}
                 </SidebarMenuItem>
