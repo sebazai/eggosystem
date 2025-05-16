@@ -6,6 +6,9 @@ export function createPageMetadata({ title, description }: Partial<Metadata>) {
     title,
     description,
     applicationName: "Kanahub by Kanaliiga",
-    metadataBase: new URL(envConfig.BASE_URL)
+    metadataBase: new URL(envConfig.BASE_URL),
+    openGraph: {
+      url: new URL(envConfig.BASE_URL)
+    }
   } satisfies Metadata;
 }
