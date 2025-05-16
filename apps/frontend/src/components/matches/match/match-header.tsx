@@ -52,9 +52,9 @@ export function MatchHeader({
         className
       )}
     >
-      <div className="mx-auto px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+      <div className="mx-auto px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-4">
         {/* Team 1 */}
-        <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left justify-self-start">
+        <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left justify-self-start md:justify-self-end">
           <div className="flex flex-col items-center md:items-start">
             <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
               {team1.name}
@@ -106,7 +106,7 @@ export function MatchHeader({
         </div>
 
         {/* Team 2 */}
-        <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left justify-self-end">
+        <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left justify-self-end md:justify-self-start">
           <div className="flex flex-col items-center md:items-start">
             <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
               {team2.name}
