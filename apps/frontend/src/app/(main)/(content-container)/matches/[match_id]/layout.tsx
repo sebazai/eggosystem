@@ -1,6 +1,5 @@
 import { MatchHeader } from "@/components/matches/match/match-header";
 import type { MatchInfo } from "@eggosystem/types";
-import type { Metadata } from "next";
 import type React from "react";
 import { getMatchInfo } from "./utils";
 import { CardContainer } from "@/components/layout/card-container";
@@ -13,11 +12,8 @@ interface LayoutProps {
   params: Promise<{ match_id: string }>;
 }
 
-export async function generateMetadata({
-  params
-}: LayoutProps): Promise<Metadata> {
+export async function generateMetadata({ params }: LayoutProps) {
   const { match_id } = await params;
-
   // parse the match_id to a number
   const matchIdNumber = parseInt(match_id, 10);
   if (isNaN(matchIdNumber)) {
@@ -42,10 +38,12 @@ export async function generateMetadata({
   const date = new Date(result.match_date);
   const formattedDate = date
     .toLocaleDateString("en-US", {
-      day: "numeric",
-      month: "short"
+      month: "short",
+      day: "2-digit",
+      year: "2-digit"
     })
     .toUpperCase();
+
   return createPageMetadata({
     title: `Match ${team1.name} vs ${team2.name} - ${formattedDate}`
   });

@@ -1,5 +1,5 @@
 import "../globals.css";
-import type { Metadata, Viewport } from "next";
+import type { Viewport } from "next";
 import localFont from "next/font/local";
 
 import { ThemeProvider } from "../../providers/theme-provider";
@@ -76,11 +76,13 @@ const poppinsFont = localFont({
   variable: "--font-poppins"
 });
 
-export const metadata: Metadata = createPageMetadata({
-  title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
-  description: "Kanaliiga statistics and esports platform",
-  applicationName: "Kanahub by Kanaliiga"
-});
+export async function generateMetadata() {
+  return createPageMetadata({
+    title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
+    description:
+      "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ companies annually. Join us for a season of competitive gaming and community building."
+  });
+}
 
 export const viewport: Viewport = {
   themeColor: META_THEME_COLORS.light,

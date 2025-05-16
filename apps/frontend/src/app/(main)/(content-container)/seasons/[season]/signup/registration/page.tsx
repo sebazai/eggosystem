@@ -2,10 +2,15 @@ import { envConfig } from "@/configs/env";
 import { SignupForm } from "@/components/signup/signup-form";
 import { SignupInfo } from "@/components/signup/signup-info";
 import type { SeasonDetails } from "@eggosystem/types";
+import type { Metadata } from "next";
 
 type SignupPageProps = {
   params: Promise<{ season: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export const metadata: Metadata = {
+  title: "Season registration"
 };
 
 export default async function SignupPage({ params }: SignupPageProps) {

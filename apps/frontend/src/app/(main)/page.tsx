@@ -3,7 +3,6 @@
 import HeroSection from "@/components/layout/hero-section";
 import { SignupButton } from "@/components/signup/call-to-action-signup-button";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { userAgent } from "next/server";
 import { CsMainSponsors } from "@/components/sponsors/cs-main-sponsors";
@@ -14,15 +13,6 @@ import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
-import { createPageMetadata } from "@/lib/metadata";
-
-export async function generateMetadata(): Promise<Metadata> {
-  return createPageMetadata({
-    title: "Kanahub by Kanaliiga",
-    description:
-      "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ companies annually. Join us for a season of competitive gaming and community building."
-  });
-}
 
 interface LandingPageStats {
   unique_players: number;

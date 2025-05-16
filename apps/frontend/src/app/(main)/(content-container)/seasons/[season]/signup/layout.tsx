@@ -1,37 +1,12 @@
 import type { SeasonDetails } from "@eggosystem/types";
-import type { Metadata } from "next";
 import type React from "react";
 
 import { envConfig } from "@/configs/env";
 import { ContentContainer } from "@/components/layout/content-container";
-import { createPageMetadata } from "@/lib/metadata";
 
 interface LayoutProps {
   children: React.ReactNode;
   params: Promise<{ season: string }>;
-}
-
-export async function generateMetadata({
-  params
-}: LayoutProps): Promise<Metadata> {
-  const { season } = await params;
-
-  const result = await fetch(
-    `${envConfig.API_URL}/api/v1/seasons/${season}/details`
-  );
-
-  if (!result.ok) {
-    return {
-      title: "Failed to fetch season"
-    };
-  }
-  const data = await result.json();
-  return createPageMetadata({
-    title: {
-      default: `Team registration for ${data.full_name}`,
-      template: "%s | Kanahub by Kanaliiga"
-    }
-  });
 }
 
 export default async function Layout({ children, params }: LayoutProps) {

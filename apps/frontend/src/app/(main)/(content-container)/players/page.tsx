@@ -8,6 +8,13 @@ import { PlayerNameFilter } from "@/components/filters/player-name-search";
 import { useFilters } from "@/context/FilterContext";
 import { CardContainer } from "@/components/layout/card-container";
 import { ContentContainer } from "@/components/layout/content-container";
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = createPageMetadata({
+  title: "Players",
+  description: "Players in Kanaliiga"
+});
 
 export default function PlayersPage() {
   const searchParams = useSearchParams();
