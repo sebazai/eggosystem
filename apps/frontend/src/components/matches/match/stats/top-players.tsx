@@ -39,9 +39,9 @@ export const TopPlayers = ({
   topPlayerFilters
 }: TopPlayerProps) => {
   return (
-    <div className="mt-8 max-w-[600px]">
-      <h2 className="mb-4">TOP PLAYERS</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
       <div className="bg-card rounded-sm">
+        <h2 className="mt-4 mb-2 md:mt-6 md:mb-4">TOP PLAYERS</h2>
         <div className="grid grid-cols-[1.5fr_1fr_auto] gap-4 p-4">
           <div className="text-muted-foreground text-sm">Award</div>
           <div className="text-muted-foreground text-sm">Player</div>
@@ -60,7 +60,7 @@ export const TopPlayers = ({
             const params = new URLSearchParams({ ...topPlayerFilters });
             return (
               <React.Fragment key={key}>
-                <div className="text-muted-foreground text-sm">{text}</div>
+                <div className="text-muted-foreground text-xs">{text}</div>
                 <div className="flex gap-2">
                   {team && (
                     <Link
@@ -98,6 +98,9 @@ export const TopPlayers = ({
             );
           })}
         </div>
+      </div>
+      <div className="bg-card rounded-sm">
+        {/* <h2 className="mt-4 mb-2 md:mt-6 md:mb-4">JOTAIN???</h2> */}
       </div>
     </div>
   );
