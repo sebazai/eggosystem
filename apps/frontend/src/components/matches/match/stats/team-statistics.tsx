@@ -37,7 +37,7 @@ export const TeamStatistics = ({
         )}
 
         {/* Center Stats - GOTV Demo */}
-        <div className="p-4 flex flex-col justify-center items-center border-l border-r border-kanaliiga-orange">
+        <div className="p-4 flex flex-col justify-center items-center md:border-l md:border-r md:border-kanaliiga-orange">
           <span className="text-muted-foreground mb-2">GOTV Demo File</span>
           <button className="px-4 py-2 bg-kanaliiga-orange rounded text-sm hover:bg-kanaliiga-light-brown transition-colors">
             Download

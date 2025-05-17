@@ -19,7 +19,7 @@ export const TeamStatBox = ({
           pathname: `/teams/${team.team_id}`,
           query: new URLSearchParams({ ...teamStatsFilters }).toString()
         }}
-        className="hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors inline-block mb-4"
+        className="hover:bg-kanaliiga-light-brown/40 py-1 rounded transition-colors inline-block mb-4"
       >
         <h3 className="text-base font-bold text-kanaliiga-orange">
           {team.name}
