@@ -106,7 +106,7 @@ export async function clientApiFetch<T>(
       throw new Error(`Request failed with status ${response.status}`);
     }
 
-    return response.json();
+    return response.json().catch(() => ({}));
   };
 
   if (isRefreshing) {

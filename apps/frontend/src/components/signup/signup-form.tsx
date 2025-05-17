@@ -33,6 +33,7 @@ import { RequiredFormLabel } from "../ui/required-form-label";
 interface SignupFormProps {
   seasonId: string;
   platform: SeasonPlatform;
+  draft?: SignupFormValues;
   editValues?: SignupFormValues;
 }
 
@@ -51,6 +52,7 @@ const validateExternalPlaformId = async (
 export const SignupForm = ({
   seasonId,
   platform,
+  draft,
   editValues
 }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState(
@@ -67,31 +69,32 @@ export const SignupForm = ({
     platform !== SeasonPlatform.Kanaliiga ? null : true
   );
 
-  const isEditMode = !!editValues;
+  const isEditMode = !!editValues || !!draft;
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: editValues ?? {
-      organizationId: undefined,
-      teamId: undefined,
-      newOrganization: undefined,
-      newTeam: undefined,
-      teamExternalId: "",
-      players: Array(5).fill({
-        accountId: 0,
-        steamId: "",
-        nickname: "",
-        discord: "",
-        captain: false,
-        coCaptain: false,
-        hasValidData: undefined,
-        hasValidWorkEmail: undefined,
-        isProfilePublic: undefined,
-        hours: undefined,
-        rank: undefined,
-        externalRank: undefined
-      } satisfies SignupPlayerType)
-    }
+    defaultValues: editValues ??
+      draft ?? {
+        organizationId: undefined,
+        teamId: undefined,
+        newOrganization: undefined,
+        newTeam: undefined,
+        teamExternalId: "",
+        players: Array(5).fill({
+          accountId: 0,
+          steamId: "",
+          nickname: "",
+          discord: "",
+          captain: false,
+          coCaptain: false,
+          hasValidData: undefined,
+          hasValidWorkEmail: undefined,
+          isProfilePublic: undefined,
+          hours: undefined,
+          rank: undefined,
+          externalRank: undefined
+        } satisfies SignupPlayerType)
+      }
   });
 
   const { control, setValue, resetField, watch } = form;
@@ -264,6 +267,24 @@ export const SignupForm = ({
     }
   };
 
+  const saveAsDraft = async (formData: SignupFormValues) => {
+    const formDataStripped = {
+      ...formData,
+      players: formData.players.map((player) => ({
+        accountId: player.accountId,
+        steamId: player.steamId,
+        nickname: player.nickname,
+        captain: player.captain,
+        coCaptain: player.coCaptain
+      }))
+    } satisfies SignupFormValues;
+    await clientApiFetch(`/api/v1/registrations/season/${seasonId}/draft`, {
+      method: "POST",
+      body: JSON.stringify(formDataStripped)
+    });
+    setSuccessMessage("Saved draft for 7 days.");
+  };
+
   if (!user) {
     return <RequiresSteamLogin />;
   }
@@ -399,10 +420,12 @@ export const SignupForm = ({
                 <div className="text-green-500 font-semibold py-2">
                   {successMessage}
                 </div>
-                <div className="gap-2">
-                  Captains edit link:
-                  <CopyInput value={editUrl} />
-                </div>
+                {editUrl && (
+                  <div className="gap-2">
+                    Captains edit link:
+                    <CopyInput value={editUrl} />
+                  </div>
+                )}
               </div>
             )}
             {errorMessage && (
@@ -420,6 +443,14 @@ export const SignupForm = ({
               }
             >
               Submit
+            </Button>
+            <Button
+              type="button"
+              onClick={() => saveAsDraft(form.getValues())}
+              variant="secondary"
+              className="w-full"
+            >
+              Save as draft
             </Button>
             <FormField
               control={control}

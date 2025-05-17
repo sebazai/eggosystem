@@ -1,8 +1,10 @@
 import { envConfig } from "@/configs/env";
 import { SignupForm } from "@/components/signup/signup-form";
 import { SignupInfo } from "@/components/signup/signup-info";
-import type { SeasonDetails } from "@eggosystem/types";
+import type { SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import type React from "react";
 
 type SignupPageProps = {
   params: Promise<{ season: string }>;
@@ -13,23 +15,66 @@ export const metadata: Metadata = {
   title: "Season registration"
 };
 
+const SignupContainer = ({
+  children,
+  platform,
+  appId
+}: {
+  children: React.ReactNode;
+  platform: SeasonPlatform;
+  appId: number;
+}) => {
+  return (
+    <div>
+      <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-4">
+        <div className="sm:min-w-xl space-y-6">{children}</div>
+
+        <div className="sm:max-w-3xl space-y-6">
+          <SignupInfo platform={platform} appId={appId} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default async function SignupPage({ params }: SignupPageProps) {
   const { season } = await params;
   const result = await fetch(
     `${envConfig.API_URL}/api/v1/seasons/${season}/details`
   );
   const data: SeasonDetails = await result.json();
-  return (
-    <div>
-      <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-4">
-        <div className="sm:min-w-xl space-y-6">
-          <SignupForm seasonId={season} platform={data.platform} />
-        </div>
 
-        <div className="sm:max-w-3xl space-y-6">
-          <SignupInfo platform={data.platform} appId={data.app_id} />
-        </div>
-      </div>
-    </div>
+  // See if saved draft
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+
+    const draftExists = await fetch(
+      `${envConfig.API_URL}/api/v1/registrations/season/${data.id}/draft`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    return (
+      <SignupContainer platform={data.platform} appId={data.app_id}>
+        <SignupForm
+          seasonId={season}
+          platform={data.platform}
+          draft={draftExists.ok ? await draftExists.json() : undefined}
+        />
+      </SignupContainer>
+    );
+  } catch (err) {
+    console.error("Error", err);
+  }
+
+  // Normal
+  return (
+    <SignupContainer platform={data.platform} appId={data.app_id}>
+      <SignupForm seasonId={season} platform={data.platform} />
+    </SignupContainer>
   );
 }
