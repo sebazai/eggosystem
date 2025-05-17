@@ -10,7 +10,7 @@ import { TeamStatistics } from "../stats/team-statistics";
 import { useGameTeamStats } from "@/hooks/data/useGameTeamStats";
 import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
 import { RoundInfo } from "../stats/round-info";
-import { PlayerStatistics } from "../stats/player-stats-grid";
+import { PlayerStatisticsForTeam } from "../stats/player-stats-grid";
 import { TopPlayers } from "../stats/top-players";
 import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
 
@@ -62,7 +62,7 @@ export const GameStats = ({ matchId, gameId, matchInfo }: MatchStatsProps) => {
 
       {/* Player Stats Grid */}
       {playerStats && (
-        <PlayerStatistics
+        <PlayerStatisticsForTeam
           playerStats={playerStats}
           teams={matchInfo.teams}
           playerStatsFilters={baseFilter}

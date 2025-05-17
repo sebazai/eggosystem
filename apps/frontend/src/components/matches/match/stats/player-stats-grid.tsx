@@ -9,22 +9,22 @@ import React from "react";
 import { useSearchParams } from "next/navigation";
 import { NextImageFallback } from "@/components/layout/image-with-fallback";
 
-interface PlayerStatsFilters {
+interface PlayerStatsForTeamFilters {
   seasons: string;
   leagues: string;
 }
 
-interface PlayerStatisticsProps {
+interface PlayerStatisticsForTeamProps {
   playerStats: MatchPlayerStats[];
   teams: MatchInfo["teams"];
-  playerStatsFilters?: PlayerStatsFilters;
+  playerStatsFilters?: PlayerStatsForTeamFilters;
 }
 
-export const PlayerStatistics = ({
+export const PlayerStatisticsForTeam = ({
   playerStats,
   teams,
   playerStatsFilters
-}: PlayerStatisticsProps) => {
+}: PlayerStatisticsForTeamProps) => {
   const search = useSearchParams();
 
   // Player Stats Grid section

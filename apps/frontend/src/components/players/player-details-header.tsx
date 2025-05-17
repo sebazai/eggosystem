@@ -28,7 +28,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   if (isLoading) {
     return (
       <div className="bg-card rounded-md overflow-hidden mb-3">
-        <div className="p-3 sm:p-6 border-b border-border animate-pulse">
+        <div className="p-3 sm:p-6 border-b border-kanaliiga-orange animate-pulse">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full" />
             <div className="space-y-2">
@@ -55,7 +55,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
 
   return (
     <div className="bg-card rounded-md overflow-hidden mb-3">
-      <div className="p-3 sm:p-6 border-b border-border">
+      <div className="p-3 sm:p-6 border-b border-kanaliiga-orange">
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl font-bold">
             {steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U"}
