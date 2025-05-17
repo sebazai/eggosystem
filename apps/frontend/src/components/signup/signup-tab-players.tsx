@@ -57,6 +57,7 @@ interface TabPlayersProps {
   platform: SeasonPlatform;
   seasonId: string;
   isEditMode: boolean;
+  isDraft: boolean;
 }
 
 export const TabPlayers = ({
@@ -68,7 +69,8 @@ export const TabPlayers = ({
   seasonSteamAppId,
   platform,
   seasonId,
-  isEditMode
+  isEditMode,
+  isDraft
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
@@ -108,7 +110,7 @@ export const TabPlayers = ({
   const [loadingStates, setLoadingStates] = useState<
     Record<number, boolean | undefined>
   >({});
-  const prevWatchedSteamIds = useRef(isEditMode ? [] : steamIds);
+  const prevWatchedSteamIds = useRef(isEditMode || isDraft ? [] : steamIds);
   // Open accordions if any errors
   useEffect(() => {
     const errorIndices: string[] = [];

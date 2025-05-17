@@ -49,6 +49,28 @@ const validateExternalPlaformId = async (
   }
 };
 
+const defaultValues = {
+  organizationId: undefined,
+  teamId: undefined,
+  newOrganization: undefined,
+  newTeam: undefined,
+  teamExternalId: "",
+  players: Array(5).fill({
+    accountId: 0,
+    steamId: "",
+    nickname: "",
+    discord: "",
+    captain: false,
+    coCaptain: false,
+    hasValidData: undefined,
+    hasValidWorkEmail: undefined,
+    isProfilePublic: undefined,
+    hours: undefined,
+    rank: undefined,
+    externalRank: undefined
+  } satisfies SignupPlayerType)
+};
+
 export const SignupForm = ({
   seasonId,
   platform,
@@ -69,32 +91,12 @@ export const SignupForm = ({
     platform !== SeasonPlatform.Kanaliiga ? null : true
   );
 
-  const isEditMode = !!editValues || !!draft;
+  const isEditMode = !!editValues;
+  const isDraftMode = !!draft;
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: editValues ??
-      draft ?? {
-        organizationId: undefined,
-        teamId: undefined,
-        newOrganization: undefined,
-        newTeam: undefined,
-        teamExternalId: "",
-        players: Array(5).fill({
-          accountId: 0,
-          steamId: "",
-          nickname: "",
-          discord: "",
-          captain: false,
-          coCaptain: false,
-          hasValidData: undefined,
-          hasValidWorkEmail: undefined,
-          isProfilePublic: undefined,
-          hours: undefined,
-          rank: undefined,
-          externalRank: undefined
-        } satisfies SignupPlayerType)
-      }
+    defaultValues: editValues ?? draft ?? defaultValues
   });
 
   const { control, setValue, resetField, watch } = form;
@@ -404,6 +406,7 @@ export const SignupForm = ({
                 platform={seasonDetails.platform}
                 seasonId={seasonId}
                 isEditMode={isEditMode}
+                isDraft={isDraftMode}
               />
             </Tabs>
 
@@ -444,14 +447,36 @@ export const SignupForm = ({
             >
               Submit
             </Button>
-            <Button
-              type="button"
-              onClick={() => saveAsDraft(form.getValues())}
-              variant="secondary"
-              className="w-full"
-            >
-              Save as draft
-            </Button>
+            <div className="flex gap-2 w-full mt-2">
+              <Button
+                type="button"
+                onClick={() => saveAsDraft(form.getValues())}
+                variant="secondary"
+                className="w-[50%]"
+                disabled={
+                  form.formState.isSubmitting ||
+                  form.formState.isSubmitSuccessful
+                }
+              >
+                Save as draft
+              </Button>
+              <Button
+                type="reset"
+                onClick={() => {
+                  setActiveTab("organization");
+                  form.reset(defaultValues);
+                }}
+                variant="destructive"
+                className="w-[50%]"
+                disabled={
+                  form.formState.isSubmitting ||
+                  form.formState.isSubmitSuccessful
+                }
+              >
+                Reset
+              </Button>
+            </div>
+
             <FormField
               control={control}
               name={"captainHasReadTermAndConditions"}
