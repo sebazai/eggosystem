@@ -59,7 +59,10 @@ export const MatchMapPicks = ({
           <h2 className="text-lg font-bold mb-3">MAP PICKS & BANS</h2>
           <div className="grid grid-cols-2 xl:grid-cols-7 gap-[2px]">
             {maps?.map((mapInfo, index) => (
-              <div key={index} className="relative bg-card p-3">
+              <div
+                key={index}
+                className="relative bg-kanaliiga-light-brown/10 p-3"
+              >
                 <div className="text-center">
                   <span
                     className={`text-xs mb-1 block text-green-500`}
