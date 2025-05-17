@@ -82,7 +82,7 @@ export const MatchMapPicks = ({
       <div className="p-2 mb-2 flex flex-col sm:flex-row justify-between">
         <h1 className="mb-2 sm:mb-0">MATCH STATS</h1>
         {maps?.length !== 1 && (
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap gap-2">
             <button
               className={`px-3 py-1 ${!gameId ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
               onClick={() => handleMapSelect(undefined)}
