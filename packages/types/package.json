@@ -13,12 +13,12 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "zod": "3.24.3"
+    "zod": "3.24.4"
   },
   "devDependencies": {
     "@eggosystem/tsconfig": "workspace:*",
     "@eggosystem/eslint": "workspace:*",
-    "@types/express": "5.0.1"
+    "@types/express": "5.0.2"
   },
   "exports": {
     ".": {

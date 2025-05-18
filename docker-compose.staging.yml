@@ -103,7 +103,7 @@ services:
       - ./db-data:/bitnami/mariadb
 
   eggo-staging-redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     networks:
       - web
     restart: always

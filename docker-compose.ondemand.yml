@@ -106,7 +106,7 @@ services:
       - /home/kanaliiga/docker/eggosystem-staging/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
 
   eggo-redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
     container_name: eggo-redis-${ENV_ID}
     networks:

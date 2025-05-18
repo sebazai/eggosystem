@@ -55,7 +55,7 @@ services:
     command: "pnpm --filter=frontend dev"
 
   eggo-redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
 
   eggo-phpmyadmin:
