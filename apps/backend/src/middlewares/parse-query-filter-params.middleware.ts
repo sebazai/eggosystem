@@ -35,7 +35,8 @@ const parseQueryFilterParams = (
         const num = Number(value.trim());
         return isNaN(num) ? null : num;
       })
-      .filter((n): n is number => n !== null);
+      .filter((n): n is number => n !== null)
+      .sort((a, b) => a - b);
 
     return parsedValues.length > 0 ? parsedValues : null;
   };

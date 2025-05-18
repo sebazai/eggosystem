@@ -3,7 +3,7 @@ import {
   getSeasons,
   getSeasonById,
   getSeasonDetailsById,
-  getActiveSeasonForAppId
+  getActiveOrLatestSeasonForAppId
 } from "../models/season.models";
 import { type RequestWithParams } from "@eggosystem/types";
 import _ from "lodash";
@@ -49,7 +49,7 @@ export const getActiveSeasonForApp = async (
     res.json({ season_id: Number(dataInRedis) });
     return;
   }
-  const activeSeason = await getActiveSeasonForAppId(app_id);
+  const activeSeason = await getActiveOrLatestSeasonForAppId(app_id);
   if (!activeSeason) {
     res.status(404).json({ message: "No active season found for app" });
     return;

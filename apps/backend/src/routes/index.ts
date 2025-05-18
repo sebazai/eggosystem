@@ -18,6 +18,7 @@ import gameRouter from "./v1/game.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
+import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -31,7 +32,14 @@ v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/games", gameRouter);
 v1Router.use("/organizations", organizationRouter);
-v1Router.use("/filters", parseQueryFilterParams, filtersRouter);
+v1Router.use(
+  "/filters",
+  parseQueryFilterParams,
+  cacheResponseMiddleware({
+    cachePrefix: "filtered"
+  }),
+  filtersRouter
+);
 v1Router.use("/maps", mapsRouter);
 v1Router.use("/teams", teamsRouter);
 v1Router.use("/seasons", seasonsRouter);
