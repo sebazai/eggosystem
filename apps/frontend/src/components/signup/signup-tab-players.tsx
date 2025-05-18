@@ -83,13 +83,14 @@ export const TabPlayers = ({
     if (
       auth.user?.provider === "steam" &&
       auth.user?.provider_id &&
-      !isEditMode
+      !isEditMode &&
+      !isDraft
     ) {
       setValue("players.0.accountId", auth.user.account_id);
       setValue("players.0.steamId", auth.user.provider_id);
       setValue("players.0.captain", true);
     }
-  }, [auth.user, setValue, isEditMode]);
+  }, [auth.user, setValue, isEditMode, isDraft]);
 
   useEffect(() => {
     const playerErrorIndicesAsNumber = playerErrorIndices
