@@ -109,6 +109,18 @@ export const createDashboardNextUrl = (url: string) => {
   return `/dashboard/${url}`;
 };
 
+export const createOrgLogoUrl = (url: string) => {
+  if (!url) return "";
+
+  // If the URL is already absolute, return it as is
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  // Ensure the URL starts with a leading slash for Next.js image component
+  return createNextUrl(`/organization-images/${url}`);
+};
+
 export const createTeamLogoUrl = (url: string) => {
   if (!url) return "";
 

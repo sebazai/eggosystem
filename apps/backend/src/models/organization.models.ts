@@ -10,10 +10,12 @@ import { buildInsertQueryParts } from "../db/utils";
 
 export const getOrganizations = async (searchParams?: string) => {
   if (!searchParams) {
-    return runQuery<Organizations[]>("SELECT * FROM Organizations");
+    return runQuery<Organizations[]>(
+      "SELECT * FROM Organizations ORDER BY sort_order DESC, name ASC"
+    );
   }
   return runQuery<Organizations[]>(
-    "SELECT * FROM Organizations WHERE name LIKE ?",
+    "SELECT * FROM Organizations WHERE name LIKE ? ORDER BY sort_order DESC, name ASC",
     [`%${searchParams}%`]
   );
 };

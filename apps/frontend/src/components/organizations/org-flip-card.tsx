@@ -11,7 +11,7 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import type { Organizations } from "@eggosystem/types";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { createOrgLogoUrl } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { NextImageFallback } from "../layout/image-with-fallback";
 
@@ -26,7 +26,7 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null); // Reference for each card
   const companyName = organization.name;
-  const imageSrc = createTeamLogoUrl(organization.logo);
+  const imageSrc = createOrgLogoUrl(organization.logo);
   // const orgPage = `/organizations/${organization.id}`;
   const isMobile = useIsMobile();
 

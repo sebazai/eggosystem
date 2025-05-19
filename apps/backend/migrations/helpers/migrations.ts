@@ -86,6 +86,10 @@ export const migrateCompanies = async () => {
       await runNewDbQuery(query);
     }
   }
+
+  await runNewDbQuery(
+    `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('Certego Oy', 'Finland', '2127363-0', 'S10_1312.png', 'https://www.certego.fi/');`
+  );
   console.log("Companies migrated");
 };
 

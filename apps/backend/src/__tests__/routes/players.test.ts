@@ -21,7 +21,7 @@ describe("GET /players", () => {
       nickname: "sububobi",
       is_valid_work_email: 0,
       is_valid_full_name: 1,
-      has_accepted_latest_privacy_policy: 1
+      has_accepted_latest_privacy_policy: 0
     });
   });
 
