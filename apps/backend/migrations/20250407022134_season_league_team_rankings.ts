@@ -120,22 +120,27 @@ export async function up(knex: Knex): Promise<void> {
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 12 AND league_id= 1 AND team_id= 1550;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 1 AND team_id= 1028;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 1 AND team_id= 122;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 12 AND league_id= 2 AND team_id= 386;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 12 AND league_id= 2 AND team_id= 930;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 2 AND team_id= 408;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 2 AND team_id= 1455;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 12 AND league_id= 3 AND team_id= 321;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 12 AND league_id= 3 AND team_id= 1697;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 3 AND team_id= 1306;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 3 AND team_id= 1342;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 12 AND league_id= 4 AND team_id= 1062;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 12 AND league_id= 4 AND team_id= 1173;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 4 AND team_id= 1670;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 4 AND team_id= 1750;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 12 AND league_id= 5 AND team_id= 1390;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 12 AND league_id= 5 AND team_id= 736;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 5 AND team_id= 1703;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 5 AND team_id= 749;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 12 AND league_id= 6 AND team_id= 1693;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 12 AND league_id= 6 AND team_id= 207;
     UPDATE SeasonLeagueTeams SET placement = 3, position_offset = 1 WHERE season_id= 12 AND league_id= 6 AND team_id= 418;
@@ -144,12 +149,15 @@ export async function up(knex: Knex): Promise<void> {
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 13 AND league_id= 1 AND team_id= 1028;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 13 AND league_id= 1 AND team_id= 756;
     UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id= 13 AND league_id= 1 AND team_id= 1550;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 13 AND league_id= 2 AND team_id= 1475;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 13 AND league_id= 2 AND team_id= 166;
     UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id= 13 AND league_id= 2 AND team_id= 408;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 13 AND league_id= 3 AND team_id= 434;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 13 AND league_id= 3 AND team_id= 1950;
     UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id= 13 AND league_id= 3 AND team_id= 1446;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 13 AND league_id= 4 AND team_id= 1588;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 13 AND league_id= 5 AND team_id= 1473;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 13 AND league_id= 6 AND team_id= 1851;
@@ -157,12 +165,15 @@ export async function up(knex: Knex): Promise<void> {
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 14 AND league_id= 1 AND team_id= 66;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 14 AND league_id= 1 AND team_id= 1028;
     UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id= 14 AND league_id= 1 AND team_id= 1697;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 14 AND league_id= 2 AND team_id= 2119;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 14 AND league_id= 2 AND team_id= 1938;
     UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id= 14 AND league_id= 2 AND team_id= 1863;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 14 AND league_id= 3 AND team_id= 1254;
     UPDATE SeasonLeagueTeams SET placement = 2 WHERE season_id= 14 AND league_id= 3 AND team_id= 2110;
     UPDATE SeasonLeagueTeams SET placement = 3 WHERE season_id= 14 AND league_id= 3 AND team_id= 1975;
+
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 14 AND league_id= 4 AND team_id= 2075;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 14 AND league_id= 5 AND team_id= 257;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 14 AND league_id= 6 AND team_id= 967;
