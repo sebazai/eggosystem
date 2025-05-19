@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36" version="26.2.13">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36" version="26.2.14">
   <diagram id="R2lEEEUBdFMjLlhIrx00" name="Page-1">
-    <mxGraphModel dx="1236" dy="754" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
+    <mxGraphModel dx="1234" dy="753" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -146,6 +146,9 @@
         <mxCell id="PAoucXeDEAnXjQcnjG_c-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="PAoucXeDEAnXjQcnjG_c-2" target="PAoucXeDEAnXjQcnjG_c-17" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="mmwNEip-hCPPJ-bk7AW9-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="PAoucXeDEAnXjQcnjG_c-2" target="PAoucXeDEAnXjQcnjG_c-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="PAoucXeDEAnXjQcnjG_c-2" value="MatchTeams" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="320" y="420" width="120" height="60" as="geometry" />
         </mxCell>
@@ -167,18 +170,15 @@
         <mxCell id="PAoucXeDEAnXjQcnjG_c-6" value="MatchGames" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="320" y="640" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="PAoucXeDEAnXjQcnjG_c-12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="PAoucXeDEAnXjQcnjG_c-9" target="PAoucXeDEAnXjQcnjG_c-11" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="120" y="430" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="PAoucXeDEAnXjQcnjG_c-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="PAoucXeDEAnXjQcnjG_c-9" target="PAoucXeDEAnXjQcnjG_c-2" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
         <mxCell id="PAoucXeDEAnXjQcnjG_c-9" value="MatchTeamMapVetoes" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="150" y="400" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mmwNEip-hCPPJ-bk7AW9-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="PAoucXeDEAnXjQcnjG_c-11" target="PAoucXeDEAnXjQcnjG_c-9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="430" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="PAoucXeDEAnXjQcnjG_c-11" value="Maps" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="80" y="640" width="120" height="60" as="geometry" />
@@ -221,7 +221,7 @@
         <mxCell id="Skfat4M1WVlrjTmSRSkH-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="Skfat4M1WVlrjTmSRSkH-1" target="Skfat4M1WVlrjTmSRSkH-13" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="gezv-iUH_hcNtDwmY0-F-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="Skfat4M1WVlrjTmSRSkH-1" target="gezv-iUH_hcNtDwmY0-F-2">
+        <mxCell id="gezv-iUH_hcNtDwmY0-F-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="Skfat4M1WVlrjTmSRSkH-1" target="gezv-iUH_hcNtDwmY0-F-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="Skfat4M1WVlrjTmSRSkH-1" value="Accounts" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
@@ -245,7 +245,7 @@
         <mxCell id="Skfat4M1WVlrjTmSRSkH-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="Skfat4M1WVlrjTmSRSkH-7" target="Skfat4M1WVlrjTmSRSkH-8" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="gezv-iUH_hcNtDwmY0-F-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Skfat4M1WVlrjTmSRSkH-7" target="gezv-iUH_hcNtDwmY0-F-2">
+        <mxCell id="gezv-iUH_hcNtDwmY0-F-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="Skfat4M1WVlrjTmSRSkH-7" target="gezv-iUH_hcNtDwmY0-F-2" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1290" y="560" />
@@ -261,7 +261,7 @@
         <mxCell id="Skfat4M1WVlrjTmSRSkH-13" value="UserPolicyAcceptance" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="1080" y="370" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="gezv-iUH_hcNtDwmY0-F-2" value="AccountPermission&lt;br&gt;Scopes" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="gezv-iUH_hcNtDwmY0-F-2" value="AccountPermission&lt;br&gt;Scopes" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="1080" y="530" width="120" height="60" as="geometry" />
         </mxCell>
       </root>

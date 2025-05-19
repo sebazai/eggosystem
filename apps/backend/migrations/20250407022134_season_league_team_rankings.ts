@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
 
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 1 AND team_id= 20;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 2 AND team_id= 87;
-    UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 3 AND team_id= 389;
+    UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 3 AND team_id= 122;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 4 AND team_id= 51;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 5 AND team_id= 104;
     UPDATE SeasonLeagueTeams SET placement = 1 WHERE season_id= 4 AND league_id= 6 AND team_id= 170;
