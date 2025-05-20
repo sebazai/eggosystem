@@ -1,9 +1,11 @@
 import { envConfig } from "@/configs/env";
 import type { Organizations } from "@eggosystem/types";
-import OrganizationHeader from "./OrganizationHeader";
+import OrganizationHeader from "@/components/organizations/OrganizationHeader";
 import { createOrgLogoUrl } from "@/lib/utils";
-import OrganizationTrophies from "./OrganizationTrophies";
-import OrganizationTeams from "./OrganizationTeams";
+import OrganizationTrophies from "@/components/organizations/OrganizationTrophies";
+import OrganizationTeams from "@/components/organizations/OrganizationTeams";
+import type { Metadata } from "next";
+import { createPageMetadata } from "@/lib/metadata";
 
 interface OrganizationProps {
   params: Promise<{
@@ -11,20 +13,23 @@ interface OrganizationProps {
   }>;
 }
 
-// export async function generateMetadata({
-//   searchParams
-// }: OrganizationProps): Promise<Metadata> {
-//   const { q } = await searchParams;
+export async function generateMetadata({
+  params
+}: OrganizationProps): Promise<Metadata> {
+  const { id } = await params;
+  const url = `${envConfig.API_URL}/api/v1/organizations/${id}`;
+  const org = await fetch(url);
+  const organization: Organizations = await org.json();
 
-//   if (q) {
-//     return createPageMetadata({
-//       title: `Search results for "${q}" in Organizations`
-//     });
-//   }
-//   return createPageMetadata({
-//     title: "Organizations"
-//   });
-// }
+  if (org.ok) {
+    return createPageMetadata({
+      title: organization.name
+    });
+  }
+  return createPageMetadata({
+    title: "Organization not found"
+  });
+}
 
 export default async function Organization({ params }: OrganizationProps) {
   const { id } = await params;
