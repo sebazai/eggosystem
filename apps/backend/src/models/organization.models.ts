@@ -28,9 +28,10 @@ export const getOrganizationById = async (id: number) => {
 };
 
 export const getOrganizationTeams = async (id: number) => {
-  return runQuery<Team[]>("SELECT * FROM Teams WHERE organization_id = ?", [
-    id
-  ]);
+  return runQuery<Team[]>(
+    "SELECT * FROM Teams WHERE organization_id = ? AND org_approved = ?",
+    [id, 1]
+  );
 };
 
 export const insertOrganization = async (
