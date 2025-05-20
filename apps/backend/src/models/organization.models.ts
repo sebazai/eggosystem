@@ -52,6 +52,7 @@ export const getOrganizationTeamTrophies = async (organizationId: number) => {
   const query = `
     SELECT
       t.id AS team_id,
+      t.name AS team_name,
       s.id AS season_id,
       l.id AS league_id,
       s.full_name AS season_name,

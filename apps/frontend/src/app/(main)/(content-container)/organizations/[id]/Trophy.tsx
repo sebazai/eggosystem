@@ -3,11 +3,17 @@ import clsx from "clsx";
 
 type TrophyProps = {
   placement: number;
+  team: string;
   season: string;
   league: string;
 };
 
-export default function Trophy({ placement, season, league }: TrophyProps) {
+export default function Trophy({
+  placement,
+  season,
+  league,
+  team
+}: TrophyProps) {
   const colorMap: Record<number, string> = {
     1: "text-yellow-400",
     2: "text-slate-400",
@@ -32,7 +38,7 @@ export default function Trophy({ placement, season, league }: TrophyProps) {
           {season} {labelMap[placement]}
         </div>
         <div className="text-muted-foreground text-xs uppercase tracking-wide">
-          {league}
+          {league} • {team}
         </div>
       </div>
     </div>

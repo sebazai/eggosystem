@@ -23,6 +23,7 @@ export default async function OrganizationTrophies({
         {orgTrophies.map((trophy) => (
           <Trophy
             key={`${trophy.season_name} ${trophy.league_name}`}
+            team={trophy.team_name}
             placement={trophy.placement}
             season={trophy.season_name}
             league={trophy.league_name}
