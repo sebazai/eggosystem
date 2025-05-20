@@ -1,6 +1,7 @@
 import type {
   InsertOrganization,
   Organizations,
+  OrganizationTeamTrophies,
   Team
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -45,4 +46,25 @@ export const insertOrganization = async (
     values,
     connection
   );
+};
+
+export const getOrganizationTeamTrophies = async (organizationId: number) => {
+  const query = `
+    SELECT
+      t.id AS team_id,
+      s.id AS season_id,
+      l.id AS league_id,
+      s.full_name AS season_name,
+      l.name AS league_name,
+      slt.placement
+    FROM Teams t
+    JOIN Organizations o ON o.id = t.organization_id
+    JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
+    JOIN Seasons s ON s.id = slt.season_id
+    JOIN Leagues l ON l.id = slt.league_id
+    WHERE o.id = ?
+      AND slt.placement IS NOT NULL
+    ORDER BY s.id DESC;
+  `;
+  return runQuery<Array<OrganizationTeamTrophies>>(query, [organizationId]);
 };
