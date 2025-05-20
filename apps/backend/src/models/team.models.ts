@@ -251,13 +251,13 @@ export const getTeamMatchesByFilters = async ({
           CASE 
             WHEN team_score_bo1 > opponent_score_bo1 THEN 'won'
             WHEN team_score_bo1 < opponent_score_bo1 THEN 'lost'
-            ELSE 'tie'
+            ELSE '-'
           END
         ELSE
           CASE
             WHEN team_game_wins > opponent_game_wins THEN 'won'
             WHEN team_game_wins < opponent_game_wins THEN 'lost'
-            ELSE 'tie'
+            ELSE '-'
           END
         END AS result,
       CASE
@@ -291,7 +291,7 @@ export const getTeamMatchesByFilters = async ({
       CASE
         WHEN tgs1.score > tgs2.score THEN 'won'
         WHEN tgs1.score < tgs2.score THEN 'lost'
-        ELSE 'tie'
+        ELSE '-'
       END AS result
     FROM Matches m
     JOIN MatchTeams team ON m.id = team.match_id AND team.team_id = ?
