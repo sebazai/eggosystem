@@ -68,15 +68,15 @@ describe("Migration tests", () => {
     expect(result[0].total_teams).toBe(124);
   });
 
-  it("There should be 1798 matches on season 11 ", async () => {
+  it("There should be 1800 matches on season 11 ", async () => {
     const query = `SELECT COUNT(mmp.id) AS total_matches FROM MatchGames mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 11;`;
     const result = await runQuery<[{ total_matches: number }]>(query);
-    expect(result[0].total_matches).toBe(1798);
+    expect(result[0].total_matches).toBe(1800);
   });
-  it("There should be 1124 matches on season 14 ", async () => {
+  it("There should be 1125 matches on season 14 ", async () => {
     const query = `SELECT COUNT(mmp.id) AS total_matches FROM MatchGames mmp JOIN Matches m ON m.id = mmp.match_id WHERE m.season_id = 14;`;
     const result = await runQuery<[{ total_matches: number }]>(query);
-    expect(result[0].total_matches).toBe(1124);
+    expect(result[0].total_matches).toBe(1125);
   });
 
   it("Leaderboards, season 14 total matesflashed", async () => {

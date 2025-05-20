@@ -14,7 +14,7 @@ describe("getMatchesByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 10098,
+        match_id: 10146,
         match_date: "2024-11-27",
         league_name: "Masters",
         map_name: "de_nuke",
@@ -28,7 +28,7 @@ describe("getMatchesByFilters", () => {
         team2_score: 8
       },
       {
-        match_id: 10018,
+        match_id: 10066,
         match_date: "2024-10-30",
         league_name: "Masters",
         map_name: "de_nuke",
@@ -61,7 +61,7 @@ describe("getMatchesByFilters", () => {
 
 describe("getMatchTopPlayers", () => {
   it("should pick the correct team id when a player has played substitute in same season", async () => {
-    const result = await getMatchTopPlayers(9416);
+    const result = await getMatchTopPlayers(9464);
     expect(result).toEqual({
       most_kills: {
         steam_id: 76561197987111310,

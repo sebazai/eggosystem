@@ -984,7 +984,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 9867,
+        match_id: 9915,
         game_id: null,
         map_name: "de_nuke, de_anubis, de_dust2",
         best_of: 3,
@@ -1018,7 +1018,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 1.07
       },
       {
-        match_id: 9977,
+        match_id: 10025,
         game_id: null,
         map_name: "de_anubis, de_ancient",
         best_of: 3,
@@ -1052,7 +1052,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.61
       },
       {
-        match_id: 10007,
+        match_id: 10055,
         game_id: null,
         map_name: "de_anubis, de_nuke",
         best_of: 3,
@@ -1097,7 +1097,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 9867,
+        match_id: 9915,
         game_id: null,
         map_name: "de_anubis",
         best_of: 3,
@@ -1131,7 +1131,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.76
       },
       {
-        match_id: 9977,
+        match_id: 10025,
         game_id: null,
         map_name: "de_anubis",
         best_of: 3,
@@ -1165,7 +1165,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 1.07
       },
       {
-        match_id: 10007,
+        match_id: 10055,
         game_id: null,
         map_name: "de_anubis",
         best_of: 3,
@@ -1210,7 +1210,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 9257,
+        match_id: 9305,
         game_id: 103438,
         map_name: "de_anubis",
         best_of: 1,
@@ -1244,7 +1244,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 1.42
       },
       {
-        match_id: 9613,
+        match_id: 9661,
         game_id: 103817,
         map_name: "de_anubis",
         best_of: 1,
@@ -1278,7 +1278,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.88
       },
       {
-        match_id: 9782,
+        match_id: 9830,
         game_id: 104025,
         map_name: "de_anubis",
         best_of: 1,
@@ -1343,7 +1343,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 7397,
+        match_id: 7405,
         game_id: null,
         map_name: "de_ancient",
         best_of: 3,
@@ -1377,7 +1377,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.29
       },
       {
-        match_id: 8153,
+        match_id: 8233,
         game_id: null,
         map_name: "de_ancient",
         best_of: 3,
@@ -1411,7 +1411,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 1.43
       },
       {
-        match_id: 9977,
+        match_id: 10025,
         game_id: null,
         map_name: "de_ancient",
         best_of: 3,
@@ -1445,7 +1445,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.14
       },
       {
-        match_id: 9463,
+        match_id: 9511,
         game_id: 103657,
         map_name: "de_ancient",
         best_of: 1,
@@ -1490,7 +1490,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
     });
     expect(result).toEqual([
       {
-        match_id: 7397,
+        match_id: 7405,
         game_id: null,
         map_name: "de_ancient",
         best_of: 3,
@@ -1524,7 +1524,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.29
       },
       {
-        match_id: 8153,
+        match_id: 8233,
         game_id: null,
         map_name: "de_ancient",
         best_of: 3,
@@ -1558,7 +1558,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 1.43
       },
       {
-        match_id: 9977,
+        match_id: 10025,
         game_id: null,
         map_name: "de_ancient",
         best_of: 3,
@@ -1592,7 +1592,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.14
       },
       {
-        match_id: 9463,
+        match_id: 9511,
         game_id: 103657,
         map_name: "de_ancient",
         best_of: 1,
