@@ -250,6 +250,15 @@ test:frontend:
     reports:
       junit: apps/frontend/test-results/junit-report.xml
 
+build:types:
+  stage: build
+  extends: [.prepare-pnpm, .mr-all-app]
+  script:
+    - npx turbo run build --filter='@eggosystem/types'
+  artifacts:
+    paths:
+      - packages/types/dist/
+
 build:frontend:
   stage: build
   extends: [.prepare-pnpm, .mr-frontend]
@@ -274,6 +283,7 @@ test-e2e:frontend:
   dependencies:
     - build:backend
     - build:frontend
+    - build:types
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
