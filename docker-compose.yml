@@ -20,6 +20,10 @@ services:
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
       - ./packages/types:/usr/src/app/packages/types
+      - ./apps/backend/private_access_token.pem:/usr/src/app/apps/backend/private_access_token.pem
+      - ./apps/backend/public_access_token.pem:/usr/src/app/apps/backend/public_access_token.pem
+      - ./apps/backend/private_refresh_token.pem:/usr/src/app/apps/backend/private_refresh_token.pem
+      - ./apps/backend/public_refresh_token.pem:/usr/src/app/apps/backend/public_refresh_token.pem
     env_file: .env.development
     command: "pnpm --filter=backend dev"
 

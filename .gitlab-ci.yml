@@ -249,27 +249,31 @@ test:frontend:
       - apps/frontend/test-results/
     reports:
       junit: apps/frontend/test-results/junit-report.xml
-build:types:
-  stage: build
-  extends: [.prepare-pnpm, .mr-all-app]
-  script:
-    - npx turbo run build --filter='@eggosystem/types'
 
 build:frontend:
   stage: build
   extends: [.prepare-pnpm, .mr-frontend]
   script:
     - npx turbo run build --filter='!backend' --cache=remote:rw
+  artifacts:
+    paths:
+      - apps/frontend/.next/
 
 build:backend:
   stage: build
   extends: [.prepare-pnpm, .mr-backend]
   script:
     - npx turbo run build --filter='!frontend' --cache=remote:rw
+  artifacts:
+    paths:
+      - apps/backend/dist/
 
 test-e2e:frontend:
   image: mcr.microsoft.com/playwright:v1.52.0-jammy
   stage: test-e2e
+  dependencies:
+    - build:backend
+    - build:frontend
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
