@@ -229,7 +229,9 @@ export const getMatchInfo = async (
           m.start_time,
           m.end_time,
           m.league_id,
+          l.name AS league_name,
           m.season_id,
+          s.full_name AS season_name,
           m.best_of,
           m.stage,
           a.game_id,
@@ -244,6 +246,8 @@ export const getMatchInfo = async (
           ) AS teams
       FROM AggregatedScores a
       JOIN Matches m ON a.match_id = m.id
+      JOIN Seasons s ON s.id = m.season_id
+      JOIN Leagues l ON l.id = m.league_id
       GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage;
   `;
 

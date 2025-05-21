@@ -8,6 +8,8 @@ interface MatchHeaderProps {
   matchStartTime: string;
   matchEndTime: string;
   matchDate: string;
+  seasonName: string;
+  leagueName: string;
   className?: string;
 }
 
@@ -17,6 +19,8 @@ export function MatchHeader({
   matchStartTime,
   matchEndTime,
   matchDate,
+  seasonName,
+  leagueName,
   className
 }: MatchHeaderProps) {
   const startDate = new Date(`${matchDate}T${matchStartTime}`);
@@ -74,34 +78,42 @@ export function MatchHeader({
         </div>
 
         {/* Score (centered) */}
-        <div className="flex items-center gap-1 justify-self-center text-center">
+        <div className="flex flex-col items-center gap-1 justify-self-center text-center">
           {/* Score 1 */}
-          <div className="flex items-center justify-center px-2 py-4">
-            <span
-              className={cn(
-                "font-extrabold text-4xl md:text-5xl",
-                team1ScoreColor
-              )}
-            >
-              {team1.score}
-            </span>
+          <div className="flex items-center gap-1 justify-self-center text-center">
+            <div className="flex items-center justify-center px-2 py-4">
+              <span
+                className={cn(
+                  "font-extrabold text-4xl md:text-5xl",
+                  team1ScoreColor
+                )}
+              >
+                {team1.score}
+              </span>
+            </div>
+            {/* Info */}
+            <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground">
+              <span>{`${formattedStart}–${formattedEnd}`}</span>
+              <span>{formattedDate}</span>
+              <span>
+                {seasonName} {leagueName}
+              </span>
+            </div>
+            <div className="xs:hidden">-</div>
+            {/* Score 2 */}
+            <div className="flex items-center justify-center px-2 py-4">
+              <span
+                className={cn(
+                  "font-extrabold text-4xl md:text-5xl",
+                  team2ScoreColor
+                )}
+              >
+                {team2.score}
+              </span>
+            </div>
           </div>
-          {/* Info */}
-          <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground">
-            <span>{`${formattedStart}–${formattedEnd}`}</span>
-            <span>{formattedDate}</span>
-          </div>
-          <div className="xs:hidden">-</div>
-          {/* Score 2 */}
-          <div className="flex items-center justify-center px-2 py-4">
-            <span
-              className={cn(
-                "font-extrabold text-4xl md:text-5xl",
-                team2ScoreColor
-              )}
-            >
-              {team2.score}
-            </span>
+          <div className="block xs:hidden text-xxs md:text-xs text-muted-foreground">
+            {seasonName} {leagueName}
           </div>
         </div>
 
