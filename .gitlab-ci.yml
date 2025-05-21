@@ -276,6 +276,12 @@ test-e2e:frontend:
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
+    - apk add --no-cache openssl
+    - | # Generate private and public access tokens
+      openssl genpkey -algorithm RSA -out apps/backend/private_access_token.pem && 
+      openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem &&
+      openssl genpkey -algorithm RSA -out apps/backend/private_refresh_token.pem &&
+      openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - export $(grep -v '^#' .env.development | xargs)

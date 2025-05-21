@@ -149,12 +149,6 @@ test.describe("Signup Form", () => {
       );
       await expect(teamSelectionButton).toBeEnabled();
     });
-
-    test.skip("should show custom fields when selecting 'Add new' organization", async ({
-      page: _page
-    }) => {
-      // Implementation will be added later
-    });
   });
 
   // Team selection tests
