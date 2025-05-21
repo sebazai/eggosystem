@@ -10,7 +10,7 @@ describe("Match Routes", () => {
   app.use("/matches", matchRouter);
 
   describe("GET /matches/:game_id/teamstats", () => {
-    it("should return team stats for game id 10151", async () => {
+    it("should return team stats for game id 10154", async () => {
       const expectedStats = [
         {
           team_id: 2035,
@@ -31,7 +31,7 @@ describe("Match Routes", () => {
       ] satisfies MatchTeamStats[];
 
       const response = await request(app)
-        .get("/matches/10151/teamstats")
+        .get("/matches/10154/teamstats")
         .expect("Content-Type", /json/)
         .expect(200);
 
