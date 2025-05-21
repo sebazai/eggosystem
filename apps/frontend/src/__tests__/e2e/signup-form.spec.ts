@@ -329,10 +329,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeDisabled();
     });
 
-    // For some reason this does not pass, even though it should trim away.
-    test.skip("should pass with Faceit ID that has spaces", async ({
-      page
-    }) => {
+    test("should pass with Faceit ID that has spaces", async ({ page }) => {
       // Find the Team Faceit ID field using data-testid
       const faceitIdField = page.locator(
         '[data-testid="team-external-id-input"]'
