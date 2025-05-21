@@ -16,6 +16,7 @@ export default defineConfig({
 
   // Set a reasonable timeout
   timeout: 30000,
+  expect: { timeout: 10000 },
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
