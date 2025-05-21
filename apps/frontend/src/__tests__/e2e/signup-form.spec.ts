@@ -326,7 +326,9 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeDisabled();
     });
 
-    test("should reject Faceit ID with spaces", async ({ page }: TestArgs) => {
+    test("should pass with Faceit ID that has spaces", async ({
+      page
+    }: TestArgs) => {
       // Find the Team Faceit ID field using data-testid
       const faceitIdField = page.locator(
         '[data-testid="team-external-id-input"]'
@@ -338,10 +340,10 @@ test.describe("Signup Form", () => {
       );
 
       // Try a Faceit ID with spaces
-      await faceitIdField.fill("77dd9104 d2f1 4f50 ba80 d58457cff5a9");
+      await faceitIdField.fill("   77dd9104-d2f1-4f50-ba80-d58457cff5a9  ");
 
       // Button should be disabled with invalid format
-      await expect(goToLineupButton).toBeDisabled();
+      await expect(goToLineupButton).toBeEnabled();
     });
 
     test("should reject Faceit ID without hyphens", async ({

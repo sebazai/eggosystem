@@ -36,7 +36,7 @@ const parseFaceITTeamId = (val: string) => {
   try {
     const parsedUrl = new URL(val);
     const segments = parsedUrl.pathname.split("/").filter(Boolean);
-    return segments.pop() || null;
+    return segments.pop()?.trim() || null;
   } catch (_error) {
     return val;
   }

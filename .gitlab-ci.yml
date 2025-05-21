@@ -249,6 +249,11 @@ test:frontend:
       - apps/frontend/test-results/
     reports:
       junit: apps/frontend/test-results/junit-report.xml
+build:types:
+  stage: build
+  extends: [.prepare-pnpm, .mr-all-app]
+  script:
+    - npx turbo run build --filter='@eggosystem/types'
 
 build:frontend:
   stage: build
@@ -276,7 +281,7 @@ test-e2e:frontend:
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
   before_script:
-    - apk add --no-cache openssl
+    - apt-get update && apt-get install -y openssl
     - | # Generate private and public access tokens
       openssl genpkey -algorithm RSA -out apps/backend/private_access_token.pem && 
       openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem &&
@@ -285,12 +290,9 @@ test-e2e:frontend:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - export $(grep -v '^#' .env.development | xargs)
-    - pnpm config set registry http://172.17.0.1:4873
-    - pnpm install --frozen-lockfile
-    - pnpm --filter="@eggosystem/types" build
     - pnpm --filter=backend seed # Run regular seeding
     - pnpm --filter=backend seed:e2e # Run seeding for test environment
-    - pnpm --filter=backend dev &
+    - pnpm --filter=backend start &
   script:
     - unset NODE_ENV
     - pnpm --filter=frontend test:e2e

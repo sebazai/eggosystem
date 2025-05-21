@@ -3,22 +3,22 @@ import path from "path";
 import { expireIn20m, expireIn7Days } from "../utils/redisClient";
 
 export const JWT_PUBLIC_KEY = fs.readFileSync(
-  path.join(__dirname, "..", "..", "public_access_token.pem"),
+  path.resolve(process.cwd(), "public_access_token.pem"),
   "utf8"
 );
 
 const JWT_PRIVATE_KEY = fs.readFileSync(
-  path.join(__dirname, "..", "..", "private_access_token.pem"),
+  path.resolve(process.cwd(), "private_access_token.pem"),
   "utf8"
 );
 
 export const JWT_REFRESH_PUBLIC_KEY = fs.readFileSync(
-  path.join(__dirname, "..", "..", "public_refresh_token.pem"),
+  path.resolve(process.cwd(), "public_refresh_token.pem"),
   "utf8"
 );
 
 const JWT_REFRESH_PRIVATE_KEY = fs.readFileSync(
-  path.join(__dirname, "..", "..", "private_refresh_token.pem"),
+  path.resolve(process.cwd(), "private_refresh_token.pem"),
   "utf8"
 );
 
