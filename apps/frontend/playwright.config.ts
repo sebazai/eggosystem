@@ -1,5 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const isIntegration = process.env.TEST_TYPE === "integration";
+console.log(
+  `[Playwright] Using webServer: ${isIntegration ? "pnpm dev" : "standalone build"}`
+);
+
 export default defineConfig({
   testDir: "./src/__tests__",
   fullyParallel: true,
@@ -37,7 +42,7 @@ export default defineConfig({
   ],
   // Run the frontend server as part of the test
   webServer: {
-    command: "pnpm start:standalone",
+    command: isIntegration ? "pnpm run dev" : "pnpm start:standalone",
     url: "http://localhost:3000",
     env: {
       NODE_ENV: "production"
