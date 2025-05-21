@@ -1,6 +1,7 @@
 import { NextImageFallback } from "@/components/layout/image-with-fallback";
-import { cn, createTeamLogoUrl } from "@/lib/utils";
+import { cn, createNextUrl, createTeamLogoUrl } from "@/lib/utils";
 import type { MatchTeamInfo } from "@eggosystem/types";
+import Link from "next/link";
 
 interface MatchHeaderProps {
   team1: MatchTeamInfo;
@@ -60,9 +61,12 @@ export function MatchHeader({
         {/* Team 1 */}
         <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left justify-self-start md:justify-self-end">
           <div className="flex flex-col items-center md:items-start">
-            <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
+            <Link
+              href={createNextUrl(`/teams/${team1.id}`)}
+              className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full"
+            >
               {team1.name}
-            </span>
+            </Link>
             <span className="text-xs md:text-sm text-muted-foreground px-2">
               Ranking #{team1.rank}
             </span>
@@ -120,9 +124,12 @@ export function MatchHeader({
         {/* Team 2 */}
         <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left justify-self-end md:justify-self-start">
           <div className="flex flex-col items-center md:items-start">
-            <span className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full">
+            <Link
+              href={createNextUrl(`/teams/${team2.id}`)}
+              className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full"
+            >
               {team2.name}
-            </span>
+            </Link>
             <span className="text-xs md:text-sm text-muted-foreground px-2">
               Ranking #{team2.rank}
             </span>
