@@ -131,7 +131,7 @@ services:
       - ./conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
 
   eggo-redis-${ENV_ID}:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: always
     container_name: eggo-redis-${ENV_ID}
     networks:

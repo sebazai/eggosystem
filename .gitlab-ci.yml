@@ -200,7 +200,7 @@ test:backend:
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
-    # - name: redis:7-alpine
+    # - name: redis:8-alpine
     #   alias: eggo-redis
   variables:
     <<: *overwrite-variables
@@ -273,7 +273,7 @@ test-e2e:frontend:
   services:
     - name: bitnami/mariadb:11.4.2
       alias: eggo-devdb
-    - name: redis:7-alpine
+    - name: redis:8-alpine
       alias: eggo-redis
   extends: [.mr-all-app]
   variables:
@@ -290,6 +290,8 @@ test-e2e:frontend:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - export $(grep -v '^#' .env.development | xargs)
+    - pnpm config set registry http://172.17.0.1:4873
+    - pnpm install --frozen-lockfile
     - pnpm --filter=backend seed # Run regular seeding
     - pnpm --filter=backend seed:e2e # Run seeding for test environment
     - pnpm --filter=backend start &

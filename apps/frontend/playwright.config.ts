@@ -32,12 +32,12 @@ export default defineConfig({
     {
       name: "integration",
       testDir: "./src/__tests__/integration",
-      use: { ...devices["Desktop Chrome"] }
+      use: { ...devices["Desktop Chrome"], browserName: "chromium" }
     },
     {
       name: "e2e",
       testDir: "./src/__tests__/e2e",
-      use: { ...devices["Desktop Chrome"] }
+      use: { ...devices["Desktop Chrome"], browserName: "chromium" }
     }
   ],
   // Run the frontend server as part of the test

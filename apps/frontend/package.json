@@ -19,7 +19,7 @@
     "test:e2e": "TEST_TYPE=e2e playwright test src/__tests__/e2e/",
     "test:e2e:ui": "TEST_TYPE=e2e playwright test src/__tests__/e2e/ --ui",
     "test:e2e:headed": "TEST_TYPE=e2e playwright test src/__tests__/e2e/ --headed",
-    "test:e2e:container": "TEST_TYPE=e2e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright test src/__tests__/e2e/ --browser=chromium"
+    "test:e2e:container": "TEST_TYPE=e2e PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright test src/__tests__/e2e/"
   },
   "dependencies": {
     "@eggosystem/types": "workspace:*",
