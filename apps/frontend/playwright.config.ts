@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   // Add retries to handle potential initial compilation
-  retries: process.env.CI ? 2 : 1,
+  retries: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : undefined,
   // Configure multiple reporters
   reporter: [
@@ -37,9 +37,12 @@ export default defineConfig({
   ],
   // Run the frontend server as part of the test
   webServer: {
-    command: "pnpm run dev",
+    command: "pnpm start:standalone",
     url: "http://localhost:3000",
+    env: {
+      NODE_ENV: "production"
+    },
     reuseExistingServer: !process.env.CI,
-    timeout: 60000 // Give the server enough time to start
+    timeout: 20000 // Give the server enough time to start
   }
 });

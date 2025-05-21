@@ -523,10 +523,10 @@ test.describe("Signup Form", () => {
 
       // Check for player nickname in the correct element - it's in a span with class "text-kanaliiga-orange"
       const playerNameSpan = page.locator("span.text-kanaliiga-orange");
-      await expect(playerNameSpan).toBeVisible({ timeout: 10000 });
+      await expect(playerNameSpan).toBeVisible();
 
       // Check the text content
-      await expect(playerNameSpan).toHaveText("Aabe", { timeout: 10000 });
+      await expect(playerNameSpan).toHaveText("Aabe");
 
       // If the test needs to also check the input field exists (which is different from the text display)
       const playerNameInput = page.locator('[data-testid="player-name-0"]');
