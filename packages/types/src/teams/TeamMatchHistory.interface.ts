@@ -1,8 +1,10 @@
-import { Match, MatchGame } from "../db";
+import { League, Match, MatchGame, Season } from "../db";
 
 export interface TeamMatchHistory {
   game_id?: MatchGame["id"];
   match_id: Match["id"];
+  season_name: Season["full_name"];
+  league_name: League["name"];
   date: string;
   maps: string;
   best_of: number;

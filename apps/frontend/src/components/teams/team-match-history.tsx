@@ -17,6 +17,10 @@ interface TeamMatchHistoryProps {
   filterQueryParams: FilterParamsQuery;
 }
 
+const convertSeasonToS = (season: string) => {
+  return season.replace("Season ", "S");
+};
+
 export const TeamMatchHistory = ({
   teamId,
   filterQueryParams
@@ -81,6 +85,9 @@ export const TeamMatchHistory = ({
               <tr className="bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
                 <th className="px-3 py-2 text-left whitespace-nowrap font-semibold">
                   OPPONENT
+                </th>
+                <th className="hidden xs:table-cell px-3 py-2 text-left whitespace-nowrap font-semibold">
+                  LEAGUE
                 </th>
                 <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
                   SCORE
@@ -154,6 +161,10 @@ export const TeamMatchHistory = ({
                           />
                           {match.opponent_name}
                         </div>
+                      </td>
+                      <td className="hidden xs:table-cell px-3 py-2 text-left">
+                        {convertSeasonToS(match.season_name)}{" "}
+                        {match.league_name}
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span
