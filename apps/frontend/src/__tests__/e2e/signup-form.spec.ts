@@ -1,8 +1,4 @@
-import { test, expect } from "../integration/fixtures";
-import type { Page, Route } from "@playwright/test";
-
-// Helper to enforce proper page typing across all tests
-type TestArgs = { page: Page };
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 // A helper function to retry navigation when pages are being compiled
 async function navigateWithRetry(
@@ -24,7 +20,7 @@ async function navigateWithRetry(
 }
 
 test.describe("Signup Form", () => {
-  test.beforeEach(async ({ page }: TestArgs) => {
+  test.beforeEach(async ({ page }) => {
     // Set up authentication with acceptedPrivacyPolicy
     await page.context().addCookies([
       {
@@ -77,7 +73,7 @@ test.describe("Signup Form", () => {
   // Base navigation test
   test("should navigate to the signup page with authentication", async ({
     page
-  }: TestArgs) => {
+  }) => {
     // Start by checking authentication status
     await navigateWithRetry(page, "/");
 
@@ -302,7 +298,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeVisible();
     });
 
-    test("should reject empty Faceit ID", async ({ page }: TestArgs) => {
+    test("should reject empty Faceit ID", async ({ page }) => {
       // Find the Team Faceit ID field using data-testid
       const faceitIdField = page.locator(
         '[data-testid="team-external-id-input"]'
@@ -326,9 +322,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeDisabled();
     });
 
-    test("should pass with Faceit ID that has spaces", async ({
-      page
-    }: TestArgs) => {
+    test("should pass with Faceit ID that has spaces", async ({ page }) => {
       // Find the Team Faceit ID field using data-testid
       const faceitIdField = page.locator(
         '[data-testid="team-external-id-input"]'
@@ -346,9 +340,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeEnabled();
     });
 
-    test("should reject Faceit ID without hyphens", async ({
-      page
-    }: TestArgs) => {
+    test("should reject Faceit ID without hyphens", async ({ page }) => {
       // Find the Team Faceit ID field using data-testid
       const faceitIdField = page.locator(
         '[data-testid="team-external-id-input"]'
@@ -366,9 +358,7 @@ test.describe("Signup Form", () => {
       await expect(goToLineupButton).toBeDisabled();
     });
 
-    test("should reject Faceit ID with HTTP prefix", async ({
-      page
-    }: TestArgs) => {
+    test("should reject Faceit ID with HTTP prefix", async ({ page }) => {
       // Find the Team Faceit ID field using data-testid
       const faceitIdField = page.locator(
         '[data-testid="team-external-id-input"]'

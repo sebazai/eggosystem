@@ -1,6 +1,5 @@
 import type { UserFullPayload, UserProfilePayload } from "@eggosystem/types";
-import { test, expect } from "./fixtures";
-import type { Page, Route } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 // A helper function to retry navigation when pages are being compiled
 async function _navigateWithRetry(

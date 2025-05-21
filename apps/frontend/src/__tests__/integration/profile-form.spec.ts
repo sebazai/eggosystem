@@ -1,6 +1,5 @@
 import type { UserFullPayload, UserProfilePayload } from "@eggosystem/types";
-import { test, expect } from "./fixtures";
-import type { Page, Route, TestInfo } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 // A helper function to retry navigation when pages are being compiled
 async function navigateWithRetry(
@@ -22,12 +21,7 @@ async function navigateWithRetry(
 }
 
 test.describe("Profile Form", () => {
-  // Tests that should not use mocked auth
-  const testsWithoutMocking = [
-    "should allow navigation after accepting privacy policy"
-  ];
-
-  test.beforeEach(async ({ page }, testInfo: TestInfo) => {
+  test.beforeEach(async ({ page }) => {
     // Add authentication cookies for all tests
     await page.context().addCookies([
       {
@@ -39,16 +33,6 @@ test.describe("Profile Form", () => {
         secure: false
       }
     ]);
-
-    // For tests that need real auth responses, don't mock endpoints
-    if (testsWithoutMocking.includes(testInfo.title)) {
-      console.log("Authentication cookies set up without mocking");
-
-      // Navigate to profile page with retry for compilation
-      await navigateWithRetry(page, "/profile");
-      console.log("Current URL:", page.url());
-      return;
-    }
 
     // Mock authentication for both endpoints for other tests
     await page.route("**/api/v1/auth/me", async (route: Route) => {
@@ -496,12 +480,7 @@ test.describe("Profile Form", () => {
       path: "test-results/after-form-submission.png",
       fullPage: true
     });
-    console.log("Form submitted");
 
-    // Now try to navigate away
-    console.log(
-      "Attempting to navigate away from profile after accepting policy..."
-    );
     await navigateWithRetry(page, "/");
 
     // Wait for any redirects to complete
