@@ -13,6 +13,7 @@ import { RoundInfo } from "../stats/round-info";
 import { PlayerStatisticsForTeam } from "../stats/player-stats-grid";
 import { TopPlayers } from "../stats/top-players";
 import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
+import _ from "lodash";
 
 interface MatchStatsProps {
   matchId: number;
@@ -50,26 +51,26 @@ export const GameStats = ({ matchId, gameId, matchInfo }: MatchStatsProps) => {
         matchId={matchId}
         handleMapSelect={handleMapSelect}
       />
-      {teamStats && (
+
+      {teamStats && teamStats.length > 0 && (
         <TeamStatistics
           teamStats={teamStats}
           teamStatsFilters={baseFilter}
           gameId={gameId}
         />
       )}
-      {/* Round Score */}
+
       {roundInfo && roundInfo.length > 0 && <RoundInfo roundInfo={roundInfo} />}
 
-      {/* Player Stats Grid */}
-      {playerStats && (
+      {playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam
           playerStats={playerStats}
           teams={matchInfo.teams}
           playerStatsFilters={baseFilter}
         />
       )}
-      {/* Top Players */}
-      {topPlayers && (
+
+      {topPlayers && !_.isEmpty(topPlayers) && (
         <TopPlayers
           topPlayers={topPlayers}
           teams={matchInfo.teams}
