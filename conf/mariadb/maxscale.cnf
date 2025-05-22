@@ -13,8 +13,8 @@ protocol=MariaDBBackend
 type=service
 router=readconnroute
 servers=eggo-prod-db
-user="${MARIADB_USER}"
-password="${MARIADB_PASSWORD}"
+user=${MARIADB_USER}
+password=${MARIADB_PASSWORD}
 filters=log-accounts
 
 # Listener for clients (phpMyAdmin)
@@ -28,7 +28,7 @@ port=4006
 [log-accounts]
 type=filter
 module=qlafilter
-match=SELECT.*FROM.*(Accounts|LinkedAccounts)
+match=/SELECT.*FROM.*(Accounts|LinkedAccounts)/
 filebase=/var/log/maxscale/accounts
 log_type=unified
 log_data=date,user,query
