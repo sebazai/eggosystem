@@ -125,13 +125,25 @@ services:
     networks:
       - web
 
+  maxscale:
+    image: mariadb/maxscale:latest
+    container_name: maxscale
+    ports:
+      - "4006:4006"  # MaxScale's default port
+    volumes:
+      - ./maxscale.cnf:/etc/maxscale.cnf
+      - ./maxscale-logs:/var/log/maxscale
+    networks:
+      - web
+
   phpmyadmin-hub:
     depends_on:
       - eggo-prod-db
     image: phpmyadmin/phpmyadmin
     restart: always
     environment:
-      PMA_HOST: eggo-prod-db
+      PMA_HOST: maxscale
+      PMA_PORT: 4006
       PMA_ABSOLUTE_URI: https://${HUB_PUBLIC_URL}/mysadmin/
       UPLOAD_LIMIT: 1G
     networks:

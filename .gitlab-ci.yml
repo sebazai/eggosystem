@@ -448,6 +448,8 @@ deploy-prod:
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
     - envsubst < docker-compose.prod.yml > docker-compose.prod.subst.yml
+    - envsubst < conf/mariadb/maxscale.cnf > conf/mariadb/maxscale.subst.yml
+    - rsync -v ./conf/mariadb/maxscale.subst.yml ubuntu@$HUB_PROD_IP:~/docker/eggosystem/maxscale.cnf
     - rsync -v ./docker-compose.prod.subst.yml ubuntu@$HUB_PROD_IP:~/docker/eggosystem/docker-compose.yml
     - rsync -v ./conf/mariadb/my.cnf ubuntu@$HUB_PROD_IP:~/docker/eggosystem/my.cnf
     - ssh ubuntu@$HUB_PROD_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"

@@ -1,0 +1,34 @@
+[maxscale]
+threads=auto
+
+# Define the backend MariaDB server
+[eggo-prod-db]
+type=server
+address=eggo-prod-db
+port=3306
+protocol=MariaDBBackend
+
+# Service that routes queries to the backend server
+[db-service]
+type=service
+router=readconnroute
+servers=eggo-prod-db
+user="${MARIADB_USER}"
+password="${MARIADB_PASSWORD}"
+filters=log-accounts
+
+# Listener for clients (phpMyAdmin)
+[db-listener]
+type=listener
+service=db-service
+protocol=MariaDBClient
+port=4006
+
+# Filter to log access to Accounts and LinkedAccounts
+[log-accounts]
+type=filter
+module=qlafilter
+match=SELECT.*FROM.*(Accounts|LinkedAccounts)
+filebase=/var/log/maxscale/accounts
+log_type=unified
+log_data=date,user,query
