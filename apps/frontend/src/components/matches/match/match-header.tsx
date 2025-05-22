@@ -10,7 +10,9 @@ interface MatchHeaderProps {
   matchEndTime: string;
   matchDate: string;
   seasonName: string;
+  seasonId: number;
   leagueName: string;
+  leagueId: number;
   className?: string;
 }
 
@@ -21,7 +23,9 @@ export function MatchHeader({
   matchEndTime,
   matchDate,
   seasonName,
+  seasonId,
   leagueName,
+  leagueId,
   className
 }: MatchHeaderProps) {
   const startDate = new Date(`${matchDate}T${matchStartTime}`);
@@ -62,7 +66,13 @@ export function MatchHeader({
         <div className="flex flex-col-reverse md:flex-row items-center gap-2 text-center md:text-left justify-self-start md:justify-self-end">
           <div className="flex flex-col items-center md:items-start">
             <Link
-              href={createNextUrl(`/teams/${team1.id}`)}
+              href={{
+                pathname: createNextUrl(`/teams/${team1.id}`),
+                query: new URLSearchParams({
+                  seasons: seasonId.toString(),
+                  leagues: leagueId.toString()
+                }).toString()
+              }}
               className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full"
             >
               {team1.name}
@@ -125,7 +135,13 @@ export function MatchHeader({
         <div className="flex flex-col-reverse md:flex-row-reverse items-center gap-2 text-center md:text-left justify-self-end md:justify-self-start">
           <div className="flex flex-col items-center md:items-start">
             <Link
-              href={createNextUrl(`/teams/${team2.id}`)}
+              href={{
+                pathname: createNextUrl(`/teams/${team2.id}`),
+                query: new URLSearchParams({
+                  seasons: seasonId.toString(),
+                  leagues: leagueId.toString()
+                }).toString()
+              }}
               className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full"
             >
               {team2.name}

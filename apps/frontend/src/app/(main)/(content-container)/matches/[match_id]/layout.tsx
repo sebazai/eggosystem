@@ -81,6 +81,8 @@ export default async function Layout({ children, params }: LayoutProps) {
         matchEndTime={matchInfo.end_time}
         seasonName={matchInfo.season_name}
         leagueName={matchInfo.league_name}
+        seasonId={matchInfo.season_id}
+        leagueId={matchInfo.league_id}
       />
       <CardContainer classNames="rounded-none">
         <div className="p-2">{children}</div>
