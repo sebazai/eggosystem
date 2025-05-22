@@ -128,8 +128,6 @@ services:
   maxscale:
     image: mariadb/maxscale:24.02
     container_name: maxscale
-    networks:
-      - web
     volumes:
       - ./maxscale.cnf:/etc/maxscale.cnf
       - ./maxscale-logs:/var/log/maxscale
