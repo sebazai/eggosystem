@@ -13,8 +13,8 @@ protocol=MariaDBBackend
 type=service
 router=readconnroute
 servers=eggo-prod-db
-user=root
-password=${MARIADB_ROOT_PASSWORD}
+user=${MARIADB_USER}
+password=${MARIADB_PASSWORD}
 filters=log-accounts
 
 # Listener for clients (phpMyAdmin)

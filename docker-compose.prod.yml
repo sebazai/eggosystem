@@ -128,8 +128,8 @@ services:
   maxscale:
     image: mariadb/maxscale:24.02
     container_name: maxscale
-    ports:
-      - "4006:4006"  # MaxScale's default port
+    networks:
+      - web
     volumes:
       - ./maxscale.cnf:/etc/maxscale.cnf
       - ./maxscale-logs:/var/log/maxscale
