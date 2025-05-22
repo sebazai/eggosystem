@@ -132,3 +132,33 @@ export const createTeamLogoUrl = (url: string) => {
   // Ensure the URL starts with a leading slash for Next.js image component
   return createNextUrl(`/team-images/${url}`);
 };
+
+export function filterParamsToSearchParams(
+  filterParams: Partial<FilterParamsQuery> | null,
+  excludeKeys: (keyof FilterParamsQuery)[] = []
+): URLSearchParams {
+  const params = new URLSearchParams();
+
+  if (!filterParams) return params;
+
+  for (const [key, value] of Object.entries(filterParams) as [
+    keyof FilterParamsQuery,
+    unknown
+  ][]) {
+    if (excludeKeys.includes(key)) continue;
+
+    if (!value) continue;
+
+    if (Array.isArray(value)) {
+      value.forEach((v) => {
+        if (v != null) {
+          params.append(key, v.toString());
+        }
+      });
+    } else if (typeof value === "string") {
+      params.append(key, value);
+    }
+  }
+
+  return params;
+}

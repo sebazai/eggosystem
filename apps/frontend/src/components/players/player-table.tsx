@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import { cn, type FilterParamsQuery } from "@/lib/utils";
+import {
+  cn,
+  filterParamsToSearchParams,
+  type FilterParamsQuery
+} from "@/lib/utils";
 import { useMultiplePlayersStats } from "@/hooks/data/filtered/useMultiplePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -234,7 +238,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
 
   const handleRowClick = (steamId: string) => {
     router.push(
-      `/players/${encodeURIComponent(steamId)}?${searchParams.toString()}`
+      `/players/${encodeURIComponent(steamId)}?${filterParamsToSearchParams(filterQueryParams).toString()}`
     );
   };
 

@@ -16,7 +16,7 @@ import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
 import { createTeamLogoUrl } from "@/lib/utils";
 
 export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
-  const { filterParams } = useFilters();
+  const { filterParams, getFilteredQueryString } = useFilters();
   const { playerTeamDetails, isLoading, isError } = usePlayerTeamDetails({
     steamId,
     ...filterParams
@@ -92,7 +92,10 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
             <div className="flex items-center gap-2 mt-1">
               {playerTeamDetails?.length === 1 ? (
                 <Link
-                  href={`/teams/${playerTeam?.team_id}`}
+                  href={{
+                    pathname: `/teams/${playerTeam?.team_id}`,
+                    query: getFilteredQueryString(["teams"])
+                  }}
                   className="flex items-center gap-2 hover:text-kanaliiga-orange transition-colors"
                 >
                   <Image

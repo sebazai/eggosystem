@@ -2,16 +2,26 @@
 
 import {
   expressFetcher,
+  filterParamsToSearchParams,
   getParamArray,
   type FilterParamsQuery
 } from "@/lib/utils";
 import { useSearchParams, usePathname } from "next/navigation";
-import { useEffect, useMemo, useState, createContext, useContext } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  createContext,
+  useContext,
+  useCallback
+} from "react";
 import useSWR from "swr";
 
 type FilterContextType = {
   activeSeason: { season_id: number } | null;
   filterParams: FilterParamsQuery;
+  filterQueryString: string;
+  getFilteredQueryString: (excludeKeys?: (keyof FilterParamsQuery)[]) => string;
   isLoading: boolean;
   isValidating: boolean;
   error: Error | undefined;
@@ -95,6 +105,18 @@ export const FilterProvider = ({
     } satisfies FilterParamsQuery;
   }, [ready, searchParams]);
 
+  const filterQueryString = useMemo(() => {
+    if (!filterParams) return "";
+    return filterParamsToSearchParams(filterParams).toString();
+  }, [filterParams]);
+
+  const getFilteredQueryString = useCallback(
+    (excludeKeys: (keyof FilterParamsQuery)[] = []) => {
+      return filterParamsToSearchParams(filterParams, excludeKeys).toString();
+    },
+    [filterParams]
+  );
+
   if (!ready || !filterParams || !data) {
     return (
       <FilterContext.Provider
@@ -107,6 +129,8 @@ export const FilterProvider = ({
             teams: null,
             maps: null
           },
+          filterQueryString: "",
+          getFilteredQueryString,
           isLoading: true,
           isValidating: false,
           error: undefined,
@@ -127,6 +151,8 @@ export const FilterProvider = ({
       value={{
         activeSeason: data,
         filterParams,
+        filterQueryString,
+        getFilteredQueryString,
         isLoading,
         error,
         isValidating,

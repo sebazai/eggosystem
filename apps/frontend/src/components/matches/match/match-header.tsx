@@ -1,5 +1,10 @@
 import { NextImageFallback } from "@/components/layout/image-with-fallback";
-import { cn, createNextUrl, createTeamLogoUrl } from "@/lib/utils";
+import {
+  cn,
+  createNextUrl,
+  createTeamLogoUrl,
+  filterParamsToSearchParams
+} from "@/lib/utils";
 import type { MatchTeamInfo } from "@eggosystem/types";
 import Link from "next/link";
 
@@ -137,9 +142,9 @@ export function MatchHeader({
             <Link
               href={{
                 pathname: createNextUrl(`/teams/${team2.id}`),
-                query: new URLSearchParams({
-                  seasons: seasonId.toString(),
-                  leagues: leagueId.toString()
+                query: filterParamsToSearchParams({
+                  seasons: [seasonId],
+                  leagues: [leagueId]
                 }).toString()
               }}
               className="text-md md:text-xl font-bold px-2 py-1 break-words max-w-50 lg:max-w-full"
