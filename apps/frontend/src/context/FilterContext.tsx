@@ -23,9 +23,10 @@ const includeExactPaths = [
   "/matches",
   "/topteams",
   "/leaderboards",
-  "/players"
+  "/players",
+  "/teams"
 ];
-const includePrefixPaths: string[] = ["/teams"];
+const includePrefixPaths: string[] = [];
 const excludePrefixPaths: string[] = ["/players/", "/teams/"];
 const alwaysActiveSeason: string[] = ["/leaderboards"];
 export const FilterProvider = ({
