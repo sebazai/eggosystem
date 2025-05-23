@@ -16,7 +16,7 @@ const overlays = [
   {
     id: 1,
     title: "CS 2 Season 4",
-    subtitle: "CS2 Corporate eSports Season 4 Starts September 1st."
+    subtitle: "CS2 Corporate esports Season 4 Starts September 1st."
   },
   {
     id: 2,

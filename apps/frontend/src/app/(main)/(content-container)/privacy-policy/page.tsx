@@ -18,7 +18,7 @@ export default function PrivacyPolicy() {
       <p>
         Welcome to Kanahub by Kanaliiga. Your privacy is important to us. This
         Privacy Policy explains how we collect, use, and protect your personal
-        data when you participate in our eSports platform.
+        data when you participate in our esports platform.
       </p>
 
       <h2>2. Data We Collect</h2>
@@ -127,7 +127,7 @@ export default function PrivacyPolicy() {
       <p>We may share the following data with trusted third parties:</p>
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
-          <strong>eSports Partners (e.g., Faceit):</strong> To facilitate
+          <strong>esports Partners (e.g., Faceit):</strong> To facilitate
           tournament and game participation, we may share your Steam ID,
           nickname, and other relevant performance data.
         </li>
