@@ -8,16 +8,20 @@ export function useIsMobile(passMobile?: boolean) {
   );
   const [isLandscape, setIsLandscape] = React.useState<boolean>(false);
 
+  console.log(`Mobile ${isMobile} in landscape ${isLandscape}`);
+
   React.useEffect(() => {
     const getOrientation = (): boolean => {
       const orientation = window.screen.orientation?.type || "";
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const userAgentMobile = navigator?.userAgentData?.mobile;
+
+      console.log(
+        `Orientation ${orientation} with user agent data mobile ${userAgentMobile}`
+      );
       if (orientation) {
-        return (
-          orientation.startsWith("landscape") &&
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          navigator?.userAgentData?.mobile
-        );
+        return orientation.startsWith("landscape") && userAgentMobile;
       }
 
       return false;
