@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { SteamPlayer } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
+import { ContentContainer } from "@/components/layout/content-container";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -35,6 +36,12 @@ export default async function PlayerDetailsPage({
 }: PlayerDetailsProps) {
   const unwrappedParams = await params;
   const steamId = unwrappedParams.steamId;
+
+  const result = await fetch(`${envConfig.API_URL}/api/v1/players/${steamId}`);
+
+  if (!result.ok && result.status === 404) {
+    return <ContentContainer>{result.statusText}</ContentContainer>;
+  }
 
   return (
     <div className="mx-auto py-4 px-2">
