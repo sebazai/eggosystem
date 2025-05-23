@@ -123,7 +123,7 @@ export const Navigation = (props: NavbarProps) => {
 
   const { isScrolled, scrolledTo } = useScrolled();
 
-  const isMobile = useIsMobile();
+  const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const params = useSearchParams();
 

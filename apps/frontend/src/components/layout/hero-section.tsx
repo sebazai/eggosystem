@@ -50,7 +50,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
-  const isMobile = useIsMobile(device === "mobile");
+  const { isMobile } = useIsMobile(device === "mobile");
 
   useEffect(() => {
     if (isMobile) {

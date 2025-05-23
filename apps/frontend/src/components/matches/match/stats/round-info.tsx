@@ -85,7 +85,7 @@ const RoundRows = ({
   teamTwo: { id: number; logo: string; name: string };
   isOvertime: boolean;
 }) => {
-  const isMobile = useIsMobile();
+  const { isMobile } = useIsMobile();
   return (
     <div className="flex gap-1">
       <div className="border-r-1 pr-4">

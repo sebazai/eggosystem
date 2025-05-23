@@ -28,9 +28,9 @@ type TooltipIconProps = {
 };
 
 const TooltipIcon = ({ text, icon }: TooltipIconProps) => {
-  const isMobile = useIsMobile();
+  const { isMobile, isLandscape } = useIsMobile();
 
-  if (isMobile) {
+  if (isMobile || isLandscape) {
     return (
       <Popover>
         <PopoverTrigger asChild>
