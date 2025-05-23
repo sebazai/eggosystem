@@ -9,6 +9,22 @@ Tummanharmaa: #161515 / 	hsl(0, 2%, 8%)
 Valkoinen: #ffffff / 	hsl(0, 0%, 100%)
 Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
 
+@custom-variant mobile-portrait {
+  @media only screen and ((((max-height: 990px) and (max-width: 560px)) or
+    ((max-height: 560px) and (max-width: 990px))) and 
+    (orientation: portrait)) {
+    @slot;
+  }
+}
+
+@custom-variant mobile-landscape {
+  @media only screen and ((((max-height: 990px) and (max-width: 560px)) or 
+    ((max-height: 560px) and (max-width: 990px))) and 
+    (orientation: landscape)) {
+    @slot;
+  }
+}
+
 :root {
   --kanaliiga-orange: hsl(35, 93%, 49%);
   --kanaliiga-light-brown: hsl(29, 56%, 58%);
