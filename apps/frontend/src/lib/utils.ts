@@ -162,3 +162,7 @@ export function filterParamsToSearchParams(
 
   return params;
 }
+
+export const convertSeasonToS = (season: string) => {
+  return season.replace("Season ", "S");
+};

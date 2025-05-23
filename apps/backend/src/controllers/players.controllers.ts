@@ -177,7 +177,7 @@ export const getFilteredPlayerStatisticsController = async (
 
   const playerStats = await getPlayerStatsWithFilters(steam_id, parsedParams);
 
-  res.status(200).json(playerStats ?? {});
+  res.status(200).json(playerStats);
 };
 
 export const getPlayerKanaRankController = async (

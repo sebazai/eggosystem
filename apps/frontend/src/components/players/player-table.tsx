@@ -263,9 +263,9 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     <TooltipProvider>
       <div className="bg-card overflow-hidden">
         <div className="overflow-auto">
-          <table className="w-full">
+          <table className="text-sm sm:text-base w-full">
             <thead>
-              <tr className="bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
+              <tr className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange">
                 {columns.map((column) => (
                   <th
                     key={column.key}
@@ -296,7 +296,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                           )}
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="px-2 py-1 text-xs">
+                      <TooltipContent side="top" className="px-2 py-1">
                         {COLUMN_TOOLTIPS[column.key] || column.key}
                       </TooltipContent>
                     </Tooltip>
@@ -339,7 +339,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       <td
                         className={cn("px-3 py-2", columnResponsive.nickname)}
                       >
-                        <div className="font-medium text-xs text-foreground">
+                        <div className="font-medium text-foreground">
                           {player.nickname}
                         </div>
                       </td>
@@ -353,7 +353,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       </TableDataCell>
                       <TableDataCell responsive={columnResponsive.assists}>
                         {player.assists}(
-                        <span className="text-[0.6rem]">
+                        <span className="text-xs">
                           {player.flash_assists || 0}
                         </span>
                         )
@@ -392,7 +392,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                             )}
                       </TableDataCell>
                       <TableDataCell
-                        classNames="px-3 py-2 text-center text-xs text-muted-foreground"
+                        classNames="px-3 py-2 text-center text-muted-foreground"
                         responsive={columnResponsive.kana_rating}
                       >
                         {player.kana_rating?.toFixed(2) || 0}
@@ -433,7 +433,7 @@ const TableDataCell = ({
   return (
     <td
       className={cn(
-        "px-3 py-2 text-center text-xs text-muted-foreground",
+        "px-3 py-2 text-center text-muted-foreground",
         responsive,
         classNames
       )}

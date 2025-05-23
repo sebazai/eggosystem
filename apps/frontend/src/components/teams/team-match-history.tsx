@@ -1,4 +1,5 @@
 import {
+  convertSeasonToS,
   createTeamLogoUrl,
   mapToReadableNameCapitalFirst,
   type FilterParamsQuery
@@ -16,10 +17,6 @@ interface TeamMatchHistoryProps {
   teamId: number;
   filterQueryParams: FilterParamsQuery;
 }
-
-const convertSeasonToS = (season: string) => {
-  return season.replace("Season ", "S");
-};
 
 export const TeamMatchHistory = ({
   teamId,

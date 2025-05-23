@@ -80,7 +80,7 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
       {/* Players Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-4">
-          <h2 className="text-xl font-semibold mb-2">Team Players</h2>
+          <h2 className="font-semibold mb-2">Team Players</h2>
           <PlayerTable
             filterQueryParams={{
               ...filterQueryParams,

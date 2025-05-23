@@ -23,9 +23,9 @@ export const TeamMapStats = ({
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-2">Map Statistics</h2>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="text-sm sm:text-base w-full">
             <thead>
-              <tr className="bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
+              <tr className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange">
                 <th className="px-3 py-2 text-left whitespace-nowrap font-semibold">
                   MAP
                 </th>

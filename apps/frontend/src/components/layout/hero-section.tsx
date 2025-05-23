@@ -66,7 +66,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
         "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
       )
     );
-  }, [isMobile]);
+  }, [isMobile, isLandscape]);
 
   useEffect(() => {
     const video = videoRef.current;
