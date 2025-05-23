@@ -239,7 +239,7 @@ export const getPlayerMatchHistoryByFilters = async (
     matchHistoryQuery,
     queryParams
   );
-  return matchHistory;
+  return matchHistory.filter((mh) => mh.kills && mh.deaths);
 };
 
 export const getPlayerTeamDetailsWithFilters = async (
