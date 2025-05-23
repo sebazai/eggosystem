@@ -43,9 +43,11 @@ export const TopPlayers = ({
       <div className="bg-card rounded-sm">
         <h2 className="mt-4 mb-2 md:mt-6 md:mb-4">TOP PLAYERS</h2>
         <div className="grid grid-cols-[1.5fr_1fr_auto] gap-4 p-4">
-          <div className="text-muted-foreground text-sm">Award</div>
-          <div className="text-muted-foreground text-sm">Player</div>
-          <div className="text-muted-foreground text-sm text-right">Score</div>
+          <div className="text-muted-foreground font-bold">Award</div>
+          <div className="text-muted-foreground font-bold">Player</div>
+          <div className="text-muted-foreground text-right font-bold">
+            Score
+          </div>
           {(
             Object.entries(topPlayers) as [
               keyof MatchOrGameTopPlayerAwards,
@@ -60,7 +62,7 @@ export const TopPlayers = ({
             const params = new URLSearchParams({ ...topPlayerFilters });
             return (
               <React.Fragment key={key}>
-                <div className="text-muted-foreground text-xs">{text}</div>
+                <div className="text-muted-foreground">{text}</div>
                 <div className="flex gap-2">
                   {team && (
                     <Link
@@ -82,7 +84,7 @@ export const TopPlayers = ({
                     </Link>
                   )}
                   <Link
-                    className="text-sm cursor-pointer hover:text-kanaliiga-orange"
+                    className="cursor-pointer hover:text-kanaliiga-orange"
                     href={{
                       pathname: `/players/${stat.steam_id}`,
                       query: params.toString()
@@ -91,7 +93,7 @@ export const TopPlayers = ({
                     {stat.nickname}
                   </Link>
                 </div>
-                <div className="text-sm text-right">
+                <div className="text-right">
                   {roundToOneDecimal(stat.value ?? 0)}
                 </div>
               </React.Fragment>
