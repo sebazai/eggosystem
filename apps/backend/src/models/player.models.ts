@@ -201,16 +201,17 @@ export const getPlayerMatchHistoryByFilters = async (
         ROUND(AVG(ps.kana_rating), 2) AS kana_rating,
         ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) AS kd
 
-      FROM PlayerStats ps
-      JOIN MatchGames mg ON mg.id = ps.game_id
-      JOIN Matches m ON m.id = mg.match_id
+      FROM SteamPlayers sp
+      JOIN SeasonTeamPlayers stp ON stp.steam_id = sp.steam_id
+      JOIN MatchTeams mt ON mt.team_id = stp.team_id AND mt.season_id = stp.season_id
+      JOIN Matches m ON m.id = mt.match_id
+      JOIN MatchGames mg ON mg.match_id = m.id
       JOIN Maps mp ON mp.id = mg.map_id
-      JOIN SteamPlayers sp ON sp.steam_id = ps.steam_id
-      JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.season_id = m.season_id
       JOIN TeamGameScores tgs ON tgs.team_id = stp.team_id AND tgs.game_id = mg.id
       JOIN Teams t ON t.id = tgs.team_id
       JOIN TeamGameScores opp_tgs ON opp_tgs.game_id = mg.id AND opp_tgs.team_id != tgs.team_id
       JOIN Teams opp_t ON opp_t.id = opp_tgs.team_id
+      LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id AND ps.game_id = mg.id
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
 

@@ -64,13 +64,13 @@ export const PlayerStatisticsForTeam = ({
         return (
           <div key={team.id} className="flex flex-col">
             {/* Team name bar */}
-            <div className="flex items-center gap-2 p-3 mb-[1px] bg-kanaliiga-light-brown/30">
+            <div className="flex items-center gap-2 p-2 mb-[1px] bg-kanaliiga-light-brown/30">
               <Link
                 href={{
                   pathname: `/teams/${team.id}`,
                   query: teamSearchParams
                 }}
-                className="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 px-2 py-1 rounded transition-colors"
+                className="flex items-center gap-2 hover:bg-kanaliiga-light-brown/40 p-2 rounded transition-colors"
               >
                 <NextImageFallback
                   src={createTeamLogoUrl(team.logo)}
@@ -83,25 +83,15 @@ export const PlayerStatisticsForTeam = ({
               </Link>
             </div>
 
-            {/* Stats header - Desktop */}
-            <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] items-center text-xs text-muted-foreground py-2 px-3 sticky top-0 bg-kanaliiga-light-brown/30">
+            <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(5,1fr)] lg:grid-cols-[2fr_repeat(7,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30">
               <div className="text-left">PLAYER</div>
               <div className="text-center">K</div>
               <div className="text-center">D</div>
               <div className="text-center">+/-</div>
               <div className="text-center">ADR</div>
-              <div className="text-center sm:hidden md:block">KAST</div>
-              <div className="text-center sm:hidden md:block">HS%</div>
-              <div className="text-center sm:hidden md:block">RATING</div>
-            </div>
-
-            {/* Mobile Headers - only player columns */}
-            <div className="grid sm:hidden grid-cols-[2fr_repeat(4,1fr)] text-xs text-muted-foreground p-2 bg-kanaliiga-light-brown/30">
-              <div>PLAYER</div>
-              <div className="text-center">K</div>
-              <div className="text-center">D</div>
-              <div className="text-center">ADR</div>
-              <div className="text-center">RATING</div>
+              <div className="text-center hidden md:block">KAST</div>
+              <div className="text-center hidden lg:block">HS%</div>
+              <div className="text-center hidden lg:block">RATING</div>
             </div>
 
             {players.map((player) => {
@@ -122,8 +112,7 @@ export const PlayerStatisticsForTeam = ({
                     query: playerSearchParams
                   }}
                 >
-                  {/* Desktop Row */}
-                  <div className="hidden sm:grid grid-cols-[2fr_repeat(7,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
+                  <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(5,1fr)] lg:grid-cols-[2fr_repeat(7,1fr)] p-2 border-b border-gray-800 items-center">
                     <div className="text-left font-bold">{player.nickname}</div>
                     <div className="text-center">{player.kills}</div>
                     <div className="text-center">{player.deaths}</div>
@@ -139,31 +128,14 @@ export const PlayerStatisticsForTeam = ({
                         ? player.adr.toFixed(1)
                         : player.adr}
                     </div>
-                    <div className="text-center sm:hidden md:block">
+                    <div className="text-center hidden md:block">
                       {player.kast_percentage}
                       {" %"}
                     </div>
-                    <div className="text-center sm:hidden md:block">
+                    <div className="text-center hidden lg:block">
                       {player.hs_percent}%
                     </div>
-                    <div className="text-center sm:hidden md:block">
-                      {typeof player.kana_rating === "number"
-                        ? player.kana_rating.toFixed(2)
-                        : player.kana_rating}
-                    </div>
-                  </div>
-
-                  {/* Mobile Row */}
-                  <div className="grid sm:hidden grid-cols-[2fr_repeat(4,1fr)] py-2 px-3 border-b border-gray-800 text-xs items-center">
-                    <div className="text-left font-bold">{player.nickname}</div>
-                    <div className="text-center">{player.kills}</div>
-                    <div className="text-center">{player.deaths}</div>
-                    <div className="text-center">
-                      {typeof player.adr === "number"
-                        ? player.adr.toFixed(1)
-                        : player.adr}
-                    </div>
-                    <div className="text-center font-medium">
+                    <div className="text-center hidden lg:block">
                       {typeof player.kana_rating === "number"
                         ? player.kana_rating.toFixed(2)
                         : player.kana_rating}
