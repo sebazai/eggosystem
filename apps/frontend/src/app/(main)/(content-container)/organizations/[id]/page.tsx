@@ -1,9 +1,9 @@
 import { envConfig } from "@/configs/env";
 import type { Organizations } from "@eggosystem/types";
-import OrganizationHeader from "@/components/organizations/OrganizationHeader";
+import OrganizationHeader from "@/components/organizations/organization-header";
 import { createOrgLogoUrl } from "@/lib/utils";
-import OrganizationTrophies from "@/components/organizations/OrganizationTrophies";
-import OrganizationTeams from "@/components/organizations/OrganizationTeams";
+import OrganizationTrophies from "@/components/organizations/organization-trophies";
+import OrganizationTeams from "@/components/organizations/organization-teams";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
 

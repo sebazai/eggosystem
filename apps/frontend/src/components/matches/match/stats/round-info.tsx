@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import {
   RoundEndReasonInfo,

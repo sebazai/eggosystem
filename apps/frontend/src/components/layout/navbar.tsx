@@ -36,7 +36,7 @@ import {
   usePathname,
   useSearchParams
 } from "next/navigation";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
 
 interface MenuItemLink {

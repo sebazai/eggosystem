@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
 import type { Team } from "@eggosystem/types";
-import TeamCard from "./TeamCard";
+import TeamCard from "./team-card";
 import { createTeamLogoUrl } from "@/lib/utils";
 
 type OrganizationTeamsProps = {

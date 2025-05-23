@@ -1,19 +1,19 @@
 import { TrophyIcon } from "lucide-react";
 import clsx from "clsx";
 
-type TrophyProps = {
+type OrgTrophyProps = {
   placement: number;
   team: string;
   season: string;
   league: string;
 };
 
-export default function Trophy({
+export default function OrgTrophy({
   placement,
   season,
   league,
   team
-}: TrophyProps) {
+}: OrgTrophyProps) {
   const colorMap: Record<number, string> = {
     1: "text-yellow-400",
     2: "text-slate-400",

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import type { Organizations } from "@eggosystem/types";
 import { createOrgLogoUrl } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface OrganizationFlipCardProps {

@@ -8,7 +8,7 @@ import { cn, createNextUrl } from "@/lib/utils";
 import Link from "next/link";
 import { CsMainSponsors } from "../sponsors/cs-main-sponsors";
 import { KanaMainPartners } from "../sponsors/kana-main-partners";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
 import { MotionSponsorContainer } from "../sponsors/sponsor-container";
 

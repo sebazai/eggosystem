@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
 import type { OrganizationTeamTrophies } from "@eggosystem/types";
-import Trophy from "./Trophy";
+import OrgTrophy from "./org-trophy";
 
 type OrganizationTorphiesProps = {
   organizationId: string;
@@ -21,7 +21,7 @@ export default async function OrganizationTrophies({
       <h2>Trophies</h2>
       <div className="flex flex-wrap gap-4 mt-6">
         {orgTrophies.map((trophy) => (
-          <Trophy
+          <OrgTrophy
             key={`${trophy.season_name} ${trophy.league_name}`}
             team={trophy.team_name}
             placement={trophy.placement}
