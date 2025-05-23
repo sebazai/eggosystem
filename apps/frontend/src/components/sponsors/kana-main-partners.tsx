@@ -8,7 +8,7 @@ export const KanaMainPartners = () => {
       <Link href={"https://elisaesports.com/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/elisa-esports-black.png")}
-          className="w-[75px] h-[44px] sm:w-[150px] sm:h-[89px]"
+          className="w-[75px] h-[44px] landscape:w-[75px] landscape:h-[44px] sm:w-[150px] sm:h-[89px] lg:landscape:w-[150px] lg:landscape:h-[89px]"
           alt="Elisa esports"
           width={150}
           height={89}
@@ -17,7 +17,7 @@ export const KanaMainPartners = () => {
       <Link href={"https://www.visma.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/visma-black.png")}
-          className="w-[110px] h-[20px] sm:w-[220px] sm:h-[41px]"
+          className="w-[110px] h-[20px] landscape:w-[110px] landscape:h-[20px] sm:w-[220px] sm:h-[41px] lg:landscape:w-[220px] lg:landscape:h-[41px]"
           alt="Visma"
           width={220}
           height={41}
@@ -26,7 +26,7 @@ export const KanaMainPartners = () => {
       <Link href={"https://atflow.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/atflow-black.png")}
-          className="w-[100px] h-[30px] sm:w-[200px] sm:h-[59px]"
+          className="w-[100px] h-[30px] landscape:w-[100px] landscape:h-[30px] sm:w-[200px] sm:h-[59px] lg:landscape:w-[200px] lg:landscape:h-[59px]"
           alt="Atflow"
           width={200}
           height={59}

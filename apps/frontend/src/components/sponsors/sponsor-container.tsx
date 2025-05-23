@@ -52,7 +52,7 @@ export const MotionSponsorContainer = ({
   return (
     <motion.div
       className={cn(
-        "flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 bg-[#D3D3D3] rounded-lg",
+        "flex gap-4 sm:gap-8 items-center justify-center flex-wrap p-5 sm:p-10 landscape:p-5 lg:landscape:p-10 bg-[#D3D3D3] rounded-lg",
         classNames
       )}
       initial={{ opacity: 0 }}

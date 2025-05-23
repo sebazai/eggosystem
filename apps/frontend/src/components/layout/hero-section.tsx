@@ -115,7 +115,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
           The Battle Begins.
         </motion.h1>
         <motion.p
-          className="text-sm xxs:text-lg lg:text-2xl mb-10 text-center"
+          className="text-sm xxs:text-lg lg:text-2xl text-center landscape:mb-5 lg:landscape:mb-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0, duration: 4 }}
@@ -124,7 +124,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
         </motion.p>
 
         {/* Sponsor Logos Row */}
-        <MotionSponsorContainer classNames="mb-10">
+        <MotionSponsorContainer classNames="mb-10 landscape:mb-5 lg:landscape:mb-10">
           <CsMainSponsors />
         </MotionSponsorContainer>
         <MotionSponsorContainer>
@@ -132,7 +132,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
         </MotionSponsorContainer>
 
         <motion.div
-          className="mt-10 w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"
+          className="mt-10 landscape:mt-5 lg:landscape:mt-10 w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"
           aria-hidden
         />
       </motion.div>
