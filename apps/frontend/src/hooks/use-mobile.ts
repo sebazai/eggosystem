@@ -2,6 +2,20 @@ import * as React from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
+function detectMobile() {
+  const toMatch = [
+    /Android/i,
+    /webOS/i,
+    /iPhone/i,
+    /BlackBerry/i,
+    /Windows Phone/i
+  ];
+
+  return toMatch.some((toMatchItem) => {
+    return navigator.userAgent.match(toMatchItem);
+  });
+}
+
 export function useIsMobile(passMobile?: boolean) {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
     passMobile
@@ -17,11 +31,11 @@ export function useIsMobile(passMobile?: boolean) {
       // @ts-ignore
       const userAgentMobile = navigator?.userAgentData?.mobile;
 
-      console.log(
-        `Orientation ${orientation} with user agent data mobile ${userAgentMobile}`
-      );
       if (orientation) {
-        return orientation.startsWith("landscape") && userAgentMobile;
+        return (
+          orientation.startsWith("landscape") &&
+          (userAgentMobile || detectMobile())
+        );
       }
 
       return false;
