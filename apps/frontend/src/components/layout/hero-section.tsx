@@ -50,10 +50,10 @@ export default function HeroSection({ device }: HeroSectionProps) {
   );
   const videoRef = useRef<HTMLVideoElement>(null);
   const router = useRouter();
-  const { isMobile } = useIsMobile(device === "mobile");
+  const { isMobile, isLandscape } = useIsMobile(device === "mobile");
 
   useEffect(() => {
-    if (isMobile) {
+    if (isMobile && !isLandscape) {
       setVideoSrc(
         createNextUrl(
           "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
