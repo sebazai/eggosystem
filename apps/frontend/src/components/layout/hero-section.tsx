@@ -210,7 +210,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
             rel="noopener noreferrer"
             className="text-xs sm:text-base hover:text-white/80 hover:underline transition-colors duration-300"
           >
-            Video by Slougani
+            Video by Vilpe
           </Link>
         </div>
       </motion.section>
