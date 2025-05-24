@@ -42,10 +42,10 @@ export default function HeroSection({ device }: HeroSectionProps) {
   const [videoSrc, setVideoSrc] = useState<string>(
     device === "mobile"
       ? createNextUrl(
-          "/videos/sun_elo.mp4"
+          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
         )
       : createNextUrl(
-          "/videos/sun_elo.mp4"
+          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
         )
   );
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -56,14 +56,14 @@ export default function HeroSection({ device }: HeroSectionProps) {
     if (isMobile && !isLandscape) {
       setVideoSrc(
         createNextUrl(
-          "/videos/sun_elo.mp4"
+          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
         )
       );
       return;
     }
     setVideoSrc(
       createNextUrl(
-        "/videos/sun_elo.mp4"
+        "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
       )
     );
   }, [isMobile, isLandscape]);
@@ -210,7 +210,7 @@ export default function HeroSection({ device }: HeroSectionProps) {
             rel="noopener noreferrer"
             className="text-xs sm:text-base hover:text-white/80 hover:underline transition-colors duration-300"
           >
-            Video by Vilpe
+            Video by Slougani
           </Link>
         </div>
       </motion.section>
