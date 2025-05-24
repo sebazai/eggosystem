@@ -56,14 +56,14 @@ export default function HeroSection({ device }: HeroSectionProps) {
     if (isMobile && !isLandscape) {
       setVideoSrc(
         createNextUrl(
-          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
+          "/videos/sun_elo.mp4"
         )
       );
       return;
     }
     setVideoSrc(
       createNextUrl(
-        "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
+        "/videos/sun_elo.mp4"
       )
     );
   }, [isMobile, isLandscape]);
