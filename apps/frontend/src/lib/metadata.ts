@@ -20,14 +20,6 @@ export function createPageMetadata({
       images: [createNextUrl("/images/kanaliiga/opengraph-image.png")],
       siteName: "Kanahub by Kanaliiga",
       ...openGraph
-    },
-    robots: {
-      index: process.env.NODE_ENV === "production",
-      follow: process.env.NODE_ENV === "production",
-      googleBot: {
-        index: process.env.NODE_ENV === "production",
-        follow: process.env.NODE_ENV === "production"
-      }
     }
   } satisfies Metadata;
 }
