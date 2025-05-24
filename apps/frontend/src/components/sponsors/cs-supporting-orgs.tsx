@@ -14,14 +14,14 @@ export const CsSupportingOrgs = () => {
           height={100}
         />
       </Link>
-      <Link href={"https://www.autoklinikka.fi/"} target="_blank">
+      <Link href={"https://supermetrics.com/"} target="_blank">
         <Image
-          src={createNextUrl("/images/sponsors/autoklinikka.png")}
-          className="w-[75px] h-[33px] sm:w-[150px] sm:h-[66px]"
-          alt="Autoklinikka"
+          src={createNextUrl("/images/sponsors/supermetrics.png")}
+          className="w-[150px] h-[23px] sm:w-[300px] sm:h-[46px] mobile-landscape:w-[150px] mobile-landscape:h-[23px]"
+          alt="Supermetrics"
           width={150}
-          height={66}
-        />{" "}
+          height={89}
+        />
       </Link>
     </>
   );
