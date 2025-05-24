@@ -42,10 +42,10 @@ export default function HeroSection({ device }: HeroSectionProps) {
   const [videoSrc, setVideoSrc] = useState<string>(
     device === "mobile"
       ? createNextUrl(
-          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
+          "/videos/sun_elo.mp4"
         )
       : createNextUrl(
-          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
+          "/videos/sun_elo.mp4"
         )
   );
   const videoRef = useRef<HTMLVideoElement>(null);
