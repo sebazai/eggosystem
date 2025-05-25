@@ -101,23 +101,21 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
         }`}
       >
         {/* Front of Card */}
-        <div
-          className="absolute inset-0 backface-hidden"
-          aria-hidden={isFlipped}
-        >
-          <Card className="w-full h-full flex flex-col">
-            <CardHeader>
-              <CardTitle>{companyName}</CardTitle>
-            </CardHeader>
-            <CardContent className="relative flex-1 m-5">
+        <Card className="w-full h-full flex flex-col gap-4">
+          <CardHeader className="flex-shrink-0">
+            <CardTitle>{companyName}</CardTitle>
+          </CardHeader>
+          <CardContent className="relative flex-1 m-2">
+            <div className="relative w-full h-full">
               <NextImageFallback
                 src={imageSrc}
-                alt={companyName.concat(" logo")}
+                alt={`${companyName} logo`}
                 fill
+                className="object-contain"
               />
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Back of Card */}
         <div
