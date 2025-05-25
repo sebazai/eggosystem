@@ -9,7 +9,7 @@ Open devcontainer (Dev Containers: Open Folder in Container...), it should run p
 It will also start the devdb and phpmyadmin from [docker-compose.yml](docker-compose.yml).
 To run the dev seed, use `pnpm seed` so you get the seeded database for development.
 
-When adding new migrations, rebuild container to run the migrations. Remember to [update the dev/test seed](docs/update_dev_seed.md) when migrations have completed successfully.
+When creating new migrations, remember to [update the dev/test seed](docs/update_dev_seed.md).
 
 Start development env: `pnpm dev` - builds `packages/types` automatically
 

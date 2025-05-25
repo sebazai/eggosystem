@@ -1,5 +1,9 @@
 # Exporting Dev Seed
 
+phpMyAdmin -> Operations -> Drop -> Create `kanaliiga` and import the dev/test seed.
+
+Do your thing.
+
 phpMyAdmin -> Export
 
 - REMOVE: Display comments (includes info such as export timestamp, PHP version, and server version)
