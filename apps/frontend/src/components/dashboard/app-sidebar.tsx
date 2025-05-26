@@ -40,22 +40,22 @@ const data: { navMain: Array<MenuItem> } = {
       items: [
         {
           title: "Organizations",
-          url: `${createDashboardNextUrl("/organizations")}`,
+          url: `${createDashboardNextUrl("organizations")}`,
           requiredRoles: ["org-owner"]
         },
         {
           title: "Teams",
-          url: `${createDashboardNextUrl("/teams")}`,
+          url: `${createDashboardNextUrl("teams")}`,
           requiredRoles: ["org-owner", "team-owner"]
         },
         {
           title: "Players",
-          url: `${createDashboardNextUrl("/players")}`,
+          url: `${createDashboardNextUrl("players")}`,
           requiredRoles: []
         },
         {
           title: "Seasons",
-          url: `${createDashboardNextUrl("/seasons")}`,
+          url: `${createDashboardNextUrl("seasons")}`,
           requiredRoles: ["helpdesk"]
         }
       ] satisfies Array<SubMenuItem>
@@ -71,11 +71,11 @@ const data: { navMain: Array<MenuItem> } = {
         },
         {
           title: "Add rank",
-          url: createDashboardNextUrl("/registration/rank")
+          url: createDashboardNextUrl("registration/rank")
         },
         {
           title: "Add manual approval",
-          url: createDashboardNextUrl("/registration/approval")
+          url: createDashboardNextUrl("registration/approval")
         },
         {
           title: "Player test",
