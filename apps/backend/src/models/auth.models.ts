@@ -34,7 +34,7 @@ export const getAuthUserBySteamId = async (steamId: string) => {
 interface CreateUserParams {
   steamId: string;
   steamDisplayName: string;
-  steamRealname: string;
+  steamRealname?: string;
 }
 
 export const createAccountForSteam = async ({
@@ -47,7 +47,7 @@ export const createAccountForSteam = async ({
     await connection.beginTransaction();
     const account = await runQuery<{ insertId: number }>(
       "INSERT INTO Accounts (full_name) VALUES (?)",
-      [steamRealname],
+      [steamRealname ?? steamDisplayName],
       connection
     );
     await runQuery<{ insertId: number }>(
