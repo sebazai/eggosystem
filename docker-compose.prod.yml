@@ -140,8 +140,9 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     environment:
-      PMA_HOST: maxscale
-      PMA_PORT: 4006
+      PMA_HOST: eggo-prod-db
+      #PMA_HOST: maxscale
+      #PMA_PORT: 4006
       PMA_ABSOLUTE_URI: https://${HUB_PUBLIC_URL}/mysadmin/
       UPLOAD_LIMIT: 1G
     networks:
