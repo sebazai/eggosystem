@@ -1,9 +1,14 @@
-import type { FaceITCSRank, FaceITTeamDetails } from "@eggosystem/types";
+import {
+  SeasonPlatform,
+  type FaceITCSRank,
+  type FaceITTeamDetails
+} from "@eggosystem/types";
 import {
   redisClient,
   expireIn30Days,
   expireInOneDay
 } from "../utils/redisClient";
+import { getPlayerExternalRankForSeason } from "../models/season-player-ranks.models";
 
 const getMonthDifference = (timestamp1: number, timestamp2: number) => {
   const date1 = new Date(timestamp1);
@@ -153,8 +158,31 @@ const getFaceITCSGORank = async (steam_id: string) => {
   return returnData;
 };
 
-export const getFaceITCS2Rank = async (steam_id: string) => {
+export const getFaceITCS2Rank = async (
+  steam_id: string,
+  season_id?: number
+) => {
   const redisKey = `730-${steam_id}-faceit-cs2-rank`;
+
+  // If someone added the rank to database for season, we use that one
+  if (season_id) {
+    const rankFromDb = await getPlayerExternalRankForSeason(
+      steam_id,
+      season_id,
+      SeasonPlatform.FACEIT
+    );
+    if (rankFromDb) {
+      return {
+        ...rankFromDb,
+        metadata: {
+          faceit_matches_played: undefined,
+          faceit_last_match: undefined,
+          faceit_decay: false
+        }
+      } satisfies FaceITCSRank;
+    }
+  }
+
   const fromRedis = await redisClient.get(redisKey);
   if (fromRedis) {
     return JSON.parse(fromRedis) as FaceITCSRank;

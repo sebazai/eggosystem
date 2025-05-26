@@ -90,9 +90,17 @@ export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
 export const getPlayerPlatformRank = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
   const platform = req.params.platform;
+  const season_id = req.query.season_id?.toString()
+    ? parseInt(req.query.season_id.toString(), 10)
+    : undefined;
+
   const isSeasonPlatformEnum = isSeasonPlatform(platform);
   if (isSeasonPlatformEnum) {
-    const platform_rank = await getPlayerRankForPlatform(steam_id, platform);
+    const platform_rank = await getPlayerRankForPlatform(
+      steam_id,
+      platform,
+      season_id
+    );
     res.status(200).json(platform_rank);
     return;
   }

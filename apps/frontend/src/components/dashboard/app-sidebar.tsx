@@ -71,7 +71,7 @@ const data: { navMain: Array<MenuItem> } = {
         },
         {
           title: "Add rank",
-          url: "#"
+          url: createDashboardNextUrl("/registration/rank")
         },
         {
           title: "Add manual approval",

@@ -126,3 +126,28 @@ export const postTeamManualPlayerApprovalSchema = z.discriminatedUnion("type", [
 export type PostTeamManualPlayerApprovalSchemaType = z.infer<
   typeof postTeamManualPlayerApprovalSchema
 >;
+
+export const seasonPlayerRankFormSchema = z
+  .object({
+    steam_id: z
+      .string()
+      .min(1, "Steam ID is required")
+      .regex(/^\d+$/, "Steam ID must be numeric"),
+
+    external_elo: z.number().optional(),
+    cs2_rank: z.number().optional(),
+    cs_hours: z.number().optional()
+  })
+  .refine(
+    (data) =>
+      (data.external_elo !== undefined && data.external_elo !== 0) ||
+      (data.cs2_rank !== undefined && data.cs2_rank !== 0),
+    {
+      message: "At least one of ELO or CS2 Rank must be provided and non-zero",
+      path: ["external_elo"]
+    }
+  );
+
+export type SeasonPlayerRankFormValues = z.infer<
+  typeof seasonPlayerRankFormSchema
+>;

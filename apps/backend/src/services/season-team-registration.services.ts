@@ -110,9 +110,9 @@ export const addPlayersForTeamInSeason = async (
       connection
     );
     const [rank, { hours }, externalRank] = await Promise.all([
-      getPlayerAppIdRank(steamId, appId),
-      getPlayerHoursForSteamAppId(steamId, appId),
-      getPlayerRankForPlatform(steamId, platform)
+      getPlayerAppIdRank(steamId, appId, seasonId),
+      getPlayerHoursForSteamAppId(steamId, appId, seasonId),
+      getPlayerRankForPlatform(steamId, platform, seasonId)
     ]);
 
     if (hours === -1) {

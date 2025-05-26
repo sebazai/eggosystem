@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { addManuallyApprovedPlayersController } from "../../../controllers/dashboard/registration.controllers";
+import {
+  addManuallyApprovedPlayersController,
+  addManualRankForPlayerController
+} from "../../../controllers/dashboard/registration.controllers";
 import { checkPermissions } from "../../../middlewares/auth.middleware";
 
 const router = Router();
@@ -11,6 +14,14 @@ router.post(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   addManuallyApprovedPlayersController
+);
+router.post(
+  "/rank",
+  checkPermissions({
+    staticPermissions: ["write:rank"],
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  addManualRankForPlayerController
 );
 
 export default router;

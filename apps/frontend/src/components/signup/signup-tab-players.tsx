@@ -203,7 +203,7 @@ export const TabPlayers = ({
               `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
             ),
             clientApiFetch<unknown>(
-              `/api/v1/players/${steam_id}/platform/${platform}/rank`
+              `/api/v1/players/${steam_id}/platform/${platform}/rank?season_id=${seasonId}`
             ),
             clientApiFetch<{ public: boolean }>(
               `/api/v1/players/${steam_id}/public`

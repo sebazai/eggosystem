@@ -1,4 +1,8 @@
-import { type SeasonPlayerRank, type FaceITCSRank } from "@eggosystem/types";
+import {
+  type SeasonPlayerRank,
+  type FaceITCSRank,
+  SeasonPlatform
+} from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
@@ -40,6 +44,23 @@ export const getPlayerRankForSeason = async (
   return rank;
 };
 
+export const getPlayerExternalRankForSeason = async (
+  steam_id: string,
+  season_id: number,
+  platform: SeasonPlatform
+) => {
+  const [externalRank] = await runQuery<
+    Array<Omit<FaceITCSRank, "metadata"> | undefined>
+  >(
+    `SELECT spr.faceit_elo, spr.faceit_level, spr.faceit_kd, spr.faceit_date FROM SeasonPlayerRanks spr 
+      JOIN Seasons s ON s.id = spr.season_id
+    WHERE spr.steam_id = ? AND spr.season_id = ? AND s.platform = ? LIMIT 1`,
+    [steam_id, season_id, platform]
+  );
+
+  return externalRank;
+};
+
 export const insertCSPlayerRankForSeason = async (
   steamId: string,
   seasonId: number,
@@ -77,7 +98,7 @@ export const insertFaceITPlayerRankForSeason = async (
   seasonId: number,
   CS2Rank: number,
   CS2Hours: number,
-  FaceITRank: FaceITCSRank,
+  FaceITRank: Omit<FaceITCSRank, "metadata">,
   connection?: PoolConnection
 ) => {
   const faceitLevel = FaceITRank.faceit_level;
