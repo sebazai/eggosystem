@@ -31,7 +31,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     commit: jest.fn(),
     rollback: jest.fn(),
     release: jest.fn(),
-    execute: jest.fn().mockImplementation(() => [{}])
+    execute: jest.fn().mockImplementation(() => [[], []])
   };
   const now = new Date();
   const yesterday = new Date().setDate(now.getDate() - 1);

@@ -1004,7 +1004,7 @@ describe("Season team registration services", () => {
         expect(true).toBe(false);
       }
     });
-    it("Should pass if app id rank is not present in redis, or leetify, rank has been added manually by organizer into database", async () => {
+    it("Should pass when rank is has been added manually by organizer into database, but not hours", async () => {
       updateFetchMock([
         {
           urlContains:
@@ -1056,31 +1056,30 @@ describe("Season team registration services", () => {
         [formData.players[4].steamId, seasonDetails.id, 10001]
       );
 
-      try {
-        await registrationServices.addPlayersForTeamInSeason(
-          seasonDetails.id,
-          seasonDetails.app_id,
-          seasonDetails.platform,
-          formData.teamId,
-          formData.players.map((player) => player.steamId)
-        );
-        const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
-          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-          [formData.players[4].steamId, seasonDetails.id]
-        );
-        expect(rankForSeason.cs2_rank).toEqual(10001);
-        expect(rankForSeason.cs_hours).toEqual(112);
-        expect(rankForSeason.faceit_elo).toEqual(null);
-        expect(rankForSeason.faceit_kd).toEqual(null);
-        expect(rankForSeason.faceit_level).toEqual(null);
-        expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
-        // 5 times for app id rank, 5 times for hours
-        expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(10);
-      } finally {
-        await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
-          idToRemove.insertId
-        ]);
-      }
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        seasonDetails.platform,
+        formData.teamId,
+        formData.players.map((player) => player.steamId)
+      );
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [formData.players[4].steamId, seasonDetails.id]
+      );
+
+      expect(rankForSeason.cs2_rank).toEqual(10001);
+      expect(rankForSeason.cs_hours).toEqual(112);
+      expect(rankForSeason.faceit_elo).toEqual(null);
+      expect(rankForSeason.faceit_kd).toEqual(null);
+      expect(rankForSeason.faceit_level).toEqual(null);
+      expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
+      // 4 times for app id rank, except added player to db, 5 times for hours
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(9);
+
+      await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
+        idToRemove.insertId
+      ]);
     });
     it("Should fallback to latest old seasons average rank if no current season rank can be determined", async () => {
       updateFetchMock([
