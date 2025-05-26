@@ -9,7 +9,7 @@ type QueryParam =
   | Date
   | Buffer
   | QueryParam[]; // Allow nested arrays for `IN (?)`
-export type QueryParams = QueryParam[];
+type QueryParams = QueryParam[];
 
 type dbDefaults = RowDataPacket[] | RowDataPacket[][];
 type dbQuery<T> = T & dbDefaults;

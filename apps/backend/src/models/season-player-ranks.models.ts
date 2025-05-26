@@ -3,7 +3,7 @@ import {
   type FaceITCSRank,
   type SeasonPlatform
 } from "@eggosystem/types";
-import { type QueryParams, runQuery } from "../db/mysqlRunQuery";
+import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
 export const getPlayerHoursForSeason = async (
@@ -69,7 +69,7 @@ export const insertCSPlayerRankForSeason = async (
   options?: { connection?: PoolConnection; isManuallyAdded?: boolean }
 ) => {
   const now = new Date();
-  const manuallyAddedRank = options?.isManuallyAdded;
+  const manuallyAddedRank = !!options?.isManuallyAdded;
 
   const query = `
       INSERT INTO SeasonPlayerRanks (
@@ -78,30 +78,23 @@ export const insertCSPlayerRankForSeason = async (
         rank_updated_at,
         cs2_rank,
         cs_hours,
-        hours_updated_at
-        ${manuallyAddedRank ? ", manual_steam_rank" : ""}
+        hours_updated_at,
+        manual_steam_rank
       )
-      VALUES (?, ?, ?, ?, ?, ? ${manuallyAddedRank ? ", ?" : ""})
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
         cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),
         cs_hours = IF(VALUES(cs_hours) != -1, VALUES(cs_hours), cs_hours),
-        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at)
-        ${manuallyAddedRank ? ", manual_steam_rank = 1" : ""}
+        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at),
+        manual_steam_rank = VALUES(manual_steam_rank)
     `;
 
-  const queryParams: QueryParams = [
-    steamId,
-    seasonId,
-    now,
-    CS2Rank,
-    CS2Hours,
-    now
-  ];
-  if (manuallyAddedRank) {
-    queryParams.push(manuallyAddedRank);
-  }
-  return runQuery(query, queryParams, options?.connection);
+  return runQuery(
+    query,
+    [steamId, seasonId, now, CS2Rank, CS2Hours, now, manuallyAddedRank],
+    options?.connection
+  );
 };
 
 export const insertFaceITPlayerRankForSeason = async (
@@ -118,7 +111,7 @@ export const insertFaceITPlayerRankForSeason = async (
   const faceitKD = FaceITRank.faceit_kd;
 
   const now = new Date();
-  const manuallyAddedRank = options?.isManuallyAdded;
+  const manuallyAddedRank = !!options?.isManuallyAdded;
 
   const query = `
       INSERT INTO SeasonPlayerRanks (
@@ -131,10 +124,10 @@ export const insertFaceITPlayerRankForSeason = async (
         faceit_elo,
         faceit_kd,
         faceit_date,
-        hours_updated_at
-        ${manuallyAddedRank ? ", manual_external_rank" : ""}
+        hours_updated_at, 
+        manual_external_rank
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? ${manuallyAddedRank ? ", ?" : ""})
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
         cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),
@@ -143,26 +136,27 @@ export const insertFaceITPlayerRankForSeason = async (
         faceit_elo = IF(VALUES(faceit_elo) != -1, VALUES(faceit_elo), faceit_elo),
         faceit_kd = IF(VALUES(faceit_kd) != -1, VALUES(faceit_kd), faceit_kd),
         faceit_date = IF(VALUES(faceit_elo) != -1, VALUES(faceit_date), faceit_date),
-        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at)
-        ${manuallyAddedRank ? ", manual_external_rank = 1" : ""}
+        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at),
+        manual_external_rank = VALUES(manual_external_rank)
     `;
 
-  const queryParams: QueryParams = [
-    steamId,
-    seasonId,
-    now,
-    CS2Rank,
-    CS2Hours,
-    faceitLevel,
-    faceitElo,
-    faceitKD,
-    faceitDate,
-    now
-  ];
-  if (manuallyAddedRank) {
-    queryParams.push(manuallyAddedRank);
-  }
-  return runQuery(query, queryParams, options?.connection);
+  return runQuery(
+    query,
+    [
+      steamId,
+      seasonId,
+      now,
+      CS2Rank,
+      CS2Hours,
+      faceitLevel,
+      faceitElo,
+      faceitKD,
+      faceitDate,
+      now,
+      manuallyAddedRank
+    ],
+    options?.connection
+  );
 };
 
 export const getPlayerKanaElo = async (steam_id: string) => {
