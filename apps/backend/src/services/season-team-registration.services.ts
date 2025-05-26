@@ -141,7 +141,7 @@ export const addPlayersForTeamInSeason = async (
         rank.average_rank,
         hours,
         externalRank,
-        connection
+        { connection }
       );
     } else {
       await insertCSPlayerRankForSeason(
@@ -149,7 +149,7 @@ export const addPlayersForTeamInSeason = async (
         seasonId,
         rank.average_rank,
         hours,
-        connection
+        { connection }
       );
     }
   }

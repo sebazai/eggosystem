@@ -218,8 +218,7 @@ export const SignupForm = ({
       (p) =>
         p.hasValidData &&
         p.isProfilePublic &&
-        p.rank !== -1 &&
-        p.externalRank !== -1 &&
+        (p.rank !== -1 || p.externalRank !== -1) &&
         p.hours !== -1
     );
 
@@ -447,35 +446,6 @@ export const SignupForm = ({
             >
               Submit
             </Button>
-            <div className="flex gap-2 w-full mt-2">
-              <Button
-                type="button"
-                onClick={() => saveAsDraft(form.getValues())}
-                variant="secondary"
-                className="w-[50%]"
-                disabled={
-                  form.formState.isSubmitting ||
-                  form.formState.isSubmitSuccessful
-                }
-              >
-                Save as draft
-              </Button>
-              <Button
-                type="reset"
-                onClick={() => {
-                  setActiveTab("organization");
-                  form.reset(defaultValues);
-                }}
-                variant="destructive"
-                className="w-[50%]"
-                disabled={
-                  form.formState.isSubmitting ||
-                  form.formState.isSubmitSuccessful
-                }
-              >
-                Reset
-              </Button>
-            </div>
 
             <FormField
               control={control}
@@ -506,6 +476,36 @@ export const SignupForm = ({
                 </FormItem>
               )}
             />
+
+            <div className="flex gap-2 w-full pt-5">
+              <Button
+                type="button"
+                onClick={() => saveAsDraft(form.getValues())}
+                variant="secondary"
+                className="w-[50%]"
+                disabled={
+                  form.formState.isSubmitting ||
+                  form.formState.isSubmitSuccessful
+                }
+              >
+                Save as draft
+              </Button>
+              <Button
+                type="reset"
+                onClick={() => {
+                  setActiveTab("organization");
+                  form.reset(defaultValues);
+                }}
+                variant="destructive"
+                className="w-[50%]"
+                disabled={
+                  form.formState.isSubmitting ||
+                  form.formState.isSubmitSuccessful
+                }
+              >
+                Reset
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </form>

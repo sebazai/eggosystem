@@ -2,7 +2,7 @@ import _ from "lodash";
 
 export interface IPlayerServiceResponse {
   response: {
-    games: {
+    games?: {
       appid: number;
       playtime_forever: number;
     }[];
@@ -19,8 +19,8 @@ export const getSteamHoursForAppId = async (
     return null;
   }
   const data: IPlayerServiceResponse = await fromSteam.json();
-  const games = data.response.games;
-  const requestedAppId = games.find((game) => game.appid === app_id);
+  const games = data.response?.games;
+  const requestedAppId = games?.find((game) => game.appid === app_id);
 
   if (!requestedAppId) {
     return null;

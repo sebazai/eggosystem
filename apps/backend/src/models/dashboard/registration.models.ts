@@ -58,14 +58,16 @@ export const addSeasonRankForPlayer = async (
         faceit_level: faceitEloToLevel(formData.external_elo || -1),
         faceit_kd: 1,
         faceit_date: new Date().getTime()
-      }
+      },
+      { isManuallyAdded: true }
     );
   } else {
     await insertCSPlayerRankForSeason(
       formData.steam_id,
       season.season_id,
       cs2Rank,
-      csHours
+      csHours,
+      { isManuallyAdded: true }
     );
   }
 };
