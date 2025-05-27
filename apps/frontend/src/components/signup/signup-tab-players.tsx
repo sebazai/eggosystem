@@ -125,9 +125,10 @@ export const TabPlayers = ({
           player.hasValidData !== true ||
           player.hasValidWorkEmail !== true ||
           player.isProfilePublic !== true ||
+          player.isEmailVerified !== true ||
           player.hours === undefined ||
           player.hours === -1 ||
-          player.rank === -1);
+          (player.rank === -1 && player.externalRank === -1));
 
       if (error && !loadingStates[index]) {
         errorIndices.push(`player-${index}`);
@@ -429,6 +430,10 @@ export const TabPlayers = ({
                                     undefined
                                   );
                                   setValue(
+                                    `players.${index}.isEmailVerified`,
+                                    undefined
+                                  );
+                                  setValue(
                                     `players.${index}.isProfilePublic`,
                                     undefined
                                   );
@@ -627,13 +632,14 @@ export const TabPlayers = ({
                     </SignupPlayerNotification>
                   )}
 
-                  {player.isEmailVerified === false && (
-                    <SignupPlayerNotification>
-                      <div>
-                        <span>Player has not verified their email.</span>
-                      </div>
-                    </SignupPlayerNotification>
-                  )}
+                  {player.isEmailVerified === false &&
+                    player.hasValidData !== false && (
+                      <SignupPlayerNotification>
+                        <div>
+                          <span>Player has not verified their email.</span>
+                        </div>
+                      </SignupPlayerNotification>
+                    )}
 
                   {player.hasValidWorkEmail === false &&
                     player.hasValidData !== false && (
