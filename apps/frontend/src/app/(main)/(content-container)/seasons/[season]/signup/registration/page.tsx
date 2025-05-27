@@ -1,7 +1,7 @@
 import { envConfig } from "@/configs/env";
 import { SignupForm } from "@/components/signup/signup-form";
 import { SignupInfo } from "@/components/signup/signup-info";
-import type { SeasonDetails, SeasonPlatform } from "@eggosystem/types";
+import type { SeasonDetails } from "@eggosystem/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import type React from "react";
@@ -15,22 +15,14 @@ export const metadata: Metadata = {
   title: "Season registration"
 };
 
-const SignupContainer = ({
-  children,
-  platform,
-  appId
-}: {
-  children: React.ReactNode;
-  platform: SeasonPlatform;
-  appId: number;
-}) => {
+const SignupContainer = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
       <div className="flex flex-col-reverse lg:flex-row gap-y-4 md:gap-x-4">
         <div className="sm:min-w-xl space-y-6">{children}</div>
 
         <div className="sm:max-w-3xl space-y-6">
-          <SignupInfo platform={platform} appId={appId} />
+          <SignupInfo />
         </div>
       </div>
     </div>
@@ -59,7 +51,7 @@ export default async function SignupPage({ params }: SignupPageProps) {
     );
 
     return (
-      <SignupContainer platform={data.platform} appId={data.app_id}>
+      <SignupContainer>
         <SignupForm
           seasonId={season}
           platform={data.platform}
@@ -73,7 +65,7 @@ export default async function SignupPage({ params }: SignupPageProps) {
 
   // Normal
   return (
-    <SignupContainer platform={data.platform} appId={data.app_id}>
+    <SignupContainer>
       <SignupForm seasonId={season} platform={data.platform} />
     </SignupContainer>
   );

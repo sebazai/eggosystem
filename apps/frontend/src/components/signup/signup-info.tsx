@@ -1,31 +1,7 @@
 import { CardContent, Card } from "@/components/ui/card";
-import { SeasonPlatform } from "@eggosystem/types";
+import Link from "next/link";
 
-const RankText = (appId: number) => {
-  switch (appId) {
-    case 730:
-      return "Premier CS Rank";
-    default:
-      return "";
-  }
-};
-
-const PlatformRankText = (platform: SeasonPlatform) => {
-  switch (platform) {
-    case SeasonPlatform.FACEIT:
-      return "FaceIT Rank";
-    default:
-      return "";
-  }
-};
-
-export const SignupInfo = ({
-  appId,
-  platform
-}: {
-  appId: number;
-  platform?: SeasonPlatform;
-}) => {
+export const SignupInfo = () => {
   return (
     <Card>
       <CardContent className="p-6 space-y-6">
@@ -52,33 +28,36 @@ export const SignupInfo = ({
             player:
           </p>
           <ul className="list-disc list-inside space-y-1 px-4 pb-4">
+            <li>Has a valid work email within the organization.</li>
             <li>
-              Has logged in to <strong>Kanahub</strong> and filled out their
-              personal information and verified work email.
+              Has logged in to <strong>Kanahub</strong>, filled out their
+              personal information, and verified their work email.
             </li>
-            {appId && platform && (
-              <li>
-                Has either a <strong>{RankText(appId)}</strong> or a{" "}
-                <strong>{PlatformRankText(platform)}</strong>.
-              </li>
-            )}
-            {appId && !platform && (
-              <li>
-                Has a <strong>{RankText(appId)}</strong>.
-              </li>
-            )}
             <li>
-              Has their <strong>Steam profile set to public</strong>.
+              Has their{" "}
+              <strong>
+                Steam profile{" "}
+                <Link
+                  href={
+                    "https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  set to public
+                </Link>
+              </strong>
+              .
             </li>
-            <li>Has a valid work e-mail within the organization.</li>
+            <li>
+              Captain and co-captain are required to have their Discord nickname
+              set in their profiles.
+            </li>
           </ul>
+
           <p>
-            Captain and co-captain are required to have their Discord nick in
-            their profile.
-          </p>
-          <p>
-            Please open a ticket in Discord if some of these requirements do not
-            fulfill.
+            Please open a ticket on Discord if any of these requirements are not
+            met.
           </p>
         </div>
       </CardContent>
