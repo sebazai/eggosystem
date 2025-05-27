@@ -9,6 +9,7 @@ import {
 import { envConfig } from "@/configs/env";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{
@@ -50,6 +51,7 @@ async function VerifyEmailContent({ token }: { token: string }) {
   }
 
   if (success) {
+    toast.success("Email verified successfully!");
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-4">

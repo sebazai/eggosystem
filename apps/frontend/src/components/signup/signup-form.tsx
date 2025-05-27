@@ -29,6 +29,7 @@ import { CopyInput } from "@/components/inputs/copy-input";
 import { envConfig } from "@/configs/env";
 import { Checkbox } from "../ui/checkbox";
 import { RequiredFormLabel } from "../ui/required-form-label";
+import { toast } from "sonner";
 
 interface SignupFormProps {
   seasonId: string;
@@ -253,9 +254,16 @@ export const SignupForm = ({
           ? "Team edited successfully"
           : "Team registered succesfully, please remember to pay participation fee."
       );
+      toast.success(
+        isEditMode
+          ? "Team edited successfully"
+          : "Team registered successfully, please remember to pay participation fee."
+      );
       setEditUrl(
         `${createBaseUrl()}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
       );
+
+      // Refresh auth to get necessary permissions for edit link
       await fetch(`${envConfig.CLIENT_API_URL}/api/v1/auth/refresh`, {
         method: "POST",
         credentials: "include"
@@ -285,6 +293,9 @@ export const SignupForm = ({
       body: JSON.stringify(formDataStripped)
     });
     setSuccessMessage("Saved draft for 7 days.");
+    toast.success("Draft saved successfully", {
+      description: "You can continue editing your draft later on this page."
+    });
   };
 
   if (!user) {
