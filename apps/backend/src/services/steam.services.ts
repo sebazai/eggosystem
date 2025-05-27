@@ -37,6 +37,11 @@ export interface ISteamUserResponse {
 export const isSteamProfilePublic = async (steam_id: string) => {
   const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${steam_id}`;
   const result = await fetch(steamUrl);
+  if (!result.ok) {
+    const text = await result.text();
+    console.error("Failed to fetch steam profile", result.status, text);
+    throw new Error("Failed to fetch steam profile public status");
+  }
   const data: ISteamUserResponse = await result.json();
   if (data.response.players.length === 0) {
     throw new Error("Invalid steam id or profile not found");
@@ -48,6 +53,11 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
   const ids = steam_ids.join(",");
   const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${ids}`;
   const result = await fetch(steamUrl);
+  if (!result.ok) {
+    const text = await result.text();
+    console.error("Failed to fetch steam profiles", result.status, text);
+    throw new Error("Failed to fetch steam profiles public status");
+  }
   const data: ISteamUserResponse = await result.json();
 
   const fetchedSteamIds = data.response.players.map((p) => p.steamid);
