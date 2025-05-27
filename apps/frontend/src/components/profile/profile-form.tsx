@@ -130,18 +130,6 @@ export default function ProfileForm() {
 
   return (
     <>
-      {successMessage && (
-        <div
-          className="text-green-300 mb-4 font-semibold"
-          data-testid="profile-success-message"
-        >
-          {successMessage}
-        </div>
-      )}
-      {errorMessage && (
-        <div className="text-red-500 mb-4 font-semibold">{errorMessage}</div>
-      )}
-
       <ProfileFormInputs
         nickname={user.nickname}
         fullName={account.details.fullName}
@@ -156,6 +144,17 @@ export default function ProfileForm() {
           requestNewVerificationLinks(user.account_id)
         }
       />
+      {successMessage && (
+        <div
+          className="text-green-300 mt-4 font-semibold"
+          data-testid="profile-success-message"
+        >
+          {successMessage}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="text-red-500 mt-4 font-semibold">{errorMessage}</div>
+      )}
     </>
   );
 }
