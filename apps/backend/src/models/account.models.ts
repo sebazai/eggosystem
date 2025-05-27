@@ -11,7 +11,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 import { getConnection } from "../db/mysqlConnection";
 import { handleEmailVerification } from "../services/account.services";
-import { getOneDayLaterInMillis } from "../utils/date-utils";
+import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 
 export const updateAccount = async (
   accountId: number,
@@ -22,7 +22,7 @@ export const updateAccount = async (
 
   const workEmailVerificationToken = uuid.v4();
 
-  const oneDayLater = getOneDayLaterInMillis();
+  const oneDayLater = getSevenDaysLaterInMillis();
 
   const hasWorkEmailChanged =
     formData.work_email && formData.work_email !== existingAccount.work_email;

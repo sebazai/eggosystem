@@ -12,7 +12,7 @@ import { getAccountById, updateAccount } from "../models/account.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { handleEmailVerification } from "../services/account.services";
-import { getOneDayLaterInMillis } from "../utils/date-utils";
+import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 
 export const sendVerificationEmails = async (
   req: RequestWithParams<{ id: string }>,
@@ -26,7 +26,7 @@ export const sendVerificationEmails = async (
   }
 
   const account = await getAccountById(accountId);
-  const oneDayInMillis = getOneDayLaterInMillis();
+  const sevenDaysInMillis = getSevenDaysLaterInMillis();
 
   if (
     !account.work_email_verified &&
@@ -41,11 +41,11 @@ export const sendVerificationEmails = async (
       account.work_email,
       "verify:work-email",
       token,
-      oneDayInMillis
+      sevenDaysInMillis
     );
     await runQuery(
       "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
-      [token, new Date(oneDayInMillis), account.id]
+      [token, new Date(sevenDaysInMillis), account.id]
     );
   }
 
