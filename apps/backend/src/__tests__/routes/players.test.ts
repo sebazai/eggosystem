@@ -19,9 +19,10 @@ describe("GET /players", () => {
       account_id: 2925,
       steam_id: "76561198049745649",
       nickname: "sububobi",
-      is_valid_work_email: 0,
+      is_valid_work_email: 1,
       is_valid_full_name: 1,
-      has_accepted_latest_privacy_policy: 0
+      has_accepted_latest_privacy_policy: 0,
+      work_email_verified: false
     });
   });
 

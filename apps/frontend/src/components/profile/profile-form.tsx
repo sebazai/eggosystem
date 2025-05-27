@@ -110,7 +110,7 @@ export default function ProfileForm() {
         }
       );
       setSuccessMessage(`${returnValue.message}`);
-      toast.success(returnValue.message);
+      toast.success("Profile updated!");
       await auth.checkAuth();
       mutate(
         "/api/v1/accounts/profile",
