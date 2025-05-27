@@ -7,6 +7,8 @@ import {
   VerifyEmailSuccessButton
 } from "./verify-email-buton";
 import { envConfig } from "@/configs/env";
+import Link from "next/link";
+import { createNextUrl } from "@/lib/utils";
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{
@@ -68,7 +70,8 @@ async function VerifyEmailContent({ token }: { token: string }) {
         <XCircleIcon className="h-16 w-16 text-destructive" />
         <h1 className="text-2xl font-bold">Verification failed</h1>
         <p className="text-muted-foreground text-center">
-          Your verification link is invalid or has expired.
+          Your verification link is invalid or has expired. Please request a new
+          one from <Link href={createNextUrl("/profile")}>your profile</Link>
         </p>
         <VerifyEmailErrorButton />
       </CardContent>

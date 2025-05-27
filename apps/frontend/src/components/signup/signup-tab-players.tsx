@@ -254,6 +254,9 @@ export const TabPlayers = ({
             );
             setValue(`players.${index}.hasValidData`, hasValidDataBool);
 
+            const isEmailVerified = Boolean(data.work_email_verified);
+            setValue(`players.${index}.isEmailVerified`, isEmailVerified);
+
             const isValidWorkEmail = Boolean(data.is_valid_work_email);
             setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
 
@@ -624,13 +627,22 @@ export const TabPlayers = ({
                     </SignupPlayerNotification>
                   )}
 
+                  {player.isEmailVerified === false && (
+                    <SignupPlayerNotification>
+                      <div>
+                        <span>Player has not verified their email.</span>
+                      </div>
+                    </SignupPlayerNotification>
+                  )}
+
                   {player.hasValidWorkEmail === false &&
                     player.hasValidData !== false && (
                       <SignupPlayerNotification>
                         <div>
                           <span>
-                            Player does not have a valid work e-mail, open a
-                            ticket in Discord. See{" "}
+                            Player does not have a valid work email or has not
+                            been approved by organizer, open a ticket in
+                            Discord. See{" "}
                             <Link
                               target="_blank"
                               href="https://wiki.kanaliiga.fi/CS2/Registration#work-email"

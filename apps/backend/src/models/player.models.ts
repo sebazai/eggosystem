@@ -28,6 +28,7 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
       p.nickname,
       a.id as account_id,
       a.discord,
+      a.work_email_verified,
       CASE 
           WHEN a.work_email IS NULL THEN FALSE
           WHEN a.work_email LIKE '%@%' AND a.work_email_verified = 1 AND a.is_work_email_personal_email != 1 THEN TRUE

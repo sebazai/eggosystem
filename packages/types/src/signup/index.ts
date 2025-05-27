@@ -8,6 +8,7 @@ const playerSchema = z
     nickname: z.string().min(1).max(50),
     hasValidData: z.boolean().optional(),
     hasValidWorkEmail: z.boolean().optional(),
+    isEmailVerified: z.boolean().optional(),
     isProfilePublic: z.boolean().optional(),
     hours: z.number().optional(),
     rank: z.number().optional(),

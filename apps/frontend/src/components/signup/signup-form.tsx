@@ -64,6 +64,7 @@ const defaultValues = {
     coCaptain: false,
     hasValidData: undefined,
     hasValidWorkEmail: undefined,
+    isEmailVerified: undefined,
     isProfilePublic: undefined,
     hours: undefined,
     rank: undefined,
