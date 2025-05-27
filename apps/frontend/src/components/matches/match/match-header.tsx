@@ -86,14 +86,23 @@ export function MatchHeader({
               Ranking #{team1.rank}
             </span>
           </div>
-          <div className="h-10 w-10 md:h-14 md:w-14 relative">
+          <Link
+            href={{
+              pathname: createNextUrl(`/teams/${team1.id}`),
+              query: new URLSearchParams({
+                seasons: seasonId.toString(),
+                leagues: leagueId.toString()
+              }).toString()
+            }}
+            className="h-10 w-10 md:h-14 md:w-14 relative"
+          >
             <NextImageFallback
               src={createTeamLogoUrl(team1.logo)}
               alt={`${team1.name} logo`}
               fill
               className="object-contain"
             />
-          </div>
+          </Link>
         </div>
 
         {/* Score (centered) */}
@@ -155,14 +164,23 @@ export function MatchHeader({
               Ranking #{team2.rank}
             </span>
           </div>
-          <div className="h-10 w-10 md:h-14 md:w-14 relative">
+          <Link
+            href={{
+              pathname: createNextUrl(`/teams/${team2.id}`),
+              query: filterParamsToSearchParams({
+                seasons: [seasonId],
+                leagues: [leagueId]
+              }).toString()
+            }}
+            className="h-10 w-10 md:h-14 md:w-14 relative"
+          >
             <NextImageFallback
               src={createTeamLogoUrl(team2.logo)}
               alt={`${team2.name} logo`}
               fill
               className="object-contain"
             />
-          </div>
+          </Link>
         </div>
       </div>
     </div>
