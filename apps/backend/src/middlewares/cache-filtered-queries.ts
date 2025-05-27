@@ -69,7 +69,7 @@ export function cacheResponseMiddleware({
       const cached = await redisClient.get(cacheKey);
       if (cached) {
         // eslint-disable-next-line no-console
-        console.log(`Returning cache for ${req.path}`);
+        console.log(`Returning cache for ${req.path} with key ${cacheKey}`);
         res.json(JSON.parse(cached));
         return;
       }
