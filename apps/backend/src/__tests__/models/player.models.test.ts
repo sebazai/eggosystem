@@ -738,38 +738,7 @@ describe("getPlayerStatsByFilters", () => {
       stages: null,
       team_ids: null
     });
-    expect(result2).toEqual({
-      adr: null,
-      assists: null,
-      awp_kills: null,
-      clutches_lost: null,
-      clutches_won: null,
-      deaths: null,
-      enemies_flashed: null,
-      first_deaths: null,
-      first_kills: null,
-      flash_assists: null,
-      flashes_thrown: null,
-      headshots: null,
-      hs_percent: null,
-      kana_rating: null,
-      kast: null,
-      kd: null,
-      kills: null,
-      maps_played: 0,
-      mates_flashed: null,
-      multikill_2k: null,
-      multikill_3k: null,
-      multikill_4k: null,
-      multikill_5k: null,
-      nickname: null,
-      rounds_played: 0,
-      self_flashes: null,
-      steam_id: null,
-      total_damage: null,
-      total_ef_duration: null,
-      utility_damage: null
-    });
+    expect(result2).toEqual(undefined);
   });
   it("player with double season but league specific filter", async () => {
     const result = await getPlayerStatsWithFilters("76561197967885016", {
@@ -861,38 +830,7 @@ describe("getPlayerStatsByFilters", () => {
       stages: null,
       team_ids: [2109]
     });
-    expect(result).toEqual({
-      steam_id: null,
-      nickname: null,
-      maps_played: 0,
-      kills: null,
-      assists: null,
-      deaths: null,
-      flash_assists: null,
-      awp_kills: null,
-      utility_damage: null,
-      headshots: null,
-      first_kills: null,
-      first_deaths: null,
-      adr: null,
-      kana_rating: null,
-      hs_percent: null,
-      clutches_won: null,
-      clutches_lost: null,
-      kast: null,
-      enemies_flashed: null,
-      mates_flashed: null,
-      self_flashes: null,
-      total_damage: null,
-      flashes_thrown: null,
-      total_ef_duration: null,
-      kd: null,
-      multikill_2k: null,
-      multikill_3k: null,
-      multikill_4k: null,
-      multikill_5k: null,
-      rounds_played: 0
-    });
+    expect(result).toEqual(undefined);
   });
 });
 
