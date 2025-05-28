@@ -13,7 +13,7 @@ export const TeamStatBox = ({
   roundBreakDown?: GameTeamRoundBreakdown;
 }) => {
   return (
-    <div className="p-4">
+    <div>
       <Link
         href={{
           pathname: `/teams/${team.team_id}`,

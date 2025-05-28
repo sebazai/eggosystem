@@ -2,6 +2,7 @@ import type { MatchInfo } from "@eggosystem/types";
 import { getMatchInfo } from "./utils";
 import { MatchStats } from "@/components/matches/match/match-stats";
 import { GameStats } from "@/components/matches/match/game/game-stats";
+import { createExternalMatchRoomUrl } from "@/components/matches/match/utils";
 
 interface PageProps {
   params: Promise<{ match_id: string }>;
@@ -18,8 +19,27 @@ export default async function MatchPage({ params }: PageProps) {
   const result = await getMatchInfo<MatchInfo>(matchId);
   if (result.game_id) {
     return (
-      <GameStats matchId={matchId} gameId={result.game_id} matchInfo={result} />
+      <GameStats
+        matchId={matchId}
+        gameId={result.game_id}
+        matchInfo={result}
+        platform={result.season_platform}
+        externalMatchRoomUrl={createExternalMatchRoomUrl(
+          result.external_match_room_id,
+          result.season_platform
+        )}
+      />
     );
   }
-  return <MatchStats matchId={matchId} matchInfo={result} />;
+  return (
+    <MatchStats
+      matchId={matchId}
+      matchInfo={result}
+      platform={result.season_platform}
+      externalMatchRoomUrl={createExternalMatchRoomUrl(
+        result.external_match_room_id,
+        result.season_platform
+      )}
+    />
+  );
 }

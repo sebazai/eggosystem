@@ -3,7 +3,7 @@
 import React from "react";
 
 import { useRouter } from "next/navigation";
-import type { MatchInfo } from "@eggosystem/types";
+import type { MatchInfo, SeasonPlatform } from "@eggosystem/types";
 import { MatchMapPicks } from "./stats/map-picks";
 import { TeamStatistics } from "./stats/team-statistics";
 import { PlayerStatisticsForTeam } from "./stats/player-stats-grid";
@@ -12,13 +12,20 @@ import { useMatchTeamStats } from "@/hooks/data/useMatchTeamStats";
 import { useMatchPlayerStats } from "@/hooks/data/useMatchPlayerStats";
 import { useMatchTopPlayers } from "@/hooks/data/useMatchTopPlayers";
 import _ from "lodash";
+import { MatchMapsHeader } from "./stats/match-maps-header";
 
 interface MatchStatsProps {
   matchId: number;
   matchInfo: MatchInfo;
+  platform: SeasonPlatform;
+  externalMatchRoomUrl: string | null;
 }
 
-export const MatchStats = ({ matchId, matchInfo }: MatchStatsProps) => {
+export const MatchStats = ({
+  matchId,
+  matchInfo,
+  externalMatchRoomUrl
+}: MatchStatsProps) => {
   const router = useRouter();
 
   const handleMapSelect = (gameId: number | undefined) => {
@@ -43,6 +50,13 @@ export const MatchStats = ({ matchId, matchInfo }: MatchStatsProps) => {
   return (
     <>
       <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
+      <MatchMapsHeader
+        matchId={matchId}
+        externalMatchRoomUrl={externalMatchRoomUrl}
+        platform={matchInfo.season_platform}
+        handleMapSelect={handleMapSelect}
+      />
+
       {teamStats && teamStats.length > 0 && (
         <TeamStatistics teamStats={teamStats} teamStatsFilters={baseFilters} />
       )}
