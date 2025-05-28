@@ -16,7 +16,7 @@ export const FooterSponsors = () => {
           />
         </Link>
 
-        <Link href={"https://www.autoklinikka.fi/"} target="_blank">
+        <Link href={"https://tnnet.fi/"} target="_blank">
           <Image
             src={createNextUrl("/images/sponsors/tnnet-footer.png")}
             alt="TNNet"
