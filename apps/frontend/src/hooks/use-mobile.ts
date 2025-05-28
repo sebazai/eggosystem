@@ -22,8 +22,6 @@ export function useIsMobile(passMobile?: boolean) {
   );
   const [isLandscape, setIsLandscape] = React.useState<boolean>(false);
 
-  console.log(`Mobile ${isMobile} in landscape ${isLandscape}`);
-
   React.useEffect(() => {
     const getOrientation = (): boolean => {
       const orientation = window.screen.orientation?.type || "";
