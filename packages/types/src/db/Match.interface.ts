@@ -9,4 +9,5 @@ export interface Match {
   start_time: string; // TIME, represented as string (ISO format)
   end_time: string; // TIME, represented as string (ISO format)
   best_of: number; // TINYINT UNSIGNED, stored as number
+  external_match_room_id: string | null;
 }
