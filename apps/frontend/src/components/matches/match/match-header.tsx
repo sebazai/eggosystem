@@ -82,9 +82,11 @@ export function MatchHeader({
             >
               {team1.name}
             </Link>
-            <span className="text-xs md:text-sm text-muted-foreground px-2">
-              Ranking #{team1.rank}
-            </span>
+            {team1.rank && (
+              <span className="text-xs md:text-sm text-muted-foreground px-2">
+                Ranking #{team1.rank}
+              </span>
+            )}
           </div>
           <Link
             href={{
@@ -160,9 +162,11 @@ export function MatchHeader({
             >
               {team2.name}
             </Link>
-            <span className="text-xs md:text-sm text-muted-foreground px-2">
-              Ranking #{team2.rank}
-            </span>
+            {team2.rank && (
+              <span className="text-xs md:text-sm text-muted-foreground px-2">
+                Ranking #{team2.rank}
+              </span>
+            )}
           </div>
           <Link
             href={{

@@ -440,6 +440,7 @@ export const getPlayerStatsWithFilters = async (
     INNER JOIN Matches m ON m.id = mg.match_id
     ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
     WHERE ${query}
+    GROUP BY p.steam_id, p.nickname
   `;
 
   const [playerStats] = await runQuery<Array<PlayerStatsResult | undefined>>(
