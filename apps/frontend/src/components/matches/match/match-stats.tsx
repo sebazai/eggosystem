@@ -48,7 +48,7 @@ export const MatchStats = ({
   };
 
   return (
-    <>
+    <div className="space-y-4 p-1 sm:p-3">
       <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
       <MatchMapsHeader
         matchId={matchId}
@@ -77,6 +77,6 @@ export const MatchStats = ({
           topPlayerFilters={baseFilters}
         />
       )}
-    </>
+    </div>
   );
 };
