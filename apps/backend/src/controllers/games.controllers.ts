@@ -5,8 +5,10 @@ import {
   getGamePlayerStats,
   getGameTeamRoundBreakdown,
   getGameTeamStats,
-  getGameTopPlayers
+  getGameTopPlayers,
+  getGameClip
 } from "../models/game.models";
+import { NotFoundError } from "../utils/errors";
 
 export const getGameTeamRoundBreakdownController = async (
   req: RequestWithParams<{ game_id: string }>,
@@ -56,4 +58,17 @@ export const getGameTopPlayersController = async (
   const game_id = parseInt(req.params.game_id, 10);
   const topplayers = await getGameTopPlayers(game_id);
   res.json(topplayers);
+};
+
+export const getGameClipController = async (
+  req: RequestWithParams<{ game_id: string }>,
+  res: Response
+) => {
+  const game_id = parseInt(req.params.game_id, 10);
+  const clip = await getGameClip(game_id);
+  if (clip.length === 0) {
+    throw new NotFoundError("Clip not found");
+  } else {
+    res.json(clip[0]);
+  }
 };

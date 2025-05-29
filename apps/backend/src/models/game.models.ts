@@ -3,7 +3,8 @@ import {
   type MapRoundInfo,
   type GameTeamRoundBreakdown,
   type GamePlayerStats,
-  type MatchOrGameTopPlayerAwards
+  type MatchOrGameTopPlayerAwards,
+  type GameClip
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
@@ -121,4 +122,13 @@ export const getGameTopPlayers = async (game_id: number) => {
   const queryResults = await Promise.all(queries);
 
   return Object.assign({}, ...queryResults) as MatchOrGameTopPlayerAwards;
+};
+
+export const getGameClip = async (game_id: number) => {
+  const query = `
+    SELECT mgc.*, sp.nickname FROM MatchGameClips mgc 
+      JOIN SteamPlayers sp ON mgc.clip_steam_id = sp.steam_id 
+      WHERE game_id = ?
+  `;
+  return runQuery<GameClip[]>(query, [game_id]);
 };

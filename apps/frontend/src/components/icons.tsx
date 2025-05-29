@@ -22,6 +22,15 @@ function Spinner() {
   );
 }
 
+function ProcessingSpinner() {
+  return (
+    <div className="relative flex items-center gap-2">
+      <div className="h-5 w-5 animate-spin rounded-full border-4 border-transparent border-t-kanaliiga-orange" />
+      <span>Processing...</span>
+    </div>
+  );
+}
+
 type TooltipIconProps = {
   text: string;
   icon?: React.ReactNode;
@@ -65,4 +74,4 @@ const TooltipIcon = ({ text, icon }: TooltipIconProps) => {
 
 export default TooltipIcon;
 
-export { Spinner, TooltipIcon };
+export { Spinner, ProcessingSpinner, TooltipIcon };

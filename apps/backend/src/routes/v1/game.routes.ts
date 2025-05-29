@@ -11,7 +11,8 @@ import {
   getGameRoundInfoController,
   getGameTeamStatsController,
   getGamePlayerStatsController,
-  getGameTopPlayersController
+  getGameTopPlayersController,
+  getGameClipController
 } from "../../controllers/games.controllers";
 
 const router = Router();
@@ -67,5 +68,6 @@ router.get(
   validateNumericParams(),
   getGamePlayerStatsController
 );
+router.get("/:game_id/clip", validateNumericParams(), getGameClipController);
 
 export default router;

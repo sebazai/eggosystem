@@ -15,6 +15,7 @@ import { TopPlayers } from "../stats/top-players";
 import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
 import _ from "lodash";
 import { MatchMapsHeader } from "../stats/match-maps-header";
+import { useGameClip } from "@/hooks/data/useGameClip";
 
 interface MatchStatsProps {
   matchId: number;
@@ -47,6 +48,7 @@ export const GameStats = ({
   const { playerStats } = useGamePlayerStats(gameId);
   const { topPlayers } = useGameTopPlayers(gameId);
   const { roundInfo } = useGameRoundInfo(gameId);
+  const { clip } = useGameClip(gameId);
 
   const baseFilter = {
     seasons: matchInfo.season_id.toString(),
@@ -70,7 +72,7 @@ export const GameStats = ({
           teamStats={teamStats}
           teamStatsFilters={baseFilter}
           gameId={gameId}
-          potgClipUrl="https://allstar.gg/iframe?clip=6836a377a04e5f135bf23d59&known=false&platform=KANALIIGARY&useCase=POTG&location=matchResult&UID=76561198049745449"
+          clip={clip}
         />
       )}
 
