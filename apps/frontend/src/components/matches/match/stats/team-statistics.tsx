@@ -7,6 +7,7 @@ import { TeamStatBox } from "./team-stat-box";
 import { useGameTeamRoundBreakdowns } from "@/hooks/data/useGameTeamRoundBreakdowns";
 import { cn } from "@/lib/utils";
 import { ProcessingSpinner } from "@/components/icons";
+import { useAuth } from "@/context/AuthContext";
 
 export interface TeamStatsFilters {
   seasons: string;
@@ -26,6 +27,7 @@ export const TeamStatistics = ({
   clip,
   gameId
 }: TeamStatisticsProps) => {
+  const auth = useAuth();
   const [teamOneStats, teamTwoStats] = teamStats;
   const teamOneId = teamOneStats?.team_id;
   const teamTwoId = teamTwoStats?.team_id;
@@ -34,7 +36,7 @@ export const TeamStatistics = ({
   return (
     <div
       className={cn(
-        "grid xl:flex grid-cols-1 md:grid-cols-2 xl:flex-row gap-4 w-full",
+        "grid xl:flex grid-cols-1 sm:grid-cols-2 xl:flex-row gap-4 w-full",
         clipAndClipStatusNotError ? "gap-4" : "gap-4 md:gap-10"
       )}
     >
@@ -43,7 +45,7 @@ export const TeamStatistics = ({
         <div
           className={cn(
             "min-w-0 flex flex-col",
-            "order-1 xl:order-2 col-span-1 md:col-span-2 xl:col-auto w-full xl:flex-[3] xl:basis-3/5",
+            "order-1 xl:order-2 col-span-1 sm:col-span-2 xl:col-auto w-full xl:flex-[3] xl:basis-3/5",
             "md:border-l md:border-r md:border-kanaliiga-orange"
           )}
         >
@@ -54,7 +56,11 @@ export const TeamStatistics = ({
             <iframe
               allow="clipboard-write"
               allowFullScreen
-              src={clip.clip_url}
+              src={
+                auth.user?.provider === "steam"
+                  ? clip.clip_url.concat(`&UID=${auth.user?.provider_id}`)
+                  : clip.clip_url
+              }
               className="w-full h-full min-h-[200px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px]"
             ></iframe>
           )}
