@@ -1,7 +1,8 @@
 import { useMatchMaps } from "@/hooks/data/useMatchMaps";
-import { cn, mapToReadableName } from "@/lib/utils";
-import type { SeasonPlatform } from "@eggosystem/types";
+import { mapToReadableName } from "@/lib/utils";
+import { SeasonPlatform } from "@eggosystem/types";
 import Link from "next/link";
+import Image from "next/image";
 
 interface MatchMapsHeaderProps {
   matchId: number;
@@ -10,6 +11,22 @@ interface MatchMapsHeaderProps {
   externalMatchRoomUrl: string | null;
   handleMapSelect: (mapId?: number) => void;
 }
+
+const platformIcon = (platform: SeasonPlatform) => {
+  if (platform === SeasonPlatform.FACEIT) {
+    return (
+      <Image
+        src="/images/faceit/icon-pheasant.png"
+        alt="Faceit"
+        width={25}
+        height={20}
+        className="w-[13px] h-[10px] sm:w-[20px] sm:h-[16px] mx-2"
+      />
+    );
+  }
+  return null;
+};
+
 export const MatchMapsHeader = ({
   matchId,
   gameId,
@@ -20,23 +37,23 @@ export const MatchMapsHeader = ({
   const { maps } = useMatchMaps(matchId);
   return (
     <>
-      <h1 className="mb-2 sm:mb-0">MATCH STATS</h1>
-      <div
-        className={cn(
-          "flex flex-col sm:flex-row",
-          externalMatchRoomUrl ? "justify-between gap-5" : "justify-end"
-        )}
-      >
-        {externalMatchRoomUrl && (
-          <Link
-            target="_blank"
-            rel="noopener noreferrer"
-            href={externalMatchRoomUrl}
-            className="py-1 text-xs text-muted-foreground hover:text-kanaliiga-light-brown transition-colors"
-          >
-            {platform.charAt(0).toUpperCase() + platform.slice(1)} match room
-          </Link>
-        )}
+      <div className="flex flex-col sm:flex-row justify-between">
+        <div className="flex flex-row gap-2 mb-5 sm:mb-0">
+          <h1>MATCH STATS</h1>
+          {externalMatchRoomUrl && (
+            <Link
+              target="_blank"
+              rel="noopener noreferrer"
+              href={externalMatchRoomUrl}
+              className="justify-center items-center flex flex-row text-xs text-muted-foreground hover:text-kanaliiga-light-brown transition-colors"
+            >
+              {platformIcon(platform)}
+              <button className="text-xs cursor-pointer">
+                {platform.charAt(0).toUpperCase() + platform.slice(1)}
+              </button>
+            </Link>
+          )}
+        </div>
         {maps?.length !== 1 && (
           <div className="flex flex-wrap gap-2">
             <button

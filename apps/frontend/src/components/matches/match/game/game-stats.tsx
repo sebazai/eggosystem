@@ -54,7 +54,7 @@ export const GameStats = ({
   };
 
   return (
-    <div className="space-y-4 p-1 sm:p-3">
+    <div className="space-y-4 sm:space-y-10 p-1 sm:p-3">
       <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
 
       <MatchMapsHeader
@@ -70,6 +70,7 @@ export const GameStats = ({
           teamStats={teamStats}
           teamStatsFilters={baseFilter}
           gameId={gameId}
+          potgClipUrl="https://allstar.gg/iframe?clip=6836a377a04e5f135bf23d59&known=false&platform=KANALIIGARY&useCase=POTG&location=matchResult&UID=76561198049745449"
         />
       )}
 

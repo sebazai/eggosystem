@@ -13,7 +13,7 @@ export const MatchMapPicks = ({
   const { maps } = useMatchMaps(matchId);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 mb-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
       {/* Picked Maps Scores */}
       <div className="w-full">
         {maps?.map((map, index) => {
@@ -33,7 +33,7 @@ export const MatchMapPicks = ({
 
               <div className="absolute inset-0 bg-gradient-to-l from-white/60 via-white/30 dark:from-black/60 dark:via-black/30 to-transparent" />
 
-              <div className="absolute bottom-1 left-1 right-1 text-xs sm:text-sm font-semibold z-10">
+              <div className="absolute bottom-1 left-1 right-1 text-xs text-white sm:text-sm font-semibold z-10">
                 {mapToReadableName(map.map_name)}
               </div>
 

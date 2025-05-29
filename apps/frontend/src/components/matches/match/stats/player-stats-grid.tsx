@@ -130,7 +130,7 @@ export const PlayerStatisticsForTeam = ({
                     </div>
                     <div className="text-center hidden md:block">
                       {player.kast_percentage}
-                      {" %"}
+                      {"%"}
                     </div>
                     <div className="text-center hidden lg:block">
                       {player.hs_percent}%

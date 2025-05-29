@@ -24,6 +24,7 @@ services:
       SMTP_HOST: $SMTP_HOST
       SMTP_USER: $SMTP_USER
       SMTP_PASSWORD: $SMTP_PASSWORD
+      ALLSTAR_WEBHOOK_TOKEN: $ALLSTAR_WEBHOOK_TOKEN
     networks:
       - web
     volumes:

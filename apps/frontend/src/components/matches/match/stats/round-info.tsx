@@ -234,7 +234,7 @@ export const RoundInfo = ({ roundInfo }: RoundInfoProps) => {
 
   return (
     <TooltipProvider>
-      <div className="mb-4 relative overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <h2 className="mb-4">ROUND HISTORY</h2>
 
         <div className="min-w-[max-content]">

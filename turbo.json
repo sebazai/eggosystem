@@ -23,7 +23,8 @@
         "PRIVACY_POLICY_VERSION",
         "SMTP_HOST",
         "SMTP_USER",
-        "SMTP_PASSWORD"
+        "SMTP_PASSWORD",
+        "ALLSTAR_WEBHOOK_TOKEN"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -65,10 +66,10 @@
       "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"],
       "cache": false
     },
-    "migrate:rollback": {},
-    "migrate:down": {},
-    "migrate:up": {},
-    "migrate:make": {},
+    "migrate:rollback": { "cache": false },
+    "migrate:down": { "cache": false },
+    "migrate:up": { "cache": false },
+    "migrate:make": { "cache": false },
     "seed": {
       "env": ["NODE_ENV", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"],
       "cache": false

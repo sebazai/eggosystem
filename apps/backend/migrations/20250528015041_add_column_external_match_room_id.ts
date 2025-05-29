@@ -9,9 +9,10 @@ export async function up(knex: Knex): Promise<void> {
     JOIN (
       SELECT 
         mg.match_id,
-        REGEXP_SUBSTR(mg.demofile, '^1-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}') AS external_id
+        REGEXP_SUBSTR(mg.demofile, '^[0-9]+-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}') AS external_id
       FROM MatchGames mg
-      WHERE mg.demofile REGEXP '^1-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-1-1\\.dem$'
+      WHERE mg.demofile REGEXP '^[0-9]+-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-[0-9]+-[0-9]+\\.dem$'
+
     ) extracted
     ON m.id = extracted.match_id
     SET m.external_match_room_id = extracted.external_id;
