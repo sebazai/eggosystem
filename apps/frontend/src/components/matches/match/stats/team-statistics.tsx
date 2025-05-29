@@ -65,10 +65,10 @@ export const TeamStatistics = ({
               className="w-full h-full min-h-[200px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px]"
             ></iframe>
           )}
-          {clip.clip_status === "Submitted" && clip.clip_snapshot_url && (
+          {clip.clip_status === "Submitted" && clip.clip_thumbnail_url && (
             <div className="relative w-full h-full min-h-[200px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px] text-center flex items-center justify-center">
               <Image
-                src={clip.clip_snapshot_url}
+                src={clip.clip_thumbnail_url}
                 alt="Clip submitted"
                 width={1024}
                 height={576}
