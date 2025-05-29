@@ -13,6 +13,7 @@ import leaguesRouter from "./v1/league.routes";
 import nowRouter from "./v1/now.routes";
 import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
+import allstarRouter from "./v1/allstar.routes";
 import registrationsRouter from "./v1/season-team-registration.routes";
 import gameRouter from "./v1/game.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
@@ -48,6 +49,7 @@ v1Router.use("/leagues", leaguesRouter);
 v1Router.use("/now", nowRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
+v1Router.use("/allstar", allstarRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
