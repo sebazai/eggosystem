@@ -32,7 +32,7 @@ export const updateClipError = async (
       clip_status = VALUES(clip_status),
       additional_data = VALUES(additional_data)
     `,
-    [gameId, data.status, clipType, JSON.stringify(data)]
+    [gameId, data.status.trim(), clipType, JSON.stringify(data).trim()]
   );
 };
 
@@ -72,17 +72,17 @@ export const updateProcessedClip = async (
     `,
     [
       gameId,
-      data.steamid,
-      data.status,
+      data.steamid.trim(),
+      data.status.trim(),
       clipType,
-      data._id,
-      data.requestId,
-      data.clipUrl,
-      data.clipImageThumbURL,
-      data.clipSnapshotURL,
-      data.clipTitle,
-      data.clipLength?.toString(),
-      JSON.stringify(data.additionalData)
+      data._id.trim(),
+      data.requestId.trim(),
+      data.clipUrl.trim(),
+      data.clipImageThumbURL.trim(),
+      data.clipSnapshotURL.trim(),
+      data.clipTitle.trim(),
+      data.clipLength?.toString().trim(),
+      JSON.stringify(data.additionalData).trim()
     ]
   );
 };
