@@ -55,9 +55,8 @@ export const updateProcessedClip = async (
       clip_snapshot_url,
       clip_title,
       clip_length,
-      clip_username,
       additional_data
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       clip_steam_id = VALUES(clip_steam_id),
       clip_status = VALUES(clip_status),
@@ -69,7 +68,6 @@ export const updateProcessedClip = async (
       clip_snapshot_url = VALUES(clip_snapshot_url),
       clip_title = VALUES(clip_title),
       clip_length = VALUES(clip_length),
-      clip_username = VALUES(clip_username),
       additional_data = VALUES(additional_data)
     `,
     [
@@ -84,7 +82,6 @@ export const updateProcessedClip = async (
       data.clipSnapshotURL,
       data.clipTitle,
       data.clipLength?.toString(),
-      data.username,
       JSON.stringify(data.additionalData)
     ]
   );
