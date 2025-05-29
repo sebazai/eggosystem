@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "mediacdn.allstar.gg"
+        hostname: "*.allstar.gg"
       }
     ]
   }
