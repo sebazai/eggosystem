@@ -3,7 +3,7 @@
 # Default values
 ALLSTAR_API_KEY=${ALLSTAR_API_KEY}
 DEMO_URL=${1:-"https://stats.kanaliiga.fi/testdata/game1nuke.dem"}
-WEBHOOK_URL="https://hubod.kanaliiga.fi/mr-236/api/v1/allstar/webhook"
+WEBHOOK_URL="https://hub.kanaliiga.fi/api/v1/allstar/webhook"
 METADATA_KEY=${2:-"game_id"}
 METADATA_VALUE=${3:-"105968"}
 
