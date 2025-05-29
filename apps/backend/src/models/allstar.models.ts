@@ -1,7 +1,7 @@
 import {
   type MatchGame,
   type AllstarClip,
-  AllstarClipError
+  type AllstarClipError
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
