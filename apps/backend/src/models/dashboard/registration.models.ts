@@ -1,7 +1,8 @@
 import {
   SeasonPlatform,
   type SeasonPlayerRankFormValues,
-  type PostTeamManualPlayerApprovalSchemaType
+  type PostTeamManualPlayerApprovalSchemaType,
+  ActiveSeasonSignupForAppId
 } from "@eggosystem/types";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
@@ -43,7 +44,7 @@ export const addManuallyApprovedPartialSignupForSeason = async (
 
 export const addSeasonRankForPlayer = async (
   formData: SeasonPlayerRankFormValues,
-  season: { season_id: number; platform: SeasonPlatform }
+  season: ActiveSeasonSignupForAppId
 ) => {
   const cs2Rank = formData.cs2_rank || -1;
   const csHours = formData.cs_hours || -1;

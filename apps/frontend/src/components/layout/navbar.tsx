@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import UserMenuDropdown from "./user-menu-dropdown";
 import { MobileUserMenu } from "./mobile/user-menu";
-import { cn, createNextUrl } from "@/lib/utils";
+import { cn, convertSeasonToS, createNextUrl } from "@/lib/utils";
 import {
   ReadonlyURLSearchParams,
   usePathname,
@@ -38,6 +38,7 @@ import {
 } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
+import { useSignupOpenForAppId } from "@/hooks/data/useSignupOpenSeason";
 
 interface MenuItemLink {
   title: string;
@@ -70,16 +71,6 @@ const defaultProps: NavbarProps = {
   },
   menu: [
     {
-      title: "Home",
-      url: "/",
-      hasFilters: false
-    },
-    {
-      title: "Matches",
-      url: "/matches",
-      hasFilters: true
-    },
-    {
       title: "Organizations",
       url: "/organizations",
       hasFilters: false
@@ -99,6 +90,11 @@ const defaultProps: NavbarProps = {
       hasFilters: true
     },
     {
+      title: "Matches",
+      url: "/matches",
+      hasFilters: true
+    },
+    {
       title: "Leaderboards",
       url: "/leaderboards",
       hasFilters: true
@@ -114,6 +110,7 @@ const defaultProps: NavbarProps = {
 
 export const Navigation = (props: NavbarProps) => {
   const pathname = usePathname();
+  const { seasonWithSignupOpen } = useSignupOpenForAppId(730);
   const navigationProps =
     Object.keys(props).length === 0 ? defaultProps : props;
   const { logo, menu, mobileExtraLinks } = navigationProps;
@@ -203,6 +200,17 @@ export const Navigation = (props: NavbarProps) => {
           <NavigationMenu delayDuration={0} viewport={false}>
             <NavigationMenuList>
               {menu?.map((m) => renderMenuItem(m, params))}
+              {seasonWithSignupOpen &&
+                renderMenuItem(
+                  {
+                    title: `Register ${convertSeasonToS(
+                      seasonWithSignupOpen.full_name
+                    )}`,
+                    url: `/seasons/${seasonWithSignupOpen.season_id}/signup`,
+                    hasFilters: false
+                  },
+                  params
+                )}
             </NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto space-x-4">
