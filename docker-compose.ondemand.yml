@@ -140,6 +140,7 @@ services:
       PMA_USER: root
       PMA_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
       PMA_ABSOLUTE_URI: https://hubod.kanaliiga.fi/${ENV_ID}/phpmyadmin/
+      UPLOAD_LIMIT: 200M
     networks:
       - web
     labels:
