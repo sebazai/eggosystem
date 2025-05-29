@@ -2,10 +2,10 @@
 
 # Default values
 ALLSTAR_API_KEY=${ALLSTAR_API_KEY}
-DEMO_URL=${1:-"https://stats.kanaliiga.fi/testdata/game1nuke.dem"}
+DEMO_URL=${1:-"https://stats.kanaliiga.fi/testdata/1-eedc197e-5a7c-4b68-b02a-8f849bcedc34-1-1.dem"}
 WEBHOOK_URL="https://hub.kanaliiga.fi/api/v1/allstar/webhook"
 METADATA_KEY=${2:-"game_id"}
-METADATA_VALUE=${3:-"105968"}
+METADATA_VALUE=${3:-"105906"}
 
 # Show usage if help is requested
 if [[ "$1" == "--help" || "$1" == "-h" ]]; then
