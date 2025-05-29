@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { cn, createNextUrl } from "@/lib/utils";
 import Link from "next/link";
-import { CsMainSponsors } from "../sponsors/cs-main-sponsors";
 import { KanaMainPartners } from "../sponsors/kana-main-partners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
@@ -124,9 +123,9 @@ export default function HeroSection({ device }: HeroSectionProps) {
         </motion.p>
 
         {/* Sponsor Logos Row */}
-        <MotionSponsorContainer classNames="mb-10 mobile-landscape:mb-5">
+        {/*         <MotionSponsorContainer classNames="mb-10 mobile-landscape:mb-5">
           <CsMainSponsors />
-        </MotionSponsorContainer>
+        </MotionSponsorContainer> */}
         <MotionSponsorContainer>
           <KanaMainPartners />
         </MotionSponsorContainer>

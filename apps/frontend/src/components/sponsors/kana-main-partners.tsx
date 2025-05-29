@@ -23,15 +23,6 @@ export const KanaMainPartners = () => {
           height={41}
         />
       </Link>
-      <Link href={"https://atflow.fi/"} target="_blank">
-        <Image
-          src={createNextUrl("/images/sponsors/atflow-black.png")}
-          className="w-[100px] h-[30px] mobile-landscape:w-[100px] mobile-landscape:h-[30px] sm:w-[200px] sm:h-[59px]"
-          alt="Atflow"
-          width={200}
-          height={59}
-        />
-      </Link>
     </>
   );
 };
