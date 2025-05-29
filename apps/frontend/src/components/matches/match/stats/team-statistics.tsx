@@ -30,15 +30,16 @@ export const TeamStatistics = ({
   const teamOneId = teamOneStats?.team_id;
   const teamTwoId = teamTwoStats?.team_id;
   const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(gameId);
+  const clipAndClipStatusNotError = clip && clip.clip_status !== "Error";
   return (
     <div
       className={cn(
         "grid xl:flex grid-cols-1 md:grid-cols-2 xl:flex-row gap-4 w-full",
-        clip ? "gap-4" : "gap-4 md:gap-10"
+        clipAndClipStatusNotError ? "gap-4" : "gap-4 md:gap-10"
       )}
     >
       {/* Video */}
-      {clip && (
+      {clipAndClipStatusNotError && (
         <div
           className={cn(
             "min-w-0 flex flex-col",
@@ -69,7 +70,7 @@ export const TeamStatistics = ({
       <div
         className={cn(
           "min-w-0 flex flex-col",
-          clip
+          clipAndClipStatusNotError
             ? "order-2 xl:order-1 col-span-1 w-full xl:w-auto basis-1/5"
             : "flex-1"
         )}
@@ -89,7 +90,7 @@ export const TeamStatistics = ({
       <div
         className={cn(
           "min-w-0 flex flex-col",
-          clip
+          clipAndClipStatusNotError
             ? "order-2 xl:order-3 col-span-1 w-full xl:w-auto basis-1/5"
             : "flex-1"
         )}
