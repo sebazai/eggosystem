@@ -1,5 +1,5 @@
 import { useMatchMaps } from "@/hooks/data/useMatchMaps";
-import { mapToReadableName } from "@/lib/utils";
+import { createNextUrl, mapToReadableName } from "@/lib/utils";
 import { SeasonPlatform } from "@eggosystem/types";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,7 +16,7 @@ const platformIcon = (platform: SeasonPlatform) => {
   if (platform === SeasonPlatform.FACEIT) {
     return (
       <Image
-        src="/images/faceit/icon-pheasant.png"
+        src={createNextUrl("/images/faceit/icon-pheasant.png")}
         alt="Faceit"
         width={25}
         height={20}
