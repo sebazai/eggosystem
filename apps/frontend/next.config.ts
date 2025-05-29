@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
   eslint: {
     dirs: ["src"],
     ignoreDuringBuilds: true
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "mediacdn.allstar.gg"
+      }
+    ]
   }
 };
 

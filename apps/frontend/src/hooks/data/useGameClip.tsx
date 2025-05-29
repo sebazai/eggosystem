@@ -11,10 +11,8 @@ export function useGameClip(gameId: number) {
     {
       refreshInterval: (data) => {
         if (!data) {
-          return 30000;
+          return 0;
         }
-
-        console.log(data);
 
         if (
           data?.clip_status === "Processing" ||

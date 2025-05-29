@@ -8,6 +8,7 @@ import { useGameTeamRoundBreakdowns } from "@/hooks/data/useGameTeamRoundBreakdo
 import { cn } from "@/lib/utils";
 import { ProcessingSpinner } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
 export interface TeamStatsFilters {
   seasons: string;
@@ -52,7 +53,7 @@ export const TeamStatistics = ({
           <h3 className="mb-2 text-center">
             {clip.clip_title} - by {clip.nickname}
           </h3>
-          {clip.clip_url && (
+          {clip.clip_url && clip.clip_status === "Processed" && (
             <iframe
               allow="clipboard-write"
               allowFullScreen
@@ -63,6 +64,17 @@ export const TeamStatistics = ({
               }
               className="w-full h-full min-h-[200px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px]"
             ></iframe>
+          )}
+          {clip.clip_status === "Submitted" && clip.clip_snapshot_url && (
+            <div className="relative w-full h-full min-h-[200px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px] text-center flex items-center justify-center">
+              <Image
+                src={clip.clip_snapshot_url}
+                alt="Clip submitted"
+                width={1024}
+                height={576}
+                className="w-full h-full object-cover"
+              />
+            </div>
           )}
           {clip.clip_status === "Processing" && (
             <div className="relative w-full h-full min-h-[200px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px] text-center flex items-center justify-center">
