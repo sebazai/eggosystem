@@ -24,7 +24,8 @@
         "SMTP_HOST",
         "SMTP_USER",
         "SMTP_PASSWORD",
-        "ALLSTAR_WEBHOOK_TOKEN"
+        "ALLSTAR_WEBHOOK_TOKEN",
+        "ALLSTAR_API_KEY"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
