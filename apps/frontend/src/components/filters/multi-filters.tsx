@@ -28,7 +28,10 @@ export const MultiFilters = (props: MultiFiltersProps) => {
   const [openFilter, setOpenFilter] = useState<string | null>(null);
 
   const seasonSorter = useCallback((a: Season, b: Season) => b.id - a.id, []);
-  const leagueSorter = useCallback((a: League, b: League) => a.id - b.id, []);
+  const leagueSorter = useCallback(
+    (a: League, b: League) => a.sort_priority - b.sort_priority,
+    []
+  );
   const teamSorter = useCallback(
     (a: Team, b: Team) => a.name.localeCompare(b.name),
     []
