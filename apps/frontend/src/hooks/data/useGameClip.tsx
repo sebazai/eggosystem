@@ -10,6 +10,12 @@ export function useGameClip(gameId: number) {
     expressFetcher,
     {
       refreshInterval: (data) => {
+        if (!data) {
+          return 30000;
+        }
+
+        console.log(data);
+
         if (
           data?.clip_status === "Processing" ||
           data?.clip_status === "Submitted"
@@ -20,7 +26,7 @@ export function useGameClip(gameId: number) {
           return 100000;
         }
 
-        return 10000;
+        return 0;
       },
       revalidateOnFocus: true
     }
