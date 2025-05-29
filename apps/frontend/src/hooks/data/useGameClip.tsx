@@ -18,7 +18,7 @@ export function useGameClip(gameId: number) {
           data?.clip_status === "Processing" ||
           data?.clip_status === "Submitted"
         ) {
-          return 10000;
+          return 30000;
         }
         if (data?.clip_status === "Error") {
           return 100000;
