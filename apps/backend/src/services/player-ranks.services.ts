@@ -156,7 +156,7 @@ export const getPlayerRankForPlatform = async (
   platform: SeasonPlatform | null,
   season_id?: number
 ) => {
-  if (platform === null) {
+  if (!platform) {
     return null;
   }
   switch (platform) {

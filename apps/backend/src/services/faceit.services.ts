@@ -52,7 +52,10 @@ const applyDecay = (
   return clamp(last_value - decay, min_value);
 };
 
-const getFaceITGameRank = async (steam_id: string, game: "cs2" | "csgo") => {
+export const getFaceITGameRank = async (
+  steam_id: string,
+  game: "cs2" | "csgo"
+) => {
   try {
     const webURL = `https://open.faceit.com/data/v4/players?game=${game}&game_player_id=${steam_id}`;
     const headers = {
@@ -61,20 +64,25 @@ const getFaceITGameRank = async (steam_id: string, game: "cs2" | "csgo") => {
     };
     const response = await fetch(webURL, { headers });
     if (!response.ok) {
-      return undefined;
+      return null;
     }
     const data = await response.json();
-    const elo = Number(data["games"][game]["faceit_elo"]);
-    const rank = Number(data["games"][game]["skill_level"]);
-    const player_id = data["player_id"];
-    return {
-      elo,
-      rank,
-      player_id
-    };
+    try {
+      const elo = Number(data["games"][game]["faceit_elo"]);
+      const rank = Number(data["games"][game]["skill_level"]);
+      const player_id = data["player_id"];
+      return {
+        elo,
+        rank,
+        player_id
+      };
+    } catch (err) {
+      if (process.env.NODE_ENV !== "test")
+        console.error(`Error parsing FaceIT rank for ${steam_id}`, err);
+      return null;
+    }
   } catch (err) {
-    if (process.env.NODE_ENV !== "test")
-      console.error(`Error fetching FaceIT rank for ${steam_id}`, err);
+    console.error(`Error fetching FaceIT rank for ${steam_id}`, err);
     return null;
   }
 };
@@ -162,8 +170,6 @@ export const getFaceITCS2Rank = async (
   steam_id: string,
   season_id?: number
 ) => {
-  const redisKey = `730-${steam_id}-faceit-cs2-rank`;
-
   // If someone added the rank to database for season, we use that one
   if (season_id) {
     const rankFromDb = await getPlayerExternalRankForSeason(
@@ -173,7 +179,12 @@ export const getFaceITCS2Rank = async (
     );
     if (rankFromDb) {
       return {
-        ...rankFromDb,
+        faceit_level: rankFromDb.faceit_level ?? -1,
+        faceit_elo: rankFromDb.faceit_elo ?? -1,
+        faceit_kd: rankFromDb.faceit_kd ?? -1,
+        faceit_date: rankFromDb.faceit_date
+          ? new Date(rankFromDb.faceit_date).getTime()
+          : new Date().getTime(),
         metadata: {
           faceit_matches_played: undefined,
           faceit_last_match: undefined,
@@ -183,10 +194,12 @@ export const getFaceITCS2Rank = async (
     }
   }
 
+  const redisKey = `730-${steam_id}-faceit-cs2-rank`;
   const fromRedis = await redisClient.get(redisKey);
   if (fromRedis) {
     return JSON.parse(fromRedis) as FaceITCSRank;
   }
+
   const faceitRanks = await getFaceITGameRank(steam_id, "cs2");
   if (!faceitRanks) {
     // Fallback to CSGO rank

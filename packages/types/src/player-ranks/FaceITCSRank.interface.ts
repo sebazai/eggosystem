@@ -16,9 +16,13 @@ export function isFaceITCSRank(obj: any): obj is FaceITCSRank {
     typeof obj === "object" &&
     obj !== null &&
     typeof obj.faceit_level === "number" &&
+    obj.faceit_level >= 0 &&
     typeof obj.faceit_elo === "number" &&
+    obj.faceit_elo >= 0 &&
     typeof obj.faceit_kd === "number" &&
+    obj.faceit_kd >= 0 &&
     typeof obj.faceit_date === "number" &&
+    obj.faceit_date >= 0 &&
     typeof obj.metadata === "object" &&
     obj.metadata !== null &&
     (typeof obj.metadata.faceit_matches_played === "undefined" ||

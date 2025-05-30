@@ -3,7 +3,7 @@ import { type SignupFormValues } from "@eggosystem/types";
 export const validSignupData: SignupFormValues = {
   organizationId: 102,
   teamId: 2,
-  teamExternalId: "team-123",
+  teamExternalId: "facded66-34dd-4a81-8a58-4d59c8b391d5",
   captainHasReadTermAndConditions: true,
   players: [
     {

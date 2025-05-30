@@ -50,7 +50,7 @@ export const getPlayerExternalRankForSeason = async (
   platform: SeasonPlatform
 ) => {
   const [externalRank] = await runQuery<
-    Array<Omit<FaceITCSRank, "metadata"> | undefined>
+    Array<Omit<Partial<FaceITCSRank>, "metadata"> | undefined>
   >(
     `SELECT spr.faceit_elo, spr.faceit_level, spr.faceit_kd, spr.faceit_date FROM SeasonPlayerRanks spr 
       JOIN Seasons s ON s.id = spr.season_id

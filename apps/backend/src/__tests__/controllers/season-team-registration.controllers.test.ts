@@ -11,12 +11,15 @@ import * as organizationModels from "../../models/organization.models";
 import * as seasonTeamRegistrationModels from "../../models/season-team-registration.models";
 import * as seasonTeamRegistrationServices from "../../services/season-team-registration.services";
 import * as seasonTeamPlayersModels from "../../models/season-team-players.models";
+import * as faceitServices from "../../services/faceit.services";
 import type { Response } from "express";
 import {
   type SignupFormValues,
   type RequestWithParamsAndBody,
   SeasonPlatform,
-  type SeasonDetails
+  type SeasonDetails,
+  type FaceITTeamDetails,
+  type FaceITCSRank
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
@@ -57,19 +60,45 @@ describe("addSignupForSeason - database transaction testing", () => {
       name: "Test Season",
       signup_start_date: String(yesterday),
       signup_end_date: String(tomorrow),
-      platform: SeasonPlatform.Kanaliiga,
+      platform: SeasonPlatform.FACEIT,
       game_id: 0,
       full_name: "CS2 Test Season",
-      start_date: "String(tomorrow)",
+      start_date: String(tomorrow),
       end_date: null,
       app_id: 730
     } satisfies SeasonDetails);
+    jest.spyOn(faceitServices, "getFaceITCS2Rank").mockResolvedValue({
+      faceit_level: 0,
+      faceit_elo: 0,
+      faceit_kd: 0,
+      faceit_date: 0,
+      metadata: {
+        faceit_matches_played: undefined,
+        faceit_last_match: undefined,
+        faceit_decay: false
+      }
+    } satisfies FaceITCSRank);
     jest
       .spyOn(seasonTeamRegistrationServices, "validatePlayersFromDBForSignup")
       .mockResolvedValue();
     jest
       .spyOn(teamModels, "getTeamWithIdWithoutOrg")
       .mockResolvedValue([undefined]);
+    jest.spyOn(faceitServices, "getFaceITTeamDetails").mockResolvedValue({
+      team_id: "",
+      nickname: "",
+      name: "",
+      avatar: "",
+      game: "cs2",
+      team_type: "",
+      members: [],
+      leader: "",
+      chat_room_id: "",
+      faceit_url: ""
+    } satisfies FaceITTeamDetails);
+    jest.spyOn(steamServices, "areSteamProfilesPublic").mockResolvedValue({
+      is_all_public: true
+    });
   });
 
   it("should rollback and return 500 if an error occurs in transaction during handleSeasonTeamRegistration", async () => {
@@ -113,7 +142,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       {
         captain_steam_id: "12345678901234566",
         co_captain_steam_id: "12345678901234567",
-        external_platform_id: "team-123",
+        external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
       mockConnection
@@ -122,7 +151,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(playersAddSpy).toHaveBeenCalledWith(
       1,
       730,
-      SeasonPlatform.Kanaliiga,
+      SeasonPlatform.FACEIT,
       2,
       req.body.players.map((player) => player.steamId),
       mockConnection
@@ -152,6 +181,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       appid: 730,
       playtime_forever: 1000
     });
+
     jest
       .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
       .mockResolvedValue();
@@ -172,7 +202,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       {
         captain_steam_id: "12345678901234566",
         co_captain_steam_id: "12345678901234567",
-        external_platform_id: "team-123",
+        external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
       mockConnection
@@ -186,7 +216,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       mockConnection
     );
     // Platform is Kanaliiga
-    expect(faceItRank).toHaveBeenCalledTimes(0);
+    expect(faceItRank).toHaveBeenCalledTimes(5);
     expect(insertSeasonTeamPlayer).toHaveBeenCalledTimes(5);
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(mockConnection.rollback).not.toHaveBeenCalled();
@@ -234,7 +264,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       {
         captain_steam_id: "12345678901234566",
         co_captain_steam_id: "12345678901234567",
-        external_platform_id: "team-123",
+        external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
       mockConnection
@@ -243,7 +273,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(playersAddSpy).toHaveBeenCalledWith(
       1,
       730,
-      SeasonPlatform.Kanaliiga,
+      SeasonPlatform.FACEIT,
       666,
       req.body.players.map((player) => player.steamId),
       mockConnection
@@ -286,7 +316,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       {
         captain_steam_id: "12345678901234566",
         co_captain_steam_id: "12345678901234567",
-        external_platform_id: "team-123",
+        external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
       mockConnection
@@ -295,7 +325,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(playersAddSpy).toHaveBeenCalledWith(
       1,
       730,
-      SeasonPlatform.Kanaliiga,
+      SeasonPlatform.FACEIT,
       1337,
       req.body.players.map((player) => player.steamId),
       mockConnection

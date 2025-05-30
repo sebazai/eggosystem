@@ -66,7 +66,7 @@ describe("Season team registration services", () => {
     full_name: "CS2 Test Season",
     signup_start_date: new Date(yesterday),
     signup_end_date: new Date(tomorrow),
-    platform: SeasonPlatform.Kanaliiga,
+    platform: SeasonPlatform.FACEIT,
     start_date: new Date(tomorrow),
     end_date: null
   } satisfies InsertSeason;
@@ -722,6 +722,13 @@ describe("Season team registration services", () => {
               ]
             }
           } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {}
+          }
         }
       ]);
 
@@ -761,6 +768,13 @@ describe("Season team registration services", () => {
               ]
             }
           } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {}
+          }
         }
       ]);
       const formData = _.cloneDeep(validSignupData);
@@ -775,7 +789,7 @@ describe("Season team registration services", () => {
       } catch (error) {
         const asBadreq = error as BadRequestError;
         expect(asBadreq.message).toEqual(
-          "Player 12345678901234566 rank not found for app 730."
+          "Player 12345678901234566 has no app id rank or faceit rank."
         );
       }
     });
@@ -821,33 +835,35 @@ describe("Season team registration services", () => {
               ]
             }
           } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {}
+          }
         }
       ]);
       const formData = _.cloneDeep(validSignupData);
 
-      try {
-        await registrationServices.addPlayersForTeamInSeason(
-          seasonDetails.id,
-          seasonDetails.app_id,
-          SeasonPlatform.FACEIT,
-          formData.teamId,
-          formData.players.map((player) => player.steamId)
-        );
-        const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
-          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-          [formData.players[4].steamId, seasonDetails.id]
-        );
-        expect(rankForSeason.cs2_rank).toEqual(22000);
-        expect(rankForSeason.cs_hours).toEqual(112);
-        expect(rankForSeason.faceit_elo).toEqual(-1);
-        expect(rankForSeason.faceit_level).toEqual(-1);
-        expect(rankForSeason.faceit_kd).toEqual(-1);
-        // 5 times for app id rank, 5 times for hours, 5 times for external rank
-        expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
-      } catch (_error) {
-        // Should not error
-        expect(true).toBe(false);
-      }
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        seasonDetails.platform,
+        formData.teamId,
+        formData.players.map((player) => player.steamId)
+      );
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [formData.players[4].steamId, seasonDetails.id]
+      );
+      expect(rankForSeason.cs2_rank).toEqual(22000);
+      expect(rankForSeason.cs_hours).toEqual(112);
+      expect(rankForSeason.faceit_elo).toEqual(null);
+      expect(rankForSeason.faceit_level).toEqual(null);
+      expect(rankForSeason.faceit_kd).toEqual(null);
+      // 5 times for app id rank, 5 times for hours, 5 times for external rank
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
     });
     it("Should throw error if no rank and no external rank", async () => {
       updateFetchMock([
@@ -885,6 +901,13 @@ describe("Season team registration services", () => {
               ]
             }
           } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {}
+          }
         }
       ]);
       const formData = _.cloneDeep(validSignupData);
@@ -977,34 +1000,30 @@ describe("Season team registration services", () => {
       ]);
       const formData = _.cloneDeep(validSignupData);
 
-      try {
-        await registrationServices.addPlayersForTeamInSeason(
-          seasonDetails.id,
-          seasonDetails.app_id,
-          SeasonPlatform.FACEIT,
-          formData.teamId,
-          formData.players.map((player) => player.steamId)
-        );
-        const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
-          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-          [formData.players[4].steamId, seasonDetails.id]
-        );
-        expect(getPlayerRank.cs2_rank).toEqual(-1);
-        expect(getPlayerRank.csgo_rank).toEqual(-1);
-        expect(getPlayerRank.cs_hours).toEqual(112);
-        expect(getPlayerRank.faceit_level).toEqual(6);
-        expect(getPlayerRank.faceit_elo).toEqual(1301);
-        expect(getPlayerRank.faceit_kd).toEqual(1.35);
-        const date = new Date();
-        const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-        expect(getPlayerRank.rank_updated_at).toContain(formatted);
-        expect(getPlayerRank.hours_updated_at).toContain(formatted);
-        expect(getPlayerRank.faceit_date).toContain(formatted);
-      } catch (_error) {
-        expect(true).toBe(false);
-      }
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        SeasonPlatform.FACEIT,
+        formData.teamId,
+        formData.players.map((player) => player.steamId)
+      );
+      const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [formData.players[4].steamId, seasonDetails.id]
+      );
+      expect(getPlayerRank.cs2_rank).toEqual(-1);
+      expect(getPlayerRank.csgo_rank).toEqual(-1);
+      expect(getPlayerRank.cs_hours).toEqual(112);
+      expect(getPlayerRank.faceit_level).toEqual(6);
+      expect(getPlayerRank.faceit_elo).toEqual(1301);
+      expect(getPlayerRank.faceit_kd).toEqual(1.35);
+      const date = new Date();
+      const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      expect(getPlayerRank.rank_updated_at).toContain(formatted);
+      expect(getPlayerRank.hours_updated_at).toContain(formatted);
+      expect(getPlayerRank.faceit_date).toContain(formatted);
     });
-    it("Should pass when rank is has been added manually by organizer into database, but not hours", async () => {
+    it("Should pass when rank is has been added manually by organizer into database, but hours come from steam", async () => {
       updateFetchMock([
         {
           urlContains:
@@ -1048,6 +1067,13 @@ describe("Season team registration services", () => {
               ]
             }
           } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {}
+          }
         }
       ]);
       const formData = _.cloneDeep(validSignupData);
@@ -1074,8 +1100,105 @@ describe("Season team registration services", () => {
       expect(rankForSeason.faceit_kd).toEqual(null);
       expect(rankForSeason.faceit_level).toEqual(null);
       expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
+      // 4 times for app id rank, 4 times for external rank, except added player to db, 5 times for hours
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(13);
+
+      await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
+        idToRemove.insertId
+      ]);
+    });
+    it("Should pass when rank has been added manually by organizer into database, external rank is null", async () => {
+      updateFetchMock([
+        {
+          urlContains:
+            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
+          response: {
+            games: [
+              {
+                isCs2: true,
+                dataSource: "matchmaking",
+                rankType: 11,
+                skillLevel: 23430,
+                gameFinishedAt: new Date().toISOString()
+              },
+              {
+                isCs2: true,
+                dataSource: "faceit",
+                elo: 2333,
+                rankType: null,
+                skillLevel: null,
+                gameFinishedAt: new Date().toISOString()
+              }
+            ]
+          } satisfies LeetifyResponse
+        },
+        {
+          urlContains:
+            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
+          response: {
+            games: []
+          } satisfies LeetifyResponse
+        },
+        {
+          urlContains: "GetOwnedGames",
+          response: {
+            response: {
+              games: [
+                {
+                  appid: 730,
+                  playtime_forever: 6747
+                }
+              ]
+            }
+          } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {
+              csgo: {
+                faceit_elo: 1500,
+                skill_level: 24000
+              }
+            }
+          }
+        }
+      ]);
+      const formData = _.cloneDeep(validSignupData);
+      const idToRemove = await runQuery<{ insertId: number }>(
+        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, faceit_level, faceit_elo, faceit_kd, faceit_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+          formData.players[4].steamId,
+          seasonDetails.id,
+          10001,
+          null,
+          null,
+          null,
+          "1970-01-01 10:00:00"
+        ]
+      );
+
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        seasonDetails.platform,
+        formData.teamId,
+        formData.players.map((player) => player.steamId)
+      );
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [formData.players[4].steamId, seasonDetails.id]
+      );
+
+      expect(rankForSeason.cs2_rank).toEqual(10001);
+      expect(rankForSeason.cs_hours).toEqual(112);
+      expect(rankForSeason.faceit_elo).toEqual(null);
+      expect(rankForSeason.faceit_kd).toEqual(null);
+      expect(rankForSeason.faceit_level).toEqual(null);
+      expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
       // 4 times for app id rank, except added player to db, 5 times for hours
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(9);
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(13);
 
       await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
         idToRemove.insertId
@@ -1125,6 +1248,13 @@ describe("Season team registration services", () => {
               ]
             }
           } satisfies IPlayerServiceResponse
+        },
+        {
+          urlContains: "https://open.faceit.com/data/v4/players?game",
+          response: {
+            player_id: "123",
+            games: {}
+          }
         }
       ]);
       const formData = _.cloneDeep(validSignupData);
@@ -1151,11 +1281,8 @@ describe("Season team registration services", () => {
         );
         expect(rankForSeason.cs2_rank).toEqual(7500);
         expect(rankForSeason.cs_hours).toEqual(112);
-        // 5 times for app id rank, 5 times for hours
-        expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(10);
-      } catch (_error) {
-        // Should not error
-        expect(true).toBe(false);
+        // 5 times for app id rank, 5 times for external rank, 5 times for hours
+        expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
       } finally {
         await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
           idToRemove.insertId
@@ -1240,34 +1367,30 @@ describe("Season team registration services", () => {
       ]);
       const formData = _.cloneDeep(validSignupData);
 
-      try {
-        await registrationServices.addPlayersForTeamInSeason(
-          seasonDetails.id,
-          seasonDetails.app_id,
-          SeasonPlatform.FACEIT,
-          formData.teamId,
-          formData.players.map((player) => player.steamId)
-        );
-        const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
-          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-          [formData.players[4].steamId, seasonDetails.id]
-        );
-        expect(getPlayerRank.cs2_rank).toEqual(-1);
-        expect(getPlayerRank.csgo_rank).toEqual(-1);
-        expect(getPlayerRank.cs_hours).toEqual(112);
-        // -3 as it's over 12 months
-        expect(getPlayerRank.faceit_level).toEqual(faceitReturnLevelCsGo - 3);
-        // 15 % away as it's over 12 months
-        expect(getPlayerRank.faceit_elo).toEqual(faceitReturnEloCsGo * 0.85);
-        expect(getPlayerRank.faceit_kd).toEqual(1.35);
-        const date = new Date();
-        const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-        expect(getPlayerRank.rank_updated_at).toContain(formatted);
-        expect(getPlayerRank.hours_updated_at).toContain(formatted);
-        expect(getPlayerRank.faceit_date).toContain(formatted);
-      } catch (_error) {
-        expect(true).toBe(false);
-      }
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        SeasonPlatform.FACEIT,
+        formData.teamId,
+        formData.players.map((player) => player.steamId)
+      );
+      const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [formData.players[4].steamId, seasonDetails.id]
+      );
+      expect(getPlayerRank.cs2_rank).toEqual(-1);
+      expect(getPlayerRank.csgo_rank).toEqual(-1);
+      expect(getPlayerRank.cs_hours).toEqual(112);
+      // -3 as it's over 12 months
+      expect(getPlayerRank.faceit_level).toEqual(faceitReturnLevelCsGo - 3);
+      // 15 % away as it's over 12 months
+      expect(getPlayerRank.faceit_elo).toEqual(faceitReturnEloCsGo * 0.85);
+      expect(getPlayerRank.faceit_kd).toEqual(1.35);
+      const date = new Date();
+      const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      expect(getPlayerRank.rank_updated_at).toContain(formatted);
+      expect(getPlayerRank.hours_updated_at).toContain(formatted);
+      expect(getPlayerRank.faceit_date).toContain(formatted);
     });
   });
   describe("setCaptainPermissionsForSeason", () => {

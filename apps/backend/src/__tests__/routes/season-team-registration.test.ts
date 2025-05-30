@@ -15,7 +15,7 @@ const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
     returnValue
       ? ({
           app_id: 730,
-          platform: SeasonPlatform.Kanaliiga,
+          platform: SeasonPlatform.FACEIT,
           ...returnValue
         } as SeasonDetails)
       : undefined
