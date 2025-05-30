@@ -5,4 +5,5 @@ export interface Organizations {
   organization_code: string;
   website: string;
   country: string;
+  sort_order: number | null;
 }

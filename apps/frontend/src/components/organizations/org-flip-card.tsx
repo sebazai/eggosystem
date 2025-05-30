@@ -11,16 +11,18 @@ import {
   CardDescription
 } from "@/components/ui/card";
 import type { Organizations } from "@eggosystem/types";
-import { createOrgLogoUrl } from "@/lib/utils";
+import { cn, createOrgLogoUrl } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NextImageFallback } from "../layout/image-with-fallback";
 
 interface OrganizationFlipCardProps {
   organization: Organizations;
+  isSupportingOrg: boolean;
 }
 
 const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
-  organization
+  organization,
+  isSupportingOrg
 }) => {
   const router = useRouter();
   const [isFlipped, setIsFlipped] = useState(false);
@@ -101,7 +103,12 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
         }`}
       >
         {/* Front of Card */}
-        <Card className="w-full h-full flex flex-col gap-4">
+        <Card
+          className={cn(
+            "w-full h-full flex flex-col gap-4",
+            isSupportingOrg && "border-kanaliiga-orange"
+          )}
+        >
           <CardHeader className="flex-shrink-0">
             <CardTitle>{companyName}</CardTitle>
           </CardHeader>
@@ -122,7 +129,12 @@ const OrganizationFlipCard: React.FC<OrganizationFlipCardProps> = ({
           className="absolute inset-0 rotate-y-180 backface-hidden"
           aria-hidden={!isFlipped}
         >
-          <Card className="w-full h-full flex flex-col">
+          <Card
+            className={cn(
+              "w-full h-full flex flex-col",
+              isSupportingOrg && "border-kanaliiga-orange"
+            )}
+          >
             <CardHeader>
               <CardTitle>{companyName}</CardTitle>
               <CardDescription>
