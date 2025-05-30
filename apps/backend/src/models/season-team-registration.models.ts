@@ -8,6 +8,7 @@ import type {
   SeasonTeamPlayer,
   SeasonTeamRegistration,
   SignupFormValues,
+  SignupPlayerType,
   SteamPlayer,
   Team,
   UpdateSeasonTeamRegistration
@@ -131,29 +132,26 @@ interface TeamSignupQueryData extends SeasonTeamRegistration {
 const transformTeamSignupData = (rows: TeamSignupQueryData[]) => {
   if (!rows.length) return null;
 
-  const {
-    organization_id,
-    team_id,
-    external_platform_id,
-    captain_steam_id,
-    co_captain_steam_id
-  } = rows[0];
+  const captain = rows.find((row) => row.steam_id === row.captain_steam_id);
+  const coCaptain = rows.find(
+    (row) => row.steam_id === row.co_captain_steam_id
+  );
 
   const players = rows.map((row) => {
     const steamId = row.steam_id;
     return {
       accountId: 0,
       nickname: "",
-      steamId: row.steam_id,
-      captain: steamId === captain_steam_id,
-      coCaptain: steamId === co_captain_steam_id
-    };
+      steamId: String(row.steam_id),
+      captain: steamId === captain?.steam_id,
+      coCaptain: steamId === coCaptain?.steam_id
+    } satisfies SignupPlayerType;
   });
 
   return {
-    organizationId: organization_id,
-    teamId: team_id,
-    teamExternalId: external_platform_id ?? undefined,
+    organizationId: rows[0].organization_id,
+    teamId: rows[0].team_id,
+    teamExternalId: rows[0].external_platform_id ?? undefined,
     newOrganization: undefined,
     newTeam: undefined,
     players,
@@ -163,7 +161,8 @@ const transformTeamSignupData = (rows: TeamSignupQueryData[]) => {
 
 export const getTeamSignupData = async (seasonId: number, teamId: number) => {
   const query = `
-    SELECT str.*, stp.steam_id, o.id as organization_id, t.id as team_id FROM SeasonTeamRegistrations str
+    SELECT str.*, stp.steam_id, o.id as organization_id, t.id as team_id 
+    FROM SeasonTeamRegistrations str
       INNER JOIN SeasonTeamPlayers stp ON stp.season_id = str.season_id AND stp.team_id = str.team_id
       INNER JOIN Teams t ON t.id = str.team_id
       INNER JOIN Organizations o ON o.id = t.organization_id

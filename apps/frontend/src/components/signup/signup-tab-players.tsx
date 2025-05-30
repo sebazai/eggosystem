@@ -184,12 +184,13 @@ export const TabPlayers = ({
   });
 
   useEffect(() => {
-    const handlePlayer = async (steam_id: string, index: number) => {
+    const handlePlayer = async (steam_id: string | number, index: number) => {
       try {
+        const steamId = String(steam_id);
         if (
-          steam_id.length === 17 &&
-          !isNaN(Number(steam_id)) &&
-          !prevWatchedSteamIds.current.includes(steam_id)
+          steamId.length === 17 &&
+          !isNaN(Number(steamId)) &&
+          !prevWatchedSteamIds.current.includes(steamId)
         ) {
           setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
@@ -288,7 +289,7 @@ export const TabPlayers = ({
           } else {
             if (playerData.reason instanceof ApiError) {
               if (playerData.reason.status === 404)
-                setNewPlayers((prev) => [...prev, steam_id]);
+                setNewPlayers((prev) => [...prev, steamId]);
             }
           }
 

@@ -491,18 +491,6 @@ export const SignupForm = ({
 
             <div className="flex gap-2 w-full pt-5">
               <Button
-                type="button"
-                onClick={() => saveAsDraft(form.getValues())}
-                variant="secondary"
-                className="w-[50%]"
-                disabled={
-                  form.formState.isSubmitting ||
-                  form.formState.isSubmitSuccessful
-                }
-              >
-                Save as draft
-              </Button>
-              <Button
                 type="reset"
                 onClick={() => {
                   setActiveTab("organization");
@@ -516,6 +504,17 @@ export const SignupForm = ({
                 }
               >
                 Reset
+              </Button>
+              <Button
+                type="button"
+                onClick={() => saveAsDraft(form.getValues())}
+                className="w-[50%]"
+                disabled={
+                  form.formState.isSubmitting ||
+                  form.formState.isSubmitSuccessful
+                }
+              >
+                Save as draft
               </Button>
             </div>
           </CardContent>
