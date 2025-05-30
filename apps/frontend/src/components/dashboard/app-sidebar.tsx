@@ -38,26 +38,26 @@ const data: { navMain: Array<MenuItem> } = {
       title: "Kanahub",
       url: createBaseUrl(),
       items: [
-        {
-          title: "Organizations",
-          url: `${createDashboardNextUrl("organizations")}`,
-          requiredRoles: ["org-owner"]
-        },
-        {
-          title: "Teams",
-          url: `${createDashboardNextUrl("teams")}`,
-          requiredRoles: ["org-owner", "team-owner"]
-        },
-        {
-          title: "Players",
-          url: `${createDashboardNextUrl("players")}`,
-          requiredRoles: []
-        },
-        {
-          title: "Seasons",
-          url: `${createDashboardNextUrl("seasons")}`,
-          requiredRoles: ["helpdesk"]
-        }
+        // {
+        //   title: "Organizations",
+        //   url: `${createDashboardNextUrl("organizations")}`,
+        //   requiredRoles: ["org-owner"]
+        // },
+        // {
+        //   title: "Teams",
+        //   url: `${createDashboardNextUrl("teams")}`,
+        //   requiredRoles: ["org-owner", "team-owner"]
+        // },
+        // {
+        //   title: "Players",
+        //   url: `${createDashboardNextUrl("players")}`,
+        //   requiredRoles: []
+        // },
+        // {
+        //   title: "Seasons",
+        //   url: `${createDashboardNextUrl("seasons")}`,
+        //   requiredRoles: ["helpdesk"]
+        // }
       ] satisfies Array<SubMenuItem>
     },
     {
@@ -65,10 +65,10 @@ const data: { navMain: Array<MenuItem> } = {
       url: "#",
       requiredRoles: ["helpdesk"],
       items: [
-        {
-          title: "Teams",
-          url: "#"
-        },
+        // {
+        //   title: "Teams",
+        //   url: "#"
+        // },
         {
           title: "Add rank",
           url: createDashboardNextUrl("registration/rank")
@@ -76,43 +76,43 @@ const data: { navMain: Array<MenuItem> } = {
         {
           title: "Add manual approval",
           url: createDashboardNextUrl("registration/approval")
-        },
-        {
-          title: "Player test",
-          url: "#"
-        },
-        {
-          title: "League sortter",
-          url: "#"
         }
-      ] satisfies Array<SubMenuItem>
-    },
-    {
-      title: "Demo parser",
-      url: "#",
-      requiredRoles: ["admin"],
-      items: [
-        {
-          title: "Problems",
-          url: "#"
-        },
-        {
-          title: "Flagged matches",
-          url: "#"
-        }
-      ] satisfies Array<SubMenuItem>
-    },
-    {
-      title: "Helpdesk",
-      url: "#",
-      requiredRoles: ["helpdesk"],
-      items: [
-        {
-          title: "Substitute player",
-          url: "#"
-        }
+        // {
+        //   title: "Player test",
+        //   url: "#"
+        // },
+        // {
+        //   title: "League sortter",
+        //   url: "#"
+        // }
       ] satisfies Array<SubMenuItem>
     }
+    // {
+    //   title: "Demo parser",
+    //   url: "#",
+    //   requiredRoles: ["admin"],
+    //   items: [
+    //     {
+    //       title: "Problems",
+    //       url: "#"
+    //     },
+    //     {
+    //       title: "Flagged matches",
+    //       url: "#"
+    //     }
+    //   ] satisfies Array<SubMenuItem>
+    // },
+    // {
+    //   title: "Helpdesk",
+    //   url: "#",
+    //   requiredRoles: ["helpdesk"],
+    //   items: [
+    //     {
+    //       title: "Substitute player",
+    //       url: "#"
+    //     }
+    //   ] satisfies Array<SubMenuItem>
+    // }
   ]
 };
 
