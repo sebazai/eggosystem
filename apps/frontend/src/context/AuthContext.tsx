@@ -9,6 +9,7 @@ import {
   useState
 } from "react";
 import type { UserFullPayload } from "@eggosystem/types";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: UserFullPayload | null;
@@ -39,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     try {
       await clientApiFetch("/api/v1/auth/logout");
+      toast.success("Logged out successfully");
     } finally {
       setUser(null);
     }
