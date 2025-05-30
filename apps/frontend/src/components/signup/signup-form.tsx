@@ -249,15 +249,9 @@ export const SignupForm = ({
           body: JSON.stringify(data)
         }
       );
-      setSuccessMessage(
-        isEditMode
-          ? "Team edited successfully"
-          : "Team registered succesfully, please remember to pay participation fee."
-      );
+      setSuccessMessage(`Team registered succesfully, please remember to`);
       toast.success(
-        isEditMode
-          ? "Team edited successfully"
-          : "Team registered successfully, please remember to pay participation fee."
+        "Team registered successfully, please remember to pay participation fee."
       );
       setEditUrl(
         `${createBaseUrl()}/seasons/${seasonId}/signup/team/${returnValue.team_id}/edit`
@@ -432,7 +426,15 @@ export const SignupForm = ({
             {successMessage && (
               <div>
                 <div className="text-green-500 font-semibold py-2">
-                  {successMessage}
+                  {successMessage}{" "}
+                  {successMessage.includes("please remember to") && (
+                    <Link
+                      className="text-kanaliiga-orange hover:underline"
+                      href="https://kanaliiga.fi/p/34437/osallistumismaksut/cskausimaksu_s4"
+                    >
+                      pay participation fee.
+                    </Link>
+                  )}
                 </div>
                 {editUrl && (
                   <div className="gap-2">
