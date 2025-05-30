@@ -229,6 +229,7 @@ export async function up(knex: Knex): Promise<void> {
       table.integer("team_id").unsigned().notNullable();
       table.specificType("map_id", "TINYINT UNSIGNED").notNullable();
       table.enum("action", ["drop", "pick", "decider"]).notNullable();
+      table.enum("opponent_start", ["CT", "T"]).nullable();
       table.specificType("veto_order", "TINYINT UNSIGNED").notNullable();
       table
         .foreign(["match_id", "team_id"])

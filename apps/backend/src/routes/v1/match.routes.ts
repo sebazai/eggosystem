@@ -7,7 +7,8 @@ import {
   getMatchGamesController,
   getMatchInfoController,
   getMatchController,
-  getMatchGameController
+  getMatchGameController,
+  getMatchMapVetoesController
 } from "../../controllers/matches.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -41,6 +42,12 @@ router.get(
   "/:match_id/topplayers",
   validateNumericParams(),
   getMatchTopPlayersController
+);
+
+router.get(
+  "/:match_id/vetoes",
+  validateNumericParams(),
+  getMatchMapVetoesController
 );
 
 router.get("/", getMatchesController);

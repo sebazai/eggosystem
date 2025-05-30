@@ -8,7 +8,8 @@ import {
   getMatchGames,
   getMatchInfo,
   getMatch,
-  getMatchGame
+  getMatchGame,
+  getMatchMapVetoes
 } from "../models/match.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
@@ -109,4 +110,13 @@ export const getMatchGamesController = async (
   const mapsPlayed = await getMatchGames(match_id);
 
   res.json(mapsPlayed);
+};
+
+export const getMatchMapVetoesController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+  const vetoes = await getMatchMapVetoes(matchId);
+  res.json(vetoes || []);
 };

@@ -258,3 +258,33 @@ export const getMatchInfo = async (
 
   return match;
 };
+
+export interface MatchMapVetoWithMapName {
+  id: number;
+  match_id: number;
+  team_id: number;
+  map_id: number;
+  map_name: string;
+  action: "drop" | "pick" | "decider";
+  veto_order: number;
+  opponent_start: "CT" | "T" | null;
+}
+
+export const getMatchMapVetoes = async (match_id: number): Promise<MatchMapVetoWithMapName[]> => {
+  const query = `
+    SELECT 
+      v.id,
+      v.match_id,
+      v.team_id,
+      v.map_id,
+      m.name as map_name,
+      v.action,
+      v.veto_order,
+      v.opponent_start
+    FROM MatchTeamMapVetoes v
+    JOIN Maps m ON v.map_id = m.id
+    WHERE v.match_id = ?
+    ORDER BY v.veto_order ASC
+  `;
+  return runQuery<MatchMapVetoWithMapName[]>(query, [match_id]);
+};
