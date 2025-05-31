@@ -47,6 +47,7 @@ services:
       - "traefik.http.routers.hubbe-secure.service=hubbe"
       - "traefik.http.services.hubbe.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
+    restart: always
 
   frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend
@@ -74,6 +75,7 @@ services:
       - "traefik.http.routers.kanahub-secure.service=kanahub"
       - "traefik.http.services.kanahub.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
+    restart: always
 
   eggo-prod-db:
     image: bitnami/mariadb:11.4.2
@@ -126,6 +128,7 @@ services:
     command: "npx knex migrate:latest"
     networks:
       - web
+    restart: always
 
   maxscale:
     image: mariadb/maxscale:24.02
@@ -135,6 +138,7 @@ services:
       - ./maxscale-logs:/var/log/maxscale
     networks:
       - web
+    restart: always
 
   phpmyadmin-hub:
     depends_on:

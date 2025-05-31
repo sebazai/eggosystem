@@ -47,6 +47,7 @@ services:
       - "traefik.http.routers.hubbestaging-secure.service=hubbedev"
       - "traefik.http.services.hubbedev.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
+    restart: always
 
   frontend:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:staging
@@ -74,6 +75,7 @@ services:
       - "traefik.http.routers.kanahubstaging-secure.service=kanahubdev"
       - "traefik.http.services.kanahubdev.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
+    restart: always
 
   eggo-staging-db:
     image: bitnami/mariadb:11.4.2
@@ -156,6 +158,7 @@ services:
     command: "npx knex migrate:latest"
     networks:
       - web
+    restart: always
 
 networks:
   web:
