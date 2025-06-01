@@ -267,7 +267,6 @@ export interface MatchMapVetoWithMapName {
   map_name: string;
   action: "drop" | "pick" | "decider";
   veto_order: number;
-  opponent_start: "CT" | "T" | null;
 }
 
 export const getMatchMapVetoes = async (match_id: number): Promise<MatchMapVetoWithMapName[]> => {
@@ -279,8 +278,7 @@ export const getMatchMapVetoes = async (match_id: number): Promise<MatchMapVetoW
       v.map_id,
       m.name as map_name,
       v.action,
-      v.veto_order,
-      v.opponent_start
+      v.veto_order
     FROM MatchTeamMapVetoes v
     JOIN Maps m ON v.map_id = m.id
     WHERE v.match_id = ?
