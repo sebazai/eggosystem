@@ -335,6 +335,14 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                       key={`${player.nickname}-${index}`}
                       className="border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10 cursor-pointer"
                       onClick={() => handleRowClick(player.steam_id)}
+                      onMouseDown={(e) => {
+                        // Handle middle mouse button (wheel) click
+                        if (e.button === 1) {
+                          e.preventDefault(); // Prevent scroll behavior
+                          const url = `/players/${encodeURIComponent(player.steam_id)}?${filterParamsToSearchParams(filterQueryParams).toString()}`;
+                          window.open(url, '_blank');
+                        }
+                      }}
                     >
                       <td
                         className={cn("px-3 py-2", columnResponsive.nickname)}

@@ -340,6 +340,16 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
                           : `/matches/${match.match_id}`
                       )
                     }
+                    onMouseDown={(e) => {
+                      // Handle middle mouse button (wheel) click
+                      if (e.button === 1) {
+                        e.preventDefault(); // Prevent scroll behavior
+                        const url = match.game_id
+                          ? `/matches/${match.match_id}/games/${match.game_id}`
+                          : `/matches/${match.match_id}`;
+                        window.open(url, '_blank');
+                      }
+                    }}
                   >
                     <td className="px-3 py-2 text-left">
                       <span>{match.opponent_name}</span>
