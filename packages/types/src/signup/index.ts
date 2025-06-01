@@ -27,7 +27,7 @@ const playerSchema = z
   )
   .refine(
     (player) => !isNaN(Number(player.steamId)) && player.steamId.length === 17,
-    { message: "Invalid SteamID", path: ["steam_id"] }
+    { message: "Invalid SteamID", path: ["steamId"] }
   );
 
 const newOrganizationSchema = z

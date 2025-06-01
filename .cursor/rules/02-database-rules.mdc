@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Database Rules & Patterns
+
+This document defines database handling rules and patterns for the Kanaliiga Eggosystem project.
+
+## Database Schema Reference
+
+- **Database Handling**: When discussing database operations, reference the schema defined in docs/database.md. Full schema can be found in apps/backend/migrations/20250127080330_database_schema.ts
+
+## Relationship Patterns
+
+- **Database Relationships**: Pay special attention to many-to-many relationships that use join tables (e.g., SeasonLeagues connects Seasons and Leagues). When writing queries, always ensure you join to the appropriate tables and reference columns from the correct tables (e.g., use `sl.season_id` not `l.season_id` when joining Leagues with SeasonLeagues).
+
+- **PlayerStats Table Structure**: Note that the PlayerStats table links to MatchGames via `game_id` column, not directly to Matches. Always join PlayerStats to MatchGames first (ps.game_id = mg.id), then to Matches (mg.match_id = m.id) when creating queries that need match information.
+
+- **Player-Team Relationships**: SteamPlayers do not have a direct `team_id` column. The relationship between players and teams is managed through the SeasonTeamPlayers table, not TeamRosters (which may be empty). Players may have played for different teams in the same season, and the team recorded in MatchTeams might not always match the team in SeasonTeamPlayers. When filtering player statistics by team, avoid using conditions that require an exact match between MatchTeams.team_id and SeasonTeamPlayers.team_id, as this can filter out valid stats.
+
+## Query Patterns
+
+- **Filtering by Team**: When filtering by team, use the `SeasonTeamPlayers` table for the relationship, not other tables. Use INNER JOIN instead of LEFT JOIN when applying team-specific filters.
+
+- **Query Pattern**: Follow the established pattern in player.models.ts for applying filters to database queries. Always include proper JOIN conditions and column references.
+
+- **Dynamic JOIN Types**: Use dynamic JOIN types based on filter presence. For team filtering, use: `const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";` to prevent data exclusion when filters aren't applied.
+
+- **Leagues Table References**: When filtering by league_ids, always join to the Leagues table explicitly and use `l.id` instead of `m.league_id` in WHERE clauses.
+
+- **Query Debugging**: Include query and parameter logging for easier debugging of SQL queries, especially for filtering operations.

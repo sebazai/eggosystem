@@ -15,7 +15,8 @@ import {
   type Control,
   type UseFormResetField,
   type UseFormSetValue,
-  type UseFormWatch
+  type UseFormWatch,
+  useFormContext
 } from "react-hook-form";
 import { createNextUrl } from "@/lib/utils";
 import {
@@ -38,7 +39,6 @@ import type {
   SignupFormValues
 } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
-import { playerSchema } from "@eggosystem/types";
 import { AlertTriangle, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./signup-player-alert";
@@ -58,6 +58,7 @@ interface TabPlayersProps {
   seasonId: string;
   isEditMode: boolean;
   isDraft: boolean;
+  validCaptainSelection: boolean;
 }
 
 export const TabPlayers = ({
@@ -70,7 +71,8 @@ export const TabPlayers = ({
   platform,
   seasonId,
   isEditMode,
-  isDraft
+  isDraft,
+  validCaptainSelection
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
@@ -79,6 +81,18 @@ export const TabPlayers = ({
   const [openItems, setOpenItems] = useState<string[]>([]);
   const [hardCarrySteamId, setHardCarrySteamId] = useState("");
   const auth = useAuth();
+  const { formState } = useFormContext();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "players"
+  });
+  // Detect duplicate Steam ID error at array level
+  const duplicateSteamIdError =
+    typeof formState.errors?.players === "object" &&
+    !Array.isArray(formState.errors.players) &&
+    typeof formState.errors.players?.message === "string" &&
+    formState.errors.players.message.includes("unique Steam ID");
+
   useEffect(() => {
     if (
       auth.user?.provider === "steam" &&
@@ -115,29 +129,57 @@ export const TabPlayers = ({
   // Open accordions if any errors
   useEffect(() => {
     const errorIndices: string[] = [];
-    for (const [index, player] of watchPlayers.entries()) {
-      if (loadingStates[index] === undefined) {
-        continue;
-      }
-      const error =
-        player.steamId.length === 17 &&
-        (playerSchema.safeParse(player).success === false ||
-          player.hasValidData !== true ||
-          player.hasValidWorkEmail !== true ||
-          player.isProfilePublic !== true ||
-          player.isEmailVerified !== true ||
-          player.hours === undefined ||
-          player.hours === -1 ||
-          (player.rank === -1 && player.externalRank === -1));
-
-      if (error && !loadingStates[index]) {
-        errorIndices.push(`player-${index}`);
-      }
+    if (Array.isArray(formState.errors?.players)) {
+      formState.errors.players.forEach((err, idx) => {
+        if (err && (err as unknown as { steamId?: unknown }).steamId) errorIndices.push(`player-${idx}`);
+      });
     }
+    playerErrorIndices
+      .map(Number)
+      .filter((index) => !isNaN(index))
+      .forEach((index) => errorIndices.push(`player-${index}`));
+    // If duplicate error, open all accordions
+    if (duplicateSteamIdError) {
+      fields.forEach((_, idx) => errorIndices.push(`player-${idx}`));
+    }
+    
+    // Check for real-time duplicates and open those accordions
+    const steamIdCounts = new Map<string, number[]>();
+    watchPlayers.forEach((player, idx) => {
+      if (player.steamId && player.steamId.length > 0) {
+        if (!steamIdCounts.has(player.steamId)) {
+          steamIdCounts.set(player.steamId, []);
+        }
+        steamIdCounts.get(player.steamId)!.push(idx);
+      }
+    });
+    
+    // Add accordion indices for duplicate Steam IDs
+    steamIdCounts.forEach((indices) => {
+      if (indices.length > 1) {
+        indices.forEach(idx => errorIndices.push(`player-${idx}`));
+      }
+    });
+    
+    // Add accordion indices for players with validation issues
+    watchPlayers.forEach((player, idx) => {
+      if (player.steamId && player.steamId.length === 17) {
+        // Check for various validation issues that should open the accordion
+        if (player.isProfilePublic === false ||
+            player.hours === -1 ||
+            (player.rank === -1 && player.externalRank === -1) ||
+            player.hasValidData === false ||
+            player.isEmailVerified === false ||
+            player.hasValidWorkEmail === false) {
+          errorIndices.push(`player-${idx}`);
+        }
+      }
+    });
+    
     if (errorIndices.length > 0) {
-      setOpenItems(errorIndices);
+      setOpenItems(Array.from(new Set(errorIndices)));
     }
-  }, [loadingStates, watchPlayers]);
+  }, [formState.errors, playerErrorIndices, fields, duplicateSteamIdError, watchPlayers]);
 
   useEffect(() => {
     if (watchPlayers.length >= 5) {
@@ -177,11 +219,6 @@ export const TabPlayers = ({
       }
     }
   }, [watchPlayers]);
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "players"
-  });
 
   useEffect(() => {
     const handlePlayer = async (steam_id: string | number, index: number) => {
@@ -381,6 +418,45 @@ export const TabPlayers = ({
             const isHardCarry =
               hardCarrySteamId !== "" && hardCarrySteamId === player.steamId;
 
+            const debugNickname = player.nickname;
+            if (debugNickname) {
+              // eslint-disable-next-line no-console
+              console.log(`Rendering player-nickname-${index}:`, debugNickname);
+            }
+
+            const steamIdError = Array.isArray(formState.errors?.players)
+              ? formState.errors.players[index]?.steamId
+              : undefined;
+            
+            // Real-time duplicate detection - check if current Steam ID appears elsewhere in the form
+            const currentSteamId = player.steamId;
+            const isDuplicate = currentSteamId && 
+                               currentSteamId.length > 0 && 
+                               watchPlayers.filter(p => p.steamId === currentSteamId).length > 1;
+            
+            // Check if field is valid (no error, has value, and has loaded nickname indicating successful validation)
+            const steamIdValid = !steamIdError && 
+                                 !duplicateSteamIdError && 
+                                 !isDuplicate &&
+                                 player.steamId && 
+                                 player.steamId.length === 17 && 
+                                 player.nickname &&
+                                 player.isProfilePublic !== false &&  // Must have public profile
+                                 player.hours !== -1 &&               // Must have valid hours
+                                 (player.rank !== -1 || player.externalRank !== -1) && // Must have valid rank
+                                 player.hasValidData !== false &&     // Must have valid account data
+                                 !loadingStates[index]; // Not currently loading
+
+            // Check if field has validation issues that should show red border
+            const hasValidationIssues = player.steamId && 
+                                       player.steamId.length === 17 && 
+                                       (player.isProfilePublic === false ||
+                                        player.hours === -1 ||
+                                        (player.rank === -1 && player.externalRank === -1) ||
+                                        player.hasValidData === false ||
+                                        player.isEmailVerified === false ||
+                                        player.hasValidWorkEmail === false);
+
             return (
               <AccordionItem
                 className="space-y-2 border-b-0"
@@ -401,7 +477,7 @@ export const TabPlayers = ({
                           {player.nickname ? (
                             <span>
                               Player:{" "}
-                              <span className="text-kanaliiga-orange">
+                              <span className="text-kanaliiga-orange" data-testid={`player-nickname-${index}`}>
                                 {player.nickname}
                               </span>
                             </span>
@@ -413,7 +489,14 @@ export const TabPlayers = ({
                           <div className="relative">
                             <Input
                               {...field}
-                              className="w-full"
+                              className={
+                                "w-full " +
+                                ((steamIdError || duplicateSteamIdError || isDuplicate || hasValidationIssues)
+                                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                                  : steamIdValid
+                                  ? "border-green-500 focus:border-green-500 focus:ring-green-500"
+                                  : "")
+                              }
                               onClick={(e) => e.stopPropagation()}
                               disabled={loadingStates[index]}
                               data-testid={`steam-id-input-${index}`}
@@ -439,11 +522,11 @@ export const TabPlayers = ({
                                     `players.${index}.isProfilePublic`,
                                     undefined
                                   );
-                                  setValue(`players.${index}.hours`, undefined);
-                                  setValue(`players.${index}.rank`, undefined);
+                                  setValue(`players.${index}.hours`, -1);
+                                  setValue(`players.${index}.rank`, -1);
                                   setValue(
                                     `players.${index}.externalRank`,
-                                    undefined
+                                    -1
                                   );
                                   setLoadingStates((prev) => ({
                                     ...prev,
@@ -519,6 +602,7 @@ export const TabPlayers = ({
                                 player.hasValidData === undefined &&
                                 newPlayers.includes(player.steamId)
                               }
+                              data-testid={`captain-checkbox-${index}`}
                             />
                           </FormControl>
                           <FormLabel className="cursor-pointer">
@@ -542,6 +626,7 @@ export const TabPlayers = ({
                                 player.hasValidData === undefined &&
                                 newPlayers.includes(player.steamId)
                               }
+                              data-testid={`co-captain-checkbox-${index}`}
                             />
                           </FormControl>
                           <FormLabel className="cursor-pointer">
@@ -634,14 +719,18 @@ export const TabPlayers = ({
                     )}
 
                   {player.hasValidData === false && (
-                    <SignupPlayerNotification>
-                      Ask the player to sign up for Kanahub.
+                    <SignupPlayerNotification
+                      data-testid={`policy-acceptance-error-${index}`}
+                    >
+                      Ask the player to sign up for Kanahub & Accept the latest privacy policy.
                     </SignupPlayerNotification>
                   )}
 
                   {player.isEmailVerified === false &&
                     player.hasValidData !== false && (
-                      <SignupPlayerNotification>
+                      <SignupPlayerNotification
+                        data-testid={`email-verification-error-${index}`}
+                      >
                         <div>
                           <span>Player has not verified their email.</span>
                         </div>
@@ -650,7 +739,9 @@ export const TabPlayers = ({
 
                   {player.hasValidWorkEmail === false &&
                     player.hasValidData !== false && (
-                      <SignupPlayerNotification>
+                      <SignupPlayerNotification
+                        data-testid={`work-email-validation-error-${index}`}
+                      >
                         <div>
                           <span>
                             Player does not have a valid work email or has not
@@ -710,6 +801,7 @@ export const TabPlayers = ({
                     type="button"
                     className="w-full mt-1 sm:mt-4"
                     disabled={fields.length <= 5} // Disable if less than 5 players
+                    data-testid={`remove-player-button-${index}`}
                   >
                     Remove Player
                   </Button>
@@ -733,9 +825,25 @@ export const TabPlayers = ({
             }}
             className="w-full my-2 sm:my-4"
             variant={"default"}
+            data-testid="add-player-button"
           >
             Add Player
           </Button>
+        )}
+        {/* Show array-level error message for duplicate Steam ID */}
+        {typeof formState.errors?.players === "object" &&
+          !Array.isArray(formState.errors.players) &&
+          typeof formState.errors.players?.message === "string" && (
+            <div className="text-red-500 text-xs mt-2">
+              {formState.errors.players.message}
+            </div>
+          )}
+        
+        {/* Show captain/co-captain validation error in real-time */}
+        {!validCaptainSelection && watchPlayers.length >= 5 && (
+          <div className="text-red-500 text-xs mt-2" data-testid="captain-validation-error">
+            There must be exactly one captain and one co-captain.
+          </div>
         )}
       </div>
     </TabsContent>

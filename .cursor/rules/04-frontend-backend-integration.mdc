@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Frontend-Backend Integration
+
+This document defines patterns for frontend-backend integration in the Kanaliiga Eggosystem project.
+
+## Data Fetching
+
+- **Data Fetching Pattern**: Use SWR for data fetching with the **nextFetcher** utility from @/lib/utils, not expressFetcher.
+
+- **API Structure**: Create frontend API routes in apps/frontend/src/app/api/v1/... that proxy requests to the backend API endpoints.
+
+- **Request Forwarding**: When forwarding requests from frontend to backend, preserve all query parameters.
+
+## Parameter Handling
+
+- **Parameter Handling**: Use the generateFiltersParamQuery utility for building query parameters from FilterParamsQuery objects.
+
+## Error Handling & Hooks
+
+- **Error Handling**: Always implement proper error handling in both frontend hooks and API routes.
+
+- **Data Hooks**: Follow the pattern in existing hooks (e.g., useTopTeams, usePlayers) that return the data, loading state, error state, and validation state.
+
+- **Hook Return Types**: Ensure hook return types match their implementations. Use `isError` (not `error`) in hook return objects for consistency, as demonstrated in the players and leaderboards hooks.
+
+## Filtering
+
+- **Active Season Handling**: When implementing pages with filtering, always apply the active season as a default filter when no specific season is selected. Use the pattern: `seasons: activeSeason && seasons.length === 0 ? [activeSeason] : seasons` without additional conditions that might prevent the active season from being applied.

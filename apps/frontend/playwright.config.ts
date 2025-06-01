@@ -11,7 +11,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   // Add retries to handle potential initial compilation
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: undefined,
   // Configure multiple reporters
   reporter: [
     ["html", { outputFolder: "playwright-report" }], // HTML report
@@ -44,9 +44,6 @@ export default defineConfig({
   webServer: {
     command: isIntegration ? "pnpm run dev" : "pnpm start:standalone",
     url: "http://localhost:3000",
-    env: {
-      NODE_ENV: "production"
-    },
     reuseExistingServer: !process.env.CI,
     timeout: 20000 // Give the server enough time to start
   }

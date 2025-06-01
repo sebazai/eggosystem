@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Testing Patterns & Conventions
+
+This document defines testing patterns and conventions for the Kanaliiga Eggosystem project.
+
+## Test Structure & Organization
+
+- **Test File Naming**: Follow the pattern `*.test.ts` for unit tests and place them in `src/__tests__/` directories within their respective domains
+- **Test Organization**: Group tests by feature/module, with clear describe blocks for different scenarios
+- **Test Database**: Use separate test database configurations and ensure proper cleanup between tests
+
+## Mock Patterns
+
+- **Database Mocking**: Use proper database mocking strategies that mirror the actual database structure
+- **Request Mocking**: Mock HTTP requests consistently using established patterns
+- **Middleware Testing**: Test middleware functions in isolation with proper request/response mocking
+
+## Backend Testing
+
+- **Model Testing**: Test database models with proper setup and teardown
+- **Controller Testing**: Test API controllers with mocked dependencies
+- **Middleware Testing**: Test parsing and filtering middleware with various input scenarios
+- **Integration Testing**: Test complete request flows from route to response
+
+## Query Testing
+
+- **Filter Parameter Testing**: Test all filtering scenarios including edge cases (empty arrays, null values, invalid IDs)
+- **JOIN Testing**: Verify that database queries use correct JOIN types and table references
+- **ParsedParams Testing**: Ensure middleware correctly parses query parameters into expected `ParsedParams` format
+
+## Test Data Management
+
+- **Seed Data**: Use consistent test data that represents realistic scenarios
+- **Data Cleanup**: Ensure proper cleanup of test data between test runs
+- **Database State**: Test both empty database scenarios and populated database scenarios
+
+## Error Handling Testing
+
+- **Validation Testing**: Test input validation with both valid and invalid data
+- **Error Response Testing**: Verify proper error responses and status codes
+- **Edge Case Testing**: Test boundary conditions and unexpected input scenarios
+- **Frontend Error Detection**: Set up listeners for console errors, uncaught exceptions, and network failures that automatically fail tests when frontend issues occur
+
+## Frontend Error Detection Setup
+
+- **Console Error Monitoring**: Use `page.on('console', ...)` to capture console errors and fail tests
+- **Uncaught Exception Handling**: Use `page.on('pageerror', ...)` to detect JavaScript runtime errors  
+- **Network Failure Detection**: Use `page.on('requestfailed', ...)` to catch failed HTTP requests
+- **Error Collection**: Collect all errors during test execution and fail with detailed error messages
+- **Cleanup**: Use `test.afterEach()` to check for accumulated errors and fail the test if any exist
+
+## Performance Testing
+
+- **Query Performance**: Test that database queries perform efficiently with larger datasets
+- **Memory Usage**: Monitor memory usage in tests, especially for data-heavy operations

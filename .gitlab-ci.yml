@@ -294,6 +294,7 @@ test-e2e:frontend:
     <<: *overwrite-variables
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
+    PRIVACY_POLICY_VERSION: "1"
   before_script:
     - apt-get update && apt-get install -y openssl
     - | # Generate private and public access tokens
@@ -304,13 +305,21 @@ test-e2e:frontend:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - export $(grep -v '^#' .env.development | xargs)
+    # Ensure PRIVACY_POLICY_VERSION is set for E2E tests
+    - export PRIVACY_POLICY_VERSION=1
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
-    - pnpm --filter=backend seed # Run regular seeding
-    - pnpm --filter=backend seed:e2e # Run seeding for test environment
-    - pnpm --filter=backend start &
+    - |
+      echo "🔍 Seeding database with PRIVACY_POLICY_VERSION=$PRIVACY_POLICY_VERSION"
+      pnpm --filter=backend reseed # Cleaning
+      pnpm --filter=backend migrate # Recreate schema after reset
+      pnpm --filter=backend seed # Run regular seeding
+      pnpm --filter=backend seed:e2e # Run seeding for test environment
+      echo "🔍 Seeding complete"
+    - pnpm --filter=backend dev:e2e &
   script:
     - unset NODE_ENV
+    - sleep 10
     - pnpm --filter=frontend test:e2e
   artifacts:
     when: always

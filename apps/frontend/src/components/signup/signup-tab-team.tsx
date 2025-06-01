@@ -12,19 +12,20 @@ import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import { useEffect, useState } from "react";
-import type { Control, UseFormResetField } from "react-hook-form";
+import type { Control, UseFormSetValue } from "react-hook-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 import { useTeamsWithoutOrgs } from "@/hooks/data/useTeamsWithoutOrgs";
 import { ContentContainer } from "../layout/content-container";
 import { Checkbox } from "../ui/checkbox";
 import { RequiredFormLabel } from "../ui/required-form-label";
+import { useFormContext } from "react-hook-form";
 
 interface TabTeamProps {
   watchTeamId: number;
   organizationId?: number;
   control: Control<SignupFormValues>;
-  resetField: UseFormResetField<SignupFormValues>;
+  setValue: UseFormSetValue<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
   platform: string;
@@ -36,7 +37,7 @@ const parseFaceITTeamId = (val: string) => {
   try {
     const parsedUrl = new URL(val);
     const segments = parsedUrl.pathname.split("/").filter(Boolean);
-    return segments.pop() || null;
+    return segments.pop() || "";
   } catch (_error) {
     return val.trim();
   }
@@ -46,7 +47,7 @@ export const TabTeam = ({
   watchTeamId,
   organizationId,
   control,
-  resetField,
+  setValue,
   validTeamSelection,
   onNext,
   platform,
@@ -63,15 +64,16 @@ export const TabTeam = ({
     isLoading: isLoadingTeamsWithoutOrg,
     isValidating: isValidatingTeamsWithoutOrg
   } = useTeamsWithoutOrgs(fetchTeamsWithoutOrg);
+  const { formState } = useFormContext();
 
   useEffect(() => {
     if (!fetchTeamsWithoutOrg && watchTeamId !== -1) {
       const team = teams?.find((team) => team.id === watchTeamId);
       if (!team) {
-        resetField("teamId");
+        setValue("teamId", -1);
       }
     }
-  }, [fetchTeamsWithoutOrg, resetField, teams, watchTeamId]);
+  }, [fetchTeamsWithoutOrg, setValue, teams, watchTeamId]);
 
   if (!organizationId) {
     return <></>;
@@ -145,8 +147,8 @@ export const TabTeam = ({
                 }
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
-                    resetField("teamId");
-                    resetField("newTeam");
+                    setValue("teamId", -1);
+                    setValue("newTeam", { name: "" });
                   }
                   field.onChange(selectedItem?.value);
                 }}
@@ -217,7 +219,12 @@ export const TabTeam = ({
                       field.onChange(parsedValue);
                     }}
                     placeholder={`Team ${platformText} id`}
-                    className="pr-10"
+                    className={
+                      "pr-10 " +
+                      (formState.errors?.teamExternalId
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : "")
+                    }
                     data-testid="team-external-id-input"
                   />
                   {fetchingExternalData && (
@@ -233,7 +240,7 @@ export const TabTeam = ({
               >
                 https://www.faceit.com/fi/teams/ID
               </FormDescription>
-              <FormMessage />
+              <FormMessage data-testid="team-external-id-error" />
             </FormItem>
           )}
         />

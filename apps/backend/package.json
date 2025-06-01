@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node ./dist/server.js",
     "dev": "nodemon",
+    "dev:e2e": "TEST_TYPE=e2e nodemon",
     "lint": "eslint .",
     "migrate": "knex migrate:latest",
     "migrate:rollback": "knex migrate:rollback",

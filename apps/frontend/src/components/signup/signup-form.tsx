@@ -53,8 +53,14 @@ const validateExternalPlaformId = async (
 const defaultValues = {
   organizationId: undefined,
   teamId: undefined,
-  newOrganization: undefined,
-  newTeam: undefined,
+  newOrganization: {
+    name: "",
+    organization_code: "",
+    website: ""
+  },
+  newTeam: {
+    name: ""
+  },
   teamExternalId: "",
   players: Array(5).fill({
     accountId: 0,
@@ -67,9 +73,9 @@ const defaultValues = {
     hasValidWorkEmail: undefined,
     isEmailVerified: undefined,
     isProfilePublic: undefined,
-    hours: undefined,
-    rank: undefined,
-    externalRank: undefined
+    hours: -1,
+    rank: -1,
+    externalRank: -1
   } satisfies SignupPlayerType)
 };
 
@@ -98,7 +104,8 @@ export const SignupForm = ({
 
   const form = useForm({
     resolver: zodResolver(schema),
-    defaultValues: editValues ?? draft ?? defaultValues
+    defaultValues: editValues ?? draft ?? defaultValues,
+    mode: "onBlur"
   });
 
   const { control, setValue, resetField, watch } = form;
@@ -215,7 +222,7 @@ export const SignupForm = ({
     !!validExternalTeamId;
 
   const validPlayerSelection =
-    validPlayers &&
+    validPlayers.success &&
     watchPlayers.every(
       (p) =>
         p.hasValidData &&
@@ -223,6 +230,17 @@ export const SignupForm = ({
         (p.rank !== -1 || p.externalRank !== -1) &&
         p.hours !== -1
     );
+
+  // Real-time captain/co-captain validation
+  const validCaptainSelection = useMemo(() => {
+    const captains = watchPlayers.filter((p) => p.captain === true);
+    const coCaptains = watchPlayers.filter((p) => p.coCaptain === true);
+    return captains.length === 1 && coCaptains.length === 1;
+  }, [watchPlayers]);
+
+  // Updated player selection validation that includes captain/co-captain check
+  const validPlayerSelectionWithCaptains =
+    validPlayerSelection && validCaptainSelection;
 
   useEffect(() => {
     if (isEditMode && validTeamExternalIdInForm.success) {
@@ -315,7 +333,7 @@ export const SignupForm = ({
   const canSubmit =
     validOrganizationSelection &&
     validTeamSelection &&
-    validPlayerSelection &&
+    validPlayerSelectionWithCaptains &&
     hasAcceptedTermsAndConditions;
 
   return (
@@ -366,7 +384,7 @@ export const SignupForm = ({
                   disabled={!validTeamSelection}
                 >
                   Players{" "}
-                  {validPlayerSelection && (
+                  {validPlayerSelectionWithCaptains && (
                     <CheckCheck
                       className={cn(
                         validOrganizationSelection && "text-green-500"
@@ -378,7 +396,7 @@ export const SignupForm = ({
 
               <TabOrganization
                 control={control}
-                resetField={resetField}
+                setValue={setValue}
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
@@ -388,7 +406,7 @@ export const SignupForm = ({
               <TabTeam
                 organizationId={watchOrgId}
                 control={control}
-                resetField={resetField}
+                setValue={setValue}
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}
@@ -412,6 +430,7 @@ export const SignupForm = ({
                 seasonId={seasonId}
                 isEditMode={isEditMode}
                 isDraft={isDraftMode}
+                validCaptainSelection={validCaptainSelection}
               />
             </Tabs>
 
@@ -424,7 +443,7 @@ export const SignupForm = ({
             />
 
             {successMessage && (
-              <div>
+              <div data-testid="success-message">
                 <div className="text-green-500 font-semibold py-2">
                   {successMessage}{" "}
                   {successMessage.includes("please remember to") && (
@@ -516,6 +535,7 @@ export const SignupForm = ({
                   form.formState.isSubmitting ||
                   form.formState.isSubmitSuccessful
                 }
+                data-testid="save-as-draft-button"
               >
                 Save as draft
               </Button>

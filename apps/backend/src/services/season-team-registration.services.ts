@@ -51,8 +51,9 @@ export const ensurePlayerSteamProfilesPublic = async (
 ) => {
   const areProfilePublic = await areSteamProfilesPublic(playerSteamIds);
   if (!areProfilePublic.is_all_public) {
+    const notPublicIds = areProfilePublic.not_public?.join(", ") || "some Steam IDs";
     throw new Error(
-      `Steam IDs ${areProfilePublic.not_public.join(", ")} are not public.`
+      `Steam IDs ${notPublicIds} are not public.`
     );
   }
 };
