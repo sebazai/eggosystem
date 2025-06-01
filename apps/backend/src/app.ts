@@ -31,6 +31,10 @@ if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
   }
 }
 
+// Initialize profiling as early as possible
+import { initializeProfiling } from "./configs/profiling";
+initializeProfiling();
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";

@@ -39,6 +39,7 @@
     "@opentelemetry/sdk-logs": "0.201.0",
     "@opentelemetry/sdk-node": "0.201.0",
     "@opentelemetry/semantic-conventions": "1.33.0",
+    "@pyroscope/nodejs": "^0.4.5",
     "cookie-parser": "1.4.7",
     "cors": "2.8.5",
     "dotenv": "16.5.0",
