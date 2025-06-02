@@ -158,7 +158,7 @@ services:
     command: "npx knex migrate:latest"
     networks:
       - web
-    restart: never
+    restart: no
 
 networks:
   web:
