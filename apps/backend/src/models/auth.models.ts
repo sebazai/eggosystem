@@ -60,6 +60,7 @@ export const createAccountForSteam = async ({
       [account.insertId, steamId, "steam"],
       connection
     );
+    await connection.commit();
     return { account_id: account.insertId, provider_id: steamId };
   } catch (error: unknown) {
     await connection.rollback();
