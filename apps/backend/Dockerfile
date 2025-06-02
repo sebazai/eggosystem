@@ -59,7 +59,7 @@ RUN mkdir -p ./packages/types/node_modules
 RUN ln -s /usr/local/lib/node_modules/zod ./packages/types/node_modules/zod
 # Copy app dist
 COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder --chown=node:node /usr/src/app/apps/backend/*.pem ./apps/backend/dist
+COPY --from=builder --chown=node:node /usr/src/app/apps/backend/*.pem ./apps/backend/
 # Do not run as root
 USER node
 

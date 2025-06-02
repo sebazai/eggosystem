@@ -78,7 +78,7 @@ services:
     restart: always
 
   eggo-prod-db:
-    image: bitnami/mariadb:11.4.2
+    image: bitnami/mariadb:11.7.2
     container_name: eggo-prod-db
     restart: always
     environment:

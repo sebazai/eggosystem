@@ -113,7 +113,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-ondemand-db-${ENV_ID}:
-    image: bitnami/mariadb:11.4.2
+    image: bitnami/mariadb:11.7.2
     restart: always
     container_name: eggo-devdb-${ENV_ID}
     environment:
