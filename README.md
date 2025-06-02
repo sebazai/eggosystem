@@ -30,7 +30,7 @@ In root run:
 
 This will start everything you need (dev database, backend & frontend, redis, phpmyadmin and will run tests)
 
-- docker compose --profile seed up
+```- docker compose --profile seed up```
 
 Backend can be accessed from localhost:3001 and frontend from localhost:3000 via browser
 
@@ -38,19 +38,36 @@ Backend can be accessed from localhost:3001 and frontend from localhost:3000 via
 
 Run all tests:
 
-- pnpm test
+```- pnpm test```
 
 Run specific test, example run leaderboards backend tests:
 
-- pnpm --filter=backend test -- leaderboards
+```- pnpm --filter=backend test -- leaderboards```
 
 Run backend tests:
 
-- pnpm --filter=backend test
+```- pnpm --filter=backend test```
 
 Run frontend tests:
 
-- pnpm --filter=frontend test
+```- pnpm --filter=frontend test```
+
+
+For running e2e tests do
+```
+pnpm --filter=backend seed:e2e
+pnpm --filter=backend dev:e2e &
+pnpm exec playwright install
+pnpm exec playwright install-deps
+pnpm --filter=frontend test:e2e
+```
+
+to revert the e2e seed do
+```
+pnpm --filter=backend reseed
+pnpm --filter=backend seed
+```
+
 
 ## Database
 

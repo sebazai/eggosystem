@@ -310,9 +310,6 @@ test-e2e:frontend:
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - |
-      echo "🔍 Seeding database with PRIVACY_POLICY_VERSION=$PRIVACY_POLICY_VERSION"
-      pnpm --filter=backend reseed # Cleaning
-      pnpm --filter=backend migrate # Recreate schema after reset
       pnpm --filter=backend seed # Run regular seeding
       pnpm --filter=backend seed:e2e # Run seeding for test environment
       echo "🔍 Seeding complete"
