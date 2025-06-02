@@ -1,5 +1,5 @@
 x-phpmyadmin: &phpmyadmin
-  image: phpmyadmin/phpmyadmin
+  image: phpmyadmin/phpmyadmin:5.2.2
   depends_on:
     eggo-devdb:
       condition: service_healthy

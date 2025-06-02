@@ -131,7 +131,7 @@ services:
       - web
 
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
+    image: phpmyadmin/phpmyadmin:5.2.2
     depends_on:
       eggo-devdb-${ENV_ID}:
         condition: service_healthy
