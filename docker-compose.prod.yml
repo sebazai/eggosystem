@@ -128,7 +128,7 @@ services:
     command: "npx knex migrate:latest"
     networks:
       - web
-    restart: always
+    restart: never
 
   maxscale:
     image: mariadb/maxscale:24.02
