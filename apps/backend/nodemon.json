@@ -5,7 +5,15 @@
   "exec": "ts-node --files server.ts",
   "watch": ["src/"],
   "env": {
-    "NODE_ENV": "development"
+    "NODE_ENV": "development",
+    "OTEL_SERVICE_NAME": "eggosystem-backend-dev",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4318",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_RESOURCE_ATTRIBUTES": "deployment.environment=development,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend-dev",
+    "NODE_OPTIONS": "--require @opentelemetry/auto-instrumentations-node/register"
   },
   "ext": "js,json,ts"
 }

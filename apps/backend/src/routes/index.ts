@@ -50,15 +50,16 @@ v1Router.use("/now", nowRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
 v1Router.use("/allstar", allstarRouter);
+v1Router.get("/verify-email", verifyEmailController);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
   res.status(200).json(stats);
 });
-v1Router.post("/verify-email", verifyEmailController);
 
 v1Router.use("/", async (req, res) => {
   console.warn("API root endpoint accessed");
   res.status(200).json({ message: "API is running" });
 });
+
 export default v1Router;
