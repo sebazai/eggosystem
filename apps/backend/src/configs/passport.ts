@@ -33,6 +33,7 @@ passport.use(
             provider: "steam"
           } satisfies SteamUserPayload);
         } catch (error) {
+          console.error("Passport config", error);
           return done(error);
         }
       }
