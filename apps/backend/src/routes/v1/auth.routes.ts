@@ -77,7 +77,8 @@ router.get(
     try {
       await login(req, res);
       res.redirect(redirectTo);
-    } catch (_error) {
+    } catch (error) {
+      console.error("Steam login error", error);
       res.redirect(`${process.env.FRONTEND_URL}/login-failed`);
     }
   }
