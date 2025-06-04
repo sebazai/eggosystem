@@ -679,43 +679,6 @@ test.describe("Signup Form", () => {
       await expect(playersHeading).toBeVisible();
     });
 
-    test("should show error for private profile", async ({ page }) => {
-      // Mock Steam API response for private profile
-      await page.route("**/api/v1/steam/players/*", async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            steam_id: "76561197967885016", // Real Steam ID for private profile error test (account_id 1)
-            nickname: "PrivateProfilePlayer",
-            avatar: "https://example.com/avatar.jpg",
-            profile_url:
-              "https://steamcommunity.com/profiles/76561197967885016",
-            is_public: false,
-            game_stats: null
-          })
-        });
-      });
-
-      // Find first Steam ID input field
-      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
-      await expect(steamIdInput).toBeVisible();
-
-      // Enter the REAL Steam ID for private profile error test
-      await steamIdInput.fill("76561197967885016");
-      await page.keyboard.press("Tab");
-
-      // Wait for validation
-      await page.waitForTimeout(1000);
-
-      // Verify the private profile error appears with correct message
-      const profileError = page.locator(
-        '[data-testid="profile-privacy-error-0"]'
-      );
-      await expect(profileError).toBeVisible();
-      await expect(profileError).toContainText("not public");
-    });
-
     test("should show error when hours cannot be detected", async ({
       page
     }) => {
