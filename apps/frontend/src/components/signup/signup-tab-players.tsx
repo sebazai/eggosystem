@@ -167,7 +167,6 @@ export const TabPlayers = ({
       if (player.steamId && player.steamId.length === 17) {
         // Check for various validation issues that should open the accordion
         if (
-          player.isProfilePublic === false ||
           player.hours === -1 ||
           (player.rank === -1 && player.externalRank === -1) ||
           player.hasValidData === false ||
@@ -410,12 +409,6 @@ export const TabPlayers = ({
             const isHardCarry =
               hardCarrySteamId !== "" && hardCarrySteamId === player.steamId;
 
-            const debugNickname = player.nickname;
-            if (debugNickname) {
-              // eslint-disable-next-line no-console
-              console.log(`Rendering player-nickname-${index}:`, debugNickname);
-            }
-
             const steamIdError = Array.isArray(formState.errors?.players)
               ? formState.errors.players[index]?.steamId
               : undefined;
@@ -436,7 +429,6 @@ export const TabPlayers = ({
               player.steamId &&
               player.steamId.length === 17 &&
               player.nickname &&
-              player.isProfilePublic !== false && // Must have public profile
               player.hours !== -1 && // Must have valid hours
               (player.rank !== -1 || player.externalRank !== -1) && // Must have valid rank
               player.hasValidData !== false && // Must have valid account data
@@ -446,8 +438,7 @@ export const TabPlayers = ({
             const hasValidationIssues =
               player.steamId &&
               player.steamId.length === 17 &&
-              (player.isProfilePublic === false ||
-                player.hours === -1 ||
+              (player.hours === -1 ||
                 (player.rank === -1 && player.externalRank === -1) ||
                 player.hasValidData === false ||
                 player.isEmailVerified === false ||
@@ -518,10 +509,6 @@ export const TabPlayers = ({
                                   );
                                   setValue(
                                     `players.${index}.isEmailVerified`,
-                                    undefined
-                                  );
-                                  setValue(
-                                    `players.${index}.isProfilePublic`,
                                     undefined
                                   );
                                   setValue(`players.${index}.hours`, -1);
@@ -757,14 +744,6 @@ export const TabPlayers = ({
                         </div>
                       </SignupPlayerNotification>
                     )}
-
-                  {player.isProfilePublic === false && (
-                    <SignupPlayerNotification
-                      data-testid={`profile-privacy-error-${index}`}
-                    >
-                      Player steam profile is not public
-                    </SignupPlayerNotification>
-                  )}
 
                   {player.hours === -1 && (
                     <SignupPlayerNotification

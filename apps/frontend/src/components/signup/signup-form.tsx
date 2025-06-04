@@ -72,7 +72,6 @@ const defaultValues = {
     hasValidData: undefined,
     hasValidWorkEmail: undefined,
     isEmailVerified: undefined,
-    isProfilePublic: undefined,
     hours: -1,
     rank: -1,
     externalRank: -1
@@ -226,7 +225,6 @@ export const SignupForm = ({
     watchPlayers.every(
       (p) =>
         p.hasValidData &&
-        p.isProfilePublic &&
         (p.rank !== -1 || p.externalRank !== -1) &&
         p.hours !== -1
     );

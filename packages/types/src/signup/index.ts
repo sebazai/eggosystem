@@ -9,7 +9,6 @@ const playerSchema = z
     hasValidData: z.boolean().optional(),
     hasValidWorkEmail: z.boolean().optional(),
     isEmailVerified: z.boolean().optional(),
-    isProfilePublic: z.boolean().optional(),
     hours: z.number().optional(),
     rank: z.number().optional(),
     externalRank: z.number().optional(),
