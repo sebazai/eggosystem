@@ -1,6 +1,6 @@
 "use client";
 import { envConfig } from "@/configs/env";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { createNextUrl } from "@/lib/utils";
 import { Button } from "../ui/button";
@@ -14,12 +14,9 @@ export const SteamLoginButton = ({
   returnUrl?: string;
 }) => {
   const pathname = usePathname();
-  const router = useRouter();
   const encodedUri = encodeURIComponent(returnUrl ?? pathname);
   const handleLogin = () => {
-    router.push(
-      `${envConfig.CLIENT_API_URL}/api/v1/auth/steam?returnUrl=${encodedUri}`
-    );
+    window.location.href = `${envConfig.CLIENT_API_URL}/api/v1/auth/steam?returnUrl=${encodedUri}`;
   };
 
   return (
