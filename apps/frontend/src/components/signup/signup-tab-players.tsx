@@ -78,6 +78,7 @@ export const TabPlayers = ({
   );
   const [newPlayers, setNewPlayers] = useState<string[]>([]);
   const [openItems, setOpenItems] = useState<string[]>([]);
+  const [errorIndices, setErrorIndices] = useState<string[]>([]);
   const [hardCarrySteamId, setHardCarrySteamId] = useState("");
   const auth = useAuth();
   const { fields, append, remove } = useFieldArray({
@@ -98,6 +99,7 @@ export const TabPlayers = ({
     }
   }, [auth.user, setValue, isEditMode, isDraft]);
 
+  // Handle errors from formState.errors.players
   useEffect(() => {
     const playerErrorIndicesAsNumber = playerErrorIndices
       .map(Number)
@@ -149,6 +151,7 @@ export const TabPlayers = ({
 
     if (errorIndices.length > 0) {
       setOpenItems(errorIndices);
+      setErrorIndices(errorIndices);
     }
   }, [loadingStates, watchPlayers]);
 
@@ -372,6 +375,11 @@ export const TabPlayers = ({
             const isHardCarry =
               hardCarrySteamId !== "" && hardCarrySteamId === player.steamId;
 
+            const hasErrors =
+              playerErrorIndices.includes(index.toString()) ||
+              errorIndices.includes(`player-${index.toString()}`);
+
+            const isEmptySteamId = player.steamId === "";
             return (
               <AccordionItem
                 className="space-y-2 border-b-0"
@@ -409,10 +417,13 @@ export const TabPlayers = ({
                               {...field}
                               className={cn(
                                 "w-full ",
-                                playerErrorIndices.includes(
-                                  index.toString() &&
-                                    "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                ),
+                                hasErrors &&
+                                  !loadingStates[index] &&
+                                  "border-red-500 focus:border-red-500 focus:ring-red-500",
+                                !hasErrors &&
+                                  !loadingStates[index] &&
+                                  !isEmptySteamId &&
+                                  "border-green-500 focus:border-green-500 focus:ring-green-500",
                                 loadingStates[index] && "border-yellow-500"
                               )}
                               onClick={(e) => e.stopPropagation()}
