@@ -126,7 +126,6 @@ async function navigateWithRetry(
       await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
       return; // Success
     } catch (e) {
-      console.log(`Navigation attempt ${i + 1} failed, retrying...`);
       if (i === retries - 1) throw e; // Last attempt failed
     }
   }
@@ -134,13 +133,11 @@ async function navigateWithRetry(
 
 async function assignCaptain(page: Page) {
   // Try to expand accordions and assign captain/co-captain roles
-  console.log("Attempting to assign captain and co-captain roles...");
 
   const accordionTriggers = page.locator(
     `[data-testid="player-accordion-triggers"]`
   );
   const triggerCount = await accordionTriggers.count();
-  console.log(`Found ${triggerCount} closed accordions`);
 
   let captainAssigned = false;
   let coCaptainAssigned = false;
@@ -159,12 +156,9 @@ async function assignCaptain(page: Page) {
           await captainCheckbox.getAttribute("aria-checked");
         if (isAlreadyCaptain !== "true") {
           await captainCheckbox.click();
-          console.log(`✅ Assigned captain role to player ${i}`);
+
           captainAssigned = true;
         } else {
-          console.log(
-            `✅ Captain already assigned to player ${i} (auto-assigned)`
-          );
           captainAssigned = true;
         }
       }
@@ -199,20 +193,13 @@ async function assignCaptain(page: Page) {
           await coCaptainCheckbox.getAttribute("aria-checked");
         if (isAlreadyCoCaptain !== "true") {
           await coCaptainCheckbox.click();
-          console.log(`✅ Assigned co-captain role to player ${i}`);
+
           coCaptainAssigned = true;
         } else {
-          console.log(`✅ Co-captain already assigned to player ${i}`);
           coCaptainAssigned = true;
         }
       }
     }
-  }
-
-  if (!captainAssigned || !coCaptainAssigned) {
-    console.log(
-      `⚠️ Role assignment incomplete: captain=${captainAssigned}, co-captain=${coCaptainAssigned}`
-    );
   }
 }
 
@@ -304,13 +291,6 @@ test.describe("Signup Form", () => {
           const teamIdMatch = url.match(/\/api\/v1\/faceit\/teams\/([^/?]+)/);
           const teamId = teamIdMatch ? teamIdMatch[1] : "unknown";
 
-          // Check if this is the hardcoded ID from the seed
-          if (teamId === "77dd9104-d2f1-4f50-ba80-d58457cff5a9") {
-            console.log(`⚠️  Using hardcoded team ID from backend seed!`);
-          } else {
-            console.log(`✅ Using generated unique team ID`);
-          }
-
           await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -361,16 +341,6 @@ test.describe("Signup Form", () => {
         `Frontend errors detected:\n${frontendErrors.join("\n")}`
       );
     }
-  });
-
-  // Debug test to check UUID generation
-  test("DEBUG: should log generated UUID format", async ({ page: _page }) => {
-    const generatedId = generateUniqueFaceitTeamId();
-    console.log(`🔍 Generated FACEIT Team ID: ${generatedId}`);
-    console.log(`🔍 Length: ${generatedId.length}`);
-    console.log(
-      `🔍 Pattern: ${generatedId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i) ? "Valid UUID v4" : "Invalid UUID v4"}`
-    );
   });
 
   // Base navigation test
@@ -798,56 +768,21 @@ test.describe("Signup Form", () => {
       // Add explicit blur to ensure validation is triggered
       await steamIdInput.blur();
 
-      // Intercept the hours API call to see what's actually returned
-      let hoursResponse: unknown = null;
-      page.on("response", async (response) => {
-        if (response.url().includes("/app/730/hours")) {
-          console.log(`🔍 Hours API Response URL: ${response.url()}`);
-          console.log(`🔍 Hours API Response Status: ${response.status()}`);
-          try {
-            hoursResponse = await response.json();
-            console.log(
-              `🔍 Hours API Response Data:`,
-              JSON.stringify(hoursResponse, null, 2)
-            );
-          } catch (e) {
-            console.log(`🔍 Could not parse response as JSON:`, e);
-          }
-        }
-      });
-
-      // Wait for validation (increased timeout for API calls)
-
-      // DEBUG: Check what happened with validation
-      console.log("🔍 DEBUG: Checking validation state...");
-
-      // Check for any error messages
       const hoursError = page.locator('[data-testid="hours-error-0"]');
       const profileError = page.locator(
         '[data-testid="profile-privacy-error-0"]'
       );
       const otherErrors = page.locator('[data-testid*="error"]');
 
-      const hoursErrorVisible = await hoursError.isVisible();
-      const profileErrorVisible = await profileError.isVisible();
+      expect(hoursError).toBeVisible();
+      expect(profileError).not.toBeVisible();
       const allErrors = await otherErrors.count();
-
-      console.log(`🔍 Hours error visible: ${hoursErrorVisible}`);
-      console.log(`🔍 Profile error visible: ${profileErrorVisible}`);
-      console.log(`🔍 Total error elements: ${allErrors}`);
-
-      // Check input border color
-      const inputClasses = await steamIdInput.getAttribute("class");
-      console.log(`🔍 Input classes: ${inputClasses}`);
 
       // If the test fails, log all error text for debugging
       if (allErrors > 0) {
         for (let i = 0; i < allErrors; i++) {
           const errorElement = otherErrors.nth(i);
-          if (await errorElement.isVisible()) {
-            const errorText = await errorElement.textContent();
-            console.log(`🔍 Error ${i}: ${errorText}`);
-          }
+          expect(errorElement).toBeVisible();
         }
       }
 
@@ -1030,7 +965,6 @@ test.describe("Signup Form", () => {
       // Give it time to enable
       try {
         await expect(submitButton).toBeEnabled({ timeout: 5000 });
-        console.log("✅ Submit button is enabled - ready for submission!");
       } catch (_error) {
         // Log the current state for debugging
         const submitButton = page
@@ -1040,28 +974,19 @@ test.describe("Signup Form", () => {
           '[data-testid="terms-conditions-checkbox"]'
         );
         const submitDisabled = await submitButton.getAttribute("disabled");
+        expect(submitDisabled).toBeNull();
         const termsChecked = await finalTermsCheckbox
           .isChecked()
           .catch(() => "not found");
+        expect(termsChecked).toBe("checked");
         const greenInputs = await page
           .locator('input[class*="border-green-500"]')
           .count();
+        expect(greenInputs).toBeGreaterThan(0);
         const redInputs = await page
           .locator('input[class*="border-red-500"]')
           .count();
-
-        console.log(
-          "Submit button state:",
-          submitDisabled ? "disabled" : "enabled"
-        );
-        console.log("Terms checked:", termsChecked);
-        console.log("Green border inputs:", greenInputs);
-        console.log("Red border inputs:", redInputs);
-
-        // This is expected for now since we might need captain/co-captain
-        console.log(
-          "ℹ️ Submit button not enabled - may need captain/co-captain selection"
-        );
+        expect(redInputs).toBeGreaterThan(0);
       }
     });
 
@@ -1113,7 +1038,6 @@ test.describe("Signup Form", () => {
         "76561197960265748" // account_id 11 - RealPlayer3 (has E2E data)
       ];
 
-      console.log("Filling in players...");
       for (let i = 0; i < 5; i++) {
         const steamIdInput = page.locator(
           `[data-testid="steam-id-input-${i}"]`
@@ -1144,7 +1068,6 @@ test.describe("Signup Form", () => {
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
       await expect(submitButton).toBeEnabled({ timeout: 10000 });
-      console.log("Submit button is enabled, proceeding with submission...");
 
       // Listen for the submission API call
       const submissionPromise = page.waitForResponse(
@@ -1156,45 +1079,22 @@ test.describe("Signup Form", () => {
 
       // Actually click the submit button
       await submitButton.click();
-      console.log("Submit button clicked!");
 
-      // Wait for the submission API response
-      try {
-        const submissionResponse = await submissionPromise;
-        const responseStatus = submissionResponse.status();
-        console.log("Submission API response status:", responseStatus);
+      const submissionResponse = await submissionPromise;
+      const responseStatus = submissionResponse.status();
 
-        // Check for successful submission
-        if (responseStatus === 200 || responseStatus === 201) {
-          console.log("✅ Registration submitted successfully!");
+      // Check for successful submission
+      if (responseStatus === 200 || responseStatus === 201) {
+        // Verify post-submission state
+        await expect(submitButton).toBeDisabled(); // Button should be disabled after submission
 
-          // Verify post-submission state
-          await expect(submitButton).toBeDisabled(); // Button should be disabled after submission
-
-          // Look for any success messages or navigation changes
-          const successMessage = page
-            .locator("text=/success|submitted|registered|thank you/i")
-            .first();
-          if (await successMessage.isVisible({ timeout: 5000 })) {
-            await expect(successMessage).toBeVisible();
-            console.log("Success message displayed");
-          }
-        } else {
-          console.log(`Submission returned status ${responseStatus}`);
-          // Log response body for debugging
-          try {
-            const responseBody = await submissionResponse.text();
-            console.log("Response body:", responseBody);
-          } catch (_e) {
-            console.log("Could not read response body");
-          }
+        // Look for any success messages or navigation changes
+        const successMessage = page
+          .locator("text=/success|submitted|registered|thank you/i")
+          .first();
+        if (await successMessage.isVisible({ timeout: 5000 })) {
+          await expect(successMessage).toBeVisible();
         }
-      } catch (submissionError) {
-        console.log("Submission timeout or error:", submissionError);
-
-        // Check if the form state changed anyway
-        const submitDisabled = await submitButton.getAttribute("disabled");
-        console.log("Submit button disabled after click:", !!submitDisabled);
       }
     });
 
@@ -1250,9 +1150,6 @@ test.describe("Signup Form", () => {
         // Fill in each player and wait for validation
         for (let i = 0; i < validPlayers.length; i++) {
           const player = validPlayers[i]!; // Non-null assertion since we know the array size
-          console.log(
-            `Filling player ${i}: ${player.nickname} (${player.steamId})`
-          );
 
           const steamIdInput = page.locator(
             `[data-testid="steam-id-input-${i}"]`
@@ -1282,7 +1179,7 @@ test.describe("Signup Form", () => {
       }
     });
 
-    test("should debug captain and co-captain assignment process", async ({
+    test("should test captain and co-captain assignment process", async ({
       page
     }) => {
       // Navigate to the registration form
@@ -1322,7 +1219,7 @@ test.describe("Signup Form", () => {
       await page.locator('[data-testid="go-to-lineup-button"]').click();
 
       // Fill in 5 players to match actual usage
-      console.log("=== STEP 1: Filling in players ===");
+
       const validPlayers = [
         "76561197960283932", // account_id 4 - heppajpg (our auth user, not in team 999)
         "76561197960265728", // account_id 8 - Hoolyz (from E2E seed)
@@ -1338,15 +1235,7 @@ test.describe("Signup Form", () => {
         await expect(steamIdInput).toBeVisible();
         await steamIdInput.fill(validPlayers[i]!);
         await page.keyboard.press("Tab");
-
-        console.log(`Filled player ${i}: ${validPlayers[i]}`);
       }
-
-      // Wait for validations to complete
-
-      console.log(
-        "=== STEP 2: Players filled, checking for captain/co-captain checkboxes ==="
-      );
 
       // Check for ALL captain and co-captain checkboxes to see which indices actually exist
       for (let i = 0; i < 5; i++) {
@@ -1357,32 +1246,10 @@ test.describe("Signup Form", () => {
           `[data-testid="co-captain-checkbox-${i}"]`
         );
 
-        const captainVisible = await captainCheckbox.isVisible();
-        const coCaptainVisible = await coCaptainCheckbox.isVisible();
-
-        console.log(
-          `Player ${i}: captain checkbox visible=${captainVisible}, co-captain checkbox visible=${coCaptainVisible}`
-        );
-
-        if (captainVisible) {
-          const captainChecked =
-            await captainCheckbox.getAttribute("aria-checked");
-          console.log(`  Captain checkbox ${i} checked: ${captainChecked}`);
-        }
-
-        if (coCaptainVisible) {
-          const coCaptainChecked =
-            await coCaptainCheckbox.getAttribute("aria-checked");
-          console.log(
-            `  Co-captain checkbox ${i} checked: ${coCaptainChecked}`
-          );
-        }
+        expect(captainCheckbox).toBeDefined();
+        expect(coCaptainCheckbox).toBeDefined();
       }
 
-      // Try to assign captain to the player who should be captain (based on the user showing co-captain-checkbox-2)
-      console.log(
-        "=== STEP 3: Trying to assign captain to appropriate player ==="
-      );
       for (let i = 0; i < 5; i++) {
         const captainCheckbox = page.locator(
           `[data-testid="captain-checkbox-${i}"]`
@@ -1390,25 +1257,16 @@ test.describe("Signup Form", () => {
         if (await captainCheckbox.isVisible()) {
           const currentState =
             await captainCheckbox.getAttribute("aria-checked");
-          console.log(
-            `Found captain checkbox for player ${i}, current state: ${currentState}`
-          );
 
           if (currentState !== "true") {
-            console.log(`Clicking captain checkbox for player ${i}...`);
             await captainCheckbox.click();
-
-            const newState = await captainCheckbox.getAttribute("aria-checked");
-            console.log(`Captain checkbox ${i} after click: ${newState}`);
-          } else {
-            console.log(`Captain checkbox ${i} already checked`);
           }
           break; // Only assign one captain
         }
       }
 
       // Try to assign co-captain (based on the user showing co-captain-checkbox-2 exists)
-      console.log("=== STEP 4: Trying to assign co-captain ===");
+
       for (let i = 0; i < 5; i++) {
         const coCaptainCheckbox = page.locator(
           `[data-testid="co-captain-checkbox-${i}"]`
@@ -1416,51 +1274,32 @@ test.describe("Signup Form", () => {
         if (await coCaptainCheckbox.isVisible()) {
           const currentState =
             await coCaptainCheckbox.getAttribute("aria-checked");
-          console.log(
-            `Found co-captain checkbox for player ${i}, current state: ${currentState}`
-          );
 
           if (currentState !== "true") {
-            console.log(`Clicking co-captain checkbox for player ${i}...`);
             await coCaptainCheckbox.click();
-
-            const newState =
-              await coCaptainCheckbox.getAttribute("aria-checked");
-            console.log(`Co-captain checkbox ${i} after click: ${newState}`);
-          } else {
-            console.log(`Co-captain checkbox ${i} already checked`);
           }
           break; // Only assign one co-captain
         }
       }
 
       // Check final validation state
-      console.log("=== STEP 5: Final validation check ===");
 
       const validationMessage = page.locator(
         "text=There must be exactly one captain and one co-captain"
       );
-      if (await validationMessage.isVisible()) {
-        console.log("❌ Validation message still showing after assignments");
-      } else {
-        console.log("✅ No validation message after assignments");
-      }
+      expect(validationMessage).toBeVisible();
 
       // Check submit button state
       const submitButton = page
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
-      const isDisabled = await submitButton.getAttribute("disabled");
-      console.log(`Submit button disabled: ${isDisabled !== null}`);
+      expect(submitButton).toBeDisabled();
 
       // Check terms and conditions
       const termsCheckbox = page.locator(
         '[data-testid="terms-conditions-checkbox"]'
       );
-      if (await termsCheckbox.isVisible()) {
-        const termsChecked = await termsCheckbox.isChecked();
-        console.log(`Terms and conditions checked: ${termsChecked}`);
-      }
+      expect(termsCheckbox).toBeVisible();
     });
 
     test("should attempt submission and check for captain/co-captain validation", async ({
@@ -1511,7 +1350,6 @@ test.describe("Signup Form", () => {
         "76561197960265740" // account_id 9 - RealPlayer1 (from E2E seed)
       ];
 
-      console.log("Filling in 5 players...");
       for (let i = 0; i < 5; i++) {
         const steamIdInput = page.locator(
           `[data-testid="steam-id-input-${i}"]`
@@ -1527,24 +1365,19 @@ test.describe("Signup Form", () => {
       const captainMessage = page.locator(
         "text=By default you are the captain"
       );
-      if (await captainMessage.isVisible()) {
-        console.log("✅ Found captain auto-assignment message");
-      }
+      expect(captainMessage).toBeVisible();
 
       // Check submit button state
       const submitButton = page
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
       const submitEnabled = await submitButton.isEnabled();
-      console.log(`Submit button enabled: ${submitEnabled}`);
 
       if (!submitEnabled) {
-        console.log("Submit button disabled, validation test complete");
         return;
       }
 
       // Check for validation states and captain/co-captain assignment
-      console.log("Submit button is enabled - checking validation state...");
 
       // Check for validation errors that might be present
       const validationErrors = [
@@ -1554,19 +1387,10 @@ test.describe("Signup Form", () => {
         '[role="alert"]' // Generic alert/error elements
       ];
 
-      console.log("Checking for validation errors...");
       for (const errorSelector of validationErrors) {
         const errorElement = page.locator(errorSelector).first(); // Use .first() to avoid strict mode violations
-        if (await errorElement.isVisible()) {
-          const errorText = await errorElement.textContent();
-          console.log(`Found validation error: ${errorText}`);
-        }
+        expect(errorElement).toBeVisible();
       }
-
-      // Don't actually submit - this test is just for validation checking
-      console.log(
-        "✅ Captain/co-captain validation test complete (no submission)"
-      );
     });
   });
 });
