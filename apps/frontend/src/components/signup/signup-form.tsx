@@ -394,7 +394,7 @@ export const SignupForm = ({
 
               <TabOrganization
                 control={control}
-                setValue={setValue}
+                resetField={resetField}
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
@@ -404,7 +404,7 @@ export const SignupForm = ({
               <TabTeam
                 organizationId={watchOrgId}
                 control={control}
-                setValue={setValue}
+                resetField={resetField}
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import { useEffect, useState } from "react";
-import type { Control, UseFormSetValue } from "react-hook-form";
+import type { Control, UseFormResetField } from "react-hook-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 import { useTeamsWithoutOrgs } from "@/hooks/data/useTeamsWithoutOrgs";
@@ -25,7 +25,7 @@ interface TabTeamProps {
   watchTeamId: number;
   organizationId?: number;
   control: Control<SignupFormValues>;
-  setValue: UseFormSetValue<SignupFormValues>;
+  resetField: UseFormResetField<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
   platform: string;
@@ -37,7 +37,7 @@ const parseFaceITTeamId = (val: string) => {
   try {
     const parsedUrl = new URL(val);
     const segments = parsedUrl.pathname.split("/").filter(Boolean);
-    return segments.pop() || "";
+    return segments.pop() || null;
   } catch (_error) {
     return val.trim();
   }
@@ -47,7 +47,7 @@ export const TabTeam = ({
   watchTeamId,
   organizationId,
   control,
-  setValue,
+  resetField,
   validTeamSelection,
   onNext,
   platform,
@@ -70,10 +70,10 @@ export const TabTeam = ({
     if (!fetchTeamsWithoutOrg && watchTeamId !== -1) {
       const team = teams?.find((team) => team.id === watchTeamId);
       if (!team) {
-        setValue("teamId", -1);
+        resetField("teamId");
       }
     }
-  }, [fetchTeamsWithoutOrg, setValue, teams, watchTeamId]);
+  }, [fetchTeamsWithoutOrg, resetField, teams, watchTeamId]);
 
   if (!organizationId) {
     return <></>;
@@ -147,8 +147,8 @@ export const TabTeam = ({
                 }
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
-                    setValue("teamId", -1);
-                    setValue("newTeam", { name: "" });
+                    resetField("teamId");
+                    resetField("newTeam");
                   }
                   field.onChange(selectedItem?.value);
                 }}

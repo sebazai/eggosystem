@@ -12,14 +12,14 @@ import { useOrganizations } from "@/hooks/data/useOrganizations";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import type { SignupFormValues } from "@eggosystem/types";
 import { useState } from "react";
-import type { Control, UseFormSetValue } from "react-hook-form";
+import type { Control, UseFormResetField } from "react-hook-form";
 import { RequiredFormLabel } from "../ui/required-form-label";
 import { NewOrganizationForm } from "../organizations/new-organization-form";
 
 interface TabOrganizationProps {
   watchOrgId: number;
   control: Control<SignupFormValues>;
-  setValue: UseFormSetValue<SignupFormValues>;
+  resetField: UseFormResetField<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
   isEditMode: boolean;
@@ -28,7 +28,7 @@ interface TabOrganizationProps {
 export const TabOrganization = ({
   watchOrgId,
   control,
-  setValue,
+  resetField,
   validOrganizationSelection,
   onNext,
   isEditMode
@@ -90,18 +90,11 @@ export const TabOrganization = ({
                 }
                 onSelectChange={(selectedItem) => {
                   if (!selectedItem) {
-                    // Clear newTeam fields
-                    setValue("organizationId", -1);
-                    setValue("newOrganization", {
-                      name: "",
-                      organization_code: "",
-                      website: ""
-                    });
-                    setValue("teamId", -1);
-                    setValue("newTeam", {
-                      name: ""
-                    });
-                    setValue("teamExternalId", "");
+                    resetField("organizationId");
+                    resetField("newOrganization");
+                    resetField("teamId");
+                    resetField("newTeam");
+                    resetField("teamExternalId");
                   }
                   field.onChange(selectedItem?.value);
                 }}
