@@ -282,8 +282,10 @@ const ProfileFormInputs = ({
           <div className="bg-orange-500/20 border border-orange-500 rounded-md p-4 text-sm">
             <div className="text-orange-400 font-semibold">Important:</div>
             <div className="text-orange-300">
-              Personal emails require organizer approval for each season. Please open a support ticket in{" "}
-              <strong>Kanaliiga Discord</strong> with proof of employment to get per-season approval for team registration.
+              Personal emails require organizer approval for each season. Please
+              open a support ticket in <strong>Kanaliiga Discord</strong> with
+              proof of employment to get per-season approval for team
+              registration.
             </div>
           </div>
         )}

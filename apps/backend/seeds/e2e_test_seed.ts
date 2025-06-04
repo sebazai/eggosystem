@@ -8,7 +8,7 @@ import { type Knex } from "knex";
  */
 export async function seed(knex: Knex): Promise<void> {
   // Get privacy policy version from environment variable (same as backend uses)
-  const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION || '1';
+  const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION || "1";
 
   // Define test Steam IDs that E2E tests will use
   const testSteamIds = [
@@ -21,18 +21,18 @@ export async function seed(knex: Knex): Promise<void> {
     "76561197961279983", // account_id 10 - RealPlayer2
     "76561197960265748", // account_id 11 - RealPlayer3
     "76561197967885016", // account_id 1 - PrivateProfilePlayer
-    "76561197960269868"  // account_id 2 - InsufficientHoursPlayer
+    "76561197960269868" // account_id 2 - InsufficientHoursPlayer
   ];
-  
+
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
   await knex("SeasonTeamPlayers").where({ team_id: 2263 }).del();
   await knex("SeasonTeamRegistrations").where({ team_id: 2263 }).del();
-  
+
   // Clean up ALL existing registrations for test Steam IDs (not just season 16)
   for (const steamId of testSteamIds) {
     // Delete from SeasonTeamPlayers for ALL seasons (not just season 16)
     await knex("SeasonTeamPlayers").where({ steam_id: steamId }).del();
-    
+
     // Delete from SeasonTeamRegistrations where this player is captain or co-captain
     await knex("SeasonTeamRegistrations")
       .where({ captain_steam_id: steamId })
@@ -41,14 +41,16 @@ export async function seed(knex: Knex): Promise<void> {
   }
 
   // Clean up existing E2E test data
-  await knex("AccountPermissionScopes").where({ season_id: 16, team_id: 999 }).del();
+  await knex("AccountPermissionScopes")
+    .where({ season_id: 16, team_id: 999 })
+    .del();
   await knex("AccountRoles").where({ account_id: 3, game_id: 1 }).del();
   await knex("SeasonTeamPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
   await knex("Teams").where({ id: 999 }).del();
   await knex("Organizations").where({ id: 999 }).del();
   await knex("Seasons").where({ id: 16 }).del();
-  
+
   // Clean up test accounts and related data if they exist
   const testAccountIds = [3, 4, 5, 6, 8, 9, 10, 11];
   for (const accountId of testAccountIds) {
@@ -67,7 +69,7 @@ export async function seed(knex: Knex): Promise<void> {
     "Test Organization",
     "Test Org"
   ];
-  
+
   for (const orgName of testOrgNames) {
     await knex("Organizations").where({ name: orgName }).del();
   }
@@ -96,7 +98,18 @@ export async function seed(knex: Knex): Promise<void> {
   });
 
   // Update user emails in the Accounts table
-  const users = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 8 }, { id: 9 }, { id: 10 }, { id: 11 }];
+  const users = [
+    { id: 1 },
+    { id: 2 },
+    { id: 3 },
+    { id: 4 },
+    { id: 5 },
+    { id: 6 },
+    { id: 8 },
+    { id: 9 },
+    { id: 10 },
+    { id: 11 }
+  ];
 
   for (const user of users) {
     // Update the user's email and set work_email_verified to 1
@@ -132,12 +145,20 @@ export async function seed(knex: Knex): Promise<void> {
     { account_id: 6, steam_id: "76561197960283671", nickname: "Trev" },
     { account_id: 8, steam_id: "76561197960265728", nickname: "Hoolyz" }, // Robin Walker (Valve employee) - guaranteed public
     // Add well-known public Steam accounts for testing
-    { account_id: 9, steam_id: "76561197960265740", nickname: "RealPlayer1" },  // Another Valve account - guaranteed public
+    { account_id: 9, steam_id: "76561197960265740", nickname: "RealPlayer1" }, // Another Valve account - guaranteed public
     { account_id: 10, steam_id: "76561197961279983", nickname: "RealPlayer2" }, // Well-known public Steam ID
     { account_id: 11, steam_id: "76561197960265748", nickname: "RealPlayer3" }, // Another Valve account - guaranteed public
     // Add Steam IDs for error testing (from dev seed)
-    { account_id: 1, steam_id: "76561197967885016", nickname: "PrivateProfilePlayer" }, // For private profile test
-    { account_id: 2, steam_id: "76561197960269868", nickname: "InsufficientHoursPlayer" } // For insufficient hours test
+    {
+      account_id: 1,
+      steam_id: "76561197967885016",
+      nickname: "PrivateProfilePlayer"
+    }, // For private profile test
+    {
+      account_id: 2,
+      steam_id: "76561197960269868",
+      nickname: "InsufficientHoursPlayer"
+    } // For insufficient hours test
   ];
 
   for (const player of steamPlayerData) {
@@ -150,7 +171,11 @@ export async function seed(knex: Knex): Promise<void> {
         work_email = VALUES(work_email),
         work_email_verified = VALUES(work_email_verified)
     `,
-      [player.account_id, player.nickname, `test+${player.account_id}@kanaliiga.fi`]
+      [
+        player.account_id,
+        player.nickname,
+        `test+${player.account_id}@kanaliiga.fi`
+      ]
     );
 
     // Insert SteamPlayer if it doesn't exist
@@ -252,13 +277,11 @@ export async function seed(knex: Knex): Promise<void> {
   }
 
   // Set account_id 6 to have personal email to test organizer approval workflow
-  await knex("Accounts")
-    .where({ id: 6 })
-    .update({
-      work_email: "personal.email@gmail.com",
-      work_email_verified: 1,
-      is_work_email_personal_email: true
-    });
+  await knex("Accounts").where({ id: 6 }).update({
+    work_email: "personal.email@gmail.com",
+    work_email_verified: 1,
+    is_work_email_personal_email: true
+  });
 
   // Set up captain permissions for account_id 3 (the auth user)
   // First ensure the captain role exists
@@ -304,17 +327,62 @@ export async function seed(knex: Knex): Promise<void> {
   // Add SeasonPlayerRanks data for our test players
   // This ensures backend validation passes during submission
   const playerRanksData = [
-    { steam_id: "76561197960283932", season_id: 16, cs_hours: 1500, cs2_rank: 15 }, // account_id 4 - heppajpg
-    { steam_id: "76561197960265728", season_id: 16, cs_hours: 2000, cs2_rank: 18 }, // account_id 8 - Hoolyz (Robin Walker)
-    { steam_id: "76561197960265740", season_id: 16, cs_hours: 1800, cs2_rank: 12 }, // account_id 9 - RealPlayer1 (Valve)
-    { steam_id: "76561197961279983", season_id: 16, cs_hours: 1600, cs2_rank: 14 }, // account_id 10 - RealPlayer2
-    { steam_id: "76561197960265748", season_id: 16, cs_hours: 1700, cs2_rank: 16 }, // account_id 11 - RealPlayer3 (Valve)
-    { steam_id: "76561197960273207", season_id: 16, cs_hours: 2200, cs2_rank: 20 }, // account_id 3 - Aabe (auth user)
-    { steam_id: "76561197960275646", season_id: 16, cs_hours: 1900, cs2_rank: 17 }, // account_id 5 - Quattra
-    { steam_id: "76561197960283671", season_id: 16, cs_hours: 1400, cs2_rank: 11 }, // account_id 6 - Trev
+    {
+      steam_id: "76561197960283932",
+      season_id: 16,
+      cs_hours: 1500,
+      cs2_rank: 15
+    }, // account_id 4 - heppajpg
+    {
+      steam_id: "76561197960265728",
+      season_id: 16,
+      cs_hours: 2000,
+      cs2_rank: 18
+    }, // account_id 8 - Hoolyz (Robin Walker)
+    {
+      steam_id: "76561197960265740",
+      season_id: 16,
+      cs_hours: 1800,
+      cs2_rank: 12
+    }, // account_id 9 - RealPlayer1 (Valve)
+    {
+      steam_id: "76561197961279983",
+      season_id: 16,
+      cs_hours: 1600,
+      cs2_rank: 14
+    }, // account_id 10 - RealPlayer2
+    {
+      steam_id: "76561197960265748",
+      season_id: 16,
+      cs_hours: 1700,
+      cs2_rank: 16
+    }, // account_id 11 - RealPlayer3 (Valve)
+    {
+      steam_id: "76561197960273207",
+      season_id: 16,
+      cs_hours: 2200,
+      cs2_rank: 20
+    }, // account_id 3 - Aabe (auth user)
+    {
+      steam_id: "76561197960275646",
+      season_id: 16,
+      cs_hours: 1900,
+      cs2_rank: 17
+    }, // account_id 5 - Quattra
+    {
+      steam_id: "76561197960283671",
+      season_id: 16,
+      cs_hours: 1400,
+      cs2_rank: 11
+    }, // account_id 6 - Trev
     // Add data for error testing Steam IDs
-    { steam_id: "76561197967885016", season_id: 16, cs_hours: 1500, cs2_rank: 15 }, // account_id 1 - PrivateProfilePlayer (normal hours, but private profile)
-    // NOTE: Intentionally NOT adding SeasonPlayerRanks for 76561197960269868 (InsufficientHoursPlayer) 
+    {
+      steam_id: "76561197967885016",
+      season_id: 16,
+      cs_hours: 1500,
+      cs2_rank: 15
+    } // account_id 1 - PrivateProfilePlayer (normal hours, but private profile)
+    // NOTE: Intentionally NOT adding SeasonPlayerRanks for 76561197960269868 (InsufficientHoursPlayer)
     // so it falls back to Steam API mock which returns null for hours detection failure
   ];
 

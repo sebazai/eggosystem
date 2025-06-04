@@ -11,7 +11,8 @@ import {
 import { getPlayerExternalRankForSeason } from "../models/season-player-ranks.models";
 
 // E2E Test mode mocking
-const isE2EMode = process.env.NODE_ENV === 'e2e' || process.env.TEST_TYPE === 'e2e';
+const isE2EMode =
+  process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";
 
 const getMonthDifference = (timestamp1: number, timestamp2: number) => {
   const date1 = new Date(timestamp1);
@@ -61,7 +62,6 @@ export const getFaceITGameRank = async (
 ) => {
   // E2E Mock: Return mock FACEIT rank data
   if (isE2EMode) {
-    
     return {
       elo: 1850,
       rank: 7,
@@ -249,7 +249,6 @@ export const getFaceITCS2Rank = async (
 export const getFaceITTeamDetails = async (faceit_team_id: string) => {
   // E2E Mock: Return mock FACEIT team data
   if (isE2EMode) {
-    
     return {
       team_id: faceit_team_id,
       name: "E2E Test FACEIT Team",

@@ -153,7 +153,7 @@ export const TeamMatchHistory = ({
                           const url = match.game_id
                             ? `/matches/${match.match_id}/games/${match.game_id}`
                             : `/matches/${match.match_id}`;
-                          window.open(url, '_blank');
+                          window.open(url, "_blank");
                         }
                       }}
                     >

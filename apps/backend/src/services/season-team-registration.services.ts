@@ -51,10 +51,9 @@ export const ensurePlayerSteamProfilesPublic = async (
 ) => {
   const areProfilePublic = await areSteamProfilesPublic(playerSteamIds);
   if (!areProfilePublic.is_all_public) {
-    const notPublicIds = areProfilePublic.not_public?.join(", ") || "some Steam IDs";
-    throw new Error(
-      `Steam IDs ${notPublicIds} are not public.`
-    );
+    const notPublicIds =
+      areProfilePublic.not_public?.join(", ") || "some Steam IDs";
+    throw new Error(`Steam IDs ${notPublicIds} are not public.`);
   }
 };
 
@@ -176,7 +175,7 @@ export const validatePlayersFromDBForSignup = async (
   playerSteamIds: string[],
   manuallyApprovedByOrganizer?: boolean
 ) => {
-  await ensurePlayerSteamProfilesPublic(playerSteamIds);
+  // await ensurePlayerSteamProfilesPublic(playerSteamIds);
   const data = await Promise.all(
     playerSteamIds.map((steamId) => getPlayerDetailsBySteamId(steamId))
   );

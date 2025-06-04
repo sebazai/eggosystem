@@ -1,7 +1,8 @@
 import _ from "lodash";
 
 // E2E Test mode mocking
-const isE2EMode = process.env.NODE_ENV === 'e2e' || process.env.TEST_TYPE === 'e2e';
+const isE2EMode =
+  process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";
 
 export interface IPlayerServiceResponse {
   response: {
@@ -18,22 +19,21 @@ export const getSteamHoursForAppId = async (
 ) => {
   // E2E Mock: Return mock hours data
   if (isE2EMode) {
-   
     // Special case: Return null for hours detection failure (results in hours: -1)
-    if (steam_id === "76561197960269868") {  // Real Steam ID for insufficient hours test
-     
+    if (steam_id === "76561197960269868") {
+      // Real Steam ID for insufficient hours test
+
       return null; // This will result in hours: -1 in the frontend
     }
-    
+
     // Default: Return sufficient hours for all other Steam IDs (including success tests)
-   
+
     return {
       appid: app_id,
       playtime_forever: 90000 // 1500 hours in minutes
     };
   }
 
- 
   const webURL = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${process.env.STEAM_API_KEY}&steamid=${steam_id}`;
   const fromSteam = await fetch(webURL);
   if (!fromSteam.ok) {
@@ -58,13 +58,13 @@ export interface ISteamUserResponse {
 export const isSteamProfilePublic = async (steam_id: string) => {
   // E2E Mock: Always return true (public profile)
   if (isE2EMode) {
-    
     // Special case: Return private profile for REAL Steam ID from dev seed (account_id 1)
-    if (steam_id === "76561197967885016") {  // Real Steam ID for private profile test
-      
+    if (steam_id === "76561197967885016") {
+      // Real Steam ID for private profile test
+
       return false;
     }
-    
+
     // Default: Return public for all other Steam IDs (including success tests)
     return true;
   }
@@ -86,19 +86,18 @@ export const isSteamProfilePublic = async (steam_id: string) => {
 export const areSteamProfilesPublic = async (steam_ids: string[]) => {
   // E2E Mock: Always return all profiles as public
   if (isE2EMode) {
-   
-    
     // Special case: Check if any Steam ID should be private for testing
-    const privateProfiles = steam_ids.filter(id => id === "76561197967885016"); // Real Steam ID for private profile test (account_id 1)
-    
+    const privateProfiles = steam_ids.filter(
+      (id) => id === "76561197967885016"
+    ); // Real Steam ID for private profile test (account_id 1)
+
     if (privateProfiles.length > 0) {
-     
-      return { 
-        is_all_public: false, 
-        not_public: privateProfiles 
+      return {
+        is_all_public: false,
+        not_public: privateProfiles
       };
     }
-    
+
     // Default: All profiles are public
     return { is_all_public: true };
   }

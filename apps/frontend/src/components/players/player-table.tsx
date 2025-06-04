@@ -340,7 +340,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                         if (e.button === 1) {
                           e.preventDefault(); // Prevent scroll behavior
                           const url = `/players/${encodeURIComponent(player.steam_id)}?${filterParamsToSearchParams(filterQueryParams).toString()}`;
-                          window.open(url, '_blank');
+                          window.open(url, "_blank");
                         }
                       }}
                     >

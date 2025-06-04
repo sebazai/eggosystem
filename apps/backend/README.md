@@ -21,6 +21,7 @@ TEST_TYPE=e2e pnpm dev
 When `TEST_TYPE=e2e` or `NODE_ENV=e2e` is set, the following external APIs are mocked:
 
 - **Steam API calls**:
+
   - `getSteamHoursForAppId()` - Returns 1500 hours for any Steam ID
   - `isSteamProfilePublic()` - Always returns `true` (public profile)
   - `areSteamProfilesPublic()` - Always returns `{ is_all_public: true }`
@@ -40,4 +41,4 @@ When `TEST_TYPE=e2e` or `NODE_ENV=e2e` is set, the following external APIs are m
 
 1. Start backend in E2E mode: `pnpm dev:e2e`
 2. Run E2E tests: `cd ../frontend && pnpm test:e2e`
-3. Backend will log mock API calls with `🎭 E2E Mock:` prefix for debugging 
+3. Backend will log mock API calls with `🎭 E2E Mock:` prefix for debugging
