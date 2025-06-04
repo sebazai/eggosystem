@@ -151,8 +151,8 @@ export const TabPlayers = ({
 
     if (errorIndices.length > 0) {
       setOpenItems(errorIndices);
-      setErrorIndices(errorIndices);
     }
+    setErrorIndices(errorIndices);
   }, [loadingStates, watchPlayers]);
 
   useEffect(() => {
@@ -273,13 +273,9 @@ export const TabPlayers = ({
             }
 
             if (data.nickname)
-              setValue(`players.${index}.nickname`, data.nickname, {
-                shouldValidate: true
-              });
+              setValue(`players.${index}.nickname`, data.nickname);
             if (data.discord)
-              setValue(`players.${index}.discord`, data.discord, {
-                shouldValidate: false
-              });
+              setValue(`players.${index}.discord`, data.discord);
           } else {
             if (playerData.reason instanceof ApiError) {
               if (playerData.reason.status === 404)
