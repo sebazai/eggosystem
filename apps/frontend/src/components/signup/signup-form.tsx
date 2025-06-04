@@ -53,15 +53,10 @@ const validateExternalPlaformId = async (
 const defaultValues = {
   organizationId: undefined,
   teamId: undefined,
-  newOrganization: {
-    name: "",
-    organization_code: "",
-    website: ""
-  },
-  newTeam: {
-    name: ""
-  },
+  newOrganization: undefined,
+  newTeam: undefined,
   teamExternalId: "",
+  captainHasReadTermAndConditions: false,
   players: Array(5).fill({
     accountId: 0,
     steamId: "",
@@ -72,9 +67,9 @@ const defaultValues = {
     hasValidData: undefined,
     hasValidWorkEmail: undefined,
     isEmailVerified: undefined,
-    hours: -1,
-    rank: -1,
-    externalRank: -1
+    hours: undefined,
+    rank: undefined,
+    externalRank: undefined
   } satisfies SignupPlayerType)
 };
 
@@ -104,7 +99,7 @@ export const SignupForm = ({
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: editValues ?? draft ?? defaultValues,
-    mode: "onBlur"
+    mode: "onTouched"
   });
 
   const { control, setValue, resetField, watch } = form;

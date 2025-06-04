@@ -100,8 +100,14 @@ export async function clientApiFetch<T>(
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
       console.error("API Client Error:", errData);
-      if (typeof errData?.error?.message === "string") {
-        throw new ApiError(errData.error.message, response.status);
+      if (
+        typeof errData?.error?.message === "string" ||
+        typeof errData?.message === "string"
+      ) {
+        throw new ApiError(
+          errData?.error?.message ?? errData?.message ?? "Unknown API error",
+          response.status
+        );
       }
       throw new Error(`Request failed with status ${response.status}`);
     }
