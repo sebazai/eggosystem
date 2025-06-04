@@ -132,6 +132,90 @@ async function navigateWithRetry(
   }
 }
 
+async function assignCaptain(page: Page) {
+  // Try to expand accordions and assign captain/co-captain roles
+  console.log("Attempting to assign captain and co-captain roles...");
+
+  const accordionTriggers = page.locator(
+    `[data-testid="player-accordion-triggers"]`
+  );
+  const triggerCount = await accordionTriggers.count();
+  console.log(`Found ${triggerCount} closed accordions`);
+
+  let captainAssigned = false;
+  let coCaptainAssigned = false;
+
+  // Assign captain to first available player
+  for (let i = 0; i < Math.min(triggerCount, 5) && !captainAssigned; i++) {
+    const trigger = accordionTriggers.nth(i);
+    if (await trigger.isVisible()) {
+      await trigger.click();
+
+      const captainCheckbox = page.locator(
+        `[data-testid="captain-checkbox-${i}"]`
+      );
+      if (await captainCheckbox.isVisible()) {
+        const isAlreadyCaptain =
+          await captainCheckbox.getAttribute("aria-checked");
+        if (isAlreadyCaptain !== "true") {
+          await captainCheckbox.click();
+          console.log(`✅ Assigned captain role to player ${i}`);
+          captainAssigned = true;
+        } else {
+          console.log(
+            `✅ Captain already assigned to player ${i} (auto-assigned)`
+          );
+          captainAssigned = true;
+        }
+      }
+    }
+  }
+
+  // Assign co-captain to next available player
+  for (let i = 0; i < Math.min(triggerCount, 5) && !coCaptainAssigned; i++) {
+    const trigger = accordionTriggers.nth(i);
+    if (await trigger.isVisible()) {
+      // Expand if not already expanded
+      const isOpen = await trigger.getAttribute("data-state");
+      if (isOpen === "closed") {
+        await trigger.click();
+      }
+      const captainCheckbox = page.locator(
+        `[data-testid="captain-checkbox-${i}"]`
+      );
+      if (await captainCheckbox.isVisible()) {
+        const isAlreadyCaptain =
+          await captainCheckbox.getAttribute("aria-checked");
+        if (isAlreadyCaptain === "true") {
+          continue;
+        }
+      }
+
+      const coCaptainCheckbox = page.locator(
+        `[data-testid="co-captain-checkbox-${i}"]`
+      );
+      if (await coCaptainCheckbox.isVisible()) {
+        const isAlreadyCoCaptain =
+          await coCaptainCheckbox.getAttribute("aria-checked");
+        if (isAlreadyCoCaptain !== "true") {
+          await coCaptainCheckbox.click();
+          console.log(`✅ Assigned co-captain role to player ${i}`);
+          coCaptainAssigned = true;
+        } else {
+          console.log(`✅ Co-captain already assigned to player ${i}`);
+          coCaptainAssigned = true;
+        }
+      }
+    }
+  }
+
+  if (!captainAssigned || !coCaptainAssigned) {
+    console.log(
+      `⚠️ Role assignment incomplete: captain=${captainAssigned}, co-captain=${coCaptainAssigned}`
+    );
+  }
+}
+
 test.describe("Signup Form", () => {
   // Configure timeout for the entire test suite - reduced from 90 seconds
   test.describe.configure({ timeout: 45000 });
@@ -337,7 +421,6 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
 
       // Find and select the "Other" option using data-testid
       const otherOption = page.locator('[data-testid="organizations-add-new"]');
@@ -382,7 +465,6 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
 
       // Select "Other" option
       await page.locator('[data-testid="organizations-add-new"]').click();
@@ -421,7 +503,7 @@ test.describe("Signup Form", () => {
       await teamSelector.click();
 
       // Wait for dropdown and select "Add new"
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
 
       // Fill in team name
@@ -432,12 +514,6 @@ test.describe("Signup Form", () => {
         '[data-testid="team-external-id-input"]'
       );
       await expect(faceitIdField).toBeVisible();
-    });
-
-    test.skip("should show custom fields when selecting 'Add new' team", async ({
-      page: _page
-    }) => {
-      // Implementation will be added later
     });
   });
 
@@ -457,7 +533,6 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
 
       // Select "Other" option
       await page.locator('[data-testid="organizations-add-new"]').click();
@@ -485,11 +560,11 @@ test.describe("Signup Form", () => {
 
       // Now we should be on the team tab
       // Select "Add new" for team
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
 
       // Wait for dropdown and select add new team option
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
 
       // Fill in the new team name
@@ -497,7 +572,6 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="team-external-id-input"]')
         .fill(generateUniqueFaceitTeamId());
-      await page.waitForTimeout(500);
     });
 
     test("should identify and access the Team Faceit ID field", async ({
@@ -531,7 +605,7 @@ test.describe("Signup Form", () => {
       await faceitIdField.focus();
       await faceitIdField.fill("");
       await faceitIdField.blur();
-      await page.waitForTimeout(500);
+
       const errorMessage = page.locator(
         '[data-testid="team-external-id-error"]'
       );
@@ -554,11 +628,9 @@ test.describe("Signup Form", () => {
       await faceitIdField.fill("77dd9104d2f14f50ba80d58457cff5a9");
 
       // Wait a moment for validation to process
-      await page.waitForTimeout(300);
 
       // Trigger validation by blurring the field
       await faceitIdField.blur();
-      await page.waitForTimeout(200);
 
       // Test 1: Check that the go to lineup button is disabled
       await expect(goToLineupButton).toBeDisabled();
@@ -587,11 +659,9 @@ test.describe("Signup Form", () => {
       await faceitIdField.fill(`http://${generateUniqueFaceitTeamId()}`);
 
       // Wait a moment for validation to process
-      await page.waitForTimeout(300);
 
       // Trigger validation by blurring the field
       await faceitIdField.blur();
-      await page.waitForTimeout(200);
 
       // Test 1: Check that the go to lineup button is disabled
       await expect(goToLineupButton).toBeDisabled();
@@ -621,7 +691,7 @@ test.describe("Signup Form", () => {
       await faceitIdField.focus();
       await faceitIdField.fill(generateUniqueFaceitTeamId());
       await faceitIdField.blur();
-      await page.waitForTimeout(500);
+
       const errorMessage = page.locator(
         '[data-testid="team-external-id-error"]'
       );
@@ -644,7 +714,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -659,17 +729,15 @@ test.describe("Signup Form", () => {
 
       // Move to team section
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
 
       // Complete team selection
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
       await page.locator('[data-testid="team-name-input"]').fill("Test Team");
       await page
         .locator('[data-testid="team-external-id-input"]')
         .fill(generateUniqueFaceitTeamId());
-      await page.waitForTimeout(500);
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
@@ -689,7 +757,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -704,11 +772,10 @@ test.describe("Signup Form", () => {
 
       // Move to team section
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
 
       // Complete team selection
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
       await page
         .locator('[data-testid="team-name-input"]')
@@ -716,11 +783,9 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="team-external-id-input"]')
         .fill(generateUniqueFaceitTeamId());
-      await page.waitForTimeout(500);
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
 
       // Find first Steam ID input field
       const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
@@ -752,7 +817,6 @@ test.describe("Signup Form", () => {
       });
 
       // Wait for validation (increased timeout for API calls)
-      await page.waitForTimeout(3000);
 
       // DEBUG: Check what happened with validation
       console.log("🔍 DEBUG: Checking validation state...");
@@ -802,7 +866,7 @@ test.describe("Signup Form", () => {
 
     // Complete organization selection
     await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
-    await page.waitForTimeout(500);
+
     await page.locator('[data-testid="organizations-add-new"]').click();
     await page
       .locator('[data-testid="organization-name-input"]')
@@ -817,21 +881,18 @@ test.describe("Signup Form", () => {
 
     // Move to team section
     await page.locator('[data-testid="team-selection-button"]').click();
-    await page.waitForTimeout(500);
 
     // Complete team selection
     await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-    await page.waitForTimeout(500);
+
     await page.locator('[data-testid="teams-add-new"]').click();
     await page.locator('[data-testid="team-name-input"]').fill("Test Team");
     await page
       .locator('[data-testid="team-external-id-input"]')
       .fill(generateUniqueFaceitTeamId());
-    await page.waitForTimeout(500);
 
     // Navigate to players section
     await page.locator('[data-testid="go-to-lineup-button"]').click();
-    await page.waitForTimeout(500);
 
     // Fill in Steam ID for player 1 - this user has employment_approved_by_organizer = true in the E2E seed
     const steamIdInput = page.locator('[data-testid="steam-id-input-1"]');
@@ -840,7 +901,7 @@ test.describe("Signup Form", () => {
     await steamIdInput.focus();
     await steamIdInput.fill("76561197960275646"); // account_id 5 - approved by organizer
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(3000); // Wait for all validation APIs to complete
+    // Wait for all validation APIs to complete
 
     // Verify green border appears (indicates successful validation including organizer approval)
     await expect(steamIdInput).toHaveClass(/border-green-500/);
@@ -854,7 +915,7 @@ test.describe("Signup Form", () => {
 
     // Complete organization selection
     await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
-    await page.waitForTimeout(500);
+
     await page.locator('[data-testid="organizations-add-new"]').click();
     await page
       .locator('[data-testid="organization-name-input"]')
@@ -869,21 +930,17 @@ test.describe("Signup Form", () => {
 
     // Move to team section
     await page.locator('[data-testid="team-selection-button"]').click();
-    await page.waitForTimeout(500);
 
     // Complete team selection
     await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-    await page.waitForTimeout(500);
     await page.locator('[data-testid="teams-add-new"]').click();
     await page.locator('[data-testid="team-name-input"]').fill("Test Team");
     await page
       .locator('[data-testid="team-external-id-input"]')
       .fill(generateUniqueFaceitTeamId());
-    await page.waitForTimeout(500);
 
     // Navigate to players section
     await page.locator('[data-testid="go-to-lineup-button"]').click();
-    await page.waitForTimeout(500);
 
     // Fill in Steam ID for player 1 - this user has employment_approved_by_organizer = false in the E2E seed
     const steamIdInput = page.locator('[data-testid="steam-id-input-1"]');
@@ -892,7 +949,6 @@ test.describe("Signup Form", () => {
     await steamIdInput.focus();
     await steamIdInput.fill("76561197960283671"); // account_id 6 - NOT approved by organizer
     await page.keyboard.press("Tab");
-    await page.waitForTimeout(3000); // Wait for all validation APIs to complete
 
     // Verify red border appears (indicates validation failure due to lack of organizer approval)
     await expect(steamIdInput).toHaveClass(/border-red-500/);
@@ -910,7 +966,6 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -925,9 +980,7 @@ test.describe("Signup Form", () => {
 
       // Navigate to team section and complete team selection
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
       await page.locator('[data-testid="teams-add-new"]').click();
       await page.locator('[data-testid="team-name-input"]').fill("Test Team");
       await page
@@ -936,7 +989,6 @@ test.describe("Signup Form", () => {
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
 
       // Fill in exactly 5 valid players (minimum required) - using unique Steam IDs
       const validPlayers = [
@@ -954,92 +1006,9 @@ test.describe("Signup Form", () => {
         await expect(steamIdInput).toBeVisible();
         await steamIdInput.fill(validPlayers[i]!); // Non-null assertion
         await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
       }
 
-      // Wait for all validations to complete
-      await page.waitForTimeout(3000);
-
-      // Try to expand accordions and assign captain/co-captain roles
-      console.log("Attempting to assign captain and co-captain roles...");
-
-      // FIXED: Use generic approach instead of looking for specific nicknames
-      // Find any closed accordion triggers and assign roles
-      const accordionTriggers = page.locator('button[data-state="closed"]');
-      const triggerCount = await accordionTriggers.count();
-      console.log(`Found ${triggerCount} closed accordions`);
-
-      let captainAssigned = false;
-      let coCaptainAssigned = false;
-
-      // Assign captain to first available player
-      for (let i = 0; i < Math.min(triggerCount, 5) && !captainAssigned; i++) {
-        const trigger = accordionTriggers.nth(i);
-        if (await trigger.isVisible()) {
-          await trigger.click();
-          await page.waitForTimeout(500);
-
-          const captainCheckbox = page.locator(
-            `[data-testid="captain-checkbox-${i}"]`
-          );
-          if (await captainCheckbox.isVisible()) {
-            const isAlreadyCaptain =
-              await captainCheckbox.getAttribute("aria-checked");
-            if (isAlreadyCaptain !== "true") {
-              await captainCheckbox.click();
-              console.log(`✅ Assigned captain role to player ${i}`);
-              captainAssigned = true;
-            } else {
-              console.log(
-                `✅ Captain already assigned to player ${i} (auto-assigned)`
-              );
-              captainAssigned = true;
-            }
-            await page.waitForTimeout(500);
-          }
-        }
-      }
-
-      // Assign co-captain to next available player
-      for (
-        let i = 0;
-        i < Math.min(triggerCount, 5) && !coCaptainAssigned;
-        i++
-      ) {
-        const trigger = accordionTriggers.nth(i);
-        if (await trigger.isVisible()) {
-          // Expand if not already expanded
-          const isOpen = await trigger.getAttribute("data-state");
-          if (isOpen === "closed") {
-            await trigger.click();
-            await page.waitForTimeout(500);
-          }
-
-          const coCaptainCheckbox = page.locator(
-            `[data-testid="co-captain-checkbox-${i}"]`
-          );
-          if (await coCaptainCheckbox.isVisible()) {
-            const isAlreadyCoCaptain =
-              await coCaptainCheckbox.getAttribute("aria-checked");
-            if (isAlreadyCoCaptain !== "true") {
-              await coCaptainCheckbox.click();
-              console.log(`✅ Assigned co-captain role to player ${i}`);
-              coCaptainAssigned = true;
-              await page.waitForTimeout(500);
-            } else {
-              console.log(`✅ Co-captain already assigned to player ${i}`);
-              coCaptainAssigned = true;
-            }
-          }
-        }
-      }
-
-      if (!captainAssigned || !coCaptainAssigned) {
-        console.log(
-          `⚠️ Role assignment incomplete: captain=${captainAssigned}, co-captain=${coCaptainAssigned}`
-        );
-      }
-
+      await assignCaptain(page);
       // Accept final terms and conditions (on players tab)
       const finalTermsCheckbox = page.locator(
         '[data-testid="terms-conditions-checkbox"]'
@@ -1050,7 +1019,6 @@ test.describe("Signup Form", () => {
           .catch(() => false);
         if (!isChecked) {
           await finalTermsCheckbox.click();
-          await page.waitForTimeout(500);
         }
       }
 
@@ -1107,7 +1075,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -1122,9 +1090,9 @@ test.describe("Signup Form", () => {
 
       // Navigate to team section and complete team selection
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
       await page
         .locator('[data-testid="team-name-input"]')
@@ -1135,7 +1103,6 @@ test.describe("Signup Form", () => {
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
 
       // Fill in 5 players using unique Steam IDs from our E2E seed (no duplicates)
       const validPlayers = [
@@ -1154,92 +1121,11 @@ test.describe("Signup Form", () => {
         await expect(steamIdInput).toBeVisible();
         await steamIdInput.fill(validPlayers[i]!); // Non-null assertion
         await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
       }
 
       // Wait for all validations to complete
-      await page.waitForTimeout(3000);
 
-      // Try to expand accordions and assign captain/co-captain roles
-      console.log("Attempting to assign captain and co-captain roles...");
-
-      // FIXED: Use generic approach instead of looking for specific nicknames
-      // Find any closed accordion triggers and assign roles
-      const accordionTriggers = page.locator('button[data-state="closed"]');
-      const triggerCount = await accordionTriggers.count();
-      console.log(`Found ${triggerCount} closed accordions`);
-
-      let captainAssigned = false;
-      let coCaptainAssigned = false;
-
-      // Assign captain to first available player
-      for (let i = 0; i < Math.min(triggerCount, 5) && !captainAssigned; i++) {
-        const trigger = accordionTriggers.nth(i);
-        if (await trigger.isVisible()) {
-          await trigger.click();
-          await page.waitForTimeout(500);
-
-          const captainCheckbox = page.locator(
-            `[data-testid="captain-checkbox-${i}"]`
-          );
-          if (await captainCheckbox.isVisible()) {
-            const isAlreadyCaptain =
-              await captainCheckbox.getAttribute("aria-checked");
-            if (isAlreadyCaptain !== "true") {
-              await captainCheckbox.click();
-              console.log(`✅ Assigned captain role to player ${i}`);
-              captainAssigned = true;
-            } else {
-              console.log(
-                `✅ Captain already assigned to player ${i} (auto-assigned)`
-              );
-              captainAssigned = true;
-            }
-            await page.waitForTimeout(500);
-          }
-        }
-      }
-
-      // Assign co-captain to next available player
-      for (
-        let i = 0;
-        i < Math.min(triggerCount, 5) && !coCaptainAssigned;
-        i++
-      ) {
-        const trigger = accordionTriggers.nth(i);
-        if (await trigger.isVisible()) {
-          // Expand if not already expanded
-          const isOpen = await trigger.getAttribute("data-state");
-          if (isOpen === "closed") {
-            await trigger.click();
-            await page.waitForTimeout(500);
-          }
-
-          const coCaptainCheckbox = page.locator(
-            `[data-testid="co-captain-checkbox-${i}"]`
-          );
-          if (await coCaptainCheckbox.isVisible()) {
-            const isAlreadyCoCaptain =
-              await coCaptainCheckbox.getAttribute("aria-checked");
-            if (isAlreadyCoCaptain !== "true") {
-              await coCaptainCheckbox.click();
-              console.log(`✅ Assigned co-captain role to player ${i}`);
-              coCaptainAssigned = true;
-              await page.waitForTimeout(500);
-            } else {
-              console.log(`✅ Co-captain already assigned to player ${i}`);
-              coCaptainAssigned = true;
-            }
-          }
-        }
-      }
-
-      if (!captainAssigned || !coCaptainAssigned) {
-        console.log(
-          `⚠️ Role assignment incomplete: captain=${captainAssigned}, co-captain=${coCaptainAssigned}`
-        );
-      }
-
+      await assignCaptain(page);
       // Accept final terms and conditions (on players tab)
       const finalTermsCheckbox = page.locator(
         '[data-testid="terms-conditions-checkbox"]'
@@ -1250,7 +1136,6 @@ test.describe("Signup Form", () => {
           .catch(() => false);
         if (!isChecked) {
           await finalTermsCheckbox.click();
-          await page.waitForTimeout(500);
         }
       }
 
@@ -1323,7 +1208,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -1338,9 +1223,9 @@ test.describe("Signup Form", () => {
 
       // Navigate to team section and complete team selection
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
       await page
         .locator('[data-testid="team-name-input"]')
@@ -1351,7 +1236,6 @@ test.describe("Signup Form", () => {
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
 
       // Player data using unique Steam IDs from our E2E seed
       const PLAYER1 = { steamId: "76561197960283932", nickname: "heppajpg" }; // account_id 4 - our auth user (has E2E data)
@@ -1376,11 +1260,9 @@ test.describe("Signup Form", () => {
           await expect(steamIdInput).toBeVisible();
           await steamIdInput.fill(player.steamId);
           await page.keyboard.press("Tab");
-          await page.waitForTimeout(1500);
         }
 
         // Extra wait for all nicknames to load
-        await page.waitForTimeout(2000);
 
         // Check all visible nickname spans for the correct nicknames
         const nicknameSpans = page.locator("span.text-kanaliiga-orange");
@@ -1400,298 +1282,6 @@ test.describe("Signup Form", () => {
       }
     });
 
-    test.skip("should assign captain and co-captain roles and enable submit button", async ({
-      page
-    }) => {
-      // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
-
-      // Complete organization selection
-      await page
-        .locator('[data-testid="organizations-dropdown-toggle"]')
-        .click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="organizations-add-new"]').click();
-      await page
-        .locator('[data-testid="organization-name-input"]')
-        .fill("Captain Test Org");
-      await page
-        .locator('[data-testid="organization-business-id-input"]')
-        .fill(generateUniqueOrgCode());
-      await page
-        .locator('[data-testid="organization-website-input"]')
-        .fill("https://kanaliiga.fi/");
-      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
-
-      // Navigate to team section and complete team selection
-      await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="teams-add-new"]').click();
-      await page
-        .locator('[data-testid="team-name-input"]')
-        .fill("Captain Test Team");
-      await page
-        .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId());
-
-      // Navigate to players section
-      await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
-
-      // Fill in 5 players with unique Steam IDs
-      const testPlayers = [
-        "76561197960283932", // account_id 4 - heppajpg (our auth user, not in team 999) (will be captain)
-        "76561197960265728", // account_id 8 - Hoolyz (from E2E seed) (will be co-captain)
-        "76561197960265740", // account_id 9 - RealPlayer1 (from E2E seed)
-        "76561197961279983", // account_id 10 - RealPlayer2 (from E2E seed)
-        "76561197960265748" // account_id 11 - RealPlayer3 (from E2E seed)
-      ];
-
-      console.log("Filling in 5 players...");
-      for (let i = 0; i < 5; i++) {
-        const steamIdInput = page.locator(
-          `[data-testid="steam-id-input-${i}"]`
-        );
-        await expect(steamIdInput).toBeVisible();
-        await steamIdInput.fill(testPlayers[i]!);
-        await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
-      }
-
-      // Wait for all validations to complete
-      await page.waitForTimeout(3000);
-
-      // Assign captain role to player 0 (auth user)
-      console.log("Assigning captain role to player 0...");
-      const captainCheckbox0 = page.locator(
-        '[data-testid="captain-checkbox-0"]'
-      );
-      if (await captainCheckbox0.isVisible()) {
-        // Check if it's already checked (auto-assigned) before clicking
-        const isAlreadyCaptain =
-          await captainCheckbox0.getAttribute("aria-checked");
-        if (isAlreadyCaptain !== "true") {
-          await captainCheckbox0.click();
-          console.log("✅ Assigned captain role");
-        } else {
-          console.log("✅ Captain already assigned (auto-assigned)");
-        }
-        await page.waitForTimeout(500);
-      }
-
-      // Assign co-captain role to player 1 (approved user)
-      console.log("Assigning co-captain role to player 1...");
-      const coCaptainCheckbox1 = page.locator(
-        '[data-testid="co-captain-checkbox-1"]'
-      );
-      if (await coCaptainCheckbox1.isVisible()) {
-        await coCaptainCheckbox1.click();
-        await page.waitForTimeout(500);
-      }
-
-      // Accept terms and conditions
-      const termsCheckbox = page.locator(
-        '[data-testid="terms-conditions-checkbox"]'
-      );
-      if (await termsCheckbox.isVisible()) {
-        const isChecked = await termsCheckbox.isChecked().catch(() => false);
-        if (!isChecked) {
-          await termsCheckbox.click();
-          await page.waitForTimeout(500);
-        }
-      }
-
-      // Wait for submit button to become enabled
-      const submitButton = page
-        .locator('button[type="submit"]')
-        .filter({ hasText: /Submit/i });
-      await expect(submitButton).toBeEnabled({ timeout: 10000 });
-
-      console.log(
-        "✅ Submit button enabled with captain and co-captain assigned!"
-      );
-    });
-
-    test.skip("should show success message after successful registration submission", async ({
-      page
-    }) => {
-      // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
-
-      // Complete organization selection
-      await page
-        .locator('[data-testid="organizations-dropdown-toggle"]')
-        .click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="organizations-add-new"]').click();
-      await page
-        .locator('[data-testid="organization-name-input"]')
-        .fill("Success Message Test Org");
-      await page
-        .locator('[data-testid="organization-business-id-input"]')
-        .fill(generateUniqueOrgCode());
-      await page
-        .locator('[data-testid="organization-website-input"]')
-        .fill("https://kanaliiga.fi/");
-      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
-
-      // Navigate to team section and complete team selection
-      await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="teams-add-new"]').click();
-      await page
-        .locator('[data-testid="team-name-input"]')
-        .fill("Success Message Test Team");
-      await page
-        .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId(true)); // Use real FACEIT team ID for submission
-
-      // Navigate to players section
-      await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
-
-      // Fill in 5 players with unique Steam IDs (same as debug test)
-      const successTestPlayers = [
-        "76561197960283932", // account_id 4 - heppajpg (our auth user, not in team 999) (will be captain)
-        "76561197960265728", // account_id 8 - Hoolyz (from E2E seed) (will be co-captain)
-        "76561197960265740", // account_id 9 - RealPlayer1 (from E2E seed)
-        "76561197961279983", // account_id 10 - RealPlayer2 (from E2E seed)
-        "76561197960265748" // account_id 11 - RealPlayer3 (from E2E seed)
-      ];
-
-      console.log("Filling in 5 players for success message test...");
-      for (let i = 0; i < 5; i++) {
-        const steamIdInput = page.locator(
-          `[data-testid="steam-id-input-${i}"]`
-        );
-        await expect(steamIdInput).toBeVisible();
-        await steamIdInput.fill(successTestPlayers[i]!);
-        await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
-      }
-
-      // Wait for all validations to complete
-      await page.waitForTimeout(3000);
-
-      // TEMP FIX: Assign co-captain using working logic from UX test
-      console.log("🔧 TEMP FIX: Assigning co-captain...");
-      const tempAccordionTriggers = page.locator('button[data-state="closed"]');
-      const tempTriggerCount = await tempAccordionTriggers.count();
-      console.log(`Found ${tempTriggerCount} closed accordions`);
-
-      for (let i = 0; i < Math.min(tempTriggerCount, 5); i++) {
-        const trigger = tempAccordionTriggers.nth(i);
-        if (await trigger.isVisible()) {
-          await trigger.click();
-          await page.waitForTimeout(500);
-
-          const coCaptainCheckboxes = page.locator(
-            '[data-testid*="co-captain-checkbox"]'
-          );
-          const coCaptainCount = await coCaptainCheckboxes.count();
-
-          if (coCaptainCount > 0) {
-            const coCaptainCheckbox = coCaptainCheckboxes.first();
-            if (await coCaptainCheckbox.isVisible()) {
-              console.log(`🔧 Found co-captain checkbox, clicking...`);
-              await coCaptainCheckbox.click();
-              await page.waitForTimeout(1000);
-              break;
-            }
-          }
-        }
-      }
-
-      // Check terms and conditions (should already be checked from organization step)
-      const termsCheckbox = page.locator(
-        '[data-testid="terms-conditions-checkbox"]'
-      );
-      if (await termsCheckbox.isVisible()) {
-        const isChecked = await termsCheckbox.isChecked().catch(() => false);
-        if (!isChecked) {
-          await termsCheckbox.click();
-          await page.waitForTimeout(500);
-        }
-      }
-
-      // Wait for submit button to become enabled (should be enabled based on debug test results)
-      const submitButton = page
-        .locator('button[type="submit"]')
-        .filter({ hasText: /Submit/i });
-      await expect(submitButton).toBeEnabled({ timeout: 10000 });
-      console.log("Submit button enabled, proceeding with submission...");
-
-      // Listen for the submission API call
-      const submissionPromise = page.waitForResponse(
-        (response) =>
-          response.url().includes("/api/v1/registrations/season/") &&
-          response.request().method() === "POST" &&
-          !response.url().includes("/draft")
-      );
-
-      // Click submit
-      await submitButton.click();
-      console.log("Submit button clicked!");
-
-      // Wait for the submission to complete
-      const submissionResponse = await submissionPromise;
-      console.log(
-        "Submission API response status:",
-        submissionResponse.status()
-      );
-
-      // Verify successful submission response
-      if (
-        submissionResponse.status() === 200 ||
-        submissionResponse.status() === 201
-      ) {
-        console.log(
-          "✅ Registration API call successful, checking for success message..."
-        );
-
-        // Verify the success message appears with the correct text
-        const successMessage = page.locator('[data-testid="success-message"]');
-        await expect(successMessage).toBeVisible({ timeout: 10000 });
-
-        // Check that the success message contains the expected text
-        await expect(successMessage).toContainText(
-          "Team registered succesfully, please remember to"
-        );
-        await expect(successMessage).toContainText("pay participation fee");
-
-        console.log("✅ Success message displayed correctly!");
-
-        // Verify button is disabled after submission
-        await expect(submitButton).toBeDisabled();
-
-        // Check that the edit URL is also provided (should be visible in the success message area)
-        const editLink = page.locator("text=Captains edit link:");
-        await expect(editLink).toBeVisible({ timeout: 5000 });
-
-        console.log("✅ Edit link provided for captain!");
-      } else {
-        console.log(
-          `Submission failed with status: ${submissionResponse.status()}`
-        );
-
-        // Log response body for debugging
-        try {
-          const responseBody = await submissionResponse.text();
-          console.log("❌ Response body:", responseBody);
-        } catch (_e) {
-          console.log("Could not read response body");
-        }
-
-        throw new Error(
-          `Submission failed with status: ${submissionResponse.status()}`
-        );
-      }
-    });
-
     test("should debug captain and co-captain assignment process", async ({
       page
     }) => {
@@ -1702,7 +1292,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -1717,9 +1307,9 @@ test.describe("Signup Form", () => {
 
       // Navigate to team section and complete team selection
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
       await page
         .locator('[data-testid="team-name-input"]')
@@ -1730,7 +1320,6 @@ test.describe("Signup Form", () => {
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
 
       // Fill in 5 players to match actual usage
       console.log("=== STEP 1: Filling in players ===");
@@ -1749,12 +1338,12 @@ test.describe("Signup Form", () => {
         await expect(steamIdInput).toBeVisible();
         await steamIdInput.fill(validPlayers[i]!);
         await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
+
         console.log(`Filled player ${i}: ${validPlayers[i]}`);
       }
 
       // Wait for validations to complete
-      await page.waitForTimeout(3000);
+
       console.log(
         "=== STEP 2: Players filled, checking for captain/co-captain checkboxes ==="
       );
@@ -1808,7 +1397,6 @@ test.describe("Signup Form", () => {
           if (currentState !== "true") {
             console.log(`Clicking captain checkbox for player ${i}...`);
             await captainCheckbox.click();
-            await page.waitForTimeout(500);
 
             const newState = await captainCheckbox.getAttribute("aria-checked");
             console.log(`Captain checkbox ${i} after click: ${newState}`);
@@ -1835,7 +1423,6 @@ test.describe("Signup Form", () => {
           if (currentState !== "true") {
             console.log(`Clicking co-captain checkbox for player ${i}...`);
             await coCaptainCheckbox.click();
-            await page.waitForTimeout(500);
 
             const newState =
               await coCaptainCheckbox.getAttribute("aria-checked");
@@ -1849,7 +1436,6 @@ test.describe("Signup Form", () => {
 
       // Check final validation state
       console.log("=== STEP 5: Final validation check ===");
-      await page.waitForTimeout(1000);
 
       const validationMessage = page.locator(
         "text=There must be exactly one captain and one co-captain"
@@ -1887,7 +1473,7 @@ test.describe("Signup Form", () => {
       await page
         .locator('[data-testid="organizations-dropdown-toggle"]')
         .click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="organizations-add-new"]').click();
       await page
         .locator('[data-testid="organization-name-input"]')
@@ -1902,9 +1488,9 @@ test.describe("Signup Form", () => {
 
       // Navigate to team section and complete team selection
       await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
+
       await page.locator('[data-testid="teams-add-new"]').click();
       await page
         .locator('[data-testid="team-name-input"]')
@@ -1915,7 +1501,6 @@ test.describe("Signup Form", () => {
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
 
       // Fill in 5 players
       const validPlayers = [
@@ -1934,11 +1519,9 @@ test.describe("Signup Form", () => {
         await expect(steamIdInput).toBeVisible();
         await steamIdInput.fill(validPlayers[i]!);
         await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
       }
 
       // Wait for all validations to complete
-      await page.waitForTimeout(3000);
 
       // Check for the captain auto-assignment message
       const captainMessage = page.locator(
@@ -1984,176 +1567,6 @@ test.describe("Signup Form", () => {
       console.log(
         "✅ Captain/co-captain validation test complete (no submission)"
       );
-    });
-
-    test.skip("should show captain/co-captain validation error immediately with improved UX", async ({
-      page
-    }) => {
-      // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
-
-      // Complete organization selection
-      await page
-        .locator('[data-testid="organizations-dropdown-toggle"]')
-        .click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="organizations-add-new"]').click();
-      await page
-        .locator('[data-testid="organization-name-input"]')
-        .fill("UX Test Org");
-      await page
-        .locator('[data-testid="organization-business-id-input"]')
-        .fill(generateUniqueOrgCode());
-      await page
-        .locator('[data-testid="organization-website-input"]')
-        .fill("https://kanaliiga.fi/");
-      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
-
-      // Navigate to team section and complete team selection
-      await page.locator('[data-testid="team-selection-button"]').click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-      await page.waitForTimeout(500);
-      await page.locator('[data-testid="teams-add-new"]').click();
-      await page
-        .locator('[data-testid="team-name-input"]')
-        .fill("UX Test Team");
-      await page
-        .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId());
-
-      // Navigate to players section
-      await page.locator('[data-testid="go-to-lineup-button"]').click();
-      await page.waitForTimeout(500);
-
-      // Fill in 5 players
-      const validPlayers = [
-        "76561197960273207", // account_id 3 - auth user (auto-captain)
-        "76561197960275646", // account_id 5 - approved
-        "76561197960283932", // account_id 4 - valid (HEPPAJPG)
-        "76561197960265728", // account_id 8 - Hoolyz (from E2E seed)
-        "76561197960265740" // account_id 9 - RealPlayer1 (from E2E seed)
-      ];
-
-      console.log("Filling in 5 players...");
-      for (let i = 0; i < 5; i++) {
-        const steamIdInput = page.locator(
-          `[data-testid="steam-id-input-${i}"]`
-        );
-        await expect(steamIdInput).toBeVisible();
-        await steamIdInput.fill(validPlayers[i]!);
-        await page.keyboard.press("Tab");
-        await page.waitForTimeout(1500);
-      }
-
-      // Wait for all validations to complete
-      await page.waitForTimeout(3000);
-
-      // Debug: Check current captain/co-captain state
-      console.log("🔍 Debugging captain/co-captain state...");
-      const captains = await page
-        .locator('[data-testid*="captain-checkbox"]')
-        .count();
-      const coCaptains = await page
-        .locator('[data-testid*="co-captain-checkbox"]')
-        .count();
-      console.log(
-        `Found ${captains} captain checkboxes, ${coCaptains} co-captain checkboxes`
-      );
-
-      // Check for captain auto-assignment message
-      const captainMessage = page.locator(
-        "text=By default you are the captain"
-      );
-      const hasCaptainMessage = await captainMessage.isVisible();
-      console.log(
-        `Captain auto-assignment message visible: ${hasCaptainMessage}`
-      );
-
-      // Get submit button reference
-      const submitButton = page
-        .locator('button[type="submit"]')
-        .filter({ hasText: /Submit/i });
-
-      // Check submit button state before looking for error
-      const submitEnabled = await submitButton.isEnabled();
-      console.log(`Submit button enabled before error check: ${submitEnabled}`);
-
-      // If submit button is enabled, the validation might already be passing
-      if (submitEnabled) {
-        console.log(
-          "⚠️ Submit button is already enabled - validation might be passing automatically"
-        );
-        return;
-      }
-
-      // 1. Check that captain/co-captain validation error shows IMMEDIATELY
-      console.log("✅ Step 1: Checking for immediate validation error...");
-      const captainValidationError = page.locator(
-        '[data-testid="captain-validation-error"]'
-      );
-      await expect(captainValidationError).toBeVisible();
-      await expect(captainValidationError).toContainText(
-        "There must be exactly one captain and one co-captain"
-      );
-      console.log("✅ Validation error shows immediately!");
-
-      // 2. Check that submit button is DISABLED due to validation error
-      console.log("✅ Step 2: Checking submit button is disabled...");
-      await expect(submitButton).toBeDisabled();
-      console.log("✅ Submit button is disabled as expected!");
-
-      // 3. Assign co-captain to clear validation error
-      console.log("✅ Step 3: Assigning co-captain to clear validation...");
-
-      // Find and expand a player accordion to assign co-captain
-      const accordionTriggers = page.locator('button[data-state="closed"]');
-      const triggerCount = await accordionTriggers.count();
-      console.log(`Found ${triggerCount} closed accordions`);
-
-      let coCaptainAssigned = false;
-      for (let i = 0; i < Math.min(triggerCount, 5); i++) {
-        const trigger = accordionTriggers.nth(i);
-        if (await trigger.isVisible()) {
-          await trigger.click();
-          await page.waitForTimeout(500);
-
-          // Look for any co-captain checkbox that becomes visible
-          const coCaptainCheckboxes = page.locator(
-            '[data-testid*="co-captain-checkbox"]'
-          );
-          const coCaptainCount = await coCaptainCheckboxes.count();
-
-          if (coCaptainCount > 0) {
-            const coCaptainCheckbox = coCaptainCheckboxes.first();
-            if (await coCaptainCheckbox.isVisible()) {
-              console.log(`Found co-captain checkbox, clicking...`);
-              await coCaptainCheckbox.click();
-              await page.waitForTimeout(1000);
-              coCaptainAssigned = true;
-              break;
-            }
-          }
-        }
-      }
-
-      if (coCaptainAssigned) {
-        // 4. Verify validation error disappears
-        console.log("✅ Step 4: Checking validation error disappears...");
-        await expect(captainValidationError).not.toBeVisible({ timeout: 5000 });
-        console.log("✅ Validation error disappeared!");
-
-        // 5. Verify submit button becomes enabled
-        console.log("✅ Step 5: Checking submit button becomes enabled...");
-        await expect(submitButton).toBeEnabled({ timeout: 5000 });
-        console.log("✅ Submit button is now enabled!");
-
-        console.log("🎉 UX improvement working perfectly!");
-      } else {
-        console.log(
-          "⚠️ Could not assign co-captain, but validation error shows correctly"
-        );
-      }
     });
   });
 });

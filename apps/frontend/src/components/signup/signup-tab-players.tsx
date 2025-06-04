@@ -381,11 +381,13 @@ export const TabPlayers = ({
                 className="space-y-2 border-b-0"
                 key={field.id}
                 value={`player-${index}`}
+                data-testid={`player-accordion-${index}`}
               >
                 <AccordionTrigger
                   className={
                     "border-1 p-4 w-full rounded-lg flex flex-col items-center xs:flex-row"
                   }
+                  data-testid={`player-accordion-triggers`}
                 >
                   <FormField
                     control={control}
