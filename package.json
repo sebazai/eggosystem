@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "author": "Sebastian Sergelius",
   "license": "GPL-3.0",
-  "description": "A unified monorepo for Kanahub’s frontend and backend services.",
+  "description": "A unified monorepo for Kanahub's frontend and backend services.",
   "scripts": {
     "shadcn:add": "turbo run shadcn:add -- --",
     "build": "turbo build",
@@ -14,6 +14,7 @@
     "clean": "turbo clean",
     "check-types": "turbo check-types --",
     "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
     "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true",
     "migrate": "turbo migrate",
     "migrate:rollback": "turbo migrate:rollback",

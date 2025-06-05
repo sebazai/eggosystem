@@ -173,6 +173,13 @@ lint-all:
   script:
     - npx turbo run lint --continue --cache=remote:rw
 
+format:check:
+  stage: lint
+  extends: [.prepare-pnpm, .mr-all-app]
+  script:
+    - pnpm format:check
+  allow_failure: false
+
 audit:
   stage: security
   extends: [.prepare-pnpm, .mr-all-app]

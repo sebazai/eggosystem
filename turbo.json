@@ -46,6 +46,9 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "format:check": {
+      "dependsOn": ["^format:check"]
+    },
     "check-types": {
       "dependsOn": ["^check-types", "@eggosystem/types#build"]
     },
