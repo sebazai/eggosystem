@@ -13,7 +13,6 @@ import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { handleEmailVerification } from "../services/account.services";
 import { getSevenDaysLaterInMillis } from "../utils/date-utils";
-import { appLogger } from "../utils/logger";
 
 export const sendVerificationEmails = async (
   req: RequestWithParams<{ id: string }>,
@@ -177,7 +176,7 @@ export const verifyEmailController = async (
 
     res.status(400).json({ message: "Invalid or expired token." });
   } catch (error) {
-    appLogger.error("Error verifying email", error);
+    console.error("Error verifying email", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
