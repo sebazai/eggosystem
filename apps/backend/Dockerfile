@@ -43,7 +43,7 @@ ENV OTEL_LOGS_EXPORTER="otlp"
 ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 # OTEL Configs
 ENV OTEL_SERVICE_NAME="eggosystem"
-ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=eggosystem-backend"
+ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production,service.namespace=eggosystem,service.name=eggosystem-backend-1"
 ENV OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
 ENV OTEL_EXPORTER_OTLP_ENDPOINT="http://172.17.0.1:4317"
 ENV OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
