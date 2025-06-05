@@ -20,6 +20,7 @@ services:
       FACEIT_API_KEY: $FACEIT_API_KEY
       OTEL_SERVICE_NAME: eggosystem-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production,service.namespace=eggosystem,service.name=eggosystem-backend-1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://172.17.0.1:4317
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
       SMTP_HOST: $SMTP_HOST
       SMTP_USER: $SMTP_USER
