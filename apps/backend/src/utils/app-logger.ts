@@ -26,7 +26,7 @@ const loggerProvider = new LoggerProvider({
   processors: [new BatchLogRecordProcessor(exporter)]
 });
 
-const otelLogger = loggerProvider.getLogger(serviceName);
+const otelLogger = loggerProvider.getLogger("default");
 
 const severityMap: Record<string, number> = {
   error: 17,
