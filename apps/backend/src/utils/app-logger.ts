@@ -5,15 +5,6 @@ import {
   BatchLogRecordProcessor
 } from "@opentelemetry/sdk-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { resourceFromAttributes } from "@opentelemetry/resources";
-import { context, trace } from "@opentelemetry/api";
-
-const serviceName = process.env.OTEL_SERVICE_NAME || "eggosystem-backend-1";
-const resource = resourceFromAttributes({
-  "service.name": serviceName,
-  "service.namespace": process.env.OTEL_SERVICE_NAMESPACE || "eggosystem",
-  "deployment.environment": process.env.NODE_ENV || "production"
-});
 
 const endpoint =
   process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318";
@@ -23,11 +14,10 @@ const exporter = new OTLPLogExporter({
 });
 
 const loggerProvider = new LoggerProvider({
-  resource,
   processors: [new BatchLogRecordProcessor(exporter)]
 });
 
-const otelLogger = loggerProvider.getLogger("default");
+const otelLogger = loggerProvider.getLogger("default", "1.0.0");
 
 const severityMap: Record<string, number> = {
   error: 17,
@@ -42,18 +32,13 @@ const severityMap: Record<string, number> = {
 class OTelTransport extends Transport {
   log(info: winston.LogEntry, callback: () => void) {
     setImmediate(() => this.emit("logged", info));
-    const span = trace.getSpan(context.active());
-    const spanContext = span?.spanContext();
+
     otelLogger.emit({
       body: info.message,
       severityNumber: severityMap[info.level] || 9,
       severityText: info.level.toUpperCase(),
       attributes: {
-        ...info,
-        ...(spanContext && {
-          trace_id: spanContext.traceId,
-          span_id: spanContext.spanId
-        })
+        ...info
       }
     });
     callback();
