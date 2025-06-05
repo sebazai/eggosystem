@@ -9,7 +9,6 @@ import { resourceFromAttributes } from "@opentelemetry/resources";
 
 const serviceName = process.env.OTEL_SERVICE_NAME || "eggosystem-backend-1";
 const resource = resourceFromAttributes({
-  "service.version": "1.0.0",
   "service.name": serviceName,
   "service.namespace": process.env.OTEL_SERVICE_NAMESPACE || "eggosystem",
   "deployment.environment": process.env.NODE_ENV || "production"
@@ -17,6 +16,10 @@ const resource = resourceFromAttributes({
 
 const endpoint =
   process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318";
+
+console.log("Endpoint", endpoint);
+console.log("Service name", serviceName);
+console.log("Resource", resource);
 
 const exporter = new OTLPLogExporter({
   url: endpoint
@@ -48,6 +51,7 @@ class OTelTransport extends Transport {
       severityText: info.level.toUpperCase(),
       attributes: { ...info }
     });
+    console.log("OTel logger should log");
     callback();
   }
 }
