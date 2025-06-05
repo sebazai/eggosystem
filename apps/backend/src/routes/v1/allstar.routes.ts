@@ -39,8 +39,6 @@ router.post("/webhook", async (req: Request, res: Response) => {
         }
       );
       const status = await fetchStatus.json();
-      // eslint-disable-next-line no-console
-      console.log("Status:", JSON.stringify(status, null, 2));
 
       const gameId = status.clip.metadata.find(
         (item: { key: string; value: string }) => item.key === "game_id"

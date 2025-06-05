@@ -18,6 +18,7 @@ class Logger {
   }
 
   info(message: string, context?: LogContext) {
+    // eslint-disable-next-line no-console
     console.info(this.formatMessage(message, context));
   }
 
@@ -42,6 +43,7 @@ class Logger {
   }
 
   debug(message: string, context?: LogContext) {
+    // eslint-disable-next-line no-console
     console.debug(this.formatMessage(message, context));
   }
 

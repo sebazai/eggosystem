@@ -65,20 +65,16 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  try {
-    await knex.raw(
-      "DROP TRIGGER IF EXISTS before_insert_unique_external_platform;"
+  await knex.raw(
+    "DROP TRIGGER IF EXISTS before_insert_unique_external_platform;"
+  );
+  await knex.raw(
+    "DROP TRIGGER IF EXISTS before_update_unique_external_platform;"
+  );
+  await knex.schema.alterTable("SeasonTeamRegistrations", (table) => {
+    table.dropUnique(
+      ["season_id", "external_platform_id"],
+      "unique_season_external_platform_id"
     );
-    await knex.raw(
-      "DROP TRIGGER IF EXISTS before_update_unique_external_platform;"
-    );
-    await knex.schema.alterTable("SeasonTeamRegistrations", (table) => {
-      table.dropUnique(
-        ["season_id", "external_platform_id"],
-        "unique_season_external_platform_id"
-      );
-    });
-  } catch (error) {
-    console.error(error);
-  }
+  });
 }

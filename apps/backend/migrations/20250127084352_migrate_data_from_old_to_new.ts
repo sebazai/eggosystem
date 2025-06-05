@@ -305,8 +305,6 @@ export async function up(knex: Knex): Promise<void> {
     if (rows.length === 0) {
       return; // Exit early to skip migration
     }
-
-    console.log("Database 'kana' exists. Proceeding with migration.");
   } finally {
     await tempDb.destroy(); // Close temporary connection
   }
@@ -344,11 +342,8 @@ export async function down(knex: Knex): Promise<void> {
     const [rows] = await tempDb.raw("SHOW DATABASES LIKE 'kana';");
 
     if (rows.length === 0) {
-      console.log("Database 'kana' does not exist. Skipping rollback.");
       return; // Exit early to skip migration
     }
-
-    console.log("Database 'kana' exists. Proceeding with rollback.");
   } finally {
     await tempDb.destroy(); // Close temporary connection
   }

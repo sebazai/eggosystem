@@ -9,16 +9,13 @@ async function _navigateWithRetry(
 ): Promise<void> {
   for (let i = 0; i < retries; i++) {
     try {
-      console.log(`Navigation attempt ${i + 1} to ${url}`);
       // Increase timeout for initial navigation when page might be compiling
       await page.goto(`http://localhost:3000${url}`, {
         timeout: i === 0 ? 60000 : 30000
       });
       await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
-      console.log(`Successfully navigated to ${url}`);
       return; // Success
     } catch (e) {
-      console.log(`Navigation attempt ${i + 1} failed: ${e}`);
       if (i === retries - 1) throw e; // Last attempt failed
     }
   }
@@ -111,31 +108,8 @@ test.describe("Leaderboards Page", () => {
       }
     ]);
 
-    // Set up request handlers to catch and log all API requests
-    page.on("request", (request) => {
-      const url = request.url();
-      if (url.includes("/api/")) {
-        console.log(`Request: ${url}`);
-      }
-    });
-
-    page.on("response", (response) => {
-      const url = response.url();
-      if (url.includes("/api/")) {
-        console.log(`Response: ${url} (${response.status()})`);
-      }
-    });
-
-    // Log failed requests
-    page.on("requestfailed", (request) => {
-      console.error(
-        `Request failed: ${request.url()}, ${request.failure()?.errorText}`
-      );
-    });
-
     // Mock auth endpoints
     await page.route("**/api/v1/auth/me", async (route: Route) => {
-      console.log("Mocking auth/me endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -155,7 +129,6 @@ test.describe("Leaderboards Page", () => {
     });
 
     await page.route("**/api/v1/accounts/profile", async (route: Route) => {
-      console.log("Mocking accounts/profile endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -173,7 +146,6 @@ test.describe("Leaderboards Page", () => {
     await page.route(
       "**/api/v1/seasons/app/730/active",
       async (route: Route) => {
-        console.log("Mocking active season endpoint for app 730");
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -184,7 +156,6 @@ test.describe("Leaderboards Page", () => {
 
     // Mock the seasons endpoint
     await page.route("**/api/v1/seasons", async (route: Route) => {
-      console.log("Mocking seasons endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -202,7 +173,6 @@ test.describe("Leaderboards Page", () => {
 
     // Mock the v1 filters endpoint
     await page.route("**/api/v1/filters**", async (route: Route) => {
-      console.log("Mocking backend V1 filters API: " + route.request().url());
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -218,7 +188,6 @@ test.describe("Leaderboards Page", () => {
 
     // Mock specific filter endpoints
     await page.route("**/api/v1/leagues", async (route: Route) => {
-      console.log("Mocking leagues endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -233,7 +202,6 @@ test.describe("Leaderboards Page", () => {
     });
 
     await page.route("**/api/v1/teams", async (route: Route) => {
-      console.log("Mocking teams endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -248,7 +216,6 @@ test.describe("Leaderboards Page", () => {
     });
 
     await page.route("**/api/v1/maps", async (route: Route) => {
-      console.log("Mocking maps endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -269,7 +236,6 @@ test.describe("Leaderboards Page", () => {
     await page.route(
       "**/api/v1/filters/leaderboards/multiple**",
       async (route: Route) => {
-        console.log("Mocking leaderboards endpoint: " + route.request().url());
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -283,8 +249,6 @@ test.describe("Leaderboards Page", () => {
     // Set longer timeout for this test
     test.setTimeout(120000);
 
-    console.log("Starting leaderboards page test");
-
     // Navigate to the leaderboards page and retry if needed
     await _navigateWithRetry(page, "/leaderboards");
 
@@ -297,8 +261,6 @@ test.describe("Leaderboards Page", () => {
       fullPage: true
     });
 
-    // Wait longer for content to be visible
-    console.log("Waiting for Leaderboards heading to appear...");
     await page.waitForSelector('h1:has-text("Leaderboards")', {
       timeout: 60000
     });
@@ -313,8 +275,6 @@ test.describe("Leaderboards Page", () => {
       fullPage: true
     });
 
-    // Now wait for actual player data to load
-    console.log("Waiting for player data to load...");
     await page.waitForTimeout(2000);
 
     // Take final screenshot with player data
@@ -322,7 +282,5 @@ test.describe("Leaderboards Page", () => {
       path: "test-results/leaderboards-with-data.png",
       fullPage: true
     });
-
-    console.log("Leaderboards page test completed");
   });
 });

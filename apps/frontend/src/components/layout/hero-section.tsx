@@ -97,7 +97,6 @@ export default function HeroSection({ device }: HeroSectionProps) {
 
   useEffect(() => {
     if (videoRef.current) {
-      console.log("Video source changed:", videoSrc);
       videoRef.current.load();
     }
   }, [videoSrc]);

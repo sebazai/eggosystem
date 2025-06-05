@@ -14,7 +14,6 @@ async function navigateWithRetry(
       await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
       return; // Success
     } catch (e) {
-      console.log(`Navigation attempt ${i + 1} failed, retrying...`);
       if (i === retries - 1) throw e; // Last attempt failed
     }
   }
@@ -36,7 +35,6 @@ test.describe("Profile Form", () => {
 
     // Mock authentication for both endpoints for other tests
     await page.route("**/api/v1/auth/me", async (route: Route) => {
-      console.log("Mocking auth/me endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -57,7 +55,6 @@ test.describe("Profile Form", () => {
     });
 
     await page.route("**/api/v1/accounts/profile", async (route: Route) => {
-      console.log("Mocking accounts/profile endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -71,18 +68,12 @@ test.describe("Profile Form", () => {
       });
     });
 
-    console.log("Authentication mocking and cookies set up");
-
     // Navigate to profile page with retry for compilation
     await navigateWithRetry(page, "/profile");
-    console.log("Current URL:", page.url());
   });
 
   // Focus on just one test initially to ensure the basic setup works
   test("should show profile form when authenticated", async ({ page }) => {
-    // Debug: log current URL and page content
-    console.log("Profile form test URL:", page.url());
-
     // Wait for form to be loaded
     await page.waitForSelector("form", { timeout: 20000 });
 
@@ -109,7 +100,6 @@ test.describe("Profile Form", () => {
       path: "test-results/profile-form-test.png",
       fullPage: true
     });
-    console.log("Screenshot saved as profile-form-test.png");
   });
 
   // Enable the login button test
@@ -122,12 +112,8 @@ test.describe("Profile Form", () => {
     const context = await browser.newContext();
     const newPage = await context.newPage();
 
-    // Log the page content to see what we're working with
-    console.log("Test starting with clean context");
-
     // Mock unauthenticated state - use more specific routes
     await newPage.route("**/api/v1/auth/me", async (route: Route) => {
-      console.log("Mocking unauthenticated me endpoint");
       await route.fulfill({
         status: 401,
         contentType: "application/json",
@@ -143,7 +129,6 @@ test.describe("Profile Form", () => {
         return;
       }
 
-      console.log("Intercepted auth request:", route.request().url());
       await route.fulfill({
         status: 401,
         contentType: "application/json",
@@ -152,7 +137,6 @@ test.describe("Profile Form", () => {
     });
 
     await newPage.route("**/api/v1/accounts/profile", async (route: Route) => {
-      console.log("Mocking accounts/profile endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -169,9 +153,6 @@ test.describe("Profile Form", () => {
     // Navigate directly to the profile page
     await navigateWithRetry(newPage, "/profile");
 
-    // Log what we see on the page
-    console.log("Unauthenticated URL:", newPage.url());
-
     // Wait for the page content to stabilize
     await newPage.waitForLoadState("networkidle", { timeout: 30000 });
 
@@ -180,14 +161,6 @@ test.describe("Profile Form", () => {
       path: "test-results/unauthenticated-page.png",
       fullPage: true
     });
-    console.log("Screenshot saved as unauthenticated-page.png");
-
-    // Look for elements that indicate we're not logged in
-    const pageContent = await newPage.content();
-    console.log(
-      "Page content contains login text:",
-      pageContent.includes("log in")
-    );
 
     // Check for the Steam login button based on the actual component structure
     // Based on the steam-login.tsx file, we know it's a button with variant="link" and contains an Image
@@ -205,26 +178,18 @@ test.describe("Profile Form", () => {
       'div:has-text("log in")'
     ];
 
-    console.log("Looking for Steam login button with various selectors");
-
     // Check if any selector is present
     let foundLoginElement = false;
     for (const selector of steamLoginSelectors) {
-      try {
-        const count = await newPage.locator(selector).count();
-        console.log(`Found ${count} elements matching selector: ${selector}`);
-        if (count > 0) {
-          foundLoginElement = true;
-          // Take a screenshot with the element highlighted
-          await newPage.locator(selector).first().highlight();
-          await newPage.screenshot({
-            path: `test-results/login-element-${selector.replace(/[^a-z0-9]/gi, "_")}.png`
-          });
-          break;
-        }
-      } catch (error) {
-        // Just log the error as string without accessing properties
-        console.log(`Error with selector ${selector}:`, String(error));
+      const count = await newPage.locator(selector).count();
+      if (count > 0) {
+        foundLoginElement = true;
+        // Take a screenshot with the element highlighted
+        await newPage.locator(selector).first().highlight();
+        await newPage.screenshot({
+          path: `test-results/login-element-${selector.replace(/[^a-z0-9]/gi, "_")}.png`
+        });
+        break;
       }
     }
 
@@ -236,7 +201,6 @@ test.describe("Profile Form", () => {
         .count();
       if (loginText > 0) {
         foundLoginElement = true;
-        console.log("Found login text on the page");
       }
     }
 
@@ -255,7 +219,6 @@ test.describe("Profile Form", () => {
   }) => {
     // Mock auth/me with user that hasn't accepted privacy policy
     await page.route("**/api/v1/auth/me", async (route: Route) => {
-      console.log("Mocking auth/me with no privacy policy acceptance");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -275,7 +238,6 @@ test.describe("Profile Form", () => {
     });
 
     await page.route("**/api/v1/accounts/profile", async (route: Route) => {
-      console.log("Mocking accounts/profile endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -293,7 +255,6 @@ test.describe("Profile Form", () => {
     await page.route(
       "**/api/v1/seasons/app/730/active",
       async (route: Route) => {
-        console.log("Mocking active season endpoint for app 730");
         await route.fulfill({
           status: 200,
           contentType: "application/json",
@@ -303,7 +264,6 @@ test.describe("Profile Form", () => {
     );
 
     await page.route("**/api/v1/stats", async (route: Route) => {
-      console.log("Mocking stats frontend");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -330,10 +290,7 @@ test.describe("Profile Form", () => {
       path: "test-results/profile-before-navigation.png",
       fullPage: true
     });
-    console.log("Screenshot saved as profile-before-navigation.png");
 
-    // Try to navigate to the home page
-    console.log("Attempting to navigate away from profile...");
     await navigateWithRetry(page, "/");
 
     // Wait for any redirects to complete
@@ -344,10 +301,7 @@ test.describe("Profile Form", () => {
       path: "test-results/after-navigation-attempt.png",
       fullPage: true
     });
-    console.log("Screenshot saved as after-navigation-attempt.png");
 
-    // Check if we're still on the profile page (with some query params possibly added)
-    console.log("URL after navigation attempt:", page.url());
     expect(page.url()).toContain("profile");
 
     // Check if we see an error message about privacy policy
@@ -361,9 +315,6 @@ test.describe("Profile Form", () => {
     let foundErrorMessage = false;
     for (const selector of errorMessages) {
       const count = await page.locator(selector).count();
-      console.log(
-        `Found ${count} elements matching error selector: ${selector}`
-      );
       if (count > 0) {
         foundErrorMessage = true;
         // Take a screenshot of the error message
@@ -388,7 +339,6 @@ test.describe("Profile Form", () => {
   }) => {
     // Ensure we're on the profile page
     await page.route("**/api/v1/accounts/profile", async (route: Route) => {
-      console.log("Mocking accounts/profile endpoint");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -405,7 +355,6 @@ test.describe("Profile Form", () => {
     await page.route("**/api/v1/accounts/update", async (route: Route) => {
       const request = route.request();
 
-      console.log("Mocking accounts/update endpoint");
       const data = JSON.parse(request.postData() || "{}");
       expect(data.nickname).toEqual("Testi User");
       expect(data.full_name).toEqual("Johnie Doe");
@@ -445,7 +394,6 @@ test.describe("Profile Form", () => {
       path: "test-results/before-form-submission.png",
       fullPage: true
     });
-    console.log("Form filled out and privacy policy accepted");
 
     // Submit the form - using real backend for profile update
     await page.locator('button[type="submit"]').click();
@@ -455,7 +403,6 @@ test.describe("Profile Form", () => {
 
     // Mock authentication for both endpoints for other tests
     await page.route("**/api/v1/auth/me", async (route: Route) => {
-      console.log("Mocking auth/me endpoint with true privacy policy");
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -492,8 +439,6 @@ test.describe("Profile Form", () => {
       fullPage: true
     });
 
-    // We should now be on the home page
-    console.log("URL after navigation:", page.url());
     expect(page.url()).not.toContain("profile");
     expect(page.url()).toContain("/");
   });

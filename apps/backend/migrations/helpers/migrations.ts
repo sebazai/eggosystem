@@ -21,7 +21,6 @@ const fixYTunnus = (ytunnus: string) => {
 };
 
 export const migrateCompanies = async () => {
-  console.log("Migrating companies");
   // Use these tables to fetch possible companydata.
   const queries = [
     "SELECT * FROM teamsbuild GROUP BY yrityksen_y_tunnus",
@@ -90,7 +89,6 @@ export const migrateCompanies = async () => {
   await runNewDbQuery(
     `INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES ('Certego Oy', 'Finland', '2127363-0', 'S10_1312.png', 'https://www.certego.fi/');`
   );
-  console.log("Companies migrated");
 };
 
 export const migrateAlmostErrything = async () => {
@@ -199,7 +197,6 @@ export const migrateAlmostErrything = async () => {
     {}
   );
 
-  console.log("Migrating teams");
   for (const team of teams) {
     const teamId = team.id;
     const teamName = trimTeamName(team.Name);
@@ -274,9 +271,6 @@ export const migrateAlmostErrything = async () => {
     }
   }
   await runNewDbQuery("UPDATE Teams SET name = LTRIM(RTRIM(name));");
-  console.log("Teams migrated");
-
-  console.log("Getting capitans for season 11-15");
   const seasonTeamsRegistrations = await runNewDbQuery<any>(
     "SELECT st.season_id, st.team_id, t.name FROM SeasonTeamRegistrations st INNER JOIN Teams t ON st.team_id = t.id WHERE st.season_id IN (11, 12, 13, 14, 15)"
   );
@@ -432,7 +426,6 @@ const migrateMatchCrazy = async (
 };
 
 export const migrateMatchesAndReservations = async () => {
-  console.log("Migrating matches");
   // Old matches insert
   // INSERT INTO `matches`(`id`, `team1`, `team2`, `team1Score`, `team1HTScore`, `team1OTScore`, `team2Score`, `team2HTScore`, `team2OTScore`, `map`, `date`, `leagueID`, `demofile`, `type`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]','[value-11]','[value-12]','[value-13]','[value-14]')
   const allOldMatches: any[] = await runOldDbQuery("SELECT * FROM matches");
@@ -533,7 +526,6 @@ export const migrateMatchesAndReservations = async () => {
     }
   }
 
-  console.log("Matches migrated");
   const allOldReservations: any[] = await runOldDbQuery(
     "SELECT * FROM reservations"
   );
@@ -544,7 +536,6 @@ export const migrateMatchesAndReservations = async () => {
   // New reservations insert
   // INSERT INTO `MatchReservations`(`id`, `match_id`, `dateStart`, `dateEnd`, `steam_url`, `hash`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]')
 
-  console.log("Migrating reservations");
   // set ID into hashmap
   for (const reservation of allOldReservations) {
     const query = `INSERT IGNORE INTO Reservations (id, date_start, date_end, stream_url, hash, team1_id, team2_id) VALUES (?, ?, ?, ?, ?, ?, ?);`;
@@ -577,12 +568,9 @@ export const migrateMatchesAndReservations = async () => {
       await runNewDbQuery(query, [matchId, reservationId]);
     }
   }
-
-  console.log("Matches and reservations migrated");
 };
 
 export const migrateRanks = async () => {
-  console.log("Migrating ranks");
   const allOldRanks: any[] = await runOldDbQuery("SELECT * FROM ranks");
 
   // oldRanks table insert
@@ -610,11 +598,9 @@ export const migrateRanks = async () => {
       rank.esportalRank
     ]);
   }
-  console.log("Ranks migrated");
 };
 
 export const migratePlayerStats = async () => {
-  console.log("Migrating player stats");
   const oldPlayerStats: any[] = await runOldDbQuery(
     "SELECT * FROM stats_all_seasons"
   );
@@ -733,11 +719,9 @@ export const migratePlayerStats = async () => {
       playerStat.GoodStrafingShots
     ]);
   }
-  console.log("Player stats migrated");
 };
 
 export const migrateTrades = async () => {
-  console.log("Migrating trades, hold on...");
   const allOldTrades: any[] = await runOldDbQuery("SELECT * FROM trades");
   // Old Trades insert
   // INSERT INTO `trades`(`id`, `matchID`, `RoundNumber`, `Trader`, `Victim`, `Killer`, `FirstDeath`, `Traded`, `Attempted`, `Time`, `TradeTime`, `DeathTime`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]','[value-11]','[value-12]')
@@ -762,16 +746,13 @@ export const migrateTrades = async () => {
       trade.DeathTime
     ]);
   }
-  console.log("Trades migrated");
 };
 
 export const teamLogosToCompanies = async () => {
   const teamNameOk = new Set();
-  console.log("Fixing logos for teams and companies");
   const allTeams = await runNewDbQuery<any[]>("SELECT * FROM Teams");
   for (const team of allTeams) {
     if (teamNameOk.has(team.name)) {
-      console.log("Skipping team, already fixed ", team.name);
       continue;
     }
     const allTeamsWithSameName = await runNewDbQuery<any[]>(
@@ -799,7 +780,6 @@ export const teamLogosToCompanies = async () => {
 };
 
 export const cleanTeamsWithCascade = async () => {
-  console.log("Cleaning duplicate teams with cascade");
   // First query to find teams with duplicate names
   const selectQuery = `
     SELECT MIN(id) AS oldest_id, name
@@ -866,7 +846,6 @@ export const cleanTeamsWithCascade = async () => {
 };
 
 export const experimentalTeamsIntoCompanies = async () => {
-  console.log("Experimental teams into companies");
   const query = `SELECT * FROM Teams WHERE organization_id IS NULL;`;
 
   const teams: any[] = await runNewDbQuery(query);
@@ -883,10 +862,8 @@ export const experimentalTeamsIntoCompanies = async () => {
     if (companies.length > 0) {
       const company: any = companies[0];
       const companyId = company.id;
-      console.log("Team", team.name, "is now in company", company.name);
       const updateQuery = `UPDATE Teams SET organization_id = ? WHERE id = ?;`;
       await runNewDbQuery(updateQuery, [companyId, team.id]);
     }
   }
-  console.log("Experimental teams into companies migrated");
 };

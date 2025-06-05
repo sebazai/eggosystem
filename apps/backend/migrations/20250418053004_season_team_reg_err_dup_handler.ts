@@ -38,10 +38,6 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  try {
-    await knex.raw("DROP TRIGGER IF EXISTS before_insert_team_registration;");
-    await knex.raw("DROP TRIGGER IF EXISTS before_update_team_registration;");
-  } catch (error) {
-    console.error(error);
-  }
+  await knex.raw("DROP TRIGGER IF EXISTS before_insert_team_registration;");
+  await knex.raw("DROP TRIGGER IF EXISTS before_update_team_registration;");
 }

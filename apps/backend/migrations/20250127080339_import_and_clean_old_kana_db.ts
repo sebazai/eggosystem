@@ -407,7 +407,6 @@ export async function up(knex: Knex): Promise<void> {
   if (rows.length === 0) {
     return;
   }
-  console.log("Database 'kana' exists. Proceeding with migration.");
 
   const oldKanaDbConfig = {
     client: "mysql2",
@@ -420,15 +419,10 @@ export async function up(knex: Knex): Promise<void> {
   const otherDb = require("knex")(oldKanaDbConfig);
 
   try {
-    console.log("Cleaning up the old Kana database...");
     const queries = getCleanDatabaseQueries();
     for (const query of queries) {
       await otherDb.raw(query);
     }
-    console.log("Finished cleaning...");
-  } catch (err) {
-    console.error(err);
-    throw err;
   } finally {
     await otherDb.destroy(); // Ensure database connection is closed
   }
