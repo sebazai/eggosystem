@@ -17,10 +17,6 @@ const resource = resourceFromAttributes({
 const endpoint =
   process.env.OTEL_EXPORTER_OTLP_ENDPOINT || "http://localhost:4318";
 
-console.log("Endpoint", endpoint);
-console.log("Service name", serviceName);
-console.log("Resource", resource);
-
 const exporter = new OTLPLogExporter({
   url: endpoint
 });
@@ -51,7 +47,6 @@ class OTelTransport extends Transport {
       severityText: info.level.toUpperCase(),
       attributes: { ...info }
     });
-    console.log("OTel logger should log");
     callback();
   }
 }
