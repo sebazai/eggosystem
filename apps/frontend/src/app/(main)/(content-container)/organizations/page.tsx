@@ -3,8 +3,6 @@ import FadeOnScroll from "@/components/layout/fade-on-scroll";
 import { envConfig } from "@/configs/env";
 import type { Organizations } from "@eggosystem/types";
 import { SearchBar } from "@/components/inputs/search-bar";
-import { Suspense } from "react";
-import { Spinner } from "@/components/icons";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
 
