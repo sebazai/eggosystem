@@ -5,7 +5,7 @@ import { createNextUrl } from "@/lib/utils";
 export const CsSupportingOrgs = () => {
   return (
     <>
-      <Link href={"https://atflow.fi/"} target="_blank">
+      {/* <Link href={"https://atflow.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/atflow-black.png")}
           className="w-[100px] h-[30px] mobile-landscape:w-[100px] mobile-landscape:h-[30px] sm:w-[200px] sm:h-[59px]"
@@ -13,7 +13,7 @@ export const CsSupportingOrgs = () => {
           width={200}
           height={59}
         />
-      </Link>
+      </Link> */}
       <Link href={"https://tnnet.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/tnnet.webp")}

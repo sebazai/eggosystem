@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FooterSponsors } from "../sponsors/footer-sponsors";
+import { FooterPartners } from "../sponsors/footer-partners";
 
 const Footer = () => {
   return (
@@ -21,7 +21,7 @@ const Footer = () => {
           </div>
 
           {/* Column 2 - Sponsors */}
-          <FooterSponsors />
+          <FooterPartners />
 
           {/* Column 3 - Follow Us */}
           <div>
