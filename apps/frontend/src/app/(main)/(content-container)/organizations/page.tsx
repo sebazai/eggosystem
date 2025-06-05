@@ -49,9 +49,7 @@ export default async function AllOrganizations(props: {
         id="sticky-header"
         className="sticky z-30 top-[var(--nav-height)] transition-[top] duration-300 ease-in-out sm:landscape:none xs:landscape:top-6 md:landscape:top-[var(--nav-height)]"
       >
-        <Suspense fallback={<Spinner />}>
-          <SearchBar placeholder={"Search organizations..."} />
-        </Suspense>
+        <SearchBar placeholder={"Search organizations..."} />
       </div>
       <div>
         {/* Organization Cards */}

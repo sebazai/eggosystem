@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
 import { Spinner } from "@/components/icons";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export function SearchBar({ placeholder }: { placeholder: string }) {
   const router = useRouter();
@@ -16,6 +18,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const mobile = useIsMobile();
 
   useEffect(() => {
     if (!isPending && inputRef.current) {
@@ -51,7 +54,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       updateSearchQuery(newQuery);
-    }, 500); // Debounce input
+    }, 1000); // Debounce input
   };
 
   // Clear search
@@ -69,7 +72,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
       if (
         searchRef.current &&
         !searchRef.current.contains(event.target as Node) &&
-        window.innerWidth < 768
+        mobile.isMobile
       ) {
         setShowInput(false);
       }
@@ -77,18 +80,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Handle screen resize
-  useEffect(() => {
-    const handleResize = () => {
-      setShowInput(window.innerWidth >= 768);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [mobile.isMobile]);
 
   return (
     <div
@@ -97,7 +89,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
     >
       {/* Search Icon (Only visible on mobile) */}
       <button
-        className="p-2 rounded-full bg-secondary hover:bg-secondary/80 transition-all md:hidden border border-ring"
+        className="p-2 rounded-full bg-secondary hover:bg-kanaliiga-orange/40 transition-all cursor-pointer border border-ring"
         onClick={toggleSearch}
         aria-label="Toggle Search"
       >
@@ -106,18 +98,16 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
 
       {/* Input Field with Clear Button */}
       <div
-        className={`relative transition-all duration-300 overflow-hidden md:overflow-visible ${
-          showInput
-            ? "w-full opacity-100"
-            : "w-0 opacity-0 pointer-events-none md:w-full md:opacity-100"
-        }`}
+        className={cn(
+          `relative transition-all duration-300 overflow-hidden md:overflow-visible`,
+          showInput ? "w-full opacity-100" : "w-0 opacity-0 pointer-events-none"
+        )}
       >
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           ref={inputRef}
-          type="text"
           placeholder={placeholder}
-          className="pl-8 pr-10 bg-secondary/70"
+          className="pl-8"
           value={searchValue}
           onChange={handleChange}
           disabled={isPending}
