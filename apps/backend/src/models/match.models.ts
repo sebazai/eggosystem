@@ -9,7 +9,8 @@ import {
   type MatchOrGameTopPlayerAwards,
   type MatchGame,
   type MatchPlayerStats,
-  type MatchTeamStats
+  type MatchTeamStats,
+  type MatchMapVetoes
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -259,30 +260,15 @@ export const getMatchInfo = async (
   return match;
 };
 
-export interface MatchMapVetoWithMapName {
-  id: number;
-  match_id: number;
-  team_id: number;
-  map_id: number;
-  map_name: string;
-  action: "drop" | "pick" | "decider";
-  veto_order: number;
-}
-
-export const getMatchMapVetoes = async (match_id: number): Promise<MatchMapVetoWithMapName[]> => {
+export const getMatchMapVetoes = async (match_id: number) => {
   const query = `
     SELECT 
-      v.id,
-      v.match_id,
-      v.team_id,
-      v.map_id,
-      m.name as map_name,
-      v.action,
-      v.veto_order
+      v.*,
+      m.name as map_name
     FROM MatchTeamMapVetoes v
     JOIN Maps m ON v.map_id = m.id
     WHERE v.match_id = ?
     ORDER BY v.veto_order ASC
   `;
-  return runQuery<MatchMapVetoWithMapName[]>(query, [match_id]);
+  return runQuery<MatchMapVetoes[]>(query, [match_id]);
 };

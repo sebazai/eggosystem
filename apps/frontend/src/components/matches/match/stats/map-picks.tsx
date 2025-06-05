@@ -1,7 +1,11 @@
 import { useMatchMaps } from "@/hooks/data/useMatchMaps";
-import { createNextUrl, mapToReadableName, createTeamLogoUrl } from "@/lib/utils";
-import { useMatchVetoes } from "@/hooks/data/useMatchMaps";
+import { useMatchMapVetoes } from "@/hooks/data/useMatchMapVetoes";
 import { useMatchInfo } from "@/hooks/data/useMatchInfo";
+import {
+  createNextUrl,
+  mapToReadableName,
+  createTeamLogoUrl
+} from "@/lib/utils";
 import { NextImageFallback } from "@/components/layout/image-with-fallback";
 
 interface MatchMapPicksProps {
@@ -14,11 +18,11 @@ export const MatchMapPicks = ({
   handleMapSelect
 }: MatchMapPicksProps) => {
   const { maps } = useMatchMaps(matchId);
-  const { vetoes } = useMatchVetoes(matchId);
+  const { vetoes } = useMatchMapVetoes(matchId);
   const { matchInfo } = useMatchInfo(String(matchId));
 
   // Helper to get team info by id
-  const getTeam = (teamId: number | string) =>
+  const getTeam = (teamId: number) =>
     matchInfo?.teams ? matchInfo.teams[teamId] : undefined;
 
   // If vetoes exist, show vetoes UI, else fallback to maps
@@ -70,16 +74,10 @@ export const MatchMapPicks = ({
           <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-7 gap-[2px]">
             {vetoes.map((veto, index) => {
               const team = getTeam(veto.team_id);
-              const actionLabel =
-                veto.action === "pick"
-                  ? "PICK"
-                  : veto.action === "drop"
-                  ? "BAN"
-                  : "DECIDER";
               return (
                 <div
                   key={index}
-                  className="relative rounded overflow-hidden flex flex-row md:flex-col items-center min-h-[48px] h-[48px] md:h-auto md:min-h-[120px] bg-kanaliiga-light-brown/10 px-2 py-1 md:p-3 w-full"
+                  className="relative rounded overflow-hidden flex flex-row md:flex-col items-center min-h-[48px] h-[48px] md:h-auto md:min-h-[100px] bg-kanaliiga-light-brown/10 px-2 py-1 md:p-2 w-full"
                   style={{
                     backgroundImage: `url(${createNextUrl(`/images/maps/${veto.map_name}.png`)})`,
                     backgroundSize: "cover",
@@ -111,7 +109,7 @@ export const MatchMapPicks = ({
                         ${veto.action === "decider" ? "text-blue-500" : ""}
                       `}
                     >
-                      {actionLabel}
+                      {veto.action.toUpperCase()}
                     </span>
                   </div>
                 </div>
@@ -126,7 +124,9 @@ export const MatchMapPicks = ({
                 className="relative bg-kanaliiga-light-brown/10 p-3"
               >
                 <div className="text-center">
-                  <span className={`text-xs mb-1 block text-green-500`}>PICK</span>
+                  <span className={`text-xs mb-1 block text-green-500`}>
+                    PICK
+                  </span>
                   <div className="text-sm text-muted-foreground">
                     {mapToReadableName(mapInfo.map_name)}
                   </div>

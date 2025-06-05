@@ -23,7 +23,7 @@ export function useMatchInfo(matchId: string) {
 
   const matchInfo = {
     ...data,
-    teams: JSON.parse(data.teams) as Record<string | number, MatchTeamInfo>
+    teams: JSON.parse(data.teams) as Record<number, MatchTeamInfo>
   } satisfies MatchInfo;
 
   return {
