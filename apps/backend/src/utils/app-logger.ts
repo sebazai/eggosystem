@@ -5,14 +5,21 @@ import {
   BatchLogRecordProcessor
 } from "@opentelemetry/sdk-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 
-const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const serviceName = "eggosystem-backend-1";
+const resource = resourceFromAttributes({
+  "service.name": serviceName,
+  "service.namespace": "eggosystem",
+  "deployment.environment": "production"
+});
 
 const exporter = new OTLPLogExporter({
-  url: endpoint ? `${endpoint}/v1/logs` : "http://localhost:4318/v1/logs"
+  url: "http://alloy:4318/v1/logs"
 });
 
 const loggerProvider = new LoggerProvider({
+  resource,
   processors: [new BatchLogRecordProcessor(exporter)]
 });
 
