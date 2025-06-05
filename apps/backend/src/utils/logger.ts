@@ -5,7 +5,7 @@ interface LogContext {
 class Logger {
   private serviceName: string;
 
-  constructor(serviceName: string = 'eggosystem-backend') {
+  constructor(serviceName: string = "eggosystem-backend") {
     this.serviceName = serviceName;
   }
 
@@ -28,11 +28,14 @@ class Logger {
   error(message: string, error?: Error | unknown, context?: LogContext) {
     const errorContext: LogContext = {
       ...context,
-      error: error instanceof Error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      } : String(error),
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack
+            }
+          : String(error)
     };
 
     console.error(this.formatMessage(message, errorContext));
@@ -43,28 +46,37 @@ class Logger {
   }
 
   // HTTP request logging
-  httpRequest(method: string, url: string, statusCode: number, responseTime: number, context?: LogContext) {
+  httpRequest(
+    method: string,
+    url: string,
+    statusCode: number,
+    responseTime: number,
+    context?: LogContext
+  ) {
     const httpContext: LogContext = {
       http: {
         method,
         url,
         status_code: statusCode,
-        response_time_ms: responseTime,
+        response_time_ms: responseTime
       },
-      ...context,
+      ...context
     };
 
-    this.info(`${method} ${url} ${statusCode} - ${responseTime}ms`, httpContext);
+    this.info(
+      `${method} ${url} ${statusCode} - ${responseTime}ms`,
+      httpContext
+    );
   }
 
   // Database operation logging
   dbQuery(query: string, duration: number, context?: LogContext) {
     const dbContext: LogContext = {
       db: {
-        query_type: query.split(' ')[0].toUpperCase(),
-        duration_ms: duration,
+        query_type: query.split(" ")[0].toUpperCase(),
+        duration_ms: duration
       },
-      ...context,
+      ...context
     };
 
     this.debug(`DB Query executed in ${duration}ms`, dbContext);
@@ -75,9 +87,9 @@ class Logger {
     const authContext: LogContext = {
       auth: {
         action,
-        user_id: userId,
+        user_id: userId
       },
-      ...context,
+      ...context
     };
 
     this.info(`Auth: ${action}`, authContext);
@@ -88,4 +100,4 @@ class Logger {
 export const appLogger = new Logger();
 
 // Export the Logger class for creating specific loggers
-export { Logger }; 
+export { Logger };

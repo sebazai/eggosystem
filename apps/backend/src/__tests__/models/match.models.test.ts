@@ -119,9 +119,9 @@ describe("getMatchTopPlayers", () => {
 describe("getMatchMapVetoes", () => {
   it("returns map vetoes in correct order for match 10154", async () => {
     const result = await getMatchMapVetoes(10154);
-    
+
     expect(result).toHaveLength(7);
-    
+
     // Verify the vetoes are ordered by veto_order
     expect(result[0]).toEqual({
       id: expect.any(Number),
@@ -132,7 +132,7 @@ describe("getMatchMapVetoes", () => {
       action: "drop",
       veto_order: 1
     });
-    
+
     expect(result[1]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -142,7 +142,7 @@ describe("getMatchMapVetoes", () => {
       action: "drop",
       veto_order: 2
     });
-    
+
     expect(result[2]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -152,7 +152,7 @@ describe("getMatchMapVetoes", () => {
       action: "pick",
       veto_order: 3
     });
-    
+
     expect(result[3]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -162,7 +162,7 @@ describe("getMatchMapVetoes", () => {
       action: "pick",
       veto_order: 4
     });
-    
+
     expect(result[4]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -172,7 +172,7 @@ describe("getMatchMapVetoes", () => {
       action: "drop",
       veto_order: 5
     });
-    
+
     expect(result[5]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -182,7 +182,7 @@ describe("getMatchMapVetoes", () => {
       action: "drop",
       veto_order: 6
     });
-    
+
     expect(result[6]).toEqual({
       id: expect.any(Number),
       match_id: 10154,
@@ -193,10 +193,10 @@ describe("getMatchMapVetoes", () => {
       veto_order: 7
     });
   });
-  
+
   it("returns alternating team vetoes for match 10154", async () => {
     const result = await getMatchMapVetoes(10154);
-    
+
     // Verify teams alternate in veto order (with team 2060 starting)
     expect(result[0].team_id).toBe(2060);
     expect(result[1].team_id).toBe(2035);
@@ -206,32 +206,40 @@ describe("getMatchMapVetoes", () => {
     expect(result[5].team_id).toBe(2035);
     expect(result[6].team_id).toBe(2060);
   });
-  
+
   it("returns correct action types for match 10154", async () => {
     const result = await getMatchMapVetoes(10154);
-    
-    const actions = result.map(veto => veto.action);
-    expect(actions).toEqual(["drop", "drop", "pick", "pick", "drop", "drop", "decider"]);
+
+    const actions = result.map((veto) => veto.action);
+    expect(actions).toEqual([
+      "drop",
+      "drop",
+      "pick",
+      "pick",
+      "drop",
+      "drop",
+      "decider"
+    ]);
   });
-  
+
   it("includes map names for all vetoes", async () => {
     const result = await getMatchMapVetoes(10154);
-    
-    result.forEach(veto => {
+
+    result.forEach((veto) => {
       expect(veto.map_name).toBeDefined();
-      expect(typeof veto.map_name).toBe('string');
+      expect(typeof veto.map_name).toBe("string");
       expect(veto.map_name.length).toBeGreaterThan(0);
     });
   });
-  
+
   it("returns empty array for non-existent match", async () => {
     const result = await getMatchMapVetoes(999999);
     expect(result).toEqual([]);
   });
-  
+
   it("verifies veto order is sequential", async () => {
     const result = await getMatchMapVetoes(10154);
-    
+
     result.forEach((veto, index) => {
       expect(veto.veto_order).toBe(index + 1);
     });
