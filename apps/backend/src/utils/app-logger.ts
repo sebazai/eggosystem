@@ -5,14 +5,6 @@ import {
   BatchLogRecordProcessor
 } from "@opentelemetry/sdk-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { resourceFromAttributes } from "@opentelemetry/resources";
-
-const serviceName = process.env.OTEL_SERVICE_NAME || "eggosystem-backend-1";
-const resource = resourceFromAttributes({
-  "service.name": serviceName,
-  "service.namespace": process.env.OTEL_SERVICE_NAMESPACE || "eggosystem",
-  "deployment.environment": process.env.NODE_ENV || "production"
-});
 
 const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
@@ -21,7 +13,6 @@ const exporter = new OTLPLogExporter({
 });
 
 const loggerProvider = new LoggerProvider({
-  resource,
   processors: [new BatchLogRecordProcessor(exporter)]
 });
 
