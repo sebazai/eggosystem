@@ -65,10 +65,10 @@ const data: { navMain: Array<MenuItem> } = {
       url: "#",
       requiredRoles: ["helpdesk"],
       items: [
-        // {
-        //   title: "Teams",
-        //   url: "#"
-        // },
+        {
+          title: "Registered teams",
+          url: createDashboardNextUrl("registration/registered")
+        },
         {
           title: "Add rank",
           url: createDashboardNextUrl("registration/rank")

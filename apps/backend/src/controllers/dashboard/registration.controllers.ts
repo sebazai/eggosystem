@@ -6,7 +6,8 @@ import { type Request, type Response } from "express";
 import * as z from "zod";
 import {
   addManuallyApprovedPartialSignupForSeason,
-  addSeasonRankForPlayer
+  addSeasonRankForPlayer,
+  getRegisteredTeams
 } from "../../models/dashboard/registration.models";
 import { getActiveSignupSeasonForAppId } from "../../models/season.models";
 import { BadRequestError } from "../../utils/errors";
@@ -52,4 +53,16 @@ export const addManualRankForPlayerController = async (
     }
     throw error;
   }
+};
+
+export const getRegisteredTeamsController = async (
+  req: Request,
+  res: Response
+) => {
+  const activeSeason = await getActiveSignupSeasonForAppId(730);
+  if (!activeSeason) {
+    throw new BadRequestError("No signup for any season for app id 730");
+  }
+  const teams = await getRegisteredTeams(15);
+  res.status(200).json(teams);
 };

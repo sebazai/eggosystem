@@ -1,7 +1,8 @@
 import { Router } from "express";
 import {
   addManuallyApprovedPlayersController,
-  addManualRankForPlayerController
+  addManualRankForPlayerController,
+  getRegisteredTeamsController
 } from "../../../controllers/dashboard/registration.controllers";
 import { checkPermissions } from "../../../middlewares/auth.middleware";
 
@@ -22,6 +23,14 @@ router.post(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   addManualRankForPlayerController
+);
+router.get(
+  "/registered",
+  checkPermissions({
+    staticPermissions: ["read:registration"],
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  getRegisteredTeamsController
 );
 
 export default router;

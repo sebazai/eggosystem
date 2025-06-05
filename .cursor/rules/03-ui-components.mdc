@@ -27,3 +27,18 @@ This document defines UI component rules and design patterns for the Kanaliiga E
   - For tables that need to display many columns, use a dedicated team column that's hidden on mobile (`hidden md:table-cell`)
   - Ensure consistent application of these spacing and font size patterns across similar components (player-table, player-details, match-stats, etc.)
   - Maintain clear hierarchy with proper use of font weight (bold for important stats) and text color contrasts
+
+## Linking & Navigation
+
+- **Internal Links**: Always use `next/link` for internal navigation (URLs starting with `/`).
+- **External Links**: Only use `<a>` for external URLs (starting with `http://` or `https://`).
+
+**Example:**
+
+```tsx
+// Internal
+<Link href="/teams/123">Team Page</Link>
+
+// External
+<a href="https://faceit.com/en/teams/123" target="_blank" rel="noopener noreferrer">Faceit Team</a>
+```
