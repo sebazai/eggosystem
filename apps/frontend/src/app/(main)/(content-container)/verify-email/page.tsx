@@ -33,21 +33,17 @@ async function VerifyEmailContent({ token }: { token: string }) {
 
   let success = false;
 
-  try {
-    const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ token }),
-      cache: "no-store" // don't cache
-    });
+  const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ token }),
+    cache: "no-store" // don't cache
+  });
 
-    if (res.ok) {
-      success = true;
-    }
-  } catch (error) {
-    console.error("Email verification error:", error);
+  if (res.ok) {
+    success = true;
   }
 
   if (success) {

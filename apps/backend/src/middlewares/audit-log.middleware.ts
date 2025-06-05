@@ -64,7 +64,7 @@ export function auditAfterResponse(config: AuditConfig) {
           );
         }
       } catch (err) {
-        console.error("Audit log error:", err);
+        console.error("Failed to save audit log", err);
       }
     });
 

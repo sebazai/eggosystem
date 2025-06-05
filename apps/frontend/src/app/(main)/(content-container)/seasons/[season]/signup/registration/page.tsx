@@ -60,7 +60,7 @@ export default async function SignupPage({ params }: SignupPageProps) {
       </SignupContainer>
     );
   } catch (err) {
-    console.error("Error", err);
+    console.error("Error loading draft", err);
   }
 
   // Normal

@@ -87,7 +87,7 @@ export function cacheResponseMiddleware({
 
       next();
     } catch (err) {
-      console.error("Cache middleware error:", err);
+      console.error("Cache middleware error", err);
       next();
     }
   };

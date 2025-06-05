@@ -24,9 +24,6 @@ export const runQuery = async <T>(
   try {
     const [rows] = await connection.execute<dbQuery<T>>(query, queryParams);
     return rows;
-  } catch (error) {
-    console.error("Database Error:", error);
-    throw error;
   } finally {
     if (!trx) connection.release();
   }

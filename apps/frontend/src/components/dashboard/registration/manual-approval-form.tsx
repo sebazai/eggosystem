@@ -100,7 +100,6 @@ export function TeamManualPlayerApprovalForm() {
 
       toast.success("Registration submitted successfully");
     } catch (error) {
-      console.error(error);
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
         return;

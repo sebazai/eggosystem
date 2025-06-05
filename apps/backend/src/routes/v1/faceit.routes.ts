@@ -30,7 +30,7 @@ router.post("/webhook", async (req: Request, res: Response) => {
 
     res.status(200).send("Webhook received");
   } catch (error) {
-    console.error("Error handling webhook:", error);
+    console.error("Error handling webhook", error);
     res.status(500).send("Something went wrong");
   }
 });

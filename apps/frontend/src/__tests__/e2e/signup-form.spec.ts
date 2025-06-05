@@ -1146,37 +1146,32 @@ test.describe("Signup Form", () => {
 
       const validPlayers = [PLAYER1, PLAYER2, PLAYER3, PLAYER4, PLAYER5];
 
-      try {
-        // Fill in each player and wait for validation
-        for (let i = 0; i < validPlayers.length; i++) {
-          const player = validPlayers[i]!; // Non-null assertion since we know the array size
+      // Fill in each player and wait for validation
+      for (let i = 0; i < validPlayers.length; i++) {
+        const player = validPlayers[i]!; // Non-null assertion since we know the array size
 
-          const steamIdInput = page.locator(
-            `[data-testid="steam-id-input-${i}"]`
-          );
-          await expect(steamIdInput).toBeVisible();
-          await steamIdInput.fill(player.steamId);
-          await page.keyboard.press("Tab");
-        }
-
-        // Extra wait for all nicknames to load
-
-        // Check all visible nickname spans for the correct nicknames
-        const nicknameSpans = page.locator("span.text-kanaliiga-orange");
-
-        // Check that we have at least some nicknames loaded (the valid players)
-        const nicknameCount = await nicknameSpans.count();
-        expect(nicknameCount).toBeGreaterThan(0);
-
-        // With backend E2E mocking, we should see the actual nicknames from our seed data
-        await expect(nicknameSpans.nth(0)).toBeVisible();
-        await expect(nicknameSpans.nth(0)).toContainText(/heppajpg/i);
-        await expect(nicknameSpans.nth(1)).toBeVisible();
-        await expect(nicknameSpans.nth(1)).toContainText(/hoolyz/i);
-      } catch (error) {
-        console.error("Test error:", error);
-        throw error;
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await expect(steamIdInput).toBeVisible();
+        await steamIdInput.fill(player.steamId);
+        await page.keyboard.press("Tab");
       }
+
+      // Extra wait for all nicknames to load
+
+      // Check all visible nickname spans for the correct nicknames
+      const nicknameSpans = page.locator("span.text-kanaliiga-orange");
+
+      // Check that we have at least some nicknames loaded (the valid players)
+      const nicknameCount = await nicknameSpans.count();
+      expect(nicknameCount).toBeGreaterThan(0);
+
+      // With backend E2E mocking, we should see the actual nicknames from our seed data
+      await expect(nicknameSpans.nth(0)).toBeVisible();
+      await expect(nicknameSpans.nth(0)).toContainText(/heppajpg/i);
+      await expect(nicknameSpans.nth(1)).toBeVisible();
+      await expect(nicknameSpans.nth(1)).toContainText(/hoolyz/i);
     });
 
     test("should test captain and co-captain assignment process", async ({

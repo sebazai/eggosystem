@@ -307,7 +307,6 @@ export const TabPlayers = ({
           setLoadingStates((prev) => ({ ...prev, [index]: false }));
         }
       } catch (error) {
-        console.error("Error fetching player data", error);
         setPromiseErrors((prev) => ({
           ...prev,
           [steam_id]:

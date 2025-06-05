@@ -11,7 +11,7 @@ export const redisClient = new Redis({
 });
 
 redisClient.on("error", (err: Error) => {
-  console.error("Redis connection error:", err);
+  console.error("Redis connection error", err);
 });
 
 export const closeRedis = async () => {
