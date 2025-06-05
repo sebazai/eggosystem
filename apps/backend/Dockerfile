@@ -36,17 +36,17 @@ RUN rm -r node_modules/.pnpm/turbo-*
 
 # Finally the runner stage as final stage
 FROM base AS runner
-# Opentelemetry configuration
-ENV OTEL_TRACES_EXPORTER="otlp"
-ENV OTEL_METRICS_EXPORTER="otlp"
-ENV OTEL_LOGS_EXPORTER="otlp"
 ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 # OTEL Configs
 ENV OTEL_SERVICE_NAME="eggosystem"
 ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production,service.namespace=eggosystem,service.name=eggosystem-backend-1"
 ENV OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
-ENV OTEL_EXPORTER_OTLP_ENDPOINT="http://alloy:4317"
-ENV OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+ENV OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://alloy:4317"
+ENV OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="http://alloy:4317"
+ENV OTEL_EXPORTER_OTLP_LOGS_ENDPOINT="http://alloy:4318/v1/logs"
+ENV OTEL_EXPORTER_OTLP_TRACES_PROTOCOL="grpc"
+ENV OTEL_EXPORTER_OTLP_METRICS_PROTOCOL="grpc"
+ENV OTEL_EXPORTER_OTLP_LOGS_PROTOCOL="http/json"
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
