@@ -14,8 +14,7 @@ export const expressErrorHandler = (
     return;
   }
 
-  console.error("Express Error Handler:", err);
-  logger.error("Express Error Handler:", err);
+  logger.error("Express Error Handler", err);
 
   if (err instanceof BaseError) {
     res.status(err.status).json({ error: { message: err.message } });
