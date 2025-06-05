@@ -52,6 +52,8 @@
     "passport": "0.7.0",
     "passport-steam": "1.0.18",
     "uuid": "11.1.0",
+    "winston": "3.17.0",
+    "winston-transport": "4.9.0",
     "zod": "3.24.4"
   },
   "devDependencies": {
@@ -72,6 +74,7 @@
     "@types/passport": "1.0.17",
     "@types/passport-steam": "1.0.6",
     "@types/supertest": "6.0.3",
+    "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "8.33.0",
     "@typescript-eslint/parser": "8.33.0",
     "ioredis-mock": "8.9.0",

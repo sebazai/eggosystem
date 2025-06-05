@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { UnauthorizedError } from "express-jwt";
 import { BaseError } from "../utils/errors";
+import { logger } from "../utils/app-logger";
 
 export const expressErrorHandler = (
   err: Error,
@@ -14,6 +15,7 @@ export const expressErrorHandler = (
   }
 
   console.error("Express Error Handler:", err);
+  logger.error("Express Error Handler:", err);
 
   if (err instanceof BaseError) {
     res.status(err.status).json({ error: { message: err.message } });
