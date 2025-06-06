@@ -28,7 +28,10 @@ export default async function Home() {
     total_organizations: 220
   } satisfies LandingPageStats;
   const statistics = await fetch(`${envConfig.API_URL}/api/v1/stats`, {
-    cache: "no-cache"
+    cache: "force-cache",
+    next: {
+      revalidate: 60 * 60 * 24
+    }
   });
   const data: LandingPageStats = statistics.ok
     ? await statistics.json()
