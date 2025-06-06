@@ -55,14 +55,18 @@ class OTelTransport extends Transport {
 
 export const logger = winston.createLogger({
   level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.colorize(),
-    winston.format.errors({ stack: true }),
-    winston.format.splat(),
-    winston.format.printf(({ level, message, timestamp, stack }) => {
-      return `${timestamp} ${level}: ${message} ${stack ? `\n${stack}` : ""}`;
-    })
-  ),
-  transports: [new winston.transports.Console(), new OTelTransport()]
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.errors({ stack: true }),
+        winston.format.colorize(),
+        winston.format.splat(),
+        winston.format.printf(({ level, message, timestamp, stack }) => {
+          return `${timestamp} ${level}: ${message} ${stack ? `\n${stack}` : ""}`;
+        })
+      )
+    }),
+    new OTelTransport()
+  ]
 });
