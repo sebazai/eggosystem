@@ -1,4 +1,5 @@
 import { type Knex } from "knex";
+import { logger } from "../src/utils/app-logger";
 
 export async function seed(knex: Knex): Promise<void> {
   // Disable foreign key checks to allow dropping tables with dependencies
@@ -19,7 +20,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Re-enable foreign key checks
   await knex.raw("SET FOREIGN_KEY_CHECKS=1");
 
-  console.warn(
+  logger.warn(
     "All tables dropped successfully. Ready for migrations and seeding."
   );
 }

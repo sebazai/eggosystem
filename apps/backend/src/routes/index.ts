@@ -61,7 +61,6 @@ v1Router.get("/stats", async (req, res) => {
 v1Router.post("/verify-email", verifyEmailController);
 
 v1Router.use("/", async (req, res) => {
-  console.warn("API root endpoint accessed");
   res.status(200).json({ message: "API is running" });
 });
 export default v1Router;
