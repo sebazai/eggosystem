@@ -8,7 +8,8 @@ import { useFilters } from "@/context/FilterContext";
 import { CardContainer } from "@/components/layout/card-container";
 
 export default function TeamsPage() {
-  const { filterParams, isLoading, error, isValidating } = useFilters();
+  const { filterParams, isLoading, error, isValidating, areFiltersEmpty } =
+    useFilters();
 
   if (isLoading || !filterParams || isValidating)
     return <ContentContainer>Loading...</ContentContainer>;
@@ -26,7 +27,13 @@ export default function TeamsPage() {
       />
 
       <CardContainer classNames="p-2 md:p-4">
-        <TeamsGrid filterQueryParams={filterParams} />
+        {areFiltersEmpty ? (
+          <ContentContainer classNames="min-h-[30vh]">
+            Please select one filter.
+          </ContentContainer>
+        ) : (
+          <TeamsGrid filterQueryParams={filterParams} />
+        )}
       </CardContainer>
     </div>
   );
