@@ -24,6 +24,7 @@ export default function TeamsPage() {
         teams={filterParams.teams}
         stages={null}
         maps={null}
+        sortOrder={["teams", "seasons", "leagues"]}
       />
 
       <CardContainer classNames="p-2 md:p-4">
