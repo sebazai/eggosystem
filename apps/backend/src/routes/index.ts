@@ -20,8 +20,6 @@ import { verifyEmailController } from "../controllers/account.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
 import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
-import { logger } from "../utils/app-logger";
-import { NotFoundError } from "../utils/errors";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -54,7 +52,6 @@ v1Router.use("/faceit", faceitRouter);
 v1Router.use("/allstar", allstarRouter);
 
 v1Router.get("/stats", async (req, res) => {
-  logger.error("Stats endpoint accessed", new NotFoundError("Testing errors"));
   const stats = await landingPageStatistics();
   res.status(200).json(stats);
 });

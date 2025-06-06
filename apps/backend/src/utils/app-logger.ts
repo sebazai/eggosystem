@@ -47,9 +47,6 @@ class OTelTransport extends Transport {
     const traceId = activeSpan?.spanContext().traceId;
     const spanId = activeSpan?.spanContext().spanId;
 
-    console.log(JSON.stringify(info, null, 2));
-    console.log(traceId, spanId);
-
     otelLogger.emit({
       body: info.message,
       severityNumber: severityMap[info.level] || 9,

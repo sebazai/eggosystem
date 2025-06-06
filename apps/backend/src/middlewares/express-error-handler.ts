@@ -4,20 +4,20 @@ import { BaseError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 
 export const expressErrorHandler = (
-  err: Error | string,
+  err: unknown,
   req: Request,
   res: Response,
   _next: NextFunction
 ) => {
+  if (err instanceof Error) {
+    logger.error("Express Error Handler", err);
+  } else {
+    logger.error(JSON.stringify(err));
+  }
+
   if (err instanceof UnauthorizedError) {
     res.status(err.status).json({ error: { message: err.message } });
     return;
-  }
-
-  if (typeof err === "string") {
-    logger.error(err);
-  } else {
-    logger.error("Express Error Handler", err);
   }
 
   if (err instanceof BaseError) {
