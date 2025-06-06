@@ -6,6 +6,7 @@ import {
 } from "@opentelemetry/sdk-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
+import { context, trace } from "@opentelemetry/api";
 
 const serviceName = process.env.OTEL_SERVICE_NAME ?? "eggosystem-backend-1";
 const resource = resourceFromAttributes({
@@ -41,12 +42,22 @@ class OTelTransport extends Transport {
   log(info: winston.LogEntry, callback: () => void) {
     setImmediate(() => this.emit("logged", info));
 
+    // Inject trace/span context if available
+    const activeSpan = trace.getSpan(context.active());
+    const traceId = activeSpan?.spanContext().traceId;
+    const spanId = activeSpan?.spanContext().spanId;
+
+    console.log(JSON.stringify(info, null, 2));
+    console.log(traceId, spanId);
+
     otelLogger.emit({
       body: info.message,
       severityNumber: severityMap[info.level] || 9,
       severityText: info.level.toUpperCase(),
       attributes: {
-        ...info
+        ...info,
+        ...(traceId && { trace_id: traceId }),
+        ...(spanId && { span_id: spanId })
       }
     });
     callback();
