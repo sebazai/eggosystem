@@ -41,7 +41,6 @@ class OTelTransport extends Transport {
   log(info: winston.LogEntry, callback: () => void) {
     setImmediate(() => this.emit("logged", info));
 
-    console.log(info);
     otelLogger.emit({
       body: info.message,
       severityNumber: severityMap[info.level] || 9,
@@ -60,7 +59,9 @@ export const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
     winston.format.splat(),
-    winston.format.json()
+    winston.format.printf(({ level, message, timestamp, stack }) => {
+      return `${timestamp} ${level}: ${message} ${stack ? `\n${stack}` : ""}`;
+    })
   ),
   transports: [new winston.transports.Console(), new OTelTransport()]
 });

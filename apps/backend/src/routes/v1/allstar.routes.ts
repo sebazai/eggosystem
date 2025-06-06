@@ -5,6 +5,7 @@ import {
   updateClipError,
   updateProcessedClip
 } from "../../models/allstar.models";
+import { logger } from "../../utils/app-logger";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.post("/webhook", async (req: Request, res: Response) => {
     const webhookData = req.body;
 
     if (isAllstarClipError(webhookData)) {
-      console.error("Allstar clip error", webhookData);
+      logger.error("Allstar clip error", webhookData);
       const apiKey = process.env.ALLSTAR_API_KEY;
       if (!apiKey) throw new Error("ALLSTAR_API_KEY is not set");
       const fetchStatus = await fetch(
@@ -73,7 +74,7 @@ router.post("/webhook", async (req: Request, res: Response) => {
 
     res.status(200).send("Webhook received and processed");
   } catch (error) {
-    console.error("Error handling Allstar webhook", error);
+    logger.error("Error handling Allstar webhook", error);
     res.status(500).send("Something went wrong");
   }
 });

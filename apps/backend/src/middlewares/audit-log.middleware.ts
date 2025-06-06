@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { runQuery } from "../db/mysqlRunQuery";
+import { logger } from "../utils/app-logger";
 
 interface AuditConfig {
   getEntityInfo?: (
@@ -64,7 +65,7 @@ export function auditAfterResponse(config: AuditConfig) {
           );
         }
       } catch (err) {
-        console.error("Failed to save audit log", err);
+        logger.error("Failed to save audit log", err);
       }
     });
 

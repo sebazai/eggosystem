@@ -12,6 +12,7 @@ import { NotFoundError } from "../utils/errors";
 import { getConnection } from "../db/mysqlConnection";
 import { handleEmailVerification } from "../services/account.services";
 import { getSevenDaysLaterInMillis } from "../utils/date-utils";
+import { logger } from "../utils/app-logger";
 
 export const updateAccount = async (
   accountId: number,
@@ -86,7 +87,7 @@ export const updateAccount = async (
         workEmailVerificationToken,
         oneDayLater
       ).catch((err) => {
-        console.error("Failed to send verification email:", err);
+        logger.error("Failed to send verification email:", err);
       });
     }
 

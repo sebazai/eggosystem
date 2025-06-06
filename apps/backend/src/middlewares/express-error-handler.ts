@@ -4,7 +4,7 @@ import { BaseError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 
 export const expressErrorHandler = (
-  err: Error,
+  err: Error | string,
   req: Request,
   res: Response,
   _next: NextFunction
@@ -14,7 +14,11 @@ export const expressErrorHandler = (
     return;
   }
 
-  logger.error("Express Error Handler", err);
+  if (typeof err === "string") {
+    logger.error(err);
+  } else {
+    logger.error("Express Error Handler", err);
+  }
 
   if (err instanceof BaseError) {
     res.status(err.status).json({ error: { message: err.message } });

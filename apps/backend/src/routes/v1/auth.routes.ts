@@ -14,6 +14,7 @@ import {
   getUserProfileAcceptanceForVersion
 } from "../../models/account.models";
 import { getRolesForAccountId } from "../../services/auth.services";
+import { logger } from "../../utils/app-logger";
 
 const router = Router();
 
@@ -78,7 +79,7 @@ router.get(
       await login(req, res);
       res.redirect(redirectTo);
     } catch (error) {
-      console.error("Steam login error", error);
+      logger.error("Steam login error", error);
       res.redirect(`${process.env.FRONTEND_URL}/login-failed`);
     }
   }

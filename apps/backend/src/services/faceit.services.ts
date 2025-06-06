@@ -9,6 +9,7 @@ import {
   expireInOneDay
 } from "../utils/redisClient";
 import { getPlayerExternalRankForSeason } from "../models/season-player-ranks.models";
+import { logger } from "../utils/app-logger";
 
 // E2E Test mode mocking
 const isE2EMode =
@@ -91,11 +92,11 @@ export const getFaceITGameRank = async (
       };
     } catch (err) {
       if (process.env.NODE_ENV !== "test")
-        console.error(`Error parsing FaceIT rank for ${steam_id}`, err);
+        logger.error(`Error parsing FaceIT rank for ${steam_id}`, err);
       return null;
     }
   } catch (err) {
-    console.error(`Error fetching FaceIT rank for ${steam_id}`, err);
+    logger.error(`Error fetching FaceIT rank for ${steam_id}`, err);
     return null;
   }
 };

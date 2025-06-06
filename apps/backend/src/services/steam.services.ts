@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { logger } from "../utils/app-logger";
 
 // E2E Test mode mocking
 const isE2EMode =
@@ -73,7 +74,7 @@ export const isSteamProfilePublic = async (steam_id: string) => {
   const result = await fetch(steamUrl);
   if (!result.ok) {
     const text = await result.text();
-    console.error("Failed to fetch steam profile", result.status, text);
+    logger.error("Failed to fetch steam profile", result.status, text);
     throw new Error("Failed to fetch steam profile public status");
   }
   const data: ISteamUserResponse = await result.json();
@@ -107,7 +108,7 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
   const result = await fetch(steamUrl);
   if (!result.ok) {
     const text = await result.text();
-    console.error("Failed to fetch steam profiles", result.status, text);
+    logger.error("Failed to fetch steam profiles", result.status, text);
     throw new Error("Failed to fetch steam profiles public status");
   }
   const data: ISteamUserResponse = await result.json();

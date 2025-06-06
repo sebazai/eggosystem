@@ -1,5 +1,6 @@
 import { type Knex } from "knex";
 import * as fs from "fs";
+import { logger } from "../src/utils/app-logger";
 
 export async function seed(knex: Knex): Promise<void> {
   const file = fs.readFileSync("./seeds/dev/kana_dev_test_seed.sql", "utf8");
@@ -41,7 +42,7 @@ export async function seed(knex: Knex): Promise<void> {
       try {
         await knex.raw(trimmedSql);
       } catch (error) {
-        console.error("ERROR", error, trimmedSql);
+        logger.error("ERROR", error, trimmedSql);
       }
     }
   }

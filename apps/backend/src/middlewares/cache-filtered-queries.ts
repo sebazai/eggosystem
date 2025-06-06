@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import { expireIn30Days, redisClient } from "../utils/redisClient";
 import { getActiveSeasonForAppId } from "../models/season.models";
+import { logger } from "../utils/app-logger";
 
 interface CacheResponseOptions {
   cachePrefix: string;
@@ -79,7 +80,7 @@ export function cacheResponseMiddleware({
         if (res.statusCode === 200 && body) {
           redisClient
             .set(cacheKey, JSON.stringify(body), "EX", ttlSeconds)
-            .catch(console.error);
+            .catch(logger.error);
         }
 
         return originalJson(body);
@@ -87,7 +88,7 @@ export function cacheResponseMiddleware({
 
       next();
     } catch (err) {
-      console.error("Cache middleware error", err);
+      logger.error("Cache middleware error", err);
       next();
     }
   };

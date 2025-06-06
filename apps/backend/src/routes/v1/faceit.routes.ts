@@ -3,6 +3,7 @@ import { getFaceITTeamDetails } from "../../services/faceit.services";
 import { type Request, type Response } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
 import { getWebhookData, saveWebhookData } from "../../models/faceit.models";
+import { logger } from "../../utils/app-logger";
 
 const router = Router();
 
@@ -30,7 +31,7 @@ router.post("/webhook", async (req: Request, res: Response) => {
 
     res.status(200).send("Webhook received");
   } catch (error) {
-    console.error("Error handling webhook", error);
+    logger.error("Error handling webhook", error);
     res.status(500).send("Something went wrong");
   }
 });
@@ -42,7 +43,7 @@ router.get("/webhook", async (req: Request, res: Response) => {
 
     res.status(200).json(mappedData);
   } catch (error) {
-    console.error("Error handling webhook data:", error);
+    logger.error("Error handling webhook data:", error);
     res.status(500).send("Something went wrong");
   }
 });

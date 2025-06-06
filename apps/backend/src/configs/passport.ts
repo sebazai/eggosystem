@@ -7,6 +7,7 @@ import {
 } from "../models/auth.models";
 import { clearPossibleRedisCacheForNewUser } from "../services/redis.services";
 import type { SteamUserPayload } from "@eggosystem/types";
+import { logger } from "../utils/app-logger";
 
 passport.use(
   new steam.Strategy(
@@ -33,7 +34,7 @@ passport.use(
             provider: "steam"
           } satisfies SteamUserPayload);
         } catch (error) {
-          console.error("Passport config", error);
+          logger.error("Passport config", error);
           return done(error);
         }
       }
