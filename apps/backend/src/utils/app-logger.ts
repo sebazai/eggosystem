@@ -41,22 +41,23 @@ const severityMap: Record<string, number> = {
 class OTelTransport extends Transport {
   log(info: winston.LogEntry, callback: () => void) {
     setImmediate(() => this.emit("logged", info));
+    if (process.env.NODE_ENV !== "test") {
+      // Inject trace/span context if available
+      const activeSpan = trace.getSpan(context.active());
+      const traceId = activeSpan?.spanContext().traceId;
+      const spanId = activeSpan?.spanContext().spanId;
 
-    // Inject trace/span context if available
-    const activeSpan = trace.getSpan(context.active());
-    const traceId = activeSpan?.spanContext().traceId;
-    const spanId = activeSpan?.spanContext().spanId;
-
-    otelLogger.emit({
-      body: info.message,
-      severityNumber: severityMap[info.level] || 9,
-      severityText: info.level.toUpperCase(),
-      attributes: {
-        ...info,
-        ...(traceId && { trace_id: traceId }),
-        ...(spanId && { span_id: spanId })
-      }
-    });
+      otelLogger.emit({
+        body: info.message,
+        severityNumber: severityMap[info.level] || 9,
+        severityText: info.level.toUpperCase(),
+        attributes: {
+          ...info,
+          ...(traceId && { trace_id: traceId }),
+          ...(spanId && { span_id: spanId })
+        }
+      });
+    }
     callback();
   }
 }

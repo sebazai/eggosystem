@@ -53,6 +53,7 @@ v1Router.use("/allstar", allstarRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
+  res.setHeader("Cache-Control", "public, max-age=86400");
   res.status(200).json(stats);
 });
 v1Router.post("/verify-email", verifyEmailController);

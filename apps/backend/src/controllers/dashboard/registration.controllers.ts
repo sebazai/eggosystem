@@ -63,6 +63,6 @@ export const getRegisteredTeamsController = async (
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }
-  const teams = await getRegisteredTeams(15);
+  const teams = await getRegisteredTeams(activeSeason.season_id);
   res.status(200).json(teams);
 };

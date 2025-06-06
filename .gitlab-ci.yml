@@ -268,7 +268,7 @@ build:types:
 
 build:frontend:
   stage: build
-  extends: [.prepare-pnpm, .mr-frontend]
+  extends: [.prepare-pnpm, .mr-all-app]
   script:
     - npx turbo run build --filter='!backend' --cache=remote:rw
   artifacts:
@@ -277,7 +277,7 @@ build:frontend:
 
 build:backend:
   stage: build
-  extends: [.prepare-pnpm, .mr-backend]
+  extends: [.prepare-pnpm, .mr-all-app]
   script:
     - npx turbo run build --filter='!frontend' --cache=remote:rw
   artifacts:

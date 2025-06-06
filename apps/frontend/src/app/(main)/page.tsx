@@ -27,11 +27,9 @@ export default async function Home() {
     total_games: 15000,
     total_organizations: 220
   } satisfies LandingPageStats;
+  // No cache required, as otherwise build fails
   const statistics = await fetch(`${envConfig.API_URL}/api/v1/stats`, {
-    cache: "force-cache",
-    next: {
-      revalidate: 60 * 60 * 24
-    }
+    cache: "no-cache"
   });
   const data: LandingPageStats = statistics.ok
     ? await statistics.json()
