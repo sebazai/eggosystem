@@ -9,15 +9,15 @@ export const expressErrorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
+  if (err instanceof UnauthorizedError) {
+    res.status(err.status).json({ error: { message: err.message } });
+    return;
+  }
+
   if (err instanceof Error) {
     logger.error("Express Error Handler", err);
   } else {
     logger.error(JSON.stringify(err));
-  }
-
-  if (err instanceof UnauthorizedError) {
-    res.status(err.status).json({ error: { message: err.message } });
-    return;
   }
 
   if (err instanceof BaseError) {

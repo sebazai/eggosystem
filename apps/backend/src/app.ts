@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { logger } from "./utils/app-logger";
 
 if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV is not defined");
@@ -34,7 +35,6 @@ import passport from "./configs/passport";
 import v1Router from "./routes";
 import { expressErrorHandler } from "./middlewares/express-error-handler";
 import cookieParser from "cookie-parser";
-import { logger } from "./utils/app-logger";
 
 const app = express();
 
