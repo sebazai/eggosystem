@@ -25,7 +25,14 @@
         "SMTP_USER",
         "SMTP_PASSWORD",
         "ALLSTAR_WEBHOOK_TOKEN",
-        "ALLSTAR_API_KEY"
+        "ALLSTAR_API_KEY",
+        "OTEL_SERVICE_NAME",
+        "OTEL_SERVICE_NAMESPACE",
+        "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+        "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+        "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+        "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
+        "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

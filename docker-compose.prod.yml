@@ -19,6 +19,7 @@ services:
       STEAM_API_KEY: $STEAM_API_KEY
       FACEIT_API_KEY: $FACEIT_API_KEY
       OTEL_SERVICE_NAME: eggosystem-backend-1
+      OTEL_SERVICE_NAMESPACE: eggosystem
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production,service.namespace=eggosystem,service.name=eggosystem-backend-1"
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://alloy:4317"
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://alloy:4317"

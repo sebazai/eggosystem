@@ -7,15 +7,17 @@ import {
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 
-const serviceName = "eggosystem-backend-1";
+const serviceName = process.env.OTEL_SERVICE_NAME ?? "eggosystem-backend-1";
 const resource = resourceFromAttributes({
   "service.name": serviceName,
-  "service.namespace": "eggosystem",
-  "deployment.environment": "production"
+  "service.namespace": process.env.OTEL_SERVICE_NAMESPACE ?? "eggosystem",
+  "deployment.environment": process.env.NODE_ENV ?? "production"
 });
 
 const exporter = new OTLPLogExporter({
-  url: "http://alloy:4318/v1/logs"
+  url:
+    process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ??
+    "http://localhost:4318/v1/logs"
 });
 
 const loggerProvider = new LoggerProvider({
@@ -39,6 +41,7 @@ class OTelTransport extends Transport {
   log(info: winston.LogEntry, callback: () => void) {
     setImmediate(() => this.emit("logged", info));
 
+    console.log(info);
     otelLogger.emit({
       body: info.message,
       severityNumber: severityMap[info.level] || 9,

@@ -38,7 +38,8 @@ RUN rm -r node_modules/.pnpm/turbo-*
 FROM base AS runner
 ENV NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 # OTEL Configs
-ENV OTEL_SERVICE_NAME="eggosystem"
+ENV OTEL_SERVICE_NAME="eggosystem-backend-1"
+ENV OTEL_SERVICE_NAMESPACE="eggosystem"
 ENV OTEL_RESOURCE_ATTRIBUTES="deployment.environment=production,service.namespace=eggosystem,service.name=eggosystem-backend-1"
 ENV OTEL_NODE_RESOURCE_DETECTORS="env,host,os,serviceinstance"
 ENV OTEL_EXPORTER_OTLP_TRACES_ENDPOINT="http://alloy:4317"
