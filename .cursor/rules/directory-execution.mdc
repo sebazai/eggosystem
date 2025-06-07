@@ -1,0 +1,163 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Directory Execution Rule for Kanaliiga Eggosystem
+
+**Type:** Strict rule
+
+## Rule Description
+
+The AI assistant MUST ensure it is in the correct directory before executing any shell command via the terminal tool. This should be achieved by prepending an appropriate `cd <absolute-path> &&` command to the main command within a **single** terminal tool execution. Do not change directories in a separate step.
+
+Given the monorepo structure of Kanaliiga Eggosystem, commands must target the appropriate workspace directory based on the task context.
+
+## Monorepo Structure Context
+
+```
+/workspace-root/
+├── apps/
+│   ├── backend/     # Node.js/Express API
+│   └── frontend/    # Next.js application
+├── packages/        # Shared packages
+├── docs/           # Documentation
+└── package.json    # Root PNPM workspace
+```
+
+## Rationale
+
+Running commands from the wrong directory in a monorepo is particularly error-prone because:
+- Different apps have different `package.json` files
+- PNPM workspace commands have different behaviors from root vs app directories
+- Build commands must target the correct application
+- Database operations should run from backend directory
+- Frontend development commands need frontend context
+
+## Required Behavior
+
+### Directory Selection Rules
+
+**Root Directory Commands:**
+- PNPM workspace operations: `pnpm install`, `pnpm run build`
+- Project-wide scripts: `turbo build`, `turbo test`
+- Git operations: `git status`, `git commit`
+- DevContainer operations
+
+**Backend Directory Commands (`apps/backend/`):**
+- Database operations: `pnpm run migrate`, `pnpm run seed`
+- Backend-specific installs: `pnpm install <backend-package>`
+- Backend testing: `pnpm test`
+- Backend development: `pnpm run dev`
+
+**Frontend Directory Commands (`apps/frontend/`):**
+- Frontend-specific installs: `pnpm install <frontend-package>`
+- Frontend development: `pnpm run dev`
+- Frontend building: `pnpm run build`
+- Frontend testing: `pnpm test`
+
+### Implementation Requirements
+
+1. **Single Command Execution:** The `cd` and main command must be in the same terminal call
+2. **Absolute Paths Only:** Never use relative paths for directory changes
+3. **Project Root Detection:** Use `git rev-parse --show-toplevel` for reliable root path
+4. **Context-Aware Selection:** Choose directory based on task requirements
+
+## Example Patterns
+
+### ✅ Correct Usage
+
+```bash
+# Root workspace operations
+cd $(git rev-parse --show-toplevel) && pnpm install
+
+# Backend database operations  
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm run migrate
+
+# Frontend development
+cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm run dev
+
+# Backend testing
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm test
+
+# Project-wide build
+cd $(git rev-parse --show-toplevel) && turbo build
+```
+
+### ❌ Violation Examples
+
+```bash
+# Wrong: Relative path assumption
+cd apps/backend && pnpm run migrate
+
+# Wrong: Separate steps
+cd /workspace/apps/backend
+pnpm run migrate
+
+# Wrong: Running from unknown directory
+pnpm run migrate
+
+# Wrong: Relative path for cd
+cd backend && pnpm install
+```
+
+## Context-Specific Guidelines
+
+### Database Operations
+Always run from `apps/backend/`:
+```bash
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm run migrate
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm run seed
+```
+
+### Package Management
+- **Root dependencies:** `cd $(git rev-parse --show-toplevel) && pnpm install`
+- **Backend deps:** `cd $(git rev-parse --show-toplevel)/apps/backend && pnpm install <package>`
+- **Frontend deps:** `cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm install <package>`
+
+### Development Servers
+Run from respective app directories:
+```bash
+# Backend server
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm run dev
+
+# Frontend server  
+cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm run dev
+```
+
+### Testing
+Target appropriate test suites:
+```bash
+# All tests
+cd $(git rev-parse --show-toplevel) && pnpm test
+
+# Backend tests only
+cd $(git rev-parse --show-toplevel)/apps/backend && pnpm test
+
+# Frontend tests only
+cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm test
+```
+
+### Build Operations
+```bash
+# Project-wide build
+cd $(git rev-parse --show-toplevel) && turbo build
+
+# Specific app build
+cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm run build
+```
+
+## DevContainer Considerations
+
+In the DevContainer environment:
+- The workspace root is mounted at the expected location
+- All paths should still use `git rev-parse --show-toplevel` for consistency
+- PNPM and Node.js are available globally within the container
+
+## Exception Cases
+
+**Rare exceptions** where commands should run from current directory:
+- `git rev-parse --show-toplevel` itself (to discover project root)
+- File operations explicitly intended for current location (must be clearly justified)
+
+When in doubt, always prepend the appropriate `cd` command to ensure predictable execution context.
