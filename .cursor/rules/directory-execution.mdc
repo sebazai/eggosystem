@@ -1,7 +1,7 @@
 ---
 description:
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 # Directory Execution Rule for Kanaliiga Eggosystem
 
