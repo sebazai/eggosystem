@@ -285,3 +285,90 @@
 - **Performance boundaries** - Test that queries meet performance requirements
 - **Error scenario coverage** - Test all failure paths and edge cases
 - **Mock cleanup** - Always reset mocks between tests to prevent interference
+
+## Node.js Testing Strategy Gaps (Critical)
+
+### Strategic Testing Approach Missing
+
+**❌ Testing Diamond vs Testing Pyramid**
+
+- Current approach: Traditional pyramid (many units → fewer integration → few E2E)
+- **Should be**: Testing Diamond (few units → MANY component/integration → few E2E)
+- **Gap**: We're not prioritizing component tests as the primary testing strategy
+
+**❌ Component-First Testing Philosophy**
+
+- **Missing**: "Always START with integration/component tests" principle
+- **Gap**: No clear guidance on testing entire microservice/component through API
+- **Should prioritize**: Full component testing with real database, mocked externals only
+
+**❌ Feature-Based Testing Focus**
+
+- **Missing**: "Cover features, not functions" approach
+- **Gap**: No emphasis on testing API routes and business workflows first
+- **Should focus**: Test complete user journeys and API endpoints, not individual functions
+
+### Database & Infrastructure Testing Gaps
+
+**❌ Optimized Database Setup for Testing**
+
+- **Missing**: Database optimization patterns for fast test execution
+- **Gap**: No guidance on test database setup, seeding strategies, isolation patterns
+- **Need**: Database setup that supports "40 tests in 5 seconds" performance
+
+**❌ Data Isolation Strategies**
+
+- **Missing**: Patterns for test data management and cleanup
+- **Gap**: No clear approach to prevent test data conflicts
+- **Need**: Proper data isolation between tests without full database resets
+
+### Integration Testing Gaps
+
+**❌ Third-Party Service Testing**
+
+- **Missing**: Strategies for testing external API integrations
+- **Gap**: No patterns for contract testing, service virtualization
+- **Need**: Approaches for testing Steam API, other external services
+
+**❌ Message Queue Testing**
+
+- **Missing**: If we use any async messaging, queue testing patterns
+- **Gap**: No guidance on testing event-driven workflows
+
+### Web Server Testing Setup
+
+**❌ Proper Server Lifecycle Management**
+
+- **Missing**: Best practices for starting/stopping backend in tests
+- **Gap**: No patterns for test server setup and teardown
+- **Need**: Efficient server startup for integration testing
+
+### Test Anatomy & Quality
+
+**❌ Advanced Test Structure Patterns**
+
+- **Missing**: Proper test naming, structure, and organization principles
+- **Gap**: No guidance on test readability and maintainability
+- **Need**: Clear patterns for test organization and documentation
+
+### Priority Implementation Strategy
+
+**IMMEDIATE (Testing Philosophy Shift):**
+
+1. **Adopt Testing Diamond**: Start with component/integration tests, not unit tests
+2. **Feature-First Testing**: Focus on API endpoints and business workflows
+3. **Database-Included Testing**: Test with real database, mock only externals
+
+**SHORT-TERM (Infrastructure):**
+
+1. **Optimized Test Database**: Fast, isolated database setup for testing
+2. **Component Test Framework**: Full backend testing through API endpoints
+3. **External Service Mocking**: Proper third-party integration testing
+
+**MEDIUM-TERM (Advanced Patterns):**
+
+1. **Performance Testing**: Query response time monitoring and boundaries
+2. **Data Management**: Advanced seeding, cleanup, and isolation strategies
+3. **Contract Testing**: API contract validation and external service contracts
+
+**Critical Insight**: The guide emphasizes that **component/integration tests should be the primary testing strategy**, not unit tests. This is a fundamental shift from traditional testing pyramid thinking.

@@ -1199,3 +1199,649 @@ it("should maintain consistent response structure", async () => {
   expect(sanitized).toMatchSnapshot();
 });
 ```
+
+## Testing Strategy (Testing Diamond Approach)
+
+### Core Testing Philosophy
+
+Following the **Testing Diamond** approach from Node.js testing best practices:
+
+```
+    Few E2E Tests (3-10 tests)
+         /\
+        /  \
+       /    \
+    MANY Component/Integration Tests (Primary Strategy)
+       \    /
+        \  /
+         \/
+    Few Unit Tests (Complex Logic Only)
+```
+
+### Component-First Testing Strategy
+
+**Primary Testing Layer: Component/Integration Tests**
+
+```typescript
+// Component test - test entire API endpoint with real database
+describe("GET /api/v1/players/:id/stats", () => {
+  beforeEach(async () => {
+    await setupTestDatabase();
+    await seedTestData();
+  });
+
+  it("should return player statistics for valid player", async () => {
+    const response = await request(app)
+      .get("/api/v1/players/1/stats")
+      .query({
+        season_ids: "1,2",
+        league_ids: "1"
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: expect.arrayContaining([
+        expect.objectContaining({
+          player_id: 1,
+          kills: expect.any(Number),
+          deaths: expect.any(Number),
+          adr: expect.any(Number),
+          rating: expect.any(Number)
+        })
+      ]),
+      total: expect.any(Number)
+    });
+  });
+});
+```
+
+### Feature-Based Testing (Not Function-Based)
+
+**Focus on API Routes and Business Workflows:**
+
+```typescript
+// ✅ Good - Feature-based test
+describe("Player Statistics Feature", () => {
+  it("should calculate and return accurate player performance metrics", async () => {
+    // Test complete workflow: request → validation → database → calculation → response
+  });
+
+  it("should filter statistics by season and league correctly", async () => {
+    // Test complete filtering workflow
+  });
+
+  it("should handle pagination for large result sets", async () => {
+    // Test complete pagination workflow
+  });
+});
+
+// ❌ Avoid - Function-based unit tests as primary strategy
+describe("calculatePlayerRating function", () => {
+  it("should calculate rating correctly", () => {
+    // Isolated function testing - use sparingly
+  });
+});
+```
+
+### Database-Included Testing Strategy
+
+**Test with Real Database, Mock Only External Services:**
+
+```typescript
+// Component test setup - real database, mocked externals
+describe("Player API Integration", () => {
+  beforeEach(async () => {
+    // Use real test database
+    await resetTestDatabase();
+    await seedRequiredData();
+
+    // Mock only external services
+    mockSteamAPI.fetchPlayerData.mockResolvedValue({
+      /* mock data */
+    });
+  });
+
+  it("should sync player data from Steam API and store correctly", async () => {
+    // Test: API call → Steam API integration → Database storage → Response
+    const response = await request(app)
+      .post("/api/v1/players/sync")
+      .send({ steam_id: "76561198000000000" })
+      .expect(200);
+
+    // Verify database was updated
+    const player = await db.query(
+      "SELECT * FROM SteamPlayers WHERE steam_id = ?",
+      ["76561198000000000"]
+    );
+    expect(player).toHaveLength(1);
+  });
+});
+```
+
+### E2E Testing Strategy (Minimal)
+
+**Only 3-10 E2E Tests for Critical Paths:**
+
+```typescript
+// E2E test - full system with real external services
+describe("E2E: Complete Player Statistics Workflow", () => {
+  it("should handle complete player lookup from external API to frontend display", async () => {
+    // Test with real Steam API, real database, full frontend flow
+    // Only for most critical user journeys
+  });
+});
+```
+
+### Test Performance Requirements
+
+**Component Tests Must Be Fast:**
+
+```typescript
+// Performance requirements for component tests
+describe("Performance Requirements", () => {
+  it("should return player stats within 500ms", async () => {
+    const start = Date.now();
+
+    await request(app).get("/api/v1/players/1/stats").expect(200);
+
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(500);
+  });
+});
+
+// Target: 40+ tests running in under 5 seconds
+```
+
+### Unit Testing (Selective Use Only)
+
+**Unit Tests Only for Complex Business Logic:**
+
+```typescript
+// Unit test - only for non-trivial algorithms
+describe("Player Rating Calculation Algorithm", () => {
+  it("should calculate HLTV-style rating correctly", () => {
+    // Test complex mathematical calculations in isolation
+    const rating = calculatePlayerRating({
+      kills: 25,
+      deaths: 15,
+      adr: 85.5,
+      rounds: 30
+    });
+
+    expect(rating).toBeCloseTo(1.25, 2);
+  });
+});
+```
+
+### Test Organization Strategy
+
+```
+apps/backend/src/
+├── __tests__/
+│   ├── component/           # Primary testing layer
+│   │   ├── players.test.ts
+│   │   ├── matches.test.ts
+│   │   └── teams.test.ts
+│   ├── unit/               # Selective use only
+│   │   └── algorithms/
+│   │       └── rating-calculation.test.ts
+│   └── e2e/               # Minimal critical paths
+│       └── player-workflow.test.ts
+└── controllers/
+    ├── playerController.ts
+    └── matchController.ts
+```
+
+### Test Data Strategy
+
+**Fast Database Setup with Isolation:**
+
+```typescript
+// Test database optimization
+const testDbSetup = {
+  // Use separate test database
+  database: "kanaliiga_test",
+
+  // Fast seeding strategy
+  seedStrategy: "essential-data-only",
+
+  // Isolation approach
+  isolation: "transaction-rollback", // vs full table truncation
+
+  // Performance target
+  setupTime: "<100ms per test"
+};
+```
+
+## Integration Testing Patterns (Section 5)
+
+### Third-Party Service Testing
+
+**Strategy: Test Contracts, Not Implementations**
+
+```typescript
+// Contract testing for external APIs
+describe("Steam API Integration", () => {
+  it("should handle Steam API response format correctly", async () => {
+    // Use real Steam API occasionally for contract validation
+    const response = await steamApiService.getPlayerSummaries([
+      "76561198000000000"
+    ]);
+
+    expect(response).toMatchObject({
+      response: {
+        players: expect.arrayContaining([
+          expect.objectContaining({
+            steamid: expect.any(String),
+            personaname: expect.any(String),
+            profileurl: expect.any(String)
+          })
+        ])
+      }
+    });
+  });
+
+  it("should gracefully handle Steam API failures", async () => {
+    // Mock API failure scenarios
+    nock("https://api.steampowered.com")
+      .get("/ISteamUser/GetPlayerSummaries/v0002/")
+      .reply(500, "Internal Server Error");
+
+    await expect(
+      steamApiService.getPlayerSummaries(["invalid"])
+    ).rejects.toThrow("Steam API unavailable");
+  });
+});
+```
+
+### Service Virtualization Patterns
+
+```typescript
+// Use tools like nock for HTTP service mocking
+import nock from "nock";
+
+describe("External Service Integration", () => {
+  beforeEach(() => {
+    nock.cleanAll();
+  });
+
+  it("should handle FaceIT API rate limiting", async () => {
+    nock("https://open-api.faceit.com")
+      .get("/data/v4/teams/team-id")
+      .reply(429, { message: "Rate limit exceeded" });
+
+    const result = await faceitService.getTeamDetails("team-id");
+
+    expect(result).toBeNull(); // Graceful degradation
+  });
+});
+```
+
+### Consumer-Driven Contract Testing
+
+```typescript
+// Define API contracts that both services must honor
+const playerStatsContract = {
+  request: {
+    method: "GET",
+    path: "/api/v1/players/*/stats",
+    query: {
+      season_ids: "string",
+      league_ids: "string?"
+    }
+  },
+  response: {
+    status: 200,
+    body: {
+      data: "array",
+      total: "number"
+    }
+  }
+};
+
+// Test that our API honors the contract
+it("should conform to player stats API contract", async () => {
+  const response = await request(app)
+    .get("/api/v1/players/1/stats")
+    .query({ season_ids: "1,2" })
+    .expect(200);
+
+  expect(response.body).toMatchContract(playerStatsContract.response.body);
+});
+```
+
+## Dealing with Data Patterns (Section 6)
+
+### Test Data Isolation Strategies
+
+**Database Per Test vs Transaction Rollback:**
+
+```typescript
+// Strategy 1: Transaction-based isolation (faster)
+describe("Player Stats with Transaction Isolation", () => {
+  let transaction: Transaction;
+
+  beforeEach(async () => {
+    transaction = await db.transaction();
+  });
+
+  afterEach(async () => {
+    await transaction.rollback();
+  });
+
+  it("should calculate player rating correctly", async () => {
+    // All database operations use the transaction
+    await createTestPlayer({ id: 1, steam_name: "TestPlayer" }, transaction);
+
+    const stats = await getPlayerStats(1, { transaction });
+    expect(stats.rating).toBeCloseTo(1.2, 2);
+  });
+});
+
+// Strategy 2: Database reset (more isolation, slower)
+describe("Integration Tests with Full Reset", () => {
+  beforeEach(async () => {
+    await resetTestDatabase();
+    await seedEssentialData();
+  });
+
+  it("should handle complex multi-table operations", async () => {
+    // Full database operations
+  });
+});
+```
+
+### Test Data Builders (Factory Pattern)
+
+```typescript
+// Hierarchical test data creation
+class TestDataBuilder {
+  static async createSeason(overrides = {}) {
+    return await db("Seasons").insert({
+      name: "Test Season",
+      full_name: "Test Season 2025",
+      start_date: new Date("2025-01-01"),
+      end_date: new Date("2025-12-31"),
+      ...overrides
+    });
+  }
+
+  static async createPlayerWithStats(seasonId: number, overrides = {}) {
+    const player = await this.createPlayer();
+    const match = await this.createMatch(seasonId);
+    const game = await this.createMatchGame(match.id);
+
+    return await this.createPlayerStats({
+      player_id: player.id,
+      game_id: game.id,
+      kills: 25,
+      deaths: 15,
+      assists: 8,
+      ...overrides
+    });
+  }
+
+  static async createCompleteMatchScenario(seasonId: number) {
+    const teams = await Promise.all([
+      this.createTeam({ name: "Team A" }),
+      this.createTeam({ name: "Team B" })
+    ]);
+
+    const match = await this.createMatch(seasonId, teams);
+    const games = await this.createMatchGames(match.id, 3); // Best of 3
+
+    // Create realistic player stats for both teams
+    for (const game of games) {
+      await this.createTeamStats(teams[0].id, game.id);
+      await this.createTeamStats(teams[1].id, game.id);
+    }
+
+    return { match, teams, games };
+  }
+}
+```
+
+### Database Optimization for Tests
+
+```typescript
+// Optimized database setup
+const testDbConfig = {
+  // Use in-memory SQLite for unit tests
+  client: "sqlite3",
+  connection: ":memory:",
+  useNullAsDefault: true,
+  migrations: {
+    directory: "./migrations"
+  },
+  seeds: {
+    directory: "./seeds/test"
+  },
+  pool: {
+    min: 1,
+    max: 1 // Single connection for consistency
+  }
+};
+
+// Parallel-safe test data
+describe("Parallel Test Safety", () => {
+  beforeEach(async () => {
+    // Use unique test prefixes to avoid conflicts
+    const testPrefix = `test_${Date.now()}_${Math.random()}`;
+    await createIsolatedTestData(testPrefix);
+  });
+});
+```
+
+## Web Server Setup Patterns (Section 3)
+
+### Efficient Server Lifecycle Management
+
+```typitten
+// Global test server setup
+let testServer: Application;
+let serverPort: number;
+
+beforeAll(async () => {
+  // Start server once for all tests
+  testServer = createApp({
+    database: testDbConfig,
+    redis: mockRedisConfig,
+    externalServices: mockServicesConfig
+  });
+
+  serverPort = await startServer(testServer, 0); // Random available port
+});
+
+afterAll(async () => {
+  await stopServer(testServer);
+  await cleanupTestDatabase();
+});
+
+// Per-test cleanup without server restart
+beforeEach(async () => {
+  await resetTestData(); // Fast data reset, keep server running
+});
+```
+
+### Test-Specific Configuration
+
+```typescript
+// Environment-aware server configuration
+const createTestApp = (overrides = {}) => {
+  const config = {
+    ...defaultConfig,
+    database: {
+      ...defaultConfig.database,
+      connection: process.env.TEST_DATABASE_URL || ":memory:"
+    },
+    redis: {
+      ...defaultConfig.redis,
+      client:
+        process.env.NODE_ENV === "test" ? mockRedisClient : realRedisClient
+    },
+    externalServices: {
+      steamApi: {
+        enabled: false, // Disable in tests
+        mockResponses: steamApiMockData
+      }
+    },
+    ...overrides
+  };
+
+  return createApplication(config);
+};
+```
+
+## Test Anatomy Best Practices (Section 4)
+
+### AAA Pattern (Arrange-Act-Assert)
+
+```typescript
+describe("Player Statistics Calculation", () => {
+  it("should calculate K/D ratio correctly for multiple games", async () => {
+    // Arrange - Set up test data
+    const playerId = await createTestPlayer();
+    const matchGames = await createMatchGames([
+      { kills: 20, deaths: 10 }, // Game 1: 2.0 K/D
+      { kills: 15, deaths: 20 }, // Game 2: 0.75 K/D
+      { kills: 25, deaths: 15 } // Game 3: 1.67 K/D
+    ]);
+
+    await Promise.all(
+      matchGames.map((game) =>
+        createPlayerStats({
+          player_id: playerId,
+          game_id: game.id,
+          kills: game.kills,
+          deaths: game.deaths
+        })
+      )
+    );
+
+    // Act - Execute the function under test
+    const stats = await calculatePlayerSummaryStats(playerId);
+
+    // Assert - Verify the results
+    expect(stats.totalKills).toBe(60);
+    expect(stats.totalDeaths).toBe(45);
+    expect(stats.kdRatio).toBeCloseTo(1.33, 2);
+    expect(stats.gamesPlayed).toBe(3);
+  });
+});
+```
+
+### Test Naming Best Practices
+
+```typescript
+// Good test names: Should/When/Given pattern
+describe("Player Rating System", () => {
+  describe("when player has consistent performance", () => {
+    it("should maintain stable rating over multiple matches", async () => {
+      // Test implementation
+    });
+  });
+
+  describe("when player performance varies significantly", () => {
+    it("should adjust rating based on recent performance weight", async () => {
+      // Test implementation
+    });
+  });
+
+  describe("given insufficient match data", () => {
+    it("should return null rating with appropriate message", async () => {
+      // Test implementation
+    });
+  });
+});
+```
+
+### Error Scenario Testing
+
+```typescript
+// Comprehensive error scenario coverage
+describe("Error Handling", () => {
+  it("should handle database connection failures gracefully", async () => {
+    // Simulate connection failure
+    mockDatabase.query.mockRejectedValue(new Error("Connection timeout"));
+
+    await expect(getPlayerStats(1)).rejects.toThrow(
+      "Database unavailable. Please try again later."
+    );
+  });
+
+  it("should validate input parameters strictly", async () => {
+    const invalidInputs = [
+      null,
+      undefined,
+      "",
+      "invalid",
+      -1,
+      0,
+      "1; DROP TABLE players;"
+    ];
+
+    for (const invalidInput of invalidInputs) {
+      await expect(getPlayerStats(invalidInput)).rejects.toThrow(
+        /Invalid player ID/
+      );
+    }
+  });
+
+  it("should handle rate limiting from external APIs", async () => {
+    mockSteamApi.getPlayerData.mockRejectedValue(
+      new Error("Rate limit exceeded")
+    );
+
+    const result = await syncPlayerData("76561198000000000");
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("rate limit");
+    expect(result.retryAfter).toBeGreaterThan(0);
+  });
+});
+```
+
+### Performance Boundary Testing
+
+```typescript
+describe("Performance Requirements", () => {
+  it("should return player stats within performance SLA", async () => {
+    // Create realistic dataset
+    await createLargeDataset({
+      players: 1000,
+      matches: 500,
+      gamesPerMatch: 3
+    });
+
+    const performanceTests = [
+      { playerId: 1, maxTime: 200 }, // Simple query
+      { playerId: 50, maxTime: 350 }, // Medium complexity
+      { playerId: 100, maxTime: 500 } // Complex aggregation
+    ];
+
+    for (const test of performanceTests) {
+      const start = Date.now();
+      const result = await getPlayerStats(test.playerId);
+      const duration = Date.now() - start;
+
+      expect(duration).toBeLessThan(test.maxTime);
+      expect(result).toBeDefined();
+    }
+  });
+
+  it("should handle concurrent requests efficiently", async () => {
+    const concurrentRequests = Array.from({ length: 10 }, (_, i) =>
+      getPlayerStats(i + 1)
+    );
+
+    const start = Date.now();
+    const results = await Promise.all(concurrentRequests);
+    const totalDuration = Date.now() - start;
+
+    // All requests should complete within reasonable time
+    expect(totalDuration).toBeLessThan(2000);
+    expect(results).toHaveLength(10);
+    expect(results.every((r) => r !== null)).toBe(true);
+  });
+});
+```
