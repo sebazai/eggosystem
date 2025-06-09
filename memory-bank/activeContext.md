@@ -131,3 +131,70 @@
 - **progress.md**: Project status, completed features, remaining work
 - **systemPatterns.md**: New technical patterns and best practices
 - **productContext.md**: Evolving user needs and feature priorities
+
+## Current Focus: Email Verification Testing & Error Handling
+
+### Recent Accomplishments
+
+**Email Verification Toast Fix (January 2025)**
+
+- ✅ Fixed server-side toast error by moving toast notifications to client components
+- ✅ Updated `VerifyEmailSuccessButton` to handle success toasts with `showSuccessToast` prop
+- ✅ Maintained clean separation between server and client components
+
+**Email Template Styling Fix**
+
+- ✅ Fixed "Verify Email" button centering in email template using table-based layout
+- ✅ Improved email client compatibility (especially Outlook) with `<table>` instead of `<div>`
+- ✅ Applied email HTML best practices for reliable cross-client rendering
+
+**Comprehensive Email Verification Test Suite**
+
+- ✅ Created 14 backend tests covering all scenarios (success, validation, expiration, errors, edge cases)
+- ✅ Created frontend E2E tests with Playwright for UI behavior
+- ✅ Followed TDD workflow principles throughout
+
+**Important Error Handling Discovery**
+
+- ✅ Learned that Redis operations in this codebase do NOT throw errors requiring try/catch
+- ✅ Confirmed that `redisClient.get()` and `redisClient.del()` return null/undefined on errors rather than throwing
+- ✅ Updated error handling to only use try/catch where actually needed (JSON.parse, data validation)
+- ✅ Removed unrealistic tests that assumed Redis throws errors
+- ✅ **Corrected misleading try/catch comment** - clarified that try/catch is for JSON.parse() and database operations, not Redis
+
+**Critical Test Structure Discovery**
+
+- ✅ **Integration Tests** (`test:integration`) should MOCK all API calls and NOT require backend
+- ✅ **E2E Tests** (`test:e2e`) should use REAL backend and test complete user flows
+- ✅ Moved verify-email tests from `/integration/` to `/e2e/` folder (they test full page navigation)
+- ✅ Fixed test helper functions to remove unnecessary try/catch blocks (Playwright has built-in retry)
+- ✅ Understanding: ECONNREFUSED errors indicate tests are in wrong category
+
+### Key Patterns Discovered
+
+**Error Handling Rule Application**
+
+- Use try/catch only for: JSON.parse(), data validation, database operations, external API calls
+- DON'T use try/catch for: Redis operations, Playwright navigation, simple validation
+- Follow existing codebase patterns rather than adding unnecessary error handling
+- **Be precise in comments** - explain the actual error boundaries, not assumptions
+
+**Email Template Best Practices**
+
+- Use table-based layout for button centering: `<table><tr><td style="text-align:center">`
+- Avoid `<div>` with CSS for critical layout in emails (poor client support)
+- Test across email clients, especially Outlook which ignores modern CSS
+
+**Test Organization**
+
+```
+/src/__tests__/integration/  → Mock all APIs, no backend required
+/src/__tests__/e2e/         → Real backend, full application flows
+/src/__tests__/unit/        → Component testing (if needed)
+```
+
+**Playwright Best Practices**
+
+- Use built-in timeout and retry mechanisms instead of custom try/catch retry loops
+- Simple navigation helpers: `page.goto()` with timeout settings
+- Let Playwright handle connection errors naturally

@@ -37,12 +37,16 @@ export const sendVerificationEmail = async (to: string, token: string) => {
   
           <p>To complete the change and verify this email address, please click the button below:</p>
   
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" 
-               style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block;">
-              Verify Email
-            </a>
-          </div>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td style="text-align: center;">
+                <a href="${verificationUrl}" 
+                   style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center;">
+                  Verify Email
+                </a>
+              </td>
+            </tr>
+          </table>
   
           <p>If you are unable to click the button, you can also copy and paste the following link into your browser:</p>
   

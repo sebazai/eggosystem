@@ -9,6 +9,7 @@
 - ✅ **Match Analysis**: Detailed match statistics with game-by-game breakdowns
 - ✅ **Leaderboards**: Dynamic player and team rankings with filtering
 - ✅ **Mobile Interface**: Responsive design optimized for mobile devices
+- ✅ **Email Verification**: Proper client-side toast notifications for email verification
 
 ### Technical Infrastructure
 
@@ -71,6 +72,7 @@
 - **Database Optimization**: Improved query patterns and relationships
 - **Mobile Enhancement**: Better mobile table design and responsiveness
 - **Filter System**: Complete filtering architecture with middleware
+- **Email Verification Fix**: Resolved server-side toast error by moving toast to client component
 
 ### Active Work Areas
 

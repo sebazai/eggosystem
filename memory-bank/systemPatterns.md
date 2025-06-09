@@ -1,5 +1,9 @@
 # System Patterns - Kanaliiga Eggosystem
 
+## Architecture Overview
+
+The Kanaliiga Eggosystem follows a monorepo structure using PNPM workspaces with clear separation between frontend and backend concerns.
+
 ## Database Query Patterns
 
 ### Critical JOIN Patterns
@@ -753,3 +757,119 @@ describe("Memory Usage", () => {
 - Mobile-first design reduces initial payload
 - Essential data only on small screens
 - Progressive enhancement for larger screens
+
+## Testing Architecture
+
+### Test Categories and Structure
+
+**Backend Tests** (`apps/backend/src/__tests__/`)
+
+- **Unit Tests**: Service functions, models, utilities
+- **Controller Tests**: API endpoint behavior with mocked dependencies
+- **Pattern**: Use Jest with `supertest` for HTTP testing
+- **Mocking**: Mock Redis, database, external APIs appropriately
+
+**Frontend Tests** (`apps/frontend/src/__tests__/`)
+
+```
+__tests__/
+├── unit/          # Component unit tests (isolated)
+├── integration/   # Component integration (mocked APIs)
+└── e2e/           # End-to-end flows (real backend)
+```
+
+**Integration vs E2E Decision Matrix**
+
+- **Integration**: Component interactions, form behavior, UI state changes (mock APIs)
+- **E2E**: Full user journeys, navigation flows, real data persistence (real backend)
+- **Error Signal**: `ECONNREFUSED` errors indicate test is in wrong category
+
+### Error Handling Patterns
+
+**When to Use try/catch**
+
+- ✅ JSON.parse() operations (can throw on malformed data)
+- ✅ Data validation and transformation
+- ✅ Database operations (actual integration boundary)
+- ✅ External API calls (third-party services)
+- ✅ Resource cleanup (files, connections)
+
+**When NOT to Use try/catch**
+
+- ❌ Redis operations (`redisClient.get()` returns null on errors)
+- ❌ Simple validation (use validation libraries)
+- ❌ Playwright navigation (has built-in retry mechanisms)
+- ❌ Generic error swallowing
+
+**Pattern**: Follow existing codebase patterns rather than adding defensive try/catch blocks
+
+### Playwright Testing Patterns
+
+**Navigation Helpers**
+
+```typescript
+// ✅ Simple and reliable
+async function navigateToPage(page: Page, url: string) {
+  await page.goto(url, { timeout: 60000 });
+  await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
+}
+
+// ❌ Unnecessary complexity
+async function navigateWithRetry(page: Page, url: string, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      /* ... */
+    } catch {
+      /* ... */
+    }
+  }
+}
+```
+
+**Test Reliability**
+
+- Use Playwright's built-in retry and timeout mechanisms
+- Mock external dependencies consistently
+- Separate concerns: integration tests mock APIs, E2E tests use real backend
+
+## Email Template Patterns
+
+### HTML Email Best Practices
+
+**Button Centering**
+
+```html
+<!-- ✅ Reliable across all email clients -->
+<table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+  <tr>
+    <td style="text-align: center;">
+      <a
+        href="..."
+        style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center;"
+      >
+        Button Text
+      </a>
+    </td>
+  </tr>
+</table>
+
+<!-- ❌ Unreliable in Outlook and other clients -->
+<div style="text-align: center;">
+  <a href="..." style="...">Button Text</a>
+</div>
+```
+
+**Email Client Compatibility**
+
+- Use table-based layouts for critical structural elements
+- Avoid flexbox, grid, and modern CSS for layout
+- Test in Outlook (worst CSS support) and Gmail (good reference)
+- Inline styles only - external stylesheets are stripped
+- Use `cellpadding="0" cellspacing="0"` on all tables
+
+**Kanaliiga Brand Colors**
+
+- Primary orange: `hsl(35, 93%, 49%)`
+- Secondary link color: `hsl(29, 56%, 58%)`
+- Text color: `#333`
+- Muted text: `#777`

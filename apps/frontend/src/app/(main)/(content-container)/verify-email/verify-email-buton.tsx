@@ -1,9 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
-export function VerifyEmailSuccessButton() {
+interface VerifyEmailSuccessButtonProps {
+  showSuccessToast?: boolean;
+}
+
+export function VerifyEmailSuccessButton({
+  showSuccessToast
+}: VerifyEmailSuccessButtonProps) {
   const router = useRouter();
+
+  useEffect(() => {
+    if (showSuccessToast) {
+      toast.success("Email verified successfully!");
+    }
+  }, [showSuccessToast]);
 
   return (
     <button
