@@ -1,0 +1,190 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Error Handling Patterns
+
+This document defines rules and best practices for error handling in the codebase, with emphasis on avoiding unnecessary try/catch blocks and using proper Jest testing patterns.
+
+## General Principles
+
+### Avoid Unnecessary Try/Catch Blocks
+
+**Rule**: Do not use try/catch blocks unless absolutely necessary and all other error handling approaches have been exhausted.
+
+**Why**: Try/catch blocks can mask errors, make code harder to read, and often indicate improper error handling architecture.
+
+**Instead of try/catch, prefer**:
+- Let errors bubble up naturally to be handled at appropriate boundaries
+- Use proper error handling middleware in Express applications
+- Use built-in error handling mechanisms of frameworks and libraries
+- Use functional error handling patterns (Result types, Either types)
+- Use proper validation libraries that return structured errors
+
+### When Try/Catch Is Acceptable
+
+Use try/catch blocks only when:
+- **Integration boundaries**: Calling external APIs, databases, or third-party libraries that throw unpredictable errors
+- **Resource cleanup**: Need to ensure cleanup of resources (files, connections) regardless of success/failure
+- **Graceful degradation**: Non-critical operations that should not break the main flow
+- **Top-level error boundaries**: Application entry points, route handlers, middleware
+- **Converting error types**: When you need to transform low-level errors into domain-specific errors
+
+```typescript
+// ❌ Bad - unnecessary try/catch for validation
+try {
+  const result = validateUser(userData);
+  return result;
+} catch (error) {
+  throw new BadRequestError("Validation failed");
+}
+
+// ✅ Good - let validation library handle errors properly
+const result = validateUser(userData); // Throws structured validation errors
+return result;
+
+// ✅ Good - necessary for external API integration
+try {
+  const response = await externalApi.call();
+  return response.data;
+} catch (error) {
+  logger.error("External API failed", error);
+  throw new ServiceUnavailableError("External service unavailable");
+}
+```
+
+## Jest Testing Patterns
+
+### Use `await expect().rejects` for Testing Expected Failures
+
+**Rule**: In Jest tests, always use `await expect().rejects.toThrow()` instead of manual try/catch blocks when testing functions that should throw errors.
+
+```typescript
+// ❌ Bad - manual try/catch in tests
+it("should fail with invalid data", async () => {
+  try {
+    await serviceFunction(invalidData);
+    throw new Error("Should have failed"); // This is a code smell
+  } catch (error) {
+    expect(error.message).toContain("invalid");
+  }
+});
+
+// ✅ Good - use Jest's built-in async error testing
+it("should fail with invalid data", async () => {
+  await expect(serviceFunction(invalidData)).rejects.toThrow(/invalid/);
+});
+
+// ✅ Good - test specific error types
+it("should throw BadRequestError with specific message", async () => {
+  await expect(serviceFunction(invalidData)).rejects.toThrow(BadRequestError);
+  await expect(serviceFunction(invalidData)).rejects.toThrow("Data validation failed");
+});
+```
+
+### Jest Error Testing Best Practices
+
+- Use **regex patterns** in `toThrow()` for flexible error message matching: `.toThrow(/pattern/)`
+- Use **specific error classes** when testing error types: `.toThrow(CustomError)`
+- Use **exact strings** only when error messages are stable: `.toThrow("exact message")`
+- Use simple `.toThrow()` when you just need to verify any error is thrown
+
+```typescript
+// Different approaches for different scenarios
+await expect(fn()).rejects.toThrow(); // Any error
+await expect(fn()).rejects.toThrow(/validation/); // Message contains "validation"
+await expect(fn()).rejects.toThrow(ValidationError); // Specific error type
+await expect(fn()).rejects.toThrow("User not found"); // Exact message
+```
+
+## Error Handling Architecture
+
+### Structured Error Handling
+
+Prefer structured error handling over generic try/catch:
+
+```typescript
+// ✅ Good - structured error types
+class ValidationError extends Error {
+  constructor(public field: string, message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+class ServiceError extends Error {
+  constructor(public service: string, public statusCode: number, message: string) {
+    super(message);
+    this.name = 'ServiceError';
+  }
+}
+
+// ✅ Good - error handling middleware
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  if (error instanceof ValidationError) {
+    return res.status(400).json({ error: error.message, field: error.field });
+  }
+  if (error instanceof ServiceError) {
+    return res.status(error.statusCode).json({ error: error.message });
+  }
+  // Handle unexpected errors
+  logger.error("Unexpected error", error);
+  return res.status(500).json({ error: "Internal server error" });
+});
+```
+
+### Function-Level Error Handling
+
+```typescript
+// ❌ Bad - swallowing errors with generic try/catch
+async function processUser(userData: any) {
+  try {
+    const user = await createUser(userData);
+    await sendWelcomeEmail(user);
+    return user;
+  } catch (error) {
+    console.log("Something went wrong");
+    return null; // Swallows error, caller doesn't know what happened
+  }
+}
+
+// ✅ Good - let errors bubble up with context
+async function processUser(userData: UserData): Promise<User> {
+  const user = await createUser(userData); // Let validation errors bubble up
+  
+  // Only catch non-critical operations
+  try {
+    await sendWelcomeEmail(user);
+  } catch (error) {
+    logger.warn("Welcome email failed for user", user.id, error);
+    // Don't throw - email failure shouldn't break user creation
+  }
+  
+  return user;
+}
+```
+
+## Code Review Guidelines
+
+When reviewing code, flag these patterns:
+
+- **Empty catch blocks**: `catch (error) { }`
+- **Generic error swallowing**: `catch (error) { return null; }`
+- **Manual error throwing in tests**: `throw new Error("Should have failed")`
+- **Try/catch for simple validation**: Use validation libraries instead
+- **Nested try/catch blocks**: Often indicates architectural issues
+- **Try/catch without proper logging**: Errors disappear silently
+
+## Summary
+
+- **Default**: Let errors bubble up naturally
+- **Testing**: Use `await expect().rejects.toThrow()` for expected failures
+- **Integration**: Use try/catch for external dependencies and resource cleanup
+- **Architecture**: Implement structured error handling at application boundaries
+- **Never**: Swallow errors silently or use try/catch for simple validation
