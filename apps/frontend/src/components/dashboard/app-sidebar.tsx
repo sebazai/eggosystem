@@ -86,6 +86,12 @@ const data: { navMain: Array<MenuItem> } = {
         //   url: "#"
         // }
       ] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "Sortter",
+      url: createDashboardNextUrl("sortter"),
+      requiredRoles: ["helpdesk"],
+      items: [] satisfies Array<SubMenuItem>
     }
     // {
     //   title: "Demo parser",
