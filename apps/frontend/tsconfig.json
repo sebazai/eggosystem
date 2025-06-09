@@ -15,5 +15,6 @@
     "eslint.config.mjs",
     "types/**.d.ts"
   ],
+  "types": ["jest", "@testing-library/jest-dom"],
   "exclude": ["node_modules", ".next"]
 }

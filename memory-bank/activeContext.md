@@ -132,9 +132,17 @@
 - **systemPatterns.md**: New technical patterns and best practices
 - **productContext.md**: Evolving user needs and feature priorities
 
-## Current Focus: Email Verification Testing & Error Handling
+## Current Focus: Frontend Unit Testing Setup & Email Verification
 
 ### Recent Accomplishments
+
+**Frontend Unit Testing Implementation (January 2025)**
+
+- ✅ **Added Jest + React Testing Library** to frontend for comprehensive unit testing
+- ✅ **Configured Jest** with Next.js integration, coverage reporting, and CI integration
+- ✅ **Fixed TypeScript errors** by adding proper Jest DOM type declarations
+- ✅ **Updated GitLab CI** to run frontend unit tests alongside integration and E2E tests
+- ✅ **Established testing hierarchy**: Unit (Jest) → Integration (Playwright) → E2E (Playwright)
 
 **Email Verification Toast Fix (January 2025)**
 
@@ -171,6 +179,14 @@
 - ✅ Understanding: ECONNREFUSED errors indicate tests are in wrong category
 
 ### Key Patterns Discovered
+
+**Frontend Unit Testing Architecture**
+
+- **Jest + React Testing Library**: Fast, isolated component testing with proper mocking
+- **Test Organization**: `/src/__tests__/unit/` for Jest, `/integration/` and `/e2e/` for Playwright
+- **TypeScript Integration**: Import `@testing-library/jest-dom` in type declaration file
+- **CI Integration**: Separate `test:frontend:unit` and `test:frontend:integration` jobs
+- **Coverage Reporting**: Cobertura format for GitLab CI integration
 
 **Error Handling Rule Application**
 

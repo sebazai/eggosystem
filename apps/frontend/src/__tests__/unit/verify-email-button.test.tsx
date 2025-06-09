@@ -29,8 +29,13 @@ describe("VerifyEmailSuccessButton", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseRouter.mockReturnValue({
-      push: mockPush
-    } as any);
+      push: mockPush,
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn()
+    });
   });
 
   it("should render button with correct text", () => {
@@ -87,8 +92,13 @@ describe("VerifyEmailErrorButton", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseRouter.mockReturnValue({
-      push: mockPush
-    } as any);
+      push: mockPush,
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn()
+    });
   });
 
   it("should render button with correct text", () => {

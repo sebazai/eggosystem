@@ -233,7 +233,25 @@ test:backend:
       - apps/backend/test-results/junit/results.xml
       - apps/backend/coverage/cobertura-coverage.xml
 
-test:frontend:
+test:frontend:unit:
+  stage: test
+  extends: [.prepare-pnpm, .mr-frontend]
+  script:
+    - pnpm --filter=frontend test:unit
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - apps/frontend/test-results/junit/results.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: apps/frontend/coverage/cobertura-coverage.xml
+    paths:
+      - apps/frontend/test-results/junit/results.xml
+      - apps/frontend/coverage/cobertura-coverage.xml
+
+test:frontend:integration:
   image: mcr.microsoft.com/playwright:v1.52.0-jammy
   stage: test
   extends: [.mr-frontend]

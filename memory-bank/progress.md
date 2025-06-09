@@ -19,6 +19,7 @@
 - ✅ **Data Fetching**: SWR integration with custom nextFetcher utility
 - ✅ **DevContainer**: Consistent development environment
 - ✅ **Query Optimization**: Efficient database queries with proper JOINs
+- ✅ **Frontend Unit Testing**: Jest + React Testing Library with CI integration
 
 ### Database Relationships
 

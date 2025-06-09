@@ -83,8 +83,10 @@ Frontend Component → SWR Hook → Frontend API Route → Backend API → Datab
 
 ### Testing Strategy
 
-- **Backend**: Unit tests for models, integration tests for controllers
-- **Frontend**: Component testing with error detection
+- **Backend**: Jest unit tests for models, integration tests for controllers
+- **Frontend Unit**: Jest + React Testing Library for component testing
+- **Frontend Integration**: Playwright tests with mocked APIs
+- **Frontend E2E**: Playwright tests with real backend
 - **Database**: Separate test database with proper cleanup
 - **Performance**: Query performance monitoring
 
