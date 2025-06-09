@@ -1,5 +1,166 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
+# Documentation Organization Rule
+
+**Type:** Organizational guideline
+
+## Rule Description
+
+This rule defines the standard organization and placement of documentation within the Kanaliiga Eggosystem project. All project documentation should be centralized in the `@/docs` directory to maintain consistency and improve discoverability.
+
+## Documentation Structure
+
+### Primary Documentation Location
+
+**All project documentation MUST be placed in `@/docs` (workspace root `/docs/` directory).**
+
+```
+/workspace-root/
+├── docs/                           # PRIMARY documentation location
+│   ├── database.md                 # Database schema and relationships
+│   ├── migration.md                # Database migration procedures
+│   ├── PERFORMANCE_IMPROVEMENTS.md # Performance optimization notes
+│   ├── update_dev_seed.md          # Development seed data procedures
+│   ├── kanastats.drawio           # System architecture diagrams
+│   └── ...                        # Additional project documentation
+├── apps/
+│   ├── backend/
+│   │   └── README.md              # App-specific setup only
+│   └── frontend/
+│       └── README.md              # App-specific setup only
+├── packages/
+│   └── */README.md                # Package-specific API docs only
+└── README.md                      # Project overview and getting started
+```
+
+## Documentation Categories
+
+### Core Project Documentation (`@/docs`)
+
+- **Database Documentation**: Schema, relationships, migration procedures
+- **API Documentation**: Endpoint specifications, authentication, examples  
+- **System Architecture**: Technical design decisions, data flow diagrams
+- **Performance Guidelines**: Optimization strategies, monitoring procedures
+- **Development Procedures**: Setup guides, testing strategies, deployment
+- **Business Logic**: Domain rules, validation logic, workflow documentation
+
+### App-Specific Documentation (App directories)
+
+**Limited to setup and app-specific configuration only:**
+- `apps/backend/README.md` - Backend-specific setup, environment variables
+- `apps/frontend/README.md` - Frontend-specific setup, build configuration
+- Package `README.md` files - API reference and usage examples for that package
+
+### Root Documentation
+
+- **`README.md`** - Project overview, quick start, and links to detailed docs in `@/docs`
+
+## Documentation Standards
+
+### File Naming Conventions
+
+- Use **kebab-case** for multi-word files: `database-schema.md`, `api-endpoints.md`
+- Use **UPPERCASE** for major procedural docs: `PERFORMANCE_IMPROVEMENTS.md`
+- Use descriptive names that indicate content scope
+
+### Content Organization
+
+#### Cross-References
+```markdown
+<!-- Reference other docs using relative paths -->
+See [Database Schema](mdc:database.md) for table relationships.
+For API patterns, refer to [API Documentation](mdc:api-documentation.md).
+```
+
+#### Consistent Structure
+```markdown
+# Document Title
+
+## Overview
+Brief description of the document's purpose.
+
+## Sections
+Organized content with clear headings.
+
+## References
+Links to related documentation.
+```
+
+## Rationale
+
+### Centralized Documentation Benefits
+
+- **Discoverability**: All documentation in one predictable location
+- **Maintenance**: Easier to keep documentation up-to-date
+- **Onboarding**: New team members know where to find information
+- **Version Control**: Clear change tracking for documentation updates
+
+### Separation of Concerns
+
+- **Project docs** → `@/docs` (business logic, architecture, procedures)
+- **Code docs** → Inline comments, JSDoc, type definitions
+- **Setup docs** → App-specific README files (minimal)
+
+## Implementation Guidelines
+
+### Creating New Documentation
+
+1. **Determine Scope**: Is this project-wide or app-specific?
+2. **Choose Location**: 
+   - Project-wide → `@/docs/`
+   - App-specific setup → `apps/*/README.md`
+3. **Follow Naming Convention**: Use descriptive, kebab-case names
+4. **Link Appropriately**: Update relevant docs with cross-references
+
+### Updating Existing Documentation
+
+1. **Check Location**: Move misplaced docs to `@/docs` if needed
+2. **Update References**: Fix any broken links after moving files
+3. **Maintain Consistency**: Follow established formatting patterns
+
+### Documentation Review
+
+When reviewing code that affects documented features:
+- **Update Relevant Docs**: Ensure `@/docs` files reflect changes
+- **Check Cross-References**: Verify links still work after changes
+- **Validate Examples**: Ensure code examples in docs remain accurate
+
+## Examples
+
+### ✅ Correct Documentation Placement
+
+```
+@/docs/database.md              # Database schema and relationships
+@/docs/api-authentication.md    # API authentication procedures  
+@/docs/performance-monitoring.md # System performance guidelines
+apps/backend/README.md          # Backend-specific setup only
+```
+
+### ❌ Incorrect Documentation Placement
+
+```
+apps/backend/docs/database.md      # Should be @/docs/database.md
+packages/types/business-rules.md   # Should be @/docs/business-rules.md
+random-notes.md (in root)          # Should be @/docs/development-notes.md
+```
+
+## Exception Cases
+
+**Rare exceptions** where documentation may exist outside `@/docs`:
+
+1. **Package API Documentation**: `packages/*/README.md` for package-specific API reference
+2. **Third-party Integration**: Vendor-specific setup files required in specific locations
+3. **Build/Deploy Configuration**: Documentation that must be co-located with configuration files
+
+**All exceptions must be clearly justified and documented.**
+
+## Summary
+
+- **Primary Rule**: All project documentation goes in `@/docs`
+- **App READMEs**: Setup and configuration only
+- **Consistent Naming**: Use kebab-case for file names
+- **Cross-Reference**: Link related documentation appropriately
+- **Maintain Currency**: Keep documentation updated with code changes

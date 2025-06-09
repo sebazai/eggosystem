@@ -3,11 +3,6 @@ description:
 globs: 
 alwaysApply: true
 ---
----
-description: 
-globs: 
-alwaysApply: true
----
 # Error Handling Patterns
 
 This document defines rules and best practices for error handling in the codebase, with emphasis on avoiding unnecessary try/catch blocks and using proper Jest testing patterns.
