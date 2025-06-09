@@ -956,3 +956,246 @@ async function debugPageElements(page: Page, state: string) {
 - Secondary link color: `hsl(29, 56%, 58%)`
 - Text color: `#333`
 - Muted text: `#777`
+
+## Backend Testing Patterns
+
+### Test Organization Structure
+
+```
+apps/backend/
+├── src/
+│   ├── controllers/
+│   │   ├── playerController.ts
+│   │   └── __tests__/
+│   │       └── playerController.test.ts
+│   ├── services/
+│   │   ├── playerService.ts
+│   │   └── __tests__/
+│   │       └── playerService.test.ts
+│   └── models/
+│       ├── playerModel.ts
+│       └── __tests__/
+│           └── playerModel.test.ts
+```
+
+### Jest Configuration Patterns
+
+```javascript
+// jest.config.js - Backend
+module.exports = {
+  testEnvironment: "node",
+  setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
+  testMatch: ["**/__tests__/**/*.test.ts"],
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/**/*.test.ts",
+    "!src/__tests__/**/*"
+  ]
+};
+```
+
+### Mocking Strategy Patterns
+
+#### Database Mocking (Unit Tests)
+
+```typescript
+// Unit tests - Mock database layer
+import * as db from "../database";
+
+jest.mock("../database", () => ({
+  query: jest.fn(),
+  transaction: jest.fn()
+}));
+
+const mockDb = db as jest.Mocked<typeof db>;
+
+describe("PlayerService", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("should get player stats", async () => {
+    mockDb.query.mockResolvedValue([{ id: 1, name: "Player1" }]);
+
+    const result = await playerService.getStats(1);
+
+    expect(result).toEqual([{ id: 1, name: "Player1" }]);
+    expect(mockDb.query).toHaveBeenCalledWith(
+      expect.stringContaining("SELECT"),
+      [1]
+    );
+  });
+});
+```
+
+#### Redis Mocking
+
+```typescript
+// Redis mocking pattern
+import { createClient } from "redis";
+
+jest.mock("redis", () => ({
+  createClient: jest.fn(() => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    connect: jest.fn(),
+    disconnect: jest.fn()
+  }))
+}));
+
+const mockRedis = createClient() as jest.Mocked<
+  ReturnType<typeof createClient>
+>;
+```
+
+#### External Service Mocking
+
+```typescript
+// Mock external APIs completely
+jest.mock("../services/steamApi", () => ({
+  fetchPlayerData: jest.fn(),
+  fetchMatchData: jest.fn()
+}));
+
+// Define specific responses for each test
+mockSteamApi.fetchPlayerData.mockResolvedValue({
+  steamId: "123",
+  name: "TestPlayer"
+});
+```
+
+### Controller Testing Patterns
+
+```typescript
+// Integration testing for controllers
+import request from "supertest";
+import { app } from "../app";
+
+describe("Player Controller", () => {
+  beforeEach(async () => {
+    // Reset database to known state
+    await resetTestDatabase();
+  });
+
+  it("should return player stats", async () => {
+    const response = await request(app)
+      .get("/api/v1/players/1/stats")
+      .query({
+        season_ids: "1,2",
+        league_ids: "1"
+      })
+      .expect(200);
+
+    expect(response.body).toMatchSchema({
+      type: "object",
+      properties: {
+        data: { type: "array" },
+        total: { type: "number" }
+      }
+    });
+  });
+});
+```
+
+### Test Data Management
+
+```typescript
+// Test data factory pattern
+export const createTestPlayer = (overrides = {}) => ({
+  id: 1,
+  steam_id: "76561198000000000",
+  steam_name: "TestPlayer",
+  ...overrides
+});
+
+export const createTestMatch = (overrides = {}) => ({
+  id: 1,
+  league_id: 1,
+  season_id: 1,
+  date: new Date("2025-01-01"),
+  ...overrides
+});
+
+// Usage in tests
+const testPlayer = createTestPlayer({ steam_name: "CustomName" });
+```
+
+### Error Testing Patterns
+
+```typescript
+// Testing error scenarios
+describe("Error Handling", () => {
+  it("should handle database connection errors", async () => {
+    mockDb.query.mockRejectedValue(new Error("Connection failed"));
+
+    await expect(playerService.getStats(1)).rejects.toThrow(
+      "Database connection error"
+    );
+  });
+
+  it("should handle validation errors", async () => {
+    await expect(playerService.getStats(-1)).rejects.toThrow(ValidationError);
+  });
+});
+```
+
+### Performance Testing
+
+```typescript
+// Performance boundaries testing
+describe("Performance", () => {
+  it("should return player stats within 500ms", async () => {
+    const start = Date.now();
+
+    await playerService.getStats(1);
+
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(500);
+  });
+});
+```
+
+### Test Environment Setup
+
+```typescript
+// src/__tests__/setup.ts
+import { setupTestDatabase, teardownTestDatabase } from "./helpers/database";
+
+beforeAll(async () => {
+  await setupTestDatabase();
+});
+
+afterAll(async () => {
+  await teardownTestDatabase();
+});
+
+// Global test timeout
+jest.setTimeout(10000);
+```
+
+### Snapshot Testing for API Responses
+
+```typescript
+// API response structure testing
+it("should maintain consistent response structure", async () => {
+  const response = await request(app)
+    .get("/api/v1/players/1/stats")
+    .expect(200);
+
+  // Remove dynamic fields for snapshot
+  const sanitized = {
+    ...response.body,
+    data: response.body.data.map((item) => ({
+      ...item,
+      id: "[DYNAMIC]",
+      date: "[DYNAMIC]"
+    }))
+  };
+
+  expect(sanitized).toMatchSnapshot();
+});
+```

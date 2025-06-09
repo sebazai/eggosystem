@@ -231,3 +231,57 @@
 - Use built-in timeout and retry mechanisms instead of custom try/catch retry loops
 - Simple navigation helpers: `page.goto()` with timeout settings
 - Let Playwright handle connection errors naturally
+
+## Backend Testing Enhancement Needs
+
+### Missing Test Infrastructure (Based on Node.js Best Practices)
+
+**Backend Unit Testing Setup**
+
+- ❌ **Missing Jest configuration** for backend unit tests (`apps/backend/jest.config.js`)
+- ❌ **No test organization structure** - need `__tests__` folders alongside source files
+- ❌ **Missing mocking setup** for database, Redis, and external services
+- ❌ **No test data factories** for consistent test data creation
+- ❌ **Missing performance testing** patterns for query response times
+
+**Test Coverage Gaps**
+
+- ❌ **Controller unit tests** - missing Supertest integration testing
+- ❌ **Service layer tests** - business logic testing with mocked dependencies
+- ❌ **Model/Query tests** - database query logic testing with mocked DB
+- ❌ **Error scenario testing** - comprehensive error handling validation
+- ❌ **API schema validation** - response structure consistency testing
+
+**Mocking Strategy**
+
+- ❌ **Database mocking** - need patterns for unit testing without real DB
+- ❌ **Redis mocking** - proper Redis client mocking for caching tests
+- ❌ **External service mocking** - Steam API and other external dependencies
+- ❌ **Clean mock patterns** - beforeEach/afterEach cleanup strategies
+
+**Performance & Quality**
+
+- ❌ **Response time testing** - ensure sub-second query performance
+- ❌ **Snapshot testing** - API response structure consistency
+- ❌ **Integration testing** - controller → service → model testing with real DB
+- ❌ **Test environment setup** - proper test database seeding/cleanup
+
+### Priority Implementation Order
+
+1. **Jest Configuration** - Set up `apps/backend/jest.config.js` with proper Node.js environment
+2. **Test Organization** - Create `__tests__` folders and establish file structure patterns
+3. **Mocking Infrastructure** - Database, Redis, external service mocking patterns
+4. **Controller Testing** - Supertest integration with proper request/response validation
+5. **Service Layer Testing** - Business logic with mocked dependencies
+6. **Performance Testing** - Query response time boundaries and monitoring
+
+### Key Node.js Testing Best Practices to Implement
+
+**From goldbergyoni/nodejs-testing-best-practices:**
+
+- **Clean mocking with type safety** - Use proper TypeScript mocking patterns
+- **Test data factories** - Consistent, reusable test data creation
+- **Avoid partial mocks** - Mock entire modules or objects, not individual functions
+- **Performance boundaries** - Test that queries meet performance requirements
+- **Error scenario coverage** - Test all failure paths and edge cases
+- **Mock cleanup** - Always reset mocks between tests to prevent interference

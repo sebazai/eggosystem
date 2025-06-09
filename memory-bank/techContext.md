@@ -90,6 +90,15 @@ Frontend Component → SWR Hook → Frontend API Route → Backend API → Datab
 - **Database**: Separate test database with proper cleanup
 - **Performance**: Query performance monitoring
 
+**Backend Testing Gap**: Currently missing comprehensive Jest unit testing setup for backend. Need to implement:
+
+- Jest configuration for Node.js environment
+- Mocking patterns for database, Redis, external services
+- Controller testing with Supertest
+- Service layer unit tests with mocked dependencies
+- Performance boundary testing
+- Following Node.js testing best practices from goldbergyoni/nodejs-testing-best-practices
+
 ## Deployment & Infrastructure
 
 ### Environment Configuration
