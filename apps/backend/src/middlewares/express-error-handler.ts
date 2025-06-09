@@ -1,8 +1,13 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { UnauthorizedError } from "express-jwt";
 import { BaseError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import { ZodError } from "zod";
+
+interface UnauthorizedErrorLike {
+  name: string;
+  status: number;
+  message: string;
+}
 
 export const expressErrorHandler = (
   err: unknown,
