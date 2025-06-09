@@ -15,6 +15,7 @@ import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
 import { BadRequestError } from "../utils/errors";
+import { logger } from "../utils/app-logger";
 
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
@@ -69,33 +70,81 @@ export const getPlayerAppIdRank = async (
   }
 };
 
-export const getCSRank = async (steam_id: string, season_id?: number) => {
-  // If someone added the rank to database for season, we use that one
-  if (season_id) {
-    const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
-    if (rankFromDb) {
-      return rankFromDb;
-    }
+/**
+ * Try to get rank from database for a specific season
+ */
+const getRankFromDatabase = async (
+  steam_id: string,
+  season_id: number
+): Promise<CS2LeetifyAvgRank | null> => {
+  const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
+  if (rankFromDb) {
+    logger.info(
+      `[Rank] Found rank in database for steam_id: ${steam_id}, season_id: ${season_id} - rank: ${rankFromDb.average_rank}`
+    );
+    return rankFromDb;
   }
 
+  return null;
+};
+
+/**
+ * Try to get rank from Redis cache
+ */
+const getRankFromCache = async (
+  steam_id: string
+): Promise<CS2LeetifyAvgRank | null> => {
   const redisKey = `730-${steam_id}-rank`;
   const rankInRedis = await redisClient.get(redisKey);
+
   if (rankInRedis) {
+    logger.info(`[Rank] Found cached rank for steam_id: ${steam_id}`);
     return JSON.parse(rankInRedis) as CS2LeetifyAvgRank;
   }
 
+  return null;
+};
+
+/**
+ * Cache rank data in Redis
+ */
+const cacheRankData = async (
+  steam_id: string,
+  rankData: CS2LeetifyAvgRank
+): Promise<void> => {
+  const redisKey = `730-${steam_id}-rank`;
+  await redisClient.set(
+    redisKey,
+    JSON.stringify(rankData),
+    "EX",
+    expireIn30Days
+  );
+  logger.debug(`[Rank] Cached rank data for steam_id: ${steam_id}`);
+};
+
+/**
+ * Get rank from external sources (Leetify)
+ */
+const getRankFromExternalSources = async (
+  steam_id: string
+): Promise<CS2LeetifyAvgRank | null> => {
   const leetifyRank = await getCS2RankFromLeetify(steam_id);
   if (leetifyRank) {
-    await redisClient.set(
-      redisKey,
-      JSON.stringify(leetifyRank),
-      "EX",
-      expireIn30Days
-    );
+    await cacheRankData(steam_id, leetifyRank);
     return leetifyRank;
   }
 
-  // FALLBACK: Try to get latest known cs2_rank for the latest season from database
+  return null;
+};
+
+/**
+ * Get rank from database fallback (latest season)
+ */
+const getRankFromDatabaseFallback = async (
+  steam_id: string
+): Promise<CS2LeetifyAvgRank | null> => {
+  logger.info(`[Rank] Trying database fallback for steam_id: ${steam_id}`);
+
   const result = await runQuery<
     Array<{
       cs2_rank: SeasonPlayerRank["cs2_rank"];
@@ -105,6 +154,7 @@ export const getCSRank = async (steam_id: string, season_id?: number) => {
     "SELECT cs2_rank, rank_updated_at FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC",
     [steam_id]
   );
+
   if (!_.isEmpty(result)) {
     const cs2RanksInKanaliiga = result
       .filter(
@@ -136,19 +186,70 @@ export const getCSRank = async (steam_id: string, season_id?: number) => {
         average_rank: Math.round(averageSkillLevel),
         rank_updated_at: cs2RanksInKanaliiga[0].rank_updated_at
       } satisfies CS2LeetifyAvgRank;
-      await redisClient.set(
-        redisKey,
-        JSON.stringify(data),
-        "EX",
-        expireIn30Days
+
+      await cacheRankData(steam_id, data);
+      logger.info(
+        `[Rank] Found fallback rank for steam_id: ${steam_id} - rank: ${data.average_rank}`
       );
       return data;
     }
   }
-  return {
-    average_rank: -1,
-    rank_updated_at: null
-  } satisfies CS2LeetifyAvgRank;
+
+  return null;
+};
+
+/**
+ * Main function to get CS2 rank for a player
+ * Tries multiple sources in order: Database -> Cache -> External API -> Database Fallback
+ */
+export const getCSRank = async (
+  steam_id: string,
+  season_id?: number
+): Promise<CS2LeetifyAvgRank> => {
+  try {
+    // 1. Try database first if season_id is provided
+    if (season_id) {
+      const dbRank = await getRankFromDatabase(steam_id, season_id);
+      if (dbRank) {
+        return dbRank;
+      }
+    }
+
+    // 2. Try Redis cache
+    const cachedRank = await getRankFromCache(steam_id);
+    if (cachedRank) {
+      return cachedRank;
+    }
+
+    // 3. Try external sources (Leetify)
+    const externalRank = await getRankFromExternalSources(steam_id);
+    if (externalRank) {
+      return externalRank;
+    }
+
+    // 4. Try database fallback
+    const fallbackRank = await getRankFromDatabaseFallback(steam_id);
+    if (fallbackRank) {
+      return fallbackRank;
+    }
+
+    logger.warn(`[Rank] No rank found for steam_id: ${steam_id}`);
+    return {
+      average_rank: -1,
+      rank_updated_at: null
+    } satisfies CS2LeetifyAvgRank;
+  } catch (error) {
+    logger.error(
+      `[Rank] Error during rank lookup for steam_id: ${steam_id}`,
+      error
+    );
+
+    // Return default rank on error
+    return {
+      average_rank: -1,
+      rank_updated_at: null
+    } satisfies CS2LeetifyAvgRank;
+  }
 };
 
 export const getPlayerRankForPlatform = async (

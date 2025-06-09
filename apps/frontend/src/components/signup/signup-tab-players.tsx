@@ -696,8 +696,11 @@ export const TabPlayers = ({
                       <SignupPlayerNotification
                         data-testid={`rank-error-${index}`}
                       >
-                        {`Could not detect external ${platform.toLocaleUpperCase()} or game internal rank for the player. Please open a
-                      ticket in the Kanaliiga Discord.`}
+                        Could not detect external {platform.toLocaleUpperCase()}{" "}
+                        or game internal rank for the player. This could be due
+                        to temporary service issues or missing rank data. Please
+                        try refreshing the page in a few minutes, or open a
+                        ticket in the Kanaliiga Discord if the problem persists.
                       </SignupPlayerNotification>
                     )}
 

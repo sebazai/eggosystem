@@ -1,4 +1,8 @@
 import { type CS2LeetifyAvgRank, type Nullable } from "@eggosystem/types";
+import { logger } from "../utils/app-logger";
+import { createAbortController } from "../utils/fetch-utils";
+
+const LEETIFY_BASE_URL = "https://api.cs-prod.leetify.com/api/profile/id/";
 
 const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
@@ -66,18 +70,38 @@ export interface LeetifyResponse {
 }
 
 export const getCS2RankFromLeetify = async (steam_id: string) => {
-  const webURL = "https://api.cs-prod.leetify.com/api/profile/id/" + steam_id;
+  const webURL = `${LEETIFY_BASE_URL}${steam_id}`;
 
-  const result = await fetch(webURL);
-  if (!result.ok) {
+  const { controller, clearAbortTimeout } = createAbortController();
+
+  try {
+    const result = await fetch(webURL, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Kanaliiga-Eggosystem/1.0"
+      }
+    });
+
+    if (!result.ok) {
+      const duration = clearAbortTimeout();
+      logger.warn(
+        `[Leetify] API returned ${result.status} ${result.statusText} for steam_id: ${steam_id} (${duration}ms)`
+      );
+      return undefined;
+    }
+
+    const data: LeetifyResponse = await result.json();
+    const cs2GamesAvgRank = getAverageRankForGames(data.games);
+
+    return cs2GamesAvgRank;
+  } catch (error) {
+    const duration = clearAbortTimeout();
+
+    logger.error(
+      `[Leetify] Request failed for steam_id: ${steam_id} (${duration}ms):`,
+      error
+    );
+
     return undefined;
   }
-  const data: LeetifyResponse = await result.json();
-  const cs2GamesAvgRank = getAverageRankForGames(data.games);
-
-  if (result) {
-    return cs2GamesAvgRank;
-  }
-
-  return undefined;
 };

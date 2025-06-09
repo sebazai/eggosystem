@@ -10,6 +10,7 @@ import {
 } from "../utils/redisClient";
 import { getPlayerExternalRankForSeason } from "../models/season-player-ranks.models";
 import { logger } from "../utils/app-logger";
+import { createAbortController } from "../utils/fetch-utils";
 
 // E2E Test mode mocking
 const isE2EMode =
@@ -70,33 +71,51 @@ export const getFaceITGameRank = async (
     };
   }
 
+  const { controller, clearAbortTimeout } = createAbortController();
+
   try {
     const webURL = `https://open.faceit.com/data/v4/players?game=${game}&game_player_id=${steam_id}`;
     const headers = {
       Accept: "application/json",
-      Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+      Authorization: `Bearer ${process.env.FACEIT_API_KEY}`,
+      "User-Agent": "Kanaliiga-Eggosystem/1.0"
     };
-    const response = await fetch(webURL, { headers });
+
+    const response = await fetch(webURL, {
+      headers,
+      signal: controller.signal
+    });
+
     if (!response.ok) {
+      const duration = clearAbortTimeout();
+      logger.warn(
+        `[FaceIT] API returned ${response.status} ${response.statusText} for steam_id: ${steam_id} (${duration}ms)`
+      );
       return null;
     }
+
     const data = await response.json();
     try {
       const elo = Number(data["games"][game]["faceit_elo"]);
       const rank = Number(data["games"][game]["skill_level"]);
       const player_id = data["player_id"];
+
       return {
         elo,
         rank,
         player_id
       };
     } catch (err) {
+      const duration = clearAbortTimeout();
       if (process.env.NODE_ENV !== "test")
-        logger.error(`Error parsing FaceIT rank for ${steam_id}`, err);
+        logger.error(
+          `[FaceIT] Error parsing rank data for steam_id: ${steam_id} (${duration}ms):`,
+          err
+        );
       return null;
     }
-  } catch (err) {
-    logger.error(`Error fetching FaceIT rank for ${steam_id}`, err);
+  } catch (error) {
+    logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
     return null;
   }
 };
@@ -105,32 +124,50 @@ const getFaceITMetaData = async (
   faceit_player_id: string,
   game: "cs2" | "csgo" = "cs2"
 ) => {
+  const { controller, clearAbortTimeout } = createAbortController();
+
   try {
     const stats_url = `https://open.faceit.com/data/v4/players/${faceit_player_id}/stats/${game}`;
     const headers = {
       Accept: "application/json",
-      Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+      Authorization: `Bearer ${process.env.FACEIT_API_KEY}`,
+      "User-Agent": "Kanaliiga-Eggosystem/1.0"
     };
-    const statsResponse = await fetch(stats_url, { headers });
+
+    const statsResponse = await fetch(stats_url, {
+      headers,
+      signal: controller.signal
+    });
     const data = await statsResponse.json();
 
     const kdr = data["lifetime"]["Average K/D Ratio"];
     const matches_played = data["lifetime"]["Matches"];
 
     const game_url = `https://open.faceit.com/data/v4/players/${faceit_player_id}/games/${game}/stats`;
-    const gameResponse = await fetch(game_url, { headers });
+    const gameResponse = await fetch(game_url, {
+      headers,
+      signal: controller.signal
+    });
     const gameData = await gameResponse.json();
     const last_match = new Date(
       gameData.items[0]["stats"]["Created At"]
     ).getTime();
+
+    clearAbortTimeout();
 
     return {
       faceit_kdr: Number(kdr),
       faceit_matches_played: Number(matches_played),
       faceit_last_match: last_match
     };
-  } catch (_err) {
-    // NO-OP
+  } catch (error) {
+    clearAbortTimeout();
+    logger.warn(
+      `[FaceIT] Failed to fetch metadata for player ${faceit_player_id}:`,
+      error
+    );
+
+    // Return fallback data
     return {
       faceit_kdr: 1 / 1.05
     };

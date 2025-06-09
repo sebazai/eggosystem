@@ -1,5 +1,6 @@
 import _ from "lodash";
 import { logger } from "../utils/app-logger";
+import { createAbortController } from "../utils/fetch-utils";
 
 // E2E Test mode mocking
 const isE2EMode =
@@ -35,19 +36,46 @@ export const getSteamHoursForAppId = async (
     };
   }
 
-  const webURL = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${process.env.STEAM_API_KEY}&steamid=${steam_id}`;
-  const fromSteam = await fetch(webURL);
-  if (!fromSteam.ok) {
-    return null;
-  }
-  const data: IPlayerServiceResponse = await fromSteam.json();
-  const games = data.response?.games;
-  const requestedAppId = games?.find((game) => game.appid === app_id);
+  const { controller, clearAbortTimeout } = createAbortController();
 
-  if (!requestedAppId) {
+  try {
+    const webURL = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${process.env.STEAM_API_KEY}&steamid=${steam_id}`;
+    const fromSteam = await fetch(webURL, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Kanaliiga-Eggosystem/1.0"
+      }
+    });
+
+    if (!fromSteam.ok) {
+      const duration = clearAbortTimeout();
+      logger.warn(
+        `[Steam] API returned ${fromSteam.status} ${fromSteam.statusText} for steam_id: ${steam_id} (${duration}ms)`
+      );
+      return null;
+    }
+
+    const data: IPlayerServiceResponse = await fromSteam.json();
+    const games = data.response?.games;
+    const requestedAppId = games?.find((game) => game.appid === app_id);
+
+    if (!requestedAppId) {
+      const duration = clearAbortTimeout();
+      logger.info(
+        `[Steam] No hours found for steam_id: ${steam_id}, app_id: ${app_id} (${duration}ms)`
+      );
+      return null;
+    }
+
+    return requestedAppId;
+  } catch (error) {
+    const duration = clearAbortTimeout();
+    logger.error(
+      `[Steam] Request failed for steam_id: ${steam_id} (${duration}ms):`,
+      error
+    );
     return null;
   }
-  return requestedAppId;
 };
 
 export interface ISteamUserResponse {
@@ -70,18 +98,38 @@ export const isSteamProfilePublic = async (steam_id: string) => {
     return true;
   }
 
+  const { controller, clearAbortTimeout } = createAbortController();
+
   const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${steam_id}`;
-  const result = await fetch(steamUrl);
+  const result = await fetch(steamUrl, {
+    signal: controller.signal,
+    headers: {
+      "User-Agent": "Kanaliiga-Eggosystem/1.0"
+    }
+  });
+
   if (!result.ok) {
+    const duration = clearAbortTimeout();
     const text = await result.text();
-    logger.error("Failed to fetch steam profile", result.status, text);
+    logger.error(
+      `[Steam] Failed to fetch steam profile for ${steam_id} - ${result.status} (${duration}ms):`,
+      text
+    );
     throw new Error("Failed to fetch steam profile public status");
   }
+
   const data: ISteamUserResponse = await result.json();
   if (data.response.players.length === 0) {
+    const duration = clearAbortTimeout();
+    logger.error(
+      `[Steam] Invalid steam id or profile not found: ${steam_id} (${duration}ms)`
+    );
     throw new Error("Invalid steam id or profile not found");
   }
-  return data.response.players[0].communityvisibilitystate === 3;
+
+  const isPublic = data.response.players[0].communityvisibilitystate === 3;
+
+  return isPublic;
 };
 
 export const areSteamProfilesPublic = async (steam_ids: string[]) => {
@@ -103,14 +151,27 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
     return { is_all_public: true };
   }
 
+  const { controller, clearAbortTimeout } = createAbortController();
+
   const ids = steam_ids.join(",");
   const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${ids}`;
-  const result = await fetch(steamUrl);
+  const result = await fetch(steamUrl, {
+    signal: controller.signal,
+    headers: {
+      "User-Agent": "Kanaliiga-Eggosystem/1.0"
+    }
+  });
+
   if (!result.ok) {
+    const duration = clearAbortTimeout();
     const text = await result.text();
-    logger.error("Failed to fetch steam profiles", result.status, text);
+    logger.error(
+      `[Steam] Failed to fetch steam profiles for ${steam_ids.length} players - ${result.status} (${duration}ms):`,
+      text
+    );
     throw new Error("Failed to fetch steam profiles public status");
   }
+
   const data: ISteamUserResponse = await result.json();
 
   const fetchedSteamIds = data.response.players.map((p) => p.steamid);
@@ -118,6 +179,7 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
   if (diff.length > 0) {
     throw new Error(`Failed to fetch steam ids ${diff.join(",")}`);
   }
+
   const isPublic: Record<string, boolean> = Object.fromEntries(
     data.response.players.map((p) => [
       p.steamid,
@@ -131,6 +193,5 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
   }
 
   const hiddenProfiles = Object.keys(isPublic).filter((key) => !isPublic[key]);
-
   return { is_all_public: allPublic, not_public: hiddenProfiles };
 };
