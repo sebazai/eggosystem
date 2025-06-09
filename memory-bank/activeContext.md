@@ -188,6 +188,23 @@
 - **CI Integration**: Separate `test:frontend:unit` and `test:frontend:integration` jobs
 - **Coverage Reporting**: Cobertura format for GitLab CI integration
 
+**E2E Testing & Database Management Patterns**
+
+- **CRITICAL**: E2E tests modify database state (consume tokens, create records, etc.)
+- **Database Reset Workflow**: Always run `reseed → seed → seed:e2e` before/after E2E test runs
+- **Test Isolation**: Create multiple test tokens/data in seeds to prevent conflicts between parallel tests
+- **Command Pattern**: `pnpm run reseed && pnpm run seed && pnpm run seed:e2e`
+- **Real Backend Usage**: E2E tests should use real backend, not mocked APIs
+- **State Contamination**: Successful operations in tests consume database resources (email tokens, registrations)
+
+**Lucide React Icon Testing Patterns**
+
+- **Auto-generated Classes**: Lucide React generates classes like `lucide-circle-check-big` and `lucide-circle-x`
+- **data-testid Issue**: data-testid attributes don't propagate to SVG elements in Lucide icons
+- **Selector Strategy**: Use actual auto-generated Lucide classes rather than manual classes
+- **Component Cleanup**: Remove conflicting manual Lucide classes, let React generate proper classes
+- **Debug Approach**: Use comprehensive DOM inspection to discover actual rendered element structure
+
 **Error Handling Rule Application**
 
 - Use try/catch only for: JSON.parse(), data validation, database operations, external API calls

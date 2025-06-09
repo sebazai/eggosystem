@@ -20,6 +20,7 @@
 - ✅ **DevContainer**: Consistent development environment
 - ✅ **Query Optimization**: Efficient database queries with proper JOINs
 - ✅ **Frontend Unit Testing**: Jest + React Testing Library with CI integration
+- ✅ **E2E Test Management**: Established reliable database seeding and test isolation patterns for Playwright tests
 
 ### Database Relationships
 
@@ -74,6 +75,7 @@
 - **Mobile Enhancement**: Better mobile table design and responsiveness
 - **Filter System**: Complete filtering architecture with middleware
 - **Email Verification Fix**: Resolved server-side toast error by moving toast to client component
+- **E2E Testing Breakthrough**: Solved email verification test failures by implementing proper database reset workflow and fixing Lucide icon selectors
 
 ### Active Work Areas
 

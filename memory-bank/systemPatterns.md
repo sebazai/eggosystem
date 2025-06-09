@@ -832,6 +832,89 @@ async function navigateWithRetry(page: Page, url: string, retries = 3) {
 - Mock external dependencies consistently
 - Separate concerns: integration tests mock APIs, E2E tests use real backend
 
+### E2E Testing Database Management
+
+**Critical Database Reset Pattern**
+
+```bash
+# ALWAYS run this sequence before/after E2E tests
+cd apps/backend && pnpm run reseed && pnpm run seed && pnpm run seed:e2e
+```
+
+**Why Database Reset is Critical**
+
+- E2E tests modify real database state
+- Email verification consumes tokens (sets to NULL, deletes from Redis)
+- User registrations create permanent records
+- Parallel test execution can conflict over shared resources
+- Tests may fail due to "consumed" data from previous runs
+
+**Test Isolation Strategies**
+
+```typescript
+// ✅ Create multiple test tokens in seed to prevent conflicts
+const validTokenAccounts = [
+  { id: 100, token: "valid-token-123", email: "test1@kanaliiga.fi" },
+  { id: 102, token: "valid-token-456", email: "test2@kanaliiga.fi" },
+  { id: 103, token: "valid-token-789", email: "test3@kanaliiga.fi" }
+  // ... more tokens for parallel test execution
+];
+
+// ✅ Use different tokens for different tests
+test("success case 1", () => {
+  await navigateToPage(page, "/verify-email?token=valid-token-123");
+});
+
+test("success case 2", () => {
+  await navigateToPage(page, "/verify-email?token=valid-token-456");
+});
+
+// ❌ Reusing tokens causes test isolation failures
+test("success case 1", () => {
+  await navigateToPage(page, "/verify-email?token=shared-token");
+});
+test("success case 2", () => {
+  await navigateToPage(page, "/verify-email?token=shared-token"); // FAILS if first test consumed it
+});
+```
+
+**Debugging DOM Element Issues**
+
+```typescript
+// ✅ Comprehensive DOM inspection for failing selectors
+async function debugPageElements(page: Page, state: string) {
+  // Find all SVG elements and their actual classes
+  const svgElements = await page.$$eval("svg", (elements) =>
+    elements.map((el) => ({
+      className: el.className.baseVal || el.className,
+      classList: Array.from(el.classList || []),
+      attributes: Array.from(el.attributes).map(
+        (attr) => `${attr.name}="${attr.value}"`
+      ),
+      outerHTML: el.outerHTML.substring(0, 200) + "..."
+    }))
+  );
+
+  // Test different selector strategies
+  const strategies = [
+    "svg.lucide-circle-check-big", // Actual Lucide class
+    "svg.lucide-circle-x", // Actual Lucide class
+    '[data-testid="check-circle-icon"]' // May not work with Lucide
+  ];
+
+  for (const strategy of strategies) {
+    const count = await page.locator(strategy).count();
+    console.log(`Strategy "${strategy}": ${count} found`);
+  }
+}
+```
+
+**Test Reliability**
+
+- Use Playwright's built-in retry and timeout mechanisms
+- Mock external dependencies consistently
+- Separate concerns: integration tests mock APIs, E2E tests use real backend
+
 ## Email Template Patterns
 
 ### HTML Email Best Practices
