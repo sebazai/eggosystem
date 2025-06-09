@@ -168,7 +168,10 @@ export const verifyEmailController = async (
 
     // Database fallback
     const [workAccount] = await runQuery<Array<{ id: number } | undefined>>(
-      `SELECT id FROM Accounts WHERE work_email_token = ? LIMIT 1`,
+      `SELECT id FROM Accounts 
+       WHERE work_email_token = ? 
+       AND work_email_token_expires_at > NOW() 
+       LIMIT 1`,
       [token]
     );
 

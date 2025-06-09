@@ -9,7 +9,6 @@ import {
 import { envConfig } from "@/configs/env";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
-import { toast } from "sonner";
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{
@@ -20,9 +19,12 @@ interface VerifyEmailPageProps {
 async function VerifyEmailContent({ token }: { token: string }) {
   if (!token) {
     return (
-      <Card>
+      <Card className="w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-4">
-          <XCircleIcon className="h-16 w-16 text-destructive" />
+          <XCircleIcon
+            className="h-16 w-16 text-destructive"
+            data-testid="x-circle-icon"
+          />
           <h1 className="text-2xl font-bold">Invalid verification</h1>
           <p className="text-muted-foreground text-center">No token found.</p>
           <VerifyEmailErrorButton />
@@ -47,25 +49,30 @@ async function VerifyEmailContent({ token }: { token: string }) {
   }
 
   if (success) {
-    toast.success("Email verified successfully!");
     return (
-      <Card>
+      <Card className="w-full max-w-md">
         <CardContent className="flex flex-col items-center gap-4">
-          <CheckCircleIcon className="h-16 w-16 text-[hsl(35,93%,49%)]" />
+          <CheckCircleIcon
+            className="h-16 w-16 text-[hsl(35,93%,49%)]"
+            data-testid="check-circle-icon"
+          />
           <h1 className="text-2xl font-bold">Email verified!</h1>
           <p className="text-muted-foreground text-center">
             Your email address was successfully verified.
           </p>
-          <VerifyEmailSuccessButton />
+          <VerifyEmailSuccessButton showSuccessToast={true} />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardContent className="flex flex-col items-center gap-4">
-        <XCircleIcon className="h-16 w-16 text-destructive" />
+        <XCircleIcon
+          className="h-16 w-16 text-destructive"
+          data-testid="x-circle-icon"
+        />
         <h1 className="text-2xl font-bold">Verification failed</h1>
         <p className="text-muted-foreground text-center">
           Your verification link is invalid or has expired. Please request a new

@@ -136,6 +136,77 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
+  // Add email verification test tokens for E2E testing
+  const futureDate = new Date();
+  futureDate.setDate(futureDate.getDate() + 7); // 7 days from now
+
+  const expiredDate = new Date();
+  expiredDate.setDate(expiredDate.getDate() - 1); // 1 day ago
+
+  // Create multiple test accounts with valid tokens for E2E testing
+  // This prevents test isolation issues where successful verification consumes tokens
+  const validTokenAccounts = [
+    { id: 100, token: "valid-token-123", email: "emailtest1@kanaliiga.fi" },
+    { id: 102, token: "valid-token-456", email: "emailtest2@kanaliiga.fi" },
+    { id: 103, token: "valid-token-789", email: "emailtest3@kanaliiga.fi" },
+    { id: 104, token: "valid-token-abc", email: "emailtest4@kanaliiga.fi" },
+    { id: 105, token: "valid-token-def", email: "emailtest5@kanaliiga.fi" }
+  ];
+
+  for (const account of validTokenAccounts) {
+    await knex.raw(
+      `
+      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, work_email_token, work_email_token_expires_at)
+      VALUES (?, ?, ?, 0, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        full_name = VALUES(full_name),
+        work_email = VALUES(work_email),
+        work_email_verified = 0,
+        work_email_token = VALUES(work_email_token),
+        work_email_token_expires_at = VALUES(work_email_token_expires_at)
+    `,
+      [
+        account.id,
+        `Email Test User ${account.id}`,
+        account.email,
+        account.token,
+        futureDate
+      ]
+    );
+  }
+
+  // Create another test account with expired token
+  await knex.raw(
+    `
+    INSERT INTO Accounts (id, full_name, work_email, work_email_verified, work_email_token, work_email_token_expires_at)
+    VALUES (101, 'Expired Token User', 'expired@kanaliiga.fi', 0, 'expired-token-456', ?)
+    ON DUPLICATE KEY UPDATE 
+      full_name = VALUES(full_name),
+      work_email = VALUES(work_email),
+      work_email_verified = 0,
+      work_email_token = VALUES(work_email_token),
+      work_email_token_expires_at = VALUES(work_email_token_expires_at)
+  `,
+    [expiredDate]
+  );
+
+  // Add UserPolicyAcceptances for all the test accounts
+  const allTestAccountIds = [...validTokenAccounts.map((a) => a.id), 101];
+  for (const accountId of allTestAccountIds) {
+    await knex.raw(
+      `
+      INSERT INTO UserPolicyAcceptances 
+        (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+      VALUES 
+        (?, 1, 0, ?)
+      ON DUPLICATE KEY UPDATE 
+        accepted_privacy_policy = 1,
+        privacy_policy_version = VALUES(privacy_policy_version)
+    `,
+      [accountId, privacyPolicyVersion]
+    );
+  }
+
   // Ensure we have SteamPlayers for the accounts we need
   // This creates the missing accounts and steam players
   const steamPlayerData = [
