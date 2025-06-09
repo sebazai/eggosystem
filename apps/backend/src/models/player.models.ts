@@ -484,3 +484,34 @@ export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
 
   return result || null;
 };
+
+export const getPlayerOldKanaElo = async (steam_id: string) => {
+  const query = `
+    SELECT 
+      spr.steam_id,
+      spr.season_id as last_played_season_id,
+      spr.kana_elo
+    FROM SeasonPlayerRanks spr
+    INNER JOIN (
+      SELECT DISTINCT m.season_id
+      FROM PlayerStats ps
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      WHERE ps.steam_id = ?
+      ORDER BY m.season_id DESC
+      LIMIT 1
+    ) last_season ON last_season.season_id = spr.season_id
+    WHERE spr.steam_id = ?
+    LIMIT 1
+  `;
+
+  const result = await runQuery<
+    Array<{
+      steam_id: string;
+      last_played_season_id: number;
+      kana_elo: number;
+    }>
+  >(query, [steam_id, steam_id]);
+
+  return result.length > 0 ? result[0] : null;
+};

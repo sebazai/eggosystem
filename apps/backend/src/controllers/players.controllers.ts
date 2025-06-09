@@ -7,7 +7,8 @@ import {
   getPlayerMatchHistoryByFilters,
   getPlayerGameDetailsWithFilters,
   getPlayerTeamDetailsWithFilters,
-  getPlayerStatsForLatestSeason
+  getPlayerStatsForLatestSeason,
+  getPlayerOldKanaElo
 } from "../models/player.models";
 
 import {
@@ -214,4 +215,19 @@ export const getPlayerStatsForLatestSeasonController = async (
   }
 
   res.status(200).json(playerLatestSeasonStats);
+};
+
+export const getPlayerOldKanaEloController = async (
+  req: Request,
+  res: Response
+) => {
+  const steam_id = req.params.steam_id;
+  const oldKanaElo = await getPlayerOldKanaElo(steam_id);
+
+  if (!oldKanaElo) {
+    res.status(404).json({ message: "No previous season data found" });
+    return;
+  }
+
+  res.status(200).json(oldKanaElo);
 };

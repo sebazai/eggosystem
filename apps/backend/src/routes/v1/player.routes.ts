@@ -6,8 +6,7 @@ import {
   getPlayerSteamAppIdHours,
   getPlayerSteamAppIdRank,
   getPlayerPlatformRank,
-  getPlayerKanaRankController,
-  getPlayerStatsForLatestSeasonController
+  getPlayerKanaRankController
 } from "../../controllers/players.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
@@ -35,5 +34,6 @@ router.get(
   "/:steam_id/latest-season-stats",
   getPlayerStatsForLatestSeasonController
 );
+router.get("/:steam_id/oldkanaelo", getPlayerOldKanaEloController);
 
 export default router;
