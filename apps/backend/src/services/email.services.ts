@@ -28,8 +28,8 @@ export const sendVerificationEmail = async (to: string, token: string) => {
     to,
     subject: "Please verify your email address for Kanahub",
     html: `
-        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5;">
-          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px;">Verify your email address</h1>
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px; text-align: left;">Verify your email address</h1>
           
           <p>Hello,</p>
   
@@ -39,11 +39,17 @@ export const sendVerificationEmail = async (to: string, token: string) => {
   
           <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
             <tr>
-              <td style="text-align: center;">
-                <a href="${verificationUrl}" 
-                   style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center;">
-                  Verify Email
-                </a>
+              <td align="center" style="text-align: center; padding: 0;">
+                <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td align="center" style="background-color: hsl(35, 93%, 49%); border-radius: 6px;">
+                      <a href="${verificationUrl}" 
+                         style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
+                        Verify Email
+                      </a>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>

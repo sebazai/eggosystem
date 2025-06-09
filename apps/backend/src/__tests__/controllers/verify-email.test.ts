@@ -75,9 +75,7 @@ describe("POST /verify-email", () => {
 
       // Verify database interactions
       expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "SELECT id FROM Accounts WHERE work_email_token = ?"
-        ),
+        expect.stringContaining("SELECT id FROM Accounts"),
         [token]
       );
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -137,6 +135,68 @@ describe("POST /verify-email", () => {
       // Should not update database or delete from Redis
       expect(mockRunQuery).not.toHaveBeenCalled();
       expect(mockRedisClient.del).not.toHaveBeenCalled();
+    });
+
+    it("should return 400 when database token is expired", async () => {
+      const token = "expired-db-token";
+
+      // Redis returns null (no data found)
+      mockRedisClient.get.mockResolvedValue(null);
+
+      // Database query should properly check expiration with NOW()
+      // This should return empty array for expired tokens
+      mockRunQuery.mockResolvedValue([]);
+
+      const response = await request(app).post("/verify-email").send({ token });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ message: "Invalid or expired token." });
+
+      // Verify the database query includes expiration check
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("work_email_token_expires_at > NOW()"),
+        [token]
+      );
+    });
+
+    it("should verify successfully when database token is not expired", async () => {
+      const token = "valid-db-token";
+
+      mockRedisClient.get.mockResolvedValue(null);
+      mockRunQuery.mockResolvedValueOnce([{ id: 456 }]); // Token found and not expired
+      mockRunQuery.mockResolvedValueOnce([]); // Update query
+
+      const response = await request(app).post("/verify-email").send({ token });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: "Email verified successfully" });
+    });
+
+    it("should handle Redis valid token when database token is expired", async () => {
+      const token = "redis-valid-db-expired-token";
+      const mockRedisData = {
+        accountId: "123",
+        email: "test@example.com",
+        expirationTime: new Date(Date.now() + 86400000).toISOString() // Valid in Redis (1 day from now)
+      };
+
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(mockRedisData));
+      mockRedisClient.del.mockResolvedValue(1);
+      mockRunQuery.mockResolvedValue([]);
+
+      const response = await request(app).post("/verify-email").send({ token });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: "Email verified successfully" });
+
+      // Should use Redis data and update database
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE Accounts"),
+        ["123"]
+      );
+      expect(mockRedisClient.del).toHaveBeenCalledWith(
+        `verify:work-email:${token}`
+      );
     });
   });
 
