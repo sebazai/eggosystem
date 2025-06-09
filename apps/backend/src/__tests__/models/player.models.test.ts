@@ -3,7 +3,8 @@ import {
   getPlayerGameDetailsWithFilters,
   getPlayerMatchHistoryByFilters,
   getPlayerStatsWithFilters,
-  getPlayerTeamDetailsWithFilters
+  getPlayerTeamDetailsWithFilters,
+  getPlayerStatsForLatestSeason
 } from "../../models/player.models";
 
 describe("getMultiplePlayerStatsByFilters", () => {
@@ -1564,5 +1565,33 @@ describe("getPlayerMatchHistoryByFilters", () => {
         kd: 0.58
       }
     ]);
+  });
+});
+
+describe("getPlayerStatsForLatestSeason", () => {
+  it("should return player stats from latest season for valid steam_id", async () => {
+    const result = await getPlayerStatsForLatestSeason("76561197967885016");
+
+    expect(result).toEqual({
+      steam_id: "76561197967885016",
+      nickname: "enzoj",
+      latest_season_id: 14,
+      avg_kana_rating: 0.82,
+      kpd: 0.92,
+      adr: 80.0,
+      level: 4
+    });
+  });
+
+  it("should return null for non-existent steam_id", async () => {
+    const result = await getPlayerStatsForLatestSeason("12345678901234567");
+
+    expect(result).toBeNull();
+  });
+
+  it("should return null for steam_id with no played seasons", async () => {
+    const result = await getPlayerStatsForLatestSeason("76561198000000000");
+
+    expect(result).toBeNull();
   });
 });

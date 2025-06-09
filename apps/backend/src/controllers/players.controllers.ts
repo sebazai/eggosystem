@@ -6,7 +6,8 @@ import {
   getPlayerBySteamId,
   getPlayerMatchHistoryByFilters,
   getPlayerGameDetailsWithFilters,
-  getPlayerTeamDetailsWithFilters
+  getPlayerTeamDetailsWithFilters,
+  getPlayerStatsForLatestSeason
 } from "../models/player.models";
 
 import {
@@ -195,4 +196,22 @@ export const getPlayerKanaRankController = async (
   const steam_id = req.params.steam_id;
   const kanaRank = await getPlayerKanaRank(steam_id);
   res.status(200).json(kanaRank);
+};
+
+export const getPlayerStatsForLatestSeasonController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+
+  const playerLatestSeasonStats = await getPlayerStatsForLatestSeason(steam_id);
+
+  if (!playerLatestSeasonStats) {
+    res
+      .status(404)
+      .json({ message: "Player stats not found for latest season" });
+    return;
+  }
+
+  res.status(200).json(playerLatestSeasonStats);
 };

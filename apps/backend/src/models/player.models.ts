@@ -11,7 +11,8 @@ import {
   type MatchHistoryResult,
   type PlayerGameDetailsByFilters,
   type PlayerTeamDetailsByFilters,
-  type PlayerStatsTable
+  type PlayerStatsTable,
+  type PlayerStatsForLatestSeason
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
@@ -449,4 +450,37 @@ export const getPlayerStatsWithFilters = async (
   );
 
   return playerStats;
+};
+
+export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
+  const query = `
+    SELECT 
+      p.steam_id,
+      p.nickname,
+      m.season_id as latest_season_id,
+      ROUND(AVG(ps.kana_rating), 2) as avg_kana_rating,
+      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kpd,
+      ROUND(AVG(ps.adr), 1) as adr,
+      sl.tier as level
+    FROM SteamPlayers p
+    INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN Matches m ON m.id = mg.match_id
+    INNER JOIN SeasonLeagues sl ON sl.season_id = m.season_id AND sl.league_id = m.league_id
+    WHERE p.steam_id = ? 
+      AND m.season_id = (
+        SELECT MAX(m2.season_id)
+        FROM PlayerStats ps2
+        INNER JOIN MatchGames mg2 ON mg2.id = ps2.game_id
+        INNER JOIN Matches m2 ON m2.id = mg2.match_id
+        WHERE ps2.steam_id = ?
+      )
+    GROUP BY p.steam_id, p.nickname, m.season_id, sl.tier
+  `;
+
+  const [result] = await runQuery<
+    Array<PlayerStatsForLatestSeason | undefined>
+  >(query, [steam_id, steam_id]);
+
+  return result || null;
 };
