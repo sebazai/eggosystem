@@ -36,7 +36,9 @@ export const getSteamHoursForAppId = async (
     };
   }
 
-  const { controller, clearAbortTimeout } = createAbortController();
+  const { controller, clearAbortTimeout } = createAbortController(
+    "getSteamHoursForAppId"
+  );
 
   try {
     const webURL = `http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${process.env.STEAM_API_KEY}&steamid=${steam_id}`;
@@ -59,8 +61,8 @@ export const getSteamHoursForAppId = async (
     const games = data.response?.games;
     const requestedAppId = games?.find((game) => game.appid === app_id);
 
+    const duration = clearAbortTimeout();
     if (!requestedAppId) {
-      const duration = clearAbortTimeout();
       logger.info(
         `[Steam] No hours found for steam_id: ${steam_id}, app_id: ${app_id} (${duration}ms)`
       );
@@ -98,7 +100,9 @@ export const isSteamProfilePublic = async (steam_id: string) => {
     return true;
   }
 
-  const { controller, clearAbortTimeout } = createAbortController();
+  const { controller, clearAbortTimeout } = createAbortController(
+    "isSteamProfilePublic"
+  );
 
   const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${steam_id}`;
   const result = await fetch(steamUrl, {
@@ -119,8 +123,8 @@ export const isSteamProfilePublic = async (steam_id: string) => {
   }
 
   const data: ISteamUserResponse = await result.json();
+  const duration = clearAbortTimeout();
   if (data.response.players.length === 0) {
-    const duration = clearAbortTimeout();
     logger.error(
       `[Steam] Invalid steam id or profile not found: ${steam_id} (${duration}ms)`
     );
@@ -151,7 +155,9 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
     return { is_all_public: true };
   }
 
-  const { controller, clearAbortTimeout } = createAbortController();
+  const { controller, clearAbortTimeout } = createAbortController(
+    "areSteamProfilesPublic"
+  );
 
   const ids = steam_ids.join(",");
   const steamUrl = `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${process.env.STEAM_API_KEY}&steamids=${ids}`;
@@ -162,8 +168,8 @@ export const areSteamProfilesPublic = async (steam_ids: string[]) => {
     }
   });
 
+  const duration = clearAbortTimeout();
   if (!result.ok) {
-    const duration = clearAbortTimeout();
     const text = await result.text();
     logger.error(
       `[Steam] Failed to fetch steam profiles for ${steam_ids.length} players - ${result.status} (${duration}ms):`,

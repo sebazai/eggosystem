@@ -1,8 +1,8 @@
 import { logger } from "./app-logger";
 
 export const createAbortController = (
-  timeoutMs: number = 8000,
-  timeoutMsg?: string
+  timeoutMsg?: string,
+  timeoutMs: number = 8000
 ) => {
   const startTime = Date.now();
   const controller = new AbortController();

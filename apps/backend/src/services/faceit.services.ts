@@ -71,7 +71,8 @@ export const getFaceITGameRank = async (
     };
   }
 
-  const { controller, clearAbortTimeout } = createAbortController();
+  const { controller, clearAbortTimeout } =
+    createAbortController("getFaceITGameRank");
 
   try {
     const webURL = `https://open.faceit.com/data/v4/players?game=${game}&game_player_id=${steam_id}`;
@@ -100,6 +101,7 @@ export const getFaceITGameRank = async (
       const rank = Number(data["games"][game]["skill_level"]);
       const player_id = data["player_id"];
 
+      clearAbortTimeout();
       return {
         elo,
         rank,
@@ -124,7 +126,8 @@ const getFaceITMetaData = async (
   faceit_player_id: string,
   game: "cs2" | "csgo" = "cs2"
 ) => {
-  const { controller, clearAbortTimeout } = createAbortController();
+  const { controller, clearAbortTimeout } =
+    createAbortController("getFaceITMetaData");
 
   try {
     const stats_url = `https://open.faceit.com/data/v4/players/${faceit_player_id}/stats/${game}`;

@@ -72,7 +72,9 @@ export interface LeetifyResponse {
 export const getCS2RankFromLeetify = async (steam_id: string) => {
   const webURL = `${LEETIFY_BASE_URL}${steam_id}`;
 
-  const { controller, clearAbortTimeout } = createAbortController();
+  const { controller, clearAbortTimeout } = createAbortController(
+    "getCS2RankFromLeetify"
+  );
 
   try {
     const result = await fetch(webURL, {
@@ -93,6 +95,7 @@ export const getCS2RankFromLeetify = async (steam_id: string) => {
     const data: LeetifyResponse = await result.json();
     const cs2GamesAvgRank = getAverageRankForGames(data.games);
 
+    clearAbortTimeout();
     return cs2GamesAvgRank;
   } catch (error) {
     const duration = clearAbortTimeout();
