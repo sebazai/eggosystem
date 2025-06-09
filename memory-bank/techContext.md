@@ -22,8 +22,44 @@
 - **Framework**: Next.js 14 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui component library
+- **Icons**: Lucide React
 - **Data Fetching**: SWR library with custom nextFetcher utility
 - **State Management**: React hooks and SWR cache
+- **Animation**: Framer Motion
+- **Theme**: next-themes for dark/light mode support
+- **Form Handling**: React Hook Form with Zod validation
+
+#### shadcn/ui Configuration
+
+**Core Setup**:
+
+- **Style**: "new-york" theme variant
+- **Base Color**: Zinc color palette
+- **Icons**: Lucide React icon library
+- **CSS Variables**: Enabled for dynamic theming
+- **Components Path**: `@/components/ui`
+
+**Installed Components**:
+
+- **Layout**: Sidebar, Accordion, Tabs, Card, Separator
+- **Navigation**: Navigation Menu, Breadcrumb, Dropdown Menu, Sheet
+- **Forms**: Button, Input, Textarea, Label, Checkbox, Select, Form
+- **Feedback**: Badge, Skeleton, Sonner (Toast), Dialog, Tooltip, Popover
+- **Data**: Command (Command Palette)
+
+**Key Dependencies**:
+
+- **@radix-ui**: Unstyled, accessible component primitives
+- **class-variance-authority**: Type-safe component variants
+- **tailwind-merge**: Intelligent Tailwind class merging
+- **cmdk**: Command palette functionality
+
+**Add New Components**:
+
+```bash
+cd apps/frontend && pnpm shadcn:add [component-name]
+```
 
 ### Development Environment
 

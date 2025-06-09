@@ -120,6 +120,218 @@ const effectiveFilters = {
 <th className="hidden md:table-cell px-3 py-2 text-xs">Assists</th>
 ```
 
+### shadcn/ui Component Patterns
+
+#### Component Usage Standards
+
+**Import from UI directory**:
+
+```tsx
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+```
+
+**Button Variants**:
+
+```tsx
+// Primary actions
+<Button>Save Changes</Button>
+<Button variant="default">Default Action</Button>
+
+// Secondary actions
+<Button variant="outline">Cancel</Button>
+<Button variant="secondary">Secondary</Button>
+
+// Destructive actions
+<Button variant="destructive">Delete</Button>
+
+// Subtle actions
+<Button variant="ghost">Ghost Button</Button>
+<Button variant="link">Link Style</Button>
+
+// Icon buttons
+<Button size="icon" variant="outline">
+  <Icon className="size-4" />
+</Button>
+```
+
+**Card Layout Pattern**:
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>Section Title</CardTitle>
+    <CardDescription>Optional description</CardDescription>
+  </CardHeader>
+  <CardContent>{/* Main content */}</CardContent>
+</Card>
+```
+
+**Form Component Integration**:
+
+```tsx
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+
+const formSchema = z.object({
+  username: z.string().min(2).max(50)
+});
+
+function MyForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema)
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Username</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter username" {...field} />
+              </FormControl>
+              <FormDescription>
+                This is your public display name.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">Submit</Button>
+      </form>
+    </Form>
+  );
+}
+```
+
+**Select Component Pattern**:
+
+```tsx
+<Select onValueChange={(value) => setSelectedValue(value)}>
+  <SelectTrigger>
+    <SelectValue placeholder="Select option" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="option1">Option 1</SelectItem>
+    <SelectItem value="option2">Option 2</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+**Badge Usage**:
+
+```tsx
+// Status indicators
+<Badge variant="default">Active</Badge>
+<Badge variant="secondary">Pending</Badge>
+<Badge variant="destructive">Error</Badge>
+<Badge variant="outline">Draft</Badge>
+```
+
+#### Accessibility & Data Attributes
+
+All shadcn/ui components include proper `data-slot` attributes for testing and styling:
+
+```tsx
+// Components automatically include data-slot attributes
+<Button data-slot="button">Click me</Button>
+<Card data-slot="card">Content</Card>
+```
+
+**Testing Pattern**:
+
+```tsx
+// Use data-slot attributes for testing selectors
+await page.click('[data-slot="button"]');
+await page.fill('[data-slot="input"]', "test value");
+```
+
+#### Styling Customization
+
+**CSS Variable Theming**:
+
+```css
+/* All components use CSS variables for theming */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 0 0% 98%;
+}
+```
+
+**Tailwind Class Merging**:
+
+```tsx
+import { cn } from "@/lib/utils";
+
+// Safely merge Tailwind classes
+<Button className={cn("custom-class", additionalClasses)}>Button Text</Button>;
+```
+
+#### Component Composition
+
+**Compound Components**:
+
+```tsx
+// Dialog composition
+<Dialog>
+  <DialogTrigger asChild>
+    <Button>Open Dialog</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Dialog Title</DialogTitle>
+      <DialogDescription>Dialog description</DialogDescription>
+    </DialogHeader>
+    {/* Dialog content */}
+  </DialogContent>
+</Dialog>
+
+// Dropdown menu composition
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button variant="outline">Open Menu</Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuItem>Item 1</DropdownMenuItem>
+    <DropdownMenuItem>Item 2</DropdownMenuItem>
+    <DropdownMenuSeparator />
+    <DropdownMenuItem variant="destructive">Delete</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+#### Performance Considerations
+
+**Client Components**:
+
+- Most shadcn/ui components are client-side ("use client")
+- Keep server components separate from shadcn/ui when possible
+- Use dynamic imports for heavy components
+
+**Bundle Size**:
+
+- Import only needed components
+- Tree-shaking automatically handles unused components
+- Radix UI primitives are optimized for bundle size
+
 ### Navigation Pattern
 
 ```tsx

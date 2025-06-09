@@ -372,3 +372,13 @@
 3. **Contract Testing**: API contract validation and external service contracts
 
 **Critical Insight**: The guide emphasizes that **component/integration tests should be the primary testing strategy**, not unit tests. This is a fundamental shift from traditional testing pyramid thinking.
+
+## Recent Changes & Updates
+
+### Documentation Updates
+
+- **shadcn/ui Integration**: Added comprehensive documentation for shadcn/ui component library usage
+  - Component patterns and best practices in `systemPatterns.md`
+  - Technical setup and configuration in `techContext.md`
+  - Form handling, accessibility, and testing patterns
+  - CSS variable theming and customization approaches
