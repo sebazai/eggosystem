@@ -99,7 +99,7 @@ export const TabPlayers = ({
   const watchPlayers = useWatch({ control, name: "players" });
   const watchTeamId = useWatch({ control, name: "teamId" });
 
-  const steamIds = useWatch({ control, name: "players" }).map((p) => p.steamId);
+  const steamIds = watchPlayers.map((p) => p.steamId);
 
   const [loadingStates, setLoadingStates] = useState<
     Record<number, boolean | undefined>
