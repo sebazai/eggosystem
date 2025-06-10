@@ -21,7 +21,11 @@ export async function seed(knex: Knex): Promise<void> {
     "76561197961279983", // account_id 10 - RealPlayer2
     "76561197960265748", // account_id 11 - RealPlayer3
     "76561197967885016", // account_id 1 - PrivateProfilePlayer
-    "76561197960269868" // account_id 2 - InsufficientHoursPlayer
+    "76561197960269868", // account_id 2 - InsufficientHoursPlayer
+    "76561197967885016", // account_id 1 - PrivateProfilePlayer (handled by steamApiService mock)
+    "76561197960269868", // account_id 2 - InsufficientHoursPlayer (handled by steamApiService mock)
+    "76561197960280001", // account_id 12 - IncompleteDetailsPlayer (invalid /details data from DB)
+    "76561197960280002" // account_id 13 - RaceConditionPlayer (handled by steamApiService mock)
   ];
 
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
@@ -52,7 +56,7 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up test accounts and related data if they exist
-  const testAccountIds = [3, 4, 5, 6, 8, 9, 10, 11];
+  const testAccountIds = [3, 4, 5, 6, 8, 9, 10, 11, 12, 13];
   for (const accountId of testAccountIds) {
     await knex("LinkedAccounts").where({ account_id: accountId }).del();
     await knex("UserPolicyAcceptances").where({ account_id: accountId }).del();
@@ -108,7 +112,9 @@ export async function seed(knex: Knex): Promise<void> {
     { id: 8 },
     { id: 9 },
     { id: 10 },
-    { id: 11 }
+    { id: 11 },
+    { id: 12 },
+    { id: 13 }
   ];
 
   for (const user of users) {
@@ -120,20 +126,54 @@ export async function seed(knex: Knex): Promise<void> {
         work_email_verified: 1
       });
 
+    // Special handling for IncompleteDetailsPlayer (account_id 12)
+    if (user.id === 12) {
+      // Set up incomplete/invalid data for testing
+      await knex("Accounts").where({ id: user.id }).update({
+        work_email: null, // Missing work email
+        work_email_verified: 0, // Not verified
+        full_name: "IncompletePlayer" // Missing space - invalid full name
+      });
+    } else {
+      // Update the user's email and set work_email_verified to 1 for all others
+      await knex("Accounts")
+        .where({ id: user.id })
+        .update({
+          work_email: `test+${user.id}@kanaliiga.fi`,
+          work_email_verified: 1
+        });
+    }
+
     // Insert or update UserPolicyAcceptances using raw query with ON DUPLICATE KEY UPDATE
     // Use the same privacy policy version that the backend expects
-    await knex.raw(
-      `
-      INSERT INTO UserPolicyAcceptances 
-        (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
-      VALUES 
-        (?, 1, 0, ?)
-      ON DUPLICATE KEY UPDATE 
-        accepted_privacy_policy = 1,
-        privacy_policy_version = VALUES(privacy_policy_version)
-    `,
-      [user.id, privacyPolicyVersion]
-    );
+    if (user.id === 12) {
+      // IncompleteDetailsPlayer - set up incomplete privacy policy acceptance
+      await knex.raw(
+        `
+        INSERT INTO UserPolicyAcceptances 
+          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+        VALUES 
+          (?, 0, 0, 'old_version')
+        ON DUPLICATE KEY UPDATE 
+          accepted_privacy_policy = 0,
+          privacy_policy_version = 'old_version'
+      `,
+        [user.id]
+      );
+    } else {
+      await knex.raw(
+        `
+        INSERT INTO UserPolicyAcceptances 
+          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+        VALUES 
+          (?, 1, 0, ?)
+        ON DUPLICATE KEY UPDATE 
+          accepted_privacy_policy = 1,
+          privacy_policy_version = VALUES(privacy_policy_version)
+      `,
+        [user.id, privacyPolicyVersion]
+      );
+    }
   }
 
   // Add email verification test tokens for E2E testing
@@ -229,7 +269,17 @@ export async function seed(knex: Knex): Promise<void> {
       account_id: 2,
       steam_id: "76561197960269868",
       nickname: "InsufficientHoursPlayer"
-    } // For insufficient hours test
+    }, // For insufficient hours test
+    {
+      account_id: 12,
+      steam_id: "76561197960280001",
+      nickname: "IncompleteDetailsPlayer"
+    }, // For incomplete /details API test
+    {
+      account_id: 13,
+      steam_id: "76561197960280002",
+      nickname: "RaceConditionPlayer"
+    } // For race condition testing
   ];
 
   for (const player of steamPlayerData) {

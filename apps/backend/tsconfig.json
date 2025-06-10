@@ -6,7 +6,8 @@
     "outDir": "dist",
     "isolatedModules": true,
     "paths": {
-      "@eggosystem/types": ["../../packages/types/dist/index"]
+      "@eggosystem/types": ["../../packages/types/dist/index"],
+      "@eggosystem/shared-msw": ["../../packages/shared-msw/dist/index"]
     }
   },
   "include": [

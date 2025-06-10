@@ -3,8 +3,8 @@ import {
   type SeasonPlayerRankFormValues,
   type PostTeamManualPlayerApprovalSchemaType,
   type ActiveSeasonSignupForAppId,
-  SeasonRegisteredTeamsWithPlayers,
-  SeasonTeamRegistration
+  type SeasonRegisteredTeamsWithPlayers,
+  type SeasonTeamRegistration
 } from "@eggosystem/types";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";

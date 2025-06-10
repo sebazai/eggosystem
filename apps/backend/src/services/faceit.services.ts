@@ -102,6 +102,11 @@ export const getFaceITGameRank = async (
       const player_id = data["player_id"];
 
       clearAbortTimeout();
+
+      if (Number.isNaN(elo) || Number.isNaN(rank)) {
+        return null;
+      }
+
       return {
         elo,
         rank,
@@ -117,6 +122,7 @@ export const getFaceITGameRank = async (
       return null;
     }
   } catch (error) {
+    clearAbortTimeout();
     logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
     return null;
   }

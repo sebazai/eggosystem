@@ -1,8 +1,11 @@
-import { type CS2LeetifyAvgRank, type Nullable } from "@eggosystem/types";
+import {
+  type GameRanks,
+  type LeetifyResponse,
+  type MatchmakingRankType,
+  type CS2LeetifyAvgRank
+} from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { createAbortController } from "../utils/fetch-utils";
-
-const LEETIFY_BASE_URL = "https://api.cs-prod.leetify.com/api/profile/id/";
 
 const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
@@ -42,35 +45,8 @@ const getAverageRankForGames = (games: GameRanks[]) => {
   return undefined; // No games found within the last year
 };
 
-// Ranktypes
-// 11 = premier
-// 12 = map based comp
-
-interface MatchmakingRankType {
-  dataSource: "matchmaking";
-  rankType: Nullable<number>;
-  skillLevel: number;
-  isCs2: boolean;
-  gameFinishedAt: string;
-}
-
-interface FaceITRankType {
-  dataSource: "faceit";
-  rankType: null;
-  skillLevel: null;
-  elo: number;
-  isCs2: boolean;
-  gameFinishedAt: string;
-}
-
-type GameRanks = MatchmakingRankType | FaceITRankType;
-
-export interface LeetifyResponse {
-  games: Array<GameRanks>;
-}
-
 export const getCS2RankFromLeetify = async (steam_id: string) => {
-  const webURL = `${LEETIFY_BASE_URL}${steam_id}`;
+  const webURL = `https://api.cs-prod.leetify.com/api/profile/id/${steam_id}`;
 
   const { controller, clearAbortTimeout } = createAbortController(
     "getCS2RankFromLeetify"

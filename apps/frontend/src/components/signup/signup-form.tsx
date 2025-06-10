@@ -43,6 +43,14 @@ const validateExternalPlaformId = async (
   externalId: string
 ) => {
   if (platform === SeasonPlatform.FACEIT) {
+    // Check extenralId is valid UUID
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        externalId
+      )
+    ) {
+      return undefined;
+    }
     const data = await clientApiFetch<FaceITTeamDetails>(
       `/api/v1/faceit/teams/${externalId}`
     );

@@ -1,0 +1,24 @@
+{
+  "extends": "@eggosystem/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "moduleResolution": "node", // Ensure module resolution works as expected
+    "module": "ESNext",
+    "target": "ESNext",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "strict": true, // TypeScript's strict mode for better type safety
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": false, // Disable strict module syntax checking
+    "noImplicitAny": false, // Allow implicit any types
+    "removeComments": false, // Keep comments in output files
+    "noEmit": false, // Ensure files are emitted
+    "paths": {
+      "@eggosystem/shared-msw": ["./src"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

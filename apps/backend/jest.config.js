@@ -3,8 +3,12 @@ export const testEnvironment = "node";
 export const moduleFileExtensions = ["ts", "tsx", "js", "jsx", "json", "node"];
 export const setupFilesAfterEnv = ["<rootDir>/jest.setup.ts"];
 export const transform = {
-  "^.+\\.(ts|tsx)$": "ts-jest"
+  "^.+\\.(ts|tsx)$": "ts-jest",
+  "^.+\\.(js|jsx)$": "babel-jest"
 };
+export const transformIgnorePatterns = [
+  "node_modules/(?!(@eggosystem/shared-msw)/)"
+];
 export const openHandlesTimeout = 2 * 1000;
 export const testMatch = [
   "**/__tests__/**/*.ts?(x)",
@@ -32,6 +36,8 @@ export const coveragePathIgnorePatterns = [
 ];
 export const coverageProvider = "v8";
 export const moduleNameMapper = {
-  "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js"
+  "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js",
+  "^@eggosystem/shared-msw$":
+    "<rootDir>/../../packages/shared-msw/dist/index.js"
 };
 export const testTimeout = 10000;

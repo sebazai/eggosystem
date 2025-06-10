@@ -32,7 +32,8 @@
         "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
         "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
         "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
-        "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL"
+        "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
+        "TEST_TYPE"
       ],
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
@@ -47,7 +48,7 @@
       ]
     },
     "backend#build": {
-      "dependsOn": ["@eggosystem/types#build"],
+      "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
       "outputs": ["dist/**", "node_modules/**"]
     },
     "lint": {
@@ -57,18 +58,23 @@
       "dependsOn": ["^format:check"]
     },
     "check-types": {
-      "dependsOn": ["^check-types", "@eggosystem/types#build"]
+      "dependsOn": [
+        "^check-types",
+        "@eggosystem/types#build",
+        "@eggosystem/shared-msw#build"
+      ]
     },
     "dev": {
-      "dependsOn": ["@eggosystem/types#build"],
+      "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
       "cache": false,
       "persistent": true
     },
     "test": {
-      "dependsOn": ["@eggosystem/types#build"]
+      "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
+      "cache": false
     },
     "test:integration": {
-      "dependsOn": ["@eggosystem/types#build"]
+      "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"]
     },
     "shadcn:add": {
       "cache": false

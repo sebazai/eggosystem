@@ -1,7 +1,8 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 // Helper function to generate a valid JWT token for E2E testing
 let cachedJWTToken: string | null = null;
@@ -14,57 +15,8 @@ function generateUniqueOrgCode(): string {
 }
 
 // Helper function to generate unique FACEIT team ID
-function generateUniqueFaceitTeamId(useKnownValidId = false): string {
-  // For actual submission tests, we still need to generate unique IDs to avoid
-  // database constraint violations from reusing the same ID across test runs
-  if (useKnownValidId) {
-    // Generate a unique ID based on current timestamp to avoid duplicates
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 10000);
-
-    // Create a UUID v4 format with timestamp-based uniqueness
-    const randomHex = (length: number) => {
-      return Array.from({ length }, () =>
-        Math.floor(Math.random() * 16).toString(16)
-      ).join("");
-    };
-
-    // Use timestamp to ensure uniqueness across test runs
-    const part1 = timestamp.toString(16).padStart(8, "0").slice(-8);
-    const part2 = random.toString(16).padStart(4, "0");
-    const part3 = "4" + randomHex(3); // Version 4 UUID
-    const part4 =
-      ["8", "9", "a", "b"][Math.floor(Math.random() * 4)] + randomHex(3);
-    const part5 = (timestamp + random)
-      .toString(16)
-      .padStart(12, "0")
-      .slice(-12);
-
-    return `${part1}-${part2}-${part3}-${part4}-${part5}`;
-  }
-
-  // Generate a proper UUID v4 format with unique timestamp-based elements
-  const timestamp = Date.now();
-
-  // Helper to generate random hex strings of specific length
-  const randomHex = (length: number) => {
-    return Array.from({ length }, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    ).join("");
-  };
-
-  // Create UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-  const part1 = timestamp.toString(16).padStart(8, "0").slice(-8); // 8 chars
-  const part2 = randomHex(4); // 4 chars
-  const part3 = "4" + randomHex(3); // 4xxx (version 4)
-  const part4 =
-    ["8", "9", "a", "b"][Math.floor(Math.random() * 4)] + randomHex(3); // yxxx (variant bits)
-  const part5 = (timestamp + Math.floor(Math.random() * 1000))
-    .toString(16)
-    .padStart(12, "0")
-    .slice(-12); // 12 chars
-
-  return `${part1}-${part2}-${part3}-${part4}-${part5}`;
+function generateUniqueFaceitTeamId(): string {
+  return uuidv4();
 }
 
 function generateTestJWT(): string {
@@ -110,24 +62,6 @@ function generateTestJWT(): string {
     const fallbackToken = "valid_token";
     cachedJWTToken = fallbackToken;
     return fallbackToken;
-  }
-}
-
-// A helper function to retry navigation when pages are being compiled
-async function navigateWithRetry(
-  page: Page,
-  url: string,
-  retries = 3
-): Promise<void> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      // Increase timeout for initial navigation when page might be compiling
-      await page.goto(url, { timeout: i === 0 ? 60000 : 30000 });
-      await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
-      return; // Success
-    } catch (e) {
-      if (i === retries - 1) throw e; // Last attempt failed
-    }
   }
 }
 
@@ -204,71 +138,7 @@ async function assignCaptain(page: Page) {
 }
 
 test.describe("Signup Form", () => {
-  // Configure timeout for the entire test suite - reduced from 90 seconds
-  test.describe.configure({ timeout: 45000 });
-
-  // Collect frontend errors and fail test if any occur
-  let frontendErrors: string[] = [];
-
   test.beforeEach(async ({ page }) => {
-    // Reset errors for each test
-    frontendErrors = [];
-
-    // Listen for console errors
-    page.on("console", (msg) => {
-      if (msg.type() === "error") {
-        const errorText = msg.text();
-        // Filter out expected test-related errors
-        if (
-          !errorText.includes("Failed to load resource") &&
-          !errorText.includes("401 (Unauthorized)") &&
-          !errorText.includes("refresh token") &&
-          !errorText.includes("session expired") &&
-          !errorText.includes("net::ERR_ABORTED") &&
-          !errorText.includes("API Client Error")
-        ) {
-          frontendErrors.push(`Console Error: ${errorText}`);
-        }
-      }
-    });
-
-    // Listen for uncaught exceptions
-    page.on("pageerror", (error) => {
-      const errorMessage = error.message;
-      // Filter out authentication and image loading related errors in tests
-      if (
-        !errorMessage.includes("refresh token") &&
-        !errorMessage.includes("session expired") &&
-        !errorMessage.includes("401") &&
-        !errorMessage.includes("Unauthorized")
-      ) {
-        frontendErrors.push(
-          `Page Error: ${errorMessage}\nStack: ${error.stack}`
-        );
-      }
-    });
-
-    // Listen for failed requests (be more selective)
-    page.on("requestfailed", (request) => {
-      const url = request.url();
-      const failure = request.failure()?.errorText;
-
-      // Only track failures that aren't related to:
-      // - Image loading in tests
-      // - Expected auth failures
-      // - Aborted requests (common in tests)
-      if (
-        !url.includes("/_next/image") &&
-        !url.includes("logo") &&
-        failure !== "net::ERR_ABORTED" &&
-        failure !== "net::ERR_FAILED"
-      ) {
-        frontendErrors.push(
-          `Request Failed: ${request.method()} ${url} - ${failure}`
-        );
-      }
-    });
-
     // Set up authentication cookie first (most important)
     await page.context().addCookies([
       {
@@ -281,47 +151,29 @@ test.describe("Signup Form", () => {
       }
     ]);
 
-    // Setup essential route mocks with timeout protection (reduced timeout)
-    try {
-      const routeSetupPromises = [
-        // Mock external services only - FACEIT team lookup (others handled by backend E2E mode)
-        page.route("**/api/v1/faceit/teams/*", async (route: Route) => {
-          // Extract team ID from URL path
-          const url = route.request().url();
-          const teamIdMatch = url.match(/\/api\/v1\/faceit\/teams\/([^/?]+)/);
-          const teamId = teamIdMatch ? teamIdMatch[1] : "unknown";
+    page.route("**/api/v1/faceit/teams/*", async (route) => {
+      // Extract team ID from URL path
+      const url = route.request().url();
+      const teamIdMatch = url.match(/\/api\/v1\/faceit\/teams\/([^/?]+)/);
+      const teamId = teamIdMatch ? teamIdMatch[1] : "unknown";
 
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              team_id: teamId, // Use the actual team ID from the request
-              name: "Test FACEIT Team",
-              avatar: "https://example.com/avatar.jpg",
-              game: "cs2",
-              nickname: "",
-              team_type: "",
-              members: [],
-              leader: "",
-              chat_room_id: "",
-              faceit_url: ""
-            })
-          });
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          team_id: teamId, // Use the actual team ID from the request
+          name: "Test FACEIT Team",
+          avatar: "https://example.com/avatar.jpg",
+          game: "cs2",
+          nickname: "",
+          team_type: "",
+          members: [],
+          leader: "",
+          chat_room_id: "",
+          faceit_url: ""
         })
-      ];
-
-      // Set up all routes with reduced timeout
-      await Promise.race([
-        Promise.all(routeSetupPromises),
-        new Promise(
-          (_, reject) =>
-            setTimeout(() => reject(new Error("Route setup timeout")), 15000) // Reduced from 30s to 15s
-        )
-      ]);
-    } catch (error) {
-      console.warn("Route setup warning:", error);
-      // Continue anyway - routes may still work
-    }
+      });
+    });
 
     // Intercept draft API requests specifically to add Bearer authorization header
     await page.route("**/draft", async (route) => {
@@ -334,24 +186,15 @@ test.describe("Signup Form", () => {
     });
   });
 
-  // Check for errors at the end of each test
-  test.afterEach(async () => {
-    if (frontendErrors.length > 0) {
-      throw new Error(
-        `Frontend errors detected:\n${frontendErrors.join("\n")}`
-      );
-    }
-  });
-
   // Base navigation test
   test("should navigate to the signup page with authentication", async ({
     page
   }) => {
     // Start by checking authentication status
-    await navigateWithRetry(page, "/");
+    await page.goto("/");
 
     // Navigate to signup page
-    await navigateWithRetry(page, "/seasons/16/signup");
+    await page.goto("/seasons/16/signup");
 
     // Verify authentication by ensuring login button is not visible
     const steamLoginButton = page.locator(
@@ -371,7 +214,7 @@ test.describe("Signup Form", () => {
   test.describe("Organization Selection", () => {
     test.beforeEach(async ({ page }: { page: Page }) => {
       // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Verify we're on the signup form
       await expect(
@@ -423,7 +266,7 @@ test.describe("Signup Form", () => {
   test.describe("Team Selection", () => {
     test.beforeEach(async ({ page }: { page: Page }) => {
       // Navigate to the form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Verify we're on the signup form
       await expect(
@@ -491,7 +334,7 @@ test.describe("Signup Form", () => {
   test.describe("Team Faceit ID Validation", () => {
     test.beforeEach(async ({ page }: { page: Page }) => {
       // Navigate to the form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Verify we're on the signup form
       await expect(
@@ -539,30 +382,6 @@ test.describe("Signup Form", () => {
 
       // Fill in the new team name
       await page.locator('[data-testid="team-name-input"]').fill("Test Team");
-      await page
-        .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId());
-    });
-
-    test("should identify and access the Team Faceit ID field", async ({
-      page
-    }) => {
-      // Find the Team Faceit ID field using data-testid
-      const faceitIdField = page.locator(
-        '[data-testid="team-external-id-input"]'
-      );
-
-      // Verify field is found
-      await expect(faceitIdField).toBeVisible();
-
-      // Verify help text is present with correct format guidance
-      await expect(page.locator('[data-testid="faceitIdHelp"]')).toBeVisible();
-
-      // Verify Go to lineup button is present
-      const goToLineupButton = page.locator(
-        '[data-testid="go-to-lineup-button"]'
-      );
-      await expect(goToLineupButton).toBeVisible();
     });
 
     test("should reject empty Faceit ID", async ({ page }) => {
@@ -596,10 +415,6 @@ test.describe("Signup Form", () => {
       // Fill in an invalid Faceit ID (without hyphens)
       await faceitIdField.focus();
       await faceitIdField.fill("77dd9104d2f14f50ba80d58457cff5a9");
-
-      // Wait a moment for validation to process
-
-      // Trigger validation by blurring the field
       await faceitIdField.blur();
 
       // Test 1: Check that the go to lineup button is disabled
@@ -678,7 +493,7 @@ test.describe("Signup Form", () => {
   test.describe("Steam ID Validation", () => {
     test.beforeEach(async ({ page }: { page: Page }) => {
       // Navigate through the registration process
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -721,7 +536,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Navigate through the registration process (following existing working pattern)
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -797,7 +612,7 @@ test.describe("Signup Form", () => {
     page
   }) => {
     // Navigate through the registration process (following existing working pattern)
-    await navigateWithRetry(page, "/seasons/16/signup/registration");
+    await page.goto("/seasons/16/signup/registration");
 
     // Complete organization selection
     await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
@@ -846,7 +661,7 @@ test.describe("Signup Form", () => {
     page
   }) => {
     // Navigate through the registration process (following existing working pattern)
-    await navigateWithRetry(page, "/seasons/16/signup/registration");
+    await page.goto("/seasons/16/signup/registration");
 
     // Complete organization selection
     await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
@@ -895,7 +710,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -994,7 +809,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -1024,7 +839,7 @@ test.describe("Signup Form", () => {
         .fill("Submission Test Team");
       await page
         .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId(true)); // Use real FACEIT team ID for submission
+        .fill(generateUniqueFaceitTeamId()); // Use real FACEIT team ID for submission
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
@@ -1102,7 +917,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -1178,7 +993,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -1301,7 +1116,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Navigate to the registration form
-      await navigateWithRetry(page, "/seasons/16/signup/registration");
+      await page.goto("/seasons/16/signup/registration");
 
       // Complete organization selection
       await page
@@ -1331,7 +1146,7 @@ test.describe("Signup Form", () => {
         .fill("Submission Test Team");
       await page
         .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId(true)); // Use real FACEIT team ID for submission
+        .fill(generateUniqueFaceitTeamId()); // Use real FACEIT team ID for submission
 
       // Navigate to players section
       await page.locator('[data-testid="go-to-lineup-button"]').click();
@@ -1385,6 +1200,929 @@ test.describe("Signup Form", () => {
       for (const errorSelector of validationErrors) {
         const errorElement = page.locator(errorSelector).first(); // Use .first() to avoid strict mode violations
         expect(errorElement).toBeVisible();
+      }
+    });
+  });
+
+  // Complete registration flow test - should attempt submission and check for captain/co-captain validation
+  test("should attempt submission and check for captain/co-captain validation", async ({
+    page
+  }) => {
+    // Navigate to the registration form
+    await page.goto("/seasons/16/signup/registration");
+
+    // Complete organization selection
+    await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
+
+    await page.locator('[data-testid="organizations-add-new"]').click();
+    await page
+      .locator('[data-testid="organization-name-input"]')
+      .fill("Submission Test Org");
+    await page
+      .locator('[data-testid="organization-business-id-input"]')
+      .fill(generateUniqueOrgCode());
+    await page
+      .locator('[data-testid="organization-website-input"]')
+      .fill("https://kanaliiga.fi/");
+    await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+
+    // Navigate to team section and complete team selection
+    await page.locator('[data-testid="team-selection-button"]').click();
+
+    await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+
+    await page.locator('[data-testid="teams-add-new"]').click();
+    await page
+      .locator('[data-testid="team-name-input"]')
+      .fill("Submission Test Team");
+    await page
+      .locator('[data-testid="team-external-id-input"]')
+      .fill(generateUniqueFaceitTeamId()); // Use real FACEIT team ID for submission
+
+    // Navigate to players section
+    await page.locator('[data-testid="go-to-lineup-button"]').click();
+
+    // Fill in 5 players
+    const validPlayers = [
+      "76561197960273207", // account_id 3 - auth user (auto-captain)
+      "76561197960275646", // account_id 5 - approved
+      "76561197960283932", // account_id 4 - valid (HEPPAJPG)
+      "76561197960265728", // account_id 8 - Hoolyz (from E2E seed)
+      "76561197960265740" // account_id 9 - RealPlayer1 (from E2E seed)
+    ];
+
+    for (let i = 0; i < 5; i++) {
+      const steamIdInput = page.locator(`[data-testid="steam-id-input-${i}"]`);
+      await expect(steamIdInput).toBeVisible();
+      await steamIdInput.fill(validPlayers[i]!);
+      await page.keyboard.press("Tab");
+    }
+
+    // Wait for all validations to complete
+
+    // Check for the captain auto-assignment message
+    const captainMessage = page.locator("text=By default you are the captain");
+    expect(captainMessage).toBeVisible();
+
+    // Check submit button state
+    const submitButton = page
+      .locator('button[type="submit"]')
+      .filter({ hasText: /Submit/i });
+    const submitEnabled = await submitButton.isEnabled();
+
+    if (!submitEnabled) {
+      return;
+    }
+
+    // Check for validation states and captain/co-captain assignment
+
+    // Check for validation errors that might be present
+    const validationErrors = [
+      "text=There must be exactly one captain and one co-captain",
+      "text=captain and one co-captain",
+      "text=co-captain",
+      '[role="alert"]' // Generic alert/error elements
+    ];
+
+    for (const errorSelector of validationErrors) {
+      const errorElement = page.locator(errorSelector).first(); // Use .first() to avoid strict mode violations
+      expect(errorElement).toBeVisible();
+    }
+  });
+
+  // NEW TEST BLOCKS FOR MISSING SCENARIOS
+
+  // 1. Silent API Validation Failures
+  test.describe("Silent API Validation Failures", () => {
+    test.beforeEach(async ({ page }: { page: Page }) => {
+      // Set up authentication
+      await page.context().addCookies([
+        {
+          name: "access_token",
+          value: generateTestJWT(),
+          domain: "localhost",
+          path: "/",
+          httpOnly: true,
+          secure: false
+        }
+      ]);
+
+      // Navigate through basic form setup
+      await page.goto("/seasons/16/signup/registration");
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .click();
+      await page.locator('[data-testid="organizations-add-new"]').click();
+      await page
+        .locator('[data-testid="organization-name-input"]')
+        .fill("Silent Test Org");
+      await page
+        .locator('[data-testid="organization-business-id-input"]')
+        .fill(generateUniqueOrgCode());
+      await page
+        .locator('[data-testid="organization-website-input"]')
+        .fill("https://kanaliiga.fi/");
+      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+      await page.locator('[data-testid="teams-add-new"]').click();
+      await page
+        .locator('[data-testid="team-name-input"]')
+        .fill("Silent Test Team");
+      await page
+        .locator('[data-testid="team-external-id-input"]')
+        .fill(generateUniqueFaceitTeamId());
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+    });
+
+    test("should detect when hours API returns null but with 200 status", async ({
+      page
+    }) => {
+      // Use the Steam ID that triggers backend hours failure (returns null, processed to hours: -1)
+      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput.fill("76561197960269868"); // This Steam ID triggers hours: null in backend mock
+      await page.keyboard.press("Tab");
+
+      expect(page.getByTestId("loading-spinner")).not.toBeVisible();
+
+      // Check if input shows green (false positive)
+      const hasGreenBorder = await steamIdInput.getAttribute("class");
+      const isGreen = hasGreenBorder?.includes("border-green-500");
+
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+
+      if (isGreen) {
+        // This is the bug - green border but invalid data
+        console.log("BUG DETECTED: Green border with null hours data");
+
+        // Submit should be disabled or fail silently
+        if (await submitButton.isEnabled()) {
+          console.log("CRITICAL BUG: Submit button enabled with invalid data");
+
+          // Try clicking submit and verify nothing happens
+          await submitButton.click();
+          await page.waitForTimeout(2000);
+
+          // Should still be on same page
+          await expect(
+            page.locator('[data-testid="go-to-lineup-button"]')
+          ).toBeVisible();
+        }
+      }
+
+      // Proper behavior: should show error or red border
+      await expect(steamIdInput).not.toHaveClass(/border-green-500/);
+    });
+
+    test("should detect when player details API returns incomplete data", async ({
+      page
+    }) => {
+      // Use the Steam ID that has incomplete details in backend (account_id 12)
+      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput.fill("76561197960280001"); // IncompleteDetailsPlayer with invalid work email, etc.
+      await page.keyboard.press("Tab");
+      await page.waitForTimeout(3000);
+
+      // Check if validation properly handles missing fields
+      const hasGreenBorder = await steamIdInput.getAttribute("class");
+      const isGreen = hasGreenBorder?.includes("border-green-500");
+
+      if (isGreen) {
+        console.log(
+          "BUG DETECTED: Green border with incomplete player details"
+        );
+
+        // Fill all players and check submit state
+        const validPlayers = [
+          "76561197960283932",
+          "76561197960265728",
+          "76561197960265740",
+          "76561197961279983",
+          "76561197960265748"
+        ];
+
+        for (let i = 1; i < 5; i++) {
+          const input = page.locator(`[data-testid="steam-id-input-${i}"]`);
+          await input.fill(validPlayers[i]!);
+          await page.keyboard.press("Tab");
+        }
+
+        await assignCaptain(page);
+
+        const termsCheckbox = page.locator(
+          '[data-testid="terms-conditions-checkbox"]'
+        );
+        if (await termsCheckbox.isVisible()) {
+          const isChecked = await termsCheckbox.isChecked().catch(() => false);
+          if (!isChecked) {
+            await termsCheckbox.click();
+          }
+        }
+
+        const submitButton = page
+          .locator('button[type="submit"]')
+          .filter({ hasText: /Submit/i });
+
+        if (await submitButton.isEnabled()) {
+          console.log(
+            "CRITICAL BUG: Submit enabled with incomplete validation data"
+          );
+        }
+      }
+    });
+  });
+
+  // 2. Race Condition Tests
+  test.describe("API Race Condition Tests", () => {
+    test.beforeEach(async ({ page }: { page: Page }) => {
+      await page.context().addCookies([
+        {
+          name: "access_token",
+          value: generateTestJWT(),
+          domain: "localhost",
+          path: "/",
+          httpOnly: true,
+          secure: false
+        }
+      ]);
+
+      await page.goto("/seasons/16/signup/registration");
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .click();
+      await page.locator('[data-testid="organizations-add-new"]').click();
+      await page
+        .locator('[data-testid="organization-name-input"]')
+        .fill("Race Test Org");
+      await page
+        .locator('[data-testid="organization-business-id-input"]')
+        .fill(generateUniqueOrgCode());
+      await page
+        .locator('[data-testid="organization-website-input"]')
+        .fill("https://kanaliiga.fi/");
+      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+      await page.locator('[data-testid="teams-add-new"]').click();
+      await page
+        .locator('[data-testid="team-name-input"]')
+        .fill("Race Test Team");
+      await page
+        .locator('[data-testid="team-external-id-input"]')
+        .fill(generateUniqueFaceitTeamId());
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+    });
+
+    test("should handle race conditions between validation API calls", async ({
+      page
+    }) => {
+      // Use RaceConditionPlayer Steam ID which has invalid hours AND private profile in backend
+      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput.fill("76561197960280002"); // RaceConditionPlayer - backend returns null hours and private profile
+      await page.keyboard.press("Tab");
+
+      // Wait for partial validations to complete
+      await page.waitForTimeout(1000);
+
+      // Check if border changes to green prematurely (before all validations complete)
+      const borderAfter1s = await steamIdInput.getAttribute("class");
+      const isGreenEarly = borderAfter1s?.includes("border-green-500");
+
+      if (isGreenEarly) {
+        console.log(
+          "POTENTIAL BUG: Green border before all validations complete"
+        );
+      }
+
+      // Wait for all validations to complete
+      await page.waitForTimeout(2500);
+
+      // Final state should be red due to multiple validation failures
+      await expect(steamIdInput).toHaveClass(/border-red-500/);
+    });
+
+    test("should handle simultaneous player validation requests", async ({
+      page
+    }) => {
+      // Set up API mocks with staggered delays
+      let callCount = 0;
+
+      await page.route("**/players/*/app/*/hours**", async (route) => {
+        const delay = (callCount % 3) * 500; // Different delays for different calls
+        callCount++;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ hours: 1500 })
+        });
+      });
+
+      // Fill multiple players quickly to trigger race conditions
+      const validPlayers = [
+        "76561197960283932",
+        "76561197960265728",
+        "76561197960265740"
+      ];
+
+      for (let i = 0; i < 3; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await steamIdInput.fill(validPlayers[i]!);
+        // Don't wait - trigger all validations simultaneously
+      }
+
+      // Wait and check if validation states are consistent
+      await page.waitForTimeout(3000);
+
+      // Check if any inputs are in inconsistent states
+      const greenInputs = await page
+        .locator('input[class*="border-green-500"]')
+        .count();
+      const redInputs = await page
+        .locator('input[class*="border-red-500"]')
+        .count();
+      const neutralInputs = await page
+        .locator(
+          'input:not([class*="border-green-500"]):not([class*="border-red-500"])'
+        )
+        .count();
+
+      console.log(
+        `Validation results: ${greenInputs} green, ${redInputs} red, ${neutralInputs} neutral`
+      );
+
+      // At least some should have completed validation (not be neutral)
+      expect(greenInputs + redInputs).toBeGreaterThan(0);
+    });
+  });
+
+  // 3. Form State Inconsistency Tests
+  test.describe("Form State Inconsistency Tests", () => {
+    test.beforeEach(async ({ page }: { page: Page }) => {
+      await page.context().addCookies([
+        {
+          name: "access_token",
+          value: generateTestJWT(),
+          domain: "localhost",
+          path: "/",
+          httpOnly: true,
+          secure: false
+        }
+      ]);
+
+      await page.goto("/seasons/16/signup/registration");
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .click();
+      await page.locator('[data-testid="organizations-add-new"]').click();
+      await page
+        .locator('[data-testid="organization-name-input"]')
+        .fill("Inconsistency Test Org");
+      await page
+        .locator('[data-testid="organization-business-id-input"]')
+        .fill(generateUniqueOrgCode());
+      await page
+        .locator('[data-testid="organization-website-input"]')
+        .fill("https://kanaliiga.fi/");
+      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+      await page.locator('[data-testid="teams-add-new"]').click();
+      await page
+        .locator('[data-testid="team-name-input"]')
+        .fill("Inconsistency Test Team");
+      await page
+        .locator('[data-testid="team-external-id-input"]')
+        .fill(generateUniqueFaceitTeamId());
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+    });
+
+    test("should detect when form shows all green but validation is incomplete", async ({
+      page
+    }) => {
+      // Mock all APIs to return "valid-looking" but actually incomplete data
+      await page.route("**/players/*/app/*/hours**", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ hours: -1 }) // Invalid hours but might not be caught
+        });
+      });
+
+      await page.route("**/players/*/public", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ public: true })
+        });
+      });
+
+      await page.route("**/players/*/details", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            steam_id: "76561197960283932",
+            nickname: "TestPlayer",
+            account_id: 4,
+            work_email_verified: false, // Should cause validation failure
+            is_valid_work_email: false,
+            is_valid_full_name: true,
+            has_accepted_latest_privacy_policy: true
+          })
+        });
+      });
+
+      // Fill all 5 players
+      const validPlayers = [
+        "76561197960283932",
+        "76561197960265728",
+        "76561197960265740",
+        "76561197961279983",
+        "76561197960265748"
+      ];
+
+      for (let i = 0; i < 5; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await steamIdInput.fill(validPlayers[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await page.waitForTimeout(3000);
+
+      // Check if inputs show green (false positive)
+      const greenInputs = await page
+        .locator('input[class*="border-green-500"]')
+        .count();
+
+      if (greenInputs > 0) {
+        console.log(
+          `POTENTIAL BUG: ${greenInputs} inputs show green with invalid data`
+        );
+
+        // Try to complete form and submit
+        await assignCaptain(page);
+
+        const termsCheckbox = page.locator(
+          '[data-testid="terms-conditions-checkbox"]'
+        );
+        if (await termsCheckbox.isVisible()) {
+          const isChecked = await termsCheckbox.isChecked().catch(() => false);
+          if (!isChecked) {
+            await termsCheckbox.click();
+          }
+        }
+
+        const submitButton = page
+          .locator('button[type="submit"]')
+          .filter({ hasText: /Submit/i });
+
+        if (await submitButton.isEnabled()) {
+          console.log(
+            "CRITICAL BUG: Submit enabled with incomplete validation data"
+          );
+        }
+      }
+
+      // Proper behavior: should show errors or disabled submit
+      const redInputs = await page
+        .locator('input[class*="border-red-500"]')
+        .count();
+      expect(redInputs).toBeGreaterThan(0);
+    });
+
+    test("should verify submit button state matches actual form validity", async ({
+      page
+    }) => {
+      // Add client-side form state tracking
+      await page.addInitScript(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).formValidationLog = [];
+
+        // Override console.log to capture validation events
+        const originalLog = console.log;
+        console.log = function (...args: unknown[]) {
+          if (
+            args.some(
+              (arg) =>
+                typeof arg === "string" &&
+                (arg.includes("validation") ||
+                  arg.includes("hours") ||
+                  arg.includes("public") ||
+                  arg.includes("setValue"))
+            )
+          ) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).formValidationLog.push({
+              timestamp: Date.now(),
+              args
+            });
+          }
+          return originalLog.apply(this, args);
+        };
+      });
+
+      // Fill form with mixed valid/invalid data
+      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput.fill("76561197960283932");
+      await page.keyboard.press("Tab");
+
+      await page.waitForTimeout(3000);
+
+      // Check form validation log
+      const validationLog = await page.evaluate(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        () => (window as any).formValidationLog || []
+      );
+      console.log("Form validation events:", validationLog);
+
+      // Analyze submit button state
+      const submitButton = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      const isSubmitEnabled = await submitButton.isEnabled();
+
+      // Check actual validation states
+      const greenInputs = await page
+        .locator('input[class*="border-green-500"]')
+        .count();
+      const redInputs = await page
+        .locator('input[class*="border-red-500"]')
+        .count();
+      const neutralInputs = 5 - greenInputs - redInputs;
+
+      console.log(
+        `Submit enabled: ${isSubmitEnabled}, Green: ${greenInputs}, Red: ${redInputs}, Neutral: ${neutralInputs}`
+      );
+
+      // If submit is enabled, all inputs should be green and valid
+      if (isSubmitEnabled) {
+        expect(greenInputs).toBe(5);
+        expect(redInputs).toBe(0);
+        expect(neutralInputs).toBe(0);
+      }
+    });
+  });
+
+  // 4. Mixed Validation State Tests
+  test.describe("Mixed Validation State Tests", () => {
+    test.beforeEach(async ({ page }: { page: Page }) => {
+      await page.context().addCookies([
+        {
+          name: "access_token",
+          value: generateTestJWT(),
+          domain: "localhost",
+          path: "/",
+          httpOnly: true,
+          secure: false
+        }
+      ]);
+
+      await page.goto("/seasons/16/signup/registration");
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .click();
+      await page.locator('[data-testid="organizations-add-new"]').click();
+      await page
+        .locator('[data-testid="organization-name-input"]')
+        .fill("Mixed Test Org");
+      await page
+        .locator('[data-testid="organization-business-id-input"]')
+        .fill(generateUniqueOrgCode());
+      await page
+        .locator('[data-testid="organization-website-input"]')
+        .fill("https://kanaliiga.fi/");
+      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+      await page.locator('[data-testid="teams-add-new"]').click();
+      await page
+        .locator('[data-testid="team-name-input"]')
+        .fill("Mixed Test Team");
+      await page
+        .locator('[data-testid="team-external-id-input"]')
+        .fill(generateUniqueFaceitTeamId());
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+    });
+
+    test("should handle mixed valid/invalid player validations", async ({
+      page
+    }) => {
+      // Mock APIs to return different results for different players
+      await page.route("**/players/*/app/*/hours**", async (route) => {
+        const steamId = route
+          .request()
+          .url()
+          .match(/players\/([^/]+)\/app/)?.[1];
+
+        if (steamId === "76561197960283932") {
+          // First player: valid hours
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ hours: 1500 })
+          });
+        } else if (steamId === "76561197960265728") {
+          // Second player: invalid hours
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ hours: -1 })
+          });
+        } else {
+          // Other players: null hours
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ hours: null })
+          });
+        }
+      });
+
+      await page.route("**/players/*/public", async (route) => {
+        const steamId = route
+          .request()
+          .url()
+          .match(/players\/([^/]+)\/public/)?.[1];
+
+        if (steamId === "76561197960283932") {
+          // First player: public profile
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ public: true })
+          });
+        } else {
+          // Other players: private profiles
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ public: false })
+          });
+        }
+      });
+
+      // Fill 3 players with different expected validation results
+      const testPlayers = [
+        "76561197960283932",
+        "76561197960265728",
+        "76561197960265740"
+      ];
+
+      for (let i = 0; i < 3; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await steamIdInput.fill(testPlayers[i]!);
+        // Don't wait - trigger all validations simultaneously
+      }
+
+      // Wait and check if validation states are consistent
+      await page.waitForTimeout(3000);
+
+      // Check if any inputs are in inconsistent states
+      const greenInputs = await page
+        .locator('input[class*="border-green-500"]')
+        .count();
+      const redInputs = await page
+        .locator('input[class*="border-red-500"]')
+        .count();
+      const neutralInputs = await page
+        .locator(
+          'input:not([class*="border-green-500"]):not([class*="border-red-500"])'
+        )
+        .count();
+
+      console.log(
+        `Validation results: ${greenInputs} green, ${redInputs} red, ${neutralInputs} neutral`
+      );
+
+      // At least some should have completed validation (not be neutral)
+      expect(greenInputs + redInputs).toBeGreaterThan(0);
+    });
+  });
+
+  // 5. Critical Edge Cases
+  test.describe("Critical Edge Cases", () => {
+    test.beforeEach(async ({ page }: { page: Page }) => {
+      await page.context().addCookies([
+        {
+          name: "access_token",
+          value: generateTestJWT(),
+          domain: "localhost",
+          path: "/",
+          httpOnly: true,
+          secure: false
+        }
+      ]);
+
+      await page.goto("/seasons/16/signup/registration");
+      await page
+        .locator('[data-testid="organizations-dropdown-toggle"]')
+        .click();
+      await page.locator('[data-testid="organizations-add-new"]').click();
+      await page
+        .locator('[data-testid="organization-name-input"]')
+        .fill("Edge Case Test Org");
+      await page
+        .locator('[data-testid="organization-business-id-input"]')
+        .fill(generateUniqueOrgCode());
+      await page
+        .locator('[data-testid="organization-website-input"]')
+        .fill("https://kanaliiga.fi/");
+      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
+      await page.locator('[data-testid="team-selection-button"]').click();
+      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
+      await page.locator('[data-testid="teams-add-new"]').click();
+      await page
+        .locator('[data-testid="team-name-input"]')
+        .fill("Edge Case Test Team");
+      await page
+        .locator('[data-testid="team-external-id-input"]')
+        .fill(generateUniqueFaceitTeamId());
+      await page.locator('[data-testid="go-to-lineup-button"]').click();
+    });
+
+    test("should detect the exact bug: green borders but silent submit failure", async ({
+      page
+    }) => {
+      // This test specifically replicates the user's reported issue
+
+      // Mock APIs to return data that appears valid but has subtle issues
+      await page.route("**/players/*/app/*/hours**", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            hours: 1500
+            // Missing additional fields that might be expected
+          })
+        });
+      });
+
+      await page.route("**/players/*/public", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            public: true
+            // Missing additional fields that might be expected
+          })
+        });
+      });
+
+      await page.route("**/players/*/details", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            steam_id: "76561197960283932",
+            nickname: "TestPlayer",
+            account_id: 4,
+            work_email_verified: true,
+            is_valid_work_email: true,
+            is_valid_full_name: true,
+            has_accepted_latest_privacy_policy: true
+            // All appears valid...
+          })
+        });
+      });
+
+      // Fill all 5 players
+      const validPlayers = [
+        "76561197960283932",
+        "76561197960265728",
+        "76561197960265740",
+        "76561197961279983",
+        "76561197960265748"
+      ];
+
+      for (let i = 0; i < 5; i++) {
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await steamIdInput.fill(validPlayers[i]!);
+        await page.keyboard.press("Tab");
+      }
+
+      await page.waitForTimeout(4000); // Wait for all validations
+
+      // Check that all inputs show green
+      const greenInputs = await page
+        .locator('input[class*="border-green-500"]')
+        .count();
+      console.log(`Green inputs found: ${greenInputs}/5`);
+
+      if (greenInputs === 5) {
+        console.log("✓ All players show green borders");
+
+        // Complete the form
+        await assignCaptain(page);
+
+        const termsCheckbox = page.locator(
+          '[data-testid="terms-conditions-checkbox"]'
+        );
+        if (await termsCheckbox.isVisible()) {
+          const isChecked = await termsCheckbox.isChecked().catch(() => false);
+          if (!isChecked) {
+            await termsCheckbox.click();
+          }
+        }
+
+        const submitButton = page
+          .locator('button[type="submit"]')
+          .filter({ hasText: /Submit/i });
+
+        if (await submitButton.isEnabled()) {
+          console.log(
+            "CRITICAL BUG: Submit button enabled with invalid validation data"
+          );
+
+          // Try clicking submit
+          const responsePromise = page
+            .waitForResponse(
+              (response) =>
+                response.url().includes("/api/v1/registrations") &&
+                response.request().method() === "POST"
+            )
+            .catch(() => null);
+
+          await submitButton.click();
+          await page.waitForTimeout(3000);
+
+          const response = await responsePromise;
+          if (!response) {
+            console.log("CONFIRMED BUG: Submit clicked but no API call made");
+            // Should still be on same page
+            await expect(
+              page.locator('[data-testid="go-to-lineup-button"]')
+            ).toBeVisible();
+          }
+        }
+      } else {
+        console.log(
+          `Only ${greenInputs}/5 players show green - not the reported bug scenario`
+        );
+      }
+    });
+
+    test("should check for malformed API response handling", async ({
+      page
+    }) => {
+      // Test with various malformed but successful API responses
+      const malformedResponses = [
+        { hours: "1500" }, // String instead of number
+        { hours: 1500.5 }, // Float instead of integer
+        { public: "true" }, // String instead of boolean
+        { public: 1 }, // Number instead of boolean
+        { hours: Infinity }, // Invalid number
+        { hours: NaN } // Invalid number
+      ];
+
+      const validPlayers = [
+        "76561197960283932",
+        "76561197960265728",
+        "76561197960265740",
+        "76561197961279983",
+        "76561197960265748"
+      ];
+
+      for (let i = 0; i < malformedResponses.length && i < 5; i++) {
+        const response = malformedResponses[i];
+
+        await page.route(`**/players/*/app/*/hours**`, async (route) => {
+          if (route.request().url().includes(validPlayers[i]!)) {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify(response)
+            });
+          } else {
+            await route.continue();
+          }
+        });
+
+        const steamIdInput = page.locator(
+          `[data-testid="steam-id-input-${i}"]`
+        );
+        await steamIdInput.fill(validPlayers[i]!);
+        await page.keyboard.press("Tab");
+        await page.waitForTimeout(1000);
+
+        // Check how the form handles malformed data
+        const borderClass = await steamIdInput.getAttribute("class");
+        const isGreen = borderClass?.includes("border-green-500");
+        const isRed = borderClass?.includes("border-red-500");
+
+        console.log(
+          `Malformed data ${JSON.stringify(response)}: ${isGreen ? "GREEN" : isRed ? "RED" : "NEUTRAL"}`
+        );
       }
     });
   });

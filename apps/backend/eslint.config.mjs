@@ -1,2 +1,7 @@
 import { config as baseConfig } from "@eggosystem/eslint/express";
-export default [...baseConfig];
+export default [
+  ...baseConfig,
+  {
+    ignores: ["babel.config.js"]
+  }
+];

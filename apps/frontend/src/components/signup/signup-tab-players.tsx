@@ -140,7 +140,6 @@ export const TabPlayers = ({
           player.hasValidData !== true ||
           player.hasValidWorkEmail !== true ||
           player.isEmailVerified !== true ||
-          player.hours === undefined ||
           player.hours === -1 ||
           (player.rank === -1 && player.externalRank === -1));
 
@@ -225,12 +224,19 @@ export const TabPlayers = ({
 
           const [hoursData, rankData, externalRankData, playerData] = promises;
 
-          if (hoursData.status === "fulfilled") {
+          if (hoursData.status === "fulfilled" && hoursData.value.hours >= 0) {
             setValue(`players.${index}.hours`, hoursData.value.hours);
+          } else {
+            setValue(`players.${index}.hours`, -1);
           }
 
-          if (rankData.status === "fulfilled") {
+          if (
+            rankData.status === "fulfilled" &&
+            rankData.value.average_rank >= 0
+          ) {
             setValue(`players.${index}.rank`, rankData.value.average_rank);
+          } else {
+            setValue(`players.${index}.hours`, -1);
           }
 
           if (externalRankData.status === "fulfilled") {
@@ -241,7 +247,10 @@ export const TabPlayers = ({
                   (externalRankData.value as FaceITCSRank).faceit_level
                 );
             }
+          } else {
+            setValue(`players.${index}.externalRank`, -1);
           }
+
           if (playerData.status === "fulfilled") {
             setValue(`players.${index}.accountId`, playerData.value.account_id);
             const data = playerData.value;
@@ -459,7 +468,10 @@ export const TabPlayers = ({
                               }}
                             />
                             {loadingStates[index] && (
-                              <div className="absolute inset-y-0 right-2 flex items-center">
+                              <div
+                                data-testid="loading-spinner"
+                                className="absolute inset-y-0 right-2 flex items-center"
+                              >
                                 <Spinner />
                               </div>
                             )}

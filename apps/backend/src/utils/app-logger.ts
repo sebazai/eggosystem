@@ -74,7 +74,8 @@ export const logger = winston.createLogger({
         winston.format.printf(({ level, message, timestamp, stack }) => {
           return `${timestamp} ${level}: ${message} ${stack ? `\n${stack}` : ""}`;
         })
-      )
+      ),
+      silent: process.env.NODE_ENV === "test"
     }),
     new OTelTransport()
   ]

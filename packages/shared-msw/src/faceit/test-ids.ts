@@ -1,0 +1,7 @@
+export const faceitValidSteamId = "76561198000000000";
+export const faceitNotFoundSteamId = "76561198000000001";
+export const faceitNetworkErrorSteamId = "76561198000000002";
+export const faceitInvalidJsonSteamId = "76561198000000003";
+export const faceitInvalidGameDataSteamId = "76561198000000005";
+export const faceitRateLimitSteamId = "76561198000000006";
+export const faceitMultipleGamesSteamId = "76561198000000007";

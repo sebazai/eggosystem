@@ -16,6 +16,7 @@ import {
   type UpdateSeasonTeamRegistration
 } from "@eggosystem/types";
 import {
+  cleanUpTestUser,
   cleanupTestUsers,
   clearOrganization,
   clearRogueTeam,
@@ -43,15 +44,6 @@ import _ from "lodash";
 import { validSignupData } from "../../__utils__/fixtures/signupFormData";
 import { type BadRequestError } from "../../utils/errors";
 import { runQuery } from "../../db/mysqlRunQuery";
-import {
-  setupSmartFetchMockWithDynamicConfigs,
-  updateFetchMock
-} from "../../__utils__/fetchMock";
-import {
-  type IPlayerServiceResponse,
-  type ISteamUserResponse
-} from "../../services/steam.services";
-import { type LeetifyResponse } from "../../services/leetify.services";
 import { redisClient } from "../../utils/redisClient";
 
 describe("Season team registration services", () => {
@@ -77,9 +69,6 @@ describe("Season team registration services", () => {
     start_date: insertSeason.start_date.toDateString(),
     app_id: 730
   } satisfies SeasonDetails;
-
-  // Mock fetches
-  setupSmartFetchMockWithDynamicConfigs();
 
   beforeAll(async () => {
     await insertTestSeason(insertSeason);
@@ -335,53 +324,6 @@ describe("Season team registration services", () => {
       const captainPerm = jest
         .spyOn(registrationServices, "setCaptainPermissionsForSeason")
         .mockResolvedValue();
-      updateFetchMock([
-        {
-          urlContains: "GetPlayerSummaries",
-          response: {
-            response: {
-              players: formData.players.map((player) => {
-                return { steamid: player.steamId, communityvisibilitystate: 3 };
-              })
-            }
-          } satisfies ISteamUserResponse
-        },
-        {
-          urlContains: "https://api.cs-prod.leetify.com/api/profile/id",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "faceit",
-                elo: 2333,
-                rankType: null,
-                skillLevel: null,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        }
-      ]);
 
       await registrationServices.handleSeasonTeamRegistration(
         seasonDetails.id,
@@ -436,21 +378,6 @@ describe("Season team registration services", () => {
       beforeEach(async () => {
         await unsetSeasonTeamRegistration();
         const formData = _.cloneDeep(validSignupData);
-        updateFetchMock([
-          {
-            urlContains: "GetPlayerSummaries",
-            response: {
-              response: {
-                players: formData.players.map((player) => {
-                  return {
-                    steamid: player.steamId,
-                    communityvisibilitystate: 3
-                  };
-                })
-              }
-            } satisfies ISteamUserResponse
-          }
-        ]);
 
         await registrationModels.insertSeasonTeamRegistration(
           seasonDetails.id,
@@ -516,24 +443,6 @@ describe("Season team registration services", () => {
       });
     });
     describe("others", () => {
-      beforeEach(() => {
-        const formData = _.cloneDeep(validSignupData);
-        updateFetchMock([
-          {
-            urlContains: "GetPlayerSummaries",
-            response: {
-              response: {
-                players: formData.players.map((player) => {
-                  return {
-                    steamid: player.steamId,
-                    communityvisibilitystate: 3
-                  };
-                })
-              }
-            } satisfies ISteamUserResponse
-          }
-        ]);
-      });
       afterEach(async () => {
         await cleanupTestUsers();
         await insertTestUsersForSignup();
@@ -685,53 +594,18 @@ describe("Season team registration services", () => {
       await unsetSeasonTeamRegistration();
       await setSeasonTeamRegistration();
       await clearSeasonPlayerRanks();
+      await insertOneTestUser(9999111, "11111111111111111", "App Ranker");
+      await insertOneTestUser(9999112, "11111111111111112", "Faceit Ranker");
+      await insertOneTestUser(9999113, "11111111111111113", "No Ranker");
+      await insertOneTestUser(9999114, "11111111111111114", "CSGO Ranker");
+    });
+    afterEach(async () => {
+      await cleanUpTestUser(9999111);
+      await cleanUpTestUser(9999112);
+      await cleanUpTestUser(9999113);
+      await cleanUpTestUser(9999114);
     });
     it("should fail if a player is missing hours for app_id", async () => {
-      updateFetchMock([
-        {
-          urlContains: "https://api.cs-prod.leetify.com/api/profile/id",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "faceit",
-                elo: 2333,
-                rankType: null,
-                skillLevel: null,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 731,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {}
-          }
-        }
-      ]);
-
       const formData = _.cloneDeep(validSignupData);
       try {
         await registrationServices.addPlayersForTeamInSeason(
@@ -749,34 +623,6 @@ describe("Season team registration services", () => {
       }
     });
     it("should fail if a player is missing either external rank or app id rank", async () => {
-      updateFetchMock([
-        {
-          urlContains: "https://api.cs-prod.leetify.com/api/profile/id",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {}
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
       try {
         await registrationServices.addPlayersForTeamInSeason(
@@ -794,57 +640,8 @@ describe("Season team registration services", () => {
       }
     });
     it("Should pass with average app rank within the last year, and external platform rank not present", async () => {
-      updateFetchMock([
-        {
-          urlContains: "https://api.cs-prod.leetify.com/api/profile/id",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23000,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 21000,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 21000,
-                gameFinishedAt: "2023-12-28T21:14:32.000Z"
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {}
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
+      formData.players[4].steamId = "11111111111111111";
 
       await registrationServices.addPlayersForTeamInSeason(
         seasonDetails.id,
@@ -866,50 +663,6 @@ describe("Season team registration services", () => {
       expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
     });
     it("Should throw error if no rank and no external rank", async () => {
-      updateFetchMock([
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {}
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
 
       try {
@@ -928,77 +681,8 @@ describe("Season team registration services", () => {
       }
     });
     it("Should pass if external platform rank is present but app rank not", async () => {
-      updateFetchMock([
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {
-              cs2: {
-                faceit_elo: "1301",
-                skill_level: "6"
-              }
-            }
-          }
-        },
-        {
-          urlContains: "/stats/cs2",
-          response: {
-            lifetime: {
-              "Average K/D Ratio": "1.35",
-              Matches: 453
-            }
-          }
-        },
-        {
-          urlContains: "/games/cs2/stats",
-          response: {
-            items: [
-              {
-                stats: {
-                  "Created At": 1745078400000
-                }
-              }
-            ]
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
+      formData.players[4].steamId = "11111111111111112";
 
       await registrationServices.addPlayersForTeamInSeason(
         seasonDetails.id,
@@ -1024,58 +708,6 @@ describe("Season team registration services", () => {
       expect(getPlayerRank.faceit_date).toContain(formatted);
     });
     it("Should pass when rank is has been added manually by organizer into database, but hours come from steam", async () => {
-      updateFetchMock([
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "faceit",
-                elo: 2333,
-                rankType: null,
-                skillLevel: null,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {}
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
       const idToRemove = await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
@@ -1108,63 +740,6 @@ describe("Season team registration services", () => {
       ]);
     });
     it("Should pass when rank has been added manually by organizer into database, external rank is null", async () => {
-      updateFetchMock([
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "faceit",
-                elo: 2333,
-                rankType: null,
-                skillLevel: null,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {
-              csgo: {
-                faceit_elo: 1500,
-                skill_level: 24000
-              }
-            }
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
       const idToRemove = await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, faceit_level, faceit_elo, faceit_kd, faceit_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -1205,167 +780,38 @@ describe("Season team registration services", () => {
       ]);
     });
     it("Should fallback to latest old seasons average rank if no current season rank can be determined", async () => {
-      updateFetchMock([
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "faceit",
-                elo: 2333,
-                rankType: null,
-                skillLevel: null,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {}
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
-      const idToRemove2 = await runQuery<{ insertId: number }>(
+      formData.players[4].steamId = "11111111111111113";
+      await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
         [formData.players[4].steamId, 14, 5000]
       );
-      const idToRemove = await runQuery<{ insertId: number }>(
+      await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
         [formData.players[4].steamId, 11, 10000]
       );
 
-      try {
-        await registrationServices.addPlayersForTeamInSeason(
-          seasonDetails.id,
-          seasonDetails.app_id,
-          seasonDetails.platform,
-          formData.teamId,
-          formData.players.map((player) => player.steamId)
-        );
-        const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
-          "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-          [formData.players[4].steamId, seasonDetails.id]
-        );
-        expect(rankForSeason.cs2_rank).toEqual(7500);
-        expect(rankForSeason.cs_hours).toEqual(112);
-        // 5 times for app id rank, 5 times for external rank, 5 times for hours
-        expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
-      } finally {
-        await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
-          idToRemove.insertId
-        ]);
-        await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
-          idToRemove2.insertId
-        ]);
-      }
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        seasonDetails.platform,
+        formData.teamId,
+        formData.players.map((player) => player.steamId)
+      );
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [formData.players[4].steamId, seasonDetails.id]
+      );
+      expect(rankForSeason.cs2_rank).toEqual(7500);
+      expect(rankForSeason.cs_hours).toEqual(112);
+      // 5 times for app id rank, 5 times for external rank, 5 times for hours
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
     });
     it("Should fall back to csgo faceit rank if cs2 faceit rank not present, and apply decay on csgo faceit rank", async () => {
       const faceitReturnEloCsGo = 2700;
       const faceitReturnLevelCsGo = 9;
-      updateFetchMock([
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/1234567890123456",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23430,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains:
-            "https://api.cs-prod.leetify.com/api/profile/id/12345678901234570",
-          response: {
-            games: []
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        },
-        {
-          urlContains: "https://open.faceit.com/data/v4/players?game",
-          response: {
-            player_id: "123",
-            games: {
-              csgo: {
-                faceit_elo: faceitReturnEloCsGo,
-                skill_level: faceitReturnLevelCsGo
-              }
-            }
-          }
-        },
-        {
-          urlContains: "/stats/cs2",
-          response: {
-            lifetime: {
-              "Average K/D Ratio": "1.35",
-              Matches: 453
-            }
-          }
-        },
-        {
-          urlContains: "/games/cs2/stats",
-          response: {
-            items: [
-              {
-                stats: {
-                  "Created At": 1713542400000
-                }
-              }
-            ]
-          }
-        }
-      ]);
       const formData = _.cloneDeep(validSignupData);
+      formData.players[4].steamId = "11111111111111114";
 
       await registrationServices.addPlayersForTeamInSeason(
         seasonDetails.id,
@@ -1633,56 +1079,6 @@ describe("Season team registration services", () => {
         registrationServices,
         "updateCaptainPermissionsForSeasonTeam"
       );
-      updateFetchMock([
-        {
-          urlContains: "GetPlayerSummaries",
-          response: {
-            response: {
-              players: formData.players.map((player) => {
-                return {
-                  steamid: player.steamId,
-                  communityvisibilitystate: 3
-                };
-              })
-            }
-          } satisfies ISteamUserResponse
-        },
-        {
-          urlContains: "https://api.cs-prod.leetify.com/api/profile/id",
-          response: {
-            games: [
-              {
-                isCs2: true,
-                dataSource: "matchmaking",
-                rankType: 11,
-                skillLevel: 23000,
-                gameFinishedAt: new Date().toISOString()
-              },
-              {
-                isCs2: true,
-                dataSource: "faceit",
-                elo: 2333,
-                rankType: null,
-                skillLevel: null,
-                gameFinishedAt: new Date().toISOString()
-              }
-            ]
-          } satisfies LeetifyResponse
-        },
-        {
-          urlContains: "GetOwnedGames",
-          response: {
-            response: {
-              games: [
-                {
-                  appid: 730,
-                  playtime_forever: 6747
-                }
-              ]
-            }
-          } satisfies IPlayerServiceResponse
-        }
-      ]);
 
       await registrationServices.handleSignupFormForSeasonUpdate(
         seasonDetails.id,
@@ -2084,6 +1480,82 @@ describe("Season team registration services", () => {
         expect(spyOnSetPerm).toHaveBeenCalledTimes(1);
         expect(spyOnRemove).toHaveBeenCalledTimes(2);
       });
+    });
+  });
+
+  // NEW TEST SECTION: Edge Cases for "Green Borders but Silent Submit Failure" Issue
+  describe("Edge Cases for Silent Validation Failures", () => {
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration();
+    });
+
+    afterEach(async () => {
+      await cleanupTestUsers();
+      await insertTestUsersForSignup();
+    });
+
+    it("should fail when Steam profile validation detects private profiles", async () => {
+      // Not public profile
+      validSignupData.players[0].steamId = "11111111111111115";
+
+      await expect(
+        registrationServices.ensurePlayerSteamProfilesPublic([
+          validSignupData.players[0].steamId
+        ])
+      ).rejects.toThrow(/not public/);
+    });
+  });
+
+  describe("Comprehensive Integration Tests for Full Signup Flow", () => {
+    beforeEach(async () => {
+      await unsetSeasonTeamRegistration();
+      await clearSeasonPlayerRanks();
+    });
+
+    afterEach(async () => {
+      await cleanupTestUsers();
+      await insertTestUsersForSignup();
+    });
+
+    it("should detect when individual validations pass but submission fails", async () => {
+      const formData = _.cloneDeep(validSignupData);
+
+      // Set up scenario where privacy policy is not accepted (this is checked during validation)
+      await runQuery(
+        "UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ? WHERE account_id = ?",
+        [false, formData.players[2].accountId]
+      );
+
+      await expect(
+        registrationServices.validatePlayersFromDBForSignup(
+          seasonDetails.id,
+          formData.teamId,
+          formData.players.map((p) => p.steamId)
+        )
+      ).rejects.toThrow(/has not accepted privacy policy/);
+    });
+
+    it("should fail when team external ID validation passes but team details are invalid", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      formData.teamId = -1;
+      formData.newTeam = {
+        name: "Test Team"
+      };
+      formData.teamExternalId = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID format
+
+      await expect(
+        registrationServices.handleSignupFormForSeason(seasonDetails, formData)
+      ).rejects.toThrow();
+    });
+
+    it("should validate team organization relationship", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      // Use team that doesn't belong to the organization
+      formData.teamId = 99999; // Non-existent team
+
+      await expect(
+        registrationServices.handleSignupFormForSeason(seasonDetails, formData)
+      ).rejects.toThrow(/Team does not belong to the selected organization/);
     });
   });
 });

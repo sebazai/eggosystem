@@ -1,8 +1,9 @@
 import { endDbConnection } from "./src/db/mysqlConnection";
 import { closeRedis } from "./src/utils/redisClient";
+import { mswServer } from "@eggosystem/shared-msw";
 
 jest.mock("fs", () => {
-  const actualFs = jest.requireActual("fs"); // keep everything else
+  const actualFs = jest.requireActual("fs"); // keep everything elsex
 
   return {
     ...actualFs,
@@ -22,12 +23,29 @@ jest.mock("fs", () => {
   };
 });
 
+beforeAll(() => {
+  // Enable API mocking before all the tests.
+  mswServer.listen({
+    onUnhandledRequest: (request, print) => {
+      if (request.url.includes("127.0.0.1")) {
+        return;
+      }
+      print.warning();
+    }
+  });
+});
+
 beforeEach(() => {
   jest.restoreAllMocks();
   jest.clearAllMocks();
 });
 
+afterEach(() => {
+  mswServer.resetHandlers();
+});
+
 afterAll(async () => {
   await endDbConnection();
   await closeRedis();
+  mswServer.close();
 });
