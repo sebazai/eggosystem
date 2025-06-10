@@ -326,7 +326,7 @@ importers:
         specifier: 7.56.4
         version: 7.56.4(react@19.1.0)
       recharts:
-        specifier: ^2.15.3
+        specifier: 2.15.3
         version: 2.15.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       sonner:
         specifier: 2.0.3
