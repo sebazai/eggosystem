@@ -1,10 +1,15 @@
 import request from "supertest";
 import { app } from "../../../app";
 import { runQuery } from "../../../db/mysqlRunQuery";
+import { redisClient } from "../../../utils/redisClient";
 
 // Mock the database
 jest.mock("../../../db/mysqlRunQuery");
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+
+// Mock Redis
+jest.mock("../../../utils/redisClient");
+const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
 // Mock the logger
 jest.mock("../../../utils/app-logger");
@@ -12,6 +17,11 @@ jest.mock("../../../utils/app-logger");
 describe("POST /api/v1/elo/stabilize", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock Redis operations
+    mockRedisClient.set.mockResolvedValue("OK");
+    mockRedisClient.get.mockResolvedValue(null);
+    mockRedisClient.keys.mockResolvedValue([]);
+    mockRedisClient.mget.mockResolvedValue([]);
   });
 
   it("should stabilize ELO for a player with valid data", async () => {
@@ -35,7 +45,8 @@ describe("POST /api/v1/elo/stabilize", () => {
           rowCount: 150,
           leagueAvgRating: 1.0
         }
-      ]); // League average rating query
+      ]) // League average rating query
+      .mockResolvedValueOnce([{ team_id: 123 }]); // Team lookup query
 
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
@@ -187,7 +198,8 @@ describe("POST /api/v1/elo/stabilize", () => {
           rowCount: 150,
           leagueAvgRating: 1.0
         }
-      ]);
+      ])
+      .mockResolvedValueOnce([{ team_id: 456 }]); // Team lookup query
 
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
