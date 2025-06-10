@@ -215,7 +215,7 @@ export default function SortterPage() {
                     Team
                   </th>
                   <th className="text-left p-2 font-medium text-xs w-32">
-                    Kanapoints (sum 5 / avg4)
+                    kanaelo (sum 5 / avg4)
                   </th>
                   <th className="text-left p-2 font-medium text-xs w-20">
                     League
