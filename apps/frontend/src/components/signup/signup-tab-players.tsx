@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/accordion";
 
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
@@ -80,24 +79,10 @@ export const TabPlayers = ({
   const [openItems, setOpenItems] = useState<string[]>([]);
   const [errorIndices, setErrorIndices] = useState<string[]>([]);
   const [hardCarrySteamId, setHardCarrySteamId] = useState("");
-  const auth = useAuth();
   const { fields, append, remove } = useFieldArray({
     control,
     name: "players"
   });
-
-  useEffect(() => {
-    if (
-      auth.user?.provider === "steam" &&
-      auth.user?.provider_id &&
-      !isEditMode &&
-      !isDraft
-    ) {
-      setValue("players.0.accountId", auth.user.account_id);
-      setValue("players.0.steamId", auth.user.provider_id);
-      setValue("players.0.captain", true);
-    }
-  }, [auth.user, setValue, isEditMode, isDraft]);
 
   // Handle errors from formState.errors.players
   useEffect(() => {
@@ -365,9 +350,6 @@ export const TabPlayers = ({
     <TabsContent value="players">
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Players</h3>
-        <p>
-          By default you are the captain, please remember to select co-captain.
-        </p>
         <Accordion
           type="multiple"
           value={openItems}
