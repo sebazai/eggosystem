@@ -71,67 +71,39 @@ async function assignCaptain(page: Page) {
   const accordionTriggers = page.locator(
     `[data-testid="player-accordion-triggers"]`
   );
-  const triggerCount = await accordionTriggers.count();
 
-  let captainAssigned = false;
-  let coCaptainAssigned = false;
-
-  // Assign captain to first available player
-  for (let i = 0; i < Math.min(triggerCount, 5) && !captainAssigned; i++) {
-    const trigger = accordionTriggers.nth(i);
-    if (await trigger.isVisible()) {
-      await trigger.click();
-
-      const captainCheckbox = page.locator(
-        `[data-testid="captain-checkbox-${i}"]`
-      );
-      if (await captainCheckbox.isVisible()) {
-        const isAlreadyCaptain =
-          await captainCheckbox.getAttribute("aria-checked");
-        if (isAlreadyCaptain !== "true") {
-          await captainCheckbox.click();
-
-          captainAssigned = true;
-        } else {
-          captainAssigned = true;
-        }
+  // Always assign player 0 as captain
+  const trigger0 = accordionTriggers.nth(0);
+  if (await trigger0.isVisible()) {
+    const isOpen = await trigger0.getAttribute("data-state");
+    if (isOpen === "closed") {
+      await trigger0.click();
+    }
+    const captainCheckbox = page.locator(`[data-testid="captain-checkbox-0"]`);
+    if (await captainCheckbox.isVisible()) {
+      const isAlreadyCaptain =
+        await captainCheckbox.getAttribute("aria-checked");
+      if (isAlreadyCaptain !== "true") {
+        await captainCheckbox.click();
       }
     }
   }
 
-  // Assign co-captain to next available player
-  for (let i = 0; i < Math.min(triggerCount, 5) && !coCaptainAssigned; i++) {
-    const trigger = accordionTriggers.nth(i);
-    if (await trigger.isVisible()) {
-      // Expand if not already expanded
-      const isOpen = await trigger.getAttribute("data-state");
-      if (isOpen === "closed") {
-        await trigger.click();
-      }
-      const captainCheckbox = page.locator(
-        `[data-testid="captain-checkbox-${i}"]`
-      );
-      if (await captainCheckbox.isVisible()) {
-        const isAlreadyCaptain =
-          await captainCheckbox.getAttribute("aria-checked");
-        if (isAlreadyCaptain === "true") {
-          continue;
-        }
-      }
-
-      const coCaptainCheckbox = page.locator(
-        `[data-testid="co-captain-checkbox-${i}"]`
-      );
-      if (await coCaptainCheckbox.isVisible()) {
-        const isAlreadyCoCaptain =
-          await coCaptainCheckbox.getAttribute("aria-checked");
-        if (isAlreadyCoCaptain !== "true") {
-          await coCaptainCheckbox.click();
-
-          coCaptainAssigned = true;
-        } else {
-          coCaptainAssigned = true;
-        }
+  // Assign player 1 as co-captain
+  const trigger1 = accordionTriggers.nth(1);
+  if (await trigger1.isVisible()) {
+    const isOpen = await trigger1.getAttribute("data-state");
+    if (isOpen === "closed") {
+      await trigger1.click();
+    }
+    const coCaptainCheckbox = page.locator(
+      `[data-testid="co-captain-checkbox-1"]`
+    );
+    if (await coCaptainCheckbox.isVisible()) {
+      const isAlreadyCoCaptain =
+        await coCaptainCheckbox.getAttribute("aria-checked");
+      if (isAlreadyCoCaptain !== "true") {
+        await coCaptainCheckbox.click();
       }
     }
   }
@@ -1153,8 +1125,8 @@ test.describe("Signup Form", () => {
 
       // Fill in 5 players
       const validPlayers = [
-        "76561197960273207", // account_id 3 - auth user (auto-captain)
-        "76561197960275646", // account_id 5 - approved
+        "76561197960273207", // account_id 3 - auth user (will be captain)
+        "76561197960275646", // account_id 5 - approved (will be co-captain)
         "76561197960283932", // account_id 4 - valid (HEPPAJPG)
         "76561197960265728", // account_id 8 - Hoolyz (from E2E seed)
         "76561197960265740" // account_id 9 - RealPlayer1 (from E2E seed)
@@ -1170,37 +1142,31 @@ test.describe("Signup Form", () => {
       }
 
       // Wait for all validations to complete
+      await page.waitForTimeout(3000);
 
-      // Check for the captain auto-assignment message
-      const captainMessage = page.locator(
-        "text=By default you are the captain"
-      );
-      expect(captainMessage).toBeVisible();
-
-      // Check submit button state
-      const submitButton = page
+      // Check submit button state before assigning roles
+      const submitButtonBefore = page
         .locator('button[type="submit"]')
         .filter({ hasText: /Submit/i });
-      const submitEnabled = await submitButton.isEnabled();
+      await expect(submitButtonBefore).toBeDisabled();
 
-      if (!submitEnabled) {
-        return;
-      }
+      // Check for validation error about missing captain/co-captain
+      const validationError = page.locator(
+        "text=There must be exactly one captain and one co-captain"
+      );
+      await expect(validationError).toBeVisible();
 
-      // Check for validation states and captain/co-captain assignment
+      // Assign captain and co-captain
+      await assignCaptain(page);
 
-      // Check for validation errors that might be present
-      const validationErrors = [
-        "text=There must be exactly one captain and one co-captain",
-        "text=captain and one co-captain",
-        "text=co-captain",
-        '[role="alert"]' // Generic alert/error elements
-      ];
+      // Check submit button state after assigning roles
+      const submitButtonAfter = page
+        .locator('button[type="submit"]')
+        .filter({ hasText: /Submit/i });
+      await expect(submitButtonAfter).toBeEnabled();
 
-      for (const errorSelector of validationErrors) {
-        const errorElement = page.locator(errorSelector).first(); // Use .first() to avoid strict mode violations
-        expect(errorElement).toBeVisible();
-      }
+      // Validation error should be gone
+      await expect(validationError).not.toBeVisible();
     });
   });
 
@@ -1244,8 +1210,8 @@ test.describe("Signup Form", () => {
 
     // Fill in 5 players
     const validPlayers = [
-      "76561197960273207", // account_id 3 - auth user (auto-captain)
-      "76561197960275646", // account_id 5 - approved
+      "76561197960273207", // account_id 3 - auth user (will be captain)
+      "76561197960275646", // account_id 5 - approved (will be co-captain)
       "76561197960283932", // account_id 4 - valid (HEPPAJPG)
       "76561197960265728", // account_id 8 - Hoolyz (from E2E seed)
       "76561197960265740" // account_id 9 - RealPlayer1 (from E2E seed)
@@ -1259,35 +1225,31 @@ test.describe("Signup Form", () => {
     }
 
     // Wait for all validations to complete
+    await page.waitForTimeout(3000);
 
-    // Check for the captain auto-assignment message
-    const captainMessage = page.locator("text=By default you are the captain");
-    expect(captainMessage).toBeVisible();
-
-    // Check submit button state
-    const submitButton = page
+    // Check submit button state before assigning roles
+    const submitButtonBefore = page
       .locator('button[type="submit"]')
       .filter({ hasText: /Submit/i });
-    const submitEnabled = await submitButton.isEnabled();
+    await expect(submitButtonBefore).toBeDisabled();
 
-    if (!submitEnabled) {
-      return;
-    }
+    // Check for validation error about missing captain/co-captain
+    const validationError = page.locator(
+      "text=There must be exactly one captain and one co-captain"
+    );
+    await expect(validationError).toBeVisible();
 
-    // Check for validation states and captain/co-captain assignment
+    // Assign captain and co-captain
+    await assignCaptain(page);
 
-    // Check for validation errors that might be present
-    const validationErrors = [
-      "text=There must be exactly one captain and one co-captain",
-      "text=captain and one co-captain",
-      "text=co-captain",
-      '[role="alert"]' // Generic alert/error elements
-    ];
+    // Check submit button state after assigning roles
+    const submitButtonAfter = page
+      .locator('button[type="submit"]')
+      .filter({ hasText: /Submit/i });
+    await expect(submitButtonAfter).toBeEnabled();
 
-    for (const errorSelector of validationErrors) {
-      const errorElement = page.locator(errorSelector).first(); // Use .first() to avoid strict mode violations
-      expect(errorElement).toBeVisible();
-    }
+    // Validation error should be gone
+    await expect(validationError).not.toBeVisible();
   });
 
   // NEW TEST BLOCKS FOR MISSING SCENARIOS
