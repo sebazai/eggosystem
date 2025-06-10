@@ -206,24 +206,24 @@ export default function SortterPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full table-fixed text-sm">
+          <div className="rounded-md border">
+            <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr className="border-b">
-                  <th className="text-left p-2 font-medium text-xs w-10">ID</th>
-                  <th className="text-left p-2 font-medium text-xs w-48">
+                  <th className="text-left p-2 font-medium text-xs w-16">ID</th>
+                  <th className="text-left p-2 font-medium text-xs w-44">
                     Team
                   </th>
-                  <th className="text-left p-2 font-medium text-xs w-28">
-                    Kanapoints
+                  <th className="text-left p-2 font-medium text-xs w-32">
+                    Kanapoints (sum 5 / avg4)
                   </th>
-                  <th className="text-left p-2 font-medium text-xs w-16">
+                  <th className="text-left p-2 font-medium text-xs w-20">
                     League
                   </th>
-                  <th className="text-left p-2 font-medium text-xs w-88">
+                  <th className="text-center p-2 font-medium text-xs w-96">
                     Graph
                   </th>
-                  <th className="text-left p-2 font-medium text-xs w-[500px]">
+                  <th className="text-left p-2 font-medium text-xs w-96">
                     Comments
                   </th>
                 </tr>
@@ -256,7 +256,7 @@ export default function SortterPage() {
                         onChange={(e) =>
                           handleCommentChange(team.id, e.target.value)
                         }
-                        className="text-xs bg-background/80 w-[480px] h-[192px] resize-none overflow-hidden"
+                        className="text-xs bg-background/80 w-[360px] h-[192px] resize-none overflow-hidden"
                       />
                     </td>
                   </tr>
