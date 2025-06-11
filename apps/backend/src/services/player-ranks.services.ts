@@ -145,57 +145,35 @@ const getRankFromDatabaseFallback = async (
 ): Promise<CS2LeetifyAvgRank | null> => {
   logger.info(`[Rank] Trying database fallback for steam_id: ${steam_id}`);
 
+  // Fetch only 6 months old ranks, rank_updated_at
   const result = await runQuery<
     Array<{
       cs2_rank: SeasonPlayerRank["cs2_rank"];
       rank_updated_at: SeasonPlayerRank["rank_updated_at"];
     }>
   >(
-    "SELECT cs2_rank, rank_updated_at FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC",
+    `SELECT cs2_rank, rank_updated_at
+      FROM SeasonPlayerRanks
+      WHERE steam_id = ? AND rank_updated_at > DATE_SUB(NOW(), INTERVAL 8 MONTH)
+      ORDER BY season_id DESC LIMIT 1`,
     [steam_id]
   );
 
-  if (!_.isEmpty(result)) {
-    const cs2RanksInKanaliiga = result
-      .filter(
-        (
-          rank
-        ): rank is {
-          cs2_rank: number;
-          rank_updated_at: SeasonPlayerRank["rank_updated_at"];
-        } => rank.cs2_rank !== null && rank.cs2_rank > 0
-      )
-      .sort((a, b) => {
-        if (a.rank_updated_at === null) return 1;
-        if (b.rank_updated_at === null) return -1;
-
-        return (
-          new Date(b.rank_updated_at).getTime() -
-          new Date(a.rank_updated_at).getTime()
-        );
-      });
-
-    if (cs2RanksInKanaliiga.length > 0) {
-      const totalSkillLevel = cs2RanksInKanaliiga.reduce(
-        (sum, g) => sum + g.cs2_rank,
-        0
-      );
-
-      const averageSkillLevel = totalSkillLevel / cs2RanksInKanaliiga.length;
-      const data = {
-        average_rank: Math.round(averageSkillLevel),
-        rank_updated_at: cs2RanksInKanaliiga[0].rank_updated_at
-      } satisfies CS2LeetifyAvgRank;
-
-      await cacheRankData(steam_id, data);
-      logger.info(
-        `[Rank] Found fallback rank for steam_id: ${steam_id} - rank: ${data.average_rank}`
-      );
-      return data;
-    }
+  const firstEntry = result[0];
+  if (!firstEntry || !firstEntry.cs2_rank) {
+    return null;
   }
 
-  return null;
+  const data = {
+    average_rank: firstEntry.cs2_rank,
+    rank_updated_at: firstEntry.rank_updated_at
+  } satisfies CS2LeetifyAvgRank;
+
+  await cacheRankData(steam_id, data);
+  logger.info(
+    `[Rank] Found fallback rank for steam_id: ${steam_id} - rank: ${data.average_rank}, updated at: ${data.rank_updated_at}`
+  );
+  return data;
 };
 
 /**
