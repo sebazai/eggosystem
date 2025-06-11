@@ -166,3 +166,7 @@ export function filterParamsToSearchParams(
 export const convertSeasonToS = (season: string) => {
   return season.replace("Season ", "S");
 };
+
+export const isValidSteamId = (steamId: string) => {
+  return /^[0-9]{17}$/.test(steamId);
+};

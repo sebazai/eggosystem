@@ -102,13 +102,22 @@ export const SignupForm = ({
   );
 
   const isEditMode = !!editValues;
-  const isDraftMode = !!draft;
 
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: editValues ?? draft ?? defaultValues,
     mode: "onTouched"
   });
+
+  const prefilledPlayerSteamIds = useMemo(() => {
+    if (editValues) {
+      return editValues.players.map((p) => p.steamId);
+    }
+    if (draft) {
+      return draft.players.map((p) => p.steamId);
+    }
+    return [];
+  }, [editValues, draft]);
 
   const { control, setValue, resetField, watch } = form;
 
@@ -429,9 +438,8 @@ export const SignupForm = ({
                 seasonSteamAppId={seasonDetails.app_id}
                 platform={seasonDetails.platform}
                 seasonId={seasonId}
-                isEditMode={isEditMode}
-                isDraft={isDraftMode}
                 validCaptainSelection={validCaptainSelection}
+                prefilledPlayerSteamIds={prefilledPlayerSteamIds}
               />
             </Tabs>
 

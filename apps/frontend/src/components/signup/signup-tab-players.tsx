@@ -17,7 +17,7 @@ import {
   type UseFormSetValue,
   type UseFormWatch
 } from "react-hook-form";
-import { cn, createNextUrl } from "@/lib/utils";
+import { cn, createNextUrl, isValidSteamId } from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -25,7 +25,7 @@ import {
   AccordionContent
 } from "@/components/ui/accordion";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import Image from "next/image";
@@ -34,7 +34,8 @@ import type {
   FaceITCSRank,
   Game,
   PlayerDetailsBySteamId,
-  SignupFormValues
+  SignupFormValues,
+  SignupPlayerType
 } from "@eggosystem/types";
 import { playerSchema, SeasonPlatform } from "@eggosystem/types";
 import { AlertTriangle, TriangleAlert } from "lucide-react";
@@ -54,9 +55,8 @@ interface TabPlayersProps {
   seasonSteamAppId: Game["app_id"];
   platform: SeasonPlatform;
   seasonId: string;
-  isEditMode: boolean;
-  isDraft: boolean;
   validCaptainSelection: boolean;
+  prefilledPlayerSteamIds: string[];
 }
 
 export const TabPlayers = ({
@@ -68,9 +68,8 @@ export const TabPlayers = ({
   seasonSteamAppId,
   platform,
   seasonId,
-  isEditMode,
-  isDraft,
-  validCaptainSelection
+  validCaptainSelection,
+  prefilledPlayerSteamIds
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
@@ -98,13 +97,186 @@ export const TabPlayers = ({
 
   const watchPlayers = useWatch({ control, name: "players" });
   const watchTeamId = useWatch({ control, name: "teamId" });
-
   const steamIds = watchPlayers.map((p) => p.steamId);
+
+  const handlePlayer = useCallback(
+    async (steam_id: string | number, index: number) => {
+      const steamId = String(steam_id);
+      if (!isValidSteamId(steamId)) {
+        return;
+      }
+      try {
+        setLoadingStates((prev) => ({ ...prev, [index]: true }));
+
+        const promises = await Promise.allSettled([
+          clientApiFetch<{
+            hours: number;
+          }>(
+            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
+          ),
+          clientApiFetch<CS2LeetifyAvgRank>(
+            `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
+          ),
+          clientApiFetch<unknown>(
+            `/api/v1/players/${steam_id}/platform/${platform}/rank?season_id=${seasonId}`
+          ),
+          clientApiFetch<PlayerDetailsBySteamId>(
+            `/api/v1/players/${steam_id}/details`
+          )
+        ]);
+
+        const [hoursData, rankData, externalRankData, playerData] = promises;
+
+        if (hoursData.status === "fulfilled" && hoursData.value.hours >= 0) {
+          setValue(`players.${index}.hours`, hoursData.value.hours);
+        } else {
+          setValue(`players.${index}.hours`, -1);
+        }
+
+        if (
+          rankData.status === "fulfilled" &&
+          rankData.value.average_rank >= 0
+        ) {
+          setValue(`players.${index}.rank`, rankData.value.average_rank);
+        } else {
+          setValue(`players.${index}.hours`, -1);
+        }
+
+        if (externalRankData.status === "fulfilled") {
+          switch (platform) {
+            case SeasonPlatform.FACEIT:
+              setValue(
+                `players.${index}.externalRank`,
+                (externalRankData.value as FaceITCSRank).faceit_level
+              );
+          }
+        } else {
+          setValue(`players.${index}.externalRank`, -1);
+        }
+
+        if (playerData.status === "fulfilled") {
+          setValue(`players.${index}.accountId`, playerData.value.account_id);
+          const data = playerData.value;
+          const hasValidDataBool = Boolean(
+            data.is_valid_full_name && data.has_accepted_latest_privacy_policy
+          );
+          setValue(`players.${index}.hasValidData`, hasValidDataBool);
+
+          const isEmailVerified = Boolean(data.work_email_verified);
+          setValue(`players.${index}.isEmailVerified`, isEmailVerified);
+
+          const isValidWorkEmail = Boolean(data.is_valid_work_email);
+          setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
+
+          if (!isValidWorkEmail) {
+            // Check if organizer has approved manually
+            if (watchTeamId) {
+              const approvedByOrganizer = await clientApiFetch<{
+                employment_approved_by_organizer: boolean;
+              }>(
+                `/api/v1/registrations/season/${seasonId}/team/${watchTeamId}/player/${steam_id}/approved-manually`
+              );
+
+              setValue(
+                `players.${index}.hasValidWorkEmail`,
+                approvedByOrganizer.employment_approved_by_organizer
+              );
+            }
+          }
+
+          if (data.nickname)
+            setValue(`players.${index}.nickname`, data.nickname);
+          if (data.discord) setValue(`players.${index}.discord`, data.discord);
+        } else {
+          if (playerData.reason instanceof ApiError) {
+            if (playerData.reason.status === 404)
+              setNewPlayers((prev) => [...prev, steamId]);
+          }
+        }
+
+        const errorReasonsMessage: string[] = [];
+        promises.forEach((promise) => {
+          if (promise.status === "rejected") {
+            errorReasonsMessage.push(
+              promise.reason instanceof ApiError
+                ? promise.reason.message
+                : "Unknown error"
+            );
+          }
+        });
+
+        setPromiseErrors((prev) => {
+          if (errorReasonsMessage.length > 0) {
+            return {
+              ...prev,
+              [steam_id]: errorReasonsMessage
+            };
+          }
+          return prev;
+        });
+
+        setLoadingStates((prev) => ({ ...prev, [index]: false }));
+      } catch (error) {
+        setPromiseErrors((prev) => ({
+          ...prev,
+          [steam_id]:
+            error instanceof ApiError ? [error.message] : ["Unknown error"]
+        }));
+        setLoadingStates((prev) => ({ ...prev, [index]: false }));
+      }
+    },
+    [platform, seasonId, seasonSteamAppId, setValue, watchTeamId]
+  );
+
+  // Add useEffect for initial data fetching if we receive steamIds from edit mode or draft
+  useEffect(() => {
+    const fetchInitialPlayerData = async () => {
+      const validSteamIds = prefilledPlayerSteamIds.filter(
+        (id) => isValidSteamId(id) && !prefilledPlayerSteamIds.includes(id)
+      );
+
+      if (validSteamIds.length > 0) {
+        await Promise.allSettled(
+          validSteamIds.map((steamId, index) => handlePlayer(steamId, index))
+        );
+      }
+    };
+
+    fetchInitialPlayerData();
+  }, [handlePlayer, prefilledPlayerSteamIds]);
 
   const [loadingStates, setLoadingStates] = useState<
     Record<number, boolean | undefined>
   >({});
-  const prevWatchedSteamIds = useRef(isEditMode || isDraft ? [] : steamIds);
+
+  const clearValuesForIndex = (index: number) => {
+    resetField(`players.${index}.nickname`);
+    resetField(`players.${index}.discord`);
+    setValue(`players.${index}.hasValidData`, undefined);
+    setValue(`players.${index}.hasValidWorkEmail`, undefined);
+    setValue(`players.${index}.isEmailVerified`, undefined);
+    setValue(`players.${index}.hours`, undefined);
+    setValue(`players.${index}.rank`, undefined);
+    setValue(`players.${index}.externalRank`, undefined);
+    setLoadingStates((prev) => ({
+      ...prev,
+      [index]: undefined
+    }));
+  };
+
+  const playerHasErrors = (player: SignupPlayerType, isDuplicate?: boolean) => {
+    const error =
+      isValidSteamId(player.steamId) &&
+      (playerSchema.safeParse(player).success === false ||
+        !!isDuplicate ||
+        player.hasValidData !== true ||
+        player.hasValidWorkEmail !== true ||
+        player.isEmailVerified !== true ||
+        player.hours === -1 ||
+        (player.rank === -1 && player.externalRank === -1));
+    return error;
+  };
+
   // Open accordions if any errors
   useEffect(() => {
     const errorIndices: string[] = [];
@@ -118,15 +290,7 @@ export const TabPlayers = ({
         continue;
       }
 
-      const error =
-        player.steamId.length === 17 &&
-        (playerSchema.safeParse(player).success === false ||
-          isDuplicate ||
-          player.hasValidData !== true ||
-          player.hasValidWorkEmail !== true ||
-          player.isEmailVerified !== true ||
-          player.hours === -1 ||
-          (player.rank === -1 && player.externalRank === -1));
+      const error = playerHasErrors(player, isDuplicate);
 
       if (error && !loadingStates[index]) {
         errorIndices.push(`player-${index}`);
@@ -139,6 +303,7 @@ export const TabPlayers = ({
     setErrorIndices(errorIndices);
   }, [loadingStates, watchPlayers]);
 
+  // Hard carry detection
   useEffect(() => {
     if (watchPlayers.length >= 5) {
       const validRanks = watchPlayers
@@ -178,171 +343,28 @@ export const TabPlayers = ({
     }
   }, [watchPlayers]);
 
-  useEffect(() => {
-    const handlePlayer = async (steam_id: string | number, index: number) => {
-      try {
-        const steamId = String(steam_id);
-        if (
-          steamId.length === 17 &&
-          !isNaN(Number(steamId)) &&
-          !prevWatchedSteamIds.current.includes(steamId)
-        ) {
-          setLoadingStates((prev) => ({ ...prev, [index]: true }));
-
-          // Fetch player hours, rank and platform rank first, as they should not return error
-          const promises = await Promise.allSettled([
-            clientApiFetch<{
-              hours: number;
-            }>(
-              `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/hours?season_id=${seasonId}`
-            ),
-            clientApiFetch<CS2LeetifyAvgRank>(
-              `/api/v1/players/${steam_id}/app/${seasonSteamAppId}/rank?season_id=${seasonId}`
-            ),
-            clientApiFetch<unknown>(
-              `/api/v1/players/${steam_id}/platform/${platform}/rank?season_id=${seasonId}`
-            ),
-            clientApiFetch<PlayerDetailsBySteamId>(
-              `/api/v1/players/${steam_id}/details`
-            )
-          ]);
-
-          const [hoursData, rankData, externalRankData, playerData] = promises;
-
-          if (hoursData.status === "fulfilled" && hoursData.value.hours >= 0) {
-            setValue(`players.${index}.hours`, hoursData.value.hours);
-          } else {
-            setValue(`players.${index}.hours`, -1);
-          }
-
-          if (
-            rankData.status === "fulfilled" &&
-            rankData.value.average_rank >= 0
-          ) {
-            setValue(`players.${index}.rank`, rankData.value.average_rank);
-          } else {
-            setValue(`players.${index}.hours`, -1);
-          }
-
-          if (externalRankData.status === "fulfilled") {
-            switch (platform) {
-              case SeasonPlatform.FACEIT:
-                setValue(
-                  `players.${index}.externalRank`,
-                  (externalRankData.value as FaceITCSRank).faceit_level
-                );
-            }
-          } else {
-            setValue(`players.${index}.externalRank`, -1);
-          }
-
-          if (playerData.status === "fulfilled") {
-            setValue(`players.${index}.accountId`, playerData.value.account_id);
-            const data = playerData.value;
-            const hasValidDataBool = Boolean(
-              data.is_valid_full_name && data.has_accepted_latest_privacy_policy
-            );
-            setValue(`players.${index}.hasValidData`, hasValidDataBool);
-
-            const isEmailVerified = Boolean(data.work_email_verified);
-            setValue(`players.${index}.isEmailVerified`, isEmailVerified);
-
-            const isValidWorkEmail = Boolean(data.is_valid_work_email);
-            setValue(`players.${index}.hasValidWorkEmail`, isValidWorkEmail);
-
-            if (!isValidWorkEmail) {
-              // Check if organizer has approved manually
-              if (watchTeamId) {
-                const approvedByOrganizer = await clientApiFetch<{
-                  employment_approved_by_organizer: boolean;
-                }>(
-                  `/api/v1/registrations/season/${seasonId}/team/${watchTeamId}/player/${steam_id}/approved-manually`
-                );
-
-                setValue(
-                  `players.${index}.hasValidWorkEmail`,
-                  approvedByOrganizer.employment_approved_by_organizer
-                );
-              }
-            }
-
-            if (data.nickname)
-              setValue(`players.${index}.nickname`, data.nickname);
-            if (data.discord)
-              setValue(`players.${index}.discord`, data.discord);
-          } else {
-            if (playerData.reason instanceof ApiError) {
-              if (playerData.reason.status === 404)
-                setNewPlayers((prev) => [...prev, steamId]);
-            }
-          }
-
-          const errorReasonsMessage: string[] = [];
-          promises.forEach((promise) => {
-            if (promise.status === "rejected") {
-              errorReasonsMessage.push(
-                promise.reason instanceof ApiError
-                  ? promise.reason.message
-                  : "Unknown error"
-              );
-            }
-          });
-
-          setPromiseErrors((prev) => {
-            if (errorReasonsMessage.length > 0) {
-              return {
-                ...prev,
-                [steam_id]: errorReasonsMessage
-              };
-            }
-            return prev;
-          });
-
-          setLoadingStates((prev) => ({ ...prev, [index]: false }));
-        }
-      } catch (error) {
-        setPromiseErrors((prev) => ({
-          ...prev,
-          [steam_id]:
-            error instanceof ApiError ? [error.message] : ["Unknown error"]
-        }));
-        setLoadingStates((prev) => ({ ...prev, [index]: false }));
-        throw error;
-      }
-    };
-
-    const checkPlayers = async (steamIds: string[]) => {
-      await Promise.allSettled(
-        steamIds.map((steamId, index) => handlePlayer(steamId, index))
-      );
-    };
-
-    checkPlayers(steamIds);
-    prevWatchedSteamIds.current = steamIds;
-  }, [platform, seasonId, seasonSteamAppId, setValue, steamIds, watchTeamId]);
-
-  const onCapitanChange = (
+  const onCaptainChange = (
     checked: CheckedState,
     index: number,
-    capitanType: "captain" | "coCaptain"
+    captainType: "captain" | "coCaptain"
   ) => {
     const isOtherCapitan = watch(
-      `players.${index}.${capitanType === "captain" ? "coCaptain" : "captain"}`
+      `players.${index}.${captainType === "captain" ? "coCaptain" : "captain"}`
     );
     if (checked) {
       if (isOtherCapitan) {
         setValue(
-          `players.${index}.${capitanType === "captain" ? "coCaptain" : "captain"}`,
+          `players.${index}.${captainType === "captain" ? "coCaptain" : "captain"}`,
           false
         );
       }
       // Uncheck other captains
       watchPlayers.forEach((_, i) => {
-        if (i !== index) setValue(`players.${i}.${capitanType}`, false);
+        if (i !== index) setValue(`players.${i}.${captainType}`, false);
       });
-      setValue(`players.${index}.${capitanType}`, true);
+      setValue(`players.${index}.${captainType}`, true);
     } else {
-      setValue(`players.${index}.${capitanType}`, false);
+      setValue(`players.${index}.${captainType}`, false);
     }
   };
 
@@ -421,30 +443,14 @@ export const TabPlayers = ({
                                 const newValue = e.target.value;
                                 const oldValue = field.value;
                                 if (newValue !== oldValue) {
-                                  resetField(`players.${index}.nickname`);
-                                  resetField(`players.${index}.discord`);
-                                  setValue(
-                                    `players.${index}.hasValidData`,
-                                    undefined
-                                  );
-                                  setValue(
-                                    `players.${index}.hasValidWorkEmail`,
-                                    undefined
-                                  );
-                                  setValue(
-                                    `players.${index}.isEmailVerified`,
-                                    undefined
-                                  );
-                                  setValue(`players.${index}.hours`, undefined);
-                                  setValue(`players.${index}.rank`, undefined);
-                                  setValue(
-                                    `players.${index}.externalRank`,
-                                    undefined
-                                  );
-                                  setLoadingStates((prev) => ({
-                                    ...prev,
-                                    [index]: undefined
-                                  }));
+                                  clearValuesForIndex(index);
+
+                                  if (
+                                    isValidSteamId(newValue) &&
+                                    !steamIds.includes(newValue)
+                                  ) {
+                                    handlePlayer(newValue, index);
+                                  }
                                 }
                                 field.onChange(e);
                               }}
@@ -512,7 +518,7 @@ export const TabPlayers = ({
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={(checked) =>
-                                onCapitanChange(checked, index, "captain")
+                                onCaptainChange(checked, index, "captain")
                               }
                               disabled={
                                 player.hasValidData === undefined &&
@@ -536,7 +542,7 @@ export const TabPlayers = ({
                             <Checkbox
                               checked={field.value}
                               onCheckedChange={(checked) =>
-                                onCapitanChange(checked, index, "coCaptain")
+                                onCaptainChange(checked, index, "coCaptain")
                               }
                               disabled={
                                 player.hasValidData === undefined &&
@@ -698,9 +704,8 @@ export const TabPlayers = ({
                       </SignupPlayerNotification>
                     )}
 
-                  {prevWatchedSteamIds.current.filter(
-                    (id) => !!id && id === player.steamId
-                  ).length > 1 && (
+                  {steamIds.filter((id) => !!id && id === player.steamId)
+                    .length > 1 && (
                     <div className="text-yellow-500 text-xs flex gap-2 items-center py-1">
                       <TriangleAlert className="h-4 w-4" /> Duplicate steam id
                       detected
