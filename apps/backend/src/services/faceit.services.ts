@@ -164,6 +164,12 @@ const getFaceITMetaData = async (
 
     clearAbortTimeout();
 
+    const numKdr = Number(kdr);
+    const numMatchesPlayed = Number(matches_played);
+    if (isNaN(numKdr) || isNaN(numMatchesPlayed)) {
+      return null;
+    }
+
     return {
       faceit_kdr: Number(kdr),
       faceit_matches_played: Number(matches_played),
@@ -176,30 +182,37 @@ const getFaceITMetaData = async (
       error
     );
 
-    // Return fallback data
-    return {
-      faceit_kdr: 1 / 1.05
-    };
+    return null;
   }
 };
+
+const fallbackFaceITRank = {
+  faceit_level: -1,
+  faceit_elo: -1,
+  faceit_kd: -1,
+  faceit_date: new Date().getTime(),
+  metadata: {
+    faceit_matches_played: undefined,
+    faceit_last_match: undefined,
+    faceit_decay: false
+  }
+} satisfies FaceITCSRank;
 
 const getFaceITCSGORank = async (steam_id: string) => {
   const data = await getFaceITGameRank(steam_id, "csgo");
   if (!data) {
-    // Fallback to defaults
-    return {
-      faceit_level: -1,
-      faceit_elo: -1,
-      faceit_kd: -1,
-      faceit_date: new Date().getTime(),
-      metadata: {
-        faceit_matches_played: undefined,
-        faceit_last_match: undefined,
-        faceit_decay: false
-      }
-    } satisfies FaceITCSRank;
+    logger.warn(`[FaceIT] Failed to fetch CSGO rank for player ${steam_id}`);
+    return fallbackFaceITRank;
   }
-  const faceit_metadata = await getFaceITMetaData(data.player_id);
+
+  const faceit_metadata = await getFaceITMetaData(data.player_id, "csgo");
+  if (!faceit_metadata) {
+    logger.warn(
+      `[FaceIT] Failed to fetch CSGO metadata for player ${steam_id}`
+    );
+    return fallbackFaceITRank;
+  }
+
   const decayedRank = applyDecay(
     "rank",
     data.rank,
@@ -212,6 +225,7 @@ const getFaceITCSGORank = async (steam_id: string) => {
     1150,
     faceit_metadata.faceit_last_match
   );
+
   const returnData = {
     faceit_level: decayedRank,
     faceit_elo: decayedElo,
@@ -272,15 +286,18 @@ export const getFaceITCS2Rank = async (
     );
     return csgoFaceItRank;
   }
-  const faceit_metadata = await getFaceITMetaData(faceitRanks.player_id);
+
+  const faceit_metadata = await getFaceITMetaData(faceitRanks.player_id, "cs2");
+
+  // If we get CS2 rank and elo, we use those and return a fallback metadata
   const returnData = {
     faceit_level: faceitRanks.rank,
     faceit_elo: faceitRanks.elo,
-    faceit_kd: faceit_metadata.faceit_kdr,
+    faceit_kd: faceit_metadata?.faceit_kdr ?? 1.05,
     faceit_date: new Date().getTime(),
     metadata: {
-      faceit_matches_played: faceit_metadata.faceit_matches_played,
-      faceit_last_match: faceit_metadata.faceit_last_match,
+      faceit_matches_played: faceit_metadata?.faceit_matches_played,
+      faceit_last_match: faceit_metadata?.faceit_last_match,
       faceit_decay: false
     }
   } satisfies FaceITCSRank;
