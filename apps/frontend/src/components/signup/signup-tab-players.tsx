@@ -105,6 +105,9 @@ export const TabPlayers = ({
       if (!isValidSteamId(steamId)) {
         return;
       }
+
+      const errorReasonsMessage: string[] = [];
+
       try {
         setLoadingStates((prev) => ({ ...prev, [index]: true }));
 
@@ -127,19 +130,32 @@ export const TabPlayers = ({
 
         const [hoursData, rankData, externalRankData, playerData] = promises;
 
-        if (hoursData.status === "fulfilled" && hoursData.value.hours >= 0) {
-          setValue(`players.${index}.hours`, hoursData.value.hours);
+        if (hoursData.status === "fulfilled") {
+          setValue(
+            `players.${index}.hours`,
+            hoursData.value.hours > 0 ? hoursData.value.hours : -1
+          );
         } else {
           setValue(`players.${index}.hours`, -1);
+          errorReasonsMessage.push(
+            hoursData.reason instanceof ApiError
+              ? hoursData.reason.message
+              : "Unknown error fetching hours data"
+          );
         }
 
-        if (
-          rankData.status === "fulfilled" &&
-          rankData.value.average_rank >= 0
-        ) {
-          setValue(`players.${index}.rank`, rankData.value.average_rank);
+        if (rankData.status === "fulfilled") {
+          setValue(
+            `players.${index}.rank`,
+            rankData.value.average_rank > 0 ? rankData.value.average_rank : -1
+          );
         } else {
           setValue(`players.${index}.rank`, -1);
+          errorReasonsMessage.push(
+            rankData.reason instanceof ApiError
+              ? rankData.reason.message
+              : "Unknown error fetching rank data"
+          );
         }
 
         if (externalRankData.status === "fulfilled") {
@@ -152,6 +168,11 @@ export const TabPlayers = ({
           }
         } else {
           setValue(`players.${index}.externalRank`, -1);
+          errorReasonsMessage.push(
+            externalRankData.reason instanceof ApiError
+              ? externalRankData.reason.message
+              : "Unknown error fetching external rank data"
+          );
         }
 
         if (playerData.status === "fulfilled") {
@@ -189,32 +210,25 @@ export const TabPlayers = ({
           if (data.discord) setValue(`players.${index}.discord`, data.discord);
         } else {
           if (playerData.reason instanceof ApiError) {
-            if (playerData.reason.status === 404)
+            if (playerData.reason.status === 404) {
+              setLoadingStates((prev) => ({ ...prev, [index]: false }));
               setNewPlayers((prev) => [...prev, steamId]);
+            } else {
+              errorReasonsMessage.push(playerData.reason.message);
+            }
+          } else {
+            errorReasonsMessage.push("Unknown error fetching player data");
           }
         }
 
-        const errorReasonsMessage: string[] = [];
-        promises.forEach((promise) => {
-          if (promise.status === "rejected") {
-            errorReasonsMessage.push(
-              promise.reason instanceof ApiError
-                ? promise.reason.message
-                : "Unknown error"
-            );
-          }
-        });
-
-        setPromiseErrors((prev) => {
-          if (errorReasonsMessage.length > 0) {
+        if (errorReasonsMessage.length > 0) {
+          setPromiseErrors((prev) => {
             return {
               ...prev,
               [steam_id]: errorReasonsMessage
             };
-          }
-          return prev;
-        });
-
+          });
+        }
         setLoadingStates((prev) => ({ ...prev, [index]: false }));
       } catch (error) {
         setPromiseErrors((prev) => ({
@@ -389,6 +403,10 @@ export const TabPlayers = ({
               playerErrorIndices.includes(index.toString()) ||
               errorIndices.includes(`player-${index.toString()}`);
 
+            const isNewPlayer =
+              newPlayers.includes(player.steamId) &&
+              player.hasValidData === undefined;
+
             const isEmptySteamId = player.steamId === "";
             return (
               <AccordionItem
@@ -522,10 +540,7 @@ export const TabPlayers = ({
                               onCheckedChange={(checked) =>
                                 onCaptainChange(checked, index, "captain")
                               }
-                              disabled={
-                                player.hasValidData === undefined &&
-                                newPlayers.includes(player.steamId)
-                              }
+                              disabled={isNewPlayer}
                               data-testid={`captain-checkbox-${index}`}
                             />
                           </FormControl>
@@ -546,10 +561,7 @@ export const TabPlayers = ({
                               onCheckedChange={(checked) =>
                                 onCaptainChange(checked, index, "coCaptain")
                               }
-                              disabled={
-                                player.hasValidData === undefined &&
-                                newPlayers.includes(player.steamId)
-                              }
+                              disabled={isNewPlayer}
                               data-testid={`co-captain-checkbox-${index}`}
                             />
                           </FormControl>
@@ -635,12 +647,12 @@ export const TabPlayers = ({
                       {`Note: Player is Hard carry for the team - make sure he plays all games`}
                     </SignupPlayerNotification>
                   )}
-                  {player.hasValidData === undefined &&
-                    newPlayers.includes(player.steamId) && (
-                      <SignupPlayerNotification type="warning">
-                        A new player, perhaps. To Kanahub, login you must.
-                      </SignupPlayerNotification>
-                    )}
+
+                  {isNewPlayer && (
+                    <SignupPlayerNotification type="warning">
+                      A new player, perhaps. To Kanahub, login you must.
+                    </SignupPlayerNotification>
+                  )}
 
                   {player.hasValidData === false && (
                     <SignupPlayerNotification
