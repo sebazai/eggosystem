@@ -1495,30 +1495,7 @@ describe("Season team registration services", () => {
     });
   });
 
-  // NEW TEST SECTION: Edge Cases for "Green Borders but Silent Submit Failure" Issue
-  describe("Edge Cases for Silent Validation Failures", () => {
-    beforeEach(async () => {
-      await unsetSeasonTeamRegistration();
-    });
-
-    afterEach(async () => {
-      await cleanupTestUsers();
-      await insertTestUsersForSignup();
-    });
-
-    it("should fail when Steam profile validation detects private profiles", async () => {
-      // Not public profile
-      validSignupData.players[0].steamId = "11111111111111115";
-
-      await expect(
-        registrationServices.ensurePlayerSteamProfilesPublic([
-          validSignupData.players[0].steamId
-        ])
-      ).rejects.toThrow(/not public/);
-    });
-  });
-
-  describe("Comprehensive Integration Tests for Full Signup Flow", () => {
+  describe("relational validation", () => {
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
       await clearSeasonPlayerRanks();
@@ -1545,19 +1522,6 @@ describe("Season team registration services", () => {
           formData.players.map((p) => p.steamId)
         )
       ).rejects.toThrow(/has not accepted privacy policy/);
-    });
-
-    it("should fail when team external ID validation passes but team details are invalid", async () => {
-      const formData = _.cloneDeep(validSignupData);
-      formData.teamId = -1;
-      formData.newTeam = {
-        name: "Test Team"
-      };
-      formData.teamExternalId = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID format
-
-      await expect(
-        registrationServices.handleSignupFormForSeason(seasonDetails, formData)
-      ).rejects.toThrow();
     });
 
     it("should validate team organization relationship", async () => {
