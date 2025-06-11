@@ -10,6 +10,7 @@
 - ✅ **Leaderboards**: Dynamic player and team rankings with filtering
 - ✅ **Mobile Interface**: Responsive design optimized for mobile devices
 - ✅ **Email Verification**: Proper client-side toast notifications for email verification
+- ✅ **Team Value Sorter**: API endpoint for team value comparison based on player kanaelo
 
 ### Technical Infrastructure
 
@@ -21,6 +22,7 @@
 - ✅ **Query Optimization**: Efficient database queries with proper JOINs
 - ✅ **Frontend Unit Testing**: Jest + React Testing Library with CI integration
 - ✅ **E2E Test Management**: Established reliable database seeding and test isolation patterns for Playwright tests
+- ✅ **SQL Optimization**: Complex aggregation queries using WITH clause for efficiency
 
 ### Database Relationships
 
@@ -76,6 +78,7 @@
 - **Filter System**: Complete filtering architecture with middleware
 - **Email Verification Fix**: Resolved server-side toast error by moving toast to client component
 - **E2E Testing Breakthrough**: Solved email verification test failures by implementing proper database reset workflow and fixing Lucide icon selectors
+- **Team Value Sorter**: Implemented new API endpoint for team value comparison based on player kanaelo
 
 ### Active Work Areas
 
