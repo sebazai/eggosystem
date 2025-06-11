@@ -46,28 +46,31 @@ const getValidReturnUrl = (returnUrl?: string) => {
   return process.env.FRONTEND_URL + "/login-success";
 };
 
-router.get("/steam", (req, res, next) => {
-  const { returnUrl } = req.query;
+router.get(
+  "/steam",
+  // Set returnUrl cookie if it's valid
+  (req, res, next) => {
+    const { returnUrl } = req.query;
 
-  if (returnUrl) {
-    const returnUrlString = decodeURIComponent(String(returnUrl));
-    if (isValidReturnUrl(returnUrlString)) {
-      res.cookie("steam_returnUrl", returnUrlString, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 5 * 60 * 1000 // 5 minutes
-      });
+    if (returnUrl) {
+      const returnUrlString = decodeURIComponent(String(returnUrl));
+      if (isValidReturnUrl(returnUrlString)) {
+        res.cookie("steam_returnUrl", returnUrlString, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 5 * 60 * 1000 // 5 minutes
+        });
+      }
     }
-  }
-
-  passport.authenticate("steam", { session: false })(req, res, next);
-});
+    next();
+  },
+  passport.authenticate("steam", { session: false })
+);
 
 router.get(
   "/steam/return",
   passport.authenticate("steam", {
-    session: false,
-    failureRedirect: `${process.env.FRONTEND_URL}/login-failed`
+    session: false
   }),
   async (req, res) => {
     const returnUrl: string | undefined = req.cookies.steam_returnUrl;
