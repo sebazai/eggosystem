@@ -687,8 +687,22 @@ export const TabPlayers = ({
                     <SignupPlayerNotification
                       data-testid={`hours-error-${index}`}
                     >
-                      Could not detect the hours for the player. Please open a
-                      ticket in the Kanaliiga Discord.
+                      <span>
+                        Could not detect the hours for the player, please ensure
+                        that the{" "}
+                        <Link
+                          href={
+                            "https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
+                          }
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline text-kanaliiga-orange"
+                        >
+                          Steam profile is public
+                        </Link>
+                        . If the profile is public, please open a ticket in the
+                        Kanaliiga Discord.
+                      </span>
                     </SignupPlayerNotification>
                   )}
 
@@ -701,7 +715,7 @@ export const TabPlayers = ({
                         Could not detect external {platform.toLocaleUpperCase()}{" "}
                         or game internal rank for the player. This could be due
                         to temporary service issues or missing rank data. Please
-                        try refreshing the page in a few minutes, or open a
+                        try removing the steam id and adding it again, or open a
                         ticket in the Kanaliiga Discord if the problem persists.
                       </SignupPlayerNotification>
                     )}
