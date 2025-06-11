@@ -139,7 +139,7 @@ export const TabPlayers = ({
         ) {
           setValue(`players.${index}.rank`, rankData.value.average_rank);
         } else {
-          setValue(`players.${index}.hours`, -1);
+          setValue(`players.${index}.rank`, -1);
         }
 
         if (externalRankData.status === "fulfilled") {

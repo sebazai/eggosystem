@@ -31,7 +31,7 @@ export const faceitMetadataHandlers = [
         });
       }
 
-      if (faceit_player_id === "11111111111111114" && game === "cs2") {
+      if (faceit_player_id === "11111111111111114" && game === "csgo") {
         return HttpResponse.json({
           items: [
             {
