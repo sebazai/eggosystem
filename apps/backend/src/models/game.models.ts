@@ -15,15 +15,17 @@ import {
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
    SELECT 
-    rw.team_id,
+    tgs.team_id,
     tgs.starting_side,
-    SUM(CASE WHEN rw.round_number <= mg.regulation_rounds / 2 THEN 1 ELSE 0 END) AS rounds_won_first_half,
-    SUM(CASE WHEN rw.round_number > mg.regulation_rounds / 2 AND rw.round_number <= mg.regulation_rounds THEN 1 ELSE 0 END) AS rounds_won_second_half,
-    SUM(CASE WHEN rw.round_number <= mg.regulation_rounds THEN 1 ELSE 0 END) AS total_rounds_won,
-    SUM(CASE WHEN rw.round_number > mg.regulation_rounds THEN 1 ELSE 0 END) AS total_overtime_rounds_won,
-    SUM(CASE WHEN rw.round_number > mg.regulation_rounds AND rw.side = 'CT' THEN 1 ELSE 0 END) AS overtime_rounds_won_ct,
-    SUM(CASE WHEN rw.round_number > mg.regulation_rounds AND rw.side = 'T' THEN 1 ELSE 0 END) AS overtime_rounds_won_t
-  FROM (
+    COALESCE(SUM(CASE WHEN rw.round_number <= mg.regulation_rounds / 2 THEN 1 ELSE 0 END), 0) AS rounds_won_first_half,
+    COALESCE(SUM(CASE WHEN rw.round_number > mg.regulation_rounds / 2 AND rw.round_number <= mg.regulation_rounds THEN 1 ELSE 0 END), 0) AS rounds_won_second_half,
+    COALESCE(SUM(CASE WHEN rw.round_number <= mg.regulation_rounds THEN 1 ELSE 0 END), 0) AS total_rounds_won,
+    COALESCE(SUM(CASE WHEN rw.round_number > mg.regulation_rounds THEN 1 ELSE 0 END), 0) AS total_overtime_rounds_won,
+    COALESCE(SUM(CASE WHEN rw.round_number > mg.regulation_rounds AND rw.side = 'CT' THEN 1 ELSE 0 END), 0) AS overtime_rounds_won_ct,
+    COALESCE(SUM(CASE WHEN rw.round_number > mg.regulation_rounds AND rw.side = 'T' THEN 1 ELSE 0 END), 0) AS overtime_rounds_won_t
+  FROM TeamGameScores tgs
+  JOIN MatchGames mg ON mg.id = tgs.game_id
+  LEFT JOIN (
     SELECT
       mrs.game_id,
       mrs.round_number,
@@ -37,14 +39,16 @@ export const getGameTeamRoundBreakdown = async (game_id: number) => {
       END AS side
     FROM MapRoundStats mrs
     WHERE mrs.game_id = ?
-  ) rw
-  JOIN MatchGames mg ON mg.id = rw.game_id
-  JOIN TeamGameScores tgs ON tgs.game_id = mg.id AND tgs.team_id = rw.team_id
-  GROUP BY rw.team_id, mg.regulation_rounds, tgs.starting_side
-  ORDER BY rw.team_id;
+  ) rw ON rw.game_id = tgs.game_id AND rw.team_id = tgs.team_id
+  WHERE tgs.game_id = ?
+  GROUP BY tgs.team_id, mg.regulation_rounds, tgs.starting_side
+  ORDER BY tgs.team_id;
   `;
 
-  const data = await runQuery<Array<GameTeamRoundBreakdown>>(query, [game_id]);
+  const data = await runQuery<Array<GameTeamRoundBreakdown>>(query, [
+    game_id,
+    game_id
+  ]);
   return data;
 };
 
