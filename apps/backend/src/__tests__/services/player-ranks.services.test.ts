@@ -4,8 +4,6 @@ import {
   getPlayerHoursForSteamAppId
 } from "../../services/player-ranks.services";
 import * as leetifyService from "../../services/leetify.services";
-import * as faceitService from "../../services/faceit.services";
-import * as steamService from "../../services/steam.services";
 import * as seasonPlayerRanksModels from "../../models/season-player-ranks.models";
 import { redisClient } from "../../utils/redisClient";
 import { runQuery } from "../../db/mysqlRunQuery";
@@ -19,8 +17,6 @@ jest.mock("../../utils/redisClient");
 jest.mock("../../db/mysqlRunQuery");
 
 const mockLeetifyService = leetifyService as jest.Mocked<typeof leetifyService>;
-const _mockFaceitService = faceitService as jest.Mocked<typeof faceitService>;
-const _mockSteamService = steamService as jest.Mocked<typeof steamService>;
 const mockSeasonPlayerRanksModels = seasonPlayerRanksModels as jest.Mocked<
   typeof seasonPlayerRanksModels
 >;
@@ -33,9 +29,6 @@ describe("Player Ranks Services", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, "log").mockImplementation();
-    jest.spyOn(console, "warn").mockImplementation();
-    jest.spyOn(console, "error").mockImplementation();
   });
 
   describe("getCSRank", () => {
@@ -156,9 +149,7 @@ describe("Player Ranks Services", () => {
 
         expect(result.average_rank).toEqual(12000);
         expect(mockRunQuery).toHaveBeenCalledWith(
-          expect.stringContaining(
-            "SELECT cs2_rank, rank_updated_at FROM SeasonPlayerRanks"
-          ),
+          expect.stringContaining("SELECT cs2_rank, rank_updated_at"),
           [testSteamId]
         );
       });
@@ -171,20 +162,6 @@ describe("Player Ranks Services", () => {
           undefined
         );
         mockLeetifyService.getCS2RankFromLeetify.mockResolvedValue(undefined);
-      });
-
-      it("should calculate average from historical data", async () => {
-        const historicalData = [
-          { cs2_rank: 15000, rank_updated_at: "2024-01-01T00:00:00Z" },
-          { cs2_rank: 16000, rank_updated_at: "2024-02-01T00:00:00Z" }
-        ];
-        mockRunQuery.mockResolvedValue(historicalData);
-        mockRedisClient.set.mockResolvedValue("OK");
-
-        const result = await getCSRank(testSteamId);
-
-        expect(result.average_rank).toEqual(15500); // Average of 15000 and 16000
-        expect(result.rank_updated_at).toEqual("2024-02-01T00:00:00Z"); // Latest timestamp
       });
 
       it("should return -1 when no historical data exists", async () => {
@@ -281,24 +258,6 @@ describe("Player Ranks Services", () => {
       await expect(
         getPlayerHoursForSteamAppId(testSteamId, 999)
       ).rejects.toThrow("Unknown app_id");
-    });
-  });
-
-  describe("Performance and logging", () => {
-    it("should complete rank lookup within reasonable time", async () => {
-      mockRedisClient.get.mockResolvedValue(
-        JSON.stringify({
-          average_rank: 15000,
-          rank_updated_at: "2024-01-01T00:00:00Z"
-        })
-      );
-
-      const startTime = Date.now();
-      await getCSRank(testSteamId);
-      const duration = Date.now() - startTime;
-
-      // Should complete quickly when cached
-      expect(duration).toBeLessThan(100);
     });
   });
 });

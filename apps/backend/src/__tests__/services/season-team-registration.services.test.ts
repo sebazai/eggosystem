@@ -782,13 +782,23 @@ describe("Season team registration services", () => {
     it("Should fallback to latest old seasons average rank if no current season rank can be determined", async () => {
       const formData = _.cloneDeep(validSignupData);
       formData.players[4].steamId = "11111111111111113";
+
+      const now = new Date();
+      const threeMonthsAgo = new Date(
+        now.getTime() - 3 * 30 * 24 * 60 * 60 * 1000
+      );
+      const formattedDate = threeMonthsAgo.toISOString().split("T")[0];
+      const twoMonthsAgo = new Date(
+        now.getTime() - 2 * 30 * 24 * 60 * 60 * 1000
+      );
+      const formattedDate2 = twoMonthsAgo.toISOString().split("T")[0];
       await runQuery<{ insertId: number }>(
-        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
-        [formData.players[4].steamId, 14, 5000]
+        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, ?)",
+        [formData.players[4].steamId, 14, 5000, formattedDate]
       );
       await runQuery<{ insertId: number }>(
-        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
-        [formData.players[4].steamId, 11, 10000]
+        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, ?)",
+        [formData.players[4].steamId, 11, 10000, formattedDate2]
       );
 
       await registrationServices.addPlayersForTeamInSeason(
@@ -802,7 +812,9 @@ describe("Season team registration services", () => {
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
         [formData.players[4].steamId, seasonDetails.id]
       );
-      expect(rankForSeason.cs2_rank).toEqual(7500);
+
+      // Should fetch season 14 rank even though season 11 is closer to now
+      expect(rankForSeason.cs2_rank).toEqual(5000);
       expect(rankForSeason.cs_hours).toEqual(112);
       // 5 times for app id rank, 5 times for external rank, 5 times for hours
       expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
