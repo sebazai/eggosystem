@@ -231,13 +231,15 @@ export const TabPlayers = ({
   // Add useEffect for initial data fetching if we receive steamIds from edit mode or draft
   useEffect(() => {
     const fetchInitialPlayerData = async () => {
-      const validSteamIds = prefilledPlayerSteamIds.filter(
-        (id) => isValidSteamId(id) && !prefilledPlayerSteamIds.includes(id)
+      const validSteamIds = prefilledPlayerSteamIds.filter((id) =>
+        isValidSteamId(id)
       );
 
-      if (validSteamIds.length > 0) {
+      const uniqueSteamIds = [...new Set(validSteamIds)];
+
+      if (uniqueSteamIds.length > 0) {
         await Promise.allSettled(
-          validSteamIds.map((steamId, index) => handlePlayer(steamId, index))
+          uniqueSteamIds.map((steamId, index) => handlePlayer(steamId, index))
         );
       }
     };
