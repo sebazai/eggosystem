@@ -5,6 +5,7 @@ import { fetchTeamValues } from "@/services/sortterService";
 import { fetchSeasons } from "@/services/seasonService";
 import type { TeamSortterValues } from "@/services/sortterService";
 import type { Season } from "@/components/sortter/SeasonSelector";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface UseSortterResult {
   teams: TeamSortterValues[];
@@ -17,12 +18,31 @@ interface UseSortterResult {
 }
 
 export function useSortter(): UseSortterResult {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [teams, setTeams] = useState<TeamSortterValues[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [selectedSeason, setSelectedSeasonState] = useState<number | null>(
+    () => {
+      // Initialize from URL parameter if available
+      const seasonParam = searchParams.get("season");
+      return seasonParam ? parseInt(seasonParam, 10) : null;
+    }
+  );
   const [isLoadingTeams, setIsLoadingTeams] = useState(false);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Function to update both state and URL
+  const setSelectedSeason = (seasonId: number) => {
+    setSelectedSeasonState(seasonId);
+
+    // Update URL with the season parameter
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("season", seasonId.toString());
+    router.push(`?${params.toString()}`);
+  };
 
   // Fetch seasons on mount
   useEffect(() => {
