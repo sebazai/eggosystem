@@ -16,7 +16,7 @@ import {
   type ChartConfig
 } from "@/components/ui/chart";
 import { XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
-import { useSortter } from "@/hooks/data/useSortter";
+import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -242,7 +242,9 @@ export default function SortterPage() {
                     return (
                       <tr
                         key={team.team_id}
-                        className={`border-b ${getRowColorClass(index)} transition-colors hover:bg-opacity-80`}
+                        className={`border-b ${getRowColorClass(
+                          index
+                        )} transition-colors hover:bg-opacity-80`}
                       >
                         <td className="p-2 font-medium text-xs">
                           {team.team_id}

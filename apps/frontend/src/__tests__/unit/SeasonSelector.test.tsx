@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { SeasonSelector } from "../SeasonSelector";
+import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 
 describe("SeasonSelector", () => {
   const mockSeasons = [
@@ -23,7 +23,7 @@ describe("SeasonSelector", () => {
       />
     );
 
-    expect(screen.getByText("Season 2")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
   });
 
   it("calls onChange when a new season is selected", () => {
@@ -39,7 +39,7 @@ describe("SeasonSelector", () => {
     fireEvent.click(screen.getByRole("combobox"));
 
     // Select first season
-    fireEvent.click(screen.getByText("Season 1"));
+    fireEvent.click(screen.getByText("1"));
 
     expect(mockOnChange).toHaveBeenCalledWith(1);
   });
