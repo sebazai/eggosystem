@@ -64,12 +64,12 @@ router.get(
     }
     next();
   },
-  passport.authenticate("steam-openid", { session: false })
+  passport.authenticate("steam", { session: false })
 );
 
 router.get(
   "/steam/return",
-  passport.authenticate("steam-openid", {
+  passport.authenticate("steam", {
     session: false
   }),
   async (req, res) => {

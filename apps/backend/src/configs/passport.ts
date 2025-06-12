@@ -1,5 +1,5 @@
 import passport from "passport";
-import { SteamOpenIdStrategy } from "passport-steam-openid";
+import steam from "passport-steam";
 
 import {
   getAuthUserBySteamId,
@@ -10,28 +10,27 @@ import type { SteamUserPayload } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 
 passport.use(
-  new SteamOpenIdStrategy(
+  new steam.Strategy(
     {
       returnURL: `${process.env.BACKEND_URL}/api/v1/auth/steam/return`,
-      profile: true,
-      apiKey: process.env.STEAM_API_KEY || "",
-      maxNonceTimeDelay: 600
+      realm: `${process.env.BACKEND_URL}/`,
+      apiKey: process.env.STEAM_API_KEY || ""
     },
-    async (req, identifier, profile, done) => {
-      const userInDb = await getAuthUserBySteamId(profile.steamid);
+    async (identifier, profile, done) => {
+      const userInDb = await getAuthUserBySteamId(profile.id);
 
       if (!userInDb) {
         try {
           const insert = await createAccountForSteam({
-            steamId: profile.steamid,
-            steamDisplayName: profile.personaname,
-            steamRealname: profile.realname
+            steamId: profile.id,
+            steamDisplayName: profile.displayName,
+            steamRealname: profile._json.realname
           });
-          await clearPossibleRedisCacheForNewUser(profile.steamid);
+          await clearPossibleRedisCacheForNewUser(profile.id);
           return done(null, {
             account_id: insert.account_id,
-            provider_id: profile.steamid,
-            nickname: profile.personaname,
+            provider_id: profile.id,
+            nickname: profile.displayName,
             provider: "steam"
           } satisfies SteamUserPayload);
         } catch (error) {
@@ -42,7 +41,7 @@ passport.use(
 
       const user = {
         account_id: userInDb.account_id,
-        provider_id: profile.steamid,
+        provider_id: profile.id,
         nickname: userInDb.nickname,
         provider: "steam"
       } satisfies SteamUserPayload;
