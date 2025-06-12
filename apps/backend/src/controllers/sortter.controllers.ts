@@ -1,5 +1,8 @@
 import { type Response } from "express";
-import { getTeamValuesForSorter } from "../models/sortter.models";
+import {
+  getTeamValuesForSorter,
+  getTeamPlayerValuesForSortter
+} from "../models/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
 
 /**
@@ -44,4 +47,49 @@ export const getTeamValueByIdController = async (
   }
 
   res.json(team);
+};
+
+/**
+ * Controller to get player values for a specific team in a season
+ * Returns all players for a given team with their values:
+ * - name
+ * - steamid
+ * - cs2 rank
+ * - faceit level
+ * - faceit elo
+ * - hours
+ * - kanarating (avg from all games player played)
+ * - fkd (faceit k/d ratio)
+ *
+ * Converts null values to 0 for numeric fields in the response
+ */
+export const getTeamPlayerValuesController = async (
+  req: RequestWithParams<{ season: string; team: string }>,
+  res: Response
+): Promise<void> => {
+  const seasonId = Number(req.params.season);
+  const teamId = Number(req.params.team);
+
+  const playerValues = await getTeamPlayerValuesForSortter(seasonId, teamId);
+
+  if (playerValues.length === 0) {
+    res.status(404).json({
+      message: `No players found for team ${teamId} in season ${seasonId}`
+    });
+    return;
+  }
+
+  // Convert null values to 0 for the response
+  const formattedPlayerValues = playerValues.map((player) => ({
+    name: player.name,
+    steamid: player.steamid,
+    cs2_rank: player.cs2_rank ?? 0,
+    faceit_level: player.faceit_level ?? 0,
+    faceit_elo: player.faceit_elo ?? 0,
+    hours: player.hours ?? 0,
+    kanarating: player.kanarating ?? 0,
+    fkd: player.fkd ?? 0
+  }));
+
+  res.json(formattedPlayerValues);
 };

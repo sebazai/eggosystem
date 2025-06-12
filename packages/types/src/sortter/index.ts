@@ -22,3 +22,19 @@ export interface TeamSortterValuesRaw
   extends Omit<TeamSortterValues, "top5_values"> {
   top5_values: string;
 }
+
+/**
+ * Interface for player values used in the sortter functionality
+ * Contains player statistics and ranking information
+ * Values can be null from the database
+ */
+export interface PlayerSortterValues {
+  name: string;
+  steamid: string;
+  cs2_rank: number | null;
+  faceit_level: number | null;
+  faceit_elo: number | null;
+  hours: number | null;
+  kanarating: number | null;
+  fkd: number | null;
+}

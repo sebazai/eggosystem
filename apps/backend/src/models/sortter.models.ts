@@ -1,7 +1,8 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   type TeamSortterValues,
-  type TeamSortterValuesRaw
+  type TeamSortterValuesRaw,
+  type PlayerSortterValues
 } from "@eggosystem/types";
 
 /**
@@ -88,6 +89,65 @@ export const getTeamValuesForSorter = async (
       top5_values
     };
   }) satisfies TeamSortterValues[];
+
+  return results;
+};
+
+/**
+ * Gets player values for a specific team and season for sorter functionality:
+ * - Player name
+ * - Steam ID
+ * - CS2 rank
+ * - Faceit level
+ * - Faceit ELO
+ * - CS hours
+ * - Kana rating (average from all games player played)
+ * - FKD (Faceit K/D ratio)
+ *
+ * @param seasonId The season ID to filter by
+ * @param teamId The team ID to filter by
+ * @returns Array of player values
+ */
+export const getTeamPlayerValuesForSortter = async (
+  seasonId: number,
+  teamId: number
+): Promise<PlayerSortterValues[]> => {
+  const query = `
+    SELECT
+      sp.nickname AS name,
+      sp.steam_id AS steamid,
+      spr.cs2_rank,
+      spr.faceit_level,
+      spr.faceit_elo,
+      spr.cs_hours AS hours,
+      ROUND(AVG(ps.kana_rating), 6) AS kanarating,
+      spr.faceit_kd AS fkd
+    FROM Teams t
+    JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
+    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = slt.season_id
+    JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
+    JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
+    LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
+    LEFT JOIN MatchGames mg ON mg.id = ps.game_id
+    LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = slt.season_id
+    WHERE slt.season_id = ?
+      AND slt.team_id = ?
+    GROUP BY
+      sp.nickname,
+      sp.steam_id,
+      spr.cs2_rank,
+      spr.faceit_level,
+      spr.faceit_elo,
+      spr.cs_hours,
+      spr.faceit_kd
+    ORDER BY
+      spr.kana_elo DESC
+  `;
+
+  const results = await runQuery<PlayerSortterValues[]>(query, [
+    seasonId,
+    teamId
+  ]);
 
   return results;
 };
