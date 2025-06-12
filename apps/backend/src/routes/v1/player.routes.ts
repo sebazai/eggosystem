@@ -6,7 +6,9 @@ import {
   getPlayerSteamAppIdHours,
   getPlayerSteamAppIdRank,
   getPlayerPlatformRank,
-  getPlayerKanaRankController
+  getPlayerKanaRankController,
+  getPlayerOldKanaEloController,
+  getPlayerStatsForLatestSeasonController
 } from "../../controllers/players.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
