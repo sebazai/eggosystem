@@ -85,8 +85,13 @@ const MiniChart = ({ data }: { data: number[] }) => {
           <ChartTooltip
             content={
               <ChartTooltipContent
-                labelFormatter={(label) => `Value ${label}`}
-                formatter={(value, _name) => [value, "Kanaelo"]}
+                labelFormatter={(label, payload) =>
+                  payload?.[0]?.payload?.index
+                    ? `Player ${payload[0].payload.index} Kanaelo`
+                    : "Kanaelo"
+                }
+                formatter={(value) => [value]}
+                hideIndicator={true}
               />
             }
           />
