@@ -1,0 +1,243 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Type Safety Practices Rule
+
+**Type:** Strict rule
+
+## Rule Description
+
+This rule defines the standards for type handling and transformation in the Kanaliiga Eggosystem project. Specifically, it prohibits unsafe type casting (`as` keyword) and mandates safer type handling approaches.
+
+## Rationale
+
+TypeScript's static type system is designed to provide compile-time safety by catching type errors before runtime. Using type assertions/casting with the `as` keyword circumvents this safety mechanism, potentially introducing runtime errors that could have been caught during development.
+
+Proper type handling:
+- Prevents runtime type errors
+- Improves code maintainability
+- Enhances code readability
+- Enables better IDE support and tooling
+- Documents expected data structures
+
+## Prohibited Practices
+
+### Unsafe Type Casting
+
+**❌ DO NOT** use the `as` keyword for type casting in most situations:
+
+```typescript
+// ❌ BAD: Unsafe type casting
+const userData = JSON.parse(response.body) as UserData;
+
+// ❌ BAD: Double casting to bypass TypeScript safety
+const id = userInput as unknown as number;
+
+// ❌ BAD: Casting returned data without validation
+const results = await runQuery<RawData[]>(query, [params]);
+return results as ProcessedData[]; // Dangerous assumption
+```
+
+### Suppressing Type Checking
+
+**❌ DO NOT** use `@ts-ignore` or `@ts-nocheck` to bypass type checking:
+
+```typescript
+// ❌ BAD: Suppressing TypeScript errors
+// @ts-ignore
+const user = getUser(id); // Error being suppressed
+
+// ❌ BAD: Disabling type checking for a file
+// @ts-nocheck
+```
+
+## Required Practices
+
+### Use the `satisfies` Operator
+
+**✅ DO** use the `satisfies` operator to validate that values conform to expected types while preserving inferred types:
+
+```typescript
+// ✅ GOOD: Validates type conformance while preserving inferred types
+const config = {
+  endpoint: "/api/users",
+  maxRetries: 3,
+  timeout: 5000
+} satisfies ApiConfig;
+
+// Type validation with transformation
+const results = rawResults.map((item) => ({
+  ...item,
+  data: JSON.parse(item.data)
+})) satisfies ProcessedData[];
+```
+
+### Implement Proper Type Transformations
+
+**✅ DO** implement explicit type transformations with validation:
+
+```typescript
+// ✅ GOOD: Explicit transformation with validation
+const rawResults = await runQuery<TeamSortterValuesRaw[]>(query, [seasonId]);
+
+// Transform with validation
+const results = rawResults.map((team) => {
+  // Handle both string and array cases
+  const top5_values = typeof team.top5_values === 'string' 
+    ? JSON.parse(team.top5_values) 
+    : team.top5_values;
+    
+  return {
+    ...team,
+    top5_values: top5_values
+  };
+}) satisfies TeamSortterValues[];
+```
+
+### Use Type Guards
+
+**✅ DO** use type guards to narrow types safely:
+
+```typescript
+// ✅ GOOD: Type guard function
+function isUserData(data: unknown): data is UserData {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "id" in data &&
+    "name" in data
+  );
+}
+
+// Usage
+const data = JSON.parse(response.body);
+if (isUserData(data)) {
+  // TypeScript knows data is UserData here
+  processUser(data.id, data.name);
+} else {
+  handleInvalidData(data);
+}
+```
+
+### Create Separate Types for Raw and Processed Data
+
+**✅ DO** create separate interfaces for raw data and processed data:
+
+```typescript
+// ✅ GOOD: Separate interfaces for raw and processed data
+// For parsed application data (post-transformation)
+export interface TeamSortterValues {
+  team_id: number;
+  team_name: string;
+  top5_values: number[]; // Typed as array
+}
+
+// For raw database results (pre-transformation)
+export interface TeamSortterValuesRaw extends Omit<TeamSortterValues, "top5_values"> {
+  top5_values: string; // Typed as string from database
+}
+```
+
+## Limited Exceptions
+
+Type assertions may be allowed in the following limited circumstances, but **MUST** be accompanied by comments explaining why they're necessary:
+
+1. **Working with external libraries** that have incomplete or incorrect type definitions:
+   ```typescript
+   // Necessary due to incomplete types in library-x v1.2.3
+   const result = externalLibraryFunction() as ExpectedType;
+   ```
+
+2. **Component props with default values** in React:
+   ```typescript
+   // Default props pattern
+   interface Props {
+    name: string;
+    age?: number;
+   }
+   
+   function Component({ age = 30 }: Props) {
+     // age is now definitely a number
+     const nextYear = age + 1;
+   }
+   ```
+
+3. **When interacting with DOM APIs** that TypeScript doesn't fully type:
+   ```typescript
+   // DOM element access with known element type
+   const canvas = document.getElementById('chart') as HTMLCanvasElement;
+   ```
+
+## Testing Requirements
+
+All code that handles type transformations **MUST** have both unit tests and integration tests that verify:
+
+1. Correct handling of valid data
+2. Proper error handling for invalid data
+3. Edge cases (null values, empty arrays, etc.)
+
+## Implementation Examples
+
+### Database Query Results
+
+```typescript
+// ✅ GOOD: Safe handling of database results
+async function getTeamData(id: number): Promise<TeamData> {
+  const rawResult = await runQuery<RawTeamData>('SELECT * FROM teams WHERE id = ?', [id]);
+  
+  if (!rawResult || rawResult.length === 0) {
+    throw new NotFoundError(`Team with ID ${id} not found`);
+  }
+  
+  // Explicit transformation
+  return {
+    ...rawResult[0],
+    metadata: rawResult[0].metadata ? JSON.parse(rawResult[0].metadata) : {},
+    isActive: Boolean(rawResult[0].active)
+  };
+}
+```
+
+### API Response Handling
+
+```typescript
+// ✅ GOOD: Safe API response handling
+async function fetchUserData(userId: string): Promise<UserProfile> {
+  const response = await fetch(`/api/users/${userId}`);
+  
+  if (!response.ok) {
+    throw new ApiError(`Failed to fetch user: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  
+  // Validate the response matches expected type
+  if (!isUserProfile(data)) {
+    throw new DataValidationError('Invalid user data received');
+  }
+  
+  return data; // TypeScript knows this is UserProfile
+}
+
+// Type guard
+function isUserProfile(data: unknown): data is UserProfile {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as any).id === 'string' &&
+    typeof (data as any).displayName === 'string'
+  );
+}
+```
+
+## Summary
+
+- **Never** use unsafe type casting with `as` without validation
+- **Always** validate data before assuming its type
+- **Use** `satisfies` operator to validate type conformance
+- **Create** separate interfaces for raw and processed data
+- **Implement** explicit type transformations
+- **Write** type guards for runtime type checking
+- **Document** any necessary exceptions with comments
