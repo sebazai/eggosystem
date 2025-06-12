@@ -58,18 +58,18 @@ router.get(
         res.cookie("steam_returnUrl", returnUrlString, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-          maxAge: 5 * 60 * 1000 // 5 minutes
+          maxAge: 10 * 60 * 1000 // 10 minutes
         });
       }
     }
     next();
   },
-  passport.authenticate("steam", { session: false })
+  passport.authenticate("steam-openid", { session: false })
 );
 
 router.get(
   "/steam/return",
-  passport.authenticate("steam", {
+  passport.authenticate("steam-openid", {
     session: false
   }),
   async (req, res) => {
