@@ -20,6 +20,7 @@ import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { PlayerValuesFloatingWindow } from "@/components/PlayerValuesFloatingWindow";
 
 // Enhanced line chart component using shadcn Chart
 const MiniChart = ({ data }: { data: number[] }) => {
@@ -139,11 +140,18 @@ export default function SortterPage() {
   const {
     teams,
     seasons,
+    playerValues,
     selectedSeason,
+    selectedTeamId,
+    floatingPosition,
     isLoadingTeams,
     isLoadingSeasons,
+    isLoadingPlayerValues,
     error,
-    setSelectedSeason
+    setSelectedSeason,
+    showTeamPlayerValues,
+    closeTeamPlayerValues,
+    prefetchPlayerValues
   } = useSortter();
 
   const [comments, setComments] = useState<{ [key: number]: string }>({});
@@ -158,6 +166,19 @@ export default function SortterPage() {
     const top4 = [...values].slice(0, 4);
     return (top4.reduce((sum, val) => sum + val, 0) / 4).toFixed(3);
   };
+
+  // Handle double click on team row
+  const handleTeamDoubleClick = (teamId: number, event: React.MouseEvent) => {
+    showTeamPlayerValues(teamId, { x: event.clientX, y: event.clientY });
+  };
+
+  // Prefetch data on row hover
+  const handleTeamHover = (teamId: number) => {
+    prefetchPlayerValues(teamId);
+  };
+
+  // Find the selected team name
+  const selectedTeam = teams.find((team) => team.team_id === selectedTeamId);
 
   return (
     <div className="space-y-6">
@@ -196,6 +217,9 @@ export default function SortterPage() {
           <CardDescription>
             View and manage team rankings with kanapoints analysis
             {teams.length > 0 && ` (${teams.length} teams)`}
+            <span className="ml-2 text-xs text-muted-foreground italic">
+              Double-click a team to view player details
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4">
@@ -244,7 +268,11 @@ export default function SortterPage() {
                         key={team.team_id}
                         className={`border-b ${getRowColorClass(
                           index
-                        )} transition-colors hover:bg-opacity-80`}
+                        )} transition-colors hover:bg-opacity-80 cursor-pointer`}
+                        onDoubleClick={(e) =>
+                          handleTeamDoubleClick(team.team_id, e)
+                        }
+                        onMouseEnter={() => handleTeamHover(team.team_id)}
                       >
                         <td className="p-2 font-medium text-xs">
                           {team.team_id}
@@ -275,6 +303,7 @@ export default function SortterPage() {
                               handleCommentChange(team.team_id, e.target.value)
                             }
                             className="text-xs bg-background/80 w-[360px] h-[192px] resize-none overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
                           />
                         </td>
                       </tr>
@@ -286,6 +315,17 @@ export default function SortterPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating player values window */}
+      {selectedTeamId && floatingPosition && selectedTeam && (
+        <PlayerValuesFloatingWindow
+          playerValues={playerValues}
+          teamName={selectedTeam.team_name}
+          position={floatingPosition}
+          isLoading={isLoadingPlayerValues}
+          onClose={closeTeamPlayerValues}
+        />
+      )}
     </div>
   );
 }

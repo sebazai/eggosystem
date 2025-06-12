@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clientApiFetch } from "@/lib/apiClient";
@@ -17,6 +17,17 @@ export interface TeamSortterValues {
   comments?: string;
 }
 
+export interface PlayerSortterValues {
+  name: string;
+  steamid: string;
+  cs2_rank: number;
+  faceit_level: number;
+  faceit_elo: number;
+  hours: number;
+  kanarating: number;
+  fkd: number;
+}
+
 export function useSortter() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,6 +39,14 @@ export function useSortter() {
   const [selectedSeason, setSelectedSeasonState] = useState<number | null>(
     initialSeason
   );
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [floatingPosition, setFloatingPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  // Store prefetched data for teams
+  const prefetchCache = useRef<Map<string, PlayerSortterValues[]>>(new Map());
 
   // Fetch available seasons
   const {
@@ -53,6 +72,43 @@ export function useSortter() {
     }
   );
 
+  // Fetch player values for the selected team
+  const {
+    data: playerValues,
+    error: playerValuesError,
+    isLoading: isLoadingPlayerValues,
+    isValidating: isValidatingPlayerValues,
+    mutate: mutatePlayerValues
+  } = useSWR<PlayerSortterValues[]>(
+    selectedSeason && selectedTeamId
+      ? `/api/v1/sortter/season/${selectedSeason}/team/${selectedTeamId}/playervalues`
+      : null,
+    clientApiFetch,
+    {
+      revalidateOnFocus: false
+    }
+  );
+
+  // Prefetch player values for hover
+  const prefetchPlayerValues = useCallback(
+    async (teamId: number) => {
+      if (!selectedSeason) return;
+
+      const key = `/api/v1/sortter/season/${selectedSeason}/team/${teamId}/playervalues`;
+
+      // If we already have this data cached, don't refetch
+      if (prefetchCache.current.has(key)) return;
+
+      try {
+        const data = await clientApiFetch<PlayerSortterValues[]>(key);
+        prefetchCache.current.set(key, data);
+      } catch (error) {
+        console.error("Error prefetching player values:", error);
+      }
+    },
+    [selectedSeason]
+  );
+
   // Handle the URL update when selected season changes
   const setSelectedSeason = (seasonId: number) => {
     setSelectedSeasonState(seasonId);
@@ -62,6 +118,32 @@ export function useSortter() {
     params.set("season", seasonId.toString());
     router.push(`?${params.toString()}`);
   };
+
+  // Show the floating team player values at the specified position
+  const showTeamPlayerValues = useCallback(
+    (teamId: number, position: { x: number; y: number }) => {
+      setSelectedTeamId(teamId);
+      setFloatingPosition(position);
+
+      // Check if we have prefetched data for this team
+      const key = `/api/v1/sortter/season/${selectedSeason}/team/${teamId}/playervalues`;
+
+      if (prefetchCache.current.has(key)) {
+        // Use the prefetched data
+        const cachedData = prefetchCache.current.get(key);
+        if (cachedData) {
+          mutatePlayerValues(cachedData, false);
+        }
+      }
+    },
+    [selectedSeason, mutatePlayerValues]
+  );
+
+  // Close the floating window
+  const closeTeamPlayerValues = useCallback(() => {
+    setSelectedTeamId(null);
+    setFloatingPosition(null);
+  }, []);
 
   // Auto-select first season if none is selected
   useEffect(() => {
@@ -77,12 +159,20 @@ export function useSortter() {
   return {
     teams: teams || [],
     seasons: seasons || [],
+    playerValues: playerValues || [],
     selectedSeason,
+    selectedTeamId,
+    floatingPosition,
     isLoadingTeams,
     isLoadingSeasons,
-    error: teamsError || seasonsError,
+    isLoadingPlayerValues,
+    error: teamsError || seasonsError || playerValuesError,
     isValidatingTeams,
     isValidatingSeasons,
-    setSelectedSeason
+    isValidatingPlayerValues,
+    setSelectedSeason,
+    showTeamPlayerValues,
+    closeTeamPlayerValues,
+    prefetchPlayerValues
   };
 }
