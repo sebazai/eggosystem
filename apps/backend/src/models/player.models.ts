@@ -459,7 +459,7 @@ export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
       p.nickname,
       m.season_id as latest_season_id,
       ROUND(AVG(ps.kana_rating), 2) as avg_kana_rating,
-      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kpd,
+      COALESCE(ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2), 0) as kpd,
       ROUND(AVG(ps.adr), 1) as adr,
       sl.tier as level
     FROM SteamPlayers p

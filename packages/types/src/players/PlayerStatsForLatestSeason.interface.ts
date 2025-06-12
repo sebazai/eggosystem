@@ -5,7 +5,7 @@ export interface PlayerStatsForLatestSeason {
   nickname: SteamPlayer["nickname"];
   latest_season_id: Season["id"];
   avg_kana_rating: number;
-  kpd: number;
+  kpd: number | null;
   adr: number;
   level: number;
 }
