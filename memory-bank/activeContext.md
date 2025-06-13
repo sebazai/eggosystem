@@ -39,12 +39,21 @@ Refactored the `sortter.models.ts` file by:
 4. Implementing proper JSON parsing with type safety using the `satisfies` operator
 5. Adding comprehensive JSDoc comments to document the purpose of each property
 
-This change established a pattern for handling database types that should be followed in future development:
+Most recently, implemented the indexed access types pattern in `PlayerSortterValues` interface:
+
+1. Changed direct type definitions to indexed access types (e.g., `SeasonPlayerRank["cs2_rank"]`)
+2. Clearly distinguished between database fields and calculated fields
+3. Added comments to indicate which fields are calculated vs. direct database fields
+4. Created a formal rule in `.cursor/rules/indexed-access-types.mdc` to enforce this pattern
+
+This establishes key patterns for handling database types that should be followed in future development:
 
 - Domain-specific type definitions should live in the shared types package
 - Raw database result types should be separated from application types
 - Type transformations should be explicit and type-safe
 - The `satisfies` operator should be used to validate type conformance
+- Indexed access types should be used for fields that directly map to database columns
+- Comments should indicate when fields are calculated/derived rather than direct database fields
 
 The pattern is now documented in the SystemPatterns.md file under "Type Management Patterns".
 

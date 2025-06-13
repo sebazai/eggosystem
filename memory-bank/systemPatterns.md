@@ -2185,6 +2185,45 @@ export interface PlayerMatchStats { ... }
 export interface LeagueRegistrationData { ... }
 ```
 
+### Indexed Access Types Pattern
+
+When creating interfaces that reference database fields, use indexed access types instead of repeating the type definitions:
+
+```typescript
+// ❌ Bad: Repeating type definitions
+export interface PlayerSortterValues {
+  name: string;
+  steamid: string;
+  cs2_rank: number | null;
+  faceit_level: number | null;
+  faceit_elo: number | null;
+  hours: number | null;
+  kanarating: number | null;
+  fkd: number | null;
+}
+
+// ✅ Good: Using indexed access types for direct database fields
+import { SeasonPlayerRank } from "../db";
+
+export interface PlayerSortterValues {
+  name: string;
+  steamid: string;
+  cs2_rank: SeasonPlayerRank["cs2_rank"];
+  faceit_level: SeasonPlayerRank["faceit_level"];
+  faceit_elo: SeasonPlayerRank["faceit_elo"];
+  hours: SeasonPlayerRank["cs_hours"] | null;
+  kanarating: number | null; // Calculated field, not direct DB field
+  fkd: number | null; // Calculated field, not direct DB field
+}
+```
+
+Key benefits:
+
+- **Single source of truth**: Type definitions are defined in one place (database schema interfaces)
+- **Automatic propagation**: Schema changes automatically update all dependent interfaces
+- **Clear distinction**: Easy to identify which fields are direct database fields vs. calculated values
+- **Type safety**: Reduces the risk of type mismatches between code and database schema
+
 ### Database Type Handling Pattern
 
 For database models that return raw data that needs transformation (like JSON strings), create two related interfaces:
