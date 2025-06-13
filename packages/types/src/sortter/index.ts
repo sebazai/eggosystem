@@ -28,13 +28,15 @@ export interface TeamSortterValuesRaw
  * Contains player statistics and ranking information
  * Values can be null from the database
  */
+import { SeasonPlayerRank } from "../db";
+
 export interface PlayerSortterValues {
   name: string;
   steamid: string;
-  cs2_rank: number | null;
-  faceit_level: number | null;
-  faceit_elo: number | null;
-  hours: number | null;
+  cs2_rank: SeasonPlayerRank["cs2_rank"];
+  faceit_level: SeasonPlayerRank["faceit_level"];
+  faceit_elo: SeasonPlayerRank["faceit_elo"];
+  hours: SeasonPlayerRank["cs_hours"] | null;
   kanarating: number | null;
   fkd: number | null;
 }
