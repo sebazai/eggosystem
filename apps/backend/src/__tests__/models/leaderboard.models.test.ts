@@ -145,20 +145,20 @@ describe("getLeaderboard", () => {
           kast: 80.6667
         },
         {
-          steam_id: "76561198310132063",
-          nickname: "Huurteinen",
-          team_name: "Valtori",
-          team_logo: "S15_2184.png",
-          matches_played: 2,
-          kast: 80.5
+          steam_id: "76561198367129350",
+          nickname: "Gee",
+          team_name: "Evitec Esports",
+          team_logo: "S15_2126.png",
+          matches_played: 3,
+          kast: 78.6667
         },
         {
-          steam_id: "76561197995177764",
-          nickname: "MAd",
-          team_name: "Valtori",
-          team_logo: "S15_2184.png",
-          matches_played: 2,
-          kast: 80.5
+          steam_id: "76561198282583074",
+          nickname: "Pepso",
+          team_name: "Evitec Esports",
+          team_logo: "S15_2126.png",
+          matches_played: 3,
+          kast: 78
         }
       ]
     });
