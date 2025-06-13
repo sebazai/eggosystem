@@ -13,6 +13,7 @@ export interface TeamSortterValues {
   avg4: number;
   /** Kanaelo values for top 5 players as an array */
   top5_values: number[];
+  comments?: string;
 }
 
 /**
@@ -39,4 +40,12 @@ export interface PlayerSortterValues {
   hours: SeasonPlayerRank["cs_hours"] | null;
   kanarating: number | null;
   fkd: number | null;
+}
+
+/**
+ * Interface for season information used in sortter
+ */
+export interface SortterSeason {
+  id: number;
+  name: string;
 }

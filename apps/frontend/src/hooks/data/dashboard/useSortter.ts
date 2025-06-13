@@ -4,29 +4,13 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import useSWR from "swr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clientApiFetch } from "@/lib/apiClient";
+import type { TeamSortterValues, PlayerSortterValues } from "@eggosystem/types";
 
-export interface Season {
+// Local type for season data from API
+type Season = {
   id: number;
   name: string;
-}
-
-export interface TeamSortterValues {
-  team_id: number;
-  team_name: string;
-  top5_values: number[];
-  comments?: string;
-}
-
-export interface PlayerSortterValues {
-  name: string;
-  steamid: string;
-  cs2_rank: number;
-  faceit_level: number;
-  faceit_elo: number;
-  hours: number;
-  kanarating: number;
-  fkd: number;
-}
+};
 
 export function useSortter() {
   const router = useRouter();

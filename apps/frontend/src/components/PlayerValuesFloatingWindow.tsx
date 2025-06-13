@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import type { PlayerSortterValues } from "@/hooks/data/dashboard/useSortter";
+import type { PlayerSortterValues } from "@eggosystem/types";
 
 interface PlayerValuesFloatingWindowProps {
   playerValues: PlayerSortterValues[];
@@ -154,7 +154,7 @@ export function PlayerValuesFloatingWindow({
                     {player.fkd ? player.fkd.toFixed(2) : "0.00"}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs">
-                    {player.kanarating.toFixed(2)}
+                    {player.kanarating ? player.kanarating.toFixed(2) : "0.00"}
                   </td>
                 </tr>
               ))}
