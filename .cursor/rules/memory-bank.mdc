@@ -120,6 +120,6 @@ Note: When triggered by **update memory bank**, I MUST review every memory bank 
 
 - **Database Schema**: See `docs/database.md`
 - **API Patterns**: Use parseQueryFilterParams middleware
-- **Frontend**: SWR + nextFetcher, AutoBreadcrumbs, MultiFilters
+- **Frontend**: SWR + expressFetcher/clientApiFetch, AutoBreadcrumbs, MultiFilters
 - **Testing**: Error detection, proper mocking, ParsedParams validation
 - **Styling**: Mobile-first, text-xs tables, hidden md:table-cell pattern

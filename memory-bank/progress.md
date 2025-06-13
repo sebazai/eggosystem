@@ -17,7 +17,7 @@
 - ✅ **Monorepo Setup**: PNPM workspace with apps/backend and apps/frontend
 - ✅ **Database Schema**: PostgreSQL with complex relational structure
 - ✅ **API Architecture**: Express.js backend with Next.js frontend proxy
-- ✅ **Data Fetching**: SWR integration with custom nextFetcher utility
+- ✅ **Data Fetching**: SWR integration with expressFetcher/clientApiFetch for authenticated/non-authenticated requests
 - ✅ **DevContainer**: Consistent development environment
 - ✅ **Query Optimization**: Efficient database queries with proper JOINs
 - ✅ **Frontend Unit Testing**: Jest + React Testing Library with CI integration

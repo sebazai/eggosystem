@@ -180,7 +180,21 @@ export async function GET(request: NextRequest) {
 // Hook pattern
 function useData(filters: FilterParams) {
   const { data, error, isLoading } = useSWR(["endpoint", filters], () =>
-    nextFetcher("/api/v1/endpoint", filters)
+    expressFetcher("/api/v1/endpoint", filters)
+  );
+
+  return {
+    data,
+    isLoading,
+    isError: !!error,
+    isValidated: !isLoading && !error
+  };
+}
+
+// Authenticated hook pattern
+function useAuthData(filters: FilterParams) {
+  const { data, error, isLoading } = useSWR(["auth-endpoint", filters], () =>
+    clientApiFetch("/api/v1/auth-endpoint", filters)
   );
 
   return {

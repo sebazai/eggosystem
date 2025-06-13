@@ -22,6 +22,7 @@
 - ✅ Established memory-bank folder structure with core files
 - ✅ Migrated project context from rules to memory bank documents
 - ✅ Defined proper file hierarchy and relationships
+- ✅ Removed redundant nextFetcher.ts and updated to use expressFetcher/clientApiFetch pattern
 
 ### In Progress
 

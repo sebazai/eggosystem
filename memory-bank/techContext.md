@@ -19,12 +19,14 @@
 
 ### Frontend Technologies
 
-- **Framework**: Next.js 14 with App Router
+- **Framework**: Next.js with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui component library
 - **Icons**: Lucide React
-- **Data Fetching**: SWR library with custom nextFetcher utility
+- **Data Fetching**:
+  - `expressFetcher` for non-authenticated requests
+  - `clientApiFetch` for authenticated requests with JWT
 - **State Management**: React hooks and SWR cache
 - **Animation**: Framer Motion
 - **Theme**: next-themes for dark/light mode support
@@ -173,3 +175,14 @@ Frontend Component → SWR Hook → Frontend API Route → Backend API → Datab
 - **TypeScript**: Strict typing requirements
 - **DevContainer**: Development environment consistency
 - **Testing**: Comprehensive test coverage requirements
+
+### Frontend Architecture
+
+- **Framework**: Next.js with App Router
+- **State Management**: SWR for data fetching and caching
+- **Data Fetching**:
+  - `expressFetcher` for non-authenticated requests
+  - `clientApiFetch` for authenticated requests with JWT
+- **Component Library**: shadcn/ui with Tailwind CSS
+- **Form Handling**: React Hook Form with Zod validation
+- **Testing**: Jest + React Testing Library
