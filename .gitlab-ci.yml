@@ -80,17 +80,17 @@ variables:
 # These either cant be DRY because the rules are OR and not AND (the - & anchors do not work really well)
 .main-frontend:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"'
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"
       <<: *frontend-changes
 
 .main-backend:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"'
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"
       <<: *backend-changes
 
 .main-all-app:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"'
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"
       <<: *all-app-changes
 
 .mr-frontend:
