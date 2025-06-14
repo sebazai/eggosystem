@@ -498,9 +498,9 @@ push-dockerfile:frontend:
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max,compression=zstd \
-          --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
-          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
-          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_API_URL=https://$HUBSTAGE_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBSTAGE_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg CI=true \
           --push \
           -t $REGISTRY/eggo-frontend:staging \
@@ -553,7 +553,7 @@ deploy-staging:
   resource_group: staging
   environment:
     name: staging
-    url: https://${HUBDEV_PUBLIC_URL}
+    url: https://${HUBSTAGE_PUBLIC_URL}
   variables:
     <<: *deploy-variables
     ENV_ID: staging
@@ -578,9 +578,9 @@ deploy-staging:
       echo "=============================================="
       echo "🚀 DEPLOYMENT SUCCESSFUL!"
       echo "=============================================="
-      echo "📱 Frontend: https://${HUBDEV_PUBLIC_URL}"
-      echo "🔌 API: https://${HUBDEV_PUBLIC_URL}/api/v1"
-      echo "🗄️ phpMyAdmin: https://${HUBDEV_PUBLIC_URL}/mysadmin/"
+      echo "📱 Frontend: https://${HUBSTAGE_PUBLIC_URL}"
+      echo "🔌 API: https://${HUBSTAGE_PUBLIC_URL}/api/v1"
+      echo "🗄️ phpMyAdmin: https://${HUBSTAGE_PUBLIC_URL}/mysadmin/"
       echo "=============================================="
 
 deploy-ondemand:

@@ -1,0 +1,165 @@
+services:
+  backend:
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:DEV
+    pull_policy: always
+    depends_on:
+      eggo-dev-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_HOST: eggo-dev-db
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: "${MARIADB_DEV_PASSWORD}"
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_PORT: 3306
+      FRONTEND_URL: https://${HUBDEV_PUBLIC_URL}
+      BACKEND_URL: https://${HUBDEV_PUBLIC_URL}
+      REDIS_HOST: eggo-dev-redis
+      REDIS_PORT: 6379
+      STEAM_API_KEY: $STEAM_API_KEY
+      FACEIT_API_KEY: $FACEIT_API_KEY
+      OTEL_SERVICE_NAME: eggosystem-DEV-backend-1
+      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=DEV,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
+      PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
+      SMTP_HOST: $SMTP_HOST
+      SMTP_USER: $SMTP_USER
+      SMTP_PASSWORD: $SMTP_PASSWORD
+      ALLSTAR_WEBHOOK_TOKEN: $ALLSTAR_WEBHOOK_TOKEN
+      ALLSTAR_API_KEY: $ALLSTAR_API_KEY
+    networks:
+      - web
+    volumes:
+      - ./public_access_token.pem:/usr/src/app/public_access_token.pem
+      - ./public_refresh_token.pem:/usr/src/app/public_refresh_token.pem
+      - ./private_access_token.pem:/usr/src/app/private_access_token.pem
+      - ./private_refresh_token.pem:/usr/src/app/private_refresh_token.pem
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hubbeDEV.entrypoints=http"
+      - "traefik.http.routers.hubbeDEV.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.middlewares.hubbeDEV-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hubbeDEV.middlewares=hubbeDEV-https-redirect"
+      - "traefik.http.routers.hubbeDEV-secure.entrypoints=https"
+      - "traefik.http.routers.hubbeDEV-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.hubbeDEV-secure.tls=true"
+      - "traefik.http.routers.hubbeDEV-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.hubbeDEV-secure.tls.certresolver=http"
+      - "traefik.http.routers.hubbeDEV-secure.service=hubbeDEV"
+      - "traefik.http.services.hubbeDEV.loadbalancer.server.port=3001"
+      - "traefik.docker.network=web"
+    restart: always
+
+  frontend:
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:dev
+    pull_policy: always
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}
+      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBDEV_PUBLIC_URL}
+      NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kanahubdev.entrypoints=http"
+      - "traefik.http.routers.kanahubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
+      - "traefik.http.middlewares.kanahubdev-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.kanahubdev.middlewares=kanahubDEV-https-redirect"
+      - "traefik.http.routers.kanahubdev-secure.entrypoints=https"
+      - "traefik.http.routers.kanahubdev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
+      - "traefik.http.routers.kanahubdev-secure.tls=true"
+      - "traefik.http.routers.kanahubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.kanahubdev-secure.tls.certresolver=http"
+      - "traefik.http.routers.kanahubdev-secure.service=kanahubDEV"
+      - "traefik.http.services.kanahubdev.loadbalancer.server.port=3000"
+      - "traefik.docker.network=web"
+    restart: always
+
+  eggo-dev-db:
+    image: bitnami/mariadb:11.7.2
+    container_name: eggo-dev-db
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: "${MARIADB_DEV_ROOT_PASSWORD}"
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: "${MARIADB_DEV_PASSWORD}"
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+    networks:
+      - web
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$MARIADB_DEV_ROOT_PASSWORD"
+        ]
+      timeout: 20s
+      retries: 10
+    volumes:
+      - ./my.cnf:/opt/bitnami/mariadb/conf/my.cnf
+      - ./db-data:/bitnami/mariadb
+
+  eggo-dev-redis:
+    image: redis:8-alpine
+    networks:
+      - web
+    restart: always
+
+  phpmyadmin-hubdev:
+    depends_on:
+      - eggo-dev-db
+    image: phpmyadmin/phpmyadmin:5.2.2
+    restart: always
+    environment:
+      PMA_HOST: eggo-dev-db
+      PMA_ABSOLUTE_URI: https://${HUBDEV_PUBLIC_URL}/mysadmin/
+      UPLOAD_LIMIT: 1G
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.phpmyadmin-hubdev.entrypoints=http"
+      - "traefik.http.routers.phpmyadmin-hubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
+      - "traefik.http.middlewares.phpmyadmin-hubdev-stripprefix.stripprefix.prefixes=/mysadmin"
+      - "traefik.http.middlewares.phpmyadmin-hubdev-auth.basicauth.users=${PHPMYADMIN_AUTH}"
+      - "traefik.http.middlewares.phpmyadmin-hubdev-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.phpmyadmin-hubdev.middlewares=phpmyadmin-hubdev-https-redirect"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.entrypoints=https"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.tls=true"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.tls.certresolver=http"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.service=phpmyadmin-hubdev"
+      - "traefik.http.routers.phpmyadmin-hubdev-secure.middlewares=phpmyadmin-hubdev-stripprefix,phpmyadmin-hubdev-auth"
+      - "traefik.http.services.phpmyadmin-hubdev.loadbalancer.server.port=80"
+      - "traefik.docker.network=web"
+
+  eggo-migrations:
+    # TODO: Run with DEV image
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
+    depends_on:
+      eggo-dev-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: eggo-dev-db
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: "${MARIADB_DEV_PASSWORD}"
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_PORT: 3306
+      WAIT_FOR_DB: ${KANA}
+    entrypoint: ["scripts/wait-for-kanadb.sh"]
+    command: "npx knex migrate:latest"
+    networks:
+      - web
+    restart: no
+
+networks:
+  web:
+    external: true
