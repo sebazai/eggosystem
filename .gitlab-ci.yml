@@ -80,17 +80,17 @@ variables:
 # These either cant be DRY because the rules are OR and not AND (the - & anchors do not work really well)
 .main-frontend:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"'
       <<: *frontend-changes
 
 .main-backend:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"'
       <<: *backend-changes
 
 .main-all-app:
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "development"'
       <<: *all-app-changes
 
 .mr-frontend:
@@ -441,14 +441,15 @@ push-dockerfile:backend:
       - BUILD_TYPE: [dev, production]
   script:
     - |
-      if [ "$BUILD_TYPE" == "dev" ]; then
+      if [ "$BUILD_TYPE" == "dev" ] && [ "$CI_COMMIT_BRANCH" == "development" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd \
           --build-arg CI=true \
+          --push \
           -t $REGISTRY/eggo-backend:dev \
           -f apps/backend/Dockerfile.dev .
-      elif [ "$BUILD_TYPE" == "production" ]; then
+      elif [ "$BUILD_TYPE" == "production" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache \
@@ -467,14 +468,27 @@ push-dockerfile:migrations:
   variables:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
   script:
-    - docker buildx build
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
-      --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
-      --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
-      --build-arg CI=true
-      --push
-      -t $REGISTRY/eggo-migrations:dev
-      -f apps/backend/Dockerfile.migrations.dev .
+    - |
+      if [ "$CI_COMMIT_BRANCH" == "development" ]; then
+          docker buildx build
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
+            --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
+            --build-arg CI=true
+            --push
+            -t $REGISTRY/eggo-migrations:dev
+            -f apps/backend/Dockerfile.migrations.dev .
+        elif [ "$CI_COMMIT_BRANCH" == "main" ]; then
+          docker buildx build
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache
+            --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache,mode=max,compression=zstd
+            --build-arg CI=true
+            --push
+            -t $REGISTRY/eggo-migrations:latest
+            -t $REGISTRY/eggo-migrations:staging
+            -f apps/backend/Dockerfile.migrations.dev .
+      fi
 
 push-dockerfile:frontend:
   <<: *common-docker-push
@@ -487,13 +501,18 @@ push-dockerfile:frontend:
       - BUILD_TYPE: [dev, stage, latest]
   script:
     - |
-      if [ "$BUILD_TYPE" == "dev" ]; then
+      if [ "$BUILD_TYPE" == "dev" ] && [ "$CI_COMMIT_BRANCH" == "development" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg CI=true \
+          --push \
+          -t $REGISTRY/eggo-frontend:dev \
           -f apps/frontend/Dockerfile.dev .
-      elif [ "$BUILD_TYPE" == "stage" ]; then
+      elif [ "$BUILD_TYPE" == "stage" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
@@ -505,7 +524,7 @@ push-dockerfile:frontend:
           --push \
           -t $REGISTRY/eggo-frontend:stage \
           -f apps/frontend/Dockerfile .
-      elif [ "$BUILD_TYPE" == "latest" ]; then
+      elif [ "$BUILD_TYPE" == "latest" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
@@ -581,6 +600,43 @@ deploy-stage:
       echo "📱 Frontend: https://${HUBSTAGE_PUBLIC_URL}"
       echo "🔌 API: https://${HUBSTAGE_PUBLIC_URL}/api/v1"
       echo "🗄️ phpMyAdmin: https://${HUBSTAGE_PUBLIC_URL}/mysadmin/"
+      echo "=============================================="
+
+deploy-dev:
+  image: alpine:latest
+  stage: deploy
+  extends: [.main-all-app]
+  resource_group: dev
+  environment:
+    name: dev
+    url: https://${HUBDEV_PUBLIC_URL}
+  variables:
+    <<: *deploy-variables
+    ENV_ID: dev
+  before_script:
+    - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
+    - eval $(ssh-agent -s)
+    - echo "$HUB_PROD_SSH" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan $HUB_DEV_IP >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
+    - envsubst < docker-compose.dev.yml > docker-compose.dev.subst.yml
+    - rsync -v ./docker-compose.dev.subst.yml ubuntu@$HUB_DEV_IP:~/docker/eggosystem-dev/docker-compose.yml
+    - rsync -v ./conf/mariadb/my.cnf ubuntu@$HUB_DEV_IP:~/docker/eggosystem-dev/my.cnf
+    - ssh ubuntu@$HUB_DEV_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh ubuntu@$HUB_DEV_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml pull"
+    - ssh ubuntu@$HUB_DEV_IP "docker compose -f ~/docker/eggosystem-dev/docker-compose.yml up -d"
+    - |
+      echo ""
+      echo "=============================================="
+      echo "🚀 DEPLOYMENT SUCCESSFUL!"
+      echo "=============================================="
+      echo "📱 Frontend: https://${HUBDEV_PUBLIC_URL}"
+      echo "🔌 API: https://${HUBDEV_PUBLIC_URL}/api/v1"
+      echo "🗄️ phpMyAdmin: https://${HUBDEV_PUBLIC_URL}/mysadmin/"
       echo "=============================================="
 
 deploy-ondemand:

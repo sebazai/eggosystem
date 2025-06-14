@@ -142,8 +142,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    # TODO: Run with stage image
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:staging
     depends_on:
       eggo-stage-db:
         condition: service_healthy
