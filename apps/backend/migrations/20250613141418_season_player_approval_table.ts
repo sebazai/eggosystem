@@ -1,7 +1,7 @@
 import type { Knex } from "knex";
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable("SeasonPlayerApproval", (table) => {
+  await knex.schema.createTable("SeasonPlayerApprovals", (table) => {
     table.increments("id").primary();
     table
       .bigInteger("steam_id")
@@ -32,7 +32,7 @@ export async function up(knex: Knex): Promise<void> {
       .unsigned()
       .references("id")
       .inTable("Accounts");
-    table.timestamp("approved_at").notNullable();
+    table.timestamp("approved_at").notNullable().defaultTo(knex.fn.now());
     table.string("ticket_id").nullable();
     table.text("details").nullable();
     table.timestamps(true, true);
@@ -48,5 +48,5 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTable("SeasonPlayerApproval");
+  await knex.schema.dropTable("SeasonPlayerApprovals");
 }
