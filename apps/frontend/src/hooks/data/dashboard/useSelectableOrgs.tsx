@@ -1,12 +1,16 @@
 "use client";
 
-import type { Team } from "@eggosystem/types";
+import { CREATE_NEW_VALUE, type Organizations } from "@eggosystem/types";
 import useSWR from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
 
-export const useSelectableOrgs = () => {
-  const { data, error, isLoading, isValidating } = useSWR<Team[]>(
-    "/api/v1/dashboard/organizations",
+export const useSelectableOrgs = (teamId?: string) => {
+  const { data, error, isLoading, isValidating } = useSWR<
+    Organizations[] | undefined
+  >(
+    teamId && teamId !== CREATE_NEW_VALUE
+      ? `/api/v1/dashboard/teams/${teamId}/organization`
+      : "/api/v1/dashboard/organizations",
     clientApiFetch,
     {
       revalidateOnFocus: false

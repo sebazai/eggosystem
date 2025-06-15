@@ -2,7 +2,8 @@ import {
   type RequestWithParamsAndBody,
   signupFormSchema,
   type SignupFormValues,
-  type RequestWithParams
+  type RequestWithParams,
+  RequestWithParamsAndQuery
 } from "@eggosystem/types";
 import type { Response } from "express";
 import {
@@ -15,7 +16,7 @@ import {
   getValidSeason,
   checkExternalId
 } from "../services/season-team-registration.services";
-import { isPlayerApprovedForSeasonTeamManually } from "../models/season-team-players.models";
+import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
 
 export const getTeamSignupDetails = async (
   req: RequestWithParams<{ season_id: string; team_id: string }>,
@@ -28,21 +29,27 @@ export const getTeamSignupDetails = async (
 };
 
 export const getPlayerApprovedByOrganizer = async (
-  req: RequestWithParams<{
-    season_id: string;
-    team_id: string;
-    steam_id: string;
-  }>,
+  req: RequestWithParamsAndQuery<
+    {
+      season_id: string;
+      steam_id: string;
+    },
+    { team_id?: string; organization_id?: string }
+  >,
   res: Response
 ) => {
   const season_id = Number(req.params.season_id);
-  const team_id = Number(req.params.team_id);
   const steam_id = req.params.steam_id;
+  const team_id = req.query.team_id ? Number(req.query.team_id) : undefined;
+  const organization_id = req.query.organization_id
+    ? Number(req.query.organization_id)
+    : undefined;
 
-  const approvedManually = await isPlayerApprovedForSeasonTeamManually(
+  const approvedManually = await isPlayerApprovedForSeasonManually(
     season_id,
+    steam_id,
     team_id,
-    steam_id
+    organization_id
   );
   res.json(approvedManually);
 };

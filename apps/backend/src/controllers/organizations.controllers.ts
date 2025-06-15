@@ -2,8 +2,9 @@ import { type Request, type Response } from "express";
 import {
   getOrganizations,
   getOrganizationById,
-  getOrganizationTeams,
-  getOrganizationTeamTrophies
+  getOrganizationApprovedTeams,
+  getOrganizationTeamTrophies,
+  getOrganizationTeams
 } from "../models/organization.models";
 import { NotFoundError } from "../utils/errors";
 import { type RequestWithParams } from "@eggosystem/types";
@@ -23,7 +24,19 @@ export const getOrgById = async (req: Request, res: Response) => {
   res.json(org[0]);
 };
 
-export const getOrgTeams = async (req: Request, res: Response) => {
+export const getOrganizationApprovedTeamsController = async (
+  req: Request,
+  res: Response
+) => {
+  const orgId = Number(req.params.id);
+  const org = await getOrganizationApprovedTeams(orgId);
+  res.json(org);
+};
+
+export const getOrganizationTeamsController = async (
+  req: Request,
+  res: Response
+) => {
   const orgId = Number(req.params.id);
   const org = await getOrganizationTeams(orgId);
   res.json(org);

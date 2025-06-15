@@ -11,16 +11,28 @@ import {
 } from "../../models/dashboard/registration.models";
 import { getActiveSignupSeasonForAppId } from "../../models/season.models";
 import { BadRequestError } from "../../utils/errors";
+import { UnauthorizedError } from "express-jwt";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
   res: Response
 ) => {
   try {
-    const validatedData = postTeamManualPlayerApprovalSchema.parse(req.body);
+    const authedUser = req.auth;
+    if (!authedUser) {
+      throw new UnauthorizedError(
+        "credentials_bad_format",
+        new Error("Unauthorized")
+      );
+    }
 
-    const result =
-      await addManuallyApprovedPartialSignupForSeason(validatedData);
+    const validatedData = postTeamManualPlayerApprovalSchema.parse(req.body);
+    const approvedByAccountId = authedUser.account_id;
+
+    const result = await addManuallyApprovedPartialSignupForSeason(
+      validatedData,
+      approvedByAccountId
+    );
 
     res.status(200).json(result);
   } catch (error) {

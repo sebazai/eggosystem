@@ -34,7 +34,7 @@ import {
 } from "../models/season-player-ranks.models";
 import {
   insertSeasonTeamPlayer,
-  isPlayerApprovedForSeasonTeamManually
+  isPlayerApprovedForSeasonManually
 } from "../models/season-team-players.models";
 import { getSeasonDetailsById } from "../models/season.models";
 import { NotFoundError, BadRequestError } from "../utils/errors";
@@ -172,6 +172,7 @@ export const isValidExternalId = async (
 export const validatePlayersFromDBForSignup = async (
   seasonId: number,
   teamId: number,
+  organizationId: number,
   playerSteamIds: string[],
   manuallyApprovedByOrganizer?: boolean
 ) => {
@@ -193,13 +194,13 @@ export const validatePlayersFromDBForSignup = async (
       );
     }
     if (!playerData.is_valid_work_email && !manuallyApprovedByOrganizer) {
-      const manuallyApprovedPlayer =
-        await isPlayerApprovedForSeasonTeamManually(
-          seasonId,
-          teamId,
-          playerData.steam_id
-        );
-      if (!manuallyApprovedPlayer.employment_approved_by_organizer) {
+      const manuallyApprovedPlayer = await isPlayerApprovedForSeasonManually(
+        seasonId,
+        playerData.steam_id,
+        teamId,
+        organizationId
+      );
+      if (!manuallyApprovedPlayer.approved_by_organizer) {
         throw new BadRequestError(
           `Player ${playerData.steam_id} does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord.`
         );
@@ -339,6 +340,7 @@ export const removeCaptainPermissionForAccountId = async (
 export const handleUpdateSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
+  organizationId: number,
   teamData: UpdateSeasonTeamRegistration,
   old_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
   old_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
@@ -346,7 +348,12 @@ export const handleUpdateSeasonTeamRegistration = async (
   connection?: PoolConnection
 ) => {
   await Promise.all([
-    validatePlayersFromDBForSignup(seasonId, teamId, playerSteamIds),
+    validatePlayersFromDBForSignup(
+      seasonId,
+      teamId,
+      organizationId,
+      playerSteamIds
+    ),
     updateSeasonTeamRegistration(seasonId, teamId, teamData, connection),
     updatePlayersForSeasonTeamRegistration(
       seasonId,
@@ -371,6 +378,7 @@ export const handleSeasonTeamRegistration = async (
   seasonPlatform: SeasonPlatform | null,
   appId: number,
   teamId: number,
+  organizationId: number,
   teamData: InsertSeasonTeamRegistration,
   playerSteamIds: string[],
   manuallyApprovedByOrganizer?: boolean,
@@ -380,6 +388,7 @@ export const handleSeasonTeamRegistration = async (
     validatePlayersFromDBForSignup(
       seasonId,
       teamId,
+      organizationId,
       playerSteamIds,
       manuallyApprovedByOrganizer
     ),
@@ -429,6 +438,7 @@ export const handleSignupFormForSeasonUpdate = async (
   await handleUpdateSeasonTeamRegistration(
     seasonId,
     teamId,
+    formData.organizationId,
     {
       captain_steam_id: captainSteamId,
       co_captain_steam_id: coCaptainSteamId,
@@ -491,6 +501,7 @@ export const handleSignupFormForSeason = async (
           season.platform,
           season.app_id,
           formData.teamId,
+          newOrg.insertId,
           {
             captain_steam_id: captainSteamId,
             co_captain_steam_id: coCaptainSteamId,
@@ -525,6 +536,7 @@ export const handleSignupFormForSeason = async (
           season.platform,
           season.app_id,
           newTeam.insertId,
+          newOrg.insertId,
           {
             captain_steam_id: captainSteamId,
             co_captain_steam_id: coCaptainSteamId,
@@ -562,6 +574,7 @@ export const handleSignupFormForSeason = async (
         season.platform,
         season.app_id,
         newTeam.insertId,
+        formData.organizationId,
         {
           captain_steam_id: captainSteamId,
           co_captain_steam_id: coCaptainSteamId,
@@ -613,6 +626,7 @@ export const handleSignupFormForSeason = async (
       season.platform,
       season.app_id,
       formData.teamId,
+      formData.organizationId,
       {
         captain_steam_id: captainSteamId,
         co_captain_steam_id: coCaptainSteamId,

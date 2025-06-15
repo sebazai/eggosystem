@@ -664,7 +664,6 @@ test.describe("Signup Form", () => {
     // Navigate to players section
     await page.locator('[data-testid="go-to-lineup-button"]').click();
 
-    // Fill in Steam ID for player 1 - this user has employment_approved_by_organizer = false in the E2E seed
     const steamIdInput = page.locator('[data-testid="steam-id-input-1"]');
     await expect(steamIdInput).toBeVisible();
 

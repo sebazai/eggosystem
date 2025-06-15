@@ -2,7 +2,7 @@ import type { PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import type {
   InsertSeasonTeamPlayer,
-  SeasonTeamPlayer
+  SeasonPlayerApprovals
 } from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
 
@@ -20,30 +20,25 @@ export const insertSeasonTeamPlayer = async (
   );
 };
 
-export const isPlayerApprovedForSeasonTeamManually = async (
+export const isPlayerApprovedForSeasonManually = async (
   season_id: number,
-  team_id: number,
-  steam_id: string
+  steam_id: string,
+  team_id?: number,
+  organization_id?: number
 ) => {
-  const [result] = await runQuery<
-    Array<
-      | {
-          employment_approved_by_organizer: SeasonTeamPlayer["employment_approved_by_organizer"];
-        }
-      | undefined
-    >
-  >(
-    `SELECT stp.employment_approved_by_organizer 
-     FROM SeasonTeamPlayers stp 
-       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
-       JOIN Accounts a ON sp.account_id = a.id
-      WHERE stp.season_id = ? AND stp.team_id = ? AND stp.steam_id = ? AND a.work_email IS NOT NULL`,
-    [season_id, team_id, steam_id]
+  if (!team_id && !organization_id) {
+    throw new Error("Either team_id or organization_id must be provided");
+  }
+  const [result] = await runQuery<Array<SeasonPlayerApprovals>>(
+    `SELECT spa.* 
+     FROM SeasonPlayerApprovals spa 
+      WHERE spa.season_id = ? AND spa.steam_id = ? AND (spa.team_id = ? OR spa.organization_id = ?)`,
+    [season_id, steam_id, team_id ?? null, organization_id ?? null]
   );
   if (!result) {
-    return { employment_approved_by_organizer: false };
+    return { approved_by_organizer: false };
   }
   return {
-    employment_approved_by_organizer: !!result.employment_approved_by_organizer
+    approved_by_organizer: !!result
   };
 };

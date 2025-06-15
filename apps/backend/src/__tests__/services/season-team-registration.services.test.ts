@@ -330,6 +330,7 @@ describe("Season team registration services", () => {
         seasonDetails.platform,
         seasonDetails.app_id,
         formData.teamId,
+        formData.organizationId,
         {
           captain_steam_id: formData.players[0].steamId,
           co_captain_steam_id: formData.players[1].steamId,
@@ -418,6 +419,7 @@ describe("Season team registration services", () => {
         await registrationServices.validatePlayersFromDBForSignup(
           seasonDetails.id,
           formData.teamId,
+          formData.organizationId,
           formData.players.map((player) => player.steamId)
         );
       });
@@ -432,6 +434,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -458,6 +461,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -473,6 +477,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -492,6 +497,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -511,6 +517,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -530,6 +537,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -545,6 +553,7 @@ describe("Season team registration services", () => {
         await registrationServices.validatePlayersFromDBForSignup(
           seasonDetails.id,
           formData.teamId,
+          formData.organizationId,
           formData.players.map((player) => player.steamId)
         );
       });
@@ -559,6 +568,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -578,6 +588,7 @@ describe("Season team registration services", () => {
           await registrationServices.validatePlayersFromDBForSignup(
             seasonDetails.id,
             formData.teamId,
+            formData.organizationId,
             formData.players.map((player) => player.steamId)
           );
         } catch (error) {
@@ -1116,6 +1127,7 @@ describe("Season team registration services", () => {
       expect(updateAddPlayers).toHaveBeenCalledWith(
         seasonDetails.id,
         2,
+        102,
         formData.players.map((player) => player.steamId),
         undefined
       );
@@ -1519,6 +1531,7 @@ describe("Season team registration services", () => {
         registrationServices.validatePlayersFromDBForSignup(
           seasonDetails.id,
           formData.teamId,
+          formData.organizationId,
           formData.players.map((p) => p.steamId)
         )
       ).rejects.toThrow(/has not accepted privacy policy/);

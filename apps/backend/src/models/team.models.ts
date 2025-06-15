@@ -5,7 +5,8 @@ import {
   type TopTeamsByFiltersRaw,
   type ParsedParams,
   type TeamMapStats,
-  type TeamHeaderDetails
+  type TeamHeaderDetails,
+  Organizations
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
@@ -460,6 +461,13 @@ export const getFilteredTopTeams = async ({
 export const getTeamsWithoutOrgs = () => {
   return runQuery<Array<Team>>(
     "SELECT * FROM Teams WHERE organization_id IS NULL;"
+  );
+};
+
+export const getTeamOrganization = async (teamId: number) => {
+  return runQuery<Array<Organizations | undefined>>(
+    "SELECT o.* FROM Teams t JOIN Organizations o ON t.organization_id = o.id WHERE t.id = ?",
+    [teamId]
   );
 };
 

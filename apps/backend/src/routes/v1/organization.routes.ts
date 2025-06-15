@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getOrgs,
   getOrgById,
-  getOrgTeams,
+  getOrganizationApprovedTeamsController,
   getOrgTeamTrophiesController
 } from "../../controllers/organizations.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -16,6 +16,10 @@ router.get(
   validateNumericParams(),
   getOrgTeamTrophiesController
 );
-router.get("/:id/teams", validateNumericParams(), getOrgTeams);
+router.get(
+  "/:id/teams",
+  validateNumericParams(),
+  getOrganizationApprovedTeamsController
+);
 
 export default router;

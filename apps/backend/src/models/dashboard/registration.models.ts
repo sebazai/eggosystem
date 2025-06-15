@@ -18,7 +18,8 @@ import { faceitEloToLevel } from "../../utils/faceit-utils";
 import { runQuery } from "../../db/mysqlRunQuery";
 
 export const addManuallyApprovedPartialSignupForSeason = async (
-  formData: PostTeamManualPlayerApprovalSchemaType
+  formData: PostTeamManualPlayerApprovalSchemaType,
+  approvedByAccountId: number
 ) => {
   const connection = await getConnection();
 
@@ -33,6 +34,7 @@ export const addManuallyApprovedPartialSignupForSeason = async (
     const data = await handlePreApprovedRegistration(
       activeSeason.season_id,
       formData,
+      approvedByAccountId,
       connection
     );
     await connection.commit();

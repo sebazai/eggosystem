@@ -7,40 +7,34 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 import { insertOrganization } from "../../models/organization.models";
 import { insertTeam } from "../../models/team.models";
-import { handleSeasonTeamRegistration } from "../season-team-registration.services";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { BadRequestError } from "../../utils/errors";
 
 const addExistingTeamPreApprovalRegistration = async (
   seasonId: number,
   data: ExistingTeamManualApprovalType,
+  approvedByAccountId: number,
   connection?: PoolConnection
 ) => {
-  await handleSeasonTeamRegistration(
-    seasonId,
-    null,
-    730,
-    data.teamId,
-    {
-      captain_steam_id: data.captainSteamId,
-      terms_and_conditions_approved: false,
-      external_platform_id: null,
-      co_captain_steam_id: null
-    },
-    data.acceptedPlayerSteamIds,
-    true,
-    connection
-  );
-
+  const query = `
+    INSERT INTO SeasonPlayerApprovals (season_id, team_id, steam_id, approved_by_id, ticket_id, details)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
   const approvedByOrganizerSteamIdQueries = data.acceptedPlayerSteamIds.map(
     (steamId) =>
       runQuery(
-        "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = 1 WHERE steam_id = ? AND season_id = ? AND team_id = ?",
-        [steamId, seasonId, data.teamId],
+        query,
+        [
+          seasonId,
+          data.teamId,
+          steamId,
+          approvedByAccountId,
+          data.ticketId ?? null,
+          data.details ?? null
+        ],
         connection
       )
   );
-
   await Promise.all(approvedByOrganizerSteamIdQueries);
   return { teamId: data.teamId };
 };
@@ -48,12 +42,12 @@ const addExistingTeamPreApprovalRegistration = async (
 const addNewTeamPreApprovalRegistration = async (
   seasonId: number,
   data: NewTeamManualApprovalType,
+  approvedByAccountId: number,
   connection?: PoolConnection
 ) => {
   const newTeam = await insertTeam(
     {
       name: data.newTeamName,
-
       organization_id: data.organizationId
     },
     connection
@@ -65,6 +59,7 @@ const addNewTeamPreApprovalRegistration = async (
       teamId: newTeam.insertId,
       type: "existing"
     },
+    approvedByAccountId,
     connection
   );
 };
@@ -72,6 +67,7 @@ const addNewTeamPreApprovalRegistration = async (
 const addNewTeamAndOrgPreApprovalRegistration = async (
   seasonId: number,
   data: NewTeamAndOrgManualApprovalType,
+  approvedByAccountId: number,
   connection?: PoolConnection
 ) => {
   const newOrg = await insertOrganization(
@@ -97,6 +93,7 @@ const addNewTeamAndOrgPreApprovalRegistration = async (
       teamId: newTeam.insertId,
       type: "existing"
     },
+    approvedByAccountId,
     connection
   );
 };
@@ -104,20 +101,28 @@ const addNewTeamAndOrgPreApprovalRegistration = async (
 export const handlePreApprovedRegistration = async (
   seasonId: number,
   formData: PostTeamManualPlayerApprovalSchemaType,
+  approvedByAccountId: number,
   connection?: PoolConnection
 ) => {
   if (formData.type === "existing") {
     return addExistingTeamPreApprovalRegistration(
       seasonId,
       formData,
+      approvedByAccountId,
       connection
     );
   } else if (formData.type === "new-team") {
-    return addNewTeamPreApprovalRegistration(seasonId, formData, connection);
+    return addNewTeamPreApprovalRegistration(
+      seasonId,
+      formData,
+      approvedByAccountId,
+      connection
+    );
   } else if (formData.type === "new-team-and-org") {
     return addNewTeamAndOrgPreApprovalRegistration(
       seasonId,
       formData,
+      approvedByAccountId,
       connection
     );
   }

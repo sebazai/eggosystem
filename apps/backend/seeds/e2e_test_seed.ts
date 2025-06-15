@@ -348,31 +348,27 @@ export async function seed(knex: Knex): Promise<void> {
   });
 
   // Set up SeasonTeamPlayers for employment approval testing
-  // This allows us to test the employment_approved_by_organizer functionality
   const seasonTeamPlayers = [
     // account_id 3 (76561197960273207) - this is our auth user, has work email verified
     {
       season_id: 16,
       team_id: 999,
       steam_id: "76561197960273207",
-      role: "primary",
-      employment_approved_by_organizer: null // Should pass based on work email
+      role: "primary"
     },
     // account_id 5 (76561197960275646) - approve manually for testing organizer approval
     {
       season_id: 16,
       team_id: 999,
       steam_id: "76561197960275646",
-      role: "primary",
-      employment_approved_by_organizer: true // Manually approved by organizer
+      role: "primary"
     },
     // account_id 6 (76561197960283671) - not approved, for testing rejection
     {
       season_id: 16,
       team_id: 999,
       steam_id: "76561197960283671",
-      role: "primary",
-      employment_approved_by_organizer: false // Not approved by organizer
+      role: "primary"
     }
   ];
 
@@ -387,13 +383,7 @@ export async function seed(knex: Knex): Promise<void> {
       ON DUPLICATE KEY UPDATE 
         employment_approved_by_organizer = VALUES(employment_approved_by_organizer)
     `,
-      [
-        player.season_id,
-        player.team_id,
-        player.steam_id,
-        player.role,
-        player.employment_approved_by_organizer
-      ]
+      [player.season_id, player.team_id, player.steam_id, player.role]
     );
   }
 

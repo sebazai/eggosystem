@@ -2,14 +2,10 @@ import * as z from "zod";
 
 export const CREATE_NEW_VALUE = "__create__";
 
-export const teamManualPlayerApprovalFormSchema = z
+export const manualPlayerApprovalFormSchema = z
   .object({
-    teamId: z.string().min(1, "Team is required"),
-    organizationId: z.string().min(1, "Organization is required").optional(),
-    captainSteamId: z
-      .string()
-      .min(17, "Captain Steam ID should be 17 numbers")
-      .max(17, "Captain Steam ID should be 17 numbers"),
+    teamId: z.string().optional(),
+    organizationId: z.string().optional(),
     acceptedPlayerSteamIds: z
       .array(
         z.object({
@@ -23,41 +19,12 @@ export const teamManualPlayerApprovalFormSchema = z
     organizationName: z.string().optional(),
     organizationCode: z.string().optional(),
     organizationWebsite: z.string().url().optional(),
-    newTeamName: z.string().optional()
+    newTeamName: z.string().optional(),
+    ticketId: z.string().optional(),
+    details: z.string().optional()
   })
   .superRefine((data, ctx) => {
     if (data.teamId === CREATE_NEW_VALUE) {
-      if (data.organizationId === CREATE_NEW_VALUE) {
-        if (!data.organizationName?.trim()) {
-          ctx.addIssue({
-            path: ["organizationName"],
-            code: z.ZodIssueCode.custom,
-            message: "Organization name is required"
-          });
-        }
-        if (!data.organizationCode?.trim()) {
-          ctx.addIssue({
-            path: ["organizationCode"],
-            code: z.ZodIssueCode.custom,
-            message: "Organization code is required"
-          });
-        }
-        if (!data.organizationWebsite?.trim()) {
-          ctx.addIssue({
-            path: ["organizationWebsite"],
-            code: z.ZodIssueCode.custom,
-            message: "Organization website is required"
-          });
-        }
-      } else {
-        if (!data.organizationId?.trim()) {
-          ctx.addIssue({
-            path: ["organizationId"],
-            code: z.ZodIssueCode.custom,
-            message: "Organization id is required"
-          });
-        }
-      }
       if (!data.newTeamName?.trim()) {
         ctx.addIssue({
           path: ["newTeamName"],
@@ -66,17 +33,48 @@ export const teamManualPlayerApprovalFormSchema = z
         });
       }
     }
+    if (data.organizationId === CREATE_NEW_VALUE) {
+      if (!data.organizationName?.trim()) {
+        ctx.addIssue({
+          path: ["organizationName"],
+          code: z.ZodIssueCode.custom,
+          message: "Organization name is required"
+        });
+      }
+      if (!data.organizationCode?.trim()) {
+        ctx.addIssue({
+          path: ["organizationCode"],
+          code: z.ZodIssueCode.custom,
+          message: "Organization code is required"
+        });
+      }
+      if (!data.organizationWebsite?.trim()) {
+        ctx.addIssue({
+          path: ["organizationWebsite"],
+          code: z.ZodIssueCode.custom,
+          message: "Organization website is required"
+        });
+      }
+    }
+    if (!data.teamId && !data.organizationId) {
+      ctx.addIssue({
+        path: ["organizationId"],
+        code: z.ZodIssueCode.custom,
+        message: "Either Team or Organization has to be selected"
+      });
+      ctx.addIssue({
+        path: ["teamId"],
+        code: z.ZodIssueCode.custom,
+        message: "Either Team or Organization has to be selected"
+      });
+    }
   });
 
-export type TeamManualPlayerApprovalFormSchemaType = z.infer<
-  typeof teamManualPlayerApprovalFormSchema
+export type ManualPlayerApprovalFormSchemaType = z.infer<
+  typeof manualPlayerApprovalFormSchema
 >;
 
 const baseSchema = {
-  captainSteamId: z
-    .string()
-    .min(17, "Captain Steam ID should be 17 numbers")
-    .max(17, "Captain Steam ID should be 17 numbers"),
   acceptedPlayerSteamIds: z
     .array(
       z
@@ -84,13 +82,15 @@ const baseSchema = {
         .min(17, "Steam ID should be 17 numbers")
         .max(17, "Steam ID should be 17 numbers")
     )
-    .min(1, "At least one player must be added")
+    .min(1, "At least one player must be added"),
+  ticketId: z.string().optional(),
+  details: z.string().optional()
 };
 
 const existingTeamSchema = z.object({
   ...baseSchema,
   type: z.literal("existing"),
-  teamId: z.number().min(1, "Team is required")
+  teamId: z.number()
 });
 
 export type ExistingTeamManualApprovalType = z.infer<typeof existingTeamSchema>;
@@ -99,7 +99,7 @@ const newTeamSchema = z.object({
   ...baseSchema,
   type: z.literal("new-team"),
   newTeamName: z.string().min(1, "Team name is required"),
-  organizationId: z.number().min(1, "Organization is required")
+  organizationId: z.number().optional()
 });
 
 export type NewTeamManualApprovalType = z.infer<typeof newTeamSchema>;

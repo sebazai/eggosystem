@@ -7,7 +7,8 @@ import {
   getFilteredTopTeams,
   getTeamById,
   getTeamsWithoutOrgs,
-  getOneTeamByFilters
+  getOneTeamByFilters,
+  getTeamOrganization
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
@@ -123,4 +124,13 @@ export const getTeamsWithoutOrgController = async (
 ) => {
   const teams = await getTeamsWithoutOrgs();
   res.json(teams);
+};
+
+export const getTeamOrganizationController = async (
+  req: RequestWithParams<{ id: string }>,
+  res: Response
+) => {
+  const teamId = Number(req.params.id);
+  const organization = await getTeamOrganization(teamId);
+  res.json(organization);
 };
