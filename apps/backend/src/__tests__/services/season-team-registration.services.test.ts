@@ -343,6 +343,7 @@ describe("Season team registration services", () => {
       expect(validatePlayersInDb).toHaveBeenCalledWith(
         seasonDetails.id,
         formData.teamId,
+        formData.organizationId,
         formData.players.map((player) => player.steamId),
         undefined
       );
@@ -377,30 +378,28 @@ describe("Season team registration services", () => {
   describe("validatePlayersFromDBForSignup", () => {
     describe("approved by organizer", () => {
       beforeEach(async () => {
-        await unsetSeasonTeamRegistration();
         const formData = _.cloneDeep(validSignupData);
 
-        await registrationModels.insertSeasonTeamRegistration(
-          seasonDetails.id,
+        const query = `
+          INSERT INTO SeasonPlayerApprovals (season_id, team_id, steam_id, approved_by_id, ticket_id, details)
+          VALUES (?, ?, ?, ?, ?, ?)
+      `;
+        await runQuery(query, [
+          1,
           formData.teamId,
-          {
-            captain_steam_id: formData.players[0].steamId,
-            co_captain_steam_id: formData.players[1].steamId,
-            external_platform_id: formData.teamExternalId,
-            terms_and_conditions_approved:
-              formData.captainHasReadTermAndConditions
-          }
-        );
-        await setSeasonTeamPlayers(seasonDetails.id);
-
-        await runQuery(
-          "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = ? WHERE steam_id = ?",
-          [true, formData.players[2].steamId]
-        );
-        await runQuery(
-          "UPDATE SeasonTeamPlayers SET employment_approved_by_organizer = ? WHERE steam_id = ?",
-          [true, formData.players[1].steamId]
-        );
+          formData.players[2].steamId,
+          1,
+          null,
+          null
+        ]);
+        await runQuery(query, [
+          1,
+          formData.teamId,
+          formData.players[1].steamId,
+          1,
+          null,
+          null
+        ]);
       });
 
       afterEach(async () => {
@@ -1111,6 +1110,7 @@ describe("Season team registration services", () => {
       expect(validatePlayersInDb).toHaveBeenCalledWith(
         seasonDetails.id,
         formData.teamId,
+        formData.organizationId,
         formData.players.map((player) => player.steamId)
       );
       expect(registrationUpdate).toHaveBeenCalledWith(
@@ -1127,7 +1127,6 @@ describe("Season team registration services", () => {
       expect(updateAddPlayers).toHaveBeenCalledWith(
         seasonDetails.id,
         2,
-        102,
         formData.players.map((player) => player.steamId),
         undefined
       );

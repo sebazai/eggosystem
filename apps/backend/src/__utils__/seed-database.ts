@@ -84,8 +84,15 @@ export const insertTestUsersForSignup = async () => {
 
 export const cleanupTestUsers = async () => {
   for (const player of validSignupData.players) {
+    await cleanupTestUserApprovals(player.steamId);
     await cleanUpTestUser(player.accountId);
   }
+};
+
+export const cleanupTestUserApprovals = async (steamId: string) => {
+  await runQuery("DELETE FROM SeasonPlayerApprovals WHERE steam_id = ?", [
+    steamId
+  ]);
 };
 
 export const cleanUpTestUser = async (accountId: number) => {
