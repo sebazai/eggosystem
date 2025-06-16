@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:DEV
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:dev
     pull_policy: always
     depends_on:
       eggo-dev-db:
