@@ -259,7 +259,8 @@ export async function seed(knex: Knex): Promise<void> {
       account_id: 5,
       steam_id: "76561197960275646",
       nickname: "Quattra",
-      work_email: null
+      work_email: null,
+      work_email_verified: 0
     },
     { account_id: 6, steam_id: "76561197960283671", nickname: "Trev" },
     { account_id: 8, steam_id: "76561197960265728", nickname: "Hoolyz" }, // Robin Walker (Valve employee) - guaranteed public
@@ -295,7 +296,7 @@ export async function seed(knex: Knex): Promise<void> {
     await knex.raw(
       `
       INSERT INTO Accounts (id, full_name, work_email, work_email_verified)
-      VALUES (?, ?, ?, 1)
+      VALUES (?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         work_email = VALUES(work_email),
         work_email_verified = VALUES(work_email_verified)
@@ -303,7 +304,8 @@ export async function seed(knex: Knex): Promise<void> {
       [
         player.account_id,
         player.nickname,
-        player.work_email ?? `test+${player.account_id}@kanaliiga.fi`
+        player.work_email ?? `test+${player.account_id}@kanaliiga.fi`,
+        player.work_email_verified ?? 1
       ]
     );
 
