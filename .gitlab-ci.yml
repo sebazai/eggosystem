@@ -477,23 +477,23 @@ push-dockerfile:migrations:
   script:
     - |
       if [ "$CI_COMMIT_BRANCH" == "development" ]; then
-          docker buildx build
-            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev
-            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache
-            --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd
-            --build-arg CI=true
-            --push
-            -t $REGISTRY/eggo-migrations:dev
+          docker buildx build \
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev \
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:dev-cache \
+            --cache-to type=registry,ref=$REGISTRY/eggo-migrations:dev-cache,mode=max,compression=zstd \
+            --build-arg CI=true \
+            --push \
+            -t $REGISTRY/eggo-migrations:dev \
             -f apps/backend/Dockerfile.migrations.dev .
         elif [ "$CI_COMMIT_BRANCH" == "main" ]; then
-          docker buildx build
-            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest
-            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache
-            --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache,mode=max,compression=zstd
-            --build-arg CI=true
-            --push
-            -t $REGISTRY/eggo-migrations:latest
-            -t $REGISTRY/eggo-migrations:staging
+          docker buildx build \
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest \
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache \
+            --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache,mode=max,compression=zstd \
+            --build-arg CI=true \
+            --push \
+            -t $REGISTRY/eggo-migrations:latest \
+            -t $REGISTRY/eggo-migrations:staging \
             -f apps/backend/Dockerfile.migrations.dev .
       fi
 
