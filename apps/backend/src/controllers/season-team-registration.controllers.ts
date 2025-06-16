@@ -17,6 +17,7 @@ import {
   checkExternalId
 } from "../services/season-team-registration.services";
 import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
+import { BadRequestError } from "../utils/errors";
 
 export const getTeamSignupDetails = async (
   req: RequestWithParams<{ season_id: string; team_id: string }>,
@@ -44,6 +45,12 @@ export const getPlayerApprovedByOrganizer = async (
   const organization_id = req.query.organization_id
     ? Number(req.query.organization_id)
     : undefined;
+
+  if (!team_id && !organization_id) {
+    throw new BadRequestError(
+      "Either team_id or organization_id is required as query param"
+    );
+  }
 
   const approvedManually = await isPlayerApprovedForSeasonManually(
     season_id,

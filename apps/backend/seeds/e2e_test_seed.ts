@@ -262,7 +262,12 @@ export async function seed(knex: Knex): Promise<void> {
       work_email: null,
       work_email_verified: 0
     },
-    { account_id: 6, steam_id: "76561197960283671", nickname: "Trev" },
+    {
+      account_id: 6,
+      steam_id: "76561197960283671",
+      nickname: "Trev",
+      work_email_verified: 0
+    },
     { account_id: 8, steam_id: "76561197960265728", nickname: "Hoolyz" }, // Robin Walker (Valve employee) - guaranteed public
     // Add well-known public Steam accounts for testing
     { account_id: 9, steam_id: "76561197960265740", nickname: "RealPlayer1" }, // Another Valve account - guaranteed public

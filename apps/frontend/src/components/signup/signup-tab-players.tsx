@@ -97,6 +97,7 @@ export const TabPlayers = ({
 
   const watchPlayers = useWatch({ control, name: "players" });
   const watchTeamId = useWatch({ control, name: "teamId" });
+  const watchOrganizationId = useWatch({ control, name: "organizationId" });
   const steamIds = watchPlayers.map((p) => p.steamId);
 
   const handlePlayer = useCallback(
@@ -193,14 +194,14 @@ export const TabPlayers = ({
             // Check if organizer has approved manually
             if (watchTeamId) {
               const approvedByOrganizer = await clientApiFetch<{
-                employment_approved_by_organizer: boolean;
+                approved_by_organizer: boolean;
               }>(
-                `/api/v1/registrations/season/${seasonId}/team/${watchTeamId}/player/${steam_id}/approved-manually`
+                `/api/v1/registrations/season/${seasonId}/player/${steam_id}/approved-manually?team_id=${watchTeamId}&organization_id=${watchOrganizationId}`
               );
 
               setValue(
                 `players.${index}.hasValidWorkEmail`,
-                approvedByOrganizer.employment_approved_by_organizer
+                approvedByOrganizer.approved_by_organizer
               );
             }
           }

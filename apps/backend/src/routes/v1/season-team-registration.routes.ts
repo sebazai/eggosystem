@@ -15,8 +15,8 @@ import { expireIn7Days, redisClient } from "../../utils/redisClient";
 
 const router = Router();
 router.get(
-  "/season/:season_id/team/:team_id/player/:steam_id/approved-manually",
-  validateNumericParams(["season_id", "team_id"]),
+  "/season/:season_id/player/:steam_id/approved-manually",
+  validateNumericParams(["season_id"]),
   authenticateJWT,
   getPlayerApprovedByOrganizer
 );
