@@ -344,8 +344,7 @@ describe("Season team registration services", () => {
         seasonDetails.id,
         formData.teamId,
         formData.organizationId,
-        formData.players.map((player) => player.steamId),
-        undefined
+        formData.players.map((player) => player.steamId)
       );
       expect(registrationInsert).toHaveBeenCalledWith(
         seasonDetails.id,
