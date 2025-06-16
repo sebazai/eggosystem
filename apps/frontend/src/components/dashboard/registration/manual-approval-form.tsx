@@ -46,7 +46,9 @@ export function ManualPlayerApprovalForm() {
       newTeamName: undefined,
       organizationCode: undefined,
       organizationName: undefined,
-      organizationWebsite: undefined
+      organizationWebsite: undefined,
+      ticketId: "",
+      details: undefined
     }
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -271,7 +273,11 @@ export function ManualPlayerApprovalForm() {
                 Ticket Number
               </Label>
               <FormControl>
-                <Input {...field} placeholder="Insert optional ticket id" />
+                <Input
+                  {...field}
+                  placeholder="Insert optional ticket id"
+                  data-testid="ticket-id-input"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -287,7 +293,11 @@ export function ManualPlayerApprovalForm() {
                 Details
               </Label>
               <FormControl>
-                <Textarea {...field} placeholder="Insert optional details" />
+                <Textarea
+                  {...field}
+                  placeholder="Insert optional details"
+                  data-testid="details-input"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
