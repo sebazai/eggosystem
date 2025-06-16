@@ -439,7 +439,7 @@ describe("Season team registration services", () => {
         } catch (error) {
           const err = error as BadRequestError;
           expect(err.message).toEqual(
-            "Player 12345678901234568 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+            "Player 12345678901234568 does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord."
           );
         }
       });
@@ -522,7 +522,7 @@ describe("Season team registration services", () => {
         } catch (error) {
           const asBadreq = error as BadRequestError;
           expect(asBadreq.message).toEqual(
-            "Player 12345678901234569 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+            "Player 12345678901234569 does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord."
           );
         }
       });
@@ -573,7 +573,7 @@ describe("Season team registration services", () => {
         } catch (error) {
           const asBadreq = error as BadRequestError;
           expect(asBadreq.message).toEqual(
-            "Player 12345678901234569 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+            "Player 12345678901234569 does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord."
           );
         }
       });
