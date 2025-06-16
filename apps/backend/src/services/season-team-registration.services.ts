@@ -173,8 +173,7 @@ export const validatePlayersFromDBForSignup = async (
   seasonId: number,
   teamId: number,
   organizationId: number,
-  playerSteamIds: string[],
-  manuallyApprovedByOrganizer?: boolean
+  playerSteamIds: string[]
 ) => {
   // await ensurePlayerSteamProfilesPublic(playerSteamIds);
   const data = await Promise.all(
@@ -193,7 +192,7 @@ export const validatePlayersFromDBForSignup = async (
         `Player ${playerData.steam_id} has not accepted privacy policy.`
       );
     }
-    if (!playerData.is_valid_work_email && !manuallyApprovedByOrganizer) {
+    if (!playerData.is_valid_work_email) {
       const manuallyApprovedPlayer = await isPlayerApprovedForSeasonManually(
         seasonId,
         playerData.steam_id,
@@ -202,7 +201,7 @@ export const validatePlayersFromDBForSignup = async (
       );
       if (!manuallyApprovedPlayer.approved_by_organizer) {
         throw new BadRequestError(
-          `Player ${playerData.steam_id} does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord.`
+          `Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord.`
         );
       }
     }
@@ -381,7 +380,6 @@ export const handleSeasonTeamRegistration = async (
   organizationId: number,
   teamData: InsertSeasonTeamRegistration,
   playerSteamIds: string[],
-  manuallyApprovedByOrganizer?: boolean,
   connection?: PoolConnection
 ) => {
   await Promise.all([
@@ -389,8 +387,7 @@ export const handleSeasonTeamRegistration = async (
       seasonId,
       teamId,
       organizationId,
-      playerSteamIds,
-      manuallyApprovedByOrganizer
+      playerSteamIds
     ),
     insertSeasonTeamRegistration(seasonId, teamId, teamData, connection),
     addPlayersForTeamInSeason(
@@ -510,7 +507,6 @@ export const handleSignupFormForSeason = async (
               formData.captainHasReadTermAndConditions
           },
           formData.players.map((player) => player.steamId),
-          false,
           connection
         );
 
@@ -545,7 +541,6 @@ export const handleSignupFormForSeason = async (
               formData.captainHasReadTermAndConditions
           },
           formData.players.map((player) => player.steamId),
-          false,
           connection
         );
 
@@ -583,7 +578,6 @@ export const handleSignupFormForSeason = async (
             formData.captainHasReadTermAndConditions
         },
         formData.players.map((player) => player.steamId),
-        false,
         connection
       );
 
@@ -634,7 +628,6 @@ export const handleSignupFormForSeason = async (
         terms_and_conditions_approved: formData.captainHasReadTermAndConditions
       },
       formData.players.map((player) => player.steamId),
-      false,
       connection
     );
 

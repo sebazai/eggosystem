@@ -37,6 +37,9 @@ export async function seed(knex: Knex): Promise<void> {
     // Delete from SeasonTeamPlayers for ALL seasons (not just season 16)
     await knex("SeasonTeamPlayers").where({ steam_id: steamId }).del();
 
+    // remove all manual approvals
+    await knex("SeasonPlayerApprovals").where({ steam_id: steamId }).del();
+
     // Delete from SeasonTeamRegistrations where this player is captain or co-captain
     await knex("SeasonTeamRegistrations")
       .where({ captain_steam_id: steamId })
@@ -252,7 +255,12 @@ export async function seed(knex: Knex): Promise<void> {
   const steamPlayerData = [
     { account_id: 3, steam_id: "76561197960273207", nickname: "Aabe" },
     { account_id: 4, steam_id: "76561197960283932", nickname: "heppajpg" },
-    { account_id: 5, steam_id: "76561197960275646", nickname: "Quattra" },
+    {
+      account_id: 5,
+      steam_id: "76561197960275646",
+      nickname: "Quattra",
+      work_email: null
+    },
     { account_id: 6, steam_id: "76561197960283671", nickname: "Trev" },
     { account_id: 8, steam_id: "76561197960265728", nickname: "Hoolyz" }, // Robin Walker (Valve employee) - guaranteed public
     // Add well-known public Steam accounts for testing
@@ -295,7 +303,7 @@ export async function seed(knex: Knex): Promise<void> {
       [
         player.account_id,
         player.nickname,
-        `test+${player.account_id}@kanaliiga.fi`
+        player.work_email ?? `test+${player.account_id}@kanaliiga.fi`
       ]
     );
 
@@ -348,44 +356,29 @@ export async function seed(knex: Knex): Promise<void> {
   });
 
   // Set up SeasonTeamPlayers for employment approval testing
-  // const seasonTeamPlayers = [
-  //   // account_id 3 (76561197960273207) - this is our auth user, has work email verified
-  //   {
-  //     season_id: 16,
-  //     team_id: 999,
-  //     steam_id: "76561197960273207",
-  //     role: "primary"
-  //   },
-  //   // account_id 5 (76561197960275646) - approve manually for testing organizer approval
-  //   {
-  //     season_id: 16,
-  //     team_id: 999,
-  //     steam_id: "76561197960275646",
-  //     role: "primary"
-  //   },
-  //   // account_id 6 (76561197960283671) - not approved, for testing rejection
-  //   {
-  //     season_id: 16,
-  //     team_id: 999,
-  //     steam_id: "76561197960283671",
-  //     role: "primary"
-  //   }
-  // ];
+  const seasonTeamPlayers = [
+    // account_id 5 (76561197960275646) - approve manually for testing organizer approval
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "76561197960275646"
+    }
+  ];
 
-  // // Insert SeasonTeamPlayers records
-  // for (const player of seasonTeamPlayers) {
-  //   await knex.raw(
-  //     `
-  //     INSERT INTO SeasonTeamPlayers
-  //       (season_id, team_id, steam_id, role, employment_approved_by_organizer)
-  //     VALUES
-  //       (?, ?, ?, ?, ?)
-  //     ON DUPLICATE KEY UPDATE
-  //       employment_approved_by_organizer = VALUES(employment_approved_by_organizer)
-  //   `,
-  //     [player.season_id, player.team_id, player.steam_id, player.role]
-  //   );
-  // }
+  // Insert SeasonTeamPlayers records
+  for (const player of seasonTeamPlayers) {
+    await knex.raw(
+      `
+      INSERT INTO SeasonPlayerApprovals
+        (season_id, steam_id, team_id)
+      VALUES
+        (?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        team_id = VALUES(team_id)
+    `,
+      [player.season_id, player.steam_id, player.team_id]
+    );
+  }
 
   // Set account_id 6 to have personal email to test organizer approval workflow
   await knex("Accounts").where({ id: 6 }).update({
