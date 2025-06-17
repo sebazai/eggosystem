@@ -463,47 +463,6 @@ test.describe("Signup Form", () => {
 
   // Steam ID Validation tests
   test.describe("Steam ID Validation", () => {
-    test.beforeEach(async ({ page }: { page: Page }) => {
-      // Navigate through the registration process
-      await page.goto("/seasons/16/signup/registration");
-
-      // Complete organization selection
-      await page
-        .locator('[data-testid="organizations-dropdown-toggle"]')
-        .click();
-
-      await page.locator('[data-testid="organizations-add-new"]').click();
-      await page
-        .locator('[data-testid="organization-name-input"]')
-        .fill("Test Organization");
-      await page
-        .locator('[data-testid="organization-business-id-input"]')
-        .fill(generateUniqueOrgCode());
-      await page
-        .locator('[data-testid="organization-website-input"]')
-        .fill("https://kanaliiga.fi/");
-      await page.locator('[data-testid="terms-conditions-checkbox"]').click();
-
-      // Move to team section
-      await page.locator('[data-testid="team-selection-button"]').click();
-
-      // Complete team selection
-      await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-
-      await page.locator('[data-testid="teams-add-new"]').click();
-      await page.locator('[data-testid="team-name-input"]').fill("Test Team");
-      await page
-        .locator('[data-testid="team-external-id-input"]')
-        .fill(generateUniqueFaceitTeamId());
-
-      // Navigate to players section
-      await page.locator('[data-testid="go-to-lineup-button"]').click();
-
-      // Verify we're on the players tab
-      const playersHeading = page.getByRole("heading", { name: "Players" });
-      await expect(playersHeading).toBeVisible();
-    });
-
     test("should show error when hours cannot be detected", async ({
       page
     }) => {
@@ -597,6 +556,9 @@ test.describe("Signup Form", () => {
     // Complete team selection
     await page.locator('[data-testid="teams-dropdown-toggle"]').click();
     await page.locator('[data-testid="teams-option-999"]').click();
+    await page
+      .locator('[data-testid="team-external-id-input"]')
+      .fill(generateUniqueFaceitTeamId());
 
     // Navigate to players section
     await page.locator('[data-testid="go-to-lineup-button"]').click();
