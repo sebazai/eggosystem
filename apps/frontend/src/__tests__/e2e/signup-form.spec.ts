@@ -588,17 +588,7 @@ test.describe("Signup Form", () => {
 
     // Complete organization selection
     await page.locator('[data-testid="organizations-dropdown-toggle"]').click();
-
-    await page.locator('[data-testid="organizations-add-new"]').click();
-    await page
-      .locator('[data-testid="organization-name-input"]')
-      .fill("Test Organization");
-    await page
-      .locator('[data-testid="organization-business-id-input"]')
-      .fill(generateUniqueOrgCode());
-    await page
-      .locator('[data-testid="organization-website-input"]')
-      .fill("https://kanaliiga.fi/");
+    await page.locator('[data-testid="organizations-option-999"]').click();
     await page.locator('[data-testid="terms-conditions-checkbox"]').click();
 
     // Move to team section
@@ -606,12 +596,7 @@ test.describe("Signup Form", () => {
 
     // Complete team selection
     await page.locator('[data-testid="teams-dropdown-toggle"]').click();
-
-    await page.locator('[data-testid="teams-add-new"]').click();
-    await page.locator('[data-testid="team-name-input"]').fill("Test Team");
-    await page
-      .locator('[data-testid="team-external-id-input"]')
-      .fill(generateUniqueFaceitTeamId());
+    await page.locator('[data-testid="teams-option-999"]').click();
 
     // Navigate to players section
     await page.locator('[data-testid="go-to-lineup-button"]').click();
