@@ -11,7 +11,6 @@ import {
 } from "../../models/dashboard/registration.models";
 import { getActiveSignupSeasonForAppId } from "../../models/season.models";
 import { BadRequestError } from "../../utils/errors";
-import { UnauthorizedError } from "express-jwt";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
@@ -20,10 +19,8 @@ export const addManuallyApprovedPlayersController = async (
   try {
     const authedUser = req.auth;
     if (!authedUser) {
-      throw new UnauthorizedError(
-        "credentials_bad_format",
-        new Error("Unauthorized")
-      );
+      res.sendStatus(401);
+      return;
     }
 
     const validatedData = postTeamManualPlayerApprovalSchema.parse(req.body);
