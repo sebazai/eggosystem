@@ -1,9 +1,7 @@
 import { Router } from "express";
-import {
-  getAllTeams,
-  getTeamOrganizationController
-} from "../../../controllers/teams.controllers";
+import { getAllTeams } from "../../../controllers/teams.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
+import { getTeamOrganizationController } from "../../../controllers/dashboard/teams.controllers";
 
 const router = Router();
 
