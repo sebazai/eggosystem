@@ -259,8 +259,9 @@ export async function seed(knex: Knex): Promise<void> {
       account_id: 5,
       steam_id: "76561197960275646",
       nickname: "Quattra",
-      work_email: null,
-      work_email_verified: 0
+      work_email: "test+5@kanaliiga.fi",
+      work_email_verified: 1,
+      is_work_email_personal_email: true
     },
     {
       account_id: 6,
@@ -300,17 +301,19 @@ export async function seed(knex: Knex): Promise<void> {
     // Insert account if it doesn't exist
     await knex.raw(
       `
-      INSERT INTO Accounts (id, full_name, work_email, work_email_verified)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, is_work_email_personal_email)
+      VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         work_email = VALUES(work_email),
-        work_email_verified = VALUES(work_email_verified)
+        work_email_verified = VALUES(work_email_verified),
+        is_work_email_personal_email = VALUES(is_work_email_personal_email)
     `,
       [
         player.account_id,
         player.nickname,
         player.work_email ?? `test+${player.account_id}@kanaliiga.fi`,
-        player.work_email_verified ?? 1
+        player.work_email_verified ?? 1,
+        player.is_work_email_personal_email ?? 0
       ]
     );
 
