@@ -2,13 +2,51 @@ import {
   type NewTeamAndOrgManualApprovalType,
   type ExistingTeamManualApprovalType,
   type NewTeamManualApprovalType,
-  type PostTeamManualPlayerApprovalSchemaType
+  type PostTeamManualPlayerApprovalSchemaType,
+  type NewOrgManualApprovalType
 } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { insertOrganization } from "../../models/organization.models";
 import { insertTeam } from "../../models/team.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { BadRequestError } from "../../utils/errors";
+
+const addNewOrgPreApprovalRegistration = async (
+  seasonId: number,
+  data: NewOrgManualApprovalType,
+  approvedByAccountId: number,
+  connection?: PoolConnection
+) => {
+  const newOrg = await insertOrganization(
+    {
+      name: data.newOrganizationName,
+      organization_code: data.newOrganizationCode,
+      website: data.newOrganizationWebsite
+    },
+    connection
+  );
+  const query = `
+    INSERT INTO SeasonPlayerApprovals (season_id, organization_id, steam_id, approved_by_id, ticket_id, details)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  const approvedByOrganizerSteamIdQueries = data.acceptedPlayerSteamIds.map(
+    (steamId) =>
+      runQuery(
+        query,
+        [
+          seasonId,
+          newOrg.insertId,
+          steamId,
+          approvedByAccountId,
+          data.ticketId ?? null,
+          data.details ?? null
+        ],
+        connection
+      )
+  );
+  await Promise.all(approvedByOrganizerSteamIdQueries);
+  return { organizationId: newOrg.insertId };
+};
 
 const addExistingTeamPreApprovalRegistration = async (
   seasonId: number,
@@ -106,6 +144,13 @@ export const handlePreApprovedRegistration = async (
 ) => {
   if (formData.type === "existing") {
     return addExistingTeamPreApprovalRegistration(
+      seasonId,
+      formData,
+      approvedByAccountId,
+      connection
+    );
+  } else if (formData.type === "new-org") {
+    return addNewOrgPreApprovalRegistration(
       seasonId,
       formData,
       approvedByAccountId,
