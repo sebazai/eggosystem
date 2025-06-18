@@ -20,14 +20,16 @@ export default async function Page() {
       <Separator className="my-5 bg-kanaliiga-orange" />
 
       <h2>Instructions you should follow</h2>
-      <p className="mb-5">
+      <p>
         Select either team OR organization, you do not need to select both. If
         you need to create a new team OR organization, select the &quot;Create
         new&quot; option.
-        <br />
+      </p>
+      <p>
         Add all the players you want to approve by adding their Steam IDs. You
         can add multiple SteamIDs for the same org/team.
-        <br />
+      </p>
+      <p className="mb-5">
         NB! This form should not be used to create organizations for teams that
         do not have an organization. So if there is an old team that gets a
         player approved, they can create the organization themselves during the
