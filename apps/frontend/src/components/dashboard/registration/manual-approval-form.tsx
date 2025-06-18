@@ -49,6 +49,8 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
         newOrganizationCode: data.organizationCode!,
         newOrganizationWebsite: data.organizationWebsite!,
         newTeamName: data.newTeamName!,
+        ticketId: data.ticketId,
+        details: data.details,
         type: "new-team-and-org"
       } satisfies NewTeamAndOrgManualApprovalType;
     }
@@ -61,6 +63,8 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
       newOrganizationName: data.organizationName!,
       newOrganizationCode: data.organizationCode!,
       newOrganizationWebsite: data.organizationWebsite!,
+      ticketId: data.ticketId,
+      details: data.details,
       type: "new-org"
     } satisfies NewOrgManualApprovalType;
   }
@@ -69,6 +73,8 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
     return {
       acceptedPlayerSteamIds: steamIds,
       newTeamName: data.newTeamName!,
+      ticketId: data.ticketId,
+      details: data.details,
       type: "new-team"
     } satisfies NewTeamManualApprovalType;
   }
@@ -77,6 +83,8 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
   return {
     teamId: Number(data.teamId),
     acceptedPlayerSteamIds: steamIds,
+    ticketId: data.ticketId,
+    details: data.details,
     type: "existing"
   } satisfies ExistingTeamManualApprovalType;
 };
