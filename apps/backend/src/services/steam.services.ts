@@ -44,9 +44,18 @@ export const getSteamHoursForAppId = async (
 
     if (!fromSteam.ok) {
       const duration = clearAbortTimeout();
-      logger.warn(
-        `[Steam] API returned ${fromSteam.status} ${fromSteam.statusText} for steam_id: ${steam_id} (${duration}ms)`
-      );
+      try {
+        const text = await fromSteam.text();
+        const json = await fromSteam.json();
+        logger.warn(
+          `[Steam] API returned ${fromSteam.status} ${fromSteam.statusText} for steam_id: ${steam_id} (${duration}ms):`,
+          text,
+          json
+        );
+        logger.warn("Steam response:", fromSteam);
+      } catch (error) {
+        logger.warn("Failed to parse steam response", error);
+      }
       return null;
     }
 
