@@ -240,7 +240,14 @@ export const TabPlayers = ({
         setLoadingStates((prev) => ({ ...prev, [index]: false }));
       }
     },
-    [platform, seasonId, seasonSteamAppId, setValue, watchTeamId]
+    [
+      platform,
+      seasonId,
+      seasonSteamAppId,
+      setValue,
+      watchOrganizationId,
+      watchTeamId
+    ]
   );
 
   // Add useEffect for initial data fetching if we receive steamIds from edit mode or draft
@@ -290,7 +297,8 @@ export const TabPlayers = ({
         player.hasValidWorkEmail !== true ||
         player.isEmailVerified !== true ||
         player.hours === -1 ||
-        (player.rank === -1 && player.externalRank === -1));
+        player.rank === -1 ||
+        (player.externalRank === -1 && platform !== SeasonPlatform.Kanaliiga));
     return error;
   };
 
@@ -719,17 +727,28 @@ export const TabPlayers = ({
                     </SignupPlayerNotification>
                   )}
 
-                  {player.rank === -1 &&
-                    player.externalRank === -1 &&
+                  {player.rank === -1 && (
+                    <SignupPlayerNotification
+                      data-testid={`rank-error-${index}`}
+                    >
+                      Could not detect internal game rank for the player. This
+                      could be due to temporary service issues or missing rank
+                      data. Please try removing the steam id and adding it
+                      again, or open a ticket in the Kanaliiga Discord if the
+                      problem persists.
+                    </SignupPlayerNotification>
+                  )}
+
+                  {player.externalRank === -1 &&
                     platform !== SeasonPlatform.Kanaliiga && (
                       <SignupPlayerNotification
                         data-testid={`rank-error-${index}`}
                       >
                         Could not detect external {platform.toLocaleUpperCase()}{" "}
-                        or game internal rank for the player. This could be due
-                        to temporary service issues or missing rank data. Please
-                        try removing the steam id and adding it again, or open a
-                        ticket in the Kanaliiga Discord if the problem persists.
+                        rank for the player. This could be due to temporary
+                        service issues or missing rank data. Please try removing
+                        the steam id and adding it again, or open a ticket in
+                        the Kanaliiga Discord if the problem persists.
                       </SignupPlayerNotification>
                     )}
 
