@@ -21,6 +21,7 @@ import {
   type ExistingTeamManualApprovalType,
   type NewTeamAndOrgManualApprovalType,
   type NewTeamManualApprovalType,
+  type NewOrgManualApprovalType,
   type ManualPlayerApprovalFormSchemaType
 } from "@eggosystem/types";
 import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
@@ -35,6 +36,50 @@ import {
   FormMessage
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+
+const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
+  const steamIds = data.acceptedPlayerSteamIds.map((p) => p.name);
+
+  // New team and new org
+  if (data.teamId === CREATE_NEW_VALUE) {
+    if (data.organizationId === CREATE_NEW_VALUE) {
+      return {
+        acceptedPlayerSteamIds: steamIds,
+        newOrganizationName: data.organizationName!,
+        newOrganizationCode: data.organizationCode!,
+        newOrganizationWebsite: data.organizationWebsite!,
+        newTeamName: data.newTeamName!,
+        type: "new-team-and-org"
+      } satisfies NewTeamAndOrgManualApprovalType;
+    }
+  }
+
+  // If new org, we do not care about team...
+  if (data.organizationId === CREATE_NEW_VALUE) {
+    return {
+      acceptedPlayerSteamIds: steamIds,
+      newOrganizationName: data.organizationName!,
+      newOrganizationCode: data.organizationCode!,
+      newOrganizationWebsite: data.organizationWebsite!,
+      type: "new-org"
+    } satisfies NewOrgManualApprovalType;
+  }
+
+  if (data.teamId === CREATE_NEW_VALUE) {
+    return {
+      acceptedPlayerSteamIds: steamIds,
+      newTeamName: data.newTeamName!,
+      type: "new-team"
+    } satisfies NewTeamManualApprovalType;
+  }
+
+  // Existing team, we do not care about org...
+  return {
+    teamId: Number(data.teamId),
+    acceptedPlayerSteamIds: steamIds,
+    type: "existing"
+  } satisfies ExistingTeamManualApprovalType;
+};
 
 export function ManualPlayerApprovalForm() {
   const methods = useForm<ManualPlayerApprovalFormSchemaType>({
@@ -66,32 +111,7 @@ export function ManualPlayerApprovalForm() {
 
   const onSubmit = async (data: ManualPlayerApprovalFormSchemaType) => {
     setErrorMessage(null);
-    const steamIds = data.acceptedPlayerSteamIds.map((p) => p.name);
-
-    const payload =
-      data.teamId === CREATE_NEW_VALUE
-        ? data.organizationId === CREATE_NEW_VALUE
-          ? ({
-              acceptedPlayerSteamIds: steamIds,
-              newOrganizationName: data.organizationName!,
-              newOrganizationCode: data.organizationCode!,
-              newOrganizationWebsite: data.organizationWebsite!,
-              newTeamName: data.newTeamName!,
-              type: "new-team-and-org"
-            } satisfies NewTeamAndOrgManualApprovalType)
-          : ({
-              acceptedPlayerSteamIds: steamIds,
-              newTeamName: data.newTeamName!,
-              organizationId: data.organizationId
-                ? Number(data.organizationId)
-                : undefined,
-              type: "new-team"
-            } satisfies NewTeamManualApprovalType)
-        : ({
-            teamId: Number(data.teamId),
-            acceptedPlayerSteamIds: steamIds,
-            type: "existing"
-          } satisfies ExistingTeamManualApprovalType);
+    const payload = generatePayload(data);
 
     try {
       await clientApiFetch<{ seasonId: number; teamId: number }>(

@@ -104,6 +104,16 @@ const newTeamSchema = z.object({
 
 export type NewTeamManualApprovalType = z.infer<typeof newTeamSchema>;
 
+const newOrgSchema = z.object({
+  ...baseSchema,
+  type: z.literal("new-org"),
+  newOrganizationName: z.string().min(1, "Organization name is required"),
+  newOrganizationCode: z.string(),
+  newOrganizationWebsite: z.string().url()
+});
+
+export type NewOrgManualApprovalType = z.infer<typeof newOrgSchema>;
+
 const newTeamAndOrgSchema = z.object({
   ...baseSchema,
   type: z.literal("new-team-and-org"),
@@ -120,7 +130,8 @@ export type NewTeamAndOrgManualApprovalType = z.infer<
 export const postTeamManualPlayerApprovalSchema = z.discriminatedUnion("type", [
   existingTeamSchema,
   newTeamSchema,
-  newTeamAndOrgSchema
+  newTeamAndOrgSchema,
+  newOrgSchema
 ]);
 
 export type PostTeamManualPlayerApprovalSchemaType = z.infer<
