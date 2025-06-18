@@ -22,7 +22,8 @@ import {
   type NewTeamAndOrgManualApprovalType,
   type NewTeamManualApprovalType,
   type NewOrgManualApprovalType,
-  type ManualPlayerApprovalFormSchemaType
+  type ManualPlayerApprovalFormSchemaType,
+  type ExistingOrgManualApprovalType
 } from "@eggosystem/types";
 import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
 import { useSelectableOrgs } from "@/hooks/data/dashboard/useSelectableOrgs";
@@ -79,14 +80,27 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
     } satisfies NewTeamManualApprovalType;
   }
 
-  // Existing team, we do not care about org...
-  return {
-    teamId: Number(data.teamId),
-    acceptedPlayerSteamIds: steamIds,
-    ticketId: data.ticketId,
-    details: data.details,
-    type: "existing"
-  } satisfies ExistingTeamManualApprovalType;
+  if (data.organizationId) {
+    return {
+      acceptedPlayerSteamIds: steamIds,
+      organizationId: Number(data.organizationId),
+      ticketId: data.ticketId,
+      details: data.details,
+      type: "existing-org"
+    } satisfies ExistingOrgManualApprovalType;
+  }
+
+  if (data.teamId) {
+    return {
+      teamId: Number(data.teamId),
+      acceptedPlayerSteamIds: steamIds,
+      ticketId: data.ticketId,
+      details: data.details,
+      type: "existing-team"
+    } satisfies ExistingTeamManualApprovalType;
+  }
+
+  throw new Error("Invalid form data");
 };
 
 export function ManualPlayerApprovalForm() {

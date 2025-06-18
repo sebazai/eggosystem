@@ -3,7 +3,8 @@ import {
   type ExistingTeamManualApprovalType,
   type NewTeamManualApprovalType,
   type PostTeamManualPlayerApprovalSchemaType,
-  type NewOrgManualApprovalType
+  type NewOrgManualApprovalType,
+  type ExistingOrgManualApprovalType
 } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { insertOrganization } from "../../models/organization.models";
@@ -25,6 +26,24 @@ const addNewOrgPreApprovalRegistration = async (
     },
     connection
   );
+  return addExistingOrgPreApprovalRegistration(
+    seasonId,
+    {
+      ...data,
+      organizationId: newOrg.insertId,
+      type: "existing-org"
+    },
+    approvedByAccountId,
+    connection
+  );
+};
+
+const addExistingOrgPreApprovalRegistration = async (
+  seasonId: number,
+  data: ExistingOrgManualApprovalType,
+  approvedByAccountId: number,
+  connection?: PoolConnection
+) => {
   const query = `
     INSERT INTO SeasonPlayerApprovals (season_id, organization_id, steam_id, approved_by_id, ticket_id, details)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -35,7 +54,7 @@ const addNewOrgPreApprovalRegistration = async (
         query,
         [
           seasonId,
-          newOrg.insertId,
+          data.organizationId,
           steamId,
           approvedByAccountId,
           data.ticketId ?? null,
@@ -45,7 +64,7 @@ const addNewOrgPreApprovalRegistration = async (
       )
   );
   await Promise.all(approvedByOrganizerSteamIdQueries);
-  return { organizationId: newOrg.insertId };
+  return { organizationId: data.organizationId };
 };
 
 const addExistingTeamPreApprovalRegistration = async (
@@ -95,7 +114,7 @@ const addNewTeamPreApprovalRegistration = async (
     {
       ...data,
       teamId: newTeam.insertId,
-      type: "existing"
+      type: "existing-team"
     },
     approvedByAccountId,
     connection
@@ -129,7 +148,7 @@ const addNewTeamAndOrgPreApprovalRegistration = async (
     {
       ...data,
       teamId: newTeam.insertId,
-      type: "existing"
+      type: "existing-team"
     },
     approvedByAccountId,
     connection
@@ -142,7 +161,14 @@ export const handlePreApprovedRegistration = async (
   approvedByAccountId: number,
   connection?: PoolConnection
 ) => {
-  if (formData.type === "existing") {
+  if (formData.type === "existing-org") {
+    return addExistingOrgPreApprovalRegistration(
+      seasonId,
+      formData,
+      approvedByAccountId,
+      connection
+    );
+  } else if (formData.type === "existing-team") {
     return addExistingTeamPreApprovalRegistration(
       seasonId,
       formData,
