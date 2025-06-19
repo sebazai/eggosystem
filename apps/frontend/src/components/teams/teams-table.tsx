@@ -7,6 +7,7 @@ import { TeamMapStats } from "./team-map-stats";
 import { TeamWinLossDetails } from "./team-win-loss";
 import { useFilteredTeamById } from "@/hooks/data/filtered/useFilteredTeamById";
 import { NextImageFallback } from "../layout/image-with-fallback";
+import { PlayerCards } from "./player-cards";
 
 interface TeamTableProps {
   filterQueryParams: FilterParamsQuery;
@@ -75,8 +76,20 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
           </div>
         </div>
       </div>
-      {/* Map statistics section */}
+
+      {/* Top Players Cards Section - Without container background */}
+      <div className="mb-3">
+        <div className="p-4">
+          <h2 className="font-semibold mb-4 text-kanaliiga-orange">
+            TOP PLAYERS
+          </h2>
+          <PlayerCards teamId={teamId} filterQueryParams={filterQueryParams} />
+        </div>
+      </div>
+
+      {/* Map statistics section  - I will move this to map stats tab later on */}
       <TeamMapStats teamId={teamId} filterQueryParams={filterQueryParams} />
+
       {/* Players Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-4">
