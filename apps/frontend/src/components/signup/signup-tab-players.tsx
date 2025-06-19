@@ -742,7 +742,7 @@ export const TabPlayers = ({
                   {player.externalRank === -1 &&
                     platform !== SeasonPlatform.Kanaliiga && (
                       <SignupPlayerNotification
-                        data-testid={`rank-error-${index}`}
+                        data-testid={`external-rank-error-${index}`}
                       >
                         Could not detect external {platform.toLocaleUpperCase()}{" "}
                         rank for the player. This could be due to temporary

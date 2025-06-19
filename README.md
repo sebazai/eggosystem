@@ -36,38 +36,34 @@ Backend can be accessed from localhost:3001 and frontend from localhost:3000 via
 
 ## Running tests on devcontainer
 
-Run all tests:
+All except e2e tests:
 
-`- pnpm test`
+`pnpm test`
 
 Run specific test, example run leaderboards backend tests:
 
-`- pnpm --filter=backend test -- leaderboards`
+`pnpm --filter=backend test -- leaderboards`
 
 Run backend tests:
 
-`- pnpm --filter=backend test`
+`pnpm --filter=backend test`
 
 Run frontend tests:
 
-`- pnpm --filter=frontend test`
+`pnpm --filter=frontend test`
 
-For running e2e tests do
+For running e2e tests, ensure you have installed dependencies in your container:
 
-```
-pnpm --filter=backend seed:e2e
-pnpm --filter=backend dev:e2e &
-pnpm exec playwright install
-pnpm exec playwright install-deps
-pnpm --filter=frontend test:e2e
-```
+`pnpm exec playwright install`  
+`pnpm exec playwright install-deps`
 
-to revert the e2e seed do
+Start the e2e stubbed backend dev:
 
-```
-pnpm --filter=backend reseed
-pnpm --filter=backend seed
-```
+`pnpm --filter=backend dev:e2e`
+
+Run in monorepo root, this will setup seed and build frontend and run the e2e tests:
+
+`pnpm test:e2e`
 
 ## Database
 

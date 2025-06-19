@@ -1,4 +1,5 @@
 import { type Knex } from "knex";
+import { type SeasonPlayerRank } from "@eggosystem/types";
 
 /**
  * E2E Test Seed
@@ -445,60 +446,87 @@ export async function seed(knex: Knex): Promise<void> {
       steam_id: "76561197960283932",
       season_id: 16,
       cs_hours: 1500,
-      cs2_rank: 15
+      cs2_rank: 15,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 4 - heppajpg
     {
       steam_id: "76561197960265728",
       season_id: 16,
       cs_hours: 2000,
-      cs2_rank: 18
+      cs2_rank: 18,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 8 - Hoolyz (Robin Walker)
     {
       steam_id: "76561197960265740",
       season_id: 16,
       cs_hours: 1800,
-      cs2_rank: 12
+      cs2_rank: 12,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 9 - RealPlayer1 (Valve)
     {
       steam_id: "76561197961279983",
       season_id: 16,
       cs_hours: 1600,
-      cs2_rank: 14
+      cs2_rank: 14,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 10 - RealPlayer2
     {
       steam_id: "76561197960265748",
       season_id: 16,
       cs_hours: 1700,
-      cs2_rank: 16
+      cs2_rank: 16,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 11 - RealPlayer3 (Valve)
     {
       steam_id: "76561197960273207",
       season_id: 16,
       cs_hours: 2200,
-      cs2_rank: 20
+      cs2_rank: 20,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 3 - Aabe (auth user)
     {
       steam_id: "76561197960275646",
       season_id: 16,
       cs_hours: 1900,
-      cs2_rank: 17
+      cs2_rank: 17,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 5 - Quattra
     {
       steam_id: "76561197960283671",
       season_id: 16,
       cs_hours: 1400,
-      cs2_rank: 11
+      cs2_rank: 11,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     }, // account_id 6 - Trev
     // Add data for error testing Steam IDs
     {
       steam_id: "76561197967885016",
       season_id: 16,
       cs_hours: 1500,
-      cs2_rank: 15
+      cs2_rank: 15,
+      faceit_elo: 1500,
+      faceit_level: 10,
+      faceit_kd: 1.5
     } // account_id 1 - PrivateProfilePlayer (normal hours, but private profile)
     // NOTE: Intentionally NOT adding SeasonPlayerRanks for 76561197960269868 (InsufficientHoursPlayer)
     // so it falls back to Steam API mock which returns null for hours detection failure
-  ];
+  ] satisfies Partial<SeasonPlayerRank>[];
 
   // Insert SeasonPlayerRanks data
   for (const rankData of playerRanksData) {
@@ -506,14 +534,17 @@ export async function seed(knex: Knex): Promise<void> {
     await knex.raw(
       `
       INSERT INTO SeasonPlayerRanks 
-        (steam_id, season_id, cs_hours, cs2_rank, hours_updated_at, rank_updated_at)
+        (steam_id, season_id, cs_hours, cs2_rank, hours_updated_at, rank_updated_at, faceit_elo, faceit_level, faceit_kd)
       VALUES 
-        (?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         cs_hours = VALUES(cs_hours),
         cs2_rank = VALUES(cs2_rank),
         hours_updated_at = VALUES(hours_updated_at),
-        rank_updated_at = VALUES(rank_updated_at)
+        rank_updated_at = VALUES(rank_updated_at),
+        faceit_elo = VALUES(faceit_elo),
+        faceit_level = VALUES(faceit_level),
+        faceit_kd = VALUES(faceit_kd)
     `,
       [
         rankData.steam_id,
@@ -521,7 +552,10 @@ export async function seed(knex: Knex): Promise<void> {
         rankData.cs_hours,
         rankData.cs2_rank,
         now,
-        now
+        now,
+        rankData.faceit_elo,
+        rankData.faceit_level,
+        rankData.faceit_kd
       ]
     );
   }

@@ -21,7 +21,8 @@
     "migrate:down": "turbo migrate:down",
     "migrate:up": "turbo migrate:up",
     "migrate:make": "turbo migrate:make --",
-    "seed": "turbo seed --"
+    "seed": "turbo seed --",
+    "test:e2e": "pnpm --filter=backend reseed:e2e && pnpm build && pnpm --filter=frontend test:e2e"
   },
   "lint-staged": {
     "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",
