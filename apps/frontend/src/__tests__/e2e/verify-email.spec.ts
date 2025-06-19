@@ -214,13 +214,12 @@ test.describe("Email Verification Page", () => {
       await expect(button).toHaveClass(/bg-kanaliiga-orange/);
     });
 
-    test.skip("should be responsive on mobile viewport", async ({ page }) => {
+    test("should be responsive on mobile viewport", async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
 
       // Create unique token for mobile test since we have limited valid tokens
-      await navigateToPage(page, "/verify-email?token=valid-token-123");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
+      await navigateToPage(page, "/verify-email?token=valid-token-mobile");
 
       // Elements should still be visible and properly formatted on mobile
       await expect(

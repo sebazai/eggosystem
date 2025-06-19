@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const isIntegration = process.env.TEST_TYPE === "integration";
 const isCI = process.env.CI;
 console.log(
-  `[Playwright] Using webServer: ${isIntegration ? "pnpm dev" : isCI ? "standalone build" : "pnpm dev"}`
+  `[Playwright] Using webServer: ${isIntegration ? "pnpm dev" : "standalone build"}`
 );
 
 export default defineConfig({
@@ -46,11 +46,7 @@ export default defineConfig({
   ],
   // Run the frontend server as part of the test
   webServer: {
-    command: isIntegration
-      ? "pnpm run dev"
-      : isCI
-        ? "pnpm start:standalone"
-        : "pnpm dev",
+    command: isIntegration ? "pnpm run dev" : "pnpm start:standalone",
     url: "http://localhost:3000",
     reuseExistingServer: !isCI,
     timeout: 20000 // Give the server enough time to start

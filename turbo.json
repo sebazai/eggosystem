@@ -36,10 +36,49 @@
         "TEST_TYPE"
       ],
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "!**/*.test.{ts,tsx,js,jsx}",
+        "!**/*.spec.{ts,tsx,js,jsx}",
+        "!**/__tests__/**/*",
+        "!**/__mocks__/**/*",
+        "package.json",
+        "tsconfig*.json",
+        ".env*"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**", "dist/**/*.d.ts"]
     },
     "@eggosystem/types#build": {
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "package.json",
+        "tsconfig*.json"
+      ],
+      "outputs": [
+        "dist/**",
+        "dist/**/*.js",
+        "dist/**/*.d.ts",
+        "node_modules/**"
+      ]
+    },
+    "@eggosystem/shared-msw#build": {
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "package.json",
+        "tsconfig*.json"
+      ],
       "outputs": [
         "dist/**",
         "dist/**/*.js",
@@ -49,7 +88,35 @@
     },
     "backend#build": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "package.json",
+        "tsconfig*.json",
+        ".env*"
+      ],
       "outputs": ["dist/**", "node_modules/**"]
+    },
+    "frontend#build": {
+      "dependsOn": ["@eggosystem/types#build"],
+      "inputs": [
+        "src/**/*.{ts,tsx,js,jsx}",
+        "!src/**/*.test.{ts,tsx,js,jsx}",
+        "!src/**/*.spec.{ts,tsx,js,jsx}",
+        "!src/__tests__/**/*",
+        "!src/__mocks__/**/*",
+        "public/**/*",
+        "next.config.ts",
+        "tailwind.config.ts",
+        "postcss.config.js",
+        "package.json",
+        "tsconfig*.json",
+        ".env*"
+      ],
+      "outputs": [".next/**", "!.next/cache/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]
