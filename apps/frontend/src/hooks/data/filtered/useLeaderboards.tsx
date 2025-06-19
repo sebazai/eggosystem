@@ -99,6 +99,111 @@ export const useLeaderboards = (params: FilterParamsQuery) => {
         rank: index + 1
       }))
     },
+    // New derived stats
+    {
+      title: "First K/D Ratio",
+      unit: "",
+      players: (data.first_kills_deaths_ratio || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.first_kills_deaths_ratio,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Kills Per Round",
+      unit: "",
+      players: (data.kills_per_round || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.kills_per_round,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Utility Damage Per Round",
+      unit: "",
+      players: (data.utility_damage_per_round || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.utility_damage_per_round,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "AWP Kills Per Round",
+      unit: "",
+      players: (data.awp_kills_per_round || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.awp_kills_per_round,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Assists Per Round",
+      unit: "",
+      players: (data.assists_per_round || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.assists_per_round,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Enemies Flashed Per Flash",
+      unit: "",
+      players: (data.enemies_flashed_per_flash || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.enemies_flashed_per_flash,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Avg Enemy Flash Time",
+      unit: "s",
+      players: (data.avg_enemy_flash_time || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.avg_enemy_flash_time,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
+    {
+      title: "Avg Teammate Flash Time",
+      unit: "s",
+      players: (data.avg_teammate_flash_time || []).map((player, index) => ({
+        steam_id: player.steam_id,
+        nickname: player.nickname,
+        team_name: player.team_name,
+        team_logo: player.team_logo,
+        value: player.avg_teammate_flash_time,
+        matches_played: player.matches_played,
+        rank: index + 1
+      }))
+    },
 
     // SUM stats
     {

@@ -9,7 +9,10 @@ import {
   getFilteredTopTeamsController
 } from "../../controllers/teams.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
-import { getFilteredMultipleLeaderboardsController } from "../../controllers/leaderboards.controllers";
+import {
+  getFilteredMultipleLeaderboardsController,
+  getSingleLeaderboardController
+} from "../../controllers/leaderboards.controllers";
 import {
   getFilteredPlayerStatisticsController,
   getFilteredPlayerGameDetailsController,
@@ -18,6 +21,7 @@ import {
   getFilteredPlayersStatsController
 } from "../../controllers/players.controllers";
 import { getFilteredMatchesController } from "../../controllers/matches.controllers";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 
 const router = Router();
 
@@ -107,7 +111,16 @@ router.get(
 );
 
 // Leaderboard
-router.get("/leaderboards/multiple", getFilteredMultipleLeaderboardsController);
+router.get(
+  "/leaderboards/multiple",
+  parseQueryFilterParams,
+  getFilteredMultipleLeaderboardsController
+);
+router.get(
+  "/leaderboards",
+  parseQueryFilterParams,
+  getSingleLeaderboardController
+);
 
 // Matches
 router.get("/matches/recent", getFilteredMatchesController);

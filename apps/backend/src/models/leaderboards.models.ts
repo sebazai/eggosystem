@@ -2,7 +2,9 @@ import { type LeaderboardResponse, type ParsedParams } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 
-const leaderboardExpressions: { [K in keyof LeaderboardResponse]: string } = {
+export const leaderboardExpressions: {
+  [K in keyof LeaderboardResponse]: string;
+} = {
   // SUM stats
   kills: "sum(ps.kills)",
   assists: "sum(ps.assists)",
@@ -29,7 +31,21 @@ const leaderboardExpressions: { [K in keyof LeaderboardResponse]: string } = {
   adr: "avg(ps.adr)",
 
   // Derived stats
-  kd: "sum(ps.kills) / GREATEST(sum(ps.deaths), 1)" // Safer division
+  kd: "sum(ps.kills) / GREATEST(sum(ps.deaths), 1)", // Safer division
+
+  // New derived stats
+  first_kills_deaths_ratio:
+    "sum(ps.first_kills) / GREATEST(sum(ps.first_deaths), 1)",
+  kills_per_round: "sum(ps.kills) / sum(total_rounds)",
+  utility_damage_per_round: "sum(ps.utility_damage) / sum(total_rounds)",
+  awp_kills_per_round: "sum(ps.awp_kills) / sum(total_rounds)",
+  assists_per_round: "sum(ps.assists) / sum(total_rounds)",
+  enemies_flashed_per_flash:
+    "sum(ps.enemies_flashed) / GREATEST(sum(ps.flashes_thrown), 1)",
+  avg_enemy_flash_time:
+    "sum(ps.total_ef_duration) / GREATEST(sum(ps.enemies_flashed), 1)",
+  avg_teammate_flash_time:
+    "sum(ps.total_mf_duration) / GREATEST(sum(ps.mates_flashed), 1)"
 };
 
 /**
@@ -81,6 +97,11 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
     AND stp.team_id = mt.team_id
     AND stp.season_id = m.season_id
     AND stp.role = 'primary'
+    INNER JOIN (
+      SELECT game_id, SUM(score + overtime_score) AS total_rounds
+      FROM TeamGameScores
+      GROUP BY game_id
+    ) AS game_rounds ON game_rounds.game_id = mg.id
     WHERE ${query}
     GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
     HAVING COUNT(DISTINCT mg.id) > 2

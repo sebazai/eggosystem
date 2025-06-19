@@ -9,6 +9,6 @@ const IORedis = jest.createMockFromModule("ioredis");
   }
   return undefined;
 });
-(IORedis as any).prototype.set = jest.fn();
+(IORedis as any).prototype.set = jest.fn().mockResolvedValue("OK");
 (IORedis as any).prototype.del = jest.fn();
 module.exports = IORedis as any;

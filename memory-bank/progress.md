@@ -72,7 +72,7 @@
 
 ### Recent Milestones
 
-- **January 2025**: Memory bank structure implementation
+- **June 2025**: Memory bank structure implementation
 - **Database Optimization**: Improved query patterns and relationships
 - **Mobile Enhancement**: Better mobile table design and responsiveness
 - **Filter System**: Complete filtering architecture with middleware
@@ -119,6 +119,7 @@
 - **Legacy Patterns**: Some older code needs updating to current patterns
 - **Error Handling**: Inconsistent error response formats in some endpoints
 - **Performance**: Query logging in production needs optimization
+- **Redis Cache Bug**: Issue #173 - Cache-filtered-queries middleware has a bug with res.json().catch() when using season_ids filter, causing 500 errors in tests
 
 ## Evolution of Project Decisions
 

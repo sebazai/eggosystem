@@ -34,7 +34,17 @@ export const getFilteredMultipleLeaderboardsController = async (
     "total_ef_duration",
 
     // derived stats
-    "kd"
+    "kd",
+
+    // New derived stats
+    "first_kills_deaths_ratio",
+    "kills_per_round",
+    "utility_damage_per_round",
+    "awp_kills_per_round",
+    "assists_per_round",
+    "enemies_flashed_per_flash",
+    "avg_enemy_flash_time",
+    "avg_teammate_flash_time"
   ] as const satisfies readonly (keyof LeaderboardResponse)[];
 
   const results = await Promise.all(
@@ -48,4 +58,23 @@ export const getFilteredMultipleLeaderboardsController = async (
   }, {} as LeaderboardResponse);
 
   res.json(mergedObject);
+};
+
+export const getSingleLeaderboardController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { parsedParams } = req;
+  const { leaderboards } = req.query;
+
+  if (!leaderboards || typeof leaderboards !== "string") {
+    res.status(400).json({ error: "Leaderboards type is required" });
+    return;
+  }
+
+  const result = await getLeaderboard({
+    ...parsedParams,
+    leaderboards: leaderboards as keyof LeaderboardResponse
+  });
+  res.json(result);
 };

@@ -34,4 +34,22 @@ export type LeaderboardResponse = {
 
   // Derived stats
   kd: Array<BaseResponse & { kd: number }>;
+
+  // New derived stats
+  first_kills_deaths_ratio: Array<
+    BaseResponse & { first_kills_deaths_ratio: number }
+  >;
+  kills_per_round: Array<BaseResponse & { kills_per_round: number }>;
+  utility_damage_per_round: Array<
+    BaseResponse & { utility_damage_per_round: number }
+  >;
+  awp_kills_per_round: Array<BaseResponse & { awp_kills_per_round: number }>;
+  assists_per_round: Array<BaseResponse & { assists_per_round: number }>;
+  enemies_flashed_per_flash: Array<
+    BaseResponse & { enemies_flashed_per_flash: number }
+  >;
+  avg_enemy_flash_time: Array<BaseResponse & { avg_enemy_flash_time: number }>;
+  avg_teammate_flash_time: Array<
+    BaseResponse & { avg_teammate_flash_time: number }
+  >;
 };
