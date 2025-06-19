@@ -18,8 +18,8 @@ services:
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
       FACEIT_API_KEY: $FACEIT_API_KEY
-      OTEL_SERVICE_NAME: eggosystem-DEV-backend-1
-      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=DEV,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
+      OTEL_SERVICE_NAME: eggosystem-dev-backend-1
+      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=dev,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
       SMTP_HOST: $SMTP_HOST
       SMTP_USER: $SMTP_USER
@@ -35,17 +35,17 @@ services:
       - ./private_refresh_token.pem:/usr/src/app/apps/backend/private_refresh_token.pem
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hubbeDEV.entrypoints=http"
-      - "traefik.http.routers.hubbeDEV.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.middlewares.hubbeDEV-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.hubbeDEV.middlewares=hubbeDEV-https-redirect"
-      - "traefik.http.routers.hubbeDEV-secure.entrypoints=https"
-      - "traefik.http.routers.hubbeDEV-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.hubbeDEV-secure.tls=true"
-      - "traefik.http.routers.hubbeDEV-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
-      - "traefik.http.routers.hubbeDEV-secure.tls.certresolver=http"
-      - "traefik.http.routers.hubbeDEV-secure.service=hubbeDEV"
-      - "traefik.http.services.hubbeDEV.loadbalancer.server.port=3001"
+      - "traefik.http.routers.hubbedev.entrypoints=http"
+      - "traefik.http.routers.hubbedev.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.middlewares.hubbedev-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hubbedev.middlewares=hubbedev-https-redirect"
+      - "traefik.http.routers.hubbedev-secure.entrypoints=https"
+      - "traefik.http.routers.hubbedev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.hubbedev-secure.tls=true"
+      - "traefik.http.routers.hubbedev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
+      - "traefik.http.routers.hubbedev-secure.tls.certresolver=http"
+      - "traefik.http.routers.hubbedev-secure.service=hubbedev"
+      - "traefik.http.services.hubbedev.loadbalancer.server.port=3001"
       - "traefik.docker.network=web"
     restart: always
 
@@ -66,13 +66,13 @@ services:
       - "traefik.http.routers.kanahubdev.entrypoints=http"
       - "traefik.http.routers.kanahubdev.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
       - "traefik.http.middlewares.kanahubdev-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.kanahubdev.middlewares=kanahubDEV-https-redirect"
+      - "traefik.http.routers.kanahubdev.middlewares=kanahubdev-https-redirect"
       - "traefik.http.routers.kanahubdev-secure.entrypoints=https"
       - "traefik.http.routers.kanahubdev-secure.rule=Host(`${HUBDEV_PUBLIC_URL}`)"
       - "traefik.http.routers.kanahubdev-secure.tls=true"
       - "traefik.http.routers.kanahubdev-secure.tls.domains[0].main=${HUBDEV_PUBLIC_URL}"
       - "traefik.http.routers.kanahubdev-secure.tls.certresolver=http"
-      - "traefik.http.routers.kanahubdev-secure.service=kanahubDEV"
+      - "traefik.http.routers.kanahubdev-secure.service=kanahubdev"
       - "traefik.http.services.kanahubdev.loadbalancer.server.port=3000"
       - "traefik.docker.network=web"
     restart: always
