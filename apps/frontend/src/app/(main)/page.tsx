@@ -12,6 +12,8 @@ import { CsSupportingOrgs } from "@/components/sponsors/cs-supporting-orgs";
 import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import ClientHomeContent from "@/components/layout/ClientHomeContent";
+import ChickenTestWrapper from "@/components/ui/ChickenTestWrapper";
 
 interface LandingPageStats {
   unique_players: number;
@@ -37,8 +39,9 @@ export default async function Home() {
 
   const { device } = userAgent({ headers: await headers() });
   const deviceType = device?.type === "mobile" ? "mobile" : "desktop";
+
   return (
-    <>
+    <ClientHomeContent>
       <section>
         <HeroSection device={deviceType} />
       </section>
@@ -174,6 +177,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
-    </>
+
+      {/* Direct test of chicken image */}
+      <ChickenTestWrapper />
+    </ClientHomeContent>
   );
 }

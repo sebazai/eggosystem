@@ -3,6 +3,7 @@ import type { Viewport } from "next";
 import localFont from "next/font/local";
 
 import { ThemeProvider } from "../../providers/theme-provider";
+import { ChickenAnnouncerProvider } from "@/providers/chicken-announcer-provider";
 import { cn } from "@/lib/utils";
 import { Navigation } from "@/components/layout/navbar";
 import Footer from "@/components/layout/footer";
@@ -14,6 +15,7 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { createPageMetadata } from "@/lib/metadata";
+import { ChickenFeatureAnnouncer } from "@/components/layout/ChickenFeatureAnnouncer";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -125,22 +127,29 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Suspense>
-            <SkipToContent />
-            <KfcRain />
-            <ScrollToTop />
-            <div className="min-h-svh min-w-[320px] w-full">
-              <AuthProvider>
-                <Navigation />
-                <AcceptPolicyProvider>
-                  <main className="w-full" id="main-content">
-                    {children}
-                  </main>
-                </AcceptPolicyProvider>
-              </AuthProvider>
-              <Footer />
-            </div>
-          </Suspense>
+          <ChickenAnnouncerProvider>
+            <Suspense>
+              <SkipToContent />
+              <KfcRain />
+              <ScrollToTop />
+              <ChickenFeatureAnnouncer
+                showDelay={3000}
+                message="NEW FEATURES! Check them out!"
+                featureDate="2026-06-20"
+              />
+              <div className="min-h-svh min-w-[320px] w-full">
+                <AuthProvider>
+                  <Navigation />
+                  <AcceptPolicyProvider>
+                    <main className="w-full" id="main-content">
+                      {children}
+                    </main>
+                  </AcceptPolicyProvider>
+                </AuthProvider>
+                <Footer />
+              </div>
+            </Suspense>
+          </ChickenAnnouncerProvider>
         </ThemeProvider>
 
         <Toaster richColors />

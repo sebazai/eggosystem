@@ -1,0 +1,70 @@
+"use client";
+
+import { createContext, useContext, useState } from "react";
+import type { ReactNode } from "react";
+import ChickenAnnouncer from "@/components/ui/ChickenAnnouncer";
+
+interface ChickenAnnouncerContextType {
+  showChicken: (options?: {
+    message?: string;
+    targetUrl?: string;
+    autoHideAfter?: number;
+  }) => void;
+  hideChicken: () => void;
+}
+
+const ChickenAnnouncerContext = createContext<
+  ChickenAnnouncerContextType | undefined
+>(undefined);
+
+export const useChickenAnnouncer = () => {
+  const context = useContext(ChickenAnnouncerContext);
+  if (!context) {
+    throw new Error(
+      "useChickenAnnouncer must be used within a ChickenAnnouncerProvider"
+    );
+  }
+  return context;
+};
+
+interface ChickenAnnouncerProviderProps {
+  children: ReactNode;
+}
+
+export const ChickenAnnouncerProvider = ({
+  children
+}: ChickenAnnouncerProviderProps) => {
+  const [showAnnouncer, setShowAnnouncer] = useState(false);
+  const [config, setConfig] = useState({
+    message: "NEW FEATURES NEW FEATURES",
+    targetUrl: "/new-features",
+    autoHideAfter: undefined as number | undefined
+  });
+
+  const showChicken = (options = {}) => {
+    console.log("showChicken called with options:", options);
+    setConfig((prev) => ({ ...prev, ...options }));
+    setShowAnnouncer(true);
+    console.log("showAnnouncer set to true");
+  };
+
+  const hideChicken = () => {
+    console.log("hideChicken called");
+    setShowAnnouncer(false);
+  };
+
+  return (
+    <ChickenAnnouncerContext.Provider value={{ showChicken, hideChicken }}>
+      {children}
+      {showAnnouncer && (
+        <ChickenAnnouncer
+          message={config.message}
+          targetUrl={config.targetUrl}
+          autoHideAfter={config.autoHideAfter}
+        />
+      )}
+    </ChickenAnnouncerContext.Provider>
+  );
+};
+
+export default ChickenAnnouncerProvider;
