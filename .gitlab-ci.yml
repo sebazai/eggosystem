@@ -418,7 +418,7 @@ build-dockerfile:frontend:
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
-          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache,mode=max,compression=zstd \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
@@ -456,7 +456,7 @@ push-dockerfile:backend:
           --build-arg CI=true \
           --push \
           -t $REGISTRY/eggo-backend:latest \
-          -t $REGISTRY/eggo-backend:staging \
+          -t $REGISTRY/eggo-backend:stage \
           -f apps/backend/Dockerfile .
       fi
 
@@ -484,7 +484,7 @@ push-dockerfile:frontend:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
   parallel:
     matrix:
-      - BUILD_TYPE: [dev, staging, latest]
+      - BUILD_TYPE: [dev, stage, latest]
   script:
     - |
       if [ "$BUILD_TYPE" == "dev" ]; then
@@ -493,17 +493,17 @@ push-dockerfile:frontend:
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
           --build-arg CI=true \
           -f apps/frontend/Dockerfile.dev .
-      elif [ "$BUILD_TYPE" == "staging" ]; then
+      elif [ "$BUILD_TYPE" == "stage" ]; then
         docker buildx build \
-          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging \
-          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache \
-          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:staging-cache,mode=max,compression=zstd \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:stage-cache,mode=max,compression=zstd \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg CI=true \
           --push \
-          -t $REGISTRY/eggo-frontend:staging \
+          -t $REGISTRY/eggo-frontend:stage \
           -f apps/frontend/Dockerfile .
       elif [ "$BUILD_TYPE" == "latest" ]; then
         docker buildx build \
@@ -546,17 +546,17 @@ deploy-prod:
     - ssh ubuntu@$HUB_PROD_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml pull"
     - ssh ubuntu@$HUB_PROD_IP "docker compose -f ~/docker/eggosystem/docker-compose.yml up -d"
 
-deploy-staging:
+deploy-stage:
   image: alpine:latest
   stage: deploy
   extends: [.main-all-app]
-  resource_group: staging
+  resource_group: stage
   environment:
-    name: staging
+    name: stage
     url: https://${HUBSTAGE_PUBLIC_URL}
   variables:
     <<: *deploy-variables
-    ENV_ID: staging
+    ENV_ID: stage
   before_script:
     - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
     - eval $(ssh-agent -s)
@@ -567,8 +567,8 @@ deploy-staging:
     - chmod 644 ~/.ssh/known_hosts
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
-    - envsubst < docker-compose.staging.yml > docker-compose.staging.subst.yml
-    - rsync -v ./docker-compose.staging.subst.yml ubuntu@$HUB_DEV_IP:~/docker/eggosystem-staging/docker-compose.yml
+    - envsubst < docker-compose.stage.yml > docker-compose.stage.subst.yml
+    - rsync -v ./docker-compose.stage.subst.yml ubuntu@$HUB_DEV_IP:~/docker/eggosystem-staging/docker-compose.yml
     - rsync -v ./conf/mariadb/my.cnf ubuntu@$HUB_DEV_IP:~/docker/eggosystem-staging/my.cnf
     - ssh ubuntu@$HUB_DEV_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh ubuntu@$HUB_DEV_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml pull"
@@ -633,7 +633,7 @@ deploy-ondemand:
     - docker buildx build
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache
-      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:staging-cache
+      --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}-cache
       --build-arg NEXT_PUBLIC_API_URL=https://hubod.kanaliiga.fi/$ENV_ID

@@ -1,25 +1,25 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:staging
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:stage
     pull_policy: always
     depends_on:
-      eggo-staging-db:
+      eggo-stage-db:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      DB_HOST: eggo-staging-db
+      DB_HOST: eggo-stage-db
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: "${MARIADB_STAGE_PASSWORD}"
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
       FRONTEND_URL: https://${HUBSTAGE_PUBLIC_URL}
       BACKEND_URL: https://${HUBSTAGE_PUBLIC_URL}
-      REDIS_HOST: eggo-staging-redis
+      REDIS_HOST: eggo-stage-redis
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
       FACEIT_API_KEY: $FACEIT_API_KEY
-      OTEL_SERVICE_NAME: eggosystem-staging-backend-1
-      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
+      OTEL_SERVICE_NAME: eggosystem-stage-backend-1
+      OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=stage,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
       SMTP_HOST: $SMTP_HOST
       SMTP_USER: $SMTP_USER
@@ -50,7 +50,7 @@ services:
     restart: always
 
   frontend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:staging
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:stage
     pull_policy: always
     depends_on:
       - backend
@@ -77,9 +77,9 @@ services:
       - "traefik.docker.network=web"
     restart: always
 
-  eggo-staging-db:
+  eggo-stage-db:
     image: bitnami/mariadb:11.7.2
-    container_name: eggo-staging-db
+    container_name: eggo-stage-db
     restart: always
     environment:
       MARIADB_ROOT_PASSWORD: "${MARIADB_STAGE_ROOT_PASSWORD}"
@@ -106,7 +106,7 @@ services:
       - ./my.cnf:/opt/bitnami/mariadb/conf/my.cnf
       - ./db-data:/bitnami/mariadb
 
-  eggo-staging-redis:
+  eggo-stage-redis:
     image: redis:8-alpine
     networks:
       - web
@@ -114,11 +114,11 @@ services:
 
   phpmyadmin-hubstage:
     depends_on:
-      - eggo-staging-db
+      - eggo-stage-db
     image: phpmyadmin/phpmyadmin:5.2.2
     restart: always
     environment:
-      PMA_HOST: eggo-staging-db
+      PMA_HOST: eggo-stage-db
       PMA_ABSOLUTE_URI: https://${HUBSTAGE_PUBLIC_URL}/mysadmin/
       UPLOAD_LIMIT: 1G
     networks:
@@ -145,7 +145,7 @@ services:
     # TODO: Run with stage image
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:dev
     depends_on:
-      eggo-staging-db:
+      eggo-stage-db:
         condition: service_healthy
     environment:
       DB_HOST: eggo-stage-db
