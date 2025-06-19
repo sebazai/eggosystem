@@ -11,22 +11,20 @@ export async function seed(knex: Knex): Promise<void> {
   // Get privacy policy version from environment variable (same as backend uses)
   const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION || "1";
 
-  // Define test Steam IDs that E2E tests will use
+  // Define NEW fake test Steam IDs that E2E tests will use (starting with 6)
   const testSteamIds = [
-    "76561197960273207", // account_id 3 - Aabe
-    "76561197960283932", // account_id 4 - heppajpg (JWT user)
-    "76561197960275646", // account_id 5 - Quattra
-    "76561197960283671", // account_id 6 - Trev
-    "76561197960265728", // account_id 8 - Hoolyz
-    "76561197960265740", // account_id 9 - RealPlayer1
-    "76561197961279983", // account_id 10 - RealPlayer2
-    "76561197960265748", // account_id 11 - RealPlayer3
-    "76561197967885016", // account_id 1 - PrivateProfilePlayer
-    "76561197960269868", // account_id 2 - InsufficientHoursPlayer
-    "76561197967885016", // account_id 1 - PrivateProfilePlayer (handled by steamApiService mock)
-    "76561197960269868", // account_id 2 - InsufficientHoursPlayer (handled by steamApiService mock)
-    "76561197960280001", // account_id 12 - IncompleteDetailsPlayer (invalid /details data from DB)
-    "76561197960280002" // account_id 13 - RaceConditionPlayer (handled by steamApiService mock)
+    "66561198999999901", // account_id 15003 - Aabe
+    "66561198999999902", // account_id 15004 - heppajpg (JWT user)
+    "66561198999999903", // account_id 15005 - Quattra
+    "66561198999999904", // account_id 15006 - Trev
+    "66561198999999905", // account_id 15008 - Hoolyz
+    "66561198999999906", // account_id 15009 - RealPlayer1
+    "66561198999999907", // account_id 15010 - RealPlayer2
+    "66561198999999908", // account_id 15011 - RealPlayer3
+    "66561198999999909", // account_id 15001 - PrivateProfilePlayer
+    "66561198999999910", // account_id 15002 - InsufficientHoursPlayer
+    "66561198999999911", // account_id 15012 - IncompleteDetailsPlayer
+    "66561198999999912" // account_id 15013 - RaceConditionPlayer
   ];
 
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
@@ -52,15 +50,18 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("AccountPermissionScopes")
     .where({ season_id: 16, team_id: 999 })
     .del();
-  await knex("AccountRoles").where({ account_id: 3, game_id: 1 }).del();
+  await knex("AccountRoles").where({ account_id: 15003, game_id: 1 }).del();
   await knex("SeasonTeamPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
   await knex("Teams").where({ id: 999 }).del();
   await knex("Organizations").where({ id: 999 }).del();
   await knex("Seasons").where({ id: 16 }).del();
 
-  // Clean up test accounts and related data if they exist
-  const testAccountIds = [3, 4, 5, 6, 8, 9, 10, 11, 12, 13];
+  // Clean up NEW test accounts and related data if they exist
+  const testAccountIds = [
+    15001, 15002, 15003, 15004, 15005, 15006, 15008, 15009, 15010, 15011, 15012,
+    15013
+  ];
   for (const accountId of testAccountIds) {
     await knex("LinkedAccounts").where({ account_id: accountId }).del();
     await knex("UserPolicyAcceptances").where({ account_id: accountId }).del();
@@ -105,52 +106,50 @@ export async function seed(knex: Knex): Promise<void> {
     platform: "faceit"
   });
 
-  // Update user emails in the Accounts table
+  // Update user emails in the Accounts table for NEW account IDs
   const users = [
-    { id: 1 },
-    { id: 2 },
-    { id: 3 },
-    { id: 4 },
-    { id: 5 },
-    { id: 6 },
-    { id: 8 },
-    { id: 9 },
-    { id: 10 },
-    { id: 11 },
-    { id: 12 },
-    { id: 13 }
+    { id: 15001 },
+    { id: 15002 },
+    { id: 15003 },
+    { id: 15004 },
+    { id: 15005 },
+    { id: 15006 },
+    { id: 15008 },
+    { id: 15009 },
+    { id: 15010 },
+    { id: 15011 },
+    { id: 15012 },
+    { id: 15013 }
   ];
 
   for (const user of users) {
-    // Update the user's email and set work_email_verified to 1
-    await knex("Accounts")
-      .where({ id: user.id })
-      .update({
-        work_email: `test+${user.id}@kanaliiga.fi`,
-        work_email_verified: 1
-      });
+    // First, ensure the account exists by inserting it
+    await knex.raw(
+      `
+      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, is_work_email_personal_email)
+      VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        full_name = VALUES(full_name),
+        work_email = VALUES(work_email),
+        work_email_verified = VALUES(work_email_verified),
+        is_work_email_personal_email = VALUES(is_work_email_personal_email)
+    `,
+      [user.id, `Test User ${user.id}`, `test+${user.id}@kanaliiga.fi`, 1, 0]
+    );
 
-    // Special handling for IncompleteDetailsPlayer (account_id 12)
-    if (user.id === 12) {
+    // Special handling for IncompleteDetailsPlayer (account_id 15012)
+    if (user.id === 15012) {
       // Set up incomplete/invalid data for testing
       await knex("Accounts").where({ id: user.id }).update({
         work_email: null, // Missing work email
         work_email_verified: 0, // Not verified
         full_name: "IncompletePlayer" // Missing space - invalid full name
       });
-    } else {
-      // Update the user's email and set work_email_verified to 1 for all others
-      await knex("Accounts")
-        .where({ id: user.id })
-        .update({
-          work_email: `test+${user.id}@kanaliiga.fi`,
-          work_email_verified: 1
-        });
     }
 
     // Insert or update UserPolicyAcceptances using raw query with ON DUPLICATE KEY UPDATE
     // Use the same privacy policy version that the backend expects
-    if (user.id === 12) {
+    if (user.id === 15012) {
       // IncompleteDetailsPlayer - set up incomplete privacy policy acceptance
       await knex.raw(
         `
@@ -251,70 +250,103 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
-  // Ensure we have SteamPlayers for the accounts we need
-  // This creates the missing accounts and steam players
+  // Ensure we have SteamPlayers for the NEW accounts we need
+  // This creates the missing accounts and steam players with NEW fake Steam IDs
   const steamPlayerData = [
-    { account_id: 3, steam_id: "76561197960273207", nickname: "Aabe" },
-    { account_id: 4, steam_id: "76561197960283932", nickname: "heppajpg" },
     {
-      account_id: 5,
-      steam_id: "76561197960275646",
+      account_id: 15003,
+      steam_id: "66561198999999901",
+      nickname: "Aabe",
+      discord: "aabe#1234"
+    },
+    {
+      account_id: 15004,
+      steam_id: "66561198999999902",
+      nickname: "heppajpg",
+      discord: "heppajpg#1234"
+    },
+    {
+      account_id: 15005,
+      steam_id: "66561198999999903",
       nickname: "Quattra",
-      work_email: "test+5@kanaliiga.fi",
+      work_email: "test+15005@kanaliiga.fi",
       work_email_verified: 1,
-      is_work_email_personal_email: true
+      is_work_email_personal_email: true,
+      discord: "quattra#1234"
     },
     {
-      account_id: 6,
-      steam_id: "76561197960283671",
+      account_id: 15006,
+      steam_id: "66561198999999904",
       nickname: "Trev",
-      work_email_verified: 0
+      work_email_verified: 0,
+      discord: "trev#1234"
     },
-    { account_id: 8, steam_id: "76561197960265728", nickname: "Hoolyz" }, // Robin Walker (Valve employee) - guaranteed public
-    // Add well-known public Steam accounts for testing
-    { account_id: 9, steam_id: "76561197960265740", nickname: "RealPlayer1" }, // Another Valve account - guaranteed public
-    { account_id: 10, steam_id: "76561197961279983", nickname: "RealPlayer2" }, // Well-known public Steam ID
-    { account_id: 11, steam_id: "76561197960265748", nickname: "RealPlayer3" }, // Another Valve account - guaranteed public
-    // Add Steam IDs for error testing (from dev seed)
     {
-      account_id: 1,
-      steam_id: "76561197967885016",
-      nickname: "PrivateProfilePlayer"
-    }, // For private profile test
+      account_id: 15008,
+      steam_id: "66561198999999905",
+      nickname: "Hoolyz",
+      discord: "hoolyz#1234"
+    },
     {
-      account_id: 2,
-      steam_id: "76561197960269868",
+      account_id: 15009,
+      steam_id: "66561198999999906",
+      nickname: "RealPlayer1",
+      discord: "realplayer1#1234"
+    },
+    {
+      account_id: 15010,
+      steam_id: "66561198999999907",
+      nickname: "RealPlayer2",
+      discord: "realplayer2#1234"
+    },
+    {
+      account_id: 15011,
+      steam_id: "66561198999999908",
+      nickname: "RealPlayer3",
+      discord: "realplayer3#1234"
+    },
+    {
+      account_id: 15001,
+      steam_id: "66561198999999909",
+      nickname: "PrivateProfilePlayer",
+      discord: "privateprofileplayer#1234"
+    },
+    {
+      account_id: 15002,
+      steam_id: "66561198999999910",
       nickname: "InsufficientHoursPlayer"
-    }, // For insufficient hours test
+    },
     {
-      account_id: 12,
-      steam_id: "76561197960280001",
+      account_id: 15012,
+      steam_id: "66561198999999911",
       nickname: "IncompleteDetailsPlayer"
-    }, // For incomplete /details API test
+    },
     {
-      account_id: 13,
-      steam_id: "76561197960280002",
+      account_id: 15013,
+      steam_id: "66561198999999912",
       nickname: "RaceConditionPlayer"
-    } // For race condition testing
+    }
   ];
 
   for (const player of steamPlayerData) {
     // Insert account if it doesn't exist
     await knex.raw(
       `
-      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, is_work_email_personal_email)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, is_work_email_personal_email, discord)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         work_email = VALUES(work_email),
         work_email_verified = VALUES(work_email_verified),
-        is_work_email_personal_email = VALUES(is_work_email_personal_email)
+        is_work_email_personal_email = VALUES(is_work_email_personal_email),
+        discord = VALUES(discord)
     `,
       [
         player.account_id,
         player.nickname,
         player.work_email ?? `test+${player.account_id}@kanaliiga.fi`,
         player.work_email_verified ?? 1,
-        player.is_work_email_personal_email ?? 0
+        player.is_work_email_personal_email ?? 0,
+        player.discord ?? `${player.nickname}#1234`
       ]
     );
 
@@ -356,23 +388,13 @@ export async function seed(knex: Knex): Promise<void> {
     org_approved: true
   });
 
-  // Create a season team registration record (required by foreign key constraint)
-  await knex("SeasonTeamRegistrations").insert({
-    season_id: 16,
-    team_id: 999,
-    captain_steam_id: "76561197960273207",
-    co_captain_steam_id: null,
-    external_platform_id: "77dd9104-d2f1-4f50-ba80-d58457cff5a9",
-    terms_and_conditions_approved: true
-  });
-
   // Set up SeasonTeamPlayers for employment approval testing
   const seasonTeamPlayers = [
-    // account_id 5 (76561197960275646) - approve manually for testing organizer approval
+    // account_id 15005 (66561198999999903) - approve manually for testing organizer approval
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "76561197960275646"
+      steam_id: "66561198999999903" // Updated to new Steam ID
     }
   ];
 
@@ -391,14 +413,14 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
-  // Set account_id 6 to have personal email to test organizer approval workflow
-  await knex("Accounts").where({ id: 6 }).update({
+  // Set account_id 15006 to have personal email to test organizer approval workflow
+  await knex("Accounts").where({ id: 15006 }).update({
     work_email: "personal.email@gmail.com",
     work_email_verified: 1,
     is_work_email_personal_email: true
   });
 
-  // Set up captain permissions for account_id 3 (the auth user)
+  // Set up captain permissions for account_id 15003 (the auth user)
   // First ensure the captain role exists
   await knex.raw(
     `
@@ -417,114 +439,113 @@ export async function seed(knex: Knex): Promise<void> {
   `
   );
 
-  // Add captain role to account_id 3
+  // Add captain role to account_id 15003
   await knex.raw(
     `
     INSERT INTO AccountRoles (account_id, role_id, game_id)
-    SELECT 3, r.id, 1
+    SELECT 15003, r.id, 1
     FROM Roles r
     WHERE r.role_name = 'captain'
     ON DUPLICATE KEY UPDATE account_id = VALUES(account_id)
   `
   );
 
-  // Add edit-registration permission scope for season 16, team 999 to account_id 3
+  // Add edit-registration permission scope for season 16, team 999 to account_id 15003
   await knex.raw(
     `
     INSERT INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
-    SELECT 3, p.id, 16, 999
+    SELECT 15003, p.id, 16, 999
     FROM Permissions p
     WHERE p.permission_name = 'edit-registration'
     ON DUPLICATE KEY UPDATE account_id = VALUES(account_id)
   `
   );
 
-  // Add SeasonPlayerRanks data for our test players
+  // Add SeasonPlayerRanks data for our NEW test players
   // This ensures backend validation passes during submission
   const playerRanksData = [
     {
-      steam_id: "76561197960283932",
+      steam_id: "66561198999999902", // heppajpg
       season_id: 16,
       cs_hours: 1500,
       cs2_rank: 15,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 4 - heppajpg
+    },
     {
-      steam_id: "76561197960265728",
+      steam_id: "66561198999999905", // Hoolyz
       season_id: 16,
       cs_hours: 2000,
       cs2_rank: 18,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 8 - Hoolyz (Robin Walker)
+    },
     {
-      steam_id: "76561197960265740",
+      steam_id: "66561198999999906", // RealPlayer1
       season_id: 16,
       cs_hours: 1800,
       cs2_rank: 12,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 9 - RealPlayer1 (Valve)
+    },
     {
-      steam_id: "76561197961279983",
+      steam_id: "66561198999999907", // RealPlayer2
       season_id: 16,
       cs_hours: 1600,
       cs2_rank: 14,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 10 - RealPlayer2
+    },
     {
-      steam_id: "76561197960265748",
+      steam_id: "66561198999999908", // RealPlayer3
       season_id: 16,
       cs_hours: 1700,
       cs2_rank: 16,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 11 - RealPlayer3 (Valve)
+    },
     {
-      steam_id: "76561197960273207",
+      steam_id: "66561198999999901", // Aabe (auth user)
       season_id: 16,
       cs_hours: 2200,
       cs2_rank: 20,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 3 - Aabe (auth user)
+    },
     {
-      steam_id: "76561197960275646",
+      steam_id: "66561198999999903", // Quattra
       season_id: 16,
       cs_hours: 1900,
       cs2_rank: 17,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 5 - Quattra
+    },
     {
-      steam_id: "76561197960283671",
+      steam_id: "66561198999999904", // Trev
       season_id: 16,
       cs_hours: 1400,
       cs2_rank: 11,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    }, // account_id 6 - Trev
-    // Add data for error testing Steam IDs
+    },
     {
-      steam_id: "76561197967885016",
+      steam_id: "66561198999999909", // PrivateProfilePlayer
       season_id: 16,
       cs_hours: 1500,
       cs2_rank: 15,
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
-    } // account_id 1 - PrivateProfilePlayer (normal hours, but private profile)
-    // NOTE: Intentionally NOT adding SeasonPlayerRanks for 76561197960269868 (InsufficientHoursPlayer)
+    }
+    // NOTE: Intentionally NOT adding SeasonPlayerRanks for 66561198999999910 (InsufficientHoursPlayer)
     // so it falls back to Steam API mock which returns null for hours detection failure
   ] satisfies Partial<SeasonPlayerRank>[];
 

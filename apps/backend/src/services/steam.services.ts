@@ -13,12 +13,12 @@ export const getSteamHoursForAppId = async (
   // E2E Mode: Return mock data based on Steam ID
   if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
     // InsufficientHoursPlayer - return null to simulate hours detection failure
-    if (steam_id === "76561197960269868") {
+    if (steam_id === "66561198999999910") {
       return null;
     }
 
     // RaceConditionPlayer - return null to simulate API failure
-    if (steam_id === "76561197960280002") {
+    if (steam_id === "66561198999999912") {
       return null;
     }
 

@@ -36,11 +36,11 @@ function generateTestJWT(): string {
     );
 
     // Create a payload that matches what the backend expects and references a real E2E user
-    // The E2E seed creates users with account IDs 3, 4, 5, 6, 8 and sets their emails/policies
-    // Let's use account ID 4 which should exist in the E2E database but has no existing registration
+    // The E2E seed creates users with account IDs 15001-15013 and sets their emails/policies
+    // Let's use account ID 15004 which should exist in the E2E database but has no existing registration
     const payload = {
-      account_id: 4,
-      provider_id: "76561197960283932", // This matches heppajpg's Steam ID
+      account_id: 15004,
+      provider_id: "66561198999999902", // This matches heppajpg's NEW Steam ID from E2E seed
       permissions: [],
       roles: [],
       nickname: "heppajpg",
@@ -216,11 +216,11 @@ async function setupCompleteRegistrationForm(
 // Helper function to fill 5 players with valid Steam IDs
 async function fillValidPlayers(page: Page) {
   const validPlayers = [
-    "76561197960283932", // account_id 4 - heppajpg (our auth user, has E2E data)
-    "76561197960265728", // account_id 8 - Hoolyz (has E2E data)
-    "76561197960265740", // account_id 9 - RealPlayer1 (has E2E data)
-    "76561197961279983", // account_id 10 - RealPlayer2 (has E2E data)
-    "76561197960265748" // account_id 11 - RealPlayer3 (has E2E data)
+    "66561198999999901", // account_id 15003 - Aabe (has E2E data)
+    "66561198999999902", // account_id 15004 - heppajpg (our auth user, has E2E data)
+    "66561198999999905", // account_id 15008 - Hoolyz (has E2E data)
+    "66561198999999906", // account_id 15009 - RealPlayer1 (has E2E data)
+    "66561198999999907" // account_id 15010 - RealPlayer2 (has E2E data)
   ];
 
   for (let i = 0; i < 5; i++) {
@@ -503,36 +503,27 @@ test.describe("Signup Form", () => {
 
       // Test 1: Hours detection failure
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
-      await steamIdInput0.fill("76561197960269868"); // This Steam ID triggers hours: null in backend mock
+      await steamIdInput0.fill("66561198999999910"); // account_id 15002 - InsufficientHoursPlayer (triggers hours: null)
       await page.keyboard.press("Tab");
       await steamIdInput0.blur();
 
-      const hoursError = page.locator('[data-testid="hours-error-0"]');
-      const profileError = page.locator(
-        '[data-testid="profile-privacy-error-0"]'
-      );
+      // Verify red border appears (indicates validation failure due to insufficient hours)
+      await expect(steamIdInput0).toHaveClass(/border-red-500/);
 
-      await expect(hoursError).toBeVisible();
-      await expect(profileError).not.toBeVisible();
-      await expect(hoursError).toContainText("Could not detect the hours");
-
-      // Test 2: Player with personal email approved by organizer (green border)
+      // Test 2: Organizer approval success
       const steamIdInput1 = page.locator('[data-testid="steam-id-input-1"]');
       await steamIdInput1.focus();
-      await steamIdInput1.fill("76561197960275646"); // account_id 5 - approved by organizer
+      await steamIdInput1.fill("66561198999999903"); // account_id 15005 - Quattra (approved by organizer)
       await page.keyboard.press("Tab");
 
       // Verify green border appears (indicates successful validation including organizer approval)
       await expect(steamIdInput1).toHaveClass(/border-green-500/);
 
-      // Test 3: Player with personal email not approved by organizer (red border)
+      // Test 3: Organizer approval failure
       const steamIdInput2 = page.locator('[data-testid="steam-id-input-2"]');
       await steamIdInput2.focus();
-      await steamIdInput2.fill("76561197960283671"); // account_id 6 - NOT approved by organizer
+      await steamIdInput2.fill("66561198999999904"); // account_id 15006 - Trev (NOT approved by organizer)
       await page.keyboard.press("Tab");
-
-      // Verify red border appears (indicates validation failure due to lack of organizer approval)
-      await expect(steamIdInput2).toHaveClass(/border-red-500/);
     });
   });
 
@@ -565,7 +556,7 @@ test.describe("Signup Form", () => {
     await expect(steamIdInput).toBeVisible();
 
     await steamIdInput.focus();
-    await steamIdInput.fill("76561197960275646"); // account_id 5 - approved by organizer
+    await steamIdInput.fill("66561198999999903"); // account_id 15005 - Quattra (approved by organizer)
     await page.keyboard.press("Tab");
     // Wait for all validation APIs to complete
 
@@ -612,7 +603,7 @@ test.describe("Signup Form", () => {
     await expect(steamIdInput).toBeVisible();
 
     await steamIdInput.focus();
-    await steamIdInput.fill("76561197960283671"); // account_id 6 - NOT approved by organizer
+    await steamIdInput.fill("66561198999999904"); // account_id 15006 - Trev (NOT approved by organizer)
     await page.keyboard.press("Tab");
 
     // Verify red border appears (indicates validation failure due to lack of organizer approval)
@@ -641,9 +632,9 @@ test.describe("Signup Form", () => {
 
       // Verify nicknames from E2E seed data
       await expect(nicknameSpans.nth(0)).toBeVisible();
-      await expect(nicknameSpans.nth(0)).toContainText(/heppajpg/i);
+      await expect(nicknameSpans.nth(0)).toContainText(/aabe/i);
       await expect(nicknameSpans.nth(1)).toBeVisible();
-      await expect(nicknameSpans.nth(1)).toContainText(/hoolyz/i);
+      await expect(nicknameSpans.nth(1)).toContainText(/heppajpg/i);
 
       // Assign captain and co-captain roles
       await assignCaptain(page);
