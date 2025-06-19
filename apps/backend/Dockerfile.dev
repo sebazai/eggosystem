@@ -22,5 +22,8 @@ RUN pnpm install --frozen-lockfile
 COPY packages/ ./packages/
 COPY apps/backend/ ./apps/backend/
 
+# Build types package
+RUN pnpm build --filter=@eggosystem/types
+
 EXPOSE 3001
 CMD [ "pnpm", "--filter=backend", "dev" ]
