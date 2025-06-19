@@ -14,9 +14,6 @@ test.describe("Email Verification Page", () => {
       // E2E tests use real backend - use one of the valid tokens from seed
       await navigateToPage(page, "/verify-email?token=valid-token-123");
 
-      // Wait for the page to load and process the verification
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
-
       // Check for success elements
       await expect(
         page.locator("h1").filter({ hasText: "Email verified!" })
@@ -73,7 +70,6 @@ test.describe("Email Verification Page", () => {
     }) => {
       // Use an invalid token (not in database)
       await navigateToPage(page, "/verify-email?token=invalid-token-xyz");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Check for error elements
       await expect(
@@ -107,7 +103,6 @@ test.describe("Email Verification Page", () => {
       page
     }) => {
       await navigateToPage(page, "/verify-email");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Check for error elements
       await expect(
@@ -125,7 +120,6 @@ test.describe("Email Verification Page", () => {
       page
     }) => {
       await navigateToPage(page, "/verify-email?token=");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       await expect(
         page.locator("h1").filter({ hasText: "Invalid verification" })
@@ -135,7 +129,6 @@ test.describe("Email Verification Page", () => {
     test("should handle expired tokens", async ({ page }) => {
       // Use the expired token we seeded in the database
       await navigateToPage(page, "/verify-email?token=expired-token-456");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Should show verification failed for expired token
       await expect(
@@ -176,7 +169,6 @@ test.describe("Email Verification Page", () => {
       page
     }) => {
       await navigateToPage(page, "/verify-email?token=valid-token-def");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Check main container styling
       const container = page.locator("div.flex.justify-center.p-4");
@@ -202,7 +194,6 @@ test.describe("Email Verification Page", () => {
 
     test("should have proper styling for error state", async ({ page }) => {
       await navigateToPage(page, "/verify-email?token=invalid-token-styling");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Check error icon
       const errorIcon = page.locator("svg.lucide-circle-x");
@@ -241,7 +232,6 @@ test.describe("Email Verification Page", () => {
       page
     }) => {
       await navigateToPage(page, "/verify-email?token=invalid-token-link");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Find and click the profile link
       const profileLink = page.locator('a[href*="/profile"]');
@@ -259,7 +249,6 @@ test.describe("Email Verification Page", () => {
     }) => {
       // Use a token that shouldn't conflict with other tests
       await navigateToPage(page, "/verify-email?token=valid-token-abc");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Wait for the success page and toast
       await expect(
@@ -274,7 +263,6 @@ test.describe("Email Verification Page", () => {
 
     test("should not show success toast on error", async ({ page }) => {
       await navigateToPage(page, "/verify-email?token=invalid-token-no-toast");
-      await page.waitForLoadState("networkidle", { timeout: 30000 });
 
       // Should show error message
       await expect(

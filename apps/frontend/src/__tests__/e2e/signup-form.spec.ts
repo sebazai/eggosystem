@@ -229,9 +229,6 @@ async function fillValidPlayers(page: Page) {
     await steamIdInput.fill(validPlayers[i]!);
     await page.keyboard.press("Tab");
   }
-
-  // Wait for all validations to complete
-  await page.waitForTimeout(3000);
 }
 
 test.describe("Signup Form", () => {
