@@ -22,6 +22,10 @@ RUN pnpm install --filter='!backend' --frozen-lockfile
 COPY packages/ ./packages/
 COPY apps/frontend/ ./apps/frontend/
 
+# Build types package
+RUN pnpm i --filter=@eggosystem/types
+RUN pnpm build --filter=@eggosystem/types
+
 # Expose the port
 EXPOSE 3000
 ENV PORT=3000
