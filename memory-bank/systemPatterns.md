@@ -145,6 +145,27 @@ Key patterns demonstrated:
 
 These patterns demonstrate efficient, readable SQL for complex aggregation calculations that would be difficult to express in multiple separate queries.
 
+### Leaderboard Per-Round Statistics Calculation
+
+For statistics that are expressed as "per round" (like kills per round, utility damage per round), we use a subquery to calculate the total rounds played in each game:
+
+```sql
+INNER JOIN (
+  SELECT game_id, SUM(score + overtime_score) AS total_rounds
+  FROM TeamGameScores
+  GROUP BY game_id
+) AS game_rounds ON game_rounds.game_id = mg.id
+```
+
+Key points about this pattern:
+
+1. **Total Rounds Calculation**: The total rounds in a game is the sum of regular score and overtime score from both teams
+2. **No Division by 2**: We do NOT divide by 2 because we want the actual total number of rounds played
+3. **Per-Round Expressions**: Used in expressions like `sum(ps.kills) / sum(total_rounds)`
+4. **INNER JOIN**: We use INNER JOIN to ensure we only include games with valid round data
+
+This pattern ensures accurate per-round statistics that reflect the true rate at which events occur during gameplay.
+
 ## API Middleware Patterns
 
 ### Filter Parameter Processing

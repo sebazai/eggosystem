@@ -102,7 +102,12 @@ cd apps/frontend && pnpm shadcn:add [component-name]
 
 - **Filtering**: `parseQueryFilterParams` middleware for all filter endpoints
 - **Parameter Structure**: Controllers access `req.parsedParams` (ParsedParams interface)
-- **Filter Types**: season_ids, league_ids, team_ids, stages, map_ids
+- **Filter Types**:
+  - season_ids (number[])
+  - league_ids (number[])
+  - team_ids (number[])
+  - stages (number[]) - where 1 = "Regular", 2 = "Playoffs"
+  - map_ids (number[])
 
 ### Data Flow
 

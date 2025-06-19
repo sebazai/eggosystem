@@ -79,6 +79,7 @@
 - **Email Verification Fix**: Resolved server-side toast error by moving toast to client component
 - **E2E Testing Breakthrough**: Solved email verification test failures by implementing proper database reset workflow and fixing Lucide icon selectors
 - **Team Value Sorter**: Implemented new API endpoint for team value comparison based on player kanaelo
+- **Leaderboard Calculation Fix**: Fixed total rounds calculation in leaderboards query to show accurate per-round statistics
 
 ### Active Work Areas
 
@@ -120,6 +121,7 @@
 - **Error Handling**: Inconsistent error response formats in some endpoints
 - **Performance**: Query logging in production needs optimization
 - **Redis Cache Bug**: Issue #173 - Cache-filtered-queries middleware has a bug with res.json().catch() when using season_ids filter, causing 500 errors in tests
+- **Type Safety**: Fixed type error in leaderboards test by using correct stage number format ([1] instead of ["group"]) - demonstrates importance of proper type definitions
 
 ## Evolution of Project Decisions
 

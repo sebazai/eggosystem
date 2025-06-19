@@ -23,6 +23,8 @@
 - ✅ Migrated project context from rules to memory bank documents
 - ✅ Defined proper file hierarchy and relationships
 - ✅ Removed redundant nextFetcher.ts and updated to use expressFetcher/clientApiFetch pattern
+- ✅ Fixed leaderboard rounds calculation by removing division by 2 in total_rounds SQL query
+- ✅ Fixed type error in leaderboards test by using correct stage number format ([1] instead of ["group"])
 
 ### In Progress
 
