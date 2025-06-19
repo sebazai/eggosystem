@@ -23,6 +23,7 @@ COPY packages/ ./packages/
 COPY apps/backend/ ./apps/backend/
 
 # Build types package
+RUN pnpm i --filter=@eggosystem/types
 RUN pnpm build --filter=@eggosystem/types
 
 EXPOSE 3001
