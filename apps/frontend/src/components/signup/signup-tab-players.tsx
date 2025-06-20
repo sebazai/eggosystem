@@ -288,19 +288,23 @@ export const TabPlayers = ({
     }));
   };
 
-  const playerHasErrors = (player: SignupPlayerType, isDuplicate?: boolean) => {
-    const error =
-      isValidSteamId(player.steamId) &&
-      (playerSchema.safeParse(player).success === false ||
-        !!isDuplicate ||
-        player.hasValidData !== true ||
-        player.hasValidWorkEmail !== true ||
-        player.isEmailVerified !== true ||
-        player.hours === -1 ||
-        player.rank === -1 ||
-        (player.externalRank === -1 && platform !== SeasonPlatform.Kanaliiga));
-    return error;
-  };
+  const playerHasErrors = useCallback(
+    (player: SignupPlayerType, isDuplicate?: boolean) => {
+      const error =
+        isValidSteamId(player.steamId) &&
+        (playerSchema.safeParse(player).success === false ||
+          !!isDuplicate ||
+          player.hasValidData !== true ||
+          player.hasValidWorkEmail !== true ||
+          player.isEmailVerified !== true ||
+          player.hours === -1 ||
+          player.rank === -1 ||
+          (player.externalRank === -1 &&
+            platform !== SeasonPlatform.Kanaliiga));
+      return error;
+    },
+    [platform]
+  );
 
   // Open accordions if any errors
   useEffect(() => {
@@ -326,7 +330,7 @@ export const TabPlayers = ({
       setOpenItems(errorIndices);
     }
     setErrorIndices(errorIndices);
-  }, [loadingStates, watchPlayers]);
+  }, [loadingStates, playerHasErrors, watchPlayers]);
 
   // Hard carry detection
   useEffect(() => {

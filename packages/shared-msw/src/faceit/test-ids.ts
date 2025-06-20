@@ -5,3 +5,4 @@ export const faceitInvalidJsonSteamId = "76561198000000003";
 export const faceitInvalidGameDataSteamId = "76561198000000005";
 export const faceitRateLimitSteamId = "76561198000000006";
 export const faceitMultipleGamesSteamId = "76561198000000007";
+export const faceitValidSteamIdDecayed = "76561198000000008";

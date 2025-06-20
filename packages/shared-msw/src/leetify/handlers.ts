@@ -122,13 +122,23 @@ export const getLeetifyHandlers = [
       }
 
       // No premier rank players
-      if (
-        steamId === "11111111111111112" ||
-        steamId === "11111111111111113" ||
-        steamId === "11111111111111114"
-      ) {
+      if (steamId === "11111111111111112" || steamId === "11111111111111113") {
         return HttpResponse.json({
           games: []
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === "11111111111111114") {
+        return HttpResponse.json({
+          games: [
+            {
+              isCs2: true,
+              dataSource: "matchmaking",
+              rankType: 11,
+              skillLevel: 23000,
+              gameFinishedAt: new Date().toISOString()
+            }
+          ]
         } satisfies LeetifyResponse);
       }
 

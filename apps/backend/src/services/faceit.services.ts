@@ -11,52 +11,15 @@ import {
 import { getPlayerExternalRankForSeason } from "../models/season-player-ranks.models";
 import { logger } from "../utils/app-logger";
 import { createAbortController } from "../utils/fetch-utils";
+import {
+  applyDecay,
+  faceitEloToLevel,
+  faceitLevelDefaultElo
+} from "../utils/faceit-utils";
 
 // E2E Test mode mocking
 const isE2EMode =
   process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";
-
-const getMonthDifference = (timestamp1: number, timestamp2: number) => {
-  const date1 = new Date(timestamp1);
-  const date2 = new Date(timestamp2);
-
-  const yearsDiff = date2.getFullYear() - date1.getFullYear();
-  const monthsDiff = date2.getMonth() - date1.getMonth();
-
-  return yearsDiff * 12 + monthsDiff;
-};
-
-const applyDecay = (
-  type: "elo" | "rank",
-  last_value: number,
-  min_value: number,
-  last_match?: number
-) => {
-  const clamp = (num: number, min: number) => Math.max(num, min);
-  if (!last_match) {
-    return clamp(last_value, min_value);
-  }
-  const currentTime = new Date().getTime();
-  const monthsDiff = getMonthDifference(last_match, currentTime);
-
-  let decay = 0;
-
-  if (type === "rank") {
-    if (monthsDiff >= 3) decay = 1;
-    if (monthsDiff >= 8) decay = 2;
-    if (monthsDiff >= 12) decay = 3;
-  } else if (type === "elo") {
-    if (monthsDiff >= 3) decay = last_value * 0.05; // 5%
-    if (monthsDiff >= 8) decay = last_value * 0.1; // 10%
-    if (monthsDiff >= 12) decay = last_value * 0.15; // 15%
-  } else {
-    return clamp(last_value, min_value);
-  }
-  if (min_value > last_value) {
-    min_value = last_value;
-  }
-  return clamp(last_value - decay, min_value);
-};
 
 export const getFaceITGameRank = async (
   steam_id: string,
@@ -64,6 +27,11 @@ export const getFaceITGameRank = async (
 ) => {
   // E2E Mock: Return mock FACEIT rank data
   if (isE2EMode) {
+    // Special case for our test player without FaceIT rank
+    if (steam_id === "66561198999999913") {
+      return null;
+    }
+
     return {
       elo: 1850,
       rank: 7,
@@ -92,39 +60,38 @@ export const getFaceITGameRank = async (
       logger.warn(
         `[FaceIT] API returned ${response.status} ${response.statusText} for steam_id: ${steam_id} (${duration}ms)`
       );
-      return null;
-    }
-
-    const data = await response.json();
-    try {
-      const elo = Number(data["games"][game]["faceit_elo"]);
-      const rank = Number(data["games"][game]["skill_level"]);
-      const player_id = data["player_id"];
-
-      clearAbortTimeout();
-
-      if (Number.isNaN(elo) || Number.isNaN(rank)) {
+      // Player not found rank for CS2 nor csgo, we return null and fallback to default rank
+      if (response.status === 404) {
+        logger.warn(
+          `[FaceIT] Player not found for steam_id: ${steam_id} (${duration}ms)`
+        );
         return null;
       }
 
-      return {
-        elo,
-        rank,
-        player_id
-      };
-    } catch (err) {
-      const duration = clearAbortTimeout();
-      if (process.env.NODE_ENV !== "test")
-        logger.error(
-          `[FaceIT] Error parsing rank data for steam_id: ${steam_id} (${duration}ms):`,
-          err
-        );
-      return null;
+      throw new Error("Failed to fetch FaceIT rank");
     }
+
+    const data = await response.json();
+    const elo = Number(data["games"][game]["faceit_elo"]);
+    const rank = Number(data["games"][game]["skill_level"]);
+    const player_id = data["player_id"];
+
+    clearAbortTimeout();
+
+    if (Number.isNaN(elo) || Number.isNaN(rank)) {
+      logger.warn(`[FaceIT] Invalid rank data for steam_id: ${steam_id}`, data);
+      throw new Error("Invalid rank data");
+    }
+
+    return {
+      elo,
+      rank,
+      player_id
+    };
   } catch (error) {
     clearAbortTimeout();
     logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
-    return null;
+    throw error;
   }
 };
 
@@ -187,14 +154,26 @@ const getFaceITMetaData = async (
 };
 
 const fallbackFaceITRank = {
+  faceit_level: 2,
+  faceit_elo: faceitLevelDefaultElo,
+  faceit_kd: 0.95,
+  faceit_date: new Date().getTime(),
+  metadata: {
+    faceit_matches_played: undefined,
+    faceit_last_match: undefined,
+    faceit_decay: false,
+    faceit_fallback: true
+  }
+} satisfies FaceITCSRank;
+
+const faceitErrorRank = {
   faceit_level: -1,
   faceit_elo: -1,
   faceit_kd: -1,
   faceit_date: new Date().getTime(),
   metadata: {
-    faceit_matches_played: undefined,
-    faceit_last_match: undefined,
-    faceit_decay: false
+    faceit_decay: false,
+    faceit_fallback: true
   }
 } satisfies FaceITCSRank;
 
@@ -206,40 +185,40 @@ const getFaceITCSGORank = async (steam_id: string) => {
   }
 
   const faceit_metadata = await getFaceITMetaData(data.player_id, "csgo");
-  if (!faceit_metadata) {
-    logger.warn(
-      `[FaceIT] Failed to fetch CSGO metadata for player ${steam_id}`
-    );
-    return fallbackFaceITRank;
-  }
 
-  const decayedRank = applyDecay(
-    "rank",
-    data.rank,
-    5,
-    faceit_metadata.faceit_last_match
-  );
+  const lastMatchThreeYearsAgo =
+    new Date().getTime() - 3 * 365 * 24 * 60 * 60 * 1000;
+
   const decayedElo = applyDecay(
-    "elo",
     data.elo,
-    1150,
-    faceit_metadata.faceit_last_match
+    faceitLevelDefaultElo,
+    faceit_metadata?.faceit_last_match ?? lastMatchThreeYearsAgo
   );
+
+  const decayedRank = faceitEloToLevel(decayedElo);
 
   const returnData = {
     faceit_level: decayedRank,
     faceit_elo: decayedElo,
-    faceit_kd: faceit_metadata.faceit_kdr,
+    faceit_kd: faceit_metadata?.faceit_kdr ?? 0.95,
     faceit_date: new Date().getTime(),
     metadata: {
-      faceit_matches_played: faceit_metadata.faceit_matches_played,
-      faceit_last_match: faceit_metadata.faceit_last_match,
-      faceit_decay: decayedRank !== data.rank || decayedElo !== data.elo
+      faceit_matches_played: faceit_metadata?.faceit_matches_played,
+      faceit_last_match:
+        faceit_metadata?.faceit_last_match ?? lastMatchThreeYearsAgo,
+      faceit_decay: decayedRank !== data.rank || decayedElo !== data.elo,
+      faceit_fallback: false
     }
   } satisfies FaceITCSRank;
   return returnData;
 };
 
+/**
+ * Used by signup to ensure that the rank is not old rank
+ * @param steam_id
+ * @param season_id
+ * @returns
+ */
 export const getFaceITCS2Rank = async (
   steam_id: string,
   season_id?: number
@@ -251,11 +230,12 @@ export const getFaceITCS2Rank = async (
       season_id,
       SeasonPlatform.FACEIT
     );
-    if (rankFromDb) {
+    // Ensure that the rank is in database
+    if (rankFromDb && rankFromDb.faceit_level && rankFromDb.faceit_elo) {
       return {
-        faceit_level: rankFromDb.faceit_level ?? -1,
-        faceit_elo: rankFromDb.faceit_elo ?? -1,
-        faceit_kd: rankFromDb.faceit_kd ?? -1,
+        faceit_level: rankFromDb.faceit_level,
+        faceit_elo: rankFromDb.faceit_elo,
+        faceit_kd: rankFromDb.faceit_kd ?? 0.95,
         faceit_date: rankFromDb.faceit_date
           ? new Date(rankFromDb.faceit_date).getTime()
           : new Date().getTime(),
@@ -274,40 +254,68 @@ export const getFaceITCS2Rank = async (
     return JSON.parse(fromRedis) as FaceITCSRank;
   }
 
-  const faceitRanks = await getFaceITGameRank(steam_id, "cs2");
-  if (!faceitRanks) {
-    // Fallback to CSGO rank
-    const csgoFaceItRank = await getFaceITCSGORank(steam_id);
+  try {
+    const faceitRanks = await getFaceITGameRank(steam_id, "cs2");
+    if (!faceitRanks) {
+      // Fallback to CSGO rank
+      const csgoFaceItRank = await getFaceITCSGORank(steam_id);
+
+      // Set non-fallback rank to redis
+      if (!csgoFaceItRank.metadata.faceit_fallback) {
+        await redisClient.set(
+          redisKey,
+          JSON.stringify(csgoFaceItRank),
+          "EX",
+          expireIn30Days
+        );
+      }
+      return csgoFaceItRank;
+    }
+
+    const faceit_metadata = await getFaceITMetaData(
+      faceitRanks.player_id,
+      "cs2"
+    );
+    if (!faceit_metadata) {
+      logger.warn(
+        `[FaceIT] Failed to fetch CS2 metadata for player ${steam_id}`
+      );
+      return faceitErrorRank;
+    }
+
+    const cs2FaceitEloDecayed = applyDecay(
+      faceitRanks.elo,
+      faceitLevelDefaultElo,
+      faceit_metadata.faceit_last_match
+    );
+    const cs2FaceitRankDecayed = faceitEloToLevel(cs2FaceitEloDecayed);
+
+    const returnData = {
+      faceit_level: cs2FaceitRankDecayed,
+      faceit_elo: cs2FaceitEloDecayed,
+      faceit_kd: faceit_metadata.faceit_kdr,
+      faceit_date: new Date().getTime(),
+      metadata: {
+        faceit_matches_played: faceit_metadata.faceit_matches_played,
+        faceit_last_match: faceit_metadata.faceit_last_match,
+        faceit_decay:
+          faceitRanks.rank !== cs2FaceitRankDecayed ||
+          faceitRanks.elo !== cs2FaceitEloDecayed
+      }
+    } satisfies FaceITCSRank;
+
     await redisClient.set(
       redisKey,
-      JSON.stringify(csgoFaceItRank),
+      JSON.stringify(returnData),
       "EX",
       expireIn30Days
     );
-    return csgoFaceItRank;
+
+    return returnData;
+  } catch (error) {
+    logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
+    return faceitErrorRank;
   }
-
-  const faceit_metadata = await getFaceITMetaData(faceitRanks.player_id, "cs2");
-
-  // If we get CS2 rank and elo, we use those and return a fallback metadata
-  const returnData = {
-    faceit_level: faceitRanks.rank,
-    faceit_elo: faceitRanks.elo,
-    faceit_kd: faceit_metadata?.faceit_kdr ?? 1.05,
-    faceit_date: new Date().getTime(),
-    metadata: {
-      faceit_matches_played: faceit_metadata?.faceit_matches_played,
-      faceit_last_match: faceit_metadata?.faceit_last_match,
-      faceit_decay: false
-    }
-  } satisfies FaceITCSRank;
-  await redisClient.set(
-    redisKey,
-    JSON.stringify(returnData),
-    "EX",
-    expireIn30Days
-  );
-  return returnData;
 };
 
 export const getFaceITTeamDetails = async (faceit_team_id: string) => {

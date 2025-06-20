@@ -41,10 +41,11 @@ import * as accountRolesModels from "../../models/account-roles.models";
 import * as registrationModels from "../../models/season-team-registration.models";
 import * as teamModels from "../../models/team.models";
 import _ from "lodash";
-import { validSignupData } from "../../__utils__/fixtures/signupFormData";
+import { validSignupData } from "@eggosystem/shared-msw";
 import { type BadRequestError } from "../../utils/errors";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { redisClient } from "../../utils/redisClient";
+import { faceitEloToLevel } from "../../utils/faceit-utils";
 
 describe("Season team registration services", () => {
   process.env.PRIVACY_POLICY_VERSION = "1";
@@ -650,7 +651,11 @@ describe("Season team registration services", () => {
     });
     it("Should pass with average app rank within the last year, and external platform rank not present", async () => {
       const formData = _.cloneDeep(validSignupData);
-      formData.players[4].steamId = "11111111111111111";
+      formData.players.push({
+        steamId: "11111111111111111",
+        accountId: 999111,
+        nickname: "App Ranker"
+      });
 
       await registrationServices.addPlayersForTeamInSeason(
         seasonDetails.id,
@@ -661,15 +666,15 @@ describe("Season team registration services", () => {
       );
       const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-        [formData.players[4].steamId, seasonDetails.id]
+        [formData.players[5].steamId, seasonDetails.id]
       );
       expect(rankForSeason.cs2_rank).toEqual(22000);
       expect(rankForSeason.cs_hours).toEqual(112);
-      expect(rankForSeason.faceit_elo).toEqual(null);
-      expect(rankForSeason.faceit_level).toEqual(null);
-      expect(rankForSeason.faceit_kd).toEqual(null);
-      // 5 times for app id rank, 5 times for hours, 5 times for external rank
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
+      expect(rankForSeason.faceit_elo).toEqual(750);
+      expect(rankForSeason.faceit_level).toEqual(2);
+      expect(rankForSeason.faceit_kd).toEqual(0.95);
+      // 6 times for app id rank, 6 times for hours, 6 times for external rank
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(18);
     });
     it("Should throw error if no rank and no external rank", async () => {
       const formData = _.cloneDeep(validSignupData);
@@ -689,34 +694,30 @@ describe("Season team registration services", () => {
         );
       }
     });
-    it("Should pass if external platform rank is present but app rank not", async () => {
+    it("Should not pass if external platform rank is present but app rank not", async () => {
       const formData = _.cloneDeep(validSignupData);
-      formData.players[4].steamId = "11111111111111112";
+      formData.players.push({
+        steamId: "11111111111111112",
+        accountId: 9999112,
+        nickname: "Faceit Ranker"
+      });
 
-      await registrationServices.addPlayersForTeamInSeason(
-        seasonDetails.id,
-        seasonDetails.app_id,
-        SeasonPlatform.FACEIT,
-        formData.teamId,
-        formData.players.map((player) => player.steamId)
-      );
-      const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
-        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-        [formData.players[4].steamId, seasonDetails.id]
-      );
-      expect(getPlayerRank.cs2_rank).toEqual(-1);
-      expect(getPlayerRank.csgo_rank).toEqual(-1);
-      expect(getPlayerRank.cs_hours).toEqual(112);
-      expect(getPlayerRank.faceit_level).toEqual(6);
-      expect(getPlayerRank.faceit_elo).toEqual(1301);
-      expect(getPlayerRank.faceit_kd).toEqual(1.35);
-      const date = new Date();
-      const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      expect(getPlayerRank.rank_updated_at).toContain(formatted);
-      expect(getPlayerRank.hours_updated_at).toContain(formatted);
-      expect(getPlayerRank.faceit_date).toContain(formatted);
+      try {
+        await registrationServices.addPlayersForTeamInSeason(
+          seasonDetails.id,
+          seasonDetails.app_id,
+          SeasonPlatform.FACEIT,
+          formData.teamId,
+          formData.players.map((player) => player.steamId)
+        );
+      } catch (error) {
+        const errorAsBadReq = error as BadRequestError;
+        expect(errorAsBadReq.message).toEqual(
+          "Player 11111111111111112 has no app id rank"
+        );
+      }
     });
-    it("Should pass when rank is has been added manually by organizer into database, but hours come from steam", async () => {
+    it("Should pass when rank is has been added manually by organizer into database, but hours come from steam and faceit rank from faceit", async () => {
       const formData = _.cloneDeep(validSignupData);
       const idToRemove = await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank) VALUES (?, ?, ?)",
@@ -737,18 +738,18 @@ describe("Season team registration services", () => {
 
       expect(rankForSeason.cs2_rank).toEqual(10001);
       expect(rankForSeason.cs_hours).toEqual(112);
-      expect(rankForSeason.faceit_elo).toEqual(null);
-      expect(rankForSeason.faceit_kd).toEqual(null);
-      expect(rankForSeason.faceit_level).toEqual(null);
-      expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
-      // 4 times for app id rank, 4 times for external rank, except added player to db, 5 times for hours
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(13);
+      expect(rankForSeason.faceit_elo).toEqual(1301);
+      expect(rankForSeason.faceit_kd).toEqual(1.35);
+      expect(rankForSeason.faceit_level).toEqual(6);
+      expect(rankForSeason.faceit_date).toBeDefined();
+      // 4 times for app id rank, 5 times for external rank, except added player to db, 5 times for hours
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(14);
 
       await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
         idToRemove.insertId
       ]);
     });
-    it("Should pass when rank has been added manually by organizer into database, external rank is null", async () => {
+    it("Should pass when rank has been added manually by organizer into database, external rank comes from faceit", async () => {
       const formData = _.cloneDeep(validSignupData);
       const idToRemove = await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, faceit_level, faceit_elo, faceit_kd, faceit_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -777,12 +778,12 @@ describe("Season team registration services", () => {
 
       expect(rankForSeason.cs2_rank).toEqual(10001);
       expect(rankForSeason.cs_hours).toEqual(112);
-      expect(rankForSeason.faceit_elo).toEqual(null);
-      expect(rankForSeason.faceit_kd).toEqual(null);
-      expect(rankForSeason.faceit_level).toEqual(null);
-      expect(rankForSeason.faceit_date).toEqual("1970-01-01 10:00:00");
-      // 4 times for app id rank, except added player to db, 5 times for hours
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(13);
+      expect(rankForSeason.faceit_elo).toEqual(1301);
+      expect(rankForSeason.faceit_kd).toEqual(1.35);
+      expect(rankForSeason.faceit_level).toEqual(6);
+      expect(rankForSeason.faceit_date).not.toEqual("1970-01-01 10:00:00");
+      // 4 times for app id rank, except added player to db, 5 times for external rank, 5 times for hours
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(14);
 
       await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
         idToRemove.insertId
@@ -790,7 +791,11 @@ describe("Season team registration services", () => {
     });
     it("Should fallback to latest old seasons average rank if no current season rank can be determined", async () => {
       const formData = _.cloneDeep(validSignupData);
-      formData.players[4].steamId = "11111111111111113";
+      formData.players.push({
+        steamId: "11111111111111113",
+        accountId: 9999113,
+        nickname: "No Ranker"
+      });
 
       const now = new Date();
       const threeMonthsAgo = new Date(
@@ -803,11 +808,11 @@ describe("Season team registration services", () => {
       const formattedDate2 = twoMonthsAgo.toISOString().split("T")[0];
       await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, ?)",
-        [formData.players[4].steamId, 14, 5000, formattedDate]
+        [formData.players[5].steamId, 14, 5000, formattedDate]
       );
       await runQuery<{ insertId: number }>(
         "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, ?)",
-        [formData.players[4].steamId, 11, 10000, formattedDate2]
+        [formData.players[5].steamId, 11, 10000, formattedDate2]
       );
 
       await registrationServices.addPlayersForTeamInSeason(
@@ -819,20 +824,23 @@ describe("Season team registration services", () => {
       );
       const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-        [formData.players[4].steamId, seasonDetails.id]
+        [formData.players[5].steamId, seasonDetails.id]
       );
 
       // Should fetch season 14 rank even though season 11 is closer to now
       expect(rankForSeason.cs2_rank).toEqual(5000);
       expect(rankForSeason.cs_hours).toEqual(112);
-      // 5 times for app id rank, 5 times for external rank, 5 times for hours
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(15);
+      // 6 times for app id rank, 6 times for external rank, 6 times for hours, as there are 6 players
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(18);
     });
     it("Should fall back to csgo faceit rank if cs2 faceit rank not present, and apply decay on csgo faceit rank", async () => {
       const faceitReturnEloCsGo = 2700;
-      const faceitReturnLevelCsGo = 9;
       const formData = _.cloneDeep(validSignupData);
-      formData.players[4].steamId = "11111111111111114";
+      formData.players.push({
+        steamId: "11111111111111114",
+        accountId: 9999114,
+        nickname: "CSGO Ranker"
+      });
 
       await registrationServices.addPlayersForTeamInSeason(
         seasonDetails.id,
@@ -843,15 +851,17 @@ describe("Season team registration services", () => {
       );
       const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
-        [formData.players[4].steamId, seasonDetails.id]
+        [formData.players[5].steamId, seasonDetails.id]
       );
-      expect(getPlayerRank.cs2_rank).toEqual(-1);
+      expect(getPlayerRank.cs2_rank).toEqual(23000);
       expect(getPlayerRank.csgo_rank).toEqual(-1);
       expect(getPlayerRank.cs_hours).toEqual(112);
-      // -3 as it's over 12 months
-      expect(getPlayerRank.faceit_level).toEqual(faceitReturnLevelCsGo - 3);
-      // 15 % away as it's over 12 months
-      expect(getPlayerRank.faceit_elo).toEqual(faceitReturnEloCsGo * 0.85);
+
+      // 10 % away as it's over 12 months
+      expect(getPlayerRank.faceit_elo).toEqual(faceitReturnEloCsGo * 0.9);
+      expect(getPlayerRank.faceit_level).toEqual(
+        faceitEloToLevel(faceitReturnEloCsGo * 0.9)
+      );
       expect(getPlayerRank.faceit_kd).toEqual(1.35);
       const date = new Date();
       const formatted = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

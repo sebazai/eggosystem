@@ -4,7 +4,8 @@ import {
   faceitInvalidJsonSteamId,
   faceitNetworkErrorSteamId,
   faceitNotFoundSteamId,
-  faceitValidSteamId
+  faceitValidSteamId,
+  faceitValidSteamIdDecayed
 } from "./test-ids";
 
 export const faceitPlayerGameRankHandlers = [
@@ -14,6 +15,18 @@ export const faceitPlayerGameRankHandlers = [
     const game = url.searchParams.get("game");
 
     if (gamePlayerId === faceitValidSteamId) {
+      return HttpResponse.json({
+        games: {
+          cs2: {
+            faceit_elo: 1500,
+            skill_level: 7
+          }
+        },
+        player_id: gamePlayerId
+      });
+    }
+
+    if (gamePlayerId === faceitValidSteamIdDecayed) {
       return HttpResponse.json({
         games: {
           cs2: {
@@ -47,10 +60,7 @@ export const faceitPlayerGameRankHandlers = [
       gamePlayerId === "11111111111111113" ||
       (gamePlayerId === "11111111111111114" && game !== "csgo")
     ) {
-      return HttpResponse.json({
-        player_id: gamePlayerId,
-        games: {}
-      });
+      return new HttpResponse("Not found", { status: 404 });
     }
 
     if (gamePlayerId === "11111111111111112") {

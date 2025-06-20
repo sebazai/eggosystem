@@ -1,7 +1,7 @@
 import { type InsertSeason } from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
 import { runQuery } from "../db/mysqlRunQuery";
-import { validSignupData } from "./fixtures/signupFormData";
+import { validSignupData } from "@eggosystem/shared-msw";
 
 export const insertTestSeason = (data: InsertSeason) => {
   const insertQuery = buildInsertQueryParts(data);

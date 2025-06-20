@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { faceitValidSteamId } from "./test-ids";
+import { faceitValidSteamId, faceitValidSteamIdDecayed } from "./test-ids";
 
 export const faceitMetadataHandlers = [
   http.get<{ faceit_player_id: string; game: string }>(
@@ -8,11 +8,27 @@ export const faceitMetadataHandlers = [
       const { faceit_player_id, game } = params;
 
       if (faceit_player_id === faceitValidSteamId) {
+        const today = new Date();
         return HttpResponse.json({
           items: [
             {
               stats: {
-                "Created At": "2024-01-01T00:00:00Z"
+                "Created At": today.getTime()
+              }
+            }
+          ]
+        });
+      }
+
+      if (faceit_player_id === faceitValidSteamIdDecayed) {
+        const lastMatchSevenMonthsAgo = new Date(
+          new Date().getTime() - 7 * 30 * 24 * 60 * 60 * 1000
+        ).getTime();
+        return HttpResponse.json({
+          items: [
+            {
+              stats: {
+                "Created At": lastMatchSevenMonthsAgo
               }
             }
           ]

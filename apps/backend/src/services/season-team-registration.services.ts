@@ -118,14 +118,16 @@ export const addPlayersForTeamInSeason = async (
     if (hours === -1) {
       throw new BadRequestError(`Player ${steamId} hours not found.`);
     }
+
+    if (rank.average_rank === -1) {
+      throw new BadRequestError(`Player ${steamId} has no app id rank`);
+    }
     if (
-      rank.average_rank === -1 &&
       externalRank &&
-      externalRank.faceit_elo === -1
+      externalRank.faceit_elo === -1 &&
+      platform !== SeasonPlatform.Kanaliiga
     ) {
-      throw new BadRequestError(
-        `Player ${steamId} has no app id rank or ${platform} rank.`
-      );
+      throw new BadRequestError(`Player ${steamId} has no ${platform} rank.`);
     }
 
     if (rank.average_rank === -1 && !externalRank) {

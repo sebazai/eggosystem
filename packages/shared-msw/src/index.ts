@@ -18,7 +18,8 @@ import {
   faceitInvalidJsonSteamId,
   faceitInvalidGameDataSteamId,
   faceitRateLimitSteamId,
-  faceitMultipleGamesSteamId
+  faceitMultipleGamesSteamId,
+  faceitValidSteamIdDecayed
 } from "./faceit/test-ids";
 
 export const mswServer: SetupServerApi = setupServer(...handlers);
@@ -32,6 +33,7 @@ export {
   leetifyRateLimitSteamId,
   leetifyMultipleGamesSteamId,
   faceitValidSteamId,
+  faceitValidSteamIdDecayed,
   faceitNotFoundSteamId,
   faceitNetworkErrorSteamId,
   faceitInvalidJsonSteamId,
@@ -39,3 +41,7 @@ export {
   faceitRateLimitSteamId,
   faceitMultipleGamesSteamId
 };
+
+export { validSignupData, invalidSignupData } from "./fixtures";
+
+export { http, HttpResponse } from "msw";

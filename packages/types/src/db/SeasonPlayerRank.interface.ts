@@ -8,7 +8,7 @@ export interface SeasonPlayerRank {
   hours_updated_at: string;
   csgo_rank: Nullable<number>; // Default -1 if not provided
   cs2_rank: number | null; // Can be null
-  cs_hours: number; // Default -1 if not provided
+  cs_hours: number | null; // Default -1 if not provided
   faceit_level: number | null; // Can be null
   faceit_elo: number; // Default 800 if not provided
   faceit_kd: number | null; // DECIMAL(3,2), can be null

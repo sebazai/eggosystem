@@ -1,6 +1,8 @@
 import { endDbConnection } from "./src/db/mysqlConnection";
 import { closeRedis } from "./src/utils/redisClient";
 import { mswServer } from "@eggosystem/shared-msw";
+import { cleanupLogger } from "./src/utils/app-logger";
+import { http, HttpResponse } from "@eggosystem/shared-msw";
 
 jest.mock("fs", () => {
   const actualFs = jest.requireActual("fs"); // keep everything elsex
@@ -27,12 +29,22 @@ beforeAll(() => {
   // Enable API mocking before all the tests.
   mswServer.listen({
     onUnhandledRequest: (request, print) => {
-      if (request.url.includes("127.0.0.1")) {
+      if (
+        request.url.includes("127.0.0.1") ||
+        request.url.includes("localhost:4318")
+      ) {
         return;
       }
       print.warning();
     }
   });
+
+  // Add handler for OpenTelemetry logs endpoint to prevent warnings
+  mswServer.use(
+    http.post("http://localhost:4318/v1/logs", () => {
+      return HttpResponse.json({}, { status: 200 });
+    })
+  );
 });
 
 beforeEach(() => {
@@ -47,5 +59,6 @@ afterEach(() => {
 afterAll(async () => {
   await endDbConnection();
   await closeRedis();
+  await cleanupLogger();
   mswServer.close();
 });

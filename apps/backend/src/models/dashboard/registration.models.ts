@@ -51,18 +51,18 @@ export const addSeasonRankForPlayer = async (
   formData: SeasonPlayerRankFormValues,
   season: ActiveSeasonSignupForAppId
 ) => {
-  const cs2Rank = formData.cs2_rank || -1;
-  const csHours = formData.cs_hours || -1;
+  const cs2Rank = formData.cs2_rank;
+  const csHours = formData.cs_hours;
   if (season.platform === SeasonPlatform.FACEIT && formData.external_elo) {
     await insertFaceITPlayerRankForSeason(
       formData.steam_id,
       season.season_id,
-      cs2Rank,
-      csHours,
+      cs2Rank ?? null,
+      csHours ?? null,
       {
-        faceit_elo: formData.external_elo || -1,
-        faceit_level: faceitEloToLevel(formData.external_elo || -1),
-        faceit_kd: 1,
+        faceit_elo: formData.external_elo,
+        faceit_level: faceitEloToLevel(formData.external_elo),
+        faceit_kd: 0.95,
         faceit_date: new Date().getTime()
       },
       { isManuallyAdded: true }
@@ -71,9 +71,9 @@ export const addSeasonRankForPlayer = async (
     await insertCSPlayerRankForSeason(
       formData.steam_id,
       season.season_id,
-      cs2Rank,
-      csHours,
-      { isManuallyAdded: true }
+      cs2Rank ?? null,
+      csHours ?? null,
+      { isManuallyAdded: !!cs2Rank }
     );
   }
 };

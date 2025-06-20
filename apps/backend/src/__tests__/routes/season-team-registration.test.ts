@@ -5,10 +5,7 @@ import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import _ from "lodash";
 import express from "express";
 import seasonTeamRegRoute from "../../routes/v1/season-team-registration.routes";
-import {
-  validSignupData,
-  invalidSignupData
-} from "../../__utils__/fixtures/signupFormData";
+import { validSignupData, invalidSignupData } from "@eggosystem/shared-msw";
 
 const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
   jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue(

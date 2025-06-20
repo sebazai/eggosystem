@@ -4,7 +4,8 @@
   "description": "Backend for CS stats",
   "main": "dist/server.js",
   "scripts": {
-    "test": "jest --coverage --runInBand --ci --",
+    "pretest": "pnpm --filter=@eggosystem/shared-msw build",
+    "test": "jest --coverage --runInBand --ci --detectOpenHandles --",
     "build": "tsc -p tsconfig.build.json",
     "start": "node ./dist/server.js",
     "dev": "nodemon",

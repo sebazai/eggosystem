@@ -7,6 +7,7 @@ export interface FaceITCSRank {
     faceit_matches_played?: number;
     faceit_last_match?: number;
     faceit_decay: boolean;
+    faceit_fallback?: boolean;
   };
 }
 

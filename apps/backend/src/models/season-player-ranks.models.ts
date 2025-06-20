@@ -10,7 +10,9 @@ export const getPlayerHoursForSeason = async (
   steam_id: string,
   season_id: number
 ) => {
-  const [hours] = await runQuery<Array<{ hours: number } | undefined>>(
+  const [hours] = await runQuery<
+    Array<{ hours: SeasonPlayerRank["cs_hours"] } | undefined>
+  >(
     "SELECT cs_hours as hours FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ? LIMIT 1",
     [steam_id, season_id]
   );
@@ -64,8 +66,8 @@ export const getPlayerExternalRankForSeason = async (
 export const insertCSPlayerRankForSeason = async (
   steamId: string,
   seasonId: number,
-  CS2Rank: number,
-  CS2Hours: number,
+  CS2Rank: SeasonPlayerRank["cs2_rank"],
+  CS2Hours: SeasonPlayerRank["cs_hours"],
   options?: { connection?: PoolConnection; isManuallyAdded?: boolean }
 ) => {
   const now = new Date();
@@ -83,10 +85,10 @@ export const insertCSPlayerRankForSeason = async (
       )
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
-        cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),
-        cs_hours = IF(VALUES(cs_hours) != -1, VALUES(cs_hours), cs_hours),
-        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at),
+        rank_updated_at = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(rank_updated_at), rank_updated_at),
+        cs2_rank = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(cs2_rank), cs2_rank),
+        cs_hours = IF(VALUES(cs_hours) IS NOT NULL, VALUES(cs_hours), cs_hours),
+        hours_updated_at = IF(VALUES(cs_hours) IS NOT NULL, VALUES(hours_updated_at), hours_updated_at),
         manual_steam_rank = VALUES(manual_steam_rank)
     `;
 
@@ -100,8 +102,8 @@ export const insertCSPlayerRankForSeason = async (
 export const insertFaceITPlayerRankForSeason = async (
   steamId: string,
   seasonId: number,
-  CS2Rank: number,
-  CS2Hours: number,
+  CS2Rank: SeasonPlayerRank["cs2_rank"],
+  CS2Hours: SeasonPlayerRank["cs_hours"],
   FaceITRank: Omit<FaceITCSRank, "metadata">,
   options?: { connection?: PoolConnection; isManuallyAdded?: boolean }
 ) => {

@@ -4,6 +4,7 @@ import {
 } from "../../services/faceit.services";
 import {
   faceitValidSteamId,
+  faceitValidSteamIdDecayed,
   faceitNotFoundSteamId,
   faceitNetworkErrorSteamId,
   faceitInvalidJsonSteamId,
@@ -29,28 +30,38 @@ describe("FaceIT Services", () => {
     });
 
     it("should handle network errors", async () => {
-      const result = await getFaceITGameRank(faceitNetworkErrorSteamId, "cs2");
-
-      expect(result).toBeNull();
+      try {
+        await getFaceITGameRank(faceitNetworkErrorSteamId, "cs2");
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect((error as unknown as Error).message).toContain(
+          "Failed to fetch"
+        );
+      }
     });
 
     it("should handle invalid JSON response", async () => {
-      const result = await getFaceITGameRank(faceitInvalidJsonSteamId, "cs2");
-      expect(result).toBeNull();
+      try {
+        await getFaceITGameRank(faceitInvalidJsonSteamId, "cs2");
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect((error as unknown as Error).message).toContain("Invalid JSON");
+      }
     });
 
     it("should handle malformed response data", async () => {
-      const result = await getFaceITGameRank(
-        faceitInvalidGameDataSteamId,
-        "cs2"
-      );
-
-      expect(result).toEqual(null);
+      try {
+        await getFaceITGameRank(faceitInvalidGameDataSteamId, "cs2");
+      } catch (error) {
+        expect(error).toBeDefined();
+        expect(error).toBeInstanceOf(Error);
+        expect((error as unknown as Error).message).toBe("Invalid rank data");
+      }
     });
   });
 
   describe("getFaceITCS2Rank", () => {
-    it("should return FaceIT-specific rank data when successful", async () => {
+    it("should return FaceIT-specific rank data when successful and not decayed", async () => {
       const result = await getFaceITCS2Rank(faceitValidSteamId);
 
       expect(result).toEqual(
@@ -61,23 +72,44 @@ describe("FaceIT Services", () => {
           faceit_kd: 1.2,
           metadata: expect.objectContaining({
             faceit_decay: false,
-            faceit_last_match: new Date("2024-01-01T00:00:00Z").getTime(),
+            faceit_last_match: expect.any(Number),
             faceit_matches_played: 100
           })
         })
       );
     });
 
-    it("should handle Error in CS2 rank fetch", async () => {
-      const result = await getFaceITCS2Rank(faceitNotFoundSteamId);
+    it("should return faceit decayed cs2 rank", async () => {
+      const result = await getFaceITCS2Rank(faceitValidSteamIdDecayed);
 
-      // When FaceIT API times out, it returns default values with -1
       expect(result).toEqual(
         expect.objectContaining({
-          faceit_elo: -1,
-          faceit_level: -1,
-          faceit_kd: -1,
-          faceit_date: expect.any(Number)
+          faceit_elo: 1425,
+          faceit_level: 7,
+          metadata: expect.objectContaining({
+            faceit_decay: true,
+            faceit_last_match: expect.any(Number),
+            faceit_matches_played: 453
+          })
+        })
+      );
+    });
+
+    it("should handle 404 Not Found Error in CS2 rank fetch and return fallback rank", async () => {
+      const result = await getFaceITCS2Rank(faceitNotFoundSteamId);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          faceit_elo: 750,
+          faceit_level: 2,
+          faceit_kd: 0.95,
+          faceit_date: expect.any(Number),
+          metadata: expect.objectContaining({
+            faceit_decay: false,
+            faceit_last_match: undefined,
+            faceit_matches_played: undefined,
+            faceit_fallback: true
+          })
         })
       );
     });

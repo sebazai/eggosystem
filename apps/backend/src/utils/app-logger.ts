@@ -15,18 +15,27 @@ const resource = resourceFromAttributes({
   "deployment.environment": process.env.NODE_ENV ?? "production"
 });
 
-const exporter = new OTLPLogExporter({
-  url:
-    process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ??
-    "http://localhost:4318/v1/logs"
-});
+// Only initialize OpenTelemetry if not in test environment
+const isTestEnvironment = process.env.NODE_ENV === "test";
 
-const loggerProvider = new LoggerProvider({
-  resource,
-  processors: [new BatchLogRecordProcessor(exporter)]
-});
+let loggerProvider: LoggerProvider | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let otelLogger: any = null; // Logger type not exported from @opentelemetry/sdk-logs
 
-const otelLogger = loggerProvider.getLogger("default", "1.0.0");
+if (!isTestEnvironment) {
+  const exporter = new OTLPLogExporter({
+    url:
+      process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ??
+      "http://localhost:4318/v1/logs"
+  });
+
+  loggerProvider = new LoggerProvider({
+    resource,
+    processors: [new BatchLogRecordProcessor(exporter)]
+  });
+
+  otelLogger = loggerProvider.getLogger("default", "1.0.0");
+}
 
 const severityMap: Record<string, number> = {
   error: 17,
@@ -41,22 +50,29 @@ const severityMap: Record<string, number> = {
 class OTelTransport extends Transport {
   log(info: winston.LogEntry, callback: () => void) {
     setImmediate(() => this.emit("logged", info));
-    if (process.env.NODE_ENV !== "test") {
-      // Inject trace/span context if available
-      const activeSpan = trace.getSpan(context.active());
-      const traceId = activeSpan?.spanContext().traceId;
-      const spanId = activeSpan?.spanContext().spanId;
 
-      otelLogger.emit({
-        body: info.message,
-        severityNumber: severityMap[info.level] || 9,
-        severityText: info.level.toUpperCase(),
-        attributes: {
-          ...info,
-          ...(traceId && { trace_id: traceId }),
-          ...(spanId && { span_id: spanId })
-        }
-      });
+    // Only send to OpenTelemetry if not in test environment and logger is initialized
+    if (!isTestEnvironment && otelLogger) {
+      try {
+        // Inject trace/span context if available
+        const activeSpan = trace.getSpan(context.active());
+        const traceId = activeSpan?.spanContext().traceId;
+        const spanId = activeSpan?.spanContext().spanId;
+
+        otelLogger.emit({
+          body: info.message,
+          severityNumber: severityMap[info.level] || 9,
+          severityText: info.level.toUpperCase(),
+          attributes: {
+            ...info,
+            ...(traceId && { trace_id: traceId }),
+            ...(spanId && { span_id: spanId })
+          }
+        });
+      } catch (error) {
+        // Silently handle any OpenTelemetry errors to prevent test failures
+        console.warn("OpenTelemetry logging error:", error);
+      }
     }
     callback();
   }
@@ -80,3 +96,10 @@ export const logger = winston.createLogger({
     new OTelTransport()
   ]
 });
+
+// Export cleanup function for tests
+export const cleanupLogger = async () => {
+  if (loggerProvider) {
+    await loggerProvider.shutdown();
+  }
+};

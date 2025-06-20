@@ -24,7 +24,8 @@ export async function seed(knex: Knex): Promise<void> {
     "66561198999999909", // account_id 15001 - PrivateProfilePlayer
     "66561198999999910", // account_id 15002 - InsufficientHoursPlayer
     "66561198999999911", // account_id 15012 - IncompleteDetailsPlayer
-    "66561198999999912" // account_id 15013 - RaceConditionPlayer
+    "66561198999999912", // account_id 15013 - RaceConditionPlayer
+    "66561198999999913" // account_id 15014 - NoFaceitRankPlayer (for testing external rank error)
   ];
 
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
@@ -60,7 +61,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Clean up NEW test accounts and related data if they exist
   const testAccountIds = [
     15001, 15002, 15003, 15004, 15005, 15006, 15008, 15009, 15010, 15011, 15012,
-    15013
+    15013, 15014
   ];
   for (const accountId of testAccountIds) {
     await knex("LinkedAccounts").where({ account_id: accountId }).del();
@@ -119,7 +120,8 @@ export async function seed(knex: Knex): Promise<void> {
     { id: 15010 },
     { id: 15011 },
     { id: 15012 },
-    { id: 15013 }
+    { id: 15013 },
+    { id: 15014 }
   ];
 
   for (const user of users) {
@@ -326,6 +328,11 @@ export async function seed(knex: Knex): Promise<void> {
       account_id: 15013,
       steam_id: "66561198999999912",
       nickname: "RaceConditionPlayer"
+    },
+    {
+      account_id: 15014,
+      steam_id: "66561198999999913",
+      nickname: "NoFaceitRankPlayer"
     }
   ];
 
@@ -545,6 +552,15 @@ export async function seed(knex: Knex): Promise<void> {
       faceit_elo: 1500,
       faceit_level: 10,
       faceit_kd: 1.5
+    },
+    {
+      steam_id: "66561198999999913", // NoFaceitRankPlayer - has CS2 rank but no FaceIT rank
+      season_id: 16,
+      cs_hours: 1200,
+      cs2_rank: 13,
+      faceit_elo: undefined, // No FaceIT ELO
+      faceit_level: undefined, // No FaceIT level - this will trigger external rank error
+      faceit_kd: undefined // No FaceIT KD
     }
     // NOTE: Intentionally NOT adding SeasonPlayerRanks for 66561198999999910 (InsufficientHoursPlayer)
     // so it falls back to Steam API mock which returns null for hours detection failure
@@ -575,9 +591,9 @@ export async function seed(knex: Knex): Promise<void> {
         rankData.cs2_rank,
         now,
         now,
-        rankData.faceit_elo,
-        rankData.faceit_level,
-        rankData.faceit_kd
+        rankData.faceit_elo ?? null,
+        rankData.faceit_level ?? null,
+        rankData.faceit_kd ?? null
       ]
     );
   }

@@ -19,7 +19,7 @@ import {
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
-import { validSignupData } from "../../__utils__/fixtures/signupFormData";
+import { validSignupData } from "@eggosystem/shared-msw";
 import { type BadRequestError } from "../../utils/errors";
 
 describe("addSignupForSeason - database transaction testing", () => {
