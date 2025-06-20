@@ -22,7 +22,7 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   // Return rank for season_id from db, i.e. if admin has added manually
   if (season_id) {
     const hoursFromDb = await getPlayerHoursForSeason(steam_id, season_id);
-    if (hoursFromDb && !!hoursFromDb.hours) {
+    if (hoursFromDb && hoursFromDb.hours && hoursFromDb.hours > 0) {
       return hoursFromDb;
     }
   }
@@ -153,7 +153,7 @@ const getRankFromDatabaseFallback = async (
   >(
     `SELECT cs2_rank, rank_updated_at
       FROM SeasonPlayerRanks
-      WHERE steam_id = ? AND rank_updated_at > DATE_SUB(NOW(), INTERVAL 8 MONTH)
+      WHERE steam_id = ? AND rank_updated_at > DATE_SUB(NOW(), INTERVAL 6 MONTH)
       ORDER BY season_id DESC LIMIT 1`,
     [steam_id]
   );

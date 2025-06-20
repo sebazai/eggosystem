@@ -11,17 +11,18 @@ const isMatchmakingRank = (game: GameRanks): game is MatchmakingRankType =>
   game.dataSource === "matchmaking";
 
 const getAverageRankForGames = (games: GameRanks[]) => {
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const oneAndHalfYearAgo = new Date();
+  oneAndHalfYearAgo.setFullYear(oneAndHalfYearAgo.getFullYear() - 1);
+  oneAndHalfYearAgo.setMonth(oneAndHalfYearAgo.getMonth() - 6);
 
-  const gamesWithinOneYear = games
+  const gamesWithinOneAndAHalfYear = games
     .filter(
       (g): g is MatchmakingRankType =>
         isMatchmakingRank(g) &&
         g.rankType === 11 &&
         g.isCs2 &&
         g.skillLevel > 0 &&
-        new Date(g.gameFinishedAt) >= oneYearAgo
+        new Date(g.gameFinishedAt) >= oneAndHalfYearAgo
     )
     .sort(
       (a, b) =>
@@ -29,16 +30,17 @@ const getAverageRankForGames = (games: GameRanks[]) => {
         new Date(a.gameFinishedAt).getTime()
     ); // Sort by gameFinishedAt descending
 
-  if (gamesWithinOneYear.length > 0) {
-    const totalSkillLevel = gamesWithinOneYear.reduce(
+  if (gamesWithinOneAndAHalfYear.length > 0) {
+    const totalSkillLevel = gamesWithinOneAndAHalfYear.reduce(
       (sum, g) => sum + g.skillLevel,
       0
     );
-    const averageSkillLevel = totalSkillLevel / gamesWithinOneYear.length;
+    const averageSkillLevel =
+      totalSkillLevel / gamesWithinOneAndAHalfYear.length;
 
     return {
       average_rank: Math.round(averageSkillLevel),
-      rank_updated_at: gamesWithinOneYear[0].gameFinishedAt // Latest game
+      rank_updated_at: gamesWithinOneAndAHalfYear[0].gameFinishedAt // Latest game
     } satisfies CS2LeetifyAvgRank;
   }
 

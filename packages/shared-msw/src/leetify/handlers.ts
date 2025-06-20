@@ -94,6 +94,26 @@ export const getLeetifyHandlers = [
 
       // Player with AVG premier skill level 22000 within last year.
       if (steamId === "11111111111111111") {
+        const oneAndHalfYearAgoAndADayAbove = new Date();
+        oneAndHalfYearAgoAndADayAbove.setFullYear(
+          oneAndHalfYearAgoAndADayAbove.getFullYear() - 1
+        );
+        oneAndHalfYearAgoAndADayAbove.setMonth(
+          oneAndHalfYearAgoAndADayAbove.getMonth() - 6
+        );
+        oneAndHalfYearAgoAndADayAbove.setDate(
+          oneAndHalfYearAgoAndADayAbove.getDate() - 1
+        );
+        const oneAndHalfYearAgoAndADayBelow = new Date();
+        oneAndHalfYearAgoAndADayBelow.setFullYear(
+          oneAndHalfYearAgoAndADayBelow.getFullYear() - 1
+        );
+        oneAndHalfYearAgoAndADayBelow.setMonth(
+          oneAndHalfYearAgoAndADayBelow.getMonth() - 6
+        );
+        oneAndHalfYearAgoAndADayBelow.setDate(
+          oneAndHalfYearAgoAndADayBelow.getDate() + 1
+        );
         return HttpResponse.json({
           games: [
             {
@@ -108,14 +128,14 @@ export const getLeetifyHandlers = [
               dataSource: "matchmaking",
               rankType: 11,
               skillLevel: 21000,
-              gameFinishedAt: new Date().toISOString()
+              gameFinishedAt: oneAndHalfYearAgoAndADayBelow.toISOString()
             },
             {
               isCs2: true,
               dataSource: "matchmaking",
               rankType: 11,
               skillLevel: 21000,
-              gameFinishedAt: "2023-12-28T21:14:32.000Z"
+              gameFinishedAt: oneAndHalfYearAgoAndADayAbove.toISOString()
             }
           ]
         } satisfies LeetifyResponse);
