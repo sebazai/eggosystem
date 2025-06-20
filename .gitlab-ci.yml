@@ -321,7 +321,7 @@ test-e2e:frontend:
     # - pnpm --filter=backend start &
   script:
     - unset NODE_ENV
-    - pnpm --filter=frontend test:e2e
+    - pnpm test:e2e
   artifacts:
     when: always
     paths:
