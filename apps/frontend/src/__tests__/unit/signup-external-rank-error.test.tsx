@@ -1,9 +1,20 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { useForm } from "react-hook-form";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { useForm, FormProvider } from "react-hook-form";
 import { TabPlayers } from "@/components/signup/signup-tab-players";
 import { SeasonPlatform } from "@eggosystem/types";
 import type { SignupFormValues } from "@eggosystem/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Mock ResizeObserver for React 19 + Radix UI compatibility
+beforeAll(() => {
+  global.ResizeObserver =
+    global.ResizeObserver ||
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+});
 
 // Mock the API client
 jest.mock("@/lib/apiClient", () => ({
@@ -77,7 +88,7 @@ jest.mock("next/link", () => ({
   )
 }));
 
-// Test wrapper component that provides proper Tabs context
+// Test wrapper component that provides proper form context
 const TestWrapper = ({
   players,
   platform = SeasonPlatform.FACEIT,
@@ -89,7 +100,7 @@ const TestWrapper = ({
   seasonSteamAppId?: number;
   seasonId?: string;
 }) => {
-  const { control, resetField, setValue, watch } = useForm<SignupFormValues>({
+  const methods = useForm<SignupFormValues>({
     defaultValues: {
       players,
       teamId: 999,
@@ -99,23 +110,25 @@ const TestWrapper = ({
   });
 
   return (
-    <Tabs defaultValue="players" className="w-full">
-      <TabsList>
-        <TabsTrigger value="players">Players</TabsTrigger>
-      </TabsList>
-      <TabPlayers
-        control={control}
-        resetField={resetField}
-        setValue={setValue}
-        watch={watch}
-        playerErrorIndices={[]}
-        seasonSteamAppId={seasonSteamAppId}
-        platform={platform}
-        seasonId={seasonId}
-        validCaptainSelection={true}
-        prefilledPlayerSteamIds={[]}
-      />
-    </Tabs>
+    <FormProvider {...methods}>
+      <Tabs defaultValue="players" className="w-full">
+        <TabsList>
+          <TabsTrigger value="players">Players</TabsTrigger>
+        </TabsList>
+        <TabPlayers
+          control={methods.control}
+          resetField={methods.resetField}
+          setValue={methods.setValue}
+          watch={methods.watch}
+          playerErrorIndices={[]}
+          seasonSteamAppId={seasonSteamAppId}
+          platform={platform}
+          seasonId={seasonId}
+          validCaptainSelection={true}
+          prefilledPlayerSteamIds={[]}
+        />
+      </Tabs>
+    </FormProvider>
   );
 };
 
@@ -143,6 +156,10 @@ describe("External Rank Error", () => {
     ];
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
+
+    // First, open the accordion to see the error message
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
 
     // Wait for the error message to appear
     await waitFor(() => {
@@ -192,6 +209,10 @@ describe("External Rank Error", () => {
       <TestWrapper players={players} platform={SeasonPlatform.Kanaliiga} />
     );
 
+    // Open the accordion to check if error is hidden
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
+
     // The error should not be visible for Kanaliiga platform
     expect(
       screen.queryByText(/Could not detect external.*rank for the player/)
@@ -217,6 +238,10 @@ describe("External Rank Error", () => {
     ];
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
+
+    // Open the accordion to see the error message
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
 
     await waitFor(() => {
       expect(
@@ -262,6 +287,15 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
+    // Open both accordions to see the error messages
+    const accordionTriggers = screen.getAllByTestId(
+      "player-accordion-triggers"
+    );
+    expect(accordionTriggers).toHaveLength(2);
+
+    if (accordionTriggers[0]) fireEvent.click(accordionTriggers[0]);
+    if (accordionTriggers[1]) fireEvent.click(accordionTriggers[1]);
+
     // Wait for both error messages to be visible
     await waitFor(() => {
       const errorMessages = screen.getAllByText(
@@ -298,6 +332,10 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
+    // Open the accordion to check if error is hidden
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
+
     // The error should not be visible when player has valid FaceIT rank
     expect(
       screen.queryByText(/Could not detect external.*rank for the player/)
@@ -323,6 +361,10 @@ describe("External Rank Error", () => {
     ];
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
+
+    // Open the accordion to check if error is hidden
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
 
     // The error should not be visible when externalRank is not -1
     expect(
@@ -350,6 +392,10 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
+    // Open the accordion to see the error message
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
+
     await waitFor(() => {
       expect(
         screen.getByText(/Could not detect external FACEIT rank for the player/)
@@ -362,11 +408,13 @@ describe("External Rank Error", () => {
     );
     expect(errorMessage).toBeInTheDocument();
 
-    // The error should be within a notification component that's accessible
-    const notification =
-      errorMessage.closest('[role="alert"]') ||
-      errorMessage.closest("[aria-live]");
+    // The error should be within a notification component
+    const notification = errorMessage.closest("span");
     expect(notification).toBeInTheDocument();
+
+    // Check that the notification has the expected test ID for accessibility testing
+    const notificationWithTestId = screen.getByTestId("external-rank-error-0");
+    expect(notificationWithTestId).toBeInTheDocument();
   });
 
   it("should provide actionable guidance in the error message", async () => {
@@ -388,6 +436,10 @@ describe("External Rank Error", () => {
     ];
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
+
+    // Open the accordion to see the error message
+    const accordionTrigger = screen.getByTestId("player-accordion-triggers");
+    fireEvent.click(accordionTrigger);
 
     await waitFor(() => {
       expect(

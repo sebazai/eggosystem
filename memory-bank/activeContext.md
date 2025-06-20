@@ -176,6 +176,55 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 - ✅ **Established testing hierarchy**: Unit (Jest) → E2E (Playwright)
 - ✅ **Playwright E2E Testing**: Configured for testing multi-component functionality with real backend
 
+**TDD Workflow Implementation (January 2025)**
+
+- ✅ **Successfully implemented TDD workflow** for PlayerValuesFloatingWindow component
+- ✅ **Created comprehensive test suite** with 17 test cases covering all component behaviors
+- ✅ **Established TDD command preference**: Use `pnpm test:watch` instead of individual test runs
+- ✅ **Demonstrated Red-Green-Refactor cycle** with proper test-first development
+- ✅ **Achieved 100% test coverage** for PlayerValuesFloatingWindow component
+
+**TDD Workflow with test:watch (January 2025)**
+
+**Preferred TDD Command:**
+
+```bash
+pnpm test:watch
+```
+
+**TDD Cycle with Watch Mode:**
+
+1. **Red Phase**: Write test first → Watch shows it failing
+2. **Green Phase**: Write minimal implementation → Watch shows it passing
+3. **Refactor Phase**: Improve code → Watch confirms tests still pass
+
+**Watch Mode Features:**
+
+- **Press `a`**: Run all tests
+- **Press `f`**: Run only failed tests
+- **Press `o`**: Run tests related to changed files
+- **Press `p`**: Filter by filename pattern
+- **Press `t`**: Filter by test name pattern
+- **Press `q`**: Quit watch mode
+
+**Benefits of test:watch for TDD:**
+
+- **Continuous feedback** - Tests run automatically when files change
+- **Real-time results** - Immediate pass/fail status
+- **Rapid iteration** - No manual test re-running needed
+- **Interactive filtering** - Focus on specific tests or files
+
+**Recent TDD Success Example:**
+Successfully implemented TDD for `PlayerValuesFloatingWindow` component:
+
+- **17 comprehensive test cases** across 6 categories
+- **All component behaviors** including edge cases
+- **User interaction patterns** with proper event handling
+- **Responsive positioning logic** with viewport boundary testing
+- **Animation and transition states** with proper timing
+- **Data display and null handling** with type safety
+- **Accessibility requirements** for inclusive design
+
 **React 19 + Radix UI Testing Pattern Discovery (January 2025)**
 
 - ✅ **Identified root cause** of AggregateError in React 19 unit tests: Missing `ResizeObserver` polyfill for jsdom

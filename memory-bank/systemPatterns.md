@@ -1266,6 +1266,12 @@ pnpm test:all
 
 # E2E tests from monorepo root (recommended for e2e only)
 pnpm test:e2e
+
+# TDD - Watch mode for unit tests (automatically runs on file changes)
+pnpm test:watch
+
+# TDD - Parallel watch mode for faster feedback
+pnpm test:tdd
 ```
 
 **What `pnpm test` from root runs:**
@@ -1280,11 +1286,17 @@ pnpm test:e2e
 - All e2e tests with database setup
 - Complete comprehensive testing suite
 
+**TDD Commands:**
+
+- **`pnpm test:watch`**: Watch mode - automatically runs unit tests when files change
+- **`pnpm test:tdd`**: Parallel watch mode - faster feedback for TDD workflow
+
 **Testing Strategy Preference:**
 
 - **`pnpm test`**: Fast unit tests for quick feedback during development
 - **`pnpm test:e2e`**: E2E tests when you need to test complete workflows
 - **`pnpm test:all`**: Comprehensive testing when you need everything
+- **`pnpm test:tdd`**: TDD workflow with automatic test execution on file changes
 
 **E2E Testing Setup**
 

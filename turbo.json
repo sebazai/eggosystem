@@ -94,7 +94,8 @@
     },
     "test": {
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
-      "cache": false
+      "cache": false,
+      "persistent": true
     },
     "shadcn:add": {
       "cache": false

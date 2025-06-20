@@ -1,5 +1,128 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
+# Testing Strategy Rule
+
+**Type:** Strict rule
+
+## Rule Description
+
+This rule enforces the testing strategy for the Kanaliiga Eggosystem project, ensuring that `pnpm test` maintains fast execution for development feedback while providing comprehensive testing options when needed.
+
+## Testing Command Hierarchy
+
+### Primary Commands
+
+**`pnpm test`** - Fast Jest-based tests only
+- **Purpose**: Quick feedback during development
+- **Scope**: Unit tests only (Jest + React Testing Library)
+- **Speed**: Fast execution (< 30 seconds)
+- **Database**: No database setup required
+- **Backend**: Backend unit tests (Jest with coverage)
+- **Frontend**: Frontend unit tests (Jest + React Testing Library)
+
+**`pnpm test:e2e`** - E2E tests only
+- **Purpose**: Test complete user workflows
+- **Scope**: Playwright e2e tests with real backend
+- **Speed**: Slower execution (requires database setup)
+- **Database**: Full reseed, seed, seed:e2e setup
+- **Backend**: Real backend with external API stubbing
+
+**`pnpm test:all`** - Comprehensive testing
+- **Purpose**: Complete testing suite
+- **Scope**: Both unit tests AND e2e tests
+- **Speed**: Slowest execution (runs everything)
+- **Database**: Full database setup for e2e tests
+
+**`pnpm test:watch`** - TDD Watch mode
+- **Purpose**: Automatic test execution on file changes
+- **Scope**: Unit tests only (Jest-based)
+- **Speed**: Fast execution with watch mode
+- **Database**: No database setup required
+- **Workflow**: Perfect for TDD development
+
+**`pnpm test:tdd`** - TDD Parallel mode
+- **Purpose**: Fastest feedback for TDD workflow
+- **Scope**: Unit tests only (Jest-based)
+- **Speed**: Parallel execution for maximum speed
+- **Database**: No database setup required
+- **Workflow**: Optimal for rapid TDD cycles
+
+## Required Behavior
+
+### When Colleagues Request Changes to `pnpm test`
+
+**If someone asks to make `pnpm test` run all tests:**
+
+1. **Explain the current strategy**: Fast unit tests for development feedback
+2. **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
+3. **Maintain separation**: Keep `pnpm test` fast and focused
+4. **Document the preference**: This separation provides better developer experience
+
+**Response template:**
+> "I've added `pnpm test:all` that runs both unit tests and e2e tests. This keeps `pnpm test` fast for development while providing a comprehensive testing option when needed. The separation gives us better developer experience - fast feedback for unit tests and comprehensive testing when you need it."
+
+### Implementation Requirements
+
+**NEVER modify `pnpm test` to include e2e tests**
+- Keep it focused on Jest-based unit tests only
+- Maintain fast execution for development feedback
+- Preserve the separation of concerns
+
+**ALWAYS offer `pnpm test:all` as the comprehensive alternative**
+- This provides the "run all tests" functionality
+- Maintains the fast development workflow
+- Gives flexibility for different testing needs
+
+## Rationale
+
+### Developer Experience Benefits
+
+1. **Fast Feedback**: Unit tests provide immediate feedback during development
+2. **Clear Intent**: Each command has a specific purpose
+3. **Flexible Workflow**: Choose the right testing level for your needs
+4. **CI/CD Optimization**: Different commands for different CI stages
+
+### Performance Benefits
+
+1. **Development Speed**: Fast unit tests don't slow down development
+2. **Resource Efficiency**: No database setup for unit tests
+3. **Parallel Execution**: Unit tests can run in parallel
+4. **Selective Testing**: Run only what you need
+
+## Examples
+
+### ✅ Correct Usage
+
+```bash
+# Fast development feedback
+pnpm test
+
+# E2E testing when needed
+pnpm test:e2e
+
+# Comprehensive testing
+pnpm test:all
+```
+
+### ❌ Incorrect Modifications
+
+```bash
+# Never modify pnpm test to include e2e tests
+"test": "turbo test && pnpm test:e2e"  # ❌ Wrong
+
+# Never remove the separation
+"test": "pnpm test:all"  # ❌ Wrong - removes fast feedback option
+```
+
+## Summary
+
+- **`pnpm test`**: Fast Jest-based unit tests only
+- **`pnpm test:e2e`**: E2E tests with database setup
+- **`pnpm test:all`**: Comprehensive testing suite
+- **`pnpm test:watch`**: TDD Watch mode
+- **`pnpm test:tdd`**: TDD Parallel mode
+- **Maintain separation**: Keep fast feedback for development
+- **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
