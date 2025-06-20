@@ -1000,7 +1000,7 @@ describe("Edge Cases", () => {
 
 #### Comprehensive Error Monitoring
 
-```typescript
+```typitten
 // Complete error detection setup for frontend tests
 let errors: string[] = [];
 
@@ -1104,1182 +1104,243 @@ describe("Memory Usage", () => {
 
 ## Testing Architecture
 
-### Test Categories and Structure
+### Frontend Testing Strategy
 
-**Backend Tests** (`apps/backend/src/__tests__/`)
+**Unit Testing with Jest + React Testing Library**
 
-- **Unit Tests**: Service functions, models, utilities
-- **Controller Tests**: API endpoint behavior with mocked dependencies
-- **Pattern**: Use Jest with `supertest` for HTTP testing
-- **Mocking**: Mock Redis, database, external APIs appropriately
+- **Primary Strategy**: Component-focused unit testing
+- **Test Organization**: `/src/__tests__/unit/` for all Jest unit tests
+- **Testing Library**: React Testing Library for user-centric testing
+- **Mocking Strategy**: Mock hooks, API calls, and external dependencies
 
-**Frontend Tests** (`apps/frontend/src/__tests__/`)
+**E2E Testing with Playwright**
+
+- **Secondary Strategy**: Multi-component testing with real backend
+- **Test Organization**: `/src/__tests__/e2e/` for Playwright e2e tests
+- **Testing Framework**: Playwright for browser automation
+- **Backend Strategy**: Use real backend, no mocking of API calls
+
+**Test File Structure**
 
 ```
-__tests__/
-├── unit/          # Component unit tests (isolated)
-├── integration/   # Component integration (mocked APIs)
-└── e2e/           # End-to-end flows (real backend)
+/src/__tests__/unit/           # Jest unit tests for components
+/src/__tests__/e2e/            # Playwright e2e tests for workflows
 ```
 
-**Integration vs E2E Decision Matrix**
+**Component Testing Patterns**
 
-- **Integration**: Component interactions, form behavior, UI state changes (mock APIs)
-- **E2E**: Full user journeys, navigation flows, real data persistence (real backend)
-- **Error Signal**: `ECONNREFUSED` errors indicate test is in wrong category
+- **User-Centric**: Test from user perspective, not implementation details
+- **Accessibility**: Use semantic queries (getByRole, getByLabelText) when possible
+- **Mock External Dependencies**: API calls, hooks, and external services
+- **Error States**: Test error handling and edge cases thoroughly
 
-### Error Handling Patterns
+**E2E Testing Patterns**
 
-**When to Use try/catch**
+- **Real Backend**: Use actual backend for API calls, no mocking
+- **Multi-Component**: Test interactions between multiple components
+- **User Workflows**: Focus on complete user journeys
+- **Standalone Server**: Use standalone build for consistent testing environment
+- **Backend Startup**: Start backend with `pnpm --filter=backend dev:e2e` for successful API requests
+- **Response Stubbing**: Stub responses from backend endpoints that do external fetches outside our system
+- **Future MSW Integration**: Research MSW server running outside Playwright to snoop on requests
 
-- ✅ JSON.parse() operations (can throw on malformed data)
-- ✅ Data validation and transformation
-- ✅ Database operations (actual integration boundary)
-- ✅ External API calls (third-party services)
-- ✅ Resource cleanup (files, connections)
-
-**When NOT to Use try/catch**
-
-- ❌ Redis operations (`redisClient.get()` returns null on errors)
-- ❌ Simple validation (use validation libraries)
-- ❌ Playwright navigation (has built-in retry mechanisms)
-- ❌ Generic error swallowing
-
-**Pattern**: Follow existing codebase patterns rather than adding defensive try/catch blocks
-
-### Playwright Testing Patterns
-
-**Navigation Helpers**
+**React 19 + Radix UI Testing Pattern**
 
 ```typescript
-// ✅ Simple and reliable
-async function navigateToPage(page: Page, url: string) {
-  await page.goto(url, { timeout: 60000 });
-  await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
-}
-
-// ❌ Unnecessary complexity
-async function navigateWithRetry(page: Page, url: string, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      /* ... */
-    } catch {
-      /* ... */
-    }
-  }
-}
+// Add this at the top of test files using Radix UI components
+beforeAll(() => {
+  global.ResizeObserver =
+    global.ResizeObserver ||
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+});
 ```
 
-**Test Reliability**
+**Testing Troubleshooting Priority**
 
-- Use Playwright's built-in retry and timeout mechanisms
-- Mock external dependencies consistently
-- Separate concerns: integration tests mock APIs, E2E tests use real backend
+1. **First**: Add ResizeObserver polyfill for any AggregateError with Radix UI components
+2. **Second**: Only consider React downgrade if ResizeObserver polyfill doesn't work
+3. **Always**: Bump back to React 19 once issues are resolved
 
-### E2E Testing Database Management
+### Backend Testing Strategy
 
-**Critical Database Reset Pattern**
+**Unit Testing with Jest**
+
+- **Test Organization**: `__tests__` folders alongside source files
+- **Mocking**: Mock database, Redis, and external services
+- **Coverage**: Test models, services, and controllers
+- **Performance**: Test query response time boundaries
+
+**Test Structure**
+
+```
+src/
+├── __tests__/
+│   ├── models/           # Database model tests
+│   ├── services/         # Business logic tests
+│   ├── controllers/      # API endpoint tests
+│   └── middlewares/      # Middleware tests
+```
+
+### Testing Best Practices
+
+**General Principles**
+
+- **Test Behavior**: Focus on what the code does, not how it does it
+- **Mock Strategy**: Mock external dependencies in unit tests, use real backend in e2e tests
+- **User Perspective**: Test from the user's point of view
+- **Error Handling**: Test error states and edge cases
+
+**Test Quality**
+
+- **Reliability**: Tests should pass consistently without flakiness
+- **Maintainability**: Tests should be easy to understand and modify
+- **Performance**: Tests should run quickly and efficiently
+- **Documentation**: Tests should serve as living documentation
+
+**Mocking Patterns**
+
+```typescript
+// Mock hooks
+jest.mock("@/hooks/data/useAccountDetails", () => ({
+  useAccountDetails: jest.fn()
+}));
+
+// Mock API calls
+jest.mock("@/lib/apiClient", () => ({
+  clientApiFetch: jest.fn()
+}));
+
+// Mock external services
+jest.mock("ioredis", () => require("ioredis-mock"));
+```
+
+**Error Testing Patterns**
+
+```typescript
+// Test expected failures
+await expect(serviceFunction(invalidData)).rejects.toThrow(/invalid/);
+
+// Test specific error types
+await expect(serviceFunction(invalidData)).rejects.toThrow(ValidationError);
+
+// Test error messages
+await expect(serviceFunction(invalidData)).rejects.toThrow(
+  "Data validation failed"
+);
+```
+
+### CI/CD Integration
+
+**GitLab CI Testing**
+
+- **Unit Tests**: Automated Jest testing for both frontend and backend
+- **E2E Tests**: Automated Playwright testing for frontend workflows
+- **Coverage Reporting**: Test coverage metrics and reporting
+- **Quality Gates**: Tests must pass before deployment
+- **Performance**: Fast test execution for quick feedback
+
+**Test Commands**
 
 ```bash
-# ALWAYS run this sequence before/after E2E tests
-cd apps/backend && pnpm run reseed && pnpm run seed && pnpm run seed:e2e
+# Frontend unit tests
+cd apps/frontend && pnpm test
+
+# Frontend e2e tests (requires backend running)
+cd apps/frontend && pnpm test:e2e
+
+# Backend startup for e2e tests
+cd apps/backend && pnpm dev:e2e
+
+# Backend unit tests
+cd apps/backend && pnpm test
+
+# All unit tests from monorepo root (fast feedback)
+pnpm test
+
+# All tests from monorepo root (comprehensive testing)
+pnpm test:all
+
+# E2E tests from monorepo root (recommended for e2e only)
+pnpm test:e2e
 ```
 
-**Why Database Reset is Critical**
+**What `pnpm test` from root runs:**
 
-- E2E tests modify real database state
-- Email verification consumes tokens (sets to NULL, deletes from Redis)
-- User registrations create permanent records
-- Parallel test execution can conflict over shared resources
-- Tests may fail due to "consumed" data from previous runs
+- Backend unit tests (Jest with coverage)
+- Frontend unit tests (Jest + React Testing Library)
+- Does NOT run e2e tests
 
-**Test Isolation Strategies**
+**What `pnpm test:all` from root runs:**
 
-```typescript
-// ✅ Create multiple test tokens in seed to prevent conflicts
-const validTokenAccounts = [
-  { id: 100, token: "valid-token-123", email: "test1@kanaliiga.fi" },
-  { id: 102, token: "valid-token-456", email: "test2@kanaliiga.fi" },
-  { id: 103, token: "valid-token-789", email: "test3@kanaliiga.fi" }
-  // ... more tokens for parallel test execution
-];
+- All unit tests (backend + frontend)
+- All e2e tests with database setup
+- Complete comprehensive testing suite
 
-// ✅ Use different tokens for different tests
-test("success case 1", () => {
-  await navigateToPage(page, "/verify-email?token=valid-token-123");
-});
+**Testing Strategy Preference:**
 
-test("success case 2", () => {
-  await navigateToPage(page, "/verify-email?token=valid-token-456");
-});
+- **`pnpm test`**: Fast unit tests for quick feedback during development
+- **`pnpm test:e2e`**: E2E tests when you need to test complete workflows
+- **`pnpm test:all`**: Comprehensive testing when you need everything
 
-// ❌ Reusing tokens causes test isolation failures
-test("success case 1", () => {
-  await navigateToPage(page, "/verify-email?token=shared-token");
-});
-test("success case 2", () => {
-  await navigateToPage(page, "/verify-email?token=shared-token"); // FAILS if first test consumed it
-});
+**E2E Testing Setup**
+
+```bash
+# Start backend for e2e testing
+pnpm --filter=backend dev:e2e
+
+# In another terminal, run e2e tests
+cd apps/frontend && pnpm test:e2e
 ```
 
-**Debugging DOM Element Issues**
+**Monorepo E2E Testing (Recommended)**
 
-```typescript
-// ✅ Comprehensive DOM inspection for failing selectors
-async function debugPageElements(page: Page, state: string) {
-  // Find all SVG elements and their actual classes
-  const svgElements = await page.$$eval("svg", (elements) =>
-    elements.map((el) => ({
-      className: el.className.baseVal || el.className,
-      classList: Array.from(el.classList || []),
-      attributes: Array.from(el.attributes).map(
-        (attr) => `${attr.name}="${attr.value}"`
-      ),
-      outerHTML: el.outerHTML.substring(0, 200) + "..."
-    }))
-  );
-
-  // Test different selector strategies
-  const strategies = [
-    "svg.lucide-circle-check-big", // Actual Lucide class
-    "svg.lucide-circle-x", // Actual Lucide class
-    '[data-testid="check-circle-icon"]' // May not work with Lucide
-  ];
-
-  for (const strategy of strategies) {
-    const count = await page.locator(strategy).count();
-    console.log(`Strategy "${strategy}": ${count} found`);
-  }
-}
+```bash
+# Run from monorepo root - handles all setup automatically
+pnpm test:e2e
 ```
 
-**Test Reliability**
+This command automatically:
 
-- Use Playwright's built-in retry and timeout mechanisms
-- Mock external dependencies consistently
-- Separate concerns: integration tests mock APIs, E2E tests use real backend
+- Runs database reseed
+- Runs database seed
+- Runs database seed:e2e
+- Starts backend with dev:e2e mode
+- Runs Playwright e2e tests
 
-## Email Template Patterns
+### Testing Tools & Libraries
 
-### HTML Email Best Practices
+**Frontend Testing**
 
-**Button Centering**
+- **Jest**: Test runner and assertion library
+- **React Testing Library**: User-centric component testing
+- **Jest DOM**: Custom matchers for DOM testing
+- **Playwright**: E2E testing framework for browser automation
+- **MSW**: Mock Service Worker for API mocking (when needed)
 
-```html
-<!-- ✅ Reliable across all email clients -->
-<table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
-  <tr>
-    <td style="text-align: center;">
-      <a
-        href="..."
-        style="background-color: hsl(35, 93%, 49%); color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center;"
-      >
-        Button Text
-      </a>
-    </td>
-  </tr>
-</table>
+**Backend Testing**
 
-<!-- ❌ Unreliable in Outlook and other clients -->
-<div style="text-align: center;">
-  <a href="..." style="...">Button Text</a>
-</div>
-```
+- **Jest**: Test runner and assertion library
+- **Supertest**: HTTP assertion library for API testing
+- **ioredis-mock**: Redis mocking for tests
+- **Knex**: Database query builder with test support
 
-**Email Client Compatibility**
+### Success Metrics
 
-- Use table-based layouts for critical structural elements
-- Avoid flexbox, grid, and modern CSS for layout
-- Test in Outlook (worst CSS support) and Gmail (good reference)
-- Inline styles only - external stylesheets are stripped
-- Use `cellpadding="0" cellspacing="0"` on all tables
+**Testing Coverage Goals**
 
-**Kanaliiga Brand Colors**
+- **Component Coverage**: All core components have unit tests
+- **User Flow Coverage**: Critical user interactions are tested
+- **Error State Coverage**: Error handling and edge cases are tested
+- **Accessibility Coverage**: Components work with assistive technologies
+- **E2E Coverage**: Critical user workflows have e2e tests
 
-- Primary orange: `hsl(35, 93%, 49%)`
-- Secondary link color: `hsl(29, 56%, 58%)`
-- Text color: `#333`
-- Muted text: `#777`
+**Quality Metrics**
 
-## Backend Testing Patterns
-
-### Test Organization Structure
-
-```
-apps/backend/
-├── src/
-│   ├── controllers/
-│   │   ├── playerController.ts
-│   │   └── __tests__/
-│   │       └── playerController.test.ts
-│   ├── services/
-│   │   ├── playerService.ts
-│   │   └── __tests__/
-│   │       └── playerService.test.ts
-│   └── models/
-│       ├── playerModel.ts
-│       └── __tests__/
-│           └── playerModel.test.ts
-```
-
-### Jest Configuration Patterns
-
-```javascript
-// jest.config.js - Backend
-module.exports = {
-  testEnvironment: "node",
-  setupFilesAfterEnv: ["<rootDir>/src/__tests__/setup.ts"],
-  testMatch: ["**/__tests__/**/*.test.ts"],
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true,
-  collectCoverageFrom: [
-    "src/**/*.ts",
-    "!src/**/*.test.ts",
-    "!src/__tests__/**/*"
-  ]
-};
-```
-
-### Mocking Strategy Patterns
-
-#### Database Mocking (Unit Tests)
-
-```typescript
-// Unit tests - Mock database layer
-import * as db from "../database";
-
-jest.mock("../database", () => ({
-  query: jest.fn(),
-  transaction: jest.fn()
-}));
-
-const mockDb = db as jest.Mocked<typeof db>;
-
-describe("PlayerService", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("should get player stats", async () => {
-    mockDb.query.mockResolvedValue([{ id: 1, name: "Player1" }]);
-
-    const result = await playerService.getStats(1);
-
-    expect(result).toEqual([{ id: 1, name: "Player1" }]);
-    expect(mockDb.query).toHaveBeenCalledWith(
-      expect.stringContaining("SELECT"),
-      [1]
-    );
-  });
-});
-```
-
-#### Redis Mocking
-
-```typescript
-// Redis mocking pattern
-import { createClient } from "redis";
-
-jest.mock("redis", () => ({
-  createClient: jest.fn(() => ({
-    get: jest.fn(),
-    set: jest.fn(),
-    del: jest.fn(),
-    connect: jest.fn(),
-    disconnect: jest.fn()
-  }))
-}));
-
-const mockRedis = createClient() as jest.Mocked<
-  ReturnType<typeof createClient>
->;
-```
-
-#### External Service Mocking
-
-```typescript
-// Mock external APIs completely
-jest.mock("../services/steamApi", () => ({
-  fetchPlayerData: jest.fn(),
-  fetchMatchData: jest.fn()
-}));
-
-// Define specific responses for each test
-mockSteamApi.fetchPlayerData.mockResolvedValue({
-  steamId: "123",
-  name: "TestPlayer"
-});
-```
-
-### Controller Testing Patterns
-
-```typescript
-// Integration testing for controllers
-import request from "supertest";
-import { app } from "../app";
-
-describe("Player Controller", () => {
-  beforeEach(async () => {
-    // Reset database to known state
-    await resetTestDatabase();
-  });
-
-  it("should return player stats", async () => {
-    const response = await request(app)
-      .get("/api/v1/players/1/stats")
-      .query({
-        season_ids: "1,2",
-        league_ids: "1"
-      })
-      .expect(200);
-
-    expect(response.body).toMatchSchema({
-      type: "object",
-      properties: {
-        data: { type: "array" },
-        total: { type: "number" }
-      }
-    });
-  });
-});
-```
-
-### Test Data Management
-
-```typescript
-// Test data factory pattern
-export const createTestPlayer = (overrides = {}) => ({
-  id: 1,
-  steam_id: "76561198000000000",
-  steam_name: "TestPlayer",
-  ...overrides
-});
-
-export const createTestMatch = (overrides = {}) => ({
-  id: 1,
-  league_id: 1,
-  season_id: 1,
-  date: new Date("2025-01-01"),
-  ...overrides
-});
-
-// Usage in tests
-const testPlayer = createTestPlayer({ steam_name: "CustomName" });
-```
-
-### Error Testing Patterns
-
-```typescript
-// Testing error scenarios
-describe("Error Handling", () => {
-  it("should handle database connection errors", async () => {
-    mockDb.query.mockRejectedValue(new Error("Connection failed"));
-
-    await expect(playerService.getStats(1)).rejects.toThrow(
-      "Database connection error"
-    );
-  });
-
-  it("should handle validation errors", async () => {
-    await expect(playerService.getStats(-1)).rejects.toThrow(ValidationError);
-  });
-});
-```
-
-### Performance Testing
-
-```typescript
-// Performance boundaries testing
-describe("Performance", () => {
-  it("should return player stats within 500ms", async () => {
-    const start = Date.now();
-
-    await playerService.getStats(1);
-
-    const duration = Date.now() - start;
-    expect(duration).toBeLessThan(500);
-  });
-});
-```
-
-### Test Environment Setup
-
-```typescript
-// src/__tests__/setup.ts
-import { setupTestDatabase, teardownTestDatabase } from "./helpers/database";
-
-beforeAll(async () => {
-  await setupTestDatabase();
-});
-
-afterAll(async () => {
-  await teardownTestDatabase();
-});
-
-// Global test timeout
-jest.setTimeout(10000);
-```
-
-### Snapshot Testing for API Responses
-
-```typescript
-// API response structure testing
-it("should maintain consistent response structure", async () => {
-  const response = await request(app)
-    .get("/api/v1/players/1/stats")
-    .expect(200);
-
-  // Remove dynamic fields for snapshot
-  const sanitized = {
-    ...response.body,
-    data: response.body.data.map((item) => ({
-      ...item,
-      id: "[DYNAMIC]",
-      date: "[DYNAMIC]"
-    }))
-  };
-
-  expect(sanitized).toMatchSnapshot();
-});
-```
-
-## Testing Strategy (Testing Diamond Approach)
-
-### Core Testing Philosophy
-
-Following the **Testing Diamond** approach from Node.js testing best practices:
-
-```
-    Few E2E Tests (3-10 tests)
-         /\
-        /  \
-       /    \
-    MANY Component/Integration Tests (Primary Strategy)
-       \    /
-        \  /
-         \/
-    Few Unit Tests (Complex Logic Only)
-```
-
-### Component-First Testing Strategy
-
-**Primary Testing Layer: Component/Integration Tests**
-
-```typescript
-// Component test - test entire API endpoint with real database
-describe("GET /api/v1/players/:id/stats", () => {
-  beforeEach(async () => {
-    await setupTestDatabase();
-    await seedTestData();
-  });
-
-  it("should return player statistics for valid player", async () => {
-    const response = await request(app)
-      .get("/api/v1/players/1/stats")
-      .query({
-        season_ids: "1,2",
-        league_ids: "1"
-      })
-      .expect(200);
-
-    expect(response.body).toMatchObject({
-      data: expect.arrayContaining([
-        expect.objectContaining({
-          player_id: 1,
-          kills: expect.any(Number),
-          deaths: expect.any(Number),
-          adr: expect.any(Number),
-          rating: expect.any(Number)
-        })
-      ]),
-      total: expect.any(Number)
-    });
-  });
-});
-```
-
-### Feature-Based Testing (Not Function-Based)
-
-**Focus on API Routes and Business Workflows:**
-
-```typescript
-// ✅ Good - Feature-based test
-describe("Player Statistics Feature", () => {
-  it("should calculate and return accurate player performance metrics", async () => {
-    // Test complete workflow: request → validation → database → calculation → response
-  });
-
-  it("should filter statistics by season and league correctly", async () => {
-    // Test complete filtering workflow
-  });
-
-  it("should handle pagination for large result sets", async () => {
-    // Test complete pagination workflow
-  });
-});
-
-// ❌ Avoid - Function-based unit tests as primary strategy
-describe("calculatePlayerRating function", () => {
-  it("should calculate rating correctly", () => {
-    // Isolated function testing - use sparingly
-  });
-});
-```
-
-### Database-Included Testing Strategy
-
-**Test with Real Database, Mock Only External Services:**
-
-```typescript
-// Component test setup - real database, mocked externals
-describe("Player API Integration", () => {
-  beforeEach(async () => {
-    // Use real test database
-    await resetTestDatabase();
-    await seedRequiredData();
-
-    // Mock only external services
-    mockSteamAPI.fetchPlayerData.mockResolvedValue({
-      /* mock data */
-    });
-  });
-
-  it("should sync player data from Steam API and store correctly", async () => {
-    // Test: API call → Steam API integration → Database storage → Response
-    const response = await request(app)
-      .post("/api/v1/players/sync")
-      .send({ steam_id: "76561198000000000" })
-      .expect(200);
-
-    // Verify database was updated
-    const player = await db.query(
-      "SELECT * FROM SteamPlayers WHERE steam_id = ?",
-      ["76561198000000000"]
-    );
-    expect(player).toHaveLength(1);
-  });
-});
-```
-
-### E2E Testing Strategy (Minimal)
-
-**Only 3-10 E2E Tests for Critical Paths:**
-
-```typescript
-// E2E test - full system with real external services
-describe("E2E: Complete Player Statistics Workflow", () => {
-  it("should handle complete player lookup from external API to frontend display", async () => {
-    // Test with real Steam API, real database, full frontend flow
-    // Only for most critical user journeys
-  });
-});
-```
-
-### Test Performance Requirements
-
-**Component Tests Must Be Fast:**
-
-```typescript
-// Performance requirements for component tests
-describe("Performance Requirements", () => {
-  it("should return player stats within 500ms", async () => {
-    const start = Date.now();
-
-    await request(app).get("/api/v1/players/1/stats").expect(200);
-
-    const duration = Date.now() - start;
-    expect(duration).toBeLessThan(500);
-  });
-});
-
-// Target: 40+ tests running in under 5 seconds
-```
-
-### Unit Testing (Selective Use Only)
-
-**Unit Tests Only for Complex Business Logic:**
-
-```typescript
-// Unit test - only for non-trivial algorithms
-describe("Player Rating Calculation Algorithm", () => {
-  it("should calculate HLTV-style rating correctly", () => {
-    // Test complex mathematical calculations in isolation
-    const rating = calculatePlayerRating({
-      kills: 25,
-      deaths: 15,
-      adr: 85.5,
-      rounds: 30
-    });
-
-    expect(rating).toBeCloseTo(1.25, 2);
-  });
-});
-```
-
-### Test Organization Strategy
-
-```
-apps/backend/src/
-├── __tests__/
-│   ├── component/           # Primary testing layer
-│   │   ├── players.test.ts
-│   │   ├── matches.test.ts
-│   │   └── teams.test.ts
-│   ├── unit/               # Selective use only
-│   │   └── algorithms/
-│   │       └── rating-calculation.test.ts
-│   └── e2e/               # Minimal critical paths
-│       └── player-workflow.test.ts
-└── controllers/
-    ├── playerController.ts
-    └── matchController.ts
-```
-
-### Test Data Strategy
-
-**Fast Database Setup with Isolation:**
-
-```typescript
-// Test database optimization
-const testDbSetup = {
-  // Use separate test database
-  database: "kanaliiga_test",
-
-  // Fast seeding strategy
-  seedStrategy: "essential-data-only",
-
-  // Isolation approach
-  isolation: "transaction-rollback", // vs full table truncation
-
-  // Performance target
-  setupTime: "<100ms per test"
-};
-```
-
-## Integration Testing Patterns (Section 5)
-
-### Third-Party Service Testing
-
-**Strategy: Test Contracts, Not Implementations**
-
-```typescript
-// Contract testing for external APIs
-describe("Steam API Integration", () => {
-  it("should handle Steam API response format correctly", async () => {
-    // Use real Steam API occasionally for contract validation
-    const response = await steamApiService.getPlayerSummaries([
-      "76561198000000000"
-    ]);
-
-    expect(response).toMatchObject({
-      response: {
-        players: expect.arrayContaining([
-          expect.objectContaining({
-            steamid: expect.any(String),
-            personaname: expect.any(String),
-            profileurl: expect.any(String)
-          })
-        ])
-      }
-    });
-  });
-
-  it("should gracefully handle Steam API failures", async () => {
-    // Mock API failure scenarios
-    nock("https://api.steampowered.com")
-      .get("/ISteamUser/GetPlayerSummaries/v0002/")
-      .reply(500, "Internal Server Error");
-
-    await expect(
-      steamApiService.getPlayerSummaries(["invalid"])
-    ).rejects.toThrow("Steam API unavailable");
-  });
-});
-```
-
-### Service Virtualization Patterns
-
-```typescript
-// Use tools like nock for HTTP service mocking
-import nock from "nock";
-
-describe("External Service Integration", () => {
-  beforeEach(() => {
-    nock.cleanAll();
-  });
-
-  it("should handle FaceIT API rate limiting", async () => {
-    nock("https://open-api.faceit.com")
-      .get("/data/v4/teams/team-id")
-      .reply(429, { message: "Rate limit exceeded" });
-
-    const result = await faceitService.getTeamDetails("team-id");
-
-    expect(result).toBeNull(); // Graceful degradation
-  });
-});
-```
-
-### Consumer-Driven Contract Testing
-
-```typescript
-// Define API contracts that both services must honor
-const playerStatsContract = {
-  request: {
-    method: "GET",
-    path: "/api/v1/players/*/stats",
-    query: {
-      season_ids: "string",
-      league_ids: "string?"
-    }
-  },
-  response: {
-    status: 200,
-    body: {
-      data: "array",
-      total: "number"
-    }
-  }
-};
-
-// Test that our API honors the contract
-it("should conform to player stats API contract", async () => {
-  const response = await request(app)
-    .get("/api/v1/players/1/stats")
-    .query({ season_ids: "1,2" })
-    .expect(200);
-
-  expect(response.body).toMatchContract(playerStatsContract.response.body);
-});
-```
-
-## Dealing with Data Patterns (Section 6)
-
-### Test Data Isolation Strategies
-
-**Database Per Test vs Transaction Rollback:**
-
-```typescript
-// Strategy 1: Transaction-based isolation (faster)
-describe("Player Stats with Transaction Isolation", () => {
-  let transaction: Transaction;
-
-  beforeEach(async () => {
-    transaction = await db.transaction();
-  });
-
-  afterEach(async () => {
-    await transaction.rollback();
-  });
-
-  it("should calculate player rating correctly", async () => {
-    // All database operations use the transaction
-    await createTestPlayer({ id: 1, steam_name: "TestPlayer" }, transaction);
-
-    const stats = await getPlayerStats(1, { transaction });
-    expect(stats.rating).toBeCloseTo(1.2, 2);
-  });
-});
-
-// Strategy 2: Database reset (more isolation, slower)
-describe("Integration Tests with Full Reset", () => {
-  beforeEach(async () => {
-    await resetTestDatabase();
-    await seedEssentialData();
-  });
-
-  it("should handle complex multi-table operations", async () => {
-    // Full database operations
-  });
-});
-```
-
-### Test Data Builders (Factory Pattern)
-
-```typescript
-// Hierarchical test data creation
-class TestDataBuilder {
-  static async createSeason(overrides = {}) {
-    return await db("Seasons").insert({
-      name: "Test Season",
-      full_name: "Test Season 2025",
-      start_date: new Date("2025-01-01"),
-      end_date: new Date("2025-12-31"),
-      ...overrides
-    });
-  }
-
-  static async createPlayerWithStats(seasonId: number, overrides = {}) {
-    const player = await this.createPlayer();
-    const match = await this.createMatch(seasonId);
-    const game = await this.createMatchGame(match.id);
-
-    return await this.createPlayerStats({
-      player_id: player.id,
-      game_id: game.id,
-      kills: 25,
-      deaths: 15,
-      assists: 8,
-      ...overrides
-    });
-  }
-
-  static async createCompleteMatchScenario(seasonId: number) {
-    const teams = await Promise.all([
-      this.createTeam({ name: "Team A" }),
-      this.createTeam({ name: "Team B" })
-    ]);
-
-    const match = await this.createMatch(seasonId, teams);
-    const games = await this.createMatchGames(match.id, 3); // Best of 3
-
-    // Create realistic player stats for both teams
-    for (const game of games) {
-      await this.createTeamStats(teams[0].id, game.id);
-      await this.createTeamStats(teams[1].id, game.id);
-    }
-
-    return { match, teams, games };
-  }
-}
-```
-
-### Database Optimization for Tests
-
-```typescript
-// Optimized database setup
-const testDbConfig = {
-  // Use in-memory SQLite for unit tests
-  client: "sqlite3",
-  connection: ":memory:",
-  useNullAsDefault: true,
-  migrations: {
-    directory: "./migrations"
-  },
-  seeds: {
-    directory: "./seeds/test"
-  },
-  pool: {
-    min: 1,
-    max: 1 // Single connection for consistency
-  }
-};
-
-// Parallel-safe test data
-describe("Parallel Test Safety", () => {
-  beforeEach(async () => {
-    // Use unique test prefixes to avoid conflicts
-    const testPrefix = `test_${Date.now()}_${Math.random()}`;
-    await createIsolatedTestData(testPrefix);
-  });
-});
-```
-
-## Web Server Setup Patterns (Section 3)
-
-### Efficient Server Lifecycle Management
-
-```typitten
-// Global test server setup
-let testServer: Application;
-let serverPort: number;
-
-beforeAll(async () => {
-  // Start server once for all tests
-  testServer = createApp({
-    database: testDbConfig,
-    redis: mockRedisConfig,
-    externalServices: mockServicesConfig
-  });
-
-  serverPort = await startServer(testServer, 0); // Random available port
-});
-
-afterAll(async () => {
-  await stopServer(testServer);
-  await cleanupTestDatabase();
-});
-
-// Per-test cleanup without server restart
-beforeEach(async () => {
-  await resetTestData(); // Fast data reset, keep server running
-});
-```
-
-### Test-Specific Configuration
-
-```typescript
-// Environment-aware server configuration
-const createTestApp = (overrides = {}) => {
-  const config = {
-    ...defaultConfig,
-    database: {
-      ...defaultConfig.database,
-      connection: process.env.TEST_DATABASE_URL || ":memory:"
-    },
-    redis: {
-      ...defaultConfig.redis,
-      client:
-        process.env.NODE_ENV === "test" ? mockRedisClient : realRedisClient
-    },
-    externalServices: {
-      steamApi: {
-        enabled: false, // Disable in tests
-        mockResponses: steamApiMockData
-      }
-    },
-    ...overrides
-  };
-
-  return createApplication(config);
-};
-```
-
-## Test Anatomy Best Practices (Section 4)
-
-### AAA Pattern (Arrange-Act-Assert)
-
-```typescript
-describe("Player Statistics Calculation", () => {
-  it("should calculate K/D ratio correctly for multiple games", async () => {
-    // Arrange - Set up test data
-    const playerId = await createTestPlayer();
-    const matchGames = await createMatchGames([
-      { kills: 20, deaths: 10 }, // Game 1: 2.0 K/D
-      { kills: 15, deaths: 20 }, // Game 2: 0.75 K/D
-      { kills: 25, deaths: 15 } // Game 3: 1.67 K/D
-    ]);
-
-    await Promise.all(
-      matchGames.map((game) =>
-        createPlayerStats({
-          player_id: playerId,
-          game_id: game.id,
-          kills: game.kills,
-          deaths: game.deaths
-        })
-      )
-    );
-
-    // Act - Execute the function under test
-    const stats = await calculatePlayerSummaryStats(playerId);
-
-    // Assert - Verify the results
-    expect(stats.totalKills).toBe(60);
-    expect(stats.totalDeaths).toBe(45);
-    expect(stats.kdRatio).toBeCloseTo(1.33, 2);
-    expect(stats.gamesPlayed).toBe(3);
-  });
-});
-```
-
-### Test Naming Best Practices
-
-```typescript
-// Good test names: Should/When/Given pattern
-describe("Player Rating System", () => {
-  describe("when player has consistent performance", () => {
-    it("should maintain stable rating over multiple matches", async () => {
-      // Test implementation
-    });
-  });
-
-  describe("when player performance varies significantly", () => {
-    it("should adjust rating based on recent performance weight", async () => {
-      // Test implementation
-    });
-  });
-
-  describe("given insufficient match data", () => {
-    it("should return null rating with appropriate message", async () => {
-      // Test implementation
-    });
-  });
-});
-```
-
-### Error Scenario Testing
-
-```typescript
-// Comprehensive error scenario coverage
-describe("Error Handling", () => {
-  it("should handle database connection failures gracefully", async () => {
-    // Simulate connection failure
-    mockDatabase.query.mockRejectedValue(new Error("Connection timeout"));
-
-    await expect(getPlayerStats(1)).rejects.toThrow(
-      "Database unavailable. Please try again later."
-    );
-  });
-
-  it("should validate input parameters strictly", async () => {
-    const invalidInputs = [
-      null,
-      undefined,
-      "",
-      "invalid",
-      -1,
-      0,
-      "1; DROP TABLE players;"
-    ];
-
-    for (const invalidInput of invalidInputs) {
-      await expect(getPlayerStats(invalidInput)).rejects.toThrow(
-        /Invalid player ID/
-      );
-    }
-  });
-
-  it("should handle rate limiting from external APIs", async () => {
-    mockSteamApi.getPlayerData.mockRejectedValue(
-      new Error("Rate limit exceeded")
-    );
-
-    const result = await syncPlayerData("76561198000000000");
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("rate limit");
-    expect(result.retryAfter).toBeGreaterThan(0);
-  });
-});
-```
-
-### Performance Boundary Testing
-
-```typescript
-describe("Performance Requirements", () => {
-  it("should return player stats within performance SLA", async () => {
-    // Create realistic dataset
-    await createLargeDataset({
-      players: 1000,
-      matches: 500,
-      gamesPerMatch: 3
-    });
-
-    const performanceTests = [
-      { playerId: 1, maxTime: 200 }, // Simple query
-      { playerId: 50, maxTime: 350 }, // Medium complexity
-      { playerId: 100, maxTime: 500 } // Complex aggregation
-    ];
-
-    for (const test of performanceTests) {
-      const start = Date.now();
-      const result = await getPlayerStats(test.playerId);
-      const duration = Date.now() - start;
-
-      expect(duration).toBeLessThan(test.maxTime);
-      expect(result).toBeDefined();
-    }
-  });
-
-  it("should handle concurrent requests efficiently", async () => {
-    const concurrentRequests = Array.from({ length: 10 }, (_, i) =>
-      getPlayerStats(i + 1)
-    );
-
-    const start = Date.now();
-    const results = await Promise.all(concurrentRequests);
-    const totalDuration = Date.now() - start;
-
-    // All requests should complete within reasonable time
-    expect(totalDuration).toBeLessThan(2000);
-    expect(results).toHaveLength(10);
-    expect(results.every((r) => r !== null)).toBe(true);
-  });
-});
-```
-
-## Type Management Patterns
-
-### Shared Type Definitions
-
-All shared type definitions should be placed in the `packages/types` package and exported from their appropriate domain folders:
-
-```
-packages/types/
-├── src/
-│   ├── index.ts            # Re-exports all types
-│   ├── players/            # Player-related types
-│   ├── matches/            # Match-related types
-│   ├── sortter/            # Sortter-related types
-│   └── ...
-```
-
-### Type Naming Conventions
-
-Type names must be descriptive and specific to their domain. For model interfaces, use the format `Domain + Purpose + ValueType`:
-
-```typescript
-// ❌ Too generic and unclear
-export interface TeamValue { ... }
-
-// ✅ Clear domain and purpose
-export interface TeamSortterValues { ... }
-export interface PlayerMatchStats { ... }
-export interface LeagueRegistrationData { ... }
-```
-
-### Indexed Access Types Pattern
-
-When creating interfaces that reference database fields, use indexed access types instead of repeating the type definitions:
-
-```typescript
-// ❌ Bad: Repeating type definitions
-export interface PlayerSortterValues {
-  name: string;
-  steamid: string;
-  cs2_rank: number | null;
-  faceit_level: number | null;
-  faceit_elo: number | null;
-  hours: number | null;
-  kanarating: number | null;
-  fkd: number | null;
-}
-
-// ✅ Good: Using indexed access types for direct database fields
-import { SeasonPlayerRank } from "../db";
-
-export interface PlayerSortterValues {
-  name: string;
-  steamid: string;
-  cs2_rank: SeasonPlayerRank["cs2_rank"];
-  faceit_level: SeasonPlayerRank["faceit_level"];
-  faceit_elo: SeasonPlayerRank["faceit_elo"];
-  hours: SeasonPlayerRank["cs_hours"] | null;
-  kanarating: number | null; // Calculated field, not direct DB field
-  fkd: number | null; // Calculated field, not direct DB field
-}
-```
-
-Key benefits:
-
-- **Single source of truth**: Type definitions are defined in one place (database schema interfaces)
-- **Automatic propagation**: Schema changes automatically update all dependent interfaces
-- **Clear distinction**: Easy to identify which fields are direct database fields vs. calculated values
-- **Type safety**: Reduces the risk of type mismatches between code and database schema
-
-### Database Type Handling Pattern
-
-For database models that return raw data that needs transformation (like JSON strings), create two related interfaces:
-
-```typescript
-// For parsed application data (post-transformation)
-export interface TeamSortterValues {
-  team_id: number;
-  team_name: string;
-  // ... other fields
-  /** Kanaelo values for top 5 players as an array */
-  top5_values: number[];
-}
-
-// For raw database results (pre-transformation)
-export interface TeamSortterValuesRaw
-  extends Omit<TeamSortterValues, "top5_values"> {
-  top5_values: string; // JSON string from database
-}
-```
-
-### Type Transformation Pattern
-
-When transforming data between raw database results and application types, handle both production and test scenarios:
+- **Test Reliability**: Tests pass consistently without flakiness
+- **Test Maintainability**: Tests are easy to understand and modify
+- **Test Performance**: Tests run quickly and efficiently
+- **Test Documentation**: Tests serve as living documentation

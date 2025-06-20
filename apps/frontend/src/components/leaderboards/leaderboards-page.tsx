@@ -13,9 +13,9 @@ export const LeaderboardsPage = () => {
   const { filterParams, isLoading, error, isValidating, areFiltersEmpty } =
     useFilters();
 
+  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
   if (isLoading || !filterParams || isValidating)
     return <ContentContainer>Loading...</ContentContainer>;
-  if (error) return <ContentContainer>Failed to load filters</ContentContainer>;
 
   return (
     <div>

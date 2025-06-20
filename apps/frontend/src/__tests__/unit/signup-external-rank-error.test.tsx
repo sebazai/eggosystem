@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { TabPlayers } from "@/components/signup/signup-tab-players";
 import { SeasonPlatform } from "@eggosystem/types";
 import type { SignupFormValues } from "@eggosystem/types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mock the API client
 jest.mock("@/lib/apiClient", () => ({
@@ -76,7 +77,7 @@ jest.mock("next/link", () => ({
   )
 }));
 
-// Test wrapper component
+// Test wrapper component that provides proper Tabs context
 const TestWrapper = ({
   players,
   platform = SeasonPlatform.FACEIT,
@@ -98,18 +99,23 @@ const TestWrapper = ({
   });
 
   return (
-    <TabPlayers
-      control={control}
-      resetField={resetField}
-      setValue={setValue}
-      watch={watch}
-      playerErrorIndices={[]}
-      seasonSteamAppId={seasonSteamAppId}
-      platform={platform}
-      seasonId={seasonId}
-      validCaptainSelection={true}
-      prefilledPlayerSteamIds={[]}
-    />
+    <Tabs defaultValue="players" className="w-full">
+      <TabsList>
+        <TabsTrigger value="players">Players</TabsTrigger>
+      </TabsList>
+      <TabPlayers
+        control={control}
+        resetField={resetField}
+        setValue={setValue}
+        watch={watch}
+        playerErrorIndices={[]}
+        seasonSteamAppId={seasonSteamAppId}
+        platform={platform}
+        seasonId={seasonId}
+        validCaptainSelection={true}
+        prefilledPlayerSteamIds={[]}
+      />
+    </Tabs>
   );
 };
 
@@ -118,7 +124,7 @@ describe("External Rank Error", () => {
     jest.clearAllMocks();
   });
 
-  it("should show external rank error for player without FaceIT rank", async () => {
+  it("should show external rank error message for player without FaceIT rank", async () => {
     const players = [
       {
         accountId: 15014,
@@ -138,25 +144,30 @@ describe("External Rank Error", () => {
 
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
-    // Wait for the component to render
+    // Wait for the error message to appear
     await waitFor(() => {
-      expect(screen.getByTestId("external-rank-error-0")).toBeInTheDocument();
+      expect(
+        screen.getByText(/Could not detect external FACEIT rank for the player/)
+      ).toBeInTheDocument();
     });
 
-    // Verify the error message content
-    const errorElement = screen.getByTestId("external-rank-error-0");
-    expect(errorElement).toHaveTextContent(
-      "Could not detect external FACEIT rank for the player"
-    );
-    expect(errorElement).toHaveTextContent(
-      "This could be due to temporary service issues or missing rank data"
-    );
-    expect(errorElement).toHaveTextContent(
-      "Please try removing the steam id and adding it again"
-    );
-    expect(errorElement).toHaveTextContent(
-      "or open a ticket in the Kanaliiga Discord if the problem persists"
-    );
+    // Verify the complete error message content using more semantic queries
+    expect(
+      screen.getByText(/Could not detect external FACEIT rank for the player/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /This could be due to temporary service issues or missing rank data/
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Please try removing the steam id and adding it again/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /or open a ticket in the Kanaliiga Discord if the problem persists/
+      )
+    ).toBeInTheDocument();
   });
 
   it("should not show external rank error for Kanaliiga platform", () => {
@@ -183,7 +194,7 @@ describe("External Rank Error", () => {
 
     // The error should not be visible for Kanaliiga platform
     expect(
-      screen.queryByTestId("external-rank-error-0")
+      screen.queryByText(/Could not detect external.*rank for the player/)
     ).not.toBeInTheDocument();
   });
 
@@ -208,12 +219,13 @@ describe("External Rank Error", () => {
     render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
 
     await waitFor(() => {
-      expect(screen.getByTestId("external-rank-error-0")).toBeInTheDocument();
+      expect(
+        screen.getByText(/Could not detect external FACEIT rank for the player/)
+      ).toBeInTheDocument();
     });
 
-    // Verify the platform name is correctly displayed
-    const errorElement = screen.getByTestId("external-rank-error-0");
-    expect(errorElement).toHaveTextContent("FACEIT");
+    // Verify the platform name is correctly displayed in the error message
+    expect(screen.getByText(/FACEIT/)).toBeInTheDocument();
   });
 
   it("should show external rank error for multiple players", async () => {
@@ -252,20 +264,18 @@ describe("External Rank Error", () => {
 
     // Wait for both error messages to be visible
     await waitFor(() => {
-      expect(screen.getByTestId("external-rank-error-0")).toBeInTheDocument();
-      expect(screen.getByTestId("external-rank-error-1")).toBeInTheDocument();
+      const errorMessages = screen.getAllByText(
+        /Could not detect external FACEIT rank for the player/
+      );
+      expect(errorMessages).toHaveLength(2);
     });
 
     // Verify both error messages contain the correct content
-    const errorElement0 = screen.getByTestId("external-rank-error-0");
-    const errorElement1 = screen.getByTestId("external-rank-error-1");
-
-    expect(errorElement0).toHaveTextContent(
-      "Could not detect external FACEIT rank for the player"
+    const errorMessages = screen.getAllByText(
+      /Could not detect external FACEIT rank for the player/
     );
-    expect(errorElement1).toHaveTextContent(
-      "Could not detect external FACEIT rank for the player"
-    );
+    expect(errorMessages[0]).toBeInTheDocument();
+    expect(errorMessages[1]).toBeInTheDocument();
   });
 
   it("should not show external rank error when player has valid FaceIT rank", () => {
@@ -290,7 +300,7 @@ describe("External Rank Error", () => {
 
     // The error should not be visible when player has valid FaceIT rank
     expect(
-      screen.queryByTestId("external-rank-error-0")
+      screen.queryByText(/Could not detect external.*rank for the player/)
     ).not.toBeInTheDocument();
   });
 
@@ -316,7 +326,83 @@ describe("External Rank Error", () => {
 
     // The error should not be visible when externalRank is not -1
     expect(
-      screen.queryByTestId("external-rank-error-0")
+      screen.queryByText(/Could not detect external.*rank for the player/)
     ).not.toBeInTheDocument();
+  });
+
+  it("should be accessible with proper ARIA attributes", async () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: "66561198999999913",
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 13,
+        externalRank: -1
+      }
+    ];
+
+    render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Could not detect external FACEIT rank for the player/)
+      ).toBeInTheDocument();
+    });
+
+    // Test that the error message is accessible
+    const errorMessage = screen.getByText(
+      /Could not detect external FACEIT rank for the player/
+    );
+    expect(errorMessage).toBeInTheDocument();
+
+    // The error should be within a notification component that's accessible
+    const notification =
+      errorMessage.closest('[role="alert"]') ||
+      errorMessage.closest("[aria-live]");
+    expect(notification).toBeInTheDocument();
+  });
+
+  it("should provide actionable guidance in the error message", async () => {
+    const players = [
+      {
+        accountId: 15014,
+        steamId: "66561198999999913",
+        nickname: "NoFaceitRankPlayer",
+        discord: "",
+        captain: false,
+        coCaptain: false,
+        hasValidData: true,
+        hasValidWorkEmail: true,
+        isEmailVerified: true,
+        hours: 1200,
+        rank: 13,
+        externalRank: -1
+      }
+    ];
+
+    render(<TestWrapper players={players} platform={SeasonPlatform.FACEIT} />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Could not detect external FACEIT rank for the player/)
+      ).toBeInTheDocument();
+    });
+
+    // Verify the error provides actionable guidance
+    expect(
+      screen.getByText(/Please try removing the steam id and adding it again/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /or open a ticket in the Kanaliiga Discord if the problem persists/
+      )
+    ).toBeInTheDocument();
   });
 });

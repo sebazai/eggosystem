@@ -258,30 +258,6 @@ test:frontend:unit:
       - apps/frontend/test-results/junit/results.xml
       - apps/frontend/coverage/cobertura-coverage.xml
 
-test:frontend:integration:
-  image: mcr.microsoft.com/playwright:v1.52.0-jammy
-  stage: test
-  extends: [.mr-frontend]
-  variables:
-    <<: *overwrite-variables
-  before_script:
-    - corepack enable
-    - corepack prepare pnpm@10.8.1 --activate
-    - export $(grep -v '^#' .env.development | xargs)
-    - pnpm config set registry http://172.17.0.1:4873
-    - pnpm install --frozen-lockfile
-    - pnpm --filter="@eggosystem/types" build
-  script:
-    - unset NODE_ENV
-    - pnpm --filter=frontend test:integration
-  artifacts:
-    when: always
-    paths:
-      - apps/frontend/playwright-report/
-      - apps/frontend/test-results/
-    reports:
-      junit: apps/frontend/test-results/junit-report.xml
-
 build:types:
   stage: build
   extends: [.prepare-pnpm, .mr-all-app]

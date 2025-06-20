@@ -14,7 +14,8 @@ import { createAbortController } from "../utils/fetch-utils";
 import {
   applyDecay,
   faceitEloToLevel,
-  faceitLevelDefaultElo
+  FACEIT_DEFAULT_ELO,
+  FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
 
 // E2E Test mode mocking
@@ -155,7 +156,7 @@ const getFaceITMetaData = async (
 
 const fallbackFaceITRank = {
   faceit_level: 2,
-  faceit_elo: faceitLevelDefaultElo,
+  faceit_elo: FACEIT_DEFAULT_ELO,
   faceit_kd: 0.95,
   faceit_date: new Date().getTime(),
   metadata: {
@@ -191,7 +192,7 @@ const getFaceITCSGORank = async (steam_id: string) => {
 
   const decayedElo = applyDecay(
     data.elo,
-    faceitLevelDefaultElo,
+    FACEIT_DEFAULT_ELO,
     faceit_metadata?.faceit_last_match ?? lastMatchThreeYearsAgo
   );
 
@@ -200,7 +201,7 @@ const getFaceITCSGORank = async (steam_id: string) => {
   const returnData = {
     faceit_level: decayedRank,
     faceit_elo: decayedElo,
-    faceit_kd: faceit_metadata?.faceit_kdr ?? 0.95,
+    faceit_kd: faceit_metadata?.faceit_kdr ?? FACEIT_DEFAULT_KD,
     faceit_date: new Date().getTime(),
     metadata: {
       faceit_matches_played: faceit_metadata?.faceit_matches_played,
@@ -235,7 +236,7 @@ export const getFaceITCS2Rank = async (
       return {
         faceit_level: rankFromDb.faceit_level,
         faceit_elo: rankFromDb.faceit_elo,
-        faceit_kd: rankFromDb.faceit_kd ?? 0.95,
+        faceit_kd: rankFromDb.faceit_kd ?? FACEIT_DEFAULT_KD,
         faceit_date: rankFromDb.faceit_date
           ? new Date(rankFromDb.faceit_date).getTime()
           : new Date().getTime(),
@@ -285,7 +286,7 @@ export const getFaceITCS2Rank = async (
 
     const cs2FaceitEloDecayed = applyDecay(
       faceitRanks.elo,
-      faceitLevelDefaultElo,
+      FACEIT_DEFAULT_ELO,
       faceit_metadata.faceit_last_match
     );
     const cs2FaceitRankDecayed = faceitEloToLevel(cs2FaceitEloDecayed);

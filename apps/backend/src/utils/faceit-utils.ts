@@ -1,7 +1,8 @@
 import { getMonthDifference } from "./date-utils";
 import { BadRequestError } from "./errors";
 
-export const faceitLevelDefaultElo = 750;
+export const FACEIT_DEFAULT_ELO = 750;
+export const FACEIT_DEFAULT_KD = 0.95;
 
 export const faceitEloToLevel = (elo: number) => {
   if (elo >= 2001) return 10;

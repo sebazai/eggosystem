@@ -19,9 +19,9 @@ const customJestConfig = {
   testPathIgnorePatterns: [
     "<rootDir>/.next/",
     "<rootDir>/node_modules/",
-    "<rootDir>/src/__tests__/integration/",
     "<rootDir>/src/__tests__/e2e/"
   ],
+  modulePathIgnorePatterns: ["<rootDir>/.next/standalone/", "<rootDir>/dist/"],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "cobertura"],
   reporters: [

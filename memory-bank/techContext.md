@@ -2,66 +2,24 @@
 
 ## Technology Stack
 
-### Monorepo Structure
+### Backend (Node.js/Express)
 
-- **Root**: PNPM workspace configuration
-- **apps/backend**: Node.js/TypeScript API server
-- **apps/frontend**: Next.js/TypeScript web application
-- **packages/**: Shared utilities and configurations
+- **Runtime**: Node.js 18+
+- **Framework**: Express.js with TypeScript
+- **Database**: PostgreSQL with Knex.js ORM
+- **Authentication**: JWT with Steam OAuth
+- **Caching**: Redis for session management
+- **Email**: Nodemailer with SMTP
+- **Testing**: Jest for unit testing
 
-### Backend Technologies
+### Frontend (Next.js)
 
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
-- **Database**: PostgreSQL
-- **Query Builder**: Knex.js with migrations
-- **API Design**: RESTful endpoints with structured responses
-
-### Frontend Technologies
-
-- **Framework**: Next.js with App Router
+- **Framework**: Next.js 14+ with App Router
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui component library
-- **Icons**: Lucide React
-- **Data Fetching**:
-  - `expressFetcher` for non-authenticated requests
-  - `clientApiFetch` for authenticated requests with JWT
-- **State Management**: React hooks and SWR cache
-- **Animation**: Framer Motion
-- **Theme**: next-themes for dark/light mode support
-- **Form Handling**: React Hook Form with Zod validation
-
-#### shadcn/ui Configuration
-
-**Core Setup**:
-
-- **Style**: "new-york" theme variant
-- **Base Color**: Zinc color palette
-- **Icons**: Lucide React icon library
-- **CSS Variables**: Enabled for dynamic theming
-- **Components Path**: `@/components/ui`
-
-**Installed Components**:
-
-- **Layout**: Sidebar, Accordion, Tabs, Card, Separator
-- **Navigation**: Navigation Menu, Breadcrumb, Dropdown Menu, Sheet
-- **Forms**: Button, Input, Textarea, Label, Checkbox, Select, Form
-- **Feedback**: Badge, Skeleton, Sonner (Toast), Dialog, Tooltip, Popover
-- **Data**: Command (Command Palette)
-
-**Key Dependencies**:
-
-- **@radix-ui**: Unstyled, accessible component primitives
-- **class-variance-authority**: Type-safe component variants
-- **tailwind-merge**: Intelligent Tailwind class merging
-- **cmdk**: Command palette functionality
-
-**Add New Components**:
-
-```bash
-cd apps/frontend && pnpm shadcn:add [component-name]
-```
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: SWR for data fetching
+- **Authentication**: Client-side JWT handling
+- **Testing**: Jest + React Testing Library for unit testing, Playwright for e2e testing
 
 ### Development Environment
 
@@ -126,68 +84,176 @@ Frontend Component → SWR Hook → Frontend API Route → Backend API → Datab
 
 ### Testing Strategy
 
-- **Backend**: Jest unit tests for models, integration tests for controllers
+- **Backend**: Jest unit tests for models, services, and controllers
 - **Frontend Unit**: Jest + React Testing Library for component testing
-- **Frontend Integration**: Playwright tests with mocked APIs
-- **Frontend E2E**: Playwright tests with real backend
-- **Database**: Separate test database with proper cleanup
-- **Performance**: Query performance monitoring
+- **Frontend E2E**: Playwright for multi-component testing with real backend
+- **Test Organization**: Unit tests alongside source files, e2e tests in dedicated folders
+- **CI Integration**: Automated testing in GitLab CI
 
-**Backend Testing Gap**: Currently missing comprehensive Jest unit testing setup for backend. Need to implement:
+## Key Dependencies
 
-- Jest configuration for Node.js environment
-- Mocking patterns for database, Redis, external services
-- Controller testing with Supertest
-- Service layer unit tests with mocked dependencies
-- Performance boundary testing
-- Following Node.js testing best practices from goldbergyoni/nodejs-testing-best-practices
+### Backend Dependencies
 
-## Deployment & Infrastructure
+- **Express**: Web framework
+- **Knex.js**: SQL query builder
+- **JWT**: Authentication tokens
+- **Redis**: Session caching
+- **Nodemailer**: Email sending
+- **Jest**: Testing framework
 
-### Environment Configuration
+### Frontend Dependencies
 
-- **Development**: DevContainer with all dependencies
-- **Database**: PostgreSQL with migration system
-- **Build Process**: Turbo for efficient monorepo builds
-- **Package Management**: PNPM workspaces for dependency management
+- **Next.js**: React framework
+- **React**: UI library
+- **TypeScript**: Type safety
+- **Tailwind CSS**: Styling
+- **shadcn/ui**: Component library
+- **SWR**: Data fetching
+- **Jest**: Testing framework
+- **React Testing Library**: Component testing
+- **Playwright**: E2E testing framework
 
-### Performance Requirements
+### Shared Dependencies
 
-- **Query Response**: Sub-second response times for most operations
-- **Mobile Performance**: Optimized for mobile devices
-- **Data Integrity**: Consistent statistical calculations
-- **Scalability**: Handle growing datasets efficiently
+- **TypeScript**: Type definitions
+- **ESLint**: Code linting
+- **Prettier**: Code formatting
 
-## Technical Constraints
+## Configuration Files
 
-### Database Constraints
+### Backend Configuration
 
-- **Complex Joins**: PlayerStats requires specific join patterns
-- **Team Relationships**: Dynamic team-player associations per season
-- **Data Volume**: Large datasets require optimized queries
-- **Historical Data**: Long-term storage and efficient access
+- **package.json**: Dependencies and scripts
+- **tsconfig.json**: TypeScript configuration
+- **jest.config.js**: Testing configuration
+- **knexfile.js**: Database configuration
+- **.env**: Environment variables
 
-### Frontend Constraints
+### Frontend Configuration
 
-- **Mobile-First**: All features must work on mobile
-- **Performance**: Fast loading despite complex data
-- **State Management**: Efficient data fetching and caching
-- **Browser Support**: Modern browser compatibility
+- **package.json**: Dependencies and scripts
+- **tsconfig.json**: TypeScript configuration
+- **jest.config.js**: Testing configuration
+- **tailwind.config.js**: Styling configuration
+- **next.config.js**: Next.js configuration
 
-### Development Constraints
+### Workspace Configuration
 
-- **Monorepo**: Coordinated changes across frontend/backend
-- **TypeScript**: Strict typing requirements
-- **DevContainer**: Development environment consistency
-- **Testing**: Comprehensive test coverage requirements
+- **package.json**: PNPM workspace configuration
+- **.gitignore**: Version control exclusions
+- **docker-compose.yml**: Development environment
 
-### Frontend Architecture
+## Development Patterns
 
-- **Framework**: Next.js with App Router
-- **State Management**: SWR for data fetching and caching
-- **Data Fetching**:
-  - `expressFetcher` for non-authenticated requests
-  - `clientApiFetch` for authenticated requests with JWT
-- **Component Library**: shadcn/ui with Tailwind CSS
-- **Form Handling**: React Hook Form with Zod validation
-- **Testing**: Jest + React Testing Library
+### Code Organization
+
+- **Feature-Based**: Organize by feature rather than type
+- **Shared Types**: Use packages/types for common interfaces
+- **Middleware**: Express middleware for cross-cutting concerns
+- **Services**: Business logic in service layer
+
+### Error Handling
+
+- **Consistent Patterns**: Standard error response format
+- **Validation**: Input validation with proper error messages
+- **Logging**: Structured logging for debugging
+- **Client Handling**: Proper error states in frontend
+
+### Performance
+
+- **Database Queries**: Optimized with proper indexing
+- **Caching**: Redis for frequently accessed data
+- **Frontend**: Efficient data fetching with SWR
+- **Mobile**: Responsive design with essential data only
+
+## Testing Infrastructure
+
+### Backend Testing
+
+- **Jest Configuration**: Proper setup for Node.js environment
+- **Database Testing**: Test database with migrations and seeding
+- **Mocking**: Mock external services and dependencies
+- **Coverage**: Test coverage reporting
+
+### Frontend Testing
+
+- **Jest + React Testing Library**: Component testing setup
+- **TypeScript Integration**: Proper type checking in tests
+- **Mocking**: Mock hooks, API calls, and external dependencies
+- **Accessibility**: Test components with accessibility in mind
+- **Playwright**: E2E testing for multi-component workflows
+- **Standalone Server**: E2E tests use standalone build for consistency
+- **Backend Requirements**: E2E tests require backend running with `pnpm --filter=backend dev:e2e`
+- **Response Stubbing**: Stub external API responses in backend endpoints for e2e tests
+
+### Testing Patterns
+
+- **Unit Tests**: Test individual functions and components
+- **E2E Tests**: Test complete user workflows with real backend
+- **Mock Strategy**: Mock external dependencies in unit tests, use real backend in e2e tests
+- **User-Centric**: Test from user perspective
+- **Error States**: Test error handling and edge cases
+- **Backend Integration**: E2E tests require backend running with external API stubbing
+- **Monorepo E2E**: Use `pnpm test:e2e` from root for complete setup and execution
+
+## Deployment & CI/CD
+
+### GitLab CI
+
+- **Pipeline**: Automated testing and deployment
+- **Stages**: Test, build, deploy
+- **Environments**: Development, staging, production
+- **Artifacts**: Build artifacts and test reports
+
+### Environment Management
+
+- **Development**: Local development with DevContainer
+- **Staging**: Pre-production testing environment
+- **Production**: Live application environment
+- **Configuration**: Environment-specific settings
+
+## Security Considerations
+
+### Authentication
+
+- **JWT Tokens**: Secure token-based authentication
+- **Steam OAuth**: Third-party authentication
+- **Session Management**: Redis-based session storage
+- **Authorization**: Role-based access control
+
+### Data Protection
+
+- **Input Validation**: Validate all user inputs
+- **SQL Injection**: Use parameterized queries
+- **XSS Prevention**: Sanitize user-generated content
+- **CORS**: Proper cross-origin resource sharing
+
+### Environment Security
+
+- **Environment Variables**: Secure configuration management
+- **Database Access**: Proper database permissions
+- **API Security**: Rate limiting and request validation
+- **HTTPS**: Secure communication in production
+
+## Performance Optimization
+
+### Database Performance
+
+- **Query Optimization**: Efficient SQL queries with proper JOINs
+- **Indexing**: Strategic database indexing
+- **Connection Pooling**: Efficient database connections
+- **Query Logging**: Performance monitoring
+
+### Frontend Performance
+
+- **Code Splitting**: Lazy loading of components
+- **Image Optimization**: Optimized image loading
+- **Caching**: Browser and CDN caching
+- **Bundle Size**: Minimized JavaScript bundles
+
+### Monitoring
+
+- **Error Tracking**: Production error monitoring
+- **Performance Metrics**: Response time monitoring
+- **User Analytics**: Usage pattern analysis
+- **Health Checks**: Application health monitoring

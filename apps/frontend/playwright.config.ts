@@ -1,10 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const isIntegration = process.env.TEST_TYPE === "integration";
 const isCI = process.env.CI;
-console.log(
-  `[Playwright] Using webServer: ${isIntegration ? "pnpm dev" : "standalone build"}`
-);
+console.log(`[Playwright] Using webServer: standalone build`);
 
 export default defineConfig({
   testDir: "./src/__tests__",
@@ -34,11 +31,6 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "integration",
-      testDir: "./src/__tests__/integration",
-      use: { ...devices["Desktop Chrome"], browserName: "chromium" }
-    },
-    {
       name: "e2e",
       testDir: "./src/__tests__/e2e",
       use: { ...devices["Desktop Chrome"], browserName: "chromium" }
@@ -46,7 +38,7 @@ export default defineConfig({
   ],
   // Run the frontend server as part of the test
   webServer: {
-    command: isIntegration ? "pnpm run dev" : "pnpm start:standalone",
+    command: "pnpm start:standalone",
     url: "http://localhost:3000",
     reuseExistingServer: !isCI,
     timeout: 20000 // Give the server enough time to start

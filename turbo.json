@@ -96,9 +96,6 @@
       "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"],
       "cache": false
     },
-    "test:integration": {
-      "dependsOn": ["@eggosystem/types#build", "@eggosystem/shared-msw#build"]
-    },
     "shadcn:add": {
       "cache": false
     },
