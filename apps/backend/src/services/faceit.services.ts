@@ -223,7 +223,7 @@ const getFaceITCSGORank = async (steam_id: string) => {
 export const getFaceITCS2Rank = async (
   steam_id: string,
   season_id?: number
-) => {
+): Promise<FaceITCSRank> => {
   // If someone added the rank to database for season, we use that one
   if (season_id) {
     const rankFromDb = await getPlayerExternalRankForSeason(

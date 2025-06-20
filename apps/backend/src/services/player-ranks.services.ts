@@ -22,8 +22,9 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   // Return rank for season_id from db, i.e. if admin has added manually
   if (season_id) {
     const hoursFromDb = await getPlayerHoursForSeason(steam_id, season_id);
-    if (hoursFromDb && hoursFromDb.hours && hoursFromDb.hours > 0) {
-      return hoursFromDb;
+    const hours = hoursFromDb?.hours;
+    if (hours && hours > 0) {
+      return { hours };
     }
   }
 

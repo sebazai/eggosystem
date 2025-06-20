@@ -131,14 +131,14 @@ export const insertFaceITPlayerRankForSeason = async (
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        rank_updated_at = IF(VALUES(cs2_rank) != -1, VALUES(rank_updated_at), rank_updated_at),
-        cs2_rank = IF(VALUES(cs2_rank) != -1, VALUES(cs2_rank), cs2_rank),
-        cs_hours = IF(VALUES(cs_hours) != -1, VALUES(cs_hours), cs_hours),
-        faceit_level = IF(VALUES(faceit_level) != -1, VALUES(faceit_level), faceit_level),
-        faceit_elo = IF(VALUES(faceit_elo) != -1, VALUES(faceit_elo), faceit_elo),
-        faceit_kd = IF(VALUES(faceit_kd) != -1, VALUES(faceit_kd), faceit_kd),
-        faceit_date = IF(VALUES(faceit_elo) != -1, VALUES(faceit_date), faceit_date),
-        hours_updated_at = IF(VALUES(cs_hours) != -1, VALUES(hours_updated_at), hours_updated_at),
+        rank_updated_at = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(rank_updated_at), rank_updated_at),
+        cs2_rank = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(cs2_rank), cs2_rank),
+        cs_hours = IF(VALUES(cs_hours) IS NOT NULL, VALUES(cs_hours), cs_hours),
+        faceit_level = IF(VALUES(faceit_level) IS NOT NULL, VALUES(faceit_level), faceit_level),
+        faceit_elo = IF(VALUES(faceit_elo) IS NOT NULL, VALUES(faceit_elo), faceit_elo),
+        faceit_kd = IF(VALUES(faceit_kd) IS NOT NULL, VALUES(faceit_kd), faceit_kd),
+        faceit_date = IF(VALUES(faceit_elo) IS NOT NULL, VALUES(faceit_date), faceit_date),
+        hours_updated_at = IF(VALUES(cs_hours) IS NOT NULL, VALUES(hours_updated_at), hours_updated_at),
         manual_external_rank = VALUES(manual_external_rank)
     `;
 
