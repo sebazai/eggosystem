@@ -47,6 +47,10 @@ async function assignCaptain(page: Page) {
       }
     }
   }
+
+  await expect(
+    page.getByText("There must be exactly one captain and one co-captain")
+  ).not.toBeVisible();
 }
 
 // Helper function to set up the form to the team FACEIT ID input stage
@@ -696,9 +700,7 @@ test.describe("Signup Form", () => {
       await steamIdInput.focus();
       await steamIdInput.fill("66561198999999913"); // NoFaceitRankPlayer - has CS2 rank but no FaceIT rank
       await page.keyboard.press("Tab");
-
-      // Wait for validation to complete
-      await page.waitForTimeout(2000);
+      await steamIdInput.blur();
 
       // Verify red border appears (indicates validation failure due to missing FaceIT rank)
       await expect(steamIdInput).toHaveClass(/border-red-500/);
@@ -719,64 +721,6 @@ test.describe("Signup Form", () => {
       );
       await expect(externalRankError).toContainText(
         "or open a ticket in the Kanaliiga Discord if the problem persists"
-      );
-    });
-
-    test("should not show external rank error for Kanaliiga platform", async ({
-      page
-    }) => {
-      // This test would require a Kanaliiga season, but we can test the logic
-      // by checking that the error only shows for FACEIT platform
-
-      // Set up form to players section using existing team_id 999
-      await setupFormToPlayersSectionWithTeam999(page);
-
-      // Test player without FaceIT rank
-      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
-      await expect(steamIdInput).toBeVisible();
-
-      await steamIdInput.focus();
-      await steamIdInput.fill("66561198999999913"); // NoFaceitRankPlayer
-      await page.keyboard.press("Tab");
-
-      // Wait for validation to complete
-      await page.waitForTimeout(2000);
-
-      // Verify the error shows for FACEIT platform (current season platform)
-      const externalRankError = page.locator(
-        '[data-testid="external-rank-error-0"]'
-      );
-      await expect(externalRankError).toBeVisible();
-      await expect(externalRankError).toContainText("FACEIT");
-    });
-
-    test("should show external rank error with correct platform name", async ({
-      page
-    }) => {
-      // Set up form to players section using existing team_id 999
-      await setupFormToPlayersSectionWithTeam999(page);
-
-      // Test player without FaceIT rank
-      const steamIdInput = page.locator('[data-testid="steam-id-input-0"]');
-      await expect(steamIdInput).toBeVisible();
-
-      await steamIdInput.focus();
-      await steamIdInput.fill("66561198999999913"); // NoFaceitRankPlayer
-      await page.keyboard.press("Tab");
-
-      // Wait for validation to complete
-      await page.waitForTimeout(2000);
-
-      // Verify the error message contains the correct platform name
-      const externalRankError = page.locator(
-        '[data-testid="external-rank-error-0"]'
-      );
-      await expect(externalRankError).toBeVisible();
-      await expect(externalRankError).toContainText("FACEIT");
-
-      // Verify the error message is properly formatted
-      await expect(externalRankError).toContainText(
-        "Could not detect external FACEIT rank for the player"
       );
     });
 
@@ -808,9 +752,6 @@ test.describe("Signup Form", () => {
         await page.keyboard.press("Tab");
       }
 
-      // Wait for all validations to complete
-      await page.waitForTimeout(3000);
-
       // Verify the external rank error is visible for the first player
       const externalRankError = page.locator(
         '[data-testid="external-rank-error-0"]'
@@ -840,6 +781,10 @@ test.describe("Signup Form", () => {
           await finalTermsCheckbox.click();
         }
       }
+
+      await expect(externalRankError).toContainText(
+        "Could not detect external FACEIT rank for the player"
+      );
 
       // Check if submit button becomes enabled despite external rank error
       const submitButton = page

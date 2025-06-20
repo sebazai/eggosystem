@@ -30,7 +30,7 @@ export const getFaceITGameRank = async (
   if (isE2EMode) {
     // Special case for our test player without FaceIT rank
     if (steam_id === "66561198999999913") {
-      return null;
+      throw new Error("No FaceIT rank found");
     }
 
     return {

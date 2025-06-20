@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 # Testing Strategy Rule
 
@@ -126,3 +126,4 @@ pnpm test:all
 - **`pnpm test:tdd`**: TDD Parallel mode
 - **Maintain separation**: Keep fast feedback for development
 - **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
+
