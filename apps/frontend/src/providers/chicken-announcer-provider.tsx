@@ -42,14 +42,11 @@ export const ChickenAnnouncerProvider = ({
   });
 
   const showChicken = (options = {}) => {
-    console.log("showChicken called with options:", options);
     setConfig((prev) => ({ ...prev, ...options }));
     setShowAnnouncer(true);
-    console.log("showAnnouncer set to true");
   };
 
   const hideChicken = () => {
-    console.log("hideChicken called");
     setShowAnnouncer(false);
   };
 
