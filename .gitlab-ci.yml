@@ -317,15 +317,10 @@ test-e2e:frontend:
     - export PRIVACY_POLICY_VERSION=1
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
-    - |
-      pnpm --filter=backend seed # Run regular seeding
-      pnpm --filter=backend seed:e2e # Run seeding for test environment
-      echo "🔍 Seeding complete"
     - pnpm --filter=backend dev:e2e &
     # - pnpm --filter=backend start &
   script:
     - unset NODE_ENV
-    - sleep 10
     - pnpm --filter=frontend test:e2e
   artifacts:
     when: always
