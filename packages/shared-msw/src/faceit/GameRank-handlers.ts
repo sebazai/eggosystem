@@ -5,7 +5,8 @@ import {
   faceitNetworkErrorSteamId,
   faceitNotFoundSteamId,
   faceitValidSteamId,
-  faceitValidSteamIdDecayed
+  faceitValidSteamIdDecayed,
+  faceitCs2EmptyMetadataSteamId
 } from "./test-ids";
 
 export const faceitPlayerGameRankHandlers = [
@@ -32,6 +33,18 @@ export const faceitPlayerGameRankHandlers = [
           cs2: {
             faceit_elo: 1500,
             skill_level: 7
+          }
+        },
+        player_id: gamePlayerId
+      });
+    }
+
+    if (gamePlayerId === faceitCs2EmptyMetadataSteamId) {
+      return HttpResponse.json({
+        games: {
+          cs2: {
+            faceit_elo: 1800,
+            skill_level: 8
           }
         },
         player_id: gamePlayerId

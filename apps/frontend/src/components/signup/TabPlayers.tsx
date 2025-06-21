@@ -713,20 +713,30 @@ export const TabPlayers = ({
                       data-testid={`hours-error-${index}`}
                     >
                       <span>
-                        Could not detect the hours for the player, please ensure
+                        Could not detect the hours for the player. Please ensure
                         that the{" "}
                         <Link
-                          href={
-                            "https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
-                          }
+                          href="https://help.steampowered.com/en/faqs/view/588C-C67D-0251-C276"
                           target="_blank"
                           rel="noreferrer"
                           className="inline text-kanaliiga-orange"
                         >
-                          Steam profile is public
+                          Steam profile and Game details are set to public
                         </Link>
-                        . If the profile is public, please open a ticket in the
-                        Kanaliiga Discord.
+                        .<br />
+                        Also, make sure the{" "}
+                        <strong>
+                          &quot;Always keep my total playtime private even if
+                          users can see my game details&quot;
+                        </strong>{" "}
+                        option is <strong>unchecked</strong>.<br />
+                        <em>
+                          Note: Changes to Steam privacy settings may take a few
+                          minutes to take effect.
+                        </em>
+                        <br />
+                        If the profile is correctly set to public and the issue
+                        persists, please open a ticket in the Kanaliiga Discord.
                       </span>
                     </SignupPlayerNotification>
                   )}

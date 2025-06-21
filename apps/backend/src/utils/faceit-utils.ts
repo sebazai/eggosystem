@@ -25,6 +25,12 @@ export const applyDecay = (
 ) => {
   const clamp = (num: number, min: number) => Math.max(num, min);
   const currentTime = new Date().getTime();
+
+  // Check if the last_match date is in the future
+  if (last_match > currentTime) {
+    throw new BadRequestError("Last match date cannot be in the future");
+  }
+
   const monthsDiff = getMonthDifference(last_match, currentTime);
 
   let decay = 0;

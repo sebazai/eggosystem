@@ -126,6 +126,14 @@ const getFaceITMetaData = async (
       signal: controller.signal
     });
     const gameData = await gameResponse.json();
+
+    // In case we find a CS2 FaceIT rank, but no metadata, this means the player has a FaceIT CS2 rank,
+    // but has not played any CS2 games. We check if there are CSGO games, get the latest match, and apply decay.
+    if (game === "cs2" && gameData.items.length === 0) {
+      // Return metadata
+      return getFaceITMetaData(faceit_player_id, "csgo");
+    }
+
     const last_match = new Date(
       gameData.items[0]["stats"]["Created At"]
     ).getTime();

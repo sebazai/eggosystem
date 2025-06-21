@@ -1,5 +1,9 @@
 import { http, HttpResponse } from "msw";
-import { faceitValidSteamId, faceitValidSteamIdDecayed } from "./test-ids";
+import {
+  faceitValidSteamId,
+  faceitValidSteamIdDecayed,
+  faceitCs2EmptyMetadataSteamId
+} from "./test-ids";
 
 export const faceitMetadataHandlers = [
   http.get<{ faceit_player_id: string; game: string }>(
@@ -29,6 +33,36 @@ export const faceitMetadataHandlers = [
             {
               stats: {
                 "Created At": lastMatchSevenMonthsAgo
+              }
+            }
+          ]
+        });
+      }
+
+      if (
+        faceit_player_id === faceitCs2EmptyMetadataSteamId &&
+        game === "cs2"
+      ) {
+        // Extraordinary case: CS2 metadata returns empty items array
+        return HttpResponse.json({
+          items: []
+        });
+      }
+
+      if (
+        faceit_player_id === faceitCs2EmptyMetadataSteamId &&
+        game === "csgo"
+      ) {
+        // When CS2 metadata is empty, it falls back to CSGO metadata
+        // Return a date 3 years in the past
+        const threeYearsAgo = new Date(
+          new Date().getTime() - 3 * 365 * 24 * 60 * 60 * 1000
+        ).getTime();
+        return HttpResponse.json({
+          items: [
+            {
+              stats: {
+                "Created At": threeYearsAgo
               }
             }
           ]
@@ -81,6 +115,32 @@ export const faceitMetadataHandlers = [
           lifetime: {
             "Average K/D Ratio": "1.2",
             Matches: "100"
+          }
+        });
+      }
+
+      if (
+        faceit_player_id === faceitCs2EmptyMetadataSteamId &&
+        game === "cs2"
+      ) {
+        // CS2 stats for the extraordinary case
+        return HttpResponse.json({
+          lifetime: {
+            "Average K/D Ratio": "1.5",
+            Matches: "75"
+          }
+        });
+      }
+
+      if (
+        faceit_player_id === faceitCs2EmptyMetadataSteamId &&
+        game === "csgo"
+      ) {
+        // CSGO stats for the fallback case
+        return HttpResponse.json({
+          lifetime: {
+            "Average K/D Ratio": "1.8",
+            Matches: "200"
           }
         });
       }
