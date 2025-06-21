@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   VerifyEmailSuccessButton,
   VerifyEmailErrorButton
-} from "../../app/(main)/(content-container)/verify-email/verify-email-buton";
+} from "@/components/ui/VerifyEmailButton";
 
 // Mock dependencies
 jest.mock("next/navigation", () => ({

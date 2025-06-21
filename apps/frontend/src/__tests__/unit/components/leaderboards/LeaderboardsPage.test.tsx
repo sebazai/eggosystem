@@ -13,11 +13,11 @@ jest.mock("@/hooks/data/filtered/useLeaderboards", () => ({
 }));
 
 // Mock child components
-jest.mock("@/components/filters/multi-filters", () => ({
+jest.mock("@/components/filters/MultiFilters", () => ({
   MultiFilters: () => <div data-testid="multi-filters">MultiFilters</div>
 }));
 
-jest.mock("@/components/leaderboards/leaderboards-grid", () => ({
+jest.mock("@/components/leaderboards/LeaderboardsGrid", () => ({
   LeaderboardsGrid: () => (
     <div data-testid="leaderboards-grid">LeaderboardsGrid</div>
   )

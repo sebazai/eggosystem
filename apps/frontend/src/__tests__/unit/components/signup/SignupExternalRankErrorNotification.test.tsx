@@ -31,7 +31,7 @@ jest.mock("@/lib/apiClient", () => ({
 }));
 
 // Mock the icons component
-jest.mock("@/components/icons", () => ({
+jest.mock("@/components/ui/icons", () => ({
   Spinner: () => <div data-testid="spinner">Loading...</div>,
   TooltipIcon: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -39,16 +39,16 @@ jest.mock("@/components/icons", () => ({
 }));
 
 // Mock the FaceIT level icon
-jest.mock("@/components/profile/faceit-level", () => ({
+jest.mock("@/components/profile/FaceITLevelIcon", () => ({
   FaceITLevelIcon: ({ level }: { level: number }) => (
     <div data-testid={`faceit-level-${level}`}>FaceIT Level {level}</div>
   )
 }));
 
 // Mock the CS2 premier rank badge
-jest.mock("@/components/profile/cs2-premier-rank", () => ({
-  CS2PremierRankBadge: ({ rankScore }: { rankScore: number }) => (
-    <div data-testid={`cs2-rank-${rankScore}`}>CS2 Rank {rankScore}</div>
+jest.mock("@/components/profile/CS2PremierRankBadge", () => ({
+  CS2PremierRankBadge: () => (
+    <div data-testid="cs2-premier-rank">CS2 Premier Rank</div>
   )
 }));
 

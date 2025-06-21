@@ -1356,3 +1356,93 @@ This command automatically:
 - **Test Maintainability**: Tests are easy to understand and modify
 - **Test Performance**: Tests run quickly and efficiently
 - **Test Documentation**: Tests serve as living documentation
+
+## Additional Rule: Always Verify Changes by Running Tests
+
+After making any code or test changes, always run the relevant test suite (or the full suite if appropriate) to verify that:
+
+- The new or updated tests pass
+- No regressions are introduced
+- The code behaves as expected
+
+This step is mandatory for every TDD cycle and for any refactor or bug fix. Document test results if required by the workflow.
+
+**Tip:** When verifying changes, prefer running only the relevant test file for speed and efficiency:
+
+```bash
+pnpm --filter=frontend test -- path/to/file.test.tsx
+pnpm --filter=backend test -- path/to/file.test.ts
+```
+
+Use this targeted command during TDD or focused debugging, unless a full suite run is required.
+
+## Debugging Pattern: Start Simple, Grow from There
+
+### The Fundamental Issue: Premature Complexity Escalation
+
+When debugging, avoid the cognitive bias of immediately jumping to complex solutions. The pattern is:
+
+```
+Simple Problem → Complex Hypothesis → Complex Solution → More Problems → Even More Complex Solutions
+```
+
+Instead, follow the **"Ladder of Complexity"** approach:
+
+### The Ladder of Complexity Rule
+
+Always start at the bottom rung and work your way up:
+
+1. **Rung 1: Obvious Changes** - What just changed? (file moves, renames, etc.)
+2. **Rung 2: Import/Path Issues** - Are references still valid?
+3. **Rung 3: Configuration Issues** - Are settings/configs correct?
+4. **Rung 4: Logic Issues** - Is the actual code logic wrong?
+5. **Rung 5: Architecture Issues** - Are there deeper structural problems?
+
+**Rule**: Don't jump to Rung 4 or 5 until you've eliminated 1-3.
+
+### The "Occam's Razor" Approach
+
+When debugging, ask: "What's the simplest explanation for this error?"
+
+- File moved → paths broken → fix paths
+- Not: File moved → complex React architecture issues → rewrite entire test strategy
+
+### The "Change Correlation" Principle
+
+If something breaks immediately after a change, the cause is likely **directly related** to that change, not some pre-existing complex issue.
+
+### Trust User Domain Knowledge
+
+When a user says "we only moved files, how can this break?" - they're usually right. Start with the most recent change and work backward, not forward into complexity.
+
+### Ask the User for Context
+
+Before jumping into complex debugging scenarios, ask the user:
+
+1. **"Did this work before?"** - If yes, focus on what changed
+2. **"What did you do before it stopped working?"** - The cause is likely in the recent changes
+3. **"What was the last thing that worked?"** - This gives you a baseline to compare against
+
+**Example**:
+
+- User: "The test is failing"
+- You: "Did this test pass before? What was the last change you made?"
+- User: "Yes, it worked before I moved the files"
+- You: "Then let's check if the import paths are still correct after the move"
+
+This simple questioning can save hours of complex debugging by focusing on the actual cause.
+
+### Example Pattern
+
+**Problem**: Test fails after file refactoring
+**Wrong Approach**: Assume complex React/import/architecture issues
+**Right Approach**:
+
+1. Check if import paths are updated
+2. Check if mock paths match new component structure
+3. Check if any new components need mocking
+4. Only then consider complex scenarios
+
+### General Rule
+
+When debugging, always start with the **most recent change** and work backward, not forward into complexity.

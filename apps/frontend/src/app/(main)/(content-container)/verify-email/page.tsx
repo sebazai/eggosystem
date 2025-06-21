@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import {
   VerifyEmailErrorButton,
   VerifyEmailSuccessButton
-} from "./verify-email-buton";
+} from "../../../../components/ui/VerifyEmailButton";
 import { envConfig } from "@/configs/env";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { PlayerValuesFloatingWindow } from "../../components/dashboard/PlayerValuesFloatingWindow";
+import { PlayerValuesFloatingWindow } from "@/components/dashboard/PlayerValuesFloatingWindow";
 import type { PlayerSortterValues } from "@eggosystem/types";
 
 // Mock ResizeObserver for React 19 + Radix UI compatibility

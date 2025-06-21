@@ -37,38 +37,25 @@ jest.mock("swr", () => ({
     mutate: jest.fn()
   })
 }));
-jest.mock("@/components/profile/steam-login", () => ({
+jest.mock("@/components/profile/SteamLoginButton", () => ({
   SteamLoginButton: () => (
     <button data-testid="steam-login">Login with Steam</button>
   )
 }));
-jest.mock("@/components/profile/email-verified-tooltip", () => ({
+jest.mock("@/components/profile/EmailVerifiedIcon", () => ({
   EmailVerifiedIcon: () => <span data-testid="email-verified-icon">✓</span>
 }));
-jest.mock("@/components/icons", () => ({
+
+// Mock icons with a simple implementation
+jest.mock("@/components/ui/icons", () => ({
   TooltipIcon: ({ text }: { text: string }) => (
     <span data-testid="tooltip-icon" title={text}>
       ?
     </span>
   )
 }));
-jest.mock("@/components/ui/required-form-label", () => ({
-  RequiredFormLabel: ({
-    children,
-    required,
-    ...props
-  }: {
-    children: React.ReactNode;
-    required?: boolean;
-    [key: string]: unknown;
-  }) => (
-    <label {...props} data-testid="required-form-label">
-      {children}
-      {required && <span>*</span>}
-    </label>
-  )
-}));
-jest.mock("@/components/layout/content-container", () => ({
+
+jest.mock("@/components/layout/ContentContainer", () => ({
   ContentContainer: ({
     children,
     classNames
@@ -79,6 +66,20 @@ jest.mock("@/components/layout/content-container", () => ({
     <div data-testid="content-container" className={classNames}>
       {children}
     </div>
+  )
+}));
+
+jest.mock("@/components/ui/RequiredFormLabel", () => ({
+  RequiredFormLabel: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <label {...props} data-testid="required-form-label">
+      {children}
+    </label>
   )
 }));
 
