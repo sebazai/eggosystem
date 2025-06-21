@@ -21,7 +21,7 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
     }
 
     const rankLower = rank.toLowerCase();
-    return createNextUrl(`/images/ranks/${rankLower}${subrank}.jpg`);
+    return createNextUrl(`/images/ranks/${rankLower}${subrank}.png`);
   };
 
   // Get rank alt text description
@@ -37,8 +37,8 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
   const rankDescription = getRankDescription(data.rank, data.subrank);
 
   return (
-    <div className="bg-gray-800 p-3 rounded-lg mb-4">
-      <h2 className="text-lg font-bold mb-3">Trophies</h2>
+    <div className="bg-card p-3 rounded-lg mb-4">
+      <h2 className="text-base font-bold mb-3">Trophies</h2>
       <div className="flex gap-3 items-center flex-wrap">
         {/* Kanarank trophy */}
         <div className="flex flex-col items-center">
