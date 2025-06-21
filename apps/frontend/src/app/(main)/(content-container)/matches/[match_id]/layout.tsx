@@ -1,10 +1,10 @@
-import { MatchHeader } from "@/components/matches/match/match-header";
+import { MatchHeader } from "@/components/matches/match/MatchHeader";
 import type { MatchInfo } from "@eggosystem/types";
 import type React from "react";
 import { getMatchInfo } from "./utils";
-import { CardContainer } from "@/components/layout/card-container";
-import { ContentContainer } from "@/components/layout/content-container";
-import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
+import { CardContainer } from "@/components/layout/CardContainer";
+import { ContentContainer } from "@/components/layout/ContentContainer";
+import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { createPageMetadata } from "@/lib/metadata";
 
 interface LayoutProps {

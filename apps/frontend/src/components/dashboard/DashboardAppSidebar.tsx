@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { createBaseUrl, createDashboardNextUrl } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { Spinner } from "../icons";
+import { Spinner } from "../ui/icons";
 interface SubMenuItem {
   title: string;
   url: string;

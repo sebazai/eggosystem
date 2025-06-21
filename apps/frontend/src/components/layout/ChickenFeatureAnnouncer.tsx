@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useChickenAnnouncer } from "@/providers/chicken-announcer-provider";
+import { useChickenAnnouncer } from "@/providers/ChickenAnnouncerProvider";
 
 interface ChickenFeatureAnnouncerProps {
   enabled?: boolean;

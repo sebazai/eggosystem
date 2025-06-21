@@ -7,7 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
-import { ThemeProvider } from "@/providers/theme-provider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { createPageMetadata } from "@/lib/metadata";
 
 const META_THEME_COLORS = {

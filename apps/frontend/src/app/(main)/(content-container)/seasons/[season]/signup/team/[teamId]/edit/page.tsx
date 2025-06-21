@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
 import type { Season, SeasonDetails, Team } from "@eggosystem/types";
-import { SignupEditForm } from "@/components/signup/signup-edit-form";
+import { SignupEditForm } from "@/components/signup/SignupEditForm";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
 

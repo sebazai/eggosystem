@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { SteamLoginButton } from "../profile/steam-login";
+import { SteamLoginButton } from "../profile/SteamLoginButton";
 
 type WithRoleProtectionProps = {
   children: React.ReactNode;

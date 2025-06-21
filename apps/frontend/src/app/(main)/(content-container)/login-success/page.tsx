@@ -1,6 +1,6 @@
 "use client";
 
-import { ContentContainer } from "@/components/layout/content-container";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 

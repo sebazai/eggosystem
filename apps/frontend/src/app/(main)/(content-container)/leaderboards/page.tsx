@@ -1,4 +1,4 @@
-import { LeaderboardsPage } from "@/components/leaderboards/leaderboards-page";
+import { LeaderboardsPage } from "@/components/leaderboards/LeaderboardsPage";
 import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 import React from "react";

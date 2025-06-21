@@ -1,14 +1,14 @@
 "use server";
 
-import HeroSection from "@/components/layout/hero-section";
-import { SignupButton } from "@/components/signup/call-to-action-signup-button";
+import HeroSection from "@/components/layout/HeroSection";
+import { SignupButton } from "@/components/signup/SignupButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { headers } from "next/headers";
 import { userAgent } from "next/server";
-import { CsMainSponsors } from "@/components/sponsors/cs-main-sponsors";
-import { KanaMainPartners } from "@/components/sponsors/kana-main-partners";
-import { SponsorContainer } from "@/components/sponsors/sponsor-container";
-import { CsSupportingOrgs } from "@/components/sponsors/cs-supporting-orgs";
+import { CsMainSponsors } from "@/components/sponsors/CsMainSponsors";
+import { KanaMainPartners } from "@/components/sponsors/KanaMainPartners";
+import { SponsorContainer } from "@/components/sponsors/SponsorContainer";
+import { CsSupportingOrgs } from "@/components/sponsors/CsSupportingOrgs";
 import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";

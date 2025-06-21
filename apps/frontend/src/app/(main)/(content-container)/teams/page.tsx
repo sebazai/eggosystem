@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { MultiFilters } from "@/components/filters/multi-filters";
-import { TeamsGrid } from "@/components/teams/teams-grid";
-import { ContentContainer } from "@/components/layout/content-container";
+import { MultiFilters } from "@/components/filters/MultiFilters";
+import { TeamsGrid } from "@/components/teams/TeamsGrid";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 import { useFilters } from "@/context/FilterContext";
-import { CardContainer } from "@/components/layout/card-container";
+import { CardContainer } from "@/components/layout/CardContainer";
 
 export default function TeamsPage() {
   const { filterParams, isLoading, error, isValidating, areFiltersEmpty } =

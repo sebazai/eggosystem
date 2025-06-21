@@ -1,7 +1,7 @@
 import { envConfig } from "@/configs/env";
 import type { Metadata } from "next";
-import { SignupWelcome } from "@/components/signup/signup-welcome";
-import { CardContainer } from "@/components/layout/card-container";
+import { SignupWelcome } from "@/components/signup/SignupWelcome";
+import { CardContainer } from "@/components/layout/CardContainer";
 import { createPageMetadata } from "@/lib/metadata";
 
 type Props = {

@@ -1,4 +1,4 @@
-import ProfileForm from "@/components/profile/profile-form";
+import ProfileForm from "@/components/profile/ProfileForm";
 import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 

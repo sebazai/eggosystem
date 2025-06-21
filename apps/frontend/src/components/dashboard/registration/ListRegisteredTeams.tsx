@@ -1,7 +1,7 @@
 "use client";
 
 import { useRegisteredTeams } from "@/hooks/data/dashboard/useRegisteredTeams";
-import { Spinner } from "@/components/icons";
+import { Spinner } from "@/components/ui/icons";
 import {
   useReactTable,
   getCoreRowModel,

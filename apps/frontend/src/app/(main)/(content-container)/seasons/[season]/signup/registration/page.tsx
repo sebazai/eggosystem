@@ -1,6 +1,6 @@
 import { envConfig } from "@/configs/env";
-import { SignupForm } from "@/components/signup/signup-form";
-import { SignupInfo } from "@/components/signup/signup-info";
+import { SignupForm } from "@/components/signup/SignupForm";
+import { SignupInfo } from "@/components/signup/SignupInfo";
 import type { SeasonDetails } from "@eggosystem/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";

@@ -1,9 +1,9 @@
 import React from "react";
-import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
+import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import type { Metadata, ResolvedMetadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { Team } from "@eggosystem/types";
-import { TeamPageWithFilters } from "@/components/teams/team-page";
+import { TeamPageWithFilters } from "@/components/teams/TeamPageWithFilters";
 import { createPageMetadata } from "@/lib/metadata";
 import { createBaseUrl, createTeamLogoUrl } from "@/lib/utils";
 

@@ -1,11 +1,11 @@
 import React from "react";
-import { AutoBreadcrumbs } from "@/components/layout/auto-breadcrumbs";
-import { PlayerPageWithFilters } from "@/components/players/player-page";
+import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
+import { PlayerPageWithFilters } from "@/components/players/PlayerPageWithFilters";
 import type { Metadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { SteamPlayer } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
-import { ContentContainer } from "@/components/layout/content-container";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 
 interface PlayerDetailsProps {
   params: Promise<{

@@ -28,7 +28,7 @@ import {
 import { useSelectableTeams } from "@/hooks/data/dashboard/useSelectableTeams";
 import { useSelectableOrgs } from "@/hooks/data/dashboard/useSelectableOrgs";
 import { PlusIcon } from "lucide-react";
-import { NewOrganizationForm } from "@/components/organizations/new-organization-form";
+import { NewOrganizationForm } from "@/components/organizations/NewOrganizationForm";
 import { useState } from "react";
 import {
   FormControl,

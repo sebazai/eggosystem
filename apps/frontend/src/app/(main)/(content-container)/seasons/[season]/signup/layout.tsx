@@ -2,7 +2,7 @@ import type { SeasonDetails } from "@eggosystem/types";
 import type React from "react";
 
 import { envConfig } from "@/configs/env";
-import { ContentContainer } from "@/components/layout/content-container";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 
 interface LayoutProps {
   children: React.ReactNode;

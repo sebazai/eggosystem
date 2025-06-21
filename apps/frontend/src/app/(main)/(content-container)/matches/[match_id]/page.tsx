@@ -1,7 +1,7 @@
 import type { MatchInfo } from "@eggosystem/types";
 import { getMatchInfo } from "./utils";
-import { MatchStats } from "@/components/matches/match/match-stats";
-import { GameStats } from "@/components/matches/match/game/game-stats";
+import { MatchStats } from "@/components/matches/match/MatchStats";
+import { GameStats } from "@/components/matches/match/game/GameStats";
 import { createExternalMatchRoomUrl } from "@/components/matches/match/utils";
 
 interface PageProps {

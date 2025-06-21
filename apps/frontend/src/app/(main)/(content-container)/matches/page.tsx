@@ -1,7 +1,7 @@
 import _ from "lodash";
 import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
-import { RecentMatches } from "@/components/matches/recent-matches-page";
+import { RecentMatches } from "@/components/matches/RecentMatches";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Recent matches",

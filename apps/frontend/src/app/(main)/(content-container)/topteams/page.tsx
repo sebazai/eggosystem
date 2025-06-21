@@ -1,4 +1,4 @@
-import { TopTeamsPage } from "@/components/topteams/top-teams-page";
+import { TopTeamsPage } from "@/components/topteams/TopTeamsPage";
 import { createPageMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
 import React from "react";

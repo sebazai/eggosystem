@@ -20,7 +20,7 @@ import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
-import { PlayerValuesFloatingWindow } from "@/components/PlayerValuesFloatingWindow";
+import { PlayerValuesFloatingWindow } from "@/components/dashboard/PlayerValuesFloatingWindow";
 
 // Enhanced line chart component using shadcn Chart
 const MiniChart = ({ data }: { data: number[] }) => {
