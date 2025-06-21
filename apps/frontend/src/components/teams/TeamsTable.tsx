@@ -3,7 +3,6 @@ import { createTeamLogoUrl, type FilterParamsQuery } from "@/lib/utils";
 import { PlayerTable } from "../players/PlayerTable";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { TeamMatchHistory } from "./TeamMatchHistory";
-import { TeamMapStats } from "./TeamMapStats";
 import { TeamWinLossDetails } from "./TeamWinLossDetails";
 import { useFilteredTeamById } from "@/hooks/data/filtered/useFilteredTeamById";
 import { NextImageFallback } from "../layout/NextImageFallback";
@@ -86,9 +85,6 @@ export const TeamsTable = ({ filterQueryParams, teamId }: TeamTableProps) => {
           <PlayerCards teamId={teamId} filterQueryParams={filterQueryParams} />
         </div>
       </div>
-
-      {/* Map statistics section  - I will move this to map stats tab later on */}
-      <TeamMapStats teamId={teamId} filterQueryParams={filterQueryParams} />
 
       {/* Players Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
