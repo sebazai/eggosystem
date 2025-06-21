@@ -122,7 +122,9 @@ const data: { navMain: Array<MenuItem> } = {
   ]
 };
 
-export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+export function DashboardAppSidebar(
+  props: React.ComponentProps<typeof Sidebar>
+) {
   const auth = useAuth();
 
   if (!auth.user) {

@@ -1,4 +1,4 @@
-import { WithRoleProtection } from "@/components/dashboard/with-role-protection";
+import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 
 export default async function Page() {
   return (

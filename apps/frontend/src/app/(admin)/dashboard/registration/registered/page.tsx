@@ -1,5 +1,5 @@
-import { ListRegisteredTeams } from "@/components/dashboard/registration/list-registered-teams";
-import { WithRoleProtection } from "@/components/dashboard/with-role-protection";
+import { ListRegisteredTeams } from "@/components/dashboard/registration/ListRegisteredTeams";
+import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 
 export default async function Page() {
   return (

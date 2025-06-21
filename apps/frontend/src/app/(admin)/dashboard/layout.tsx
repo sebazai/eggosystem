@@ -1,5 +1,5 @@
-import { AppSidebar } from "@/components/dashboard/app-sidebar";
-import { DashboardBreadcrumbs } from "@/components/dashboard/dashboard-breadcrumbs";
+import { DashboardAppSidebar } from "@/components/dashboard/DashboardAppSidebar";
+import { DashboardBreadcrumbs } from "@/components/dashboard/DashboardBreadcrumbs";
 
 import { Separator } from "@/components/ui/separator";
 import {
@@ -15,7 +15,7 @@ export default async function Layout({
 }>) {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <DashboardAppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b">
           <div className="flex items-center gap-2 px-3">

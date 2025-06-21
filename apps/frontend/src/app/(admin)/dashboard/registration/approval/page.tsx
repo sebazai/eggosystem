@@ -1,5 +1,5 @@
-import { ManualPlayerApprovalForm } from "@/components/dashboard/registration/manual-approval-form";
-import { WithRoleProtection } from "@/components/dashboard/with-role-protection";
+import { ManualPlayerApprovalForm } from "@/components/dashboard/registration/ManualPlayerApprovalForm";
+import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Separator } from "@/components/ui/separator";
 
 export default async function Page() {

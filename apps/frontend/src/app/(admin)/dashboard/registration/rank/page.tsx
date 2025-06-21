@@ -1,5 +1,5 @@
-import { SeasonPlayerRankForm } from "@/components/dashboard/registration/manual-rank-form";
-import { WithRoleProtection } from "@/components/dashboard/with-role-protection";
+import { SeasonPlayerRankForm } from "@/components/dashboard/registration/SeasonPlayerRankForm";
+import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Separator } from "@/components/ui/separator";
 
 export default async function Page() {
