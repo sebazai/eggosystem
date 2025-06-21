@@ -33,7 +33,7 @@ export const NewOrganizationForm = <T extends FieldValues>({
               <Input
                 {...field}
                 placeholder="Insert organization name"
-                data-testid="new-org-name"
+                data-testid="organization-name-input"
               />
             </FormControl>
             <FormMessage />
@@ -50,7 +50,7 @@ export const NewOrganizationForm = <T extends FieldValues>({
               <Input
                 {...field}
                 placeholder="Insert y-tunnus (2992559-2)"
-                data-testid="new-org-business-id"
+                data-testid="organization-business-id-input"
               />
             </FormControl>
             <FormMessage />
@@ -67,7 +67,7 @@ export const NewOrganizationForm = <T extends FieldValues>({
               <Input
                 {...field}
                 placeholder="Example: https://kanaliiga.fi/"
-                data-testid="new-org-website"
+                data-testid="organization-website-input"
               />
             </FormControl>
             <FormMessage />

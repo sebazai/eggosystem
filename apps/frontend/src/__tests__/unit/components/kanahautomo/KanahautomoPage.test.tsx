@@ -174,23 +174,6 @@ describe("KanahautomoPage", () => {
     expect(screen.getAllByText("Waiting")).toHaveLength(1);
   });
 
-  it("displays loading state for organization status", () => {
-    mockUseKanahautomoOrganizationStatus.mockReturnValue({
-      orgStatus: [],
-      orgStatusLoading: true,
-      orgStatusError: undefined,
-      isValidating: true
-    });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    expect(
-      screen.getByText("Loading organization status...")
-    ).toBeInTheDocument();
-  });
-
   it("displays error state for organization status", () => {
     mockUseKanahautomoOrganizationStatus.mockReturnValue({
       orgStatus: [],
@@ -292,9 +275,13 @@ describe("KanahautomoPage", () => {
     });
     // Wait for the form fields to appear
     await waitFor(() => {
-      expect(screen.getByTestId("new-org-name")).toBeInTheDocument();
-      expect(screen.getByTestId("new-org-business-id")).toBeInTheDocument();
-      expect(screen.getByTestId("new-org-website")).toBeInTheDocument();
+      expect(screen.getByTestId("organization-name-input")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("organization-business-id-input")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("organization-website-input")
+      ).toBeInTheDocument();
     });
   });
 
@@ -349,9 +336,7 @@ describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
         <KanahautomoPage />
       </AuthProvider>
     );
-    expect(
-      screen.getByText("Loading organization status...")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
   it("shows error state for organization status", () => {
