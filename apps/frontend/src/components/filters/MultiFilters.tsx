@@ -128,6 +128,7 @@ const getFilterComponent = (
 
 export const MultiFilters = ({
   sortOrder = ["seasons", "leagues", "stages", "teams", "maps"],
+  hideFilters,
   ...props
 }: MultiFiltersProps) => {
   const searchParams = useSearchParams();
@@ -156,8 +157,28 @@ export const MultiFilters = ({
     window.history.replaceState(null, "", newUrl);
   };
 
-  // How many props are passed to FancyMultiSelect?
-  const columns = Math.round(Object.keys(props).length / 2);
+  // Filter out hidden filters from sortOrder
+  const visibleFilters = sortOrder.filter((key) => {
+    if (!hideFilters) return true;
+
+    switch (key) {
+      case "seasons":
+        return !hideFilters.seasons;
+      case "leagues":
+        return !hideFilters.leagues;
+      case "stages":
+        return !hideFilters.stages;
+      case "teams":
+        return !hideFilters.teams;
+      case "maps":
+        return !hideFilters.maps;
+      default:
+        return true;
+    }
+  });
+
+  // How many visible filters are there, + 1 for the clear filters button
+  const columns = Math.round(visibleFilters.length / 2) + 1;
   return (
     <div
       className={clsx(
@@ -170,7 +191,7 @@ export const MultiFilters = ({
         }
       )}
     >
-      {sortOrder.map((key) => {
+      {visibleFilters.map((key) => {
         return getFilterComponent(
           key,
           props[key] ?? [],
