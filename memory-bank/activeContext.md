@@ -186,65 +186,44 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 
 **TDD Workflow with test:watch (January 2025)**
 
+**Hybrid TDD Workflow - AI Assistant + User Collaboration:**
+
+**AI Assistant Role (Fast TDD Feedback):**
+
+- Use **targeted test runs** for immediate feedback during development
+- Focus on specific files being worked on
+- Get fast feedback in 5-10 seconds for Red-Green-Refactor cycles
+- Example: `pnpm test src/__tests__/controllers/leaderboards.controllers.test.ts`
+
+**User Role (System-Wide Monitoring):**
+
+- Run **`pnpm test:watch`** locally during development sessions
+- Press **`a`** to run all tests whenever needed to check system health
+- **Stop AI immediately** if any tests break or regressions are detected
+- Monitor for cross-cutting issues that targeted tests might miss
+
+**Benefits of Hybrid Approach:**
+
+- ✅ **Speed**: AI gets fast feedback for TDD cycles (5-10s vs 39s)
+- ✅ **Safety**: User catches regressions immediately across entire codebase
+- ✅ **Efficiency**: Best of both worlds - fast development + comprehensive monitoring
+- ✅ **Collaboration**: Clear roles and responsibilities
+
+**TDD Cycle with Hybrid Workflow:**
+
+1. **Red Phase**: AI writes test first → User watches for failures
+2. **Green Phase**: AI writes minimal implementation → User confirms no regressions
+3. **Refactor Phase**: AI improves code → User ensures system stability
+
 **Preferred TDD Command:**
 
 ```bash
-pnpm test:watch
-```
+# AI Assistant - Fast targeted feedback
+pnpm test src/__tests__/specific-feature.test.ts  # 5-10s
 
-**TDD Cycle with Watch Mode:**
-
-1. **Red Phase**: Write test first → Watch shows it failing
-2. **Green Phase**: Write minimal implementation → Watch shows it passing
-3. **Refactor Phase**: Improve code → Watch confirms tests still pass
-
-**Watch Mode Features:**
-
-- **Press `a`**: Run all tests
-- **Press `f`**: Run only failed tests
-- **Press `o`**: Run tests related to changed files
-- **Press `p`**: Filter by filename pattern
-- **Press `t`**: Filter by test name pattern
-- **Press `q`**: Quit watch mode
-
-**Benefits of test:watch for TDD:**
-
-- **Continuous feedback** - Tests run automatically when files change
-- **Real-time results** - Immediate pass/fail status
-- **Rapid iteration** - No manual test re-running needed
-- **Interactive filtering** - Focus on specific tests or files
-
-**Recent TDD Success Example:**
-Successfully implemented TDD for `PlayerValuesFloatingWindow` component:
-
-- **17 comprehensive test cases** across 6 categories
-- **All component behaviors** including edge cases
-- **User interaction patterns** with proper event handling
-- **Responsive positioning logic** with viewport boundary testing
-- **Animation and transition states** with proper timing
-- **Data display and null handling** with type safety
-- **Accessibility requirements** for inclusive design
-
-**React 19 + Radix UI Testing Pattern Discovery (January 2025)**
-
-- ✅ **Identified root cause** of AggregateError in React 19 unit tests: Missing `ResizeObserver` polyfill for jsdom
-- ✅ **Discovered solution**: Add ResizeObserver mock at the top of test files when using Radix UI components
-- ✅ **Established testing pattern**: Always try ResizeObserver polyfill first before considering React downgrade
-- ✅ **Confirmed compatibility**: React 19 works perfectly with proper ResizeObserver polyfill
-
-**Key Testing Pattern for React 19 + Radix UI:**
-
-```typescript
-// Add this at the top of test files using Radix UI components
-beforeAll(() => {
-  global.ResizeObserver =
-    global.ResizeObserver ||
-    class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    };
-});
+# User - Continuous monitoring
+pnpm test:watch  # Running locally
+# Press 'a' whenever you want to check full system health
 ```
 
 **Testing Troubleshooting Priority:**
