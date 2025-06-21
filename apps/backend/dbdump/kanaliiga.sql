@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Apr 22, 2025 at 03:07 AM
--- Server version: 11.4.2-MariaDB
+-- Generation Time: Jun 21, 2025 at 06:55 AM
+-- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -20,6 +20,22 @@ SET time_zone = "+00:00";
 --
 -- Database: `kanaliiga`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `AccountPermissionScopes`
+--
+
+CREATE TABLE `AccountPermissionScopes` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `account_id` int(10) UNSIGNED NOT NULL,
+  `permission_id` int(10) UNSIGNED NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -43,12 +59,15 @@ CREATE TABLE `AccountRoles` (
 
 CREATE TABLE `Accounts` (
   `id` int(10) UNSIGNED NOT NULL,
-  `email` varchar(255) DEFAULT NULL,
   `work_email` varchar(255) DEFAULT NULL,
   `full_name` varchar(255) DEFAULT NULL,
   `discord` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `work_email_verified` tinyint(1) NOT NULL DEFAULT 0,
+  `work_email_token` varchar(255) DEFAULT NULL,
+  `work_email_token_expires_at` timestamp NULL DEFAULT NULL,
+  `is_work_email_personal_email` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -62,6 +81,27 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `AuditLog`
+--
+
+CREATE TABLE `AuditLog` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `action_type` varchar(255) NOT NULL,
+  `entity_type` varchar(255) NOT NULL,
+  `entity_id` bigint(20) DEFAULT NULL,
+  `user_id` int(10) UNSIGNED DEFAULT NULL,
+  `request_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`request_data`)),
+  `response_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`response_data`)),
+  `response_status` int(11) NOT NULL,
+  `response_message` varchar(255) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`)),
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `Games`
 --
 
@@ -70,30 +110,6 @@ CREATE TABLE `Games` (
   `name` varchar(255) NOT NULL,
   `abbreviation` varchar(255) NOT NULL,
   `app_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `knex_migrations`
---
-
-CREATE TABLE `knex_migrations` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `batch` int(11) DEFAULT NULL,
-  `migration_time` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `knex_migrations_lock`
---
-
-CREATE TABLE `knex_migrations_lock` (
-  `index` int(10) UNSIGNED NOT NULL,
-  `is_locked` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -134,9 +150,9 @@ CREATE TABLE `MapRoundStats` (
   `round_number` tinyint(3) UNSIGNED NOT NULL,
   `round_end_reason_info` enum('bomb_defused','target_bombed','target_saved','t_win','ct_win') NOT NULL,
   `ct_t` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`ct_t`)),
-  `first_kill` varchar(2) NOT NULL,
+  `first_kill` varchar(2) DEFAULT NULL,
   `plant_site` char(1) DEFAULT NULL
-) ;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -163,7 +179,30 @@ CREATE TABLE `Matches` (
   `best_of` tinyint(3) UNSIGNED NOT NULL,
   `match_date` date NOT NULL,
   `start_time` time NOT NULL,
-  `end_time` time NOT NULL
+  `end_time` time NOT NULL,
+  `external_match_room_id` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `MatchGameClips`
+--
+
+CREATE TABLE `MatchGameClips` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `clip_steam_id` bigint(20) DEFAULT NULL,
+  `clip_status` varchar(255) NOT NULL,
+  `clip_type` varchar(255) NOT NULL,
+  `clip_id` varchar(255) DEFAULT NULL,
+  `clip_request_id` varchar(255) DEFAULT NULL,
+  `clip_url` varchar(255) DEFAULT NULL,
+  `clip_thumbnail_url` varchar(255) DEFAULT NULL,
+  `clip_snapshot_url` varchar(255) DEFAULT NULL,
+  `clip_title` varchar(255) DEFAULT NULL,
+  `clip_length` varchar(255) DEFAULT NULL,
+  `additional_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`additional_data`))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -177,7 +216,8 @@ CREATE TABLE `MatchGames` (
   `match_id` int(10) UNSIGNED NOT NULL,
   `map_id` tinyint(3) UNSIGNED NOT NULL,
   `map_order` tinyint(3) UNSIGNED DEFAULT NULL,
-  `demofile` varchar(255) NOT NULL
+  `demofile` varchar(255) NOT NULL,
+  `regulation_rounds` tinyint(3) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -219,8 +259,9 @@ CREATE TABLE `Organizations` (
   `name` varchar(255) NOT NULL,
   `country` varchar(255) NOT NULL DEFAULT 'Finland',
   `organization_code` varchar(255) NOT NULL,
-  `logo` varchar(255) NOT NULL DEFAULT 'nologo.svg',
-  `website` varchar(255) NOT NULL
+  `logo` varchar(255) NOT NULL DEFAULT 'nologo.png',
+  `website` varchar(255) NOT NULL,
+  `sort_order` int(10) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -246,7 +287,6 @@ CREATE TABLE `PlayerStats` (
   `id` int(10) UNSIGNED NOT NULL,
   `steam_id` bigint(20) NOT NULL,
   `game_id` int(10) UNSIGNED NOT NULL,
-  `team` int(11) NOT NULL,
   `kills` tinyint(3) UNSIGNED NOT NULL,
   `deaths` tinyint(3) UNSIGNED NOT NULL,
   `assists` tinyint(3) UNSIGNED NOT NULL,
@@ -443,6 +483,48 @@ CREATE TABLE `SeasonLeagueTeams` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `SeasonPlayerApprovals`
+--
+
+CREATE TABLE `SeasonPlayerApprovals` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `season_id` int(10) UNSIGNED DEFAULT NULL,
+  `organization_id` int(10) UNSIGNED DEFAULT NULL,
+  `team_id` int(10) UNSIGNED DEFAULT NULL,
+  `approved_by_id` int(10) UNSIGNED DEFAULT NULL,
+  `approved_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `ticket_id` varchar(255) DEFAULT NULL,
+  `details` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `SeasonPlayerApprovals`
+--
+DELIMITER $$
+CREATE TRIGGER `check_team_or_organization` BEFORE INSERT ON `SeasonPlayerApprovals` FOR EACH ROW BEGIN
+      IF NEW.organization_id IS NULL AND NEW.team_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Either organization_id or team_id must be provided';
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `check_team_or_organization_update` BEFORE UPDATE ON `SeasonPlayerApprovals` FOR EACH ROW BEGIN
+      IF NEW.organization_id IS NULL AND NEW.team_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Either organization_id or team_id must be provided';
+      END IF;
+    END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `SeasonPlayerRanks`
 --
 
@@ -453,16 +535,18 @@ CREATE TABLE `SeasonPlayerRanks` (
   `rank_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
   `csgo_rank` int(11) DEFAULT -1,
   `cs2_rank` int(11) DEFAULT NULL,
-  `cs_hours` int(11) DEFAULT -1,
+  `cs_hours` int(11) DEFAULT NULL,
   `faceit_level` int(11) DEFAULT NULL,
-  `faceit_elo` int(11) DEFAULT 800,
+  `faceit_elo` int(11) DEFAULT NULL,
   `faceit_kd` decimal(3,2) DEFAULT NULL,
   `faceit_date` timestamp NULL DEFAULT '1970-01-01 10:00:00',
   `kana_elo` int(11) DEFAULT 0,
   `esportal_kd` decimal(4,2) DEFAULT NULL,
   `esportal_elo` int(11) DEFAULT NULL,
   `esportal_rank` int(11) DEFAULT NULL,
-  `hours_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00'
+  `hours_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
+  `manual_external_rank` tinyint(1) NOT NULL DEFAULT 0,
+  `manual_steam_rank` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -554,7 +638,8 @@ CREATE TABLE `SeasonTeamRegistrations` (
   `captain_steam_id` bigint(20) DEFAULT NULL,
   `co_captain_steam_id` bigint(20) DEFAULT NULL,
   `approved` tinyint(1) NOT NULL DEFAULT 0,
-  `external_platform_id` varchar(255) DEFAULT NULL
+  `external_platform_id` varchar(255) DEFAULT NULL,
+  `terms_and_conditions_approved` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -651,7 +736,7 @@ DELIMITER ;
 CREATE TABLE `SteamPlayers` (
   `steam_id` bigint(20) NOT NULL,
   `nickname` varchar(255) NOT NULL,
-  `account_id` int(10) UNSIGNED NOT NULL
+  `account_id` int(10) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -693,7 +778,7 @@ CREATE TABLE `Teams` (
   `id` int(10) UNSIGNED NOT NULL,
   `organization_id` int(10) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
-  `team_logo` varchar(255) NOT NULL DEFAULT 'nologo.svg',
+  `team_logo` varchar(255) NOT NULL DEFAULT 'nologo.png',
   `org_approved` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -726,6 +811,16 @@ DELIMITER ;
 --
 
 --
+-- Indexes for table `AccountPermissionScopes`
+--
+ALTER TABLE `AccountPermissionScopes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `accountpermissionscopes_account_id_foreign` (`account_id`),
+  ADD KEY `accountpermissionscopes_permission_id_foreign` (`permission_id`),
+  ADD KEY `accountpermissionscopes_season_id_foreign` (`season_id`),
+  ADD KEY `accountpermissionscopes_team_id_foreign` (`team_id`);
+
+--
 -- Indexes for table `AccountRoles`
 --
 ALTER TABLE `AccountRoles`
@@ -738,26 +833,22 @@ ALTER TABLE `AccountRoles`
 --
 ALTER TABLE `Accounts`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `accounts_email_unique` (`email`),
   ADD UNIQUE KEY `accounts_work_email_unique` (`work_email`);
+
+--
+-- Indexes for table `AuditLog`
+--
+ALTER TABLE `AuditLog`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `auditlog_entity_type_entity_id_index` (`entity_type`,`entity_id`),
+  ADD KEY `auditlog_user_id_index` (`user_id`),
+  ADD KEY `auditlog_created_at_index` (`created_at`);
 
 --
 -- Indexes for table `Games`
 --
 ALTER TABLE `Games`
   ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `knex_migrations`
---
-ALTER TABLE `knex_migrations`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `knex_migrations_lock`
---
-ALTER TABLE `knex_migrations_lock`
-  ADD PRIMARY KEY (`index`);
 
 --
 -- Indexes for table `Leagues`
@@ -796,6 +887,14 @@ ALTER TABLE `Matches`
   ADD KEY `matches_season_id_league_id_foreign` (`season_id`,`league_id`);
 
 --
+-- Indexes for table `MatchGameClips`
+--
+ALTER TABLE `MatchGameClips`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `match_game_clips_game_id_clip_type_unique` (`game_id`,`clip_type`),
+  ADD KEY `matchgameclips_clip_steam_id_foreign` (`clip_steam_id`);
+
+--
 -- Indexes for table `MatchGames`
 --
 ALTER TABLE `MatchGames`
@@ -823,7 +922,8 @@ ALTER TABLE `MatchTeams`
 --
 ALTER TABLE `Organizations`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `organizations_organization_code_unique` (`organization_code`);
+  ADD UNIQUE KEY `organizations_organization_code_unique` (`organization_code`),
+  ADD UNIQUE KEY `organizations_name_unique` (`name`);
 
 --
 -- Indexes for table `Permissions`
@@ -884,6 +984,17 @@ ALTER TABLE `SeasonLeagues`
 ALTER TABLE `SeasonLeagueTeams`
   ADD PRIMARY KEY (`season_id`,`league_id`,`team_id`),
   ADD KEY `seasonleagueteams_season_id_team_id_foreign` (`season_id`,`team_id`);
+
+--
+-- Indexes for table `SeasonPlayerApprovals`
+--
+ALTER TABLE `SeasonPlayerApprovals`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_steam_id_season_id` (`steam_id`,`season_id`),
+  ADD KEY `seasonplayerapprovals_season_id_foreign` (`season_id`),
+  ADD KEY `seasonplayerapprovals_organization_id_foreign` (`organization_id`),
+  ADD KEY `seasonplayerapprovals_team_id_foreign` (`team_id`),
+  ADD KEY `seasonplayerapprovals_approved_by_id_foreign` (`approved_by_id`);
 
 --
 -- Indexes for table `SeasonPlayerRanks`
@@ -961,28 +1072,28 @@ ALTER TABLE `UserPolicyAcceptances`
 --
 
 --
+-- AUTO_INCREMENT for table `AccountPermissionScopes`
+--
+ALTER TABLE `AccountPermissionScopes`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `Accounts`
 --
 ALTER TABLE `Accounts`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `AuditLog`
+--
+ALTER TABLE `AuditLog`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `Games`
 --
 ALTER TABLE `Games`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `knex_migrations`
---
-ALTER TABLE `knex_migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `knex_migrations_lock`
---
-ALTER TABLE `knex_migrations_lock`
-  MODIFY `index` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Leagues`
@@ -1006,6 +1117,12 @@ ALTER TABLE `Maps`
 -- AUTO_INCREMENT for table `Matches`
 --
 ALTER TABLE `Matches`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `MatchGameClips`
+--
+ALTER TABLE `MatchGameClips`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1057,6 +1174,12 @@ ALTER TABLE `Roles`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `SeasonPlayerApprovals`
+--
+ALTER TABLE `SeasonPlayerApprovals`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `SeasonPlayerRanks`
 --
 ALTER TABLE `SeasonPlayerRanks`
@@ -1097,12 +1220,27 @@ ALTER TABLE `UserPolicyAcceptances`
 --
 
 --
+-- Constraints for table `AccountPermissionScopes`
+--
+ALTER TABLE `AccountPermissionScopes`
+  ADD CONSTRAINT `accountpermissionscopes_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `accountpermissionscopes_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `Permissions` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `accountpermissionscopes_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `accountpermissionscopes_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `AccountRoles`
 --
 ALTER TABLE `AccountRoles`
   ADD CONSTRAINT `accountroles_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `accountroles_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `accountroles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `AuditLog`
+--
+ALTER TABLE `AuditLog`
+  ADD CONSTRAINT `auditlog_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `LinkedAccounts`
@@ -1123,6 +1261,13 @@ ALTER TABLE `MapRoundStats`
 --
 ALTER TABLE `Matches`
   ADD CONSTRAINT `matches_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `MatchGameClips`
+--
+ALTER TABLE `MatchGameClips`
+  ADD CONSTRAINT `matchgameclips_clip_steam_id_foreign` FOREIGN KEY (`clip_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `matchgameclips_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `MatchGames`
@@ -1189,6 +1334,16 @@ ALTER TABLE `SeasonLeagueTeams`
   ADD CONSTRAINT `seasonleagueteams_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `SeasonPlayerApprovals`
+--
+ALTER TABLE `SeasonPlayerApprovals`
+  ADD CONSTRAINT `seasonplayerapprovals_approved_by_id_foreign` FOREIGN KEY (`approved_by_id`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonplayerapprovals_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `Organizations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonplayerapprovals_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonplayerapprovals_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`),
+  ADD CONSTRAINT `seasonplayerapprovals_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `SeasonPlayerRanks`
 --
 ALTER TABLE `SeasonPlayerRanks`
@@ -1221,7 +1376,7 @@ ALTER TABLE `SeasonTeamRegistrations`
 -- Constraints for table `SteamPlayers`
 --
 ALTER TABLE `SteamPlayers`
-  ADD CONSTRAINT `steamplayers_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `steamplayers_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL;
 
 --
 -- Constraints for table `TeamGameScores`

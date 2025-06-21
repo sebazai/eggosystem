@@ -437,3 +437,179 @@ This pattern resolves the common AggregateError issues that occur when testing c
 - **Test Maintainability**: Tests are easy to understand and modify
 - **Test Performance**: Tests run quickly and efficiently
 - **Test Documentation**: Tests serve as living documentation
+
+## Database Schema Overview
+
+### Core Tables
+
+#### User Management
+
+- **Accounts**: Core user accounts with work email, full name, discord
+- **LinkedAccounts**: Steam account linking to main accounts
+- **SteamPlayers**: Steam player profiles with nicknames
+- **UserPolicyAcceptances**: Privacy policy and marketing consent tracking
+
+#### Authentication & Authorization
+
+- **AccountRoles**: User roles per game (admin, moderator, etc.)
+- **AccountPermissionScopes**: Granular permissions per season/team
+- **Roles**: Available roles (admin, moderator, etc.)
+- **Permissions**: Available permissions
+- **RolePermissions**: Role-permission mappings
+
+#### Organizations & Teams
+
+- **Organizations**: Company/organization entities
+- **Teams**: Teams within organizations
+- **TeamRosters**: Current team rosters
+- **SeasonTeamRegistrations**: Team registrations for seasons
+- **SeasonTeamPlayers**: Player assignments to teams in seasons
+
+#### Seasons & Leagues
+
+- **Seasons**: Tournament seasons with dates and platforms
+- **Leagues**: Different competition tiers
+- **SeasonLeagues**: Season-league mappings with tiers
+- **SeasonLeagueTeams**: Team placements in leagues per season
+
+#### Player Management
+
+- **SeasonPlayerRanks**: Player ranks and stats per season
+- **SeasonPlayerApprovals**: Player approval workflow
+
+#### Matches & Games
+
+- **Matches**: Match scheduling and metadata
+- **MatchTeams**: Team participation in matches
+- **MatchGames**: Individual games within matches
+- **MatchTeamMapVetoes**: Map veto process
+- **TeamGameScores**: Team scores per game
+
+#### Game Data
+
+- **Games**: Supported games (CS2, etc.)
+- **Maps**: Available maps
+- **PlayerStats**: Detailed player performance statistics
+- **PlayerTrades**: Trade kill tracking
+- **MapRoundStats**: Round-by-round statistics
+- **MatchGameClips**: Game clip management
+
+#### System
+
+- **AuditLog**: Comprehensive audit trail
+- **Reservations**: Stream reservations
+
+### Key Relationships
+
+#### User Flow
+
+```
+Accounts ←→ LinkedAccounts ←→ SteamPlayers
+Accounts ←→ UserPolicyAcceptances
+Accounts ←→ AccountRoles ←→ Roles
+```
+
+#### Team Structure
+
+```
+Organizations ←→ Teams ←→ TeamRosters ←→ SteamPlayers
+Teams ←→ SeasonTeamRegistrations ←→ Seasons
+SeasonTeamRegistrations ←→ SeasonTeamPlayers ←→ SteamPlayers
+```
+
+#### Competition Structure
+
+```
+Seasons ←→ SeasonLeagues ←→ Leagues
+SeasonLeagues ←→ SeasonLeagueTeams ←→ Teams
+Seasons ←→ SeasonPlayerRanks ←→ SteamPlayers
+```
+
+#### Match Structure
+
+```
+Matches ←→ MatchTeams ←→ Teams
+Matches ←→ MatchGames ←→ Maps
+MatchGames ←→ PlayerStats ←→ SteamPlayers
+MatchGames ←→ TeamGameScores ←→ Teams
+```
+
+### Important Constraints & Triggers
+
+#### Data Integrity Triggers
+
+- **SeasonPlayerApprovals**: Ensures either organization_id or team_id is provided
+- **SeasonTeamPlayers**: Prevents duplicate primary player registrations
+- **SeasonTeamRegistrations**: Prevents duplicate team registrations and external platform IDs
+- **Accounts**: Auto-updates updated_at timestamp
+
+#### Foreign Key Relationships
+
+- Cascade deletes for most relationships
+- SET NULL for optional relationships (captains, co-captains)
+- Complex composite key relationships for season-team-league mappings
+
+### Type Safety Implications
+
+#### Indexed Access Types Required
+
+When creating interfaces that reference database fields, use indexed access types:
+
+```typescript
+// ✅ Correct - using indexed access types
+export interface PlayerRankData {
+  steam_id: SteamPlayers["steam_id"];
+  cs2_rank: SeasonPlayerRanks["cs2_rank"];
+  faceit_elo: SeasonPlayerRanks["faceit_elo"];
+  season_id: Seasons["id"];
+}
+
+// ❌ Incorrect - manual type duplication
+export interface PlayerRankData {
+  steam_id: bigint;
+  cs2_rank: number | null;
+  faceit_elo: number | null;
+  season_id: number;
+}
+```
+
+#### Raw vs Processed Data
+
+Create separate interfaces for raw database results and processed application data:
+
+```typescript
+// Raw database result (string from SQL functions)
+export interface PlayerStatsRaw {
+  steam_id: SteamPlayers["steam_id"];
+  average_rating: string | null; // SQL avg() returns string
+}
+
+// Processed application data
+export interface PlayerStats {
+  steam_id: SteamPlayers["steam_id"];
+  average_rating: number | null; // Transformed to number
+}
+```
+
+## Next Steps
+
+- Ensure all new database-related interfaces use indexed access types
+- Update existing interfaces to follow the pattern
+- Maintain separation between raw and processed data types
+- Follow TDD workflow for any database-related changes
+
+## Important Patterns
+
+- Use `satisfies` operator for type validation
+- Create type guards for runtime validation
+- Separate raw database types from processed application types
+- Document calculated/virtual fields with comments
+- Follow the established foreign key relationship patterns
+
+## Learnings
+
+- Database schema is comprehensive with proper normalization
+- Complex many-to-many relationships through junction tables
+- Extensive use of triggers for data integrity
+- Clear separation between core entities and seasonal data
+- Audit logging for compliance and debugging
