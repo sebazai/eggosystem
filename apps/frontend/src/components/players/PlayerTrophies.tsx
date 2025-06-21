@@ -56,8 +56,8 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
 
             {/* Show position for top 50 players */}
             {data.is_top50 && data.position && (
-              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
-                {data.position}
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
+                #{data.position}
               </div>
             )}
           </div>
