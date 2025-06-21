@@ -30,4 +30,3 @@ export * from "./RolePermission.interface";
 export * from "./AccountPermissionScopes.interface";
 export * from "./MatchGameClips.interface";
 export * from "./SeasonPlayerApprovals.interface";
-export * from "./KanahautomoRegistration.interface";

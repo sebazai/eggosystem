@@ -1,13 +1,21 @@
 import { type Request, type Response } from "express";
-import { registerForKanahautomo } from "../../controllers/kanahautomo.controllers";
+import {
+  registerForKanahautomo,
+  getKanahautomoOrganizationStatus,
+  getKanahautomoRegistrationCounts,
+  registerForKanahautomoWithOrganization
+} from "../../controllers/kanahautomo.controllers";
 import * as kanahautomoModels from "../../models/kanahautomo.models";
 import * as organizationModels from "../../models/organization.models";
+import * as seasonModels from "../../models/season.models";
 import type { JwtPayload } from "jsonwebtoken";
-import type { Organizations, KanahautomoRegistration } from "@eggosystem/types";
+import type { Organizations } from "@eggosystem/types";
+import { SeasonPlatform } from "@eggosystem/types";
 
 // Mock the models
 jest.mock("../../models/kanahautomo.models");
 jest.mock("../../models/organization.models");
+jest.mock("../../models/season.models");
 jest.mock("../../utils/app-logger", () => ({
   logger: {
     info: jest.fn(),
@@ -21,6 +29,17 @@ const mockKanahautomoModels = kanahautomoModels as jest.Mocked<
 const mockOrganizationModels = organizationModels as jest.Mocked<
   typeof organizationModels
 >;
+const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
+
+const mockOrg: Organizations = {
+  id: 1,
+  name: "Test Org",
+  logo: "",
+  organization_code: "TEST",
+  website: "",
+  country: "",
+  sort_order: null
+};
 
 describe("Kanahautomo Controllers", () => {
   let mockRequest: Partial<Request>;
@@ -53,25 +72,15 @@ describe("Kanahautomo Controllers", () => {
         provider: "steam"
       };
 
-      const mockOrg: Organizations = {
-        id: 1,
-        name: "Test Org",
-        logo: "",
-        organization_code: "TEST",
-        website: "",
-        country: "",
-        sort_order: null
-      };
-
       mockRequest = {
         auth: mockAuth,
         body: { organization_id: 1 }
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockKanahautomoModels.getKanahautomoRegistrationsByPlayer.mockResolvedValue(
-        []
-      );
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
+        season_id: 15
+      });
       mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue([
         { insertId: 123 }
       ]);
@@ -87,11 +96,11 @@ describe("Kanahautomo Controllers", () => {
         1
       );
       expect(
-        mockKanahautomoModels.getKanahautomoRegistrationsByPlayer
-      ).toHaveBeenCalledWith("76561198000000001");
+        mockSeasonModels.getActiveOrLatestSeasonForAppId
+      ).toHaveBeenCalledWith(730);
       expect(
         mockKanahautomoModels.registerPlayerForKanahautomo
-      ).toHaveBeenCalledWith("76561198000000001", 1);
+      ).toHaveBeenCalledWith("76561198000000001", 1, 15);
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith({
         message: "Successfully registered for Kanahautomo",
@@ -143,7 +152,7 @@ describe("Kanahautomo Controllers", () => {
       // Assert
       expect(mockStatus).toHaveBeenCalledWith(400);
       expect(mockJson).toHaveBeenCalledWith({
-        error: "organization_id is required and must be a number"
+        error: "Valid organization_id is required"
       });
     });
 
@@ -172,7 +181,7 @@ describe("Kanahautomo Controllers", () => {
       // Assert
       expect(mockStatus).toHaveBeenCalledWith(400);
       expect(mockJson).toHaveBeenCalledWith({
-        error: "organization_id is required and must be a number"
+        error: "Valid organization_id is required"
       });
     });
 
@@ -210,7 +219,7 @@ describe("Kanahautomo Controllers", () => {
       });
     });
 
-    it("should return 409 when player is already registered", async () => {
+    it("should return 400 when no active season is found", async () => {
       // Arrange
       const mockAuth: JwtPayload = {
         account_id: 1,
@@ -221,32 +230,14 @@ describe("Kanahautomo Controllers", () => {
         provider: "steam"
       };
 
-      const mockOrg: Organizations = {
-        id: 1,
-        name: "Test Org",
-        logo: "",
-        organization_code: "TEST",
-        website: "",
-        country: "",
-        sort_order: null
-      };
-
-      const mockRegistration: KanahautomoRegistration = {
-        id: 1,
-        steam_id: "76561198000000001",
-        organization_id: 1,
-        status: "active",
-        created_at: "2025-01-27T00:00:00.000Z"
-      };
-
       mockRequest = {
         auth: mockAuth,
         body: { organization_id: 1 }
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockKanahautomoModels.getKanahautomoRegistrationsByPlayer.mockResolvedValue(
-        [mockRegistration]
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue(
+        undefined
       );
 
       // Act
@@ -257,12 +248,11 @@ describe("Kanahautomo Controllers", () => {
 
       // Assert
       expect(
-        mockKanahautomoModels.getKanahautomoRegistrationsByPlayer
-      ).toHaveBeenCalledWith("76561198000000001");
-      expect(mockStatus).toHaveBeenCalledWith(409);
+        mockSeasonModels.getActiveOrLatestSeasonForAppId
+      ).toHaveBeenCalledWith(730);
+      expect(mockStatus).toHaveBeenCalledWith(400);
       expect(mockJson).toHaveBeenCalledWith({
-        error: "Player is already registered for Kanahautomo",
-        registration: mockRegistration
+        error: "No active season found for CS2"
       });
     });
 
@@ -296,6 +286,460 @@ describe("Kanahautomo Controllers", () => {
       expect(mockStatus).toHaveBeenCalledWith(500);
       expect(mockJson).toHaveBeenCalledWith({
         error: "Internal server error"
+      });
+    });
+
+    it("should return 400 when player is already registered for the same season", async () => {
+      // Mock successful first registration
+      mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValueOnce([
+        { insertId: 1 }
+      ]);
+
+      // Mock duplicate registration error with code 'ER_DUP_ENTRY'
+      const dupError = new Error("Duplicate entry") as Error & { code: string };
+      dupError.code = "ER_DUP_ENTRY";
+      mockKanahautomoModels.registerPlayerForKanahautomo.mockRejectedValueOnce(
+        dupError
+      );
+
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: { organization_id: 1 }
+      };
+
+      mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
+        season_id: 15
+      });
+
+      // First registration should succeed
+      await registerForKanahautomo(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      expect(mockStatus).toHaveBeenCalledWith(201);
+
+      // Reset mock for second call
+      mockStatus.mockClear();
+      mockJson.mockClear();
+
+      // Second registration should fail
+      await registerForKanahautomo(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        error: "Player is already registered for this season"
+      });
+    });
+
+    it("should allow registration for different seasons", async () => {
+      // Mock successful registrations for different seasons
+      mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValueOnce([
+        { insertId: 1 }
+      ]);
+      mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValueOnce([
+        { insertId: 2 }
+      ]);
+
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: { organization_id: 1 }
+      };
+
+      mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
+        season_id: 15
+      });
+
+      // First registration for season 1
+      await registerForKanahautomo(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      expect(mockStatus).toHaveBeenCalledWith(201);
+
+      // Reset mock for second call
+      mockStatus.mockClear();
+      mockJson.mockClear();
+
+      // Second registration for season 2 should also succeed
+      await registerForKanahautomo(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      expect(mockStatus).toHaveBeenCalledWith(201);
+    });
+
+    it("should return 400 when organization_id is missing", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: {}
+      };
+
+      await registerForKanahautomo(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        error: "Valid organization_id is required"
+      });
+    });
+
+    it("should return 400 when organization_id is not a number", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: { organization_id: "invalid" }
+      };
+
+      await registerForKanahautomo(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        error: "Valid organization_id is required"
+      });
+    });
+  });
+
+  describe("getKanahautomoOrganizationStatus", () => {
+    it("should return organization status for the current season", async () => {
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 42,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      });
+      mockKanahautomoModels.getKanahautomoOrganizationStatusForSeason.mockResolvedValue(
+        [
+          {
+            organization_id: 1,
+            organization_name: "Org 1",
+            count: 5,
+            status: "ready"
+          },
+          {
+            organization_id: 2,
+            organization_name: "Org 2",
+            count: 2,
+            status: "waiting"
+          }
+        ]
+      );
+      const req = {} as Request;
+      const res = {
+        json: jest.fn(),
+        status: jest.fn().mockReturnThis()
+      } as unknown as Response;
+      await getKanahautomoOrganizationStatus(req, res);
+      expect(res.json).toHaveBeenCalledWith({
+        season_id: 42,
+        organizations: [
+          {
+            organization_id: 1,
+            organization_name: "Org 1",
+            count: 5,
+            status: "ready"
+          },
+          {
+            organization_id: 2,
+            organization_name: "Org 2",
+            count: 2,
+            status: "waiting"
+          }
+        ]
+      });
+    });
+
+    it("should return 404 if no active season found", async () => {
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(
+        undefined
+      );
+      const req = {} as Request;
+      const res = {
+        json: jest.fn(),
+        status: jest.fn().mockReturnThis()
+      } as unknown as Response;
+      await getKanahautomoOrganizationStatus(req, res);
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({
+        error: "No active season found for CS2"
+      });
+    });
+  });
+
+  describe("getKanahautomoRegistrationCounts", () => {
+    it("should return registration counts for all organizations", async () => {
+      const mockCounts = [
+        {
+          organization_id: 1,
+          organization_name: "Test Org 1",
+          registration_count: 3,
+          has_discord_channel: false
+        },
+        {
+          organization_id: 2,
+          organization_name: "Test Org 2",
+          registration_count: 5,
+          has_discord_channel: true
+        }
+      ];
+
+      (
+        kanahautomoModels.getKanahautomoRegistrationCounts as jest.Mock
+      ).mockResolvedValue(mockCounts);
+
+      const req = {} as Request;
+      const res = {
+        json: jest.fn(),
+        status: jest.fn().mockReturnThis()
+      } as unknown as Response;
+
+      await getKanahautomoRegistrationCounts(req, res);
+
+      expect(
+        kanahautomoModels.getKanahautomoRegistrationCounts
+      ).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(mockCounts);
+    });
+
+    it("should handle database errors", async () => {
+      const error = new Error("Database error");
+      (
+        kanahautomoModels.getKanahautomoRegistrationCounts as jest.Mock
+      ).mockRejectedValue(error);
+
+      const req = {} as Request;
+      const res = {
+        json: jest.fn(),
+        status: jest.fn().mockReturnThis()
+      } as unknown as Response;
+
+      await getKanahautomoRegistrationCounts(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+    });
+  });
+
+  describe("registerForKanahautomoWithOrganization", () => {
+    it("should successfully register with existing organization", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: { organization_id: 1 }
+      };
+
+      mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
+        season_id: 15
+      });
+      mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
+        []
+      );
+      mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue([
+        { insertId: 123 }
+      ]);
+
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(201);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: "Successfully registered for Kanahautomo",
+        registration_id: 123,
+        organization_id: 1
+      });
+    });
+
+    it("should successfully register with new organization creation", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: {
+          new_organization: {
+            name: "New Org",
+            organization_code: "NEW",
+            website: "https://neworg.com"
+          }
+        }
+      };
+
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
+        season_id: 15
+      });
+      mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
+        []
+      );
+      mockOrganizationModels.insertOrganization.mockResolvedValue({
+        insertId: 999
+      });
+      mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue([
+        { insertId: 123 }
+      ]);
+
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(201);
+      expect(mockJson).toHaveBeenCalledWith({
+        message: "Successfully registered for Kanahautomo",
+        registration_id: 123,
+        organization_id: 999
+      });
+    });
+
+    it("should return 400 when neither organization_id nor new_organization is provided", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: {}
+      };
+
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        error: "Either organization_id or new_organization is required"
+      });
+    });
+
+    it("should return 400 when both organization_id and new_organization are provided", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: {
+          organization_id: 1,
+          new_organization: {
+            name: "New Org",
+            organization_code: "NEW",
+            website: "https://neworg.com"
+          }
+        }
+      };
+
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        error: "Cannot provide both organization_id and new_organization"
+      });
+    });
+
+    it("should return 404 when existing organization is not found", async () => {
+      const mockAuth: JwtPayload = {
+        account_id: 1,
+        provider_id: "steam123",
+        permissions: [],
+        roles: [],
+        nickname: "TestUser",
+        provider: "steam"
+      };
+
+      mockRequest = {
+        auth: mockAuth,
+        body: { organization_id: 999 }
+      };
+
+      mockOrganizationModels.getOrganizationById.mockResolvedValue([]);
+      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
+        season_id: 15
+      });
+      mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
+        []
+      );
+
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(mockStatus).toHaveBeenCalledWith(400);
+      expect(mockJson).toHaveBeenCalledWith({
+        error: "Organization not found"
       });
     });
   });

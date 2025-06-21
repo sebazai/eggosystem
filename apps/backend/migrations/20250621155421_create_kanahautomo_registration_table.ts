@@ -9,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
     (table: Knex.TableBuilder) => {
       table.increments("id").primary();
       table.bigInteger("steam_id").notNullable();
+      table.integer("season_id").unsigned().notNullable();
       table.integer("organization_id").unsigned().notNullable();
       table
         .enum("status", ["active", "team_formed"])
@@ -25,17 +26,24 @@ export async function up(knex: Knex): Promise<void> {
         .onDelete("CASCADE");
 
       table
+        .foreign("season_id")
+        .references("id")
+        .inTable("Seasons")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE");
+
+      table
         .foreign("organization_id")
         .references("id")
         .inTable("Organizations")
         .onUpdate("CASCADE")
         .onDelete("CASCADE");
 
-      // Unique constraint: one player can only be registered once
-      table.unique(["steam_id"]);
+      // Unique constraint: one player can only be registered once per season
+      table.unique(["steam_id", "season_id"]);
 
       // Index for performance
-      table.index(["organization_id", "status"]);
+      table.index(["organization_id", "season_id", "status"]);
     }
   );
 
@@ -47,10 +55,11 @@ export async function up(knex: Knex): Promise<void> {
     BEGIN
       DECLARE player_count INT;
       
-      -- Count active players in the same organization
+      -- Count active players in the same organization and season
       SELECT COUNT(*) INTO player_count
       FROM KanahautomoRegistration
       WHERE organization_id = NEW.organization_id 
+        AND season_id = NEW.season_id
         AND status = 'active';
       
       -- If we have 5 or more players, we could create a Discord channel
@@ -61,7 +70,7 @@ export async function up(knex: Knex): Promise<void> {
         -- Future: Send notification to organization admin
         INSERT INTO AuditLog (action_type, entity_type, entity_id, metadata)
         VALUES ('team_ready', 'KanahautomoRegistration', NEW.organization_id, 
-                JSON_OBJECT('player_count', player_count, 'organization_id', NEW.organization_id));
+                JSON_OBJECT('player_count', player_count, 'organization_id', NEW.organization_id, 'season_id', NEW.season_id));
       END IF;
     END;
   `);

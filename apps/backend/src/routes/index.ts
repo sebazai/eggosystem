@@ -22,6 +22,7 @@ import { verifyEmailController } from "../controllers/account.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
 import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
+import kanahautomoRouter from "./v1/kanahautomo.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -54,6 +55,7 @@ v1Router.use("/sortter", sortterRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
 v1Router.use("/allstar", allstarRouter);
+v1Router.use("/kanahautomo", kanahautomoRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
