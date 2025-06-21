@@ -1,4 +1,4 @@
-import { FancySelect } from "@/components/filters/FanceMultiSelect";
+import { FancySelect } from "@/components/filters/FancyMultiSelect";
 import { Spinner } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import {

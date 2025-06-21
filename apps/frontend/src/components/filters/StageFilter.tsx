@@ -1,5 +1,5 @@
 import type { MultiSelect } from "@/types/MultiSelectType";
-import { FancySelect } from "./FanceMultiSelect";
+import { FancySelect } from "./FancyMultiSelect";
 import type { Nullable } from "@eggosystem/types";
 import _ from "lodash";
 import { useState } from "react";

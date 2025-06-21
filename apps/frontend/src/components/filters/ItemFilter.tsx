@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { FancySelect } from "./FanceMultiSelect";
+import { FancySelect } from "./FancyMultiSelect";
 import { expressFetcher } from "@/lib/utils";
 import type { Nullable } from "@eggosystem/types";
 import type { MultiSelect } from "@/types/MultiSelectType";
