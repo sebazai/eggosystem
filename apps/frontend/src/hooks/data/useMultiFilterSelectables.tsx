@@ -24,6 +24,29 @@ const fetchPossibleIdsWithIndividualParam = async (
   return res.json();
 };
 
+const fetchPossibleIdsWithCombinedParam = async (
+  queryParams: Array<{ key: string; values: string[] }>,
+  steamId?: string
+) => {
+  const params = new URLSearchParams();
+  queryParams.forEach((param) => {
+    param.values.forEach((value) => {
+      params.append(param.key, value);
+    });
+  });
+
+  if (steamId) {
+    params.append("steamId", steamId);
+  }
+
+  const queryString = params.toString();
+
+  const res = await fetch(`${envConfig.API_URL}/api/v1/filters?${queryString}`);
+  if (!res.ok) throw new Error("Failed to fetch filter data");
+
+  return res.json();
+};
+
 const fetchMultiFilterData = async (
   params: FilterParamsQuery
 ): Promise<MultiFilterSelectableIds> => {
@@ -40,7 +63,8 @@ const fetchMultiFilterData = async (
     withLeaguesParam,
     withStagesParam,
     withTeamsParam,
-    withMapsParam
+    withMapsParam,
+    withCombinedParam
   ] = await Promise.all([
     fetchPossibleIdsWithIndividualParam(
       seasons ?? [],
@@ -62,7 +86,14 @@ const fetchMultiFilterData = async (
       "team_ids",
       params.steamId
     ),
-    fetchPossibleIdsWithIndividualParam(maps ?? [], "map_ids", params.steamId)
+    fetchPossibleIdsWithIndividualParam(maps ?? [], "map_ids", params.steamId),
+    fetchPossibleIdsWithCombinedParam(
+      [
+        { key: "season_ids", values: seasons ?? [] },
+        { key: "team_ids", values: teams ?? [] }
+      ],
+      params.steamId
+    )
   ]);
 
   return {
@@ -76,7 +107,8 @@ const fetchMultiFilterData = async (
       withSeasonsParam.league_ids,
       withStagesParam.league_ids,
       withTeamsParam.league_ids,
-      withMapsParam.league_ids
+      withMapsParam.league_ids,
+      withCombinedParam.league_ids
     ),
     stages: _.intersection(
       withSeasonsParam.stages,
