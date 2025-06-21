@@ -9,7 +9,10 @@ import * as kanahautomoModels from "../../models/kanahautomo.models";
 import * as organizationModels from "../../models/organization.models";
 import * as seasonModels from "../../models/season.models";
 import type { JwtPayload } from "jsonwebtoken";
-import type { Organizations } from "@eggosystem/types";
+import type {
+  ActiveSeasonSignupForAppId,
+  Organizations
+} from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 
 // Mock the models
@@ -76,11 +79,13 @@ describe("Kanahautomo Controllers", () => {
         auth: mockAuth,
         body: { organization_id: 1 }
       };
-
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
-        season_id: 15
-      });
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 15,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      } satisfies ActiveSeasonSignupForAppId);
       mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue([
         { insertId: 123 }
       ]);
@@ -96,7 +101,7 @@ describe("Kanahautomo Controllers", () => {
         1
       );
       expect(
-        mockSeasonModels.getActiveOrLatestSeasonForAppId
+        mockSeasonModels.getActiveSignupSeasonForAppId
       ).toHaveBeenCalledWith(730);
       expect(
         mockKanahautomoModels.registerPlayerForKanahautomo
@@ -143,17 +148,10 @@ describe("Kanahautomo Controllers", () => {
         body: {}
       };
 
-      // Act
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      // Assert
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Valid organization_id is required"
-      });
+      // Act & Assert
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("Valid organization_id is required");
     });
 
     it("should return 400 when organization_id is not a number", async () => {
@@ -172,17 +170,10 @@ describe("Kanahautomo Controllers", () => {
         body: { organization_id: "invalid" }
       };
 
-      // Act
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      // Assert
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Valid organization_id is required"
-      });
+      // Act & Assert
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("Valid organization_id is required");
     });
 
     it("should return 404 when organization does not exist", async () => {
@@ -236,24 +227,14 @@ describe("Kanahautomo Controllers", () => {
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue(
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(
         undefined
       );
 
-      // Act
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      // Assert
-      expect(
-        mockSeasonModels.getActiveOrLatestSeasonForAppId
-      ).toHaveBeenCalledWith(730);
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "No active season found for CS2"
-      });
+      // Act & Assert
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("No active season found for CS2");
     });
 
     it("should return 500 when database error occurs", async () => {
@@ -276,17 +257,10 @@ describe("Kanahautomo Controllers", () => {
         new Error("Database error")
       );
 
-      // Act
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      // Assert
-      expect(mockStatus).toHaveBeenCalledWith(500);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Internal server error"
-      });
+      // Act & Assert
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("Database error");
     });
 
     it("should return 400 when player is already registered for the same season", async () => {
@@ -317,15 +291,27 @@ describe("Kanahautomo Controllers", () => {
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
-        season_id: 15
-      });
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 15,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      } satisfies ActiveSeasonSignupForAppId);
 
       // First registration should succeed
       await registerForKanahautomo(
         mockRequest as Request,
         mockResponse as Response
       );
+      expect(mockOrganizationModels.getOrganizationById).toHaveBeenCalledWith(
+        1
+      );
+      expect(
+        mockSeasonModels.getActiveSignupSeasonForAppId
+      ).toHaveBeenCalledWith(730);
+      expect(
+        mockKanahautomoModels.registerPlayerForKanahautomo
+      ).toHaveBeenCalledWith("steam123", 1, 15);
       expect(mockStatus).toHaveBeenCalledWith(201);
 
       // Reset mock for second call
@@ -333,14 +319,9 @@ describe("Kanahautomo Controllers", () => {
       mockJson.mockClear();
 
       // Second registration should fail
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Player is already registered for this season"
-      });
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("Duplicate entry");
     });
 
     it("should allow registration for different seasons", async () => {
@@ -367,15 +348,27 @@ describe("Kanahautomo Controllers", () => {
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
-        season_id: 15
-      });
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 15,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      } satisfies ActiveSeasonSignupForAppId);
 
       // First registration for season 1
       await registerForKanahautomo(
         mockRequest as Request,
         mockResponse as Response
       );
+      expect(mockOrganizationModels.getOrganizationById).toHaveBeenCalledWith(
+        1
+      );
+      expect(
+        mockSeasonModels.getActiveSignupSeasonForAppId
+      ).toHaveBeenCalledWith(730);
+      expect(
+        mockKanahautomoModels.registerPlayerForKanahautomo
+      ).toHaveBeenCalledWith("steam123", 1, 15);
       expect(mockStatus).toHaveBeenCalledWith(201);
 
       // Reset mock for second call
@@ -405,15 +398,9 @@ describe("Kanahautomo Controllers", () => {
         body: {}
       };
 
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Valid organization_id is required"
-      });
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("Valid organization_id is required");
     });
 
     it("should return 400 when organization_id is not a number", async () => {
@@ -431,15 +418,9 @@ describe("Kanahautomo Controllers", () => {
         body: { organization_id: "invalid" }
       };
 
-      await registerForKanahautomo(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Valid organization_id is required"
-      });
+      await expect(
+        registerForKanahautomo(mockRequest as Request, mockResponse as Response)
+      ).rejects.toThrow("Valid organization_id is required");
     });
   });
 
@@ -473,6 +454,12 @@ describe("Kanahautomo Controllers", () => {
         status: jest.fn().mockReturnThis()
       } as unknown as Response;
       await getKanahautomoOrganizationStatus(req, res);
+      expect(
+        mockSeasonModels.getActiveSignupSeasonForAppId
+      ).toHaveBeenCalledWith(730);
+      expect(
+        mockKanahautomoModels.getKanahautomoOrganizationStatusForSeason
+      ).toHaveBeenCalledWith(42);
       expect(res.json).toHaveBeenCalledWith({
         season_id: 42,
         organizations: [
@@ -502,6 +489,9 @@ describe("Kanahautomo Controllers", () => {
         status: jest.fn().mockReturnThis()
       } as unknown as Response;
       await getKanahautomoOrganizationStatus(req, res);
+      expect(
+        mockSeasonModels.getActiveSignupSeasonForAppId
+      ).toHaveBeenCalledWith(730);
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
         error: "No active season found for CS2"
@@ -540,7 +530,7 @@ describe("Kanahautomo Controllers", () => {
 
       expect(
         kanahautomoModels.getKanahautomoRegistrationCounts
-      ).toHaveBeenCalled();
+      ).toHaveBeenCalledWith();
       expect(res.json).toHaveBeenCalledWith(mockCounts);
     });
 
@@ -556,10 +546,9 @@ describe("Kanahautomo Controllers", () => {
         status: jest.fn().mockReturnThis()
       } as unknown as Response;
 
-      await getKanahautomoRegistrationCounts(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: "Internal server error" });
+      await expect(getKanahautomoRegistrationCounts(req, res)).rejects.toThrow(
+        "Database error"
+      );
     });
   });
 
@@ -580,9 +569,12 @@ describe("Kanahautomo Controllers", () => {
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
-        season_id: 15
-      });
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 15,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      } satisfies ActiveSeasonSignupForAppId);
       mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
         []
       );
@@ -595,6 +587,18 @@ describe("Kanahautomo Controllers", () => {
         mockResponse as Response
       );
 
+      expect(mockOrganizationModels.getOrganizationById).toHaveBeenCalledWith(
+        1
+      );
+      expect(
+        mockSeasonModels.getActiveSignupSeasonForAppId
+      ).toHaveBeenCalledWith(730);
+      expect(
+        mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason
+      ).toHaveBeenCalledWith("steam123", 15);
+      expect(
+        mockKanahautomoModels.registerPlayerForKanahautomo
+      ).toHaveBeenCalledWith("steam123", 1, 15);
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith({
         message: "Successfully registered for Kanahautomo",
@@ -613,20 +617,25 @@ describe("Kanahautomo Controllers", () => {
         provider: "steam"
       };
 
+      const newOrgData = {
+        name: "New Org",
+        organization_code: "NEW",
+        website: "https://neworg.com"
+      };
+
       mockRequest = {
         auth: mockAuth,
         body: {
-          new_organization: {
-            name: "New Org",
-            organization_code: "NEW",
-            website: "https://neworg.com"
-          }
+          new_organization: newOrgData
         }
       };
 
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
-        season_id: 15
-      });
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 15,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      } satisfies ActiveSeasonSignupForAppId);
       mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
         []
       );
@@ -642,6 +651,18 @@ describe("Kanahautomo Controllers", () => {
         mockResponse as Response
       );
 
+      expect(
+        mockSeasonModels.getActiveSignupSeasonForAppId
+      ).toHaveBeenCalledWith(730);
+      expect(
+        mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason
+      ).toHaveBeenCalledWith("steam123", 15);
+      expect(mockOrganizationModels.insertOrganization).toHaveBeenCalledWith(
+        newOrgData
+      );
+      expect(
+        mockKanahautomoModels.registerPlayerForKanahautomo
+      ).toHaveBeenCalledWith("steam123", 999, 15);
       expect(mockStatus).toHaveBeenCalledWith(201);
       expect(mockJson).toHaveBeenCalledWith({
         message: "Successfully registered for Kanahautomo",
@@ -665,15 +686,14 @@ describe("Kanahautomo Controllers", () => {
         body: {}
       };
 
-      await registerForKanahautomoWithOrganization(
-        mockRequest as Request,
-        mockResponse as Response
+      await expect(
+        registerForKanahautomoWithOrganization(
+          mockRequest as Request,
+          mockResponse as Response
+        )
+      ).rejects.toThrow(
+        "Either organization_id or new_organization is required"
       );
-
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Either organization_id or new_organization is required"
-      });
     });
 
     it("should return 400 when both organization_id and new_organization are provided", async () => {
@@ -698,15 +718,14 @@ describe("Kanahautomo Controllers", () => {
         }
       };
 
-      await registerForKanahautomoWithOrganization(
-        mockRequest as Request,
-        mockResponse as Response
+      await expect(
+        registerForKanahautomoWithOrganization(
+          mockRequest as Request,
+          mockResponse as Response
+        )
+      ).rejects.toThrow(
+        "Cannot provide both organization_id and new_organization"
       );
-
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Cannot provide both organization_id and new_organization"
-      });
     });
 
     it("should return 404 when existing organization is not found", async () => {
@@ -725,22 +744,22 @@ describe("Kanahautomo Controllers", () => {
       };
 
       mockOrganizationModels.getOrganizationById.mockResolvedValue([]);
-      mockSeasonModels.getActiveOrLatestSeasonForAppId.mockResolvedValue({
-        season_id: 15
-      });
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
+        season_id: 15,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season 2024"
+      } satisfies ActiveSeasonSignupForAppId);
       mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
         []
       );
 
-      await registerForKanahautomoWithOrganization(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockStatus).toHaveBeenCalledWith(400);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Organization not found"
-      });
+      await expect(
+        registerForKanahautomoWithOrganization(
+          mockRequest as Request,
+          mockResponse as Response
+        )
+      ).rejects.toThrow("Organization not found");
     });
   });
 });
