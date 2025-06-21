@@ -11,6 +11,7 @@ interface ChickenAnnouncerProps {
   showDelay?: number; // Delay in ms before showing the chicken
   autoHideAfter?: number; // Auto-hide after this many ms (if provided)
   walkSpeed?: number; // Walking speed in pixels per second
+  onChickenClick?: () => void; // Callback when chicken is clicked
 }
 
 export const ChickenAnnouncer = ({
@@ -18,7 +19,8 @@ export const ChickenAnnouncer = ({
   targetUrl = "/new-features",
   showDelay = 1000,
   autoHideAfter,
-  walkSpeed = 50 // Default walking speed
+  walkSpeed = 50, // Default walking speed
+  onChickenClick
 }: ChickenAnnouncerProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isBubbleVisible, setIsBubbleVisible] = useState(false);
@@ -102,6 +104,11 @@ export const ChickenAnnouncer = ({
   }, [isVisible, walkSpeed]);
 
   const handleClick = () => {
+    // Call the onChickenClick callback if provided
+    if (onChickenClick) {
+      onChickenClick();
+    }
+
     setIsBubbleVisible(false);
     setTimeout(() => {
       setIsVisible(false);

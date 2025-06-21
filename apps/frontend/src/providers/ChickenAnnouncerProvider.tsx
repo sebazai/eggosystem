@@ -9,6 +9,7 @@ interface ChickenAnnouncerContextType {
     message?: string;
     targetUrl?: string;
     autoHideAfter?: number;
+    onChickenClick?: () => void;
   }) => void;
   hideChicken: () => void;
 }
@@ -38,7 +39,8 @@ export const ChickenAnnouncerProvider = ({
   const [config, setConfig] = useState({
     message: "NEW FEATURES NEW FEATURES",
     targetUrl: "/new-features",
-    autoHideAfter: undefined as number | undefined
+    autoHideAfter: undefined as number | undefined,
+    onChickenClick: undefined as (() => void) | undefined
   });
 
   const showChicken = (options = {}) => {
@@ -50,6 +52,13 @@ export const ChickenAnnouncerProvider = ({
     setShowAnnouncer(false);
   };
 
+  const handleChickenClick = () => {
+    if (config.onChickenClick) {
+      config.onChickenClick();
+    }
+    hideChicken();
+  };
+
   return (
     <ChickenAnnouncerContext.Provider value={{ showChicken, hideChicken }}>
       {children}
@@ -58,6 +67,7 @@ export const ChickenAnnouncerProvider = ({
           message={config.message}
           targetUrl={config.targetUrl}
           autoHideAfter={config.autoHideAfter}
+          onChickenClick={handleChickenClick}
         />
       )}
     </ChickenAnnouncerContext.Provider>
