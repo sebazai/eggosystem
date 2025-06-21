@@ -5,6 +5,7 @@ Database pooling, API for CS stats.
 ## Environment Variables
 
 ### Database
+
 - `DB_HOST` - Database host
 - `DB_PORT` - Database port
 - `DB_USER` - Database user
@@ -12,6 +13,7 @@ Database pooling, API for CS stats.
 - `DB_NAME` - Database name
 
 ### Grafana Cloud Profiles
+
 To enable profiling with Grafana Cloud via Alloy, the following environment variables are configured:
 
 - `PYROSCOPE_SERVER_ADDRESS` - Points to your local Alloy instance (e.g., `http://172.17.0.1:4040`)
@@ -26,6 +28,7 @@ To enable profiling with Grafana Cloud via Alloy, the following environment vari
 This application is configured to send profiling data through [Grafana Alloy](https://grafana.com/docs/alloy/) running at `http://172.17.0.1:4040`. Alloy then forwards the data to Grafana Cloud Profiles.
 
 **Benefits of using Alloy:**
+
 - Centralized telemetry collection
 - Built-in authentication handling to Grafana Cloud
 - No need to configure auth tokens in each application
@@ -42,6 +45,7 @@ The Grafana Cloud credentials are configured in your Alloy instance, not directl
 ### Development Setup
 
 For development, profiling is disabled by default. To enable it, set:
+
 ```
 ENABLE_PROFILING=true
 ```
