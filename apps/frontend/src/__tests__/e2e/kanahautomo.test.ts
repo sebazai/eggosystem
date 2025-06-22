@@ -1,88 +1,95 @@
 import { test, expect } from "@playwright/test";
+import { generateTestJWT } from "./utils";
 
 test.describe("Kanahautomo", () => {
   test.beforeEach(async ({ page }) => {
+    // Set up authentication cookie (following SignupForm pattern)
+    await page.context().addCookies([
+      {
+        name: "access_token",
+        value: generateTestJWT(),
+        domain: "localhost",
+        path: "/",
+        httpOnly: true,
+        secure: false
+      }
+    ]);
+
+    // Intercept API requests to add Bearer authorization header
+    await page.route("**/api/**", async (route) => {
+      const headers = {
+        ...route.request().headers(),
+        Authorization: `Bearer ${generateTestJWT()}`
+      };
+      await route.continue({ headers });
+    });
+
     // Navigate to the Kanahautomo page
     await page.goto("/kanahautomo");
   });
 
-  test("should require authentication", async ({ page }) => {
-    // Should show login message when not authenticated
-    await expect(page.getByText(/please log in with steam/i)).toBeVisible();
-  });
-
-  test("should show page structure", async ({ page }) => {
-    // Test basic page structure - these elements should always be visible
+  test("happy path: authenticated user can register for Kanahautomo", async ({
+    page
+  }) => {
+    // Should show the form when authenticated
+    await expect(page.getByRole("combobox")).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: /join kanahautomo/i })
+      page.getByRole("button", { name: /join kanahautomo/i })
     ).toBeVisible();
 
-    // When not authenticated, should show login message
-    await expect(page.getByText(/please log in with steam/i)).toBeVisible();
+    // Select an organization from the dropdown
+    // First click the select trigger to open the dropdown
+    await page.getByRole("combobox").click();
+
+    // Wait for the dropdown to be visible and select the E2E Test Organization
+    await page.getByRole("option", { name: "E2E Test Organization" }).click();
+
+    // Submit the form
+    await page.getByRole("button", { name: /join kanahautomo/i }).click();
+
+    // Wait for success toast notification
+    await expect(
+      page
+        .locator("[data-sonner-toast]")
+        .filter({ hasText: /successfully registered/i })
+    ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should show login message when not authenticated", async ({ page }) => {
-    // When not authenticated, should show login message
-    await expect(page.getByText(/please log in with steam/i)).toBeVisible();
-  });
-
-  test("should not show form when not authenticated", async ({ page }) => {
-    // Form elements should not be visible when not authenticated
-    const selectTrigger = page.getByRole("combobox");
-    const submitButton = page.getByRole("button", {
-      name: /join kanahautomo/i
-    });
-
-    // These elements should not be visible when not authenticated
-    await expect(selectTrigger).not.toBeVisible();
-    await expect(submitButton).not.toBeVisible();
-  });
-
-  test("should show authentication required message", async ({ page }) => {
-    // Should show the authentication required message
-    await expect(page.getByText(/please log in with steam/i)).toBeVisible();
-  });
-
-  test("should show organization selection form when authenticated", async ({
+  test("should handle validation errors for empty form submission", async ({
     page
   }) => {
-    // This test would need authentication to be set up
-    // For now, just test that the form elements are not visible when not authenticated
-    const selectLabel = page.getByText(/select your organization/i);
-    const submitButton = page.getByRole("button", {
-      name: /join kanahautomo/i
-    });
+    // Try to submit without selecting an organization
+    await page.getByRole("button", { name: /join kanahautomo/i }).click();
 
-    // These should not be visible when not authenticated
-    await expect(selectLabel).not.toBeVisible();
-    await expect(submitButton).not.toBeVisible();
+    // Should show validation error in FormMessage component
+    await expect(
+      page.locator(
+        "text=/please select an existing organization OR create a new one/i"
+      )
+    ).toBeVisible({ timeout: 5000 });
   });
 
-  test("should show organization dropdown when authenticated", async ({
+  test("should handle new organization creation with validation", async ({
     page
   }) => {
-    // This test would need authentication to be set up
-    // For now, just test the basic structure
-    const selectTrigger = page.getByRole("combobox");
-    if (await selectTrigger.isVisible()) {
-      await expect(selectTrigger).toHaveText(/choose an organization/i);
-    }
-  });
+    // Select "Add new organization..." option
+    await page.getByRole("combobox").click();
+    await page.getByRole("option", { name: "Add new organization..." }).click();
 
-  test("should show form validation when authenticated", async ({ page }) => {
-    const submitButton = page.getByRole("button", {
-      name: /join kanahautomo/i
-    });
+    // Fill in invalid data
+    await page.getByLabel("Organization name").fill("A");
+    await page.getByLabel("Business ID").fill("B");
 
-    // Only try to click if the button is visible (user is authenticated)
-    if (await submitButton.isVisible()) {
-      await submitButton.click();
+    // Submit the form
+    await page.getByRole("button", { name: /join kanahautomo/i }).click();
 
-      // Should show validation error if form is accessible
-      const errorMessage = page.getByText(/please select an organization/i);
-      if (await errorMessage.isVisible()) {
-        await expect(errorMessage).toBeVisible();
-      }
-    }
+    // Should show validation errors in FormMessage components
+    await expect(
+      page.locator("text=/organization name must be at least 2 characters/i")
+    ).toBeVisible({ timeout: 5000 });
+
+    await expect(
+      page.locator("text=/business id must be at least 2 characters/i")
+    ).toBeVisible({ timeout: 5000 });
   });
 });
