@@ -1,16 +1,13 @@
 import { type Request, type Response } from "express";
 import {
   registerPlayerForKanahautomo,
-  getKanahautomoRegistrationsByPlayerAndSeason,
-  getKanahautomoOrganizationStatusForSeason,
-  getKanahautomoRegistrationCounts as getKanahautomoRegistrationCountsModel
+  getKanahautomoOrganizationStatus as getKanahautomoOrganizationStatusModel
 } from "../models/kanahautomo.models";
 import {
   getOrganizationById,
   insertOrganization
 } from "../models/organization.models";
 import { logger } from "../utils/app-logger";
-import { getActiveSignupSeasonForAppId } from "../models/season.models";
 import { BadRequestError } from "../utils/errors";
 import type {
   KanahautomoRegistration,
@@ -44,25 +41,6 @@ export const registerForKanahautomoWithOrganization = async (
     );
   }
 
-  // Get the active season for CS2 (app_id 730)
-  const activeSeason = await getActiveSignupSeasonForAppId(730);
-  if (!activeSeason) {
-    throw new BadRequestError("No active season found for CS2");
-  }
-
-  // Check if player is already registered for this season
-  const existingRegistration =
-    await getKanahautomoRegistrationsByPlayerAndSeason(
-      steamId,
-      activeSeason.season_id
-    );
-  if (existingRegistration && existingRegistration.length > 0) {
-    res.status(400).json({
-      error: "Player is already registered for this season"
-    });
-    return;
-  }
-
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
@@ -85,11 +63,11 @@ export const registerForKanahautomoWithOrganization = async (
       throw new BadRequestError("Invalid request: no organization specified");
     }
 
-    // Register player for Kanahautomo
+    // Register player for Kanahautomo (terms not accepted initially)
     const result = await registerPlayerForKanahautomo(
       steamId,
       finalOrganizationId,
-      activeSeason.season_id
+      false // accepted_terms = false initially
     );
 
     const response: KanahautomoRegistrationResponse = {
@@ -99,7 +77,7 @@ export const registerForKanahautomoWithOrganization = async (
     };
 
     logger.info(
-      `Player ${steamId} registered for Kanahautomo in organization ${finalOrganizationId} for season ${activeSeason.season_id}`
+      `Player ${steamId} registered for Kanahautomo in organization ${finalOrganizationId}`
     );
 
     await connection.commit();
@@ -107,6 +85,15 @@ export const registerForKanahautomoWithOrganization = async (
   } catch (error) {
     await connection.rollback();
     logger.error(`Error registering for Kanahautomo: ${error}`);
+
+    // Handle duplicate entry error gracefully
+    if (error instanceof Error && error.message.includes("Duplicate entry")) {
+      res.status(400).json({
+        error: "Player is already registered for this organization"
+      });
+      return;
+    }
+
     throw error;
   } finally {
     connection.release();
@@ -117,22 +104,6 @@ export const getKanahautomoOrganizationStatus = async (
   req: Request,
   res: Response
 ) => {
-  // Get the active season for CS2 (app_id 730)
-  const activeSeason = await getActiveSignupSeasonForAppId(730);
-  if (!activeSeason) {
-    res.status(404).json({ error: "No active season found for CS2" });
-    return;
-  }
-  const data = await getKanahautomoOrganizationStatusForSeason(
-    activeSeason.season_id
-  );
-  res.json({ season_id: activeSeason.season_id, organizations: data });
-};
-
-export const getKanahautomoRegistrationCounts = async (
-  req: Request,
-  res: Response
-) => {
-  const data = await getKanahautomoRegistrationCountsModel();
-  res.json(data);
+  const data = await getKanahautomoOrganizationStatusModel();
+  res.json({ organizations: data });
 };

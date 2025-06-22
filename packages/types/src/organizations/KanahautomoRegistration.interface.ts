@@ -14,9 +14,7 @@ export interface KanahautomoRegistrationResponse {
 export interface KanahautomoRegistrationRecord {
   id: number;
   steam_id: string;
-  season_id: number;
   organization_id: number;
-  status: "active" | "team_formed";
+  accepted_terms: boolean;
   created_at: string;
-  updated_at?: string;
 }

@@ -200,3 +200,45 @@ export const clearOrganization = (orgId?: number) => {
     return runQuery("DELETE FROM Organizations WHERE id = ?", [orgId]);
   }
 };
+
+export const insertTestKanahautomoRegistration = async (
+  steamId: string,
+  organizationId: number,
+  acceptedTerms: boolean = false
+) => {
+  return runQuery<{ insertId: number }>(
+    "INSERT INTO KanahautomoRegistration (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
+    [steamId, organizationId, acceptedTerms]
+  );
+};
+
+export const removeTestKanahautomoRegistration = async (
+  steamId: string,
+  organizationId: number
+) => {
+  return runQuery(
+    "DELETE FROM KanahautomoRegistration WHERE steam_id = ? AND organization_id = ?",
+    [steamId, organizationId]
+  );
+};
+
+export const clearTestKanahautomoRegistrations = async () => {
+  return runQuery("DELETE FROM KanahautomoRegistration");
+};
+
+export const insertTestOrganization = async (
+  name: string,
+  organizationCode?: string
+) => {
+  const code =
+    organizationCode ||
+    `TEST-ORG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return runQuery<{ insertId: number }>(
+    "INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES (?, ?, ?, ?, ?)",
+    [name, "Finland", code, "nologo.png", "http://test.org"]
+  );
+};
+
+export const clearTestOrganization = async (name: string) => {
+  return runQuery("DELETE FROM Organizations WHERE name = ?", [name]);
+};

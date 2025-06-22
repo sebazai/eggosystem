@@ -2,20 +2,13 @@ import { type Request, type Response } from "express";
 import { registerForKanahautomoWithOrganization } from "../../controllers/kanahautomo.controllers";
 import * as kanahautomoModels from "../../models/kanahautomo.models";
 import * as organizationModels from "../../models/organization.models";
-import * as seasonModels from "../../models/season.models";
 import * as dbConnection from "../../db/mysqlConnection";
 import type { JwtPayload } from "jsonwebtoken";
-import type {
-  ActiveSeasonSignupForAppId,
-  KanahautomoRegistrationRecord,
-  Organizations
-} from "@eggosystem/types";
-import { SeasonPlatform } from "@eggosystem/types";
+import type { Organizations } from "@eggosystem/types";
 
 // Mock the models
 jest.mock("../../models/kanahautomo.models");
 jest.mock("../../models/organization.models");
-jest.mock("../../models/season.models");
 jest.mock("../../db/mysqlConnection");
 jest.mock("../../utils/app-logger", () => ({
   logger: {
@@ -30,7 +23,6 @@ const mockKanahautomoModels = kanahautomoModels as jest.Mocked<
 const mockOrganizationModels = organizationModels as jest.Mocked<
   typeof organizationModels
 >;
-const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 const mockGetConnection = dbConnection.getConnection as jest.Mock;
 
 const mockOrg: Organizations = {
@@ -78,15 +70,6 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       provider: "steam"
     };
     mockRequest = { auth: mockAuth, body: { organization_id: 1 } };
-    mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
-      season_id: 15,
-      platform: SeasonPlatform.Kanaliiga,
-      signup_end_date: "2024-12-31",
-      full_name: "Test Season"
-    } as ActiveSeasonSignupForAppId);
-    mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
-      []
-    );
     mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
     mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue({
       insertId: 123
@@ -101,7 +84,7 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     expect(mockOrganizationModels.getOrganizationById).toHaveBeenCalledWith(1);
     expect(
       mockKanahautomoModels.registerPlayerForKanahautomo
-    ).toHaveBeenCalledWith("steamid", 1, 15);
+    ).toHaveBeenCalledWith("steamid", 1, false);
     expect(connection.commit).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();
     expect(mockStatus).toHaveBeenCalledWith(201);
@@ -163,25 +146,6 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     );
   });
 
-  it("throws if no active season", async () => {
-    const mockAuth: JwtPayload = {
-      account_id: 1,
-      provider_id: "steamid",
-      permissions: [],
-      roles: [],
-      nickname: "TestUser",
-      provider: "steam"
-    };
-    mockRequest = { auth: mockAuth, body: { organization_id: 1 } };
-    mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(undefined);
-    await expect(
-      registerForKanahautomoWithOrganization(
-        mockRequest as Request,
-        mockResponse as Response
-      )
-    ).rejects.toThrow("No active season found for CS2");
-  });
-
   it("returns 400 if already registered", async () => {
     const mockAuth: JwtPayload = {
       account_id: 1,
@@ -192,24 +156,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       provider: "steam"
     };
     mockRequest = { auth: mockAuth, body: { organization_id: 1 } };
-    mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
-      season_id: 15,
-      platform: SeasonPlatform.Kanaliiga,
-      signup_end_date: "2024-12-31",
-      full_name: "Test Season"
-    } as ActiveSeasonSignupForAppId);
-    mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
-      [
-        {
-          id: 0,
-          steam_id: "",
-          season_id: 0,
-          organization_id: 0,
-          status: "active",
-          created_at: ""
-        } satisfies KanahautomoRegistrationRecord
-      ]
+    mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
+    mockKanahautomoModels.registerPlayerForKanahautomo.mockRejectedValue(
+      new Error("Duplicate entry")
     );
+
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
       mockResponse as Response
@@ -218,7 +169,7 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     expect(mockJson).toHaveBeenCalledWith({
       error: expect.stringContaining("already registered")
     });
-    expect(connection.beginTransaction).not.toHaveBeenCalled();
+    expect(connection.beginTransaction).toHaveBeenCalled();
   });
 
   it("rolls back and throws if org does not exist", async () => {
@@ -231,16 +182,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       provider: "steam"
     };
     mockRequest = { auth: mockAuth, body: { organization_id: 999 } };
-    mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
-      season_id: 15,
-      platform: SeasonPlatform.Kanaliiga,
-      signup_end_date: "2024-12-31",
-      full_name: "Test Season"
-    } as ActiveSeasonSignupForAppId);
-    mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
-      []
-    );
     mockOrganizationModels.getOrganizationById.mockResolvedValue([]);
+
     await expect(
       registerForKanahautomoWithOrganization(
         mockRequest as Request,
@@ -266,15 +209,7 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       website: "https://new.org"
     };
     mockRequest = { auth: mockAuth, body: { new_organization: newOrg } };
-    mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
-      season_id: 15,
-      platform: SeasonPlatform.Kanaliiga,
-      signup_end_date: "2024-12-31",
-      full_name: "Test Season"
-    } as ActiveSeasonSignupForAppId);
-    mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
-      []
-    );
+
     mockOrganizationModels.insertOrganization.mockResolvedValue({
       insertId: 42
     });
@@ -291,7 +226,7 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     );
     expect(
       mockKanahautomoModels.registerPlayerForKanahautomo
-    ).toHaveBeenCalledWith("steamid", 42, 15);
+    ).toHaveBeenCalledWith("steamid", 42, false);
     expect(connection.commit).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();
     expect(mockStatus).toHaveBeenCalledWith(201);
@@ -307,15 +242,6 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       provider: "steam"
     };
     mockRequest = { auth: mockAuth, body: { organization_id: 1 } };
-    mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue({
-      season_id: 15,
-      platform: SeasonPlatform.Kanaliiga,
-      signup_end_date: "2024-12-31",
-      full_name: "Test Season"
-    } as ActiveSeasonSignupForAppId);
-    mockKanahautomoModels.getKanahautomoRegistrationsByPlayerAndSeason.mockResolvedValue(
-      []
-    );
     mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
     mockKanahautomoModels.registerPlayerForKanahautomo.mockRejectedValue(
       new Error("fail")
