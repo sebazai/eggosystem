@@ -216,7 +216,7 @@ if [ -z "$MATCHING_STACKS" ]; then
   
   # Delete images first if they exist
   for IMAGE_NAME in "eggo-backend" "eggo-frontend" "eggo-migrations"; do
-    delete_image "$IMAGE_NAME" "latest"
+    delete_image "$IMAGE_NAME" "${ENV_ID}"
   done
   
   # Create the stack with compose file content
@@ -280,7 +280,7 @@ else
   
   # Delete images
   for IMAGE_NAME in "eggo-backend" "eggo-frontend" "eggo-migrations"; do
-    delete_image "$IMAGE_NAME" "latest"
+    delete_image "$IMAGE_NAME" "${ENV_ID}"
   done
   
   # Create the stack with compose file content
