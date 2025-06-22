@@ -140,8 +140,10 @@ export const ChickenAnnouncer = ({
               : "opacity-0 translate-y-4 pointer-events-none"
           )}
           style={{
-            maxWidth: "240px",
+            maxWidth: "300px",
+            minWidth: "240px",
             marginBottom: "60px",
+            padding: "12px",
             position: "absolute",
             bottom: "100%",
             left: "50%",
@@ -149,7 +151,7 @@ export const ChickenAnnouncer = ({
           }}
           onClick={handleClick}
         >
-          <div className="font-bold text-sm text-black dark:text-white text-center whitespace-pre-line">
+          <div className="font-bold text-center whitespace-pre-line px-2 text-black dark:text-white text-base">
             {message}
           </div>
           <div className="absolute h-4 w-4 bg-white dark:bg-gray-800 border-b border-r border-gray-300 dark:border-gray-600 transform rotate-45 left-0 right-0 mx-auto -mb-2 bottom-0"></div>
