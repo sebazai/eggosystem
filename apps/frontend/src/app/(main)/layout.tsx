@@ -135,7 +135,7 @@ export default function RootLayout({
               <ChickenFeatureAnnouncer
                 showDelay={3000}
                 message="NEW FEATURES! Check them out!"
-                featureDate="2026-06-20"
+                featureDate="2025-06-22"
               />
               <div className="min-h-svh min-w-[320px] w-full">
                 <AuthProvider>
