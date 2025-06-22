@@ -41,13 +41,30 @@ const parseQueryFilterParams = (
     return parsedValues.length > 0 ? parsedValues : null;
   };
 
+  // Parse a single number (for non-array numeric parameters)
+  const parseNumber = (param: string | string[] | undefined): number | null => {
+    if (param === undefined || param === "") return null;
+    if (param === "any") return null;
+
+    const value = Array.isArray(param) ? param[0] : param;
+    if (!value) return null;
+
+    const num = Number(value.trim());
+    return isNaN(num) ? null : num;
+  };
+
   const parsedParams = {
     season_ids: parseArray(req.query.season_ids?.toString()),
     league_ids: parseArray(req.query.league_ids?.toString()),
     team_ids: parseArray(req.query.team_ids?.toString()),
     stages: parseArray(req.query.stages?.toString()),
     map_ids: parseArray(req.query.map_ids?.toString()),
-    playerName: req.query.playerName?.toString() || null
+    playerName: req.query.playerName?.toString() || null,
+    // New filter parameters
+    faceit_level: parseNumber(req.query.faceit_level?.toString()),
+    cs2_rank_min: parseNumber(req.query.cs2_rank_min?.toString()),
+    cs2_rank_max: parseNumber(req.query.cs2_rank_max?.toString()),
+    tier: parseNumber(req.query.tier?.toString())
   } satisfies ParsedParams;
 
   req.parsedParams = parsedParams;

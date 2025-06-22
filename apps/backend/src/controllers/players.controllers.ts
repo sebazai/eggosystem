@@ -19,6 +19,10 @@ import {
 } from "../services/player-ranks.services";
 import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
+import {
+  getPlayerSkillDiagram,
+  getMultiplePlayersSkillDiagrams
+} from "../models/player-skills.models";
 
 export const getPlayerBySteamIdController = async (
   req: RequestWithParams<{ steam_id: string }>,
@@ -230,4 +234,74 @@ export const getPlayerOldKanaEloController = async (
   }
 
   res.status(200).json(oldKanaElo);
+};
+
+/**
+ * Get player skill diagram data with 5 core skill categories
+ * Supports filtering by season, map, and stage
+ * @param req Request with steam_id parameter and filter params
+ * @param res Response with PlayerSkillDiagram object
+ */
+export const getPlayerSkillDiagramController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const skillDiagram = await getPlayerSkillDiagram(steam_id, parsedParams);
+
+  if (!skillDiagram) {
+    res.status(404).json({ message: "Player skill data not found" });
+    return;
+  }
+
+  res.status(200).json(skillDiagram);
+};
+
+/**
+ * Get aggregated skill diagram for multiple players based on filter criteria
+ * Returns a single diagram that represents the group average skill profile
+ * @param req Request with filter parameters
+ * @param res Response with a single aggregated PlayerSkillDiagram
+ */
+export const getMultiplePlayersSkillDiagramController = async (
+  req: Request,
+  res: Response
+) => {
+  const { parsedParams } = req;
+
+  // Validate that only one filter type is selected
+  const filterTypes = [
+    parsedParams.team_ids !== null &&
+      Array.isArray(parsedParams.team_ids) &&
+      parsedParams.team_ids.length > 0,
+    parsedParams.tier !== null && parsedParams.tier !== undefined,
+    parsedParams.faceit_level !== null &&
+      parsedParams.faceit_level !== undefined,
+    parsedParams.cs2_rank_min !== null && parsedParams.cs2_rank_max !== null
+  ];
+
+  const activeFilters = filterTypes.filter(Boolean).length;
+
+  // Multiple filter types selected - reject with error
+  if (activeFilters > 1) {
+    res.status(400).json({
+      message:
+        "Only one filter type (team, tier, faceit_level, or cs2_rank range) can be selected at a time"
+    });
+    return;
+  }
+
+  const aggregatedSkillDiagram =
+    await getMultiplePlayersSkillDiagrams(parsedParams);
+
+  if (!aggregatedSkillDiagram) {
+    res.status(404).json({
+      message: "No player data found matching the specified filters"
+    });
+    return;
+  }
+
+  res.status(200).json(aggregatedSkillDiagram);
 };

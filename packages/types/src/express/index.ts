@@ -13,6 +13,10 @@ export interface ParsedParams {
   stages: Nullable<number[]>;
   map_ids: Nullable<number[]>;
   playerName?: Nullable<string>;
+  faceit_level?: Nullable<number>;
+  cs2_rank_min?: Nullable<number>;
+  cs2_rank_max?: Nullable<number>;
+  tier?: Nullable<number>;
 }
 
 export type SteamUserPayload = Omit<UserPayload, "roles" | "permissions">;

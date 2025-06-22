@@ -32,7 +32,11 @@ describe("parseFilterParams Middleware", () => {
       league_ids: [5, 6],
       stages: [7, 8],
       team_ids: [9, 10],
-      playerName: null
+      playerName: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -51,7 +55,11 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       playerName: null,
       stages: null,
-      team_ids: null
+      team_ids: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -65,7 +73,11 @@ describe("parseFilterParams Middleware", () => {
       league_ids: null,
       playerName: null,
       stages: null,
-      team_ids: null
+      team_ids: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -81,7 +93,11 @@ describe("parseFilterParams Middleware", () => {
       league_ids: null,
       stages: null,
       playerName: null,
-      team_ids: null
+      team_ids: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -100,7 +116,11 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       playerName: null,
       stages: null,
-      team_ids: null
+      team_ids: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -119,7 +139,11 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       playerName: null,
       stages: null,
-      team_ids: null
+      team_ids: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
     });
     expect(next).toHaveBeenCalled();
   });
@@ -138,7 +162,36 @@ describe("parseFilterParams Middleware", () => {
       map_ids: null,
       playerName: null,
       stages: null,
-      team_ids: null
+      team_ids: null,
+      cs2_rank_max: null,
+      cs2_rank_min: null,
+      faceit_level: null,
+      tier: null
+    });
+    expect(next).toHaveBeenCalled();
+  });
+
+  it("should correctly parse numeric filter params", () => {
+    req.query = {
+      faceit_level: "8",
+      cs2_rank_min: "15",
+      cs2_rank_max: "18",
+      tier: "2"
+    };
+
+    parseQueryFilterParams(req as Request, res as Response, next);
+
+    expect(req.parsedParams).toEqual({
+      season_ids: null,
+      league_ids: null,
+      map_ids: null,
+      playerName: null,
+      stages: null,
+      team_ids: null,
+      cs2_rank_max: 18,
+      cs2_rank_min: 15,
+      faceit_level: 8,
+      tier: 2
     });
     expect(next).toHaveBeenCalled();
   });
