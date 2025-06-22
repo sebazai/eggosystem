@@ -5,9 +5,3 @@ export interface KanahautomoRegistration {
   accepted_terms: boolean;
   created_at: string;
 }
-
-export interface InsertKanahautomoRegistration {
-  steam_id: string; // steam_id from SteamPlayers
-  organization_id: number;
-  accepted_terms?: boolean;
-}

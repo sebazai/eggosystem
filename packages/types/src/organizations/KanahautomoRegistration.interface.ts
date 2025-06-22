@@ -10,11 +10,3 @@ export interface KanahautomoRegistrationResponse {
   registration_id: number;
   organization_id: number;
 }
-
-export interface KanahautomoRegistrationRecord {
-  id: number;
-  steam_id: string;
-  organization_id: number;
-  accepted_terms: boolean;
-  created_at: string;
-}
