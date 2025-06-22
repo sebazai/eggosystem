@@ -72,9 +72,7 @@ export async function clientApiFetch<T>(
     if (response.status === 401) {
       const errData = await response.json().catch(() => ({}));
       const message =
-        typeof errData?.error?.message === "string"
-          ? errData.error.message
-          : "Unauthorized";
+        typeof errData?.error === "string" ? errData.error : "Unauthorized";
 
       if (retryAttempted) {
         // Prevent infinite retry loop, but include error message if available
@@ -100,12 +98,9 @@ export async function clientApiFetch<T>(
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
       console.error("API Client Error", errData);
-      if (
-        typeof errData?.error?.message === "string" ||
-        typeof errData?.message === "string"
-      ) {
+      if (typeof errData?.error === "string" || typeof errData === "string") {
         throw new ApiError(
-          errData?.error?.message ?? errData?.message ?? "Unknown API error",
+          errData?.error ?? errData ?? "Unknown API error",
           response.status
         );
       }

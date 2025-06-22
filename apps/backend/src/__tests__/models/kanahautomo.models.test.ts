@@ -26,7 +26,7 @@ describe("Kanahautomo Models", () => {
       const organizationId = 5;
       const seasonId = 15;
 
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 123 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 123 });
 
       const result = await registerPlayerForKanahautomo(
         steamId,
@@ -36,9 +36,10 @@ describe("Kanahautomo Models", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         "INSERT INTO KanahautomoRegistration (steam_id, season_id, organization_id, status) VALUES (?, ?, ?, 'active')",
-        [steamId, seasonId, organizationId]
+        [steamId, seasonId, organizationId],
+        undefined
       );
-      expect(result).toEqual([{ insertId: 123 }]);
+      expect(result).toEqual({ insertId: 123 });
     });
 
     it("should throw error if player is already registered", async () => {
@@ -51,11 +52,16 @@ describe("Kanahautomo Models", () => {
       (error as Error & { code: string }).code = "ER_DUP_ENTRY";
       mockRunQuery.mockRejectedValueOnce(error);
 
-      await expect(
-        registerPlayerForKanahautomo(steamId, organizationId, seasonId)
-      ).rejects.toThrow(
-        "Player is already registered for Kanahautomo in this season"
-      );
+      try {
+        await registerPlayerForKanahautomo(steamId, organizationId, seasonId);
+        throw new Error("Expected function to throw");
+      } catch (error) {
+        console.log("Actual error:", error);
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe(
+          "Player is already registered for Kanahautomo in this season"
+        );
+      }
     });
 
     it("should throw error if player is already registered for the same season", async () => {
@@ -64,7 +70,7 @@ describe("Kanahautomo Models", () => {
       const seasonId = 1;
 
       // Mock successful first registration
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 123 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 123 });
 
       // Mock duplicate key error for second registration
       const error = new Error("Duplicate entry");
@@ -87,8 +93,8 @@ describe("Kanahautomo Models", () => {
       const organizationId = 1;
 
       // Mock successful registrations for different seasons
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 123 }]);
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 124 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 123 });
+      mockRunQuery.mockResolvedValueOnce({ insertId: 124 });
 
       // Register for season 1
       await registerPlayerForKanahautomo(steamId, organizationId, 1);
@@ -104,8 +110,8 @@ describe("Kanahautomo Models", () => {
       const seasonId = 1;
 
       // Mock successful registrations for different players
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 123 }]);
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 124 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 123 });
+      mockRunQuery.mockResolvedValueOnce({ insertId: 124 });
 
       // Player 1 registers for season 1
       await registerPlayerForKanahautomo("steam123", organizationId, seasonId);
@@ -120,8 +126,8 @@ describe("Kanahautomo Models", () => {
       const steamId = "steam123";
 
       // Mock successful registrations for different organizations/seasons
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 123 }]);
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 124 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 123 });
+      mockRunQuery.mockResolvedValueOnce({ insertId: 124 });
 
       // Register for organization 1, season 1
       await registerPlayerForKanahautomo(steamId, 1, 1);

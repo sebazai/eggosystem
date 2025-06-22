@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { expressFetcher } from "@/lib/utils";
+import { clientApiFetch } from "@/lib/apiClient";
 
 export interface KanahautomoOrgStatus {
   organization_id: number;
@@ -13,10 +13,10 @@ interface KanahautomoOrgStatusResponse {
 }
 
 export function useKanahautomoOrganizationStatus() {
-  const { data, error, isValidating, isLoading } = useSWR<
+  const { data, error, isValidating, isLoading, mutate } = useSWR<
     KanahautomoOrgStatusResponse,
     Error
-  >("/api/v1/kanahautomo/organization-status", expressFetcher, {
+  >("/api/v1/kanahautomo/organization-status", clientApiFetch, {
     revalidateOnFocus: false
   });
 
@@ -24,6 +24,7 @@ export function useKanahautomoOrganizationStatus() {
     orgStatus: data?.organizations ?? [],
     orgStatusLoading: isLoading,
     orgStatusError: error,
-    isValidating
+    isValidating,
+    mutate
   };
 }

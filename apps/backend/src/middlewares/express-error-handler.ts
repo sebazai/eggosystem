@@ -10,7 +10,7 @@ export const expressErrorHandler = (
   _next: NextFunction
 ) => {
   if (err instanceof UnauthorizedError) {
-    res.status(err.status).json({ error: { message: err.message } });
+    res.status(err.status).json({ error: err.message });
     return;
   }
 
@@ -21,14 +21,14 @@ export const expressErrorHandler = (
   }
 
   if (err instanceof BaseError) {
-    res.status(err.status).json({ error: { message: err.message } });
+    res.status(err.status).json({ error: err.message });
     return;
   }
 
   if (err instanceof Error) {
-    res.status(400).json({ error: { message: err.message } });
+    res.status(400).json({ error: err.message });
     return;
   }
 
-  res.status(500).json({ error: { message: "Something went wrong" } });
+  res.status(500).json({ error: "Something went wrong" });
 };

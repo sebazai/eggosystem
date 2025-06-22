@@ -46,18 +46,19 @@ const kanahautomoSchema = z
   })
   .refine(
     (data) => {
-      if (data.organizationId === -1) {
-        return (
-          data.newOrganization &&
-          data.newOrganization.name &&
-          data.newOrganization.organization_code &&
-          data.newOrganization.website
-        );
-      }
-      return data.organizationId && data.organizationId > 0;
+      // Must have exactly one: either organizationId OR newOrganization
+      const hasOrgId = data.organizationId && data.organizationId > 0;
+      const hasNewOrg =
+        data.newOrganization &&
+        data.newOrganization.name &&
+        data.newOrganization.organization_code &&
+        data.newOrganization.website;
+
+      return (hasOrgId && !hasNewOrg) || (!hasOrgId && hasNewOrg);
     },
     {
-      message: "Please select an organization or create a new one",
+      message:
+        "Please select an existing organization OR create a new one (not both)",
       path: ["organizationId"]
     }
   );
@@ -71,8 +72,12 @@ export default function KanahautomoPage() {
     isLoading: orgsLoading,
     isError: orgsError
   } = useOrganizations();
-  const { orgStatus, orgStatusLoading, orgStatusError } =
-    useKanahautomoOrganizationStatus();
+  const {
+    orgStatus,
+    orgStatusLoading,
+    orgStatusError,
+    mutate: mutateOrgStatus
+  } = useKanahautomoOrganizationStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,8 +107,8 @@ export default function KanahautomoPage() {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Join Kanahautomo</h1>
-            <p className="kanaliiga-light-brown">
+            <h1 className="text-2xl font-bold pb-7">Join Kanahautomo</h1>
+            <p className="text-kanaliiga-light-brown">
               Please log in with Steam to join Kanahautomo
             </p>
           </CardContent>
@@ -117,8 +122,8 @@ export default function KanahautomoPage() {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Join Kanahautomo</h1>
-            <p className="kanaliiga-light-brown">
+            <h1 className="text-2xl font-bold pb-7">Join Kanahautomo</h1>
+            <p className="text-kanaliiga-light-brown">
               Failed to load organizations. Please try again later.
             </p>
           </CardContent>
@@ -161,6 +166,7 @@ export default function KanahautomoPage() {
 
       toast.success("Successfully registered for Kanahautomo!");
       form.reset();
+      if (mutateOrgStatus) await mutateOrgStatus();
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "An error occurred";
@@ -173,59 +179,22 @@ export default function KanahautomoPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Organization status table */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-2">
-          Organization Registration Status
-        </h2>
-        {orgStatusLoading ? (
-          <div>Loading...</div>
-        ) : orgStatusError ? (
-          <div className="kanaliiga-orange">
-            {orgStatusError.message || "Failed to load organization status"}
-          </div>
-        ) : (
-          <table className="min-w-full border text-sm">
-            <thead>
-              <tr>
-                <th className="border px-2 py-1 text-left">Organization</th>
-                <th className="border px-2 py-1 text-left">Count</th>
-                <th className="border px-2 py-1 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orgStatus.map((org) => (
-                <tr key={org.organization_id}>
-                  <td className="border px-2 py-1">{org.organization_name}</td>
-                  <td className="border px-2 py-1">{org.count}</td>
-                  <td className="border px-2 py-1">
-                    {org.status === "ready" ? (
-                      <span className="kanaliiga-orange font-semibold">
-                        Ready
-                      </span>
-                    ) : (
-                      <span className="kanaliiga-light-brown">Waiting</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      <Card>
+      <Card className="mb-8">
         <CardHeader>
           <div
-            className="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"
+            className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6"
             data-slot="card-header"
           >
-            <h1 className="text-2xl font-bold" data-slot="card-title">
+            <h1 className="text-2xl font-bold mb-4" data-slot="card-title">
               Join Kanahautomo
             </h1>
-            <p className="kanaliiga-light-brown">
+            <p>
               Register for Kanahautomo to find teammates from your organization.
               When 5 or more players from the same organization register, a
-              Discord channel will be created automatically.
+              Discord channel will be created automatically and an email with
+              the invite link will be sent to your registered email address.
+              Please ensure you have a valid email in your profile and it is
+              verified. Remember to check your junk e-mail folder.
             </p>
           </div>
         </CardHeader>
@@ -283,12 +252,13 @@ export default function KanahautomoPage() {
                 </div>
               )}
 
-              {error && <div className="kanaliiga-orange text-sm">{error}</div>}
+              {error && (
+                <div className="text-kanaliiga-orange text-sm">{error}</div>
+              )}
 
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full"
                 data-testid="kanahautomo-submit"
               >
                 {isSubmitting ? "Registering..." : "Join Kanahautomo"}
@@ -297,6 +267,106 @@ export default function KanahautomoPage() {
           </Form>
         </CardContent>
       </Card>
+      {/* Organization status cards */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-6">
+          Organization Registration Status
+        </h2>
+        {orgStatusLoading ? (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+          </div>
+        ) : orgStatusError ? (
+          <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-kanaliiga-orange">
+              {orgStatusError.message || "Failed to load organization status"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {orgStatus.map((org) => (
+              <div
+                key={org.organization_id}
+                className={`relative overflow-hidden rounded-xl border transition-all duration-300 hover:scale-105 shadow-md ${
+                  org.status === "ready"
+                    ? "border-orange-200"
+                    : "border-gray-200"
+                }`}
+              >
+                {/* Status indicator */}
+                <div
+                  className={`absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] ${
+                    org.status === "ready"
+                      ? "border-t-orange-500"
+                      : "border-t-gray-400"
+                  }`}
+                />
+
+                {/* Progress bar */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      org.status === "ready"
+                        ? "bg-gradient-to-r from-orange-400 to-orange-600"
+                        : "bg-gradient-to-r from-gray-300 to-gray-400"
+                    }`}
+                    style={{
+                      width: `${Math.min((org.count / 5) * 100, 100)}%`
+                    }}
+                  />
+                </div>
+
+                <div className="p-6">
+                  {/* Organization name */}
+                  <h3 className="font-bold text-lg mb-2 text-kanaliiga-light-brown truncate">
+                    {org.organization_name}
+                  </h3>
+
+                  {/* Count and status */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex -space-x-1">
+                        {[...Array(Math.min(org.count, 5))].map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold ${
+                              org.status === "ready"
+                                ? "bg-orange-500 text-white"
+                                : "bg-gray-400 text-white"
+                            }`}
+                          >
+                            {i === 4 && org.count > 5 ? "+" : "👤"}
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-sm font-medium text-kanaliiga-light-brown">
+                        {org.count}/5
+                      </span>
+                    </div>
+
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        org.status === "ready"
+                          ? "bg-orange-100 text-orange-700 border border-orange-200"
+                          : "bg-gray-100 text-kanaliiga-light-brown border border-gray-200"
+                      }`}
+                    >
+                      {org.status === "ready" ? "Ready" : "Waiting"}
+                    </div>
+                  </div>
+
+                  {/* Status message */}
+                  <p className="text-xs text-kanaliiga-light-brown">
+                    {org.status === "ready"
+                      ? "Discord channel will be created soon!"
+                      : `${5 - org.count} more needed for Discord channel`}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

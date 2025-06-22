@@ -1,21 +1,25 @@
 import type { KanahautomoRegistrationRecord } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type PoolConnection } from "mysql2/promise";
 
 export const registerPlayerForKanahautomo = async (
   steamId: string,
   organizationId: number,
-  seasonId: number
-): Promise<{ insertId: number }[]> => {
+  seasonId: number,
+  connection?: PoolConnection
+) => {
   try {
-    return await runQuery<Array<{ insertId: number }>>(
+    return await runQuery<{ insertId: number }>(
       "INSERT INTO KanahautomoRegistration (steam_id, season_id, organization_id, status) VALUES (?, ?, ?, 'active')",
-      [steamId, seasonId, organizationId]
+      [steamId, seasonId, organizationId],
+      connection
     );
   } catch (error: unknown) {
     if (
-      error instanceof Error &&
+      error &&
+      typeof error === "object" &&
       "code" in error &&
-      error.code === "ER_DUP_ENTRY"
+      (error as { code?: string }).code === "ER_DUP_ENTRY"
     ) {
       throw new Error(
         "Player is already registered for Kanahautomo in this season"

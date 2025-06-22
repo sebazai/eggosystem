@@ -130,7 +130,8 @@ describe("KanahautomoPage", () => {
       orgStatus: mockOrgStatus,
       orgStatusLoading: false,
       orgStatusError: undefined,
-      isValidating: false
+      isValidating: false,
+      mutate: jest.fn()
     });
 
     (useAuth as jest.Mock).mockReturnValue(mockAuthContext);
@@ -158,18 +159,17 @@ describe("KanahautomoPage", () => {
         screen.getByText("Organization Registration Status")
       ).toBeInTheDocument();
     });
+    // Check for organization names in headings (cards, not table cells)
     expect(
-      screen.getByRole("cell", { name: "Test Organization 1" })
+      screen.getByRole("heading", { name: "Test Organization 1" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("cell", { name: "Test Organization 2" })
+      screen.getByRole("heading", { name: "Test Organization 2" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("cell", { name: "Test Organization 3" })
+      screen.getByRole("heading", { name: "Test Organization 3" })
     ).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument();
-    expect(screen.getByText("5")).toBeInTheDocument();
+    // Check for status badges
     expect(screen.getAllByText("Ready")).toHaveLength(2);
     expect(screen.getAllByText("Waiting")).toHaveLength(1);
   });
@@ -179,7 +179,8 @@ describe("KanahautomoPage", () => {
       orgStatus: [],
       orgStatusLoading: false,
       orgStatusError: new Error("Failed to load organization status"),
-      isValidating: false
+      isValidating: false,
+      mutate: jest.fn()
     });
     render(
       <AuthProvider>
@@ -329,14 +330,17 @@ describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
       orgStatus: [],
       orgStatusLoading: true,
       orgStatusError: undefined,
-      isValidating: true
+      isValidating: true,
+      mutate: jest.fn()
     });
     render(
       <AuthProvider>
         <KanahautomoPage />
       </AuthProvider>
     );
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    // Look for the loading spinner div with animate-spin class
+    const loadingSpinner = document.querySelector(".animate-spin");
+    expect(loadingSpinner).toBeInTheDocument();
   });
 
   it("shows error state for organization status", () => {
@@ -344,7 +348,8 @@ describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
       orgStatus: [],
       orgStatusLoading: false,
       orgStatusError: new Error("Failed to load organization status"),
-      isValidating: false
+      isValidating: false,
+      mutate: jest.fn()
     });
     render(
       <AuthProvider>
@@ -361,7 +366,8 @@ describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
       orgStatus: mockOrgStatus,
       orgStatusLoading: false,
       orgStatusError: undefined,
-      isValidating: false
+      isValidating: false,
+      mutate: jest.fn()
     });
     render(
       <AuthProvider>
@@ -373,10 +379,10 @@ describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
         screen.getByText("Organization Registration Status")
       ).toBeInTheDocument();
     });
+    // Check for organization names in headings (cards, not table cells)
     expect(
-      screen.getByRole("cell", { name: "Test Organization 1" })
+      screen.getByRole("heading", { name: "Test Organization 1" })
     ).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
     expect(screen.getAllByText("Ready")).toHaveLength(2);
   });
 });

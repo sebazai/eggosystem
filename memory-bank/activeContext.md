@@ -735,3 +735,10 @@ it("should verify correct SQL queries and parameters", async () => {
 - Ensures queries are optimized and correct
 - Catches SQL injection vulnerabilities
 - Validates parameter binding
+
+# Frontend Custom Color Class Convention
+
+- Always use `text-kanaliiga-orange` instead of `kanaliiga-orange`
+- Always use `text-kanaliiga-light-brown` instead of `kanaliiga-light-brown`
+- This follows Tailwind CSS conventions for text color utility classes
+- Apply this rule to all frontend code and reviews

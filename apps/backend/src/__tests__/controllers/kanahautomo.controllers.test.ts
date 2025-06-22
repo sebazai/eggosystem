@@ -88,9 +88,9 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       []
     );
     mockOrganizationModels.getOrganizationById.mockResolvedValue([mockOrg]);
-    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue([
-      { insertId: 123 }
-    ]);
+    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue({
+      insertId: 123
+    });
 
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
@@ -278,9 +278,9 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     mockOrganizationModels.insertOrganization.mockResolvedValue({
       insertId: 42
     });
-    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue([
-      { insertId: 123 }
-    ]);
+    mockKanahautomoModels.registerPlayerForKanahautomo.mockResolvedValue({
+      insertId: 123
+    });
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
       mockResponse as Response

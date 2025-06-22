@@ -38,7 +38,6 @@ export const registerForKanahautomoWithOrganization = async (
       "Either organization_id or new_organization is required"
     );
   }
-
   if (organization_id && new_organization) {
     throw new BadRequestError(
       "Cannot provide both organization_id and new_organization"
@@ -95,7 +94,7 @@ export const registerForKanahautomoWithOrganization = async (
 
     const response: KanahautomoRegistrationResponse = {
       message: "Successfully registered for Kanahautomo",
-      registration_id: result[0].insertId,
+      registration_id: result.insertId,
       organization_id: finalOrganizationId
     };
 

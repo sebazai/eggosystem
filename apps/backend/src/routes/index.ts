@@ -29,6 +29,7 @@ const v1Router = Router();
 
 // Dashboard
 v1Router.use("/dashboard", authenticateJWT, dashboardRouter);
+v1Router.use("/kanahautomo", authenticateJWT, kanahautomoRouter);
 
 // Mount the routers
 v1Router.use("/auth", authRouter);
@@ -55,7 +56,6 @@ v1Router.use("/sortter", sortterRouter);
 v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
 v1Router.use("/allstar", allstarRouter);
-v1Router.use("/kanahautomo", kanahautomoRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
