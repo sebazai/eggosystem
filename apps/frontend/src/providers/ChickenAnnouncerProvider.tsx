@@ -37,7 +37,7 @@ export const ChickenAnnouncerProvider = ({
 }: ChickenAnnouncerProviderProps) => {
   const [showAnnouncer, setShowAnnouncer] = useState(false);
   const [config, setConfig] = useState({
-    message: "NEW FEATURES NEW FEATURES",
+    message: "NEW FEATURES!\nCheck them out!",
     targetUrl: "/new-features",
     autoHideAfter: undefined as number | undefined,
     onChickenClick: undefined as (() => void) | undefined
