@@ -434,7 +434,9 @@ export const getPlayerStatsWithFilters = async (
       SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
       SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
       SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
-      COUNT(DISTINCT ps.id) as rounds_played
+      COUNT(DISTINCT ps.id) as rounds_played,
+      SUM(ps.kills_t) as kills_t,
+      SUM(ps.kills_ct) as kills_ct
     FROM SteamPlayers p
     INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
     INNER JOIN MatchGames mg ON mg.id = ps.game_id

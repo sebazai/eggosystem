@@ -1,10 +1,14 @@
-export type PlayerStatsResult = {
-  steam_id: string;
-  nickname: string;
+import { type Map, SteamPlayer } from "../db";
+
+export interface PlayerMapStats {
+  steam_id: SteamPlayer["steam_id"];
+  nickname: SteamPlayer["nickname"];
+  map_id: Map["id"];
+  map_name: Map["name"];
   maps_played: number;
   kills: number;
-  assists: number;
   deaths: number;
+  assists: number;
   flash_assists: number;
   awp_kills: number;
   utility_damage: number;
@@ -24,11 +28,14 @@ export type PlayerStatsResult = {
   flashes_thrown: number;
   total_ef_duration: number;
   kd: number;
-  kills_t?: number;
-  kills_ct?: number;
+  kills_t: number;
+  kills_ct: number;
   multikill_2k: number;
   multikill_3k: number;
   multikill_4k: number;
   multikill_5k: number;
   rounds_played: number;
-};
+  wins: number;
+  losses: number;
+  win_percentage: number;
+}

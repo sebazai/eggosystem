@@ -31,9 +31,16 @@ const simulateSideStats = (winPct: number) => {
 
 // Function to determine color based on win percentage
 const getPistolRoundColor = (winPercentage: number) => {
-  if (winPercentage <= 25) return "bg-red-400";
-  if (winPercentage < 50) return "bg-amber-400";
-  return "bg-emerald-400";
+  if (winPercentage <= 25) return "bg-red-400/50";
+  if (winPercentage <= 50) return "bg-amber-400/50";
+  return "bg-emerald-400/50";
+};
+
+// Function to determine color for win percentage text
+const getWinRateColor = (winPercentage: number) => {
+  if (winPercentage <= 25) return "text-red-400/50";
+  if (winPercentage <= 50) return "text-amber-400/50";
+  return "text-green-400/50";
 };
 
 export const TeamMapStatsCards = ({
@@ -119,14 +126,16 @@ export const TeamMapStatsCards = ({
               {/* Win rate stats */}
               <div className="flex justify-between items-center mb-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-kanaliiga-orange">
+                  <p
+                    className={`text-3xl font-bold ${getWinRateColor(mapStat.win_percentage)}`}
+                  >
                     {mapStat.win_percentage.toFixed(0)}%
                   </p>
                   <p className="text-xs text-muted-foreground">Win rate</p>
                 </div>
                 <div className="text-center">
                   <p className="text-xl">
-                    <span className="text-green-500 font-medium">
+                    <span className="text-green-400/50 font-medium">
                       {mapStat.wins}
                     </span>{" "}
                     / {mapStat.maps_played}
@@ -135,7 +144,9 @@ export const TeamMapStatsCards = ({
                 </div>
                 {pistolStat && (
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-kanaliiga-orange">
+                    <p
+                      className={`text-3xl font-bold ${getWinRateColor(pistolStat.pistol_win_percentage)}`}
+                    >
                       {pistolStat.pistol_win_percentage.toFixed(0)}%
                     </p>
                     <p className="text-xs text-muted-foreground">Pistol win</p>
@@ -153,7 +164,7 @@ export const TeamMapStatsCards = ({
                   </div>
                   <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-amber-300"
+                      className="h-full bg-amber-300/50"
                       style={{
                         width: `${Math.min(100, parseFloat(tKd) * 50)}%`
                       }}
@@ -169,7 +180,7 @@ export const TeamMapStatsCards = ({
                   </div>
                   <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-sky-400"
+                      className="h-full bg-sky-400/50"
                       style={{
                         width: `${Math.min(100, parseFloat(ctKd) * 50)}%`
                       }}
@@ -216,7 +227,7 @@ export const TeamMapStatsCards = ({
                     </div>
                     <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-amber-300"
+                        className="h-full bg-amber-300/50"
                         style={{
                           width: `${(Math.floor(pistolStat.pistol_rounds_won * 0.5) / Math.floor(pistolStat.pistol_rounds_played * 0.5)) * 100}%`
                         }}
@@ -235,7 +246,7 @@ export const TeamMapStatsCards = ({
                     </div>
                     <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-sky-400"
+                        className="h-full bg-sky-400/50"
                         style={{
                           width: `${(Math.ceil(pistolStat.pistol_rounds_won * 0.5) / Math.ceil(pistolStat.pistol_rounds_played * 0.5)) * 100}%`
                         }}
