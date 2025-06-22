@@ -1446,3 +1446,154 @@ This simple questioning can save hours of complex debugging by focusing on the a
 ### General Rule
 
 When debugging, always start with the **most recent change** and work backward, not forward into complexity.
+
+# Player Skill Metrics Pattern
+
+## Player Skill Diagram
+
+The Player Skill Diagram feature uses a radar chart visualization to represent player performance across five key skill dimensions. This pattern demonstrates effective use of:
+
+1. **Radar Chart Visualization**: Using Recharts to create a pentagonal radar chart
+2. **Skill Dimension Calculation**: Breaking down player performance into 5 key metrics
+3. **Comparison Capability**: Allowing comparison with team average, similar ranked players, or all players
+
+### Component Structure
+
+```tsx
+// Parent component structure
+<PlayerSkillTab steamId={steamId} filterQueryParams={filterParams} />
+  ↓
+<usePlayerSkillDiagram> // Data fetching hook
+  ↓
+<PlayerSkillRadar playerSkillData={data} compareSkillData={compareData} />
+```
+
+### Data Model
+
+```typescript
+interface PlayerSkillDiagram {
+  steam_id: string;
+  nickname: string;
+  overall_rating: number;
+  aim: number; // Mechanical skills (headshot %, accuracy)
+  positioning: number; // Tactical awareness (opening duels, survival)
+  impact: number; // Round outcome influence (clutches, multi-kills)
+  utility: number; // Grenade/flash effectiveness
+  consistency: number; // Performance stability across maps/sides
+  detailed_metrics: {
+    // Additional detailed metrics
+    // Various sub-metrics that contribute to main categories
+  };
+}
+```
+
+### API Endpoints
+
+```
+GET /api/v1/players/:steam_id/skill-diagram
+GET /api/v1/players/skill-diagram/aggregate
+```
+
+### Comparison Logic
+
+The comparison feature allows players to compare their skills against different benchmarks:
+
+```typescript
+// Dynamic URL generation based on comparison type
+let compareUrl: string | null = null;
+
+if (compareOption === "aggregate") {
+  // All players aggregate
+  compareUrl = `/api/v1/players/skill-diagram/aggregate?${sortedQuery}`;
+} else if (compareOption.startsWith("faceit_")) {
+  // Faceit level comparison
+  const faceitLevel = compareOption.split("_")[1];
+  compareUrl = addParamsToUrl(baseUrl, { faceit_level: faceitLevel });
+} else if (compareOption.startsWith("cs2rank_")) {
+  // CS2 rank comparison
+  const rankValue = compareOption.split("_")[1];
+  const rankMin = parseInt(rankValue) - 500;
+  const rankMax = parseInt(rankValue) + 500;
+  compareUrl = addParamsToUrl(baseUrl, {
+    cs2_rank_min: rankMin,
+    cs2_rank_max: rankMax
+  });
+} else if (compareOption === "team" && playerTeam?.team_id) {
+  // Player's own team
+  compareUrl = addParamsToUrl(baseUrl, { team_ids: playerTeam.team_id });
+}
+```
+
+### Team Data Pre-fetching
+
+To enable team comparison, the player's team data is pre-fetched when the component loads:
+
+```typescript
+// Pre-fetch player's team when component loads
+useEffect(() => {
+  const fetchPlayerTeam = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/filters/players/${steamId}/teams`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data) && data.length > 0) {
+          setPlayerTeam({
+            team_id: data[0].team_id,
+            team_name: data[0].team_name
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching player team:", error);
+    }
+  };
+
+  fetchPlayerTeam();
+}, [steamId, filterQueryParams]);
+```
+
+### Dynamic Comparison Options
+
+The comparison options are dynamically generated based on available data:
+
+```typescript
+// Generate comparison options based on whether player has a team
+const getCompareOptionGroups = (hasTeam: boolean): CompareOptionGroup[] => {
+  const generalOptions = [
+    { value: "none", label: "No comparison" },
+    { value: "aggregate", label: "All players" }
+  ];
+
+  if (hasTeam) {
+    generalOptions.push({ value: "team", label: "Player's team" });
+  }
+
+  return [
+    {
+      label: "General",
+      options: generalOptions
+    },
+    {
+      label: "Faceit Levels",
+      options: Array.from({ length: 10 }, (_, i) => ({
+        value: `faceit_${i + 1}`,
+        label: `Faceit Level ${i + 1}`
+      }))
+    },
+    {
+      label: "CS2 Ranks",
+      options: generateCS2RankOptions()
+    }
+  ];
+};
+```
+
+This pattern demonstrates effective use of:
+
+1. **Component Composition**: Clean separation of data fetching, visualization, and UI controls
+2. **Dynamic API Requests**: Building API requests based on user selection
+3. **Conditional UI Elements**: Showing comparison options only when relevant data is available
+4. **Data Pre-fetching**: Loading necessary data (team details) when component mounts
+5. **Filter Parameter Integration**: Using the same filter parameters across the application

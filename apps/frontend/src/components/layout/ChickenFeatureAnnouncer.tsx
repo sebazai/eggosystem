@@ -20,7 +20,7 @@ export const ChickenFeatureAnnouncer = ({
   autoHideAfter = undefined, // Don't auto-hide by default
   message = "NEW FEATURES NEW FEATURES",
   targetUrl = "/new-features",
-  featureDate = "2026-06-20" // Default to the chicken announcer date
+  featureDate = "2025-06-23" // Default to the chicken announcer date
 }: ChickenFeatureAnnouncerProps) => {
   const { showChicken } = useChickenAnnouncer();
 

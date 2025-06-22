@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { createNextUrl } from "@/lib/utils";
+import { CalendarDays } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "New Features",
@@ -13,12 +14,108 @@ export default function NewFeaturesPage() {
       <h1 className="text-4xl font-heading font-bold mb-6">New Features</h1>
 
       <div className="space-y-8">
+        {/* June 22, 2025 Features */}
         <section className="bg-card p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-heading font-bold mb-4">
-            Latest Updates
-          </h2>
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">June 22, 2025</h2>
+          </div>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold mb-2">
+                Player Skill Metrics Diagram 📊
+              </h3>
+              <p className="mb-2">
+                We&apos;ve added a comprehensive skill metrics diagram for
+                players! This new visualization breaks down player performance
+                into five key areas:
+              </p>
+              <ul className="list-disc pl-5 mb-3">
+                <li>
+                  <span className="font-medium">Aim</span> - Mechanical skills
+                  including headshot percentage and accuracy
+                </li>
+                <li>
+                  <span className="font-medium">Impact</span> - Influence on
+                  round outcomes including clutches and multi-kills
+                </li>
+                <li>
+                  <span className="font-medium">Positioning</span> - Tactical
+                  awareness including opening duels and survival
+                </li>
+                <li>
+                  <span className="font-medium">Utility</span> - Grenade and
+                  flash effectiveness
+                </li>
+                <li>
+                  <span className="font-medium">Consistency</span> - Performance
+                  stability across maps and sides
+                </li>
+              </ul>
+              <p className="mb-2">
+                You can also compare a player&apos;s skills with their team
+                average, players of similar rank, or the entire player base.
+              </p>
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <strong>Where to find it:</strong> Go to any player&apos;s
+                profile page and click on the &quot;Skills&quot; tab.
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold mb-2">Map Statistics 🗺️</h3>
+              <p className="mb-2">
+                We&apos;ve launched detailed map statistics for both teams and
+                players! Now you can:
+              </p>
+              <ul className="list-disc pl-5 mb-3">
+                <li>
+                  View performance breakdowns by map for teams and individual
+                  players
+                </li>
+                <li>
+                  See win rates, round distributions, and key statistics for
+                  each map
+                </li>
+                <li>
+                  Compare performance across different maps to identify
+                  strengths and weaknesses
+                </li>
+                <li>
+                  Filter map statistics by season, league, and other parameters
+                </li>
+              </ul>
+              <p className="mb-2">
+                This feature helps teams identify which maps they should focus
+                on practicing and gives players insights into their map-specific
+                performance.
+              </p>
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <strong>Where to find it:</strong>
+                <ul className="list-disc pl-5 mt-1">
+                  <li>
+                    For players: Visit a player&apos;s profile and click on the
+                    &quot;Map Statistics&quot; tab
+                  </li>
+                  <li>
+                    For teams: Go to a team&apos;s page and and click on the
+                    &quot;Map Statistics&quot; tab
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* June 20, 2025 Features */}
+        <section className="bg-card p-6 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">June 20, 2025</h2>
+          </div>
+
+          <div className="space-y-8">
             <div>
               <h3 className="text-xl font-bold mb-2">
                 Team Page Player Cards 🎮
@@ -27,9 +124,9 @@ export default function NewFeaturesPage() {
                 We&apos;ve enhanced the team pages with improved player cards!
                 Now you can see top 5 players in a team, and their key stats.
               </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-                <span>Added:</span>
-                <time dateTime="2026-06-25">June 25, 2026</time>
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <strong>Where to find it:</strong> Visit any team page to see
+                the new player cards with enhanced statistics.
               </div>
             </div>
 
@@ -216,9 +313,9 @@ export default function NewFeaturesPage() {
                 Kanaliiga.
               </p>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Added:</span>
-                <time dateTime="2026-06-20">June 20, 2026</time>
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <strong>Where to find it:</strong> Player ranks are displayed on
+                player profile pages, leaderboards, and in team rosters.
               </div>
             </div>
 
@@ -229,9 +326,9 @@ export default function NewFeaturesPage() {
                 When you see the chicken walking on your screen, click on it to
                 visit this page and learn about our latest updates.
               </p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Added:</span>
-                <time dateTime="2026-06-20">June 20, 2026</time>
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <strong>Where to find it:</strong> The chicken will occasionally
+                appear at the bottom of your screen while browsing the site.
               </div>
             </div>
           </div>
@@ -240,9 +337,7 @@ export default function NewFeaturesPage() {
         <section className="bg-card p-6 rounded-lg shadow-md">
           <h2 className="text-2xl font-heading font-bold mb-4">Coming Soon</h2>
           <ul className="list-disc pl-5 space-y-2">
-            <li>Detailed map stats for teams</li>
-            <li>More stats for players</li>
-            <li>Trophies for teams and players (from earier seasons)</li>
+            <li>Trophies for teams and players (from earlier seasons)</li>
           </ul>
         </section>
       </div>

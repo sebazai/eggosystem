@@ -28,6 +28,10 @@
 - ✅ **Removed try/catch blocks from Kanahautomo controllers** - Controllers now let errors bubble up naturally
 - ✅ **Updated controller tests** to use `await expect(...).rejects.toThrow()` for error cases instead of checking response status
 - ✅ **Separated SQL Query Verification tests** into dedicated file for better test organization
+- ✅ **Implemented Player Skill Metrics Diagram** with radar chart visualization of 5 key skill areas
+- ✅ **Added Map Statistics for Teams and Players** with detailed performance breakdowns by map
+- ✅ **Created Skill Comparison Feature** allowing players to compare with team average, similar ranked players, or all players
+- ✅ **Fixed Team Filter in Player Skills** to correctly fetch and use player's team data for comparison
 
 ### In Progress
 

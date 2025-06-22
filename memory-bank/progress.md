@@ -40,6 +40,9 @@
 - ✅ **Team Statistics**: Team performance and standings
 - ✅ **Match Statistics**: Detailed match analysis and reporting
 - ✅ **Leaderboards**: Dynamic ranking systems for players and teams
+- ✅ **Player Skill Metrics**: Radar diagram showing 5 key skill areas (aim, impact, positioning, utility, consistency)
+- ✅ **Map Statistics**: Performance breakdowns by map for teams and players
+- ✅ **Skill Comparison**: Compare player skills with team average, similar ranked players, or all players
 
 **Frontend Features (2024-2025)**
 
