@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { getPlayerOldKanaEloController } from "../players.controllers";
+import { getPlayerOldKanaEloController } from "../../controllers/players.controllers";
 import * as playerModels from "../../models/player.models";
 
 // Mock the player models

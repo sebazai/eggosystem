@@ -1,4 +1,4 @@
-import { getTeamPlantStats } from "../plant-stats.models";
+import { getTeamPlantStats } from "../../models/plant-stats.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 
 // Mock the runQuery module

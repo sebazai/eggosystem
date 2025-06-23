@@ -1,4 +1,4 @@
-import { getTeamRetakeStats } from "../retake-stats.models";
+import { getTeamRetakeStats } from "../../models/retake-stats.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 
 // Mock the runQuery module

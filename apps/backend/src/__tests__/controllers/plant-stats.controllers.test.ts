@@ -1,14 +1,14 @@
-import { getTeamRetakeStats } from "../../models/retake-stats.models";
-import { getTeamRetakeStatsController } from "../retake-stats.controllers";
+import { getTeamPlantStats } from "../../models/plant-stats.models";
+import { getTeamPlantStatsController } from "../../controllers/plant-stats.controllers";
 import { type Response } from "express";
 import { type RequestWithParams, type ParsedParams } from "@eggosystem/types";
 
 // Mock the model
-jest.mock("../../models/retake-stats.models", () => ({
-  getTeamRetakeStats: jest.fn()
+jest.mock("../../models/plant-stats.models", () => ({
+  getTeamPlantStats: jest.fn()
 }));
 
-describe("getTeamRetakeStatsController", () => {
+describe("getTeamPlantStatsController", () => {
   let mockReq: Partial<RequestWithParams<{ teamId: string }>> & {
     parsedParams: ParsedParams;
   };
@@ -41,9 +41,9 @@ describe("getTeamRetakeStatsController", () => {
     jest.clearAllMocks();
   });
 
-  it("should return retake stats data with status 200", async () => {
+  it("should return plant stats data with status 200", async () => {
     // Mock data
-    const mockRetakeStats = [
+    const mockPlantStats = [
       {
         season_id: 1,
         season_name: "Season 1",
@@ -51,44 +51,44 @@ describe("getTeamRetakeStatsController", () => {
         map_name: "de_dust2",
         team_id: 123,
         team_name: "Test Team",
-        afterplant_total: 10,
-        afterplant_won: 6,
-        afterplant_win_percentage: 60,
-        retake_total: 8,
-        retake_won: 3,
-        retake_win_percentage: 38
+        planted_a_site: 5,
+        planted_b_site: 10,
+        no_plants: 8,
+        enemy_planted_a_site: 4,
+        enemy_planted_b_site: 7,
+        enemy_no_plants: 12
       }
     ];
 
-    (getTeamRetakeStats as jest.Mock).mockResolvedValue(mockRetakeStats);
+    (getTeamPlantStats as jest.Mock).mockResolvedValue(mockPlantStats);
 
     // Call controller
-    await getTeamRetakeStatsController(
+    await getTeamPlantStatsController(
       mockReq as RequestWithParams<{ teamId: string }>,
       mockRes as Response
     );
 
     // Verify model was called with correct parameters
-    expect(getTeamRetakeStats).toHaveBeenCalledWith(123, mockReq.parsedParams);
+    expect(getTeamPlantStats).toHaveBeenCalledWith(123, mockReq.parsedParams);
 
     // Verify response
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(jsonSpy).toHaveBeenCalledWith({
       success: true,
-      data: mockRetakeStats
+      data: mockPlantStats
     });
   });
 
   it("should convert teamId to number", async () => {
-    (getTeamRetakeStats as jest.Mock).mockResolvedValue([]);
+    (getTeamPlantStats as jest.Mock).mockResolvedValue([]);
 
     // Call controller
-    await getTeamRetakeStatsController(
+    await getTeamPlantStatsController(
       mockReq as RequestWithParams<{ teamId: string }>,
       mockRes as Response
     );
 
     // Verify teamId was converted to number
-    expect(getTeamRetakeStats).toHaveBeenCalledWith(123, expect.anything());
+    expect(getTeamPlantStats).toHaveBeenCalledWith(123, expect.anything());
   });
 });
