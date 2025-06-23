@@ -4,3 +4,4 @@ export * from "./TeamMatchHistory.interface";
 export * from "./TeamHeaderDetails.interface";
 export * from "./TeamPistolWinStat.interface";
 export * from "./TeamPlantStat.interface";
+export * from "./TeamRetakeStats.interface";
