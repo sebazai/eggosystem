@@ -550,7 +550,7 @@ export const getPlayerSkillDiagram = async (
   const aimScore = Math.round(
     // Headshot percentage (headshots/kills)
     // For hs_percent, 40-60 is excellent, 20-30 is average
-    normalizeValue(stats.hs_percent, 30, 50) * 0.25 +
+    normalizeValue(stats.hs_percent, 30, 50) * 0.1 +
       // Time to damage - lower is better, so normalize inversely
       // For ttd, 200-230 is excellent, 250-300 is good, 332 is average
       // We use 500-ttd to invert the scale (lower ttd = higher score)
@@ -563,13 +563,13 @@ export const getPlayerSkillDiagram = async (
         6,
         8
       ) *
-        0.25 +
+        0.275 +
       // Counter-strafing (good strafing shots / total strafing shots)
       // For counter_strafing, 0.95-1.00 is excellent, 0.90-0.95 is very good, 0.84 is average
-      normalizeValue((stats.counter_strafing || 0.84) * 100, 84, 96) * 0.15 +
+      normalizeValue((stats.counter_strafing || 0.84) * 100, 84, 96) * 0.275 +
       // Accuracy (shots_hit / shots)
       // For accuracy, 0.25-0.35 is excellent, 0.15-0.20 is average
-      normalizeValue((stats.accuracy || 0.18) * 100, 15, 25) * 0.1
+      normalizeValue((stats.accuracy || 0.18) * 100, 15, 25) * 0.1 // 10% weight because this is smoke spams etc
   );
 
   // Apply a scaling factor to bring aim scores for top players into the 90-100 range
@@ -613,13 +613,12 @@ export const getPlayerSkillDiagram = async (
   // Calculate utility score (0-100) with Leetify-style metrics
   const utilityScore = Math.round(
     normalizeValue(stats.flash_assists_per_round || 0, 0.01, 0.09) * 0.15 + // Reduced weight from 0.25
-      normalizeValue(stats.enemies_flashed_per_round || 0, 0.2, 0.9) * 0.15 +
-      normalizeValue(stats.avg_enemy_flash_duration || 0, 1.0, 2.7) * 0.1 + // Reduced weight from 0.15
-      normalizeValue(stats.utility_damage_per_round || 0, 2.0, 10.0) * 0.1 + // Reduced weight from 0.15
-      normalizeValue(stats.he_damage_per_round || 0, 1.0, 5.0) * 0.15 + // New metric
+      normalizeValue(stats.enemies_flashed_per_round || 0, 0.2, 0.9) * 0.1 +
+      normalizeValue(stats.avg_enemy_flash_duration || 0, 1.0, 2.7) * 0.15 + // Reduced weight from 0.15
+      normalizeValue(stats.he_damage_per_round || 0, 1.0, 5.0) * 0.2 + // New metric
       normalizeValue(stats.molotov_damage_per_round || 0, 1.0, 5.0) * 0.15 + // New metric
       normalizeValue(stats.flash_assists_per_flash || 0, 0.02, 0.09) * 0.1 + // Reduced weight from 0.2
-      normalizeValue(stats.enemies_flashed_per_flash || 0, 0.3, 0.9) * 0.05 +
+      normalizeValue(stats.enemies_flashed_per_flash || 0, 0.3, 0.9) * 0.1 +
       normalizeValue(1 - (stats.teammates_flashed_per_flash || 0), 0.3, 0.7) *
         0.05
   );
