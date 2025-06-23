@@ -240,7 +240,7 @@ test:backend:
       - apps/backend/test-results/junit/results.xml
       - apps/backend/coverage/cobertura-coverage.xml
 
-test:frontend:unit:
+test:frontend:
   stage: test
   extends: [.prepare-pnpm, .mr-frontend]
   script:
