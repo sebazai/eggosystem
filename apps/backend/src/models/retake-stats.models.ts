@@ -40,6 +40,30 @@ export const getTeamRetakeStats = async (
           THEN mrs.id 
       END) AS afterplant_won,
       
+      -- Afterplant A site stats
+      COUNT(DISTINCT CASE 
+          WHEN mrs.t_team_id = t.id AND mrs.plant_site = 'A'
+          THEN mrs.id 
+      END) AS afterplant_a_total,
+      
+      COUNT(DISTINCT CASE 
+          WHEN mrs.t_team_id = t.id AND mrs.plant_site = 'A' 
+          AND (mrs.round_end_reason_info = 'bomb_exploded' OR mrs.round_end_reason_info LIKE '%T_WIN%')
+          THEN mrs.id 
+      END) AS afterplant_a_won,
+      
+      -- Afterplant B site stats
+      COUNT(DISTINCT CASE 
+          WHEN mrs.t_team_id = t.id AND mrs.plant_site = 'B'
+          THEN mrs.id 
+      END) AS afterplant_b_total,
+      
+      COUNT(DISTINCT CASE 
+          WHEN mrs.t_team_id = t.id AND mrs.plant_site = 'B' 
+          AND (mrs.round_end_reason_info = 'bomb_exploded' OR mrs.round_end_reason_info LIKE '%T_WIN%')
+          THEN mrs.id 
+      END) AS afterplant_b_won,
+      
       -- Retake stats (team is CT and enemy planted)
       COUNT(DISTINCT CASE 
           WHEN mrs.ct_team_id = t.id AND mrs.plant_site IN ('A', 'B')
@@ -50,7 +74,31 @@ export const getTeamRetakeStats = async (
           WHEN mrs.ct_team_id = t.id AND mrs.plant_site IN ('A', 'B') 
           AND mrs.round_end_reason_info = 'bomb_defused'
           THEN mrs.id 
-      END) AS retake_won
+      END) AS retake_won,
+      
+      -- Retake A site stats
+      COUNT(DISTINCT CASE 
+          WHEN mrs.ct_team_id = t.id AND mrs.plant_site = 'A'
+          THEN mrs.id 
+      END) AS retake_a_total,
+      
+      COUNT(DISTINCT CASE 
+          WHEN mrs.ct_team_id = t.id AND mrs.plant_site = 'A' 
+          AND mrs.round_end_reason_info = 'bomb_defused'
+          THEN mrs.id 
+      END) AS retake_a_won,
+      
+      -- Retake B site stats
+      COUNT(DISTINCT CASE 
+          WHEN mrs.ct_team_id = t.id AND mrs.plant_site = 'B'
+          THEN mrs.id 
+      END) AS retake_b_total,
+      
+      COUNT(DISTINCT CASE 
+          WHEN mrs.ct_team_id = t.id AND mrs.plant_site = 'B' 
+          AND mrs.round_end_reason_info = 'bomb_defused'
+          THEN mrs.id 
+      END) AS retake_b_won
       
     FROM
       MapRoundStats mrs

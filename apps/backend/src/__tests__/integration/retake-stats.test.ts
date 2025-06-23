@@ -16,8 +16,16 @@ describe("Retake Stats Integration Tests", () => {
           team_name: "7dos",
           afterplant_total: 10,
           afterplant_won: 5,
+          afterplant_a_total: 5,
+          afterplant_a_won: 2,
+          afterplant_b_total: 5,
+          afterplant_b_won: 3,
           retake_total: 18,
           retake_won: 2,
+          retake_a_total: 9,
+          retake_a_won: 1,
+          retake_b_total: 9,
+          retake_b_won: 1,
           afterplant_win_percentage: 50,
           retake_win_percentage: 11
         },
@@ -30,8 +38,16 @@ describe("Retake Stats Integration Tests", () => {
           team_name: "7dos",
           afterplant_total: 36,
           afterplant_won: 20,
+          afterplant_a_total: 20,
+          afterplant_a_won: 13,
+          afterplant_b_total: 16,
+          afterplant_b_won: 7,
           retake_total: 31,
           retake_won: 7,
+          retake_a_total: 16,
+          retake_a_won: 4,
+          retake_b_total: 15,
+          retake_b_won: 3,
           afterplant_win_percentage: 56,
           retake_win_percentage: 23
         },
@@ -44,8 +60,16 @@ describe("Retake Stats Integration Tests", () => {
           team_name: "7dos",
           afterplant_total: 17,
           afterplant_won: 7,
+          afterplant_a_total: 5,
+          afterplant_a_won: 2,
+          afterplant_b_total: 12,
+          afterplant_b_won: 5,
           retake_total: 7,
           retake_won: 2,
+          retake_a_total: 2,
+          retake_a_won: 0,
+          retake_b_total: 5,
+          retake_b_won: 2,
           afterplant_win_percentage: 41,
           retake_win_percentage: 29
         },
@@ -58,8 +82,16 @@ describe("Retake Stats Integration Tests", () => {
           team_name: "7dos",
           afterplant_total: 17,
           afterplant_won: 8,
+          afterplant_a_total: 11,
+          afterplant_a_won: 7,
+          afterplant_b_total: 6,
+          afterplant_b_won: 1,
           retake_total: 9,
           retake_won: 4,
+          retake_a_total: 5,
+          retake_a_won: 3,
+          retake_b_total: 4,
+          retake_b_won: 1,
           afterplant_win_percentage: 47,
           retake_win_percentage: 44
         },
@@ -72,8 +104,16 @@ describe("Retake Stats Integration Tests", () => {
           team_name: "7dos",
           afterplant_total: 32,
           afterplant_won: 17,
+          afterplant_a_total: 16,
+          afterplant_a_won: 9,
+          afterplant_b_total: 16,
+          afterplant_b_won: 8,
           retake_total: 17,
           retake_won: 6,
+          retake_a_total: 9,
+          retake_a_won: 3,
+          retake_b_total: 8,
+          retake_b_won: 3,
           afterplant_win_percentage: 53,
           retake_win_percentage: 35
         }
@@ -110,8 +150,16 @@ describe("Retake Stats Integration Tests", () => {
       expect(actualMap.team_id).toBe(expectedMap.team_id);
       expect(actualMap.afterplant_total).toBe(expectedMap.afterplant_total);
       expect(actualMap.afterplant_won).toBe(expectedMap.afterplant_won);
+      expect(actualMap.afterplant_a_total).toBe(expectedMap.afterplant_a_total);
+      expect(actualMap.afterplant_a_won).toBe(expectedMap.afterplant_a_won);
+      expect(actualMap.afterplant_b_total).toBe(expectedMap.afterplant_b_total);
+      expect(actualMap.afterplant_b_won).toBe(expectedMap.afterplant_b_won);
       expect(actualMap.retake_total).toBe(expectedMap.retake_total);
       expect(actualMap.retake_won).toBe(expectedMap.retake_won);
+      expect(actualMap.retake_a_total).toBe(expectedMap.retake_a_total);
+      expect(actualMap.retake_a_won).toBe(expectedMap.retake_a_won);
+      expect(actualMap.retake_b_total).toBe(expectedMap.retake_b_total);
+      expect(actualMap.retake_b_won).toBe(expectedMap.retake_b_won);
       expect(actualMap.afterplant_win_percentage).toBe(
         expectedMap.afterplant_win_percentage
       );
@@ -131,8 +179,16 @@ describe("Retake Stats Integration Tests", () => {
       team_name: "7dos",
       afterplant_total: 32,
       afterplant_won: 17,
+      afterplant_a_total: 16,
+      afterplant_a_won: 9,
+      afterplant_b_total: 16,
+      afterplant_b_won: 8,
       retake_total: 17,
       retake_won: 6,
+      retake_a_total: 9,
+      retake_a_won: 3,
+      retake_b_total: 8,
+      retake_b_won: 3,
       afterplant_win_percentage: 53,
       retake_win_percentage: 35
     };

@@ -34,8 +34,16 @@ describe("getTeamRetakeStats", () => {
         team_name: "Test Team",
         afterplant_total: 10,
         afterplant_won: 6,
+        afterplant_a_total: 5,
+        afterplant_a_won: 3,
+        afterplant_b_total: 5,
+        afterplant_b_won: 3,
         retake_total: 8,
-        retake_won: 3
+        retake_won: 3,
+        retake_a_total: 4,
+        retake_a_won: 1,
+        retake_b_total: 4,
+        retake_b_won: 2
       }
     ];
 
@@ -50,9 +58,17 @@ describe("getTeamRetakeStats", () => {
         team_name: "Test Team",
         afterplant_total: 10,
         afterplant_won: 6,
+        afterplant_a_total: 5,
+        afterplant_a_won: 3,
+        afterplant_b_total: 5,
+        afterplant_b_won: 3,
         afterplant_win_percentage: 60,
         retake_total: 8,
         retake_won: 3,
+        retake_a_total: 4,
+        retake_a_won: 1,
+        retake_b_total: 4,
+        retake_b_won: 2,
         retake_win_percentage: 38
       }
     ];
@@ -106,8 +122,16 @@ describe("getTeamRetakeStats", () => {
         team_name: "Test Team",
         afterplant_total: 0,
         afterplant_won: 0,
+        afterplant_a_total: 0,
+        afterplant_a_won: 0,
+        afterplant_b_total: 0,
+        afterplant_b_won: 0,
         retake_total: 0,
-        retake_won: 0
+        retake_won: 0,
+        retake_a_total: 0,
+        retake_a_won: 0,
+        retake_b_total: 0,
+        retake_b_won: 0
       }
     ];
 
