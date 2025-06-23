@@ -2,6 +2,7 @@
 
 import { useFilteredTeamMapStats } from "@/hooks/data/filtered/useFilteredTeamMapStats";
 import { useFilteredTeamPistolWins } from "@/hooks/data/filtered/useFilteredTeamPistolWins";
+import { useFilteredTeamPlantStats } from "@/hooks/data/filtered/useFilteredTeamPlantStats";
 import { mapToReadableName, type FilterParamsQuery } from "@/lib/utils";
 import Image from "next/image";
 
@@ -59,7 +60,18 @@ export const TeamMapStatsCards = ({
       filterQueryParams
     });
 
-  if (isMapStatsLoading || isPistolStatsLoading || !teamMapStats) {
+  const { teamPlantStats, isLoading: isPlantStatsLoading } =
+    useFilteredTeamPlantStats({
+      teamId,
+      filterQueryParams
+    });
+
+  if (
+    isMapStatsLoading ||
+    isPistolStatsLoading ||
+    isPlantStatsLoading ||
+    !teamMapStats
+  ) {
     // Return skeleton loader
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -93,10 +105,20 @@ export const TeamMapStatsCards = ({
     {} as Record<number, (typeof teamPistolWins)[0]>
   );
 
+  // Create a map of plant stats by map_id for easy lookup
+  const plantStatsByMapId = (teamPlantStats || []).reduce(
+    (acc, stat) => {
+      acc[stat.map_id] = stat;
+      return acc;
+    },
+    {} as Record<number, (typeof teamPlantStats)[0]>
+  );
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {teamMapStats.map((mapStat) => {
         const pistolStat = pistolStatsByMapId[mapStat.map_id];
+        const plantStat = plantStatsByMapId[mapStat.map_id];
         const mapName = mapToReadableName(mapStat.map_name);
 
         // Simulate CT/T stats for display purposes
@@ -251,6 +273,157 @@ export const TeamMapStatsCards = ({
                           width: `${(Math.ceil(pistolStat.pistol_rounds_won * 0.5) / Math.ceil(pistolStat.pistol_rounds_played * 0.5)) * 100}%`
                         }}
                       />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Plant stats visualization if available */}
+              {plantStat && (
+                <div className="mt-4 space-y-1">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Bomb plants (as T)</span>
+                    <span className="font-medium">
+                      {plantStat.planted_a_site + plantStat.planted_b_site} /{" "}
+                      {plantStat.planted_a_site +
+                        plantStat.planted_b_site +
+                        plantStat.no_plants}
+                    </span>
+                  </div>
+
+                  {/* Plant distribution slider */}
+                  <div>
+                    <div className="h-2 bg-gray-800 rounded-full overflow-hidden flex">
+                      {/* Calculate percentages for slider visualization */}
+                      {(() => {
+                        const total =
+                          plantStat.planted_a_site +
+                          plantStat.planted_b_site +
+                          plantStat.no_plants;
+                        if (total === 0) return null;
+
+                        const aSitePercentage =
+                          (plantStat.planted_a_site / total) * 100;
+                        const bSitePercentage =
+                          (plantStat.planted_b_site / total) * 100;
+                        const noPlantPercentage =
+                          (plantStat.no_plants / total) * 100;
+
+                        return (
+                          <>
+                            <div
+                              className="h-full bg-red-400/50"
+                              style={{ width: `${aSitePercentage}%` }}
+                            />
+                            <div
+                              className="h-full bg-gray-600/50"
+                              style={{ width: `${noPlantPercentage}%` }}
+                            />
+                            <div
+                              className="h-full bg-blue-400/50"
+                              style={{ width: `${bSitePercentage}%` }}
+                            />
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Plant sites detail */}
+                  <div className="grid grid-cols-3 text-center text-xs">
+                    <div>
+                      <p className="font-medium text-red-400/70">
+                        {plantStat.planted_a_site}
+                      </p>
+                      <p className="text-muted-foreground text-xxs">A</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-400/70">
+                        {plantStat.no_plants}
+                      </p>
+                      <p className="text-muted-foreground text-xxs">No plant</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-blue-400/70">
+                        {plantStat.planted_b_site}
+                      </p>
+                      <p className="text-muted-foreground text-xxs">B</p>
+                    </div>
+                  </div>
+
+                  {/* Enemy plants section */}
+                  <div className="mt-1">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span>Enemy plants (as CT)</span>
+                      <span className="font-medium">
+                        {plantStat.enemy_planted_a_site +
+                          plantStat.enemy_planted_b_site}{" "}
+                        /{" "}
+                        {plantStat.enemy_planted_a_site +
+                          plantStat.enemy_planted_b_site +
+                          plantStat.enemy_no_plants}
+                      </span>
+                    </div>
+
+                    {/* Enemy plant distribution slider */}
+                    <div>
+                      <div className="h-2 bg-gray-800 rounded-full overflow-hidden flex">
+                        {(() => {
+                          const total =
+                            plantStat.enemy_planted_a_site +
+                            plantStat.enemy_planted_b_site +
+                            plantStat.enemy_no_plants;
+                          if (total === 0) return null;
+
+                          const aSitePercentage =
+                            (plantStat.enemy_planted_a_site / total) * 100;
+                          const bSitePercentage =
+                            (plantStat.enemy_planted_b_site / total) * 100;
+                          const noPlantPercentage =
+                            (plantStat.enemy_no_plants / total) * 100;
+
+                          return (
+                            <>
+                              <div
+                                className="h-full bg-red-400/50"
+                                style={{ width: `${aSitePercentage}%` }}
+                              />
+                              <div
+                                className="h-full bg-gray-600/50"
+                                style={{ width: `${noPlantPercentage}%` }}
+                              />
+                              <div
+                                className="h-full bg-blue-400/50"
+                                style={{ width: `${bSitePercentage}%` }}
+                              />
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Enemy plant sites detail */}
+                    <div className="grid grid-cols-3 text-center text-xs">
+                      <div>
+                        <p className="font-medium text-red-400/70">
+                          {plantStat.enemy_planted_a_site}
+                        </p>
+                        <p className="text-muted-foreground text-xxs">A</p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-400/70">
+                          {plantStat.enemy_no_plants}
+                        </p>
+                        <p className="text-muted-foreground text-xxs">
+                          No plant
+                        </p>
+                      </div>
+                      <div>
+                        <p className="font-medium text-blue-400/70">
+                          {plantStat.enemy_planted_b_site}
+                        </p>
+                        <p className="text-muted-foreground text-xxs">B</p>
+                      </div>
                     </div>
                   </div>
                 </div>
