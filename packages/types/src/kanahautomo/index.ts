@@ -33,7 +33,8 @@ export const kanahautomoSchema = z
         data.newOrganization.organization_code &&
         data.newOrganization.website;
 
-      return !hasOrgId && !hasNewOrg;
+      // Return true if validation passes (either orgId OR newOrg is selected)
+      return hasOrgId || hasNewOrg;
     },
     {
       message:
