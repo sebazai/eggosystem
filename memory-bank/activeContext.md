@@ -32,6 +32,7 @@
 - ✅ **Added Map Statistics for Teams and Players** with detailed performance breakdowns by map
 - ✅ **Created Skill Comparison Feature** allowing players to compare with team average, similar ranked players, or all players
 - ✅ **Fixed Team Filter in Player Skills** to correctly fetch and use player's team data for comparison
+- ✅ **Fixed E2E Testing Configuration** - Updated package.json scripts and playwright.config.ts to allow running specific e2e test files
 
 ### In Progress
 
@@ -255,6 +256,86 @@ pnpm test:watch  # Running locally
 - [ ] Verify tests still pass after cleanup
 
 This pattern resolves the common AggregateError issues that occur when testing components using Radix UI (Checkbox, Select, etc.) in React 19 + Jest + jsdom environments.
+
+**E2E Testing Configuration Fix (January 2025)**
+
+**Problem Identified:**
+
+- Running `pnpm test:e2e <specific_test_file>` was not working correctly
+- The command was running all e2e tests instead of just the specified file
+- This was due to hardcoded directory paths and argument parsing issues in package.json scripts
+
+**Root Cause:**
+
+```json
+// OLD (problematic) configuration
+"test:e2e": "PW_TEST_HTML_REPORT_OPEN='never' TEST_TYPE=e2e playwright test src/__tests__/e2e/ --"
+```
+
+The issues were:
+
+1. **Hardcoded directory path**: `src/__tests__/e2e/` was hardcoded, causing conflicts when passing specific files
+2. **Trailing `--`**: This caused argument parsing issues with Playwright
+3. **Incorrect testDir configuration**: Playwright config was pointing to wrong directory
+
+**Solution Implemented:**
+
+1. **Updated package.json scripts:**
+
+```json
+// NEW (working) configuration
+"test:e2e": "PW_TEST_HTML_REPORT_OPEN='never' TEST_TYPE=e2e playwright test"
+```
+
+2. **Updated playwright.config.ts:**
+
+```typescript
+// Changed from
+testDir: "./src/__tests__";
+// To
+testDir: "./src/__tests__/e2e";
+```
+
+**Result:**
+
+- ✅ Can now run specific e2e test files: `pnpm test:e2e kanahautomo.test.ts`
+- ✅ Can run tests by title: `pnpm test:e2e -g "happy path: authenticated user can register for Kanahautomo"`
+- ✅ Can run tests in UI mode: `pnpm test:e2e:ui kanahautomo.test.ts`
+- ✅ Can run tests in headed mode: `pnpm test:e2e:headed kanahautomo.test.ts`
+- ✅ Maintains backward compatibility for running all e2e tests: `pnpm test:e2e`
+
+**IMPORTANT E2E Testing Workflow:**
+
+**Root Level (RECOMMENDED):**
+
+```bash
+# From monorepo root - handles everything automatically
+pnpm test:e2e                    # All e2e tests
+pnpm test:e2e kanahautomo.test.ts # Specific test file
+```
+
+**What root `pnpm test:e2e` does automatically:**
+
+1. **Database Setup**: `pnpm --filter=backend reseed:e2e` (resets and seeds database)
+2. **Build**: `pnpm build` (builds the entire project)
+3. **E2E Tests**: `pnpm --filter=frontend test:e2e` (executes Playwright tests)
+
+**Frontend Level (For Debugging Only):**
+
+```bash
+# Only use when you need manual control or debugging
+cd apps/frontend && pnpm test:e2e kanahautomo.test.ts
+cd apps/frontend && pnpm test:e2e:ui kanahautomo.test.ts
+cd apps/frontend && pnpm test:e2e:headed kanahautomo.test.ts
+```
+
+**Verification:**
+
+- Successfully tested with `pnpm test:e2e kanahautomo.test.ts` from root
+- Confirmed only 3 Kanahautomo tests run instead of all e2e tests
+- Updated memory bank documentation to reflect new capabilities
+
+This fix enables targeted e2e testing for faster development feedback and better debugging capabilities.
 
 ### Current Testing Status
 

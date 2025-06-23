@@ -1249,11 +1249,20 @@ await expect(serviceFunction(invalidData)).rejects.toThrow(
 # Frontend unit tests
 cd apps/frontend && pnpm test
 
-# Frontend e2e tests (requires backend running)
+# Frontend e2e tests (all e2e tests) - FOR DEBUGGING ONLY
 cd apps/frontend && pnpm test:e2e
 
-# Backend startup for e2e tests
-cd apps/backend && pnpm dev:e2e
+# Frontend e2e tests (specific file) - FOR DEBUGGING ONLY
+cd apps/frontend && pnpm test:e2e kanahautomo.test.ts
+
+# Frontend e2e tests (specific test by title) - FOR DEBUGGING ONLY
+cd apps/frontend && pnpm test:e2e -g "happy path: authenticated user can register for Kanahautomo"
+
+# Frontend e2e tests (UI mode for debugging)
+cd apps/frontend && pnpm test:e2e:ui kanahautomo.test.ts
+
+# Frontend e2e tests (headed mode to see browser)
+cd apps/frontend && pnpm test:e2e:headed kanahautomo.test.ts
 
 # Backend unit tests
 cd apps/backend && pnpm test
@@ -1264,14 +1273,14 @@ pnpm test
 # All tests from monorepo root (comprehensive testing)
 pnpm test:all
 
-# E2E tests from monorepo root (recommended for e2e only)
+# E2E tests from monorepo root (RECOMMENDED - handles all setup automatically)
 pnpm test:e2e
+
+# E2E tests from monorepo root (specific file - RECOMMENDED)
+pnpm test:e2e kanahautomo.test.ts
 
 # TDD - Watch mode for unit tests (automatically runs on file changes)
 pnpm test:watch
-
-# TDD - Parallel watch mode for faster feedback
-pnpm test:tdd
 ```
 
 **What `pnpm test` from root runs:**
@@ -1289,39 +1298,51 @@ pnpm test:tdd
 **TDD Commands:**
 
 - **`pnpm test:watch`**: Watch mode - automatically runs unit tests when files change
-- **`pnpm test:tdd`**: Parallel watch mode - faster feedback for TDD workflow
 
 **Testing Strategy Preference:**
 
 - **`pnpm test`**: Fast unit tests for quick feedback during development
 - **`pnpm test:e2e`**: E2E tests when you need to test complete workflows
+- **`pnpm test:e2e <filename>`**: Run specific e2e test files for targeted testing
 - **`pnpm test:all`**: Comprehensive testing when you need everything
-- **`pnpm test:tdd`**: TDD workflow with automatic test execution on file changes
-
-**E2E Testing Setup**
-
-```bash
-# Start backend for e2e testing
-pnpm --filter=backend dev:e2e
-
-# In another terminal, run e2e tests
-cd apps/frontend && pnpm test:e2e
-```
+- **`pnpm test:watch`**: TDD workflow with automatic test execution on file changes
 
 **Monorepo E2E Testing (Recommended)**
 
 ```bash
 # Run from monorepo root - handles all setup automatically
 pnpm test:e2e
+
+# Run specific e2e test file from monorepo root
+pnpm test:e2e kanahautomo.test.ts
 ```
 
-This command automatically:
+**What `pnpm test:e2e` from root does automatically:**
 
-- Runs database reseed
-- Runs database seed
-- Runs database seed:e2e
-- Starts backend with dev:e2e mode
-- Runs Playwright e2e tests
+1. **Database Setup**: Runs `pnpm --filter=backend reseed:e2e` (resets and seeds database)
+2. **Build**: Runs `pnpm build` (builds the entire project)
+3. **E2E Tests**: Runs `pnpm --filter=frontend test:e2e` (executes Playwright tests)
+
+**IMPORTANT**: Always run e2e tests from the monorepo root using `pnpm test:e2e`. This ensures:
+
+- ✅ Database is properly set up with e2e test data
+- ✅ Project is built with latest changes
+- ✅ Backend is ready for e2e testing
+- ✅ No manual backend setup required
+
+**E2E Testing Setup (Alternative - Manual)**
+
+```bash
+# Only use this if you need manual control over the process
+# Start backend for e2e testing
+pnpm --filter=backend dev:e2e
+
+# In another terminal, run e2e tests from frontend
+cd apps/frontend && pnpm test:e2e
+
+# Or run specific e2e test file
+cd apps/frontend && pnpm test:e2e kanahautomo.test.ts
+```
 
 ### Testing Tools & Libraries
 

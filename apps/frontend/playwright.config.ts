@@ -4,7 +4,7 @@ const isCI = process.env.CI;
 console.log(`[Playwright] Using webServer: standalone build`);
 
 export default defineConfig({
-  testDir: "./src/__tests__",
+  testDir: "./src/__tests__/e2e",
   fullyParallel: true,
   forbidOnly: !!isCI,
   // Add retries to handle potential initial compilation
@@ -32,7 +32,6 @@ export default defineConfig({
   projects: [
     {
       name: "e2e",
-      testDir: "./src/__tests__/e2e",
       use: { ...devices["Desktop Chrome"], browserName: "chromium" }
     }
   ],
