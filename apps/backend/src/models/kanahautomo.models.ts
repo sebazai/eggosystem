@@ -1,3 +1,4 @@
+import { type KanahautomoOrganizationStatus } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
@@ -9,7 +10,7 @@ export const registerPlayerForKanahautomo = async (
 ) => {
   try {
     return await runQuery<{ insertId: number }>(
-      "INSERT INTO KanahautomoRegistration (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
+      "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
       [steamId, organizationId, acceptedTerms],
       connection
     );
@@ -29,17 +30,10 @@ export const registerPlayerForKanahautomo = async (
 };
 
 export const getKanahautomoOrganizationStatus = async () => {
-  const results = await runQuery<
-    Array<{
-      organization_id: number;
-      organization_name: string;
-      count: number;
-    }>
-  >(
+  const results = await runQuery<Array<KanahautomoOrganizationStatus>>(
     `SELECT o.id as organization_id, o.name as organization_name, COUNT(r.id) as count
      FROM Organizations o
-     JOIN KanahautomoRegistration r
-       ON o.id = r.organization_id AND r.accepted_terms = true
+     JOIN KanahautomoRegistrations r ON o.id = r.organization_id
      GROUP BY o.id, o.name
      ORDER BY o.name ASC`,
     []

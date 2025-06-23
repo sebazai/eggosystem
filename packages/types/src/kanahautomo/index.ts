@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Organizations } from "../db";
 
 export const kanahautomoSchema = z
   .object({
@@ -19,28 +20,48 @@ export const kanahautomoSchema = z
       pubgSquad: z.boolean(),
       csWingman: z.boolean(),
       pubgDuo: z.boolean(),
-      rocketLeague: z.boolean()
+      rocketLeague: z.boolean(),
+      dota: z.boolean()
     }),
-    acceptedTerms: z.boolean()
+    acceptedTerms: z.boolean().refine((val) => val, {
+      message: "You must accept the terms and conditions"
+    })
   })
   .refine(
     (data) => {
-      // Must have exactly one: either organizationId OR newOrganization
-      const hasOrgId = data.organizationId && data.organizationId > 0;
-      const hasNewOrg =
-        data.newOrganization &&
-        data.newOrganization.name &&
-        data.newOrganization.organization_code &&
-        data.newOrganization.website;
-
-      // Return true if validation passes (either orgId OR newOrg is selected)
-      return hasOrgId || hasNewOrg;
+      const hasValidOrgId =
+        data.organizationId !== undefined && data.organizationId > 0;
+      const isAddingNewOrg = data.organizationId === -1;
+      return hasValidOrgId || isAddingNewOrg;
     },
     {
-      message:
-        "Please select an existing organization OR create a new one (not both)",
+      message: "Please select an existing organization or create a new one.",
       path: ["organizationId"]
+    }
+  )
+  .refine(
+    (data) => {
+      // Must have at least one game type selected
+      const gameTypes = data.gameTypes;
+      return (
+        gameTypes.cs ||
+        gameTypes.pubgSquad ||
+        gameTypes.csWingman ||
+        gameTypes.pubgDuo ||
+        gameTypes.rocketLeague ||
+        gameTypes.dota
+      );
+    },
+    {
+      message: "Please select at least one game type",
+      path: ["gameTypes"]
     }
   );
 
 export type KanahautomoFormData = z.infer<typeof kanahautomoSchema>;
+
+export interface KanahautomoOrganizationStatus {
+  organization_id: Organizations["id"];
+  organization_name: Organizations["name"];
+  count: number;
+}

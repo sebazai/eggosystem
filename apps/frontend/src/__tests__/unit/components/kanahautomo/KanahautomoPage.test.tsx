@@ -169,9 +169,6 @@ describe("KanahautomoPage", () => {
     expect(
       screen.getByRole("heading", { name: "Test Organization 3" })
     ).toBeInTheDocument();
-    // Check for status badges
-    expect(screen.getAllByText("Ready")).toHaveLength(2);
-    expect(screen.getAllByText("Waiting")).toHaveLength(1);
   });
 
   it("displays error state for organization status", () => {
@@ -359,31 +356,6 @@ describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
     expect(
       screen.getByText("Failed to load organization status")
     ).toBeInTheDocument();
-  });
-
-  it("shows organization registration status table when data is loaded", async () => {
-    mockUseKanahautomoOrganizationStatus.mockReturnValue({
-      orgStatus: mockOrgStatus,
-      orgStatusLoading: false,
-      orgStatusError: undefined,
-      isValidating: false,
-      mutate: jest.fn()
-    });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    await waitFor(() => {
-      expect(
-        screen.getByText("Organization Registration Status")
-      ).toBeInTheDocument();
-    });
-    // Check for organization names in headings (cards, not table cells)
-    expect(
-      screen.getByRole("heading", { name: "Test Organization 1" })
-    ).toBeInTheDocument();
-    expect(screen.getAllByText("Ready")).toHaveLength(2);
   });
 });
 

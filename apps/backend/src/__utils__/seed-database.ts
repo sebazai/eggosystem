@@ -207,7 +207,7 @@ export const insertTestKanahautomoRegistration = async (
   acceptedTerms: boolean = false
 ) => {
   return runQuery<{ insertId: number }>(
-    "INSERT INTO KanahautomoRegistration (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
+    "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
     [steamId, organizationId, acceptedTerms]
   );
 };
@@ -217,13 +217,13 @@ export const removeTestKanahautomoRegistration = async (
   organizationId: number
 ) => {
   return runQuery(
-    "DELETE FROM KanahautomoRegistration WHERE steam_id = ? AND organization_id = ?",
+    "DELETE FROM KanahautomoRegistrations WHERE steam_id = ? AND organization_id = ?",
     [steamId, organizationId]
   );
 };
 
 export const clearTestKanahautomoRegistrations = async () => {
-  return runQuery("DELETE FROM KanahautomoRegistration");
+  return runQuery("DELETE FROM KanahautomoRegistrations");
 };
 
 export const insertTestOrganization = async (

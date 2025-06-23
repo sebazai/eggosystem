@@ -67,7 +67,8 @@ export const registerForKanahautomoWithOrganization = async (
     const result = await registerPlayerForKanahautomo(
       steamId,
       finalOrganizationId,
-      false // accepted_terms = false initially
+      false, // accepted_terms = false initially
+      connection
     );
 
     const response: KanahautomoRegistrationResponse = {

@@ -14,12 +14,18 @@ import {
   FormMessage
 } from "@/components/ui/form";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
@@ -32,6 +38,8 @@ import {
   type KanahautomoFormData,
   kanahautomoSchema
 } from "@eggosystem/types";
+import { RequiredFormLabel } from "../ui/RequiredFormLabel";
+import { ChevronsUpDown } from "lucide-react";
 
 export default function KanahautomoPage() {
   const { user, loading: authLoading } = useAuth();
@@ -48,6 +56,7 @@ export default function KanahautomoPage() {
   } = useKanahautomoOrganizationStatus();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   const form = useForm<KanahautomoFormData>({
     resolver: zodResolver(kanahautomoSchema),
@@ -60,13 +69,19 @@ export default function KanahautomoPage() {
         csWingman: false,
         rocketLeague: false,
         pubgDuo: false,
-        pubgSquad: false
+        pubgSquad: false,
+        dota: false
       }
     },
     mode: "onChange"
   });
 
   const watchOrganizationId = form.watch("organizationId");
+
+  // Get selected organization name for display
+  const selectedOrg = organizations?.find(
+    (org) => org.id === watchOrganizationId
+  );
 
   if (authLoading || orgsLoading) {
     return (
@@ -113,7 +128,10 @@ export default function KanahautomoPage() {
     setError(null);
 
     try {
-      let requestBody: KanahautomoRegistration;
+      let requestBody: KanahautomoRegistration & {
+        gameTypes: KanahautomoFormData["gameTypes"];
+        acceptedTerms: boolean;
+      };
 
       // If creating new organization
       if (data.organizationId === -1 && data.newOrganization) {
@@ -122,11 +140,15 @@ export default function KanahautomoPage() {
             name: data.newOrganization.name,
             organization_code: data.newOrganization.organization_code,
             website: data.newOrganization.website
-          }
+          },
+          gameTypes: data.gameTypes,
+          acceptedTerms: data.acceptedTerms
         };
       } else {
         requestBody = {
-          organization_id: data.organizationId
+          organization_id: data.organizationId,
+          gameTypes: data.gameTypes,
+          acceptedTerms: data.acceptedTerms
         };
       }
 
@@ -183,30 +205,65 @@ export default function KanahautomoPage() {
                   <FormItem>
                     <FormLabel>Select your organization</FormLabel>
                     <FormControl>
-                      <Select
-                        onValueChange={(value) => {
-                          const numValue = parseInt(value);
-                          field.onChange(numValue);
-                          if (numValue !== -1) {
-                            form.setValue("newOrganization", undefined);
-                          }
-                        }}
-                        value={field.value?.toString() || ""}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose an organization..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="-1">
-                            Add new organization...
-                          </SelectItem>
-                          {organizations.map((org) => (
-                            <SelectItem key={org.id} value={org.id.toString()}>
-                              {org.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="relative w-full">
+                        <Popover open={open} onOpenChange={setOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={open}
+                              className="w-full justify-between"
+                            >
+                              {field.value === -1
+                                ? "Add new organization..."
+                                : selectedOrg?.name ||
+                                  "Choose an organization..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search organization..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  No organization found.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  <CommandItem
+                                    value="-1"
+                                    onSelect={() => {
+                                      field.onChange(-1);
+                                      form.setValue(
+                                        "newOrganization",
+                                        undefined
+                                      );
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    Add new organization...
+                                  </CommandItem>
+                                  {organizations?.map((org) => (
+                                    <CommandItem
+                                      key={org.id}
+                                      value={org.name}
+                                      onSelect={() => {
+                                        field.onChange(org.id);
+                                        form.setValue(
+                                          "newOrganization",
+                                          undefined
+                                        );
+                                        setOpen(false);
+                                      }}
+                                    >
+                                      {org.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -247,7 +304,7 @@ export default function KanahautomoPage() {
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormLabel className="text-sm">CS2</FormLabel>
+                          <FormLabel className="text-sm">CS2 Comp</FormLabel>
                         </FormItem>
                       )}
                     />
@@ -307,7 +364,7 @@ export default function KanahautomoPage() {
                 </div>
 
                 {/* Rocket League - Full Width */}
-                <div className="pt-1">
+                <div className="pt-1 space-y-2">
                   <h4 className="text-sm font-medium text-kanaliiga-light-brown mb-2">
                     Other Games
                   </h4>
@@ -322,11 +379,41 @@ export default function KanahautomoPage() {
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <FormLabel className="text-sm">Rocket League</FormLabel>
+                        <FormLabel className="text-sm">
+                          Rocket League Standard
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gameTypes.dota"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm">
+                          Dota 2 Team Clash
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
                 </div>
+
+                {/* Game Types Error Message */}
+                <FormField
+                  control={form.control}
+                  name="gameTypes"
+                  render={() => (
+                    <FormItem>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <FormField
@@ -341,10 +428,11 @@ export default function KanahautomoPage() {
                         className="mt-1"
                       />
                     </FormControl>
-                    <FormLabel className="text-sm leading-relaxed">
-                      I hereby consent to that my Steam ID and my nickname may
-                      be shared to other Kanahautomo players.
-                    </FormLabel>
+                    <RequiredFormLabel className="text-sm leading-relaxed">
+                      I consent to my Steam ID and nickname being shared with
+                      other Kanahautomo players.
+                    </RequiredFormLabel>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -384,35 +472,10 @@ export default function KanahautomoPage() {
             {orgStatus.map((org) => (
               <div
                 key={org.organization_id}
-                className={`relative overflow-hidden rounded-xl border transition-all duration-300 hover:scale-105 shadow-md ${
-                  org.status === "ready"
-                    ? "border-orange-200"
-                    : "border-gray-200"
-                }`}
+                className={
+                  "relative overflow-hidden rounded-xl border transition-all duration-300 hover:scale-105 shadow-md border-kanaliight-light-brown"
+                }
               >
-                {/* Status indicator */}
-                <div
-                  className={`absolute top-0 right-0 w-0 h-0 border-l-[20px] border-l-transparent border-t-[20px] ${
-                    org.status === "ready"
-                      ? "border-t-orange-500"
-                      : "border-t-gray-400"
-                  }`}
-                />
-
-                {/* Progress bar */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      org.status === "ready"
-                        ? "bg-gradient-to-r from-orange-400 to-orange-600"
-                        : "bg-gradient-to-r from-gray-300 to-gray-400"
-                    }`}
-                    style={{
-                      width: `${Math.min((org.count / 5) * 100, 100)}%`
-                    }}
-                  />
-                </div>
-
                 <div className="p-6">
                   {/* Organization name */}
                   <h3 className="font-bold text-lg mb-2 text-kanaliiga-light-brown truncate">
@@ -426,38 +489,20 @@ export default function KanahautomoPage() {
                         {[...Array(Math.min(org.count, 5))].map((_, i) => (
                           <div
                             key={i}
-                            className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold ${
-                              org.status === "ready"
-                                ? "bg-orange-500 text-white"
-                                : "bg-gray-400 text-white"
-                            }`}
+                            className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold`}
                           >
                             {i === 4 && org.count > 5 ? "+" : "👤"}
                           </div>
                         ))}
                       </div>
                       <span className="text-sm font-medium text-kanaliiga-light-brown">
-                        {org.count}/5
+                        Registered: {org.count}
                       </span>
-                    </div>
-
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        org.status === "ready"
-                          ? "bg-orange-100 text-orange-700 border border-orange-200"
-                          : "bg-gray-100 text-kanaliiga-light-brown border border-gray-200"
-                      }`}
-                    >
-                      {org.status === "ready" ? "Ready" : "Waiting"}
                     </div>
                   </div>
 
                   {/* Status message */}
-                  <p className="text-xs text-kanaliiga-light-brown">
-                    {org.status === "ready"
-                      ? "Discord channel will be created soon!"
-                      : `${5 - org.count} more needed for Discord channel`}
-                  </p>
+                  <p className="text-xs text-kanaliiga-light-brown">Yalla</p>
                 </div>
               </div>
             ))}

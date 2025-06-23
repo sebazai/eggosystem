@@ -43,13 +43,6 @@ This rule enforces the testing strategy for the Kanaliiga Eggosystem project, en
 - **Database**: No database setup required
 - **Workflow**: Perfect for TDD development
 
-**`pnpm test:tdd`** - TDD Parallel mode
-- **Purpose**: Fastest feedback for TDD workflow
-- **Scope**: Unit tests only (Jest-based)
-- **Speed**: Parallel execution for maximum speed
-- **Database**: No database setup required
-- **Workflow**: Optimal for rapid TDD cycles
-
 ## Required Behavior
 
 ### When Colleagues Request Changes to `pnpm test`
@@ -123,7 +116,6 @@ pnpm test:all
 - **`pnpm test:e2e`**: E2E tests with database setup
 - **`pnpm test:all`**: Comprehensive testing suite
 - **`pnpm test:watch`**: TDD Watch mode
-- **`pnpm test:tdd`**: TDD Parallel mode
 - **Maintain separation**: Keep fast feedback for development
 - **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
 

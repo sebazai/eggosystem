@@ -127,7 +127,7 @@ describe("Kanahautomo Models Integration Tests", () => {
           accepted_terms: boolean;
           created_at: string;
         }>
-      >("SELECT * FROM KanahautomoRegistration WHERE id = ?", [
+      >("SELECT * FROM KanahautomoRegistrations WHERE id = ?", [
         result.insertId
       ]);
 

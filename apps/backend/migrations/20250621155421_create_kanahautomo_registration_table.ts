@@ -3,9 +3,9 @@ import { type Knex } from "knex";
 export const config = { transaction: false };
 
 export async function up(knex: Knex): Promise<void> {
-  // Create KanahautomoRegistration table
+  // Create KanahautomoRegistrations table
   await knex.schema.createTable(
-    "KanahautomoRegistration",
+    "KanahautomoRegistrations",
     (table: Knex.TableBuilder) => {
       table.increments("id").primary();
       table.bigInteger("steam_id").notNullable();
@@ -36,5 +36,5 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   // Drop table
-  await knex.schema.dropTableIfExists("KanahautomoRegistration");
+  await knex.schema.dropTableIfExists("KanahautomoRegistrations");
 }

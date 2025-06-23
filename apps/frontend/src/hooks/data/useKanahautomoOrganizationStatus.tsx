@@ -1,15 +1,9 @@
 import useSWR from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
-
-export interface KanahautomoOrgStatus {
-  organization_id: number;
-  organization_name: string;
-  count: number;
-  status: "ready" | "waiting";
-}
+import type { KanahautomoOrganizationStatus } from "@eggosystem/types";
 
 interface KanahautomoOrgStatusResponse {
-  organizations: KanahautomoOrgStatus[];
+  organizations: KanahautomoOrganizationStatus[];
 }
 
 export function useKanahautomoOrganizationStatus() {
