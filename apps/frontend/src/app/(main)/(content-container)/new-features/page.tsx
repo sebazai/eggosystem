@@ -183,33 +183,33 @@ export default function NewFeaturesPage() {
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div className="flex flex-col items-center">
                     <Image
-                      src={createNextUrl("/images/ranks/chic3.png")}
+                      src={createNextUrl("/images/ranks/chick3.png")}
                       width={64}
                       height={64}
-                      alt="Chic 3"
+                      alt="Chick 3"
                       className="mb-2"
                     />
-                    <span className="text-sm font-semibold">Chic 3</span>
+                    <span className="text-sm font-semibold">Chick 3</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <Image
-                      src={createNextUrl("/images/ranks/chic2.png")}
+                      src={createNextUrl("/images/ranks/chick2.png")}
                       width={64}
                       height={64}
-                      alt="Chic 2"
+                      alt="Chick 2"
                       className="mb-2"
                     />
-                    <span className="text-sm font-semibold">Chic 2</span>
+                    <span className="text-sm font-semibold">Chick 2</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <Image
-                      src={createNextUrl("/images/ranks/chic1.png")}
+                      src={createNextUrl("/images/ranks/chick1.png")}
                       width={64}
                       height={64}
-                      alt="Chic 1"
+                      alt="Chick 1"
                       className="mb-2"
                     />
-                    <span className="text-sm font-semibold">Chic 1</span>
+                    <span className="text-sm font-semibold">Chick 1</span>
                   </div>
                 </div>
 
