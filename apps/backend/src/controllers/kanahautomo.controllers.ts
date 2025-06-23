@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import {
   registerPlayerForKanahautomo,
+  insertKanahautomoGameTypes,
   getKanahautomoOrganizationStatus as getKanahautomoOrganizationStatusModel
 } from "../models/kanahautomo.models";
 import {
@@ -9,11 +10,10 @@ import {
 } from "../models/organization.models";
 import { logger } from "../utils/app-logger";
 import { BadRequestError } from "../utils/errors";
-import type {
-  KanahautomoRegistration,
-  KanahautomoRegistrationResponse
-} from "@eggosystem/types";
+import type { KanahautomoRegistrationResponse } from "@eggosystem/types";
+import { kanahautomoSchema } from "@eggosystem/types";
 import { getConnection } from "../db/mysqlConnection";
+import { z } from "zod";
 
 export const registerForKanahautomoWithOrganization = async (
   req: Request,
@@ -25,51 +25,59 @@ export const registerForKanahautomoWithOrganization = async (
     return;
   }
 
-  const { organization_id, new_organization }: KanahautomoRegistration =
-    req.body;
   const steamId = req.auth.provider_id; // From JWT token
 
-  // Validate input
-  if (!organization_id && !new_organization) {
-    throw new BadRequestError(
-      "Either organization_id or new_organization is required"
-    );
+  // Validate input using Zod schema with proper error handling
+  let parsed;
+  try {
+    parsed = kanahautomoSchema.parse(req.body);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        message: "Invalid registration data",
+        errors: error.flatten()
+      });
+      return;
+    }
+    throw error;
   }
-  if (organization_id && new_organization) {
-    throw new BadRequestError(
-      "Cannot provide both organization_id and new_organization"
-    );
-  }
+
+  // Map frontend field names to backend field names
+  const { organizationId, newOrganization, gameTypes, acceptedTerms } = parsed;
 
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
     let finalOrganizationId: number;
-    if (new_organization) {
+
+    if (newOrganization) {
       // Create new organization
       const newOrgResult = await insertOrganization(
-        new_organization,
+        newOrganization,
         connection
       );
       finalOrganizationId = newOrgResult.insertId;
-    } else if (organization_id) {
+    } else if (organizationId && organizationId > 0) {
       // Verify existing organization exists
-      const organization = await getOrganizationById(organization_id);
+      const organization = await getOrganizationById(organizationId);
       if (!organization || organization.length === 0) {
         throw new BadRequestError("Organization not found");
       }
-      finalOrganizationId = organization_id;
+      finalOrganizationId = organizationId;
     } else {
       throw new BadRequestError("Invalid request: no organization specified");
     }
 
-    // Register player for Kanahautomo (terms not accepted initially)
+    // Register player for Kanahautomo
     const result = await registerPlayerForKanahautomo(
       steamId,
       finalOrganizationId,
-      false, // accepted_terms = false initially
+      acceptedTerms,
       connection
     );
+
+    // Insert selected game types
+    await insertKanahautomoGameTypes(result.insertId, gameTypes, connection);
 
     const response: KanahautomoRegistrationResponse = {
       message: "Successfully registered for Kanahautomo",
@@ -78,7 +86,12 @@ export const registerForKanahautomoWithOrganization = async (
     };
 
     logger.info(
-      `Player ${steamId} registered for Kanahautomo in organization ${finalOrganizationId}`
+      `Player ${steamId} registered for Kanahautomo in organization ${finalOrganizationId} with game types: ${Object.entries(
+        gameTypes
+      )
+        .filter(([_, selected]) => selected)
+        .map(([gameType, _]) => gameType)
+        .join(", ")}`
     );
 
     await connection.commit();

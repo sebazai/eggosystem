@@ -1,10 +1,5 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor
-} from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import KanahautomoPage from "@/components/kanahautomo/KanahautomoPage";
 import { AuthProvider } from "@/context/AuthContext";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
@@ -12,6 +7,7 @@ import { useKanahautomoOrganizationStatus } from "@/hooks/data/useKanahautomoOrg
 import type { Organizations } from "@eggosystem/types";
 import { useAuth } from "@/context/AuthContext";
 import React from "react";
+import { clientApiFetch } from "@/lib/apiClient";
 
 // Mock the hooks
 jest.mock("@/hooks/data/useOrganizations");
@@ -115,9 +111,33 @@ const mockAuthContext = {
   logout: jest.fn()
 };
 
+// Mock scrollIntoView for Command component
+const mockScrollIntoView = jest.fn();
+Object.defineProperty(window.Element.prototype, "scrollIntoView", {
+  value: mockScrollIntoView,
+  writable: true
+});
+
+// Mock ResizeObserver for jsdom
+class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = ResizeObserver;
+
+const renderKanahautomoPage = () => {
+  return render(
+    <AuthProvider>
+      <KanahautomoPage />
+    </AuthProvider>
+  );
+};
+
 describe("KanahautomoPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockScrollIntoView.mockClear();
 
     mockUseOrganizations.mockReturnValue({
       organizations: mockOrganizations,
@@ -137,232 +157,572 @@ describe("KanahautomoPage", () => {
     (useAuth as jest.Mock).mockReturnValue(mockAuthContext);
   });
 
-  it("renders the page title", () => {
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    expect(
-      screen.getByRole("heading", { name: "Join Kanahautomo" })
-    ).toBeInTheDocument();
+  describe("Basic Rendering", () => {
+    it("renders the page title", () => {
+      renderKanahautomoPage();
+      expect(
+        screen.getByRole("heading", { name: "Join Kanahautomo" })
+      ).toBeInTheDocument();
+    });
+
+    it("renders the page description", () => {
+      renderKanahautomoPage();
+      expect(
+        screen.getByText(
+          /Register for Kanahautomo to find teammates from your organization/
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("renders the form with full page width container", () => {
+      renderKanahautomoPage();
+      const heading = screen.getByRole("heading", { name: "Join Kanahautomo" });
+      const container = heading.closest(".container");
+      expect(container).toHaveClass("container");
+    });
+
+    it("renders the submit button", () => {
+      renderKanahautomoPage();
+      expect(
+        screen.getByRole("button", { name: "Join Kanahautomo" })
+      ).toBeInTheDocument();
+    });
   });
 
-  it("displays organization registration status table", async () => {
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    await waitFor(() => {
+  describe("Authentication States", () => {
+    it("requires authentication to register", () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        user: null,
+        loading: false,
+        checkAuth: jest.fn(),
+        logout: jest.fn()
+      });
+      renderKanahautomoPage();
+      expect(
+        screen.getByText(/please log in with steam to join kanahautomo/i)
+      ).toBeInTheDocument();
+    });
+
+    it("shows loading state when auth is loading", () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        user: null,
+        loading: true,
+        checkAuth: jest.fn(),
+        logout: jest.fn()
+      });
+      renderKanahautomoPage();
+      const loadingSpinner = document.querySelector(".animate-spin");
+      expect(loadingSpinner).toBeInTheDocument();
+    });
+
+    it("shows form when user is authenticated", () => {
+      renderKanahautomoPage();
+      expect(screen.getByText("Select your organization")).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
+    });
+  });
+
+  describe("Organization Loading States", () => {
+    it("shows loading state when organizations are loading", () => {
+      mockUseOrganizations.mockReturnValue({
+        organizations: undefined,
+        isLoading: true,
+        isError: undefined,
+        isValidating: false
+      });
+      renderKanahautomoPage();
+      const loadingSpinner = document.querySelector(".animate-spin");
+      expect(loadingSpinner).toBeInTheDocument();
+    });
+
+    it("shows error state when organizations fail to load", () => {
+      mockUseOrganizations.mockReturnValue({
+        organizations: undefined,
+        isLoading: false,
+        isError: new Error("Failed to load organizations"),
+        isValidating: false
+      });
+      renderKanahautomoPage();
+      expect(
+        screen.getByText(
+          "Failed to load organizations. Please try again later."
+        )
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("Organization Selection", () => {
+    it("renders organization selection dropdown", () => {
+      renderKanahautomoPage();
+      expect(screen.getByText("Select your organization")).toBeInTheDocument();
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
+    });
+
+    it("shows 'Choose an organization...' as default text", () => {
+      renderKanahautomoPage();
+      expect(screen.getByText("Choose an organization...")).toBeInTheDocument();
+    });
+
+    it("opens organization dropdown when clicked", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+
+      // Check that the dropdown content is visible
+      expect(screen.getByText("Add new organization...")).toBeInTheDocument();
+      // Use getAllByText to handle multiple elements with same text
+      const org1Elements = screen.getAllByText("Test Organization 1");
+      const org2Elements = screen.getAllByText("Test Organization 2");
+      expect(org1Elements.length).toBeGreaterThan(0);
+      expect(org2Elements.length).toBeGreaterThan(0);
+    });
+
+    it("allows selecting an existing organization", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+
+      // Select an organization from the dropdown (use getAllByText and get the first one which should be the dropdown option)
+      const orgOptions = screen.getAllByText("Test Organization 1");
+      expect(orgOptions[0]).toBeDefined();
+      await user.click(orgOptions[0]!); // First one should be the dropdown option
+
+      // Check that the selected organization is displayed in the combobox
+      expect(screen.getByText("Test Organization 1")).toBeInTheDocument();
+    });
+
+    it("shows 'Add new organization...' option", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+
+      expect(screen.getByText("Add new organization...")).toBeInTheDocument();
+    });
+  });
+
+  describe("New Organization Form", () => {
+    it("shows new organization form when 'Add new organization...' is selected", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+      await user.click(screen.getByText("Add new organization..."));
+
+      // Check that the form fields appear
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("organization-name-input")
+        ).toBeInTheDocument();
+        expect(
+          screen.getByTestId("organization-business-id-input")
+        ).toBeInTheDocument();
+        expect(
+          screen.getByTestId("organization-website-input")
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("hides new organization form when existing organization is selected", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      // First select "Add new organization..."
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+      await user.click(screen.getByText("Add new organization..."));
+
+      // Verify form is visible
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("organization-name-input")
+        ).toBeInTheDocument();
+      });
+
+      // Now select an existing organization - click the combobox again to open dropdown
+      await user.click(combobox);
+
+      // Find the organization option in the dropdown (not in the status cards)
+      await waitFor(() => {
+        const dropdownOptions = screen.getAllByText("Test Organization 1");
+        // Find the one that's in the command item (dropdown)
+        const dropdownOption = dropdownOptions.find(
+          (el) =>
+            el.getAttribute("data-value") === "Test Organization 1" ||
+            el.closest('[role="option"]') ||
+            el.closest("[cmdk-item]")
+        );
+        expect(dropdownOption).toBeDefined();
+        return dropdownOption;
+      });
+
+      // Click on the dropdown option
+      const dropdownOptions = screen.getAllByText("Test Organization 1");
+      const dropdownOption = dropdownOptions.find(
+        (el) =>
+          el.getAttribute("data-value") === "Test Organization 1" ||
+          el.closest('[role="option"]') ||
+          el.closest("[cmdk-item]")
+      );
+      await user.click(dropdownOption!);
+
+      // Wait for the form to be hidden - the watchOrganizationId should no longer be -1
+      await waitFor(
+        () => {
+          expect(
+            screen.queryByTestId("organization-name-input")
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 3000 }
+      );
+    });
+  });
+
+  describe("Game Types Selection", () => {
+    it("renders all game type checkboxes", () => {
+      renderKanahautomoPage();
+
+      expect(screen.getByText("Select Game Types")).toBeInTheDocument();
+      expect(screen.getByText("Counter-Strike 2")).toBeInTheDocument();
+      expect(screen.getByText("PUBG")).toBeInTheDocument();
+      expect(screen.getByText("Other Games")).toBeInTheDocument();
+
+      // Check for specific game types
+      expect(screen.getByText("CS2 Comp")).toBeInTheDocument();
+      expect(screen.getByText("CS2 Wingman")).toBeInTheDocument();
+      expect(screen.getByText("PUBG Squad")).toBeInTheDocument();
+      expect(screen.getByText("PUBG Duo")).toBeInTheDocument();
+      expect(screen.getByText("Rocket League Standard")).toBeInTheDocument();
+      expect(screen.getByText("Dota 2 Team Clash")).toBeInTheDocument();
+    });
+
+    it("allows toggling game type checkboxes", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      const pubgCheckbox = screen.getByLabelText("PUBG Squad");
+
+      // Initially unchecked
+      expect(cs2Checkbox).not.toBeChecked();
+      expect(pubgCheckbox).not.toBeChecked();
+
+      // Check them
+      await user.click(cs2Checkbox);
+      await user.click(pubgCheckbox);
+
+      // Now checked
+      expect(cs2Checkbox).toBeChecked();
+      expect(pubgCheckbox).toBeChecked();
+    });
+  });
+
+  describe("Terms and Conditions", () => {
+    it("renders terms and conditions checkbox", () => {
+      renderKanahautomoPage();
+
+      expect(
+        screen.getByText(
+          /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+        )
+      ).toBeInTheDocument();
+
+      const termsCheckbox = screen.getByRole("checkbox", {
+        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+      });
+      expect(termsCheckbox).toBeInTheDocument();
+    });
+
+    it("allows toggling terms checkbox", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      const termsCheckbox = screen.getByRole("checkbox", {
+        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+      });
+
+      // Initially unchecked
+      expect(termsCheckbox).not.toBeChecked();
+
+      // Check it
+      await user.click(termsCheckbox);
+
+      // Now checked
+      expect(termsCheckbox).toBeChecked();
+    });
+  });
+
+  describe("Form Submission", () => {
+    it("disables submit button when form is submitting", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      // Fill required fields first - select organization
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+
+      // Select an existing organization from dropdown
+      await waitFor(() => {
+        const dropdownOptions = screen.getAllByText("Test Organization 1");
+        const dropdownOption = dropdownOptions.find(
+          (el) =>
+            el.getAttribute("data-value") === "Test Organization 1" ||
+            el.closest('[role="option"]') ||
+            el.closest("[cmdk-item]")
+        );
+        expect(dropdownOption).toBeDefined();
+        return dropdownOption;
+      });
+
+      const dropdownOptions = screen.getAllByText("Test Organization 1");
+      const dropdownOption = dropdownOptions.find(
+        (el) =>
+          el.getAttribute("data-value") === "Test Organization 1" ||
+          el.closest('[role="option"]') ||
+          el.closest("[cmdk-item]")
+      );
+      await user.click(dropdownOption!);
+
+      // Select a game type
+      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      await user.click(cs2Checkbox);
+
+      // Accept terms
+      const termsCheckbox = screen.getByRole("checkbox", {
+        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+      });
+      await user.click(termsCheckbox);
+
+      // Wait for form to be valid
+      await waitFor(() => {
+        expect(cs2Checkbox).toBeChecked();
+        expect(termsCheckbox).toBeChecked();
+      });
+
+      // Mock API call to hang (never resolves) to keep form in submitting state
+      let resolveApiCall: () => void;
+      const apiPromise = new Promise<void>((resolve) => {
+        resolveApiCall = resolve;
+      });
+      (clientApiFetch as jest.Mock).mockReturnValue(apiPromise);
+
+      // Submit form
+      const submitButton = screen.getByTestId("kanahautomo-submit");
+      await user.click(submitButton);
+
+      // Button should be disabled and show loading text
+      await waitFor(
+        () => {
+          expect(submitButton).toBeDisabled();
+          expect(submitButton).toHaveTextContent("Registering...");
+        },
+        { timeout: 2000 }
+      );
+
+      // Clean up - resolve the promise to avoid hanging
+      resolveApiCall!();
+    });
+
+    it("shows error message when submission fails", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      // Fill required fields - select organization
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+
+      // Select an existing organization from dropdown
+      await waitFor(() => {
+        const dropdownOptions = screen.getAllByText("Test Organization 1");
+        const dropdownOption = dropdownOptions.find(
+          (el) =>
+            el.getAttribute("data-value") === "Test Organization 1" ||
+            el.closest('[role="option"]') ||
+            el.closest("[cmdk-item]")
+        );
+        expect(dropdownOption).toBeDefined();
+        return dropdownOption;
+      });
+
+      const dropdownOptions = screen.getAllByText("Test Organization 1");
+      const dropdownOption = dropdownOptions.find(
+        (el) =>
+          el.getAttribute("data-value") === "Test Organization 1" ||
+          el.closest('[role="option"]') ||
+          el.closest("[cmdk-item]")
+      );
+      await user.click(dropdownOption!);
+
+      // Select a game type
+      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      await user.click(cs2Checkbox);
+
+      // Accept terms
+      const termsCheckbox = screen.getByRole("checkbox", {
+        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+      });
+      await user.click(termsCheckbox);
+
+      // Wait for form to be valid
+      await waitFor(() => {
+        expect(cs2Checkbox).toBeChecked();
+        expect(termsCheckbox).toBeChecked();
+      });
+
+      // Mock API call to fail
+      (clientApiFetch as jest.Mock).mockRejectedValue(
+        new Error("Registration failed")
+      );
+
+      // Submit form
+      const submitButton = screen.getByRole("button", {
+        name: "Join Kanahautomo"
+      });
+      await user.click(submitButton);
+
+      // Should show error message - wait for the error to appear
+      await waitFor(
+        () => {
+          // The error appears in a div with text-kanaliiga-orange class
+          const errorText = screen.getByText("Registration failed");
+          expect(errorText).toBeInTheDocument();
+          expect(errorText).toHaveClass("text-kanaliiga-orange");
+        },
+        { timeout: 3000 }
+      );
+    });
+  });
+
+  describe("Organization Status Section", () => {
+    it("displays organization registration status section", () => {
+      renderKanahautomoPage();
       expect(
         screen.getByText("Organization Registration Status")
       ).toBeInTheDocument();
     });
-    // Check for organization names in headings (cards, not table cells)
-    expect(
-      screen.getByRole("heading", { name: "Test Organization 1" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Test Organization 2" })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Test Organization 3" })
-    ).toBeInTheDocument();
-  });
 
-  it("displays error state for organization status", () => {
-    mockUseKanahautomoOrganizationStatus.mockReturnValue({
-      orgStatus: [],
-      orgStatusLoading: false,
-      orgStatusError: new Error("Failed to load organization status"),
-      isValidating: false,
-      mutate: jest.fn()
+    it("shows loading state for organization status", () => {
+      mockUseKanahautomoOrganizationStatus.mockReturnValue({
+        orgStatus: [],
+        orgStatusLoading: true,
+        orgStatusError: undefined,
+        isValidating: true,
+        mutate: jest.fn()
+      });
+      renderKanahautomoPage();
+
+      const loadingSpinner = document.querySelector(".animate-spin");
+      expect(loadingSpinner).toBeInTheDocument();
     });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    expect(
-      screen.getByText("Failed to load organization status")
-    ).toBeInTheDocument();
-  });
 
-  it("requires authentication to register", () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      user: null,
-      loading: false,
-      checkAuth: jest.fn(),
-      logout: jest.fn()
-    });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    expect(
-      screen.getByText(/please log in with steam to join kanahautomo/i)
-    ).toBeInTheDocument();
-  });
+    it("shows error state for organization status", () => {
+      mockUseKanahautomoOrganizationStatus.mockReturnValue({
+        orgStatus: [],
+        orgStatusLoading: false,
+        orgStatusError: new Error("Failed to load organization status"),
+        isValidating: false,
+        mutate: jest.fn()
+      });
+      renderKanahautomoPage();
 
-  it("renders the form with full page width container", () => {
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    // Use heading to find the container
-    const heading = screen.getByRole("heading", { name: "Join Kanahautomo" });
-    const container = heading.closest(".container");
-    expect(container).toHaveClass("container");
-  });
-
-  it("should render the page with organization selection", () => {
-    render(<KanahautomoPage />);
-    // Heading
-    expect(
-      screen.getByRole("heading", { name: /join kanahautomo/i })
-    ).toBeInTheDocument();
-    // Button
-    expect(
-      screen.getByRole("button", { name: /join kanahautomo/i })
-    ).toBeInTheDocument();
-    // Label
-    expect(screen.getByText("Select your organization")).toBeInTheDocument();
-    // Select trigger
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
-  });
-
-  it("should show organization dropdown with existing organizations", () => {
-    render(<KanahautomoPage />);
-    const selectTrigger = screen.getByRole("combobox");
-    expect(selectTrigger).toBeInTheDocument();
-    // Click to open dropdown
-    fireEvent.click(selectTrigger);
-    // Check that organizations are available as options (use getAllByText and take first)
-    const org1Elements = screen.getAllByText("Test Organization 1");
-    const org2Elements = screen.getAllByText("Test Organization 2");
-    const addNewElements = screen.getAllByText("Add new organization...");
-    expect(org1Elements[0]).toBeInTheDocument();
-    expect(org2Elements[0]).toBeInTheDocument();
-    expect(addNewElements[0]).toBeInTheDocument();
-  });
-
-  it("should render the list of organizations", () => {
-    render(<KanahautomoPage />);
-    // Open dropdown
-    const selectTrigger = screen.getByRole("combobox");
-    fireEvent.click(selectTrigger);
-    expect(screen.getAllByText("Test Organization 1").length).toBeGreaterThan(
-      0
-    );
-    expect(screen.getAllByText("Test Organization 2").length).toBeGreaterThan(
-      0
-    );
-  });
-
-  it("should show new organization form when 'Add new...' is selected", async () => {
-    render(<KanahautomoPage />);
-    // Select 'Add new organization...' using the hidden select
-    const select = screen
-      .getByRole("combobox")
-      .parentElement?.querySelector("select");
-    act(() => {
-      fireEvent.change(select!, { target: { value: "-1" } });
-    });
-    // Wait for the form fields to appear
-    await waitFor(() => {
-      expect(screen.getByTestId("organization-name-input")).toBeInTheDocument();
       expect(
-        screen.getByTestId("organization-business-id-input")
-      ).toBeInTheDocument();
-      expect(
-        screen.getByTestId("organization-website-input")
+        screen.getByText("Failed to load organization status")
       ).toBeInTheDocument();
     });
-  });
 
-  it("should require authentication", () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      user: null,
-      loading: false,
-      checkAuth: jest.fn(),
-      logout: jest.fn()
+    it("displays organization status cards", () => {
+      renderKanahautomoPage();
+
+      // Check for organization names in the status cards
+      expect(screen.getByText("Test Organization 1")).toBeInTheDocument();
+      expect(screen.getByText("Test Organization 2")).toBeInTheDocument();
+      expect(screen.getByText("Test Organization 3")).toBeInTheDocument();
+
+      // Check for registration counts
+      expect(screen.getByText("Registered: 3")).toBeInTheDocument();
+      expect(screen.getByText("Registered: 1")).toBeInTheDocument();
+      expect(screen.getByText("Registered: 5")).toBeInTheDocument();
     });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    expect(
-      screen.getByText("Please log in with Steam to join Kanahautomo")
-    ).toBeInTheDocument();
   });
 
-  it("should not render the form full page width", () => {
-    render(<KanahautomoPage />);
-    const heading = screen.getByRole("heading", { name: /join kanahautomo/i });
-    const container = heading.closest(".container");
-    expect(container).toHaveClass("container");
-    // Optionally check for max-width style or class
-    expect(container?.className).toContain("container");
+  describe("Form Validation", () => {
+    it("requires organization selection", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      // Try to submit without selecting organization
+      const submitButton = screen.getByRole("button", {
+        name: "Join Kanahautomo"
+      });
+      await user.click(submitButton);
+
+      // Should show validation error
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            "Please select an existing organization or create a new one."
+          )
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("requires at least one game type selection", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      // Select organization but no game types
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+      const orgOptions = screen.getAllByText("Test Organization 1");
+      expect(orgOptions[0]).toBeDefined();
+      await user.click(orgOptions[0]!);
+
+      const submitButton = screen.getByRole("button", {
+        name: "Join Kanahautomo"
+      });
+      await user.click(submitButton);
+
+      // Should show validation error for game types - look specifically for the validation message
+      await waitFor(() => {
+        const validationMessages = screen.getAllByText(
+          "Please select at least one game type"
+        );
+        expect(validationMessages.length).toBeGreaterThan(0);
+        expect(validationMessages[0]).toBeInTheDocument();
+      });
+    });
+
+    it("requires terms acceptance", async () => {
+      const user = userEvent.setup();
+      renderKanahautomoPage();
+
+      // Select organization and game type but not terms
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+      const orgOptions = screen.getAllByText("Test Organization 1");
+      expect(orgOptions[0]).toBeDefined();
+      await user.click(orgOptions[0]!);
+
+      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      await user.click(cs2Checkbox);
+
+      const submitButton = screen.getByRole("button", {
+        name: "Join Kanahautomo"
+      });
+      await user.click(submitButton);
+
+      // Should show validation error for terms - check for the actual message
+      await waitFor(() => {
+        expect(
+          screen.getByText("You must accept the terms and conditions")
+        ).toBeInTheDocument();
+      });
+    });
   });
 });
-
-describe("KanahautomoPage (with useKanahautomoOrganizationStatus hook)", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseOrganizations.mockReturnValue({
-      organizations: mockOrganizations,
-      isLoading: false,
-      isError: undefined,
-      isValidating: false
-    });
-    (useAuth as jest.Mock).mockReturnValue(mockAuthContext);
-  });
-
-  it("shows loading state for organization status", () => {
-    mockUseKanahautomoOrganizationStatus.mockReturnValue({
-      orgStatus: [],
-      orgStatusLoading: true,
-      orgStatusError: undefined,
-      isValidating: true,
-      mutate: jest.fn()
-    });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    // Look for the loading spinner div with animate-spin class
-    const loadingSpinner = document.querySelector(".animate-spin");
-    expect(loadingSpinner).toBeInTheDocument();
-  });
-
-  it("shows error state for organization status", () => {
-    mockUseKanahautomoOrganizationStatus.mockReturnValue({
-      orgStatus: [],
-      orgStatusLoading: false,
-      orgStatusError: new Error("Failed to load organization status"),
-      isValidating: false,
-      mutate: jest.fn()
-    });
-    render(
-      <AuthProvider>
-        <KanahautomoPage />
-      </AuthProvider>
-    );
-    expect(
-      screen.getByText("Failed to load organization status")
-    ).toBeInTheDocument();
-  });
-});
-
-// Mock ResizeObserver for jsdom
-class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-window.ResizeObserver = ResizeObserver;

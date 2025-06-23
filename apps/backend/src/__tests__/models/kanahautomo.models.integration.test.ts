@@ -1,5 +1,6 @@
 import {
   registerPlayerForKanahautomo,
+  insertKanahautomoGameTypes,
   getKanahautomoOrganizationStatus
 } from "../../models/kanahautomo.models";
 import {
@@ -202,6 +203,129 @@ describe("Kanahautomo Models Integration Tests", () => {
 
       expect(org1Result?.count).toBe(2);
       expect(org2Result?.count).toBe(1);
+    });
+  });
+
+  describe("insertKanahautomoGameTypes", () => {
+    it("should insert selected game types for a registration", async () => {
+      // First create a registration
+      const registration = await registerPlayerForKanahautomo(
+        testSteamId,
+        testOrganizationId,
+        false
+      );
+
+      const gameTypes = {
+        cs: true,
+        csWingman: false,
+        pubgDuo: true,
+        pubgSquad: false,
+        rocketLeague: false,
+        dota: false
+      };
+
+      await insertKanahautomoGameTypes(registration.insertId, gameTypes);
+
+      // Verify the game types were inserted
+      const gameTypeRegistrations = await runQuery<
+        Array<{
+          kanahautomo_registration_id: number;
+          game_type_id: number;
+        }>
+      >(
+        "SELECT kanahautomo_registration_id, game_type_id FROM KanahautomoRegistrationGameTypes WHERE kanahautomo_registration_id = ? ORDER BY game_type_id",
+        [registration.insertId]
+      );
+
+      expect(gameTypeRegistrations).toHaveLength(2);
+      expect(gameTypeRegistrations[0].game_type_id).toBe(1); // CS2 Comp
+      expect(gameTypeRegistrations[1].game_type_id).toBe(3); // PUBG Duo
+    });
+
+    it("should insert all selected game types", async () => {
+      const registration = await registerPlayerForKanahautomo(
+        testSteamId2,
+        testOrganizationId,
+        false
+      );
+
+      const gameTypes = {
+        cs: true,
+        csWingman: true,
+        pubgDuo: true,
+        pubgSquad: true,
+        rocketLeague: true,
+        dota: true
+      };
+
+      await insertKanahautomoGameTypes(registration.insertId, gameTypes);
+
+      const gameTypeRegistrations = await runQuery<
+        Array<{
+          kanahautomo_registration_id: number;
+          game_type_id: number;
+        }>
+      >(
+        "SELECT kanahautomo_registration_id, game_type_id FROM KanahautomoRegistrationGameTypes WHERE kanahautomo_registration_id = ? ORDER BY game_type_id",
+        [registration.insertId]
+      );
+
+      expect(gameTypeRegistrations).toHaveLength(6);
+      const gameTypeIds = gameTypeRegistrations.map((r) => r.game_type_id);
+      expect(gameTypeIds).toEqual([1, 2, 3, 4, 5, 6]);
+    });
+
+    it("should throw error if no game types are selected", async () => {
+      const registration = await registerPlayerForKanahautomo(
+        testSteamId3,
+        testOrganizationId,
+        false
+      );
+
+      const gameTypes = {
+        cs: false,
+        csWingman: false,
+        pubgDuo: false,
+        pubgSquad: false,
+        rocketLeague: false,
+        dota: false
+      };
+
+      await expect(
+        insertKanahautomoGameTypes(registration.insertId, gameTypes)
+      ).rejects.toThrow("At least one game type must be selected");
+    });
+
+    it("should handle single game type selection", async () => {
+      const registration = await registerPlayerForKanahautomo(
+        testSteamId4,
+        testOrganizationId,
+        false
+      );
+
+      const gameTypes = {
+        cs: false,
+        csWingman: false,
+        pubgDuo: false,
+        pubgSquad: false,
+        rocketLeague: true,
+        dota: false
+      };
+
+      await insertKanahautomoGameTypes(registration.insertId, gameTypes);
+
+      const gameTypeRegistrations = await runQuery<
+        Array<{
+          kanahautomo_registration_id: number;
+          game_type_id: number;
+        }>
+      >(
+        "SELECT kanahautomo_registration_id, game_type_id FROM KanahautomoRegistrationGameTypes WHERE kanahautomo_registration_id = ?",
+        [registration.insertId]
+      );
+
+      expect(gameTypeRegistrations).toHaveLength(1);
+      expect(gameTypeRegistrations[0].game_type_id).toBe(5); // Rocket League Standard
     });
   });
 });

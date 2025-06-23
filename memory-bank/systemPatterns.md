@@ -4,6 +4,111 @@
 
 The Kanaliiga Eggosystem follows a monorepo structure using PNPM workspaces with clear separation between frontend and backend concerns.
 
+## Testing Architecture
+
+### Test Strategy Hierarchy
+
+**Unit Tests (Jest + React Testing Library)**
+
+- **Purpose**: Test individual components and functions in isolation
+- **Speed**: Very fast (< 5 seconds)
+- **Scope**: Single component or utility function
+- **Command**: `pnpm test` (fast feedback during development)
+- **Watch Mode**: `pnpm test:watch` (TDD workflow)
+
+**E2E Tests (Playwright)**
+
+- **Purpose**: Test complete user workflows with real backend
+- **Speed**: Slower (requires database setup)
+- **Scope**: Multi-component interactions, full user journeys
+- **Command**: `cd $(git rev-parse --show-toplevel) && pnpm test:e2e` (**ALWAYS from root**)
+- **Database**: Full reseed, seed, seed:e2e setup
+
+**Testing Strategy Rules:**
+
+1. **E2E Command Requirements**:
+
+   - **MUST run from monorepo root**: Ensures proper database seeding and builds
+   - **Does NOT start dev:e2e backend**: That's handled separately
+   - **Includes build step**: Ensures latest code is tested
+
+2. **Boundary Value Testing Strategy**:
+
+   - **Minimum Valid Values**: Test smallest acceptable inputs (e.g., 2-char names)
+   - **Maximum Valid Values**: Test largest acceptable inputs (e.g., max length strings)
+   - **Below Minimum**: Test values just under the limit (should fail validation)
+   - **Above Maximum**: Test values just over the limit (should fail validation)
+   - **Edge Cases**: Empty strings, null values, special characters
+   - **Boundary Transitions**: Test exactly at the limits
+
+3. **Package/Types Build Requirement**:
+   - **After any changes in packages/types**: `cd $(git rev-parse --show-toplevel) && pnpm --filter=@eggosystem/types build`
+   - **Why**: Changes don't auto-propagate to backend/frontend
+   - **When**: Before running tests or starting dev servers after type changes
+
+### TDD Workflow Patterns
+
+**Red-Green-Refactor Cycle:**
+
+1. **Red**: Write failing test first
+2. **Green**: Write minimal code to make test pass
+3. **Refactor**: Improve code while keeping tests green
+
+**Command Preferences:**
+
+- **Development**: `pnpm test:watch` for continuous feedback
+- **Specific Files**: `pnpm test path/to/specific.test.ts` for targeted testing
+- **Full Suite**: `pnpm test:all` for comprehensive validation
+
+### Error Testing Patterns
+
+**Use `await expect().rejects.toThrow()` for testing expected failures:**
+
+```typescript
+// ✅ Good - Jest async error testing
+it("should fail with invalid data", async () => {
+  await expect(serviceFunction(invalidData)).rejects.toThrow(
+    /validation error/i
+  );
+});
+
+// ❌ Bad - manual try/catch in tests
+it("should fail with invalid data", async () => {
+  try {
+    await serviceFunction(invalidData);
+    throw new Error("Should have failed");
+  } catch (error) {
+    expect(error.message).toContain("validation");
+  }
+});
+```
+
+**Boundary Value Test Examples:**
+
+```typescript
+// Test minimum valid value
+it("should accept minimum valid organization name", async () => {
+  await expect(validateOrgName("AB")).resolves.toBe(true);
+});
+
+// Test below minimum (should fail)
+it("should reject organization name below minimum", async () => {
+  await expect(validateOrgName("A")).rejects.toThrow(/at least 2 characters/i);
+});
+
+// Test maximum valid value
+it("should accept maximum valid organization name", async () => {
+  const maxName = "A".repeat(100); // assuming 100 is max
+  await expect(validateOrgName(maxName)).resolves.toBe(true);
+});
+
+// Test above maximum (should fail)
+it("should reject organization name above maximum", async () => {
+  const tooLongName = "A".repeat(101);
+  await expect(validateOrgName(tooLongName)).rejects.toThrow(/too long/i);
+});
+```
+
 ## Database Query Patterns
 
 ### Critical JOIN Patterns

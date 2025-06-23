@@ -33,12 +33,46 @@
 - ✅ **Created Skill Comparison Feature** allowing players to compare with team average, similar ranked players, or all players
 - ✅ **Fixed Team Filter in Player Skills** to correctly fetch and use player's team data for comparison
 - ✅ **Fixed E2E Testing Configuration** - Updated package.json scripts and playwright.config.ts to allow running specific e2e test files
+- ✅ **Fixed and Made Robust Kanahautomo E2E Tests** - All 7 tests now passing with comprehensive coverage
 
 ### In Progress
 
 - 🔄 Finalizing memory bank structure and content
 - 🔄 Cleaning up existing rule files to remove duplicated context
 - 🔄 Establishing progress tracking and active context documentation
+
+### E2E Testing Strategy & Requirements (January 2025)
+
+**CRITICAL E2E Testing Rules:**
+
+1. **ALWAYS run e2e tests from monorepo root**: `cd $(git rev-parse --show-toplevel) && pnpm test:e2e`
+
+   - This ensures proper database seeding (`reseed:e2e`, `seed`, `seed:e2e`)
+   - Triggers necessary builds before running tests
+   - **Note**: This does NOT start the `dev:e2e` backend - that's handled separately
+
+2. **Boundary Value Testing Strategy**: Apply Test Boundary Analysis for robust tests
+
+   - Test **minimum valid values** (e.g., 2-character organization names)
+   - Test **maximum valid values** (e.g., maximum length strings)
+   - Test **just below minimum** (e.g., 1-character names - should fail)
+   - Test **just above maximum** (e.g., too-long strings - should fail)
+   - Test **edge cases** (empty strings, null values, special characters)
+   - Test **boundary transitions** (exactly at limits)
+
+3. **Package/Types Build Requirement**:
+   - **ALWAYS build packages/types after changes**: `cd $(git rev-parse --show-toplevel) && pnpm --filter=@eggosystem/types build`
+   - Changes in `packages/types` don't automatically propagate to backend/frontend
+   - Must explicitly build types package for changes to be visible
+
+**E2E Test Quality Improvements Made:**
+
+- ✅ **Better Element Selectors**: Used `button[role='combobox']` to avoid conflicts
+- ✅ **API Request/Response Tracking**: Monitor actual API calls for debugging
+- ✅ **Flexible Validation Testing**: Content matching instead of exact text selectors
+- ✅ **Robust Success Verification**: API response status + form state changes
+- ✅ **Comprehensive Coverage**: 7 test scenarios covering all major functionality
+- ✅ **Error Handling**: Graceful handling of both success and failure cases
 
 ### Type Management Improvements
 
@@ -124,11 +158,12 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 - **Pattern Consistency**: Follow established patterns in systemPatterns.md
 - **Mobile-First**: All features must work on mobile devices
 - **Data Integrity**: Maintain correct database relationships and queries
+- **Boundary Testing**: Apply Test Boundary Analysis for edge cases and limits
 
 ### Code Quality Standards
 
 - **TypeScript Strict**: No any types, proper interfaces
-- **Test Coverage**: Comprehensive testing with error detection
+- **Test Coverage**: Comprehensive testing with error detection and boundary analysis
 - **Performance**: Sub-second response times for most operations
 - **Documentation**: Clear, current documentation for all features
 
@@ -140,6 +175,8 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 2. **Team Associations**: SeasonTeamPlayers is source of truth, not TeamRosters
 3. **Mobile Performance**: Essential data only on small screens improves UX
 4. **Filter Architecture**: parseQueryFilterParams middleware enables consistent filtering
+5. **E2E Testing**: Must run from root for proper seeding and builds
+6. **Types Package**: Requires explicit build after changes to propagate
 
 ### Technical Debt Awareness
 
@@ -147,6 +184,7 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 - **Mobile Table Design**: Ongoing refinement of what data is essential
 - **Error Handling**: Consistent patterns across frontend and backend
 - **Testing Strategy**: Balance between comprehensive coverage and development speed
+- **Build Dependencies**: Types package changes need explicit build step
 
 ### Success Factors
 
@@ -154,6 +192,8 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 - **Documentation**: Good documentation enables faster development
 - **Mobile-First**: Designing for mobile improves overall UX
 - **Performance Focus**: Fast queries essential for good user experience
+- **Boundary Testing**: Testing edge cases prevents production issues
+- **Proper E2E Setup**: Correct test environment setup prevents flaky tests
 
 ## Context Update Strategy
 
