@@ -128,7 +128,7 @@ export const PlayerSkillTab = ({
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold mb-4">
-        Player Skills{" "}
+        Player Skill Rating:{" "}
         <span className="text-kanaliiga-orange">
           {playerSkillData.overall_rating}/100
         </span>
@@ -147,58 +147,186 @@ export const PlayerSkillTab = ({
 
         <div className="bg-card rounded-lg p-4 shadow-sm">
           <h3 className="font-medium text-lg mb-4">Skill Metrics Explained</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="font-medium text-kanaliiga-orange">
+              <h4 className="font-medium text-kanaliiga-orange mb-2">
                 Aim ({playerSkillData.aim}/100)
               </h4>
-              <p className="text-sm text-muted-foreground">
-                Measures mechanical skills including headshot percentage,
-                accuracy, and damage output.
+              <p className="text-sm text-muted-foreground mb-2">
+                Measures a player&apos;s mechanical shooting skills:
               </p>
+              <ul className="list-disc pl-5 mb-3 text-sm text-muted-foreground space-y-1">
+                <li>
+                  <span className="font-medium">Headshot percentage</span> -
+                  Accuracy when aiming for headshots
+                </li>
+                <li>
+                  <span className="font-medium">Time to damage</span> - How
+                  quickly the player deals damage after spotting enemies
+                </li>
+                <li>
+                  <span className="font-medium">Crosshair placement</span> - How
+                  well the player pre-aims at head level
+                </li>
+                <li>
+                  <span className="font-medium">Counter-strafing</span> -
+                  Ability to stop movement for accurate shots
+                </li>
+                <li>
+                  <span className="font-medium">Accuracy</span> - Overall
+                  shooting precision
+                </li>
+              </ul>
             </div>
             <div>
-              <h4 className="font-medium text-kanaliiga-orange">
+              <h4 className="font-medium text-kanaliiga-orange mb-2">
                 Impact ({playerSkillData.impact}/100)
               </h4>
-              <p className="text-sm text-muted-foreground">
-                Measures influence on round outcomes including clutches,
-                multi-kills, and KAST.
+              <p className="text-sm text-muted-foreground mb-2">
+                Measures a player&apos;s influence on round outcomes:
               </p>
+              <ul className="list-disc pl-5 mb-3 text-sm text-muted-foreground space-y-1">
+                <li>
+                  <span className="font-medium">KAST</span> - Kill, Assist,
+                  Survived, or Traded percentage
+                </li>
+                <li>
+                  <span className="font-medium">Clutches</span> - Success rate
+                  in last-player-standing situations
+                </li>
+                <li>
+                  <span className="font-medium">Multi-kills</span> - Frequency
+                  of double/triple kills per round
+                </li>
+                <li>
+                  <span className="font-medium">KANA rating</span> - Overall
+                  statistical performance
+                </li>
+                <li>
+                  <span className="font-medium">1v1 success</span> - Win ratio
+                  in one-versus-one situations
+                </li>
+              </ul>
             </div>
             <div>
-              <h4 className="font-medium text-kanaliiga-orange">
+              <h4 className="font-medium text-kanaliiga-orange mb-2">
                 Positioning ({playerSkillData.positioning}/100)
               </h4>
-              <p className="text-sm text-muted-foreground">
-                Measures tactical awareness including opening duels, trade
-                efficiency, and survival.
+              <p className="text-sm text-muted-foreground mb-2">
+                Measures tactical awareness and positioning:
               </p>
+              <ul className="list-disc pl-5 mb-3 text-sm text-muted-foreground space-y-1">
+                <li>
+                  <span className="font-medium">First kill/death ratio</span> -
+                  Success in opening duels
+                </li>
+                <li>
+                  <span className="font-medium">Trade efficiency</span> - How
+                  well player converts trade opportunities
+                </li>
+                <li>
+                  <span className="font-medium">Tradeable deaths</span> -
+                  Percentage of deaths in positions where teammates can trade
+                </li>
+                <li>
+                  <span className="font-medium">Opening duel success</span> -
+                  Performance in first engagements as T and CT
+                </li>
+                <li>
+                  <span className="font-medium">Good deaths</span> - Deaths that
+                  occur in advantageous team positions
+                </li>
+              </ul>
             </div>
             <div>
-              <h4 className="font-medium text-kanaliiga-orange">
+              <h4 className="font-medium text-kanaliiga-orange mb-2">
                 Utility ({playerSkillData.utility}/100)
               </h4>
-              <p className="text-sm text-muted-foreground">
-                Measures grenade and flash effectiveness including damage,
-                enemies flashed, and assists.
+              <p className="text-sm text-muted-foreground mb-2">
+                Measures grenade and flash effectiveness:
               </p>
+              <ul className="list-disc pl-5 mb-3 text-sm text-muted-foreground space-y-1">
+                <li>
+                  <span className="font-medium">Flash assists</span> - Kills
+                  secured by teammates on flashed enemies
+                </li>
+                <li>
+                  <span className="font-medium">Enemies flashed</span> - Average
+                  number of enemies blinded per flash
+                </li>
+                <li>
+                  <span className="font-medium">Flash duration</span> - Average
+                  time enemies remain blinded
+                </li>
+                <li>
+                  <span className="font-medium">HE damage</span> - Average
+                  damage dealt with grenades per round
+                </li>
+                <li>
+                  <span className="font-medium">Molotov damage</span> - Average
+                  damage dealt with molotovs per round
+                </li>
+              </ul>
             </div>
             <div>
-              <h4 className="font-medium text-kanaliiga-orange">
+              <h4 className="font-medium text-kanaliiga-orange mb-2">
                 Consistency ({playerSkillData.consistency}/100)
               </h4>
-              <p className="text-sm text-muted-foreground">
-                Measures performance stability across maps, sides, and roles.
+              <p className="text-sm text-muted-foreground mb-2">
+                Measures performance stability across different scenarios:
               </p>
+              <ul className="list-disc pl-5 mb-3 text-sm text-muted-foreground space-y-1">
+                <li>
+                  <span className="font-medium">CT/T balance</span> - How
+                  balanced performance is between sides
+                </li>
+                <li>
+                  <span className="font-medium">Map consistency</span> - How
+                  stable performance is across different maps
+                </li>
+                <li>
+                  <span className="font-medium">Role balance</span> -
+                  Consistency between entry fragging and clutch situations
+                </li>
+                <li>
+                  <span className="font-medium">ADR variance</span> - How much
+                  damage output fluctuates between matches
+                </li>
+                <li>
+                  <span className="font-medium">KD variance</span> - How much
+                  kill/death ratio varies between matches
+                </li>
+              </ul>
             </div>
             <div>
-              <h4 className="font-medium text-kanaliiga-orange">
+              <h4 className="font-medium text-kanaliiga-orange mb-2">
                 Overall Rating ({playerSkillData.overall_rating}/100)
               </h4>
-              <p className="text-sm text-muted-foreground">
-                Combined score based on all skill categories.
+              <p className="text-sm text-muted-foreground mb-2">
+                Comprehensive player skill rating based on all categories:
               </p>
+              <ul className="list-disc pl-5 mb-3 text-sm text-muted-foreground space-y-1">
+                <li>
+                  <span className="font-medium">Aim</span> - 25% of overall
+                  rating
+                </li>
+                <li>
+                  <span className="font-medium">Impact</span> - 25% of overall
+                  rating
+                </li>
+                <li>
+                  <span className="font-medium">Positioning</span> - 20% of
+                  overall rating
+                </li>
+                <li>
+                  <span className="font-medium">Utility</span> - 15% of overall
+                  rating
+                </li>
+                <li>
+                  <span className="font-medium">Consistency</span> - 15% of
+                  overall rating
+                </li>
+              </ul>
             </div>
           </div>
         </div>
