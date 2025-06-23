@@ -44,9 +44,5 @@ export const getKanahautomoOrganizationStatus = async () => {
      ORDER BY o.name ASC`,
     []
   );
-  return results.map((row) => ({
-    ...row,
-    count: Number(row.count),
-    status: row.count >= 5 ? "ready" : "waiting"
-  }));
+  return results;
 };

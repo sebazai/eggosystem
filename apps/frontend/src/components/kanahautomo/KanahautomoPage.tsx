@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,49 +20,18 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 import { clientApiFetch } from "@/lib/apiClient";
 import { NewOrganizationForm } from "@/components/organizations/NewOrganizationForm";
 import { toast } from "sonner";
 import { useKanahautomoOrganizationStatus } from "@/hooks/data/useKanahautomoOrganizationStatus";
-import type { KanahautomoRegistration } from "@eggosystem/types";
-
-const kanahautomoSchema = z
-  .object({
-    organizationId: z.number().optional(),
-    newOrganization: z
-      .object({
-        name: z
-          .string()
-          .min(2, "Organization name must be at least 2 characters"),
-        organization_code: z
-          .string()
-          .min(2, "Business ID must be at least 2 characters"),
-        website: z.string().url("Please enter a valid website URL")
-      })
-      .optional()
-  })
-  .refine(
-    (data) => {
-      // Must have exactly one: either organizationId OR newOrganization
-      const hasOrgId = data.organizationId && data.organizationId > 0;
-      const hasNewOrg =
-        data.newOrganization &&
-        data.newOrganization.name &&
-        data.newOrganization.organization_code &&
-        data.newOrganization.website;
-
-      return (hasOrgId && !hasNewOrg) || (!hasOrgId && hasNewOrg);
-    },
-    {
-      message:
-        "Please select an existing organization OR create a new one (not both)",
-      path: ["organizationId"]
-    }
-  );
-
-type KanahautomoFormData = z.infer<typeof kanahautomoSchema>;
+import {
+  type KanahautomoRegistration,
+  type KanahautomoFormData,
+  kanahautomoSchema
+} from "@eggosystem/types";
 
 export default function KanahautomoPage() {
   const { user, loading: authLoading } = useAuth();
@@ -85,7 +53,15 @@ export default function KanahautomoPage() {
     resolver: zodResolver(kanahautomoSchema),
     defaultValues: {
       organizationId: undefined,
-      newOrganization: undefined
+      newOrganization: undefined,
+      acceptedTerms: false,
+      gameTypes: {
+        cs: false,
+        csWingman: false,
+        rocketLeague: false,
+        pubgDuo: false,
+        pubgSquad: false
+      }
     },
     mode: "onChange"
   });
@@ -190,11 +166,10 @@ export default function KanahautomoPage() {
             </h1>
             <p>
               Register for Kanahautomo to find teammates from your organization.
-              When 5 or more players from the same organization register, a
-              Discord channel will be created automatically and an email with
-              the invite link will be sent to your registered email address.
-              Please ensure you have a valid email in your profile and it is
-              verified. Remember to check your junk e-mail folder.
+              When you have registered, an invite link for Kanahautomo Discord
+              will be sent to your registered email address. Please ensure you
+              have a valid email in your profile and it is verified. Remember to
+              check your junk e-mail folder.
             </p>
           </div>
         </CardHeader>
@@ -251,6 +226,128 @@ export default function KanahautomoPage() {
                   />
                 </div>
               )}
+
+              {/* Game Types Section */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Select Game Types</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* CS2 Games */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-kanaliiga-light-brown">
+                      Counter-Strike 2
+                    </h4>
+                    <FormField
+                      control={form.control}
+                      name="gameTypes.cs"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm">CS2</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="gameTypes.csWingman"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm">CS2 Wingman</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* PUBG Games */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-kanaliiga-light-brown">
+                      PUBG
+                    </h4>
+                    <FormField
+                      control={form.control}
+                      name="gameTypes.pubgSquad"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm">PUBG Squad</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="gameTypes.pubgDuo"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormLabel className="text-sm">PUBG Duo</FormLabel>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Rocket League - Full Width */}
+                <div className="pt-1">
+                  <h4 className="text-sm font-medium text-kanaliiga-light-brown mb-2">
+                    Other Games
+                  </h4>
+                  <FormField
+                    control={form.control}
+                    name="gameTypes.rocketLeague"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm">Rocket League</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="acceptedTerms"
+                render={({ field }) => (
+                  <FormItem className="flex items-start space-x-3 pt-4 border-t border-gray-200">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-1"
+                      />
+                    </FormControl>
+                    <FormLabel className="text-sm leading-relaxed">
+                      I hereby consent to that my Steam ID and my nickname may
+                      be shared to other Kanahautomo players.
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
 
               {error && (
                 <div className="text-kanaliiga-orange text-sm">{error}</div>

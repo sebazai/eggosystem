@@ -200,14 +200,8 @@ describe("Kanahautomo Models Integration Tests", () => {
         (r) => r.organization_id === testOrganizationId2
       );
 
-      if (org1Result) {
-        expect(org1Result.count).toBe(2);
-        expect(org1Result.status).toBe("waiting"); // Less than 5
-      }
-      if (org2Result) {
-        expect(org2Result.count).toBe(1);
-        expect(org2Result.status).toBe("waiting"); // Less than 5
-      }
+      expect(org1Result?.count).toBe(2);
+      expect(org2Result?.count).toBe(1);
     });
   });
 });

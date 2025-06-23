@@ -29,7 +29,7 @@ const v1Router = Router();
 
 // Dashboard
 v1Router.use("/dashboard", authenticateJWT, dashboardRouter);
-v1Router.use("/kanahautomo", authenticateJWT, kanahautomoRouter);
+v1Router.use("/kanahautomo", kanahautomoRouter);
 
 // Mount the routers
 v1Router.use("/auth", authRouter);

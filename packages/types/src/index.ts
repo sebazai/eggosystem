@@ -23,4 +23,5 @@ export * from "./dashboard/index";
 export * from "./allstar/index";
 export * from "./steam/index";
 export * from "./leetify/index";
-export * from "./sortter";
+export * from "./sortter/index";
+export * from "./kanahautomo/index";
