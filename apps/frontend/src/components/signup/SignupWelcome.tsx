@@ -5,6 +5,7 @@ import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
+import { convertTimeToLocalTimeWithoutSeconds } from "@/lib/date-utils";
 import Link from "next/link";
 
 interface SignupWelcomeProps {
@@ -30,8 +31,19 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
   return (
     <div>
       <div className="text-lg pb-4 font-semibold">
-        👋 Welcome to Kanaliiga {seasonDetails.full_name} Sign Up! Season starts
-        on {new Date(seasonDetails.start_date).toLocaleDateString()}{" "}
+        👋 Welcome to Kanaliiga {seasonDetails.full_name} Sign Up!
+        <br />
+        {seasonDetails.signup_end_date && (
+          <span>
+            Signup ends at{" "}
+            {convertTimeToLocalTimeWithoutSeconds(
+              seasonDetails.signup_end_date
+            )}
+            . <br />
+          </span>
+        )}
+        Season starts on{" "}
+        {new Date(seasonDetails.start_date).toLocaleDateString()}{" "}
         {seasonDetails.end_date && (
           <span>
             and ends approximately on{" "}
