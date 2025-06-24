@@ -9,7 +9,7 @@ export const manualPlayerApprovalFormSchema = z
     acceptedPlayerSteamIds: z
       .array(
         z.object({
-          name: z
+          steamId: z
             .string()
             .min(17, "Steam ID should be 17 numbers")
             .max(17, "Steam ID should be 17 numbers")

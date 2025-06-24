@@ -2,9 +2,11 @@ import { Router } from "express";
 import {
   addManuallyApprovedPlayersController,
   addManualRankForPlayerController,
-  getRegisteredTeamsController
+  getRegisteredTeamsController,
+  getPlayerFullNameController
 } from "../../../controllers/dashboard/registration.controllers";
 import { checkPermissions } from "../../../middlewares/auth.middleware";
+import { auditReadEntity } from "../../../middlewares/audit-log.middleware";
 
 const router = Router();
 
@@ -15,6 +17,15 @@ router.post(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   addManuallyApprovedPlayersController
+);
+router.get(
+  "/players/:steamId/full-name",
+  checkPermissions({
+    staticPermissions: ["read:registration"],
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  auditReadEntity("Accounts through SteamPlayer", "steamId"),
+  getPlayerFullNameController
 );
 router.post(
   "/rank",

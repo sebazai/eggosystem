@@ -7,10 +7,12 @@ import * as z from "zod";
 import {
   addManuallyApprovedPartialSignupForSeason,
   addSeasonRankForPlayer,
-  getRegisteredTeams
+  getRegisteredTeams,
+  getPlayerFullName
 } from "../../models/dashboard/registration.models";
 import { getActiveSignupSeasonForAppId } from "../../models/season.models";
 import { BadRequestError } from "../../utils/errors";
+import { type RequestWithParams } from "@eggosystem/types";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
@@ -74,4 +76,19 @@ export const getRegisteredTeamsController = async (
   }
   const teams = await getRegisteredTeams(activeSeason.season_id);
   res.status(200).json(teams);
+};
+
+export const getPlayerFullNameController = async (
+  req: RequestWithParams<{ steamId: string }>,
+  res: Response
+) => {
+  const steamId = req.params.steamId;
+  const playerFullName = await getPlayerFullName(steamId);
+
+  if (!playerFullName) {
+    res.status(404).json({ message: "Player not found" });
+    return;
+  }
+
+  res.status(200).json(playerFullName);
 };

@@ -4,7 +4,8 @@ import {
   type PostTeamManualPlayerApprovalSchemaType,
   type ActiveSeasonSignupForAppId,
   type SeasonRegisteredTeamsWithPlayers,
-  type SeasonTeamRegistration
+  type SeasonTeamRegistration,
+  type PlayerFullName
 } from "@eggosystem/types";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
@@ -119,4 +120,20 @@ export const getRegisteredTeams = async (seasonId: number) => {
           : []
       }) satisfies SeasonRegisteredTeamsWithPlayers
   );
+};
+
+export const getPlayerFullName = async (
+  steamId: string
+): Promise<PlayerFullName | undefined> => {
+  const query = `
+    SELECT 
+      sp.steam_id,
+      a.full_name
+    FROM SteamPlayers sp
+    JOIN Accounts a ON a.id = sp.account_id
+    WHERE sp.steam_id = ?
+  `;
+
+  const results = await runQuery<PlayerFullName[]>(query, [steamId]);
+  return results.length > 0 ? results[0] : undefined;
 };

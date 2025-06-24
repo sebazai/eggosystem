@@ -34,7 +34,7 @@ export function auditAfterResponse(config: AuditConfig) {
       };
 
       try {
-        if (res.statusCode !== 304) {
+        if (res.statusCode !== 304 && res.statusCode <= 399) {
           await runQuery(
             `
             INSERT INTO AuditLog (
