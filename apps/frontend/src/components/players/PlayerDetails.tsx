@@ -7,12 +7,16 @@ import { PlayerTrophies } from "./PlayerTrophies";
 
 interface PlayerDetailsProps {
   steamId: string;
+  hideHeader?: boolean;
 }
 
-export const PlayerDetails = ({ steamId }: PlayerDetailsProps) => {
+export const PlayerDetails = ({
+  steamId,
+  hideHeader = false
+}: PlayerDetailsProps) => {
   return (
     <div>
-      <PlayerDetailsHeader steamId={steamId} />
+      {!hideHeader && <PlayerDetailsHeader steamId={steamId} />}
       <PlayerTrophies steamId={steamId} />
       <PlayerStatCardsSection steamId={steamId} />
       <PlayerMatchHistoryTable steamId={steamId} />
