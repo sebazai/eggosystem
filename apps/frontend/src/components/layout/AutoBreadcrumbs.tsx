@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import {
@@ -10,7 +10,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import type { Map, Match, MatchGame, SteamPlayer } from "@eggosystem/types";
+import type { MatchesByFilters, SteamPlayer } from "@eggosystem/types";
 import { envConfig } from "@/configs/env";
 
 const matchBreadcrumbLabel = (bestOf: number, stage: number) => {
@@ -24,52 +24,90 @@ const matchBreadcrumbLabel = (bestOf: number, stage: number) => {
   return undefined;
 };
 
-// Simulate fetching a label for an ID
-async function fetchLabelFor(resource: string, id: string): Promise<string> {
-  switch (resource) {
-    case "players": {
-      const response = await fetch(
-        `${envConfig.API_URL}/api/v1/${resource}/${id}`
-      );
-      const data: Pick<SteamPlayer, "nickname" | "steam_id"> =
-        await response.json();
-      return data.nickname || `${resource.slice(0, -1)} ${id}`;
+const gameNumBreadcrumbLabel = (gameId: number, matchId: number) => {
+  const url = `${envConfig.API_URL}/api/v1/games/${gameId}/matchId/${matchId}`;
+  return fetch(url)
+    .then((response) => response.json())
+    .then((_game) => {
+      return `Game ${gameId}`;
+    })
+    .catch(() => {
+      return `Game ${gameId}`;
+    });
+};
+
+const mapBreadcrumbLabel = (mapId: string) => {
+  const url = `${envConfig.API_URL}/api/v1/maps/${mapId}`;
+  return fetch(url)
+    .then((response) => response.json())
+    .then((map: { name?: string }) => {
+      return map.name || mapId;
+    })
+    .catch(() => {
+      return mapId;
+    });
+};
+
+const fetchLabelFor = async (resource: string, id: string): Promise<string> => {
+  if (resource === "matches") {
+    const url = `${envConfig.API_URL}/api/v1/matches/${id}`;
+    return fetch(url)
+      .then((response) => response.json())
+      .then((match: MatchesByFilters) => {
+        // Using match_id in place of best_of as a fallback
+        const matchLabel = matchBreadcrumbLabel(match.match_id, match.stage);
+        if (matchLabel && match.team1_name && match.team2_name) {
+          return `${match.team1_name} vs ${match.team2_name} (${matchLabel})`;
+        }
+        return match.team1_name && match.team2_name
+          ? `${match.team1_name} vs ${match.team2_name}`
+          : id;
+      })
+      .catch(() => {
+        return id;
+      });
+  } else if (resource === "maps") {
+    return mapBreadcrumbLabel(id);
+  } else if (resource === "games" && id.includes("-")) {
+    const parts = id.split("-");
+    if (parts.length === 2 && parts[0] && parts[1]) {
+      return gameNumBreadcrumbLabel(parseInt(parts[0]), parseInt(parts[1]));
     }
-    case "matches": {
-      const response = await fetch(
-        `${envConfig.API_URL}/api/v1/${resource}/${id}`
-      );
-      const data: Match = await response.json();
-      return (
-        matchBreadcrumbLabel(data.best_of, data.stage) ||
-        `${resource.slice(0, -1)} ${id}`
-      );
-    }
-    case "games": {
-      const response = await fetch(
-        `${envConfig.API_URL}/api/v1/${resource}/${id}`
-      );
-      const data: {
-        map_order: MatchGame["map_order"];
-        map_id: MatchGame["map_id"];
-        name: Map["name"];
-      } = await response.json();
-      return data.name || `${resource.slice(0, -1)} ${id}`;
-    }
-    case "teams": {
-      const response = await fetch(
-        `${envConfig.API_URL}/api/v1/${resource}/${id}`
-      );
-      const data: { name: string } = await response.json();
-      return data.name || `${resource.slice(0, -1)} ${id}`;
-    }
-    default:
-      return id;
+    return `Game ${id}`;
+  } else if (resource === "players") {
+    const url = `${envConfig.API_URL}/api/v1/players/steam/${id}`;
+    return fetch(url)
+      .then((response) => response.json())
+      .then((player: SteamPlayer) => {
+        return player?.nickname || id;
+      })
+      .catch(() => {
+        return id;
+      });
   }
-}
+
+  // Default - use ID as label
+  return id;
+};
+
+const getActiveTabLabel = (tab: string | null): string | null => {
+  if (!tab) return null;
+
+  switch (tab) {
+    case "main":
+      return "Overview";
+    case "skills":
+      return "Skills";
+    case "mapstats":
+      return "Map Statistics";
+    default:
+      return tab.charAt(0).toUpperCase() + tab.slice(1);
+  }
+};
 
 export const AutoBreadcrumbs = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [breadcrumbs, setBreadcrumbs] = useState<
     { href: string; label: string }[]
   >([]);
@@ -110,11 +148,27 @@ export const AutoBreadcrumbs = () => {
         }
       }
 
+      // Add the active tab as the last breadcrumb if it exists
+      const activeTab = searchParams.get("tab");
+      const tabLabel = getActiveTabLabel(activeTab);
+
+      if (
+        activeTab &&
+        tabLabel &&
+        (segments.includes("players") || segments.includes("teams"))
+      ) {
+        const tabPath = `${hrefAccumulator}?tab=${activeTab}`;
+        crumbs.push({
+          href: tabPath,
+          label: tabLabel
+        });
+      }
+
       setBreadcrumbs(crumbs);
     };
 
     buildBreadcrumbs();
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return (
     <Breadcrumb className="mb-3">
