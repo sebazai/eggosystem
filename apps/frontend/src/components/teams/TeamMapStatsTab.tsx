@@ -4,6 +4,7 @@ import { TeamMapStatsCards } from "./TeamMapStatsCards";
 import { MapPerformanceRadar } from "./MapPerformanceRadar";
 import { useFilteredTeamMapStats } from "@/hooks/data/filtered/useFilteredTeamMapStats";
 import type { FilterParamsQuery } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface TeamMapStatsTabProps {
   teamId: number;
@@ -14,10 +15,15 @@ export const TeamMapStatsTab = ({
   teamId,
   filterQueryParams
 }: TeamMapStatsTabProps) => {
-  const { teamMapStats, isLoading } = useFilteredTeamMapStats({
+  const { teamMapStats, isLoading, mutate } = useFilteredTeamMapStats({
     teamId,
     filterQueryParams
   });
+
+  // Force revalidation when component mounts - helps ensure data is fresh
+  useEffect(() => {
+    mutate();
+  }, [teamId, filterQueryParams, mutate]);
 
   return (
     <div className="space-y-6">

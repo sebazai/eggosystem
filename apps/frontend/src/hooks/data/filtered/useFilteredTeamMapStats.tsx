@@ -19,11 +19,25 @@ export const useFilteredTeamMapStats = ({
 }: UseFilteredTeamMapStatsProps) => {
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
-  const { data, error, isValidating, isLoading } = useSWR<TeamMapStats[]>(
+  const { data, error, isValidating, isLoading, mutate } = useSWR<
+    TeamMapStats[]
+  >(
     `/api/v1/filters/teams/${teamId}/map-stats?${sortedQuery}`,
     expressFetcher,
     {
-      revalidateOnFocus: false
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      revalidateIfStale: true,
+      errorRetryCount: 3,
+      dedupingInterval: 5000,
+      keepPreviousData: true,
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        // Only retry up to 3 times
+        if (retryCount >= 3) return;
+
+        // Retry after 1 second
+        setTimeout(() => revalidate({ retryCount }), 1000);
+      }
     }
   );
 
@@ -31,6 +45,7 @@ export const useFilteredTeamMapStats = ({
     teamMapStats: data,
     isLoading,
     error,
-    isValidating
+    isValidating,
+    mutate
   };
 };

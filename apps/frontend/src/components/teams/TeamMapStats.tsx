@@ -15,8 +15,70 @@ export const TeamMapStats = ({
     filterQueryParams
   });
   if (isLoading || isValidating || !teamMapStats) {
-    // SKELETON
-    return <></>;
+    // Show skeleton loader instead of empty fragment
+    return (
+      <div className="bg-card rounded-md overflow-hidden mb-3 animate-pulse">
+        <div className="p-4">
+          <div className="h-7 bg-gray-800 rounded w-1/3 mb-4"></div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-20"></div>
+                  </th>
+                  <th className="px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                  </th>
+                  <th className="px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                  </th>
+                  <th className="px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                  </th>
+                  <th className="px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                  </th>
+                  <th className="hidden md:table-cell px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                  </th>
+                  <th className="hidden md:table-cell px-3 py-2">
+                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...Array(5)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-24"></div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
+                    </td>
+                    <td className="hidden md:table-cell px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
+                    </td>
+                    <td className="hidden md:table-cell px-3 py-2">
+                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
   }
   return (
     <div className="bg-card rounded-md overflow-hidden mb-3">

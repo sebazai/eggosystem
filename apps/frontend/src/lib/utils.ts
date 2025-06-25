@@ -80,12 +80,40 @@ export const expressFetcher = async <T>(
     url = `${basePath}${url}`;
   }
 
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const resultJson = await res.json();
-    throw new Error(resultJson.message ?? "An error occurred");
+  try {
+    const res = await fetch(url, options);
+
+    if (!res.ok) {
+      let errorMessage = `API request failed with status ${res.status}`;
+      try {
+        const resultJson = await res.json();
+        errorMessage = resultJson.message || errorMessage;
+      } catch (parseError) {
+        // If parsing fails, use the default error message
+        console.error("Failed to parse error response:", parseError);
+      }
+
+      // Create error with additional properties
+      const error = new Error(errorMessage) as Error & { status?: number };
+      error.status = res.status;
+      throw error;
+    }
+
+    // For non-JSON responses (rare edge case)
+    const contentType = res.headers.get("content-type");
+    if (contentType && !contentType.includes("application/json")) {
+      console.warn("Non-JSON response received:", contentType);
+      return {} as T;
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error(
+      `API fetch error for ${typeof url === "string" ? url : "request"}:`,
+      error
+    );
+    throw error;
   }
-  return res.json();
 };
 
 export const createBaseUrl = (path?: string) => {

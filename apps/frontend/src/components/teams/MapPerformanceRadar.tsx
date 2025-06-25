@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Radar,
   RadarChart,
@@ -53,15 +53,36 @@ const CustomTooltip = ({
 export const MapPerformanceRadar: React.FC<MapPerformanceRadarProps> = ({
   mapStats
 }) => {
-  // Prepare data for radar chart
-  const chartData = mapStats.map((stat) => ({
-    map: stat.map_name,
-    mapName: mapToReadableName(stat.map_name),
-    winRate: stat.win_percentage,
-    wins: stat.wins,
-    maps_played: stat.maps_played,
-    value: stat.wins / stat.maps_played // Normalized value between 0-1
-  }));
+  // Safety check
+  const validMapStats = useMemo(() => {
+    return Array.isArray(mapStats) && mapStats.length > 0 ? mapStats : [];
+  }, [mapStats]);
+
+  // Prepare data for radar chart - with safety checks
+  const chartData = useMemo(() => {
+    return validMapStats.map((stat) => ({
+      map: stat.map_name,
+      mapName: mapToReadableName(stat.map_name),
+      winRate: stat.win_percentage || 0,
+      wins: stat.wins || 0,
+      maps_played: stat.maps_played || 1, // Prevent division by zero
+      value: stat.maps_played > 0 ? stat.wins / stat.maps_played : 0 // Normalized value between 0-1
+    }));
+  }, [validMapStats]);
+
+  // If there's no data, show alternative content
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-card rounded-lg p-4 shadow-sm">
+        <h2 className="font-medium text-lg mb-4">Map Performance Overview</h2>
+        <div className="h-[350px] w-full flex items-center justify-center">
+          <p className="text-muted-foreground">
+            No map performance data available
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-lg p-4 shadow-sm">
