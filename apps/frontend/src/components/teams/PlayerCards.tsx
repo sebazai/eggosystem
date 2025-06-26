@@ -3,11 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
-import {
-  filterParamsToSearchParams,
-  type FilterParamsQuery
-} from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 import { useMultiplePlayersStats } from "@/hooks/data/filtered/useMultiplePlayersStats";
+import type { FilterParamsQuery } from "@/lib/utils";
 
 interface PlayerCardsProps {
   teamId: number;
@@ -18,6 +16,7 @@ export const PlayerCards = ({
   teamId,
   filterQueryParams
 }: PlayerCardsProps) => {
+  const searchParams = useSearchParams();
   const { players, isLoading, isError } = useMultiplePlayersStats({
     ...filterQueryParams,
     teams: [Number(teamId)]
@@ -59,7 +58,7 @@ export const PlayerCards = ({
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
       {top5Players.map((player) => (
         <Link
-          href={`/players/${encodeURIComponent(player.steam_id)}?${filterParamsToSearchParams(filterQueryParams).toString()}`}
+          href={`/players/${encodeURIComponent(player.steam_id)}?${searchParams.toString()}`}
           key={player.steam_id}
           className="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
         >

@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import {
-  cn,
-  filterParamsToSearchParams,
-  type FilterParamsQuery
-} from "@/lib/utils";
+import { cn, type FilterParamsQuery } from "@/lib/utils";
 import { useMultiplePlayersStats } from "@/hooks/data/filtered/useMultiplePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -29,10 +25,10 @@ type SortDirection = "asc" | "desc";
 // Column definitions with full names for tooltips
 const COLUMN_TOOLTIPS: Record<string, string> = {
   nickname: "Player Nickname",
-  matches_played: "Games Played",
-  kills: "Kills",
-  assists: "Assists (Flash Assists)",
-  deaths: "Deaths",
+  matches_played: "Number of Maps Played",
+  kills: "Total Kills",
+  assists: "Total Assists (Flash Assists in parentheses)",
+  deaths: "Total Deaths",
   awp_kills: "AWP Kills",
   utility_damage: "Utility Damage",
   headshots: "Headshots",
@@ -41,7 +37,7 @@ const COLUMN_TOOLTIPS: Record<string, string> = {
   adr: "Average Damage per Round",
   hs_percent: "Headshot Percentage",
   kd: "Kill/Death Ratio",
-  kana_rating: "Kanaliiga Rating"
+  kana_rating: "Kana Rating"
 };
 
 export const PlayerTable: React.FC<PlayerTableProps> = ({
@@ -50,19 +46,6 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const playerName = searchParams.get("playerName") ?? null;
-
-  // Pagination state (state-only pagination to prevent scroll issues)
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(initialPageSize ?? 20);
-
-  // Get players data based on filters
-  const { players, isLoading, isError, isValidating } = useMultiplePlayersStats(
-    {
-      player_name: playerName || null,
-      ...filterQueryParams
-    }
-  );
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: SortDirection;
@@ -71,84 +54,128 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     direction: "desc"
   });
 
-  // Column definitions for the table
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize || 10);
+
+  const { players, isLoading, isError, isValidating } =
+    useMultiplePlayersStats(filterQueryParams);
+
+  // Get player name from URL params
+  const playerName = searchParams.get("playerName") || "";
+
+  // Filter players by name if search param exists
+  const filteredPlayers = useMemo(() => {
+    if (!players) return [];
+    if (!playerName) return players;
+
+    return players.filter((player) =>
+      player.nickname.toLowerCase().includes(playerName.toLowerCase())
+    );
+  }, [players, playerName]);
+
+  // Sort players based on current sort configuration
+  const sortedPlayers = useMemo(() => {
+    if (!filteredPlayers) return [];
+
+    return [...filteredPlayers].sort((a, b) => {
+      const aValue = a[sortConfig.key as keyof PlayerStatsTable];
+      const bValue = b[sortConfig.key as keyof PlayerStatsTable];
+
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return 1;
+      if (bValue == null) return -1;
+
+      // Handle numeric values
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortConfig.direction === "asc"
+          ? aValue - bValue
+          : bValue - aValue;
+      }
+
+      // Handle string values
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortConfig.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return 0;
+    });
+  }, [filteredPlayers, sortConfig]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedPlayers.length / pageSize);
+  const getCurrentPageItems = sortedPlayers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // Column definitions with responsive classes
   const columns = useMemo(
     () => [
       {
         key: "nickname",
-        label: "Player",
+        label: "PLAYER",
         sortable: true,
-        responsive: ""
+        responsive: "table-cell"
       },
       {
-        key: "matches_played",
-        label: "Maps Played",
+        key: "maps_played",
+        label: "MAPS",
         sortable: true,
         responsive: "hidden md:table-cell"
       },
-      {
-        key: "kills",
-        label: "K",
-        sortable: true,
-        responsive: ""
-      },
+      { key: "kills", label: "K", sortable: true, responsive: "table-cell" },
       {
         key: "assists",
-        label: (
-          <>
-            A<span className="text-transform-none">(f)</span>
-          </>
-        ),
+        label: "A (F)",
         sortable: true,
-        responsive: "hidden sm:table-cell"
+        responsive: "hidden lg:table-cell"
       },
-      {
-        key: "deaths",
-        label: "D",
-        sortable: true,
-        responsive: ""
-      },
+      { key: "deaths", label: "D", sortable: true, responsive: "table-cell" },
       {
         key: "awp_kills",
         label: "AWP",
         sortable: true,
-        responsive: "hidden md:table-cell"
+        responsive: "hidden xl:table-cell"
       },
       {
         key: "utility_damage",
         label: "UD",
         sortable: true,
-        responsive: "hidden lg:table-cell"
+        responsive: "hidden xl:table-cell"
       },
       {
         key: "headshots",
         label: "HS",
         sortable: true,
-        responsive: "hidden sm:table-cell"
+        responsive: "hidden lg:table-cell"
       },
       {
         key: "first_kills",
         label: "FK",
         sortable: true,
-        responsive: "hidden lg:table-cell"
+        responsive: "hidden xl:table-cell"
       },
       {
         key: "first_deaths",
         label: "FD",
         sortable: true,
-        responsive: "hidden lg:table-cell"
+        responsive: "hidden xl:table-cell"
       },
       {
         key: "adr",
         label: "ADR",
         sortable: true,
-        responsive: ""
+        responsive: "hidden md:table-cell"
       },
       {
         key: "hs_percent",
         label: "HS%",
         sortable: true,
-        responsive: "hidden md:table-cell"
+        responsive: "hidden lg:table-cell"
       },
       {
         key: "kd",
@@ -158,75 +185,39 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
       },
       {
         key: "kana_rating",
-        label: "Rating",
+        label: "RATING",
         sortable: true,
-        responsive: ""
+        responsive: "table-cell"
       }
     ],
     []
   );
 
-  const columnResponsive = useMemo(() => {
-    return columns.reduce(
-      (acc, column) => {
-        if (column.responsive) {
-          acc[column.key] = column.responsive;
-        }
-        return acc;
-      },
-      {} as Record<string, string>
-    );
-  }, [columns]);
-
-  const handleSortClick = (key: string) => {
-    let direction: SortDirection = "desc";
-    if (sortConfig.key === key && sortConfig.direction === "desc") {
-      direction = "asc";
-    }
-    setSortConfig({ key, direction });
+  const columnResponsive = {
+    nickname: "table-cell",
+    matches_played: "hidden md:table-cell",
+    kills: "table-cell",
+    assists: "hidden lg:table-cell",
+    deaths: "table-cell",
+    awp_kills: "hidden xl:table-cell",
+    utility_damage: "hidden xl:table-cell",
+    headshots: "hidden lg:table-cell",
+    first_kills: "hidden xl:table-cell",
+    first_deaths: "hidden xl:table-cell",
+    adr: "hidden md:table-cell",
+    hs_percent: "hidden lg:table-cell",
+    kd: "hidden md:table-cell",
+    kana_rating: "table-cell"
   };
 
-  const getSortedPlayers = useMemo(() => {
-    if (!players || players.length === 0) return [];
+  const handleSortClick = (key: string) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc"
+    }));
+  };
 
-    const sortableItems = [...players];
-    sortableItems.sort((a, b) => {
-      // Get values for the sort key
-      const aValue = a[sortConfig.key as keyof PlayerStatsTable];
-      const bValue = b[sortConfig.key as keyof PlayerStatsTable];
-
-      // Handle special cases for strings and nulls
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortConfig.direction === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      // Convert to numbers for comparison
-      const aNum = aValue === null || aValue === undefined ? 0 : Number(aValue);
-      const bNum = bValue === null || bValue === undefined ? 0 : Number(bValue);
-
-      return sortConfig.direction === "asc" ? aNum - bNum : bNum - aNum;
-    });
-
-    return sortableItems;
-  }, [players, sortConfig]);
-
-  // Get current page items
-  const getCurrentPageItems = useMemo(() => {
-    const sorted = getSortedPlayers;
-    const startIndex = (currentPage - 1) * pageSize;
-    return sorted.slice(startIndex, startIndex + pageSize);
-  }, [getSortedPlayers, currentPage, pageSize]);
-
-  // Calculate total pages
-  const totalPages = useMemo(() => {
-    return Math.ceil((players?.length || 0) / pageSize);
-  }, [players, pageSize]);
-
-  // Handle page change - state only (no URL updates)
   const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
   };
 
@@ -238,7 +229,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
 
   const handleRowClick = (steamId: string) => {
     router.push(
-      `/players/${encodeURIComponent(steamId)}?${filterParamsToSearchParams(filterQueryParams).toString()}`
+      `/players/${encodeURIComponent(steamId)}?${searchParams.toString()}`
     );
   };
 
@@ -339,7 +330,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
                         // Handle middle mouse button (wheel) click
                         if (e.button === 1) {
                           e.preventDefault(); // Prevent scroll behavior
-                          const url = `/players/${encodeURIComponent(player.steam_id)}?${filterParamsToSearchParams(filterQueryParams).toString()}`;
+                          const url = `/players/${encodeURIComponent(player.steam_id)}?${searchParams.toString()}`;
                           window.open(url, "_blank");
                         }
                       }}
@@ -439,13 +430,7 @@ const TableDataCell = ({
   classNames?: string;
 }) => {
   return (
-    <td
-      className={cn(
-        "px-3 py-2 text-center text-muted-foreground",
-        responsive,
-        classNames
-      )}
-    >
+    <td className={cn("px-3 py-2 text-center", responsive, classNames)}>
       {children}
     </td>
   );

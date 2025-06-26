@@ -4,8 +4,7 @@ import { PlayerDetailsHeader } from "@/components/players/PlayerDetailsHeader";
 import { useFilters } from "@/context/FilterContext";
 import { FilterProvider } from "@/context/FilterContext";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { filterParamsToSearchParams } from "@/lib/utils";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function PlayerTabLayoutClient({
   children,
@@ -32,6 +31,7 @@ function PlayerTabLayoutContent({
 }) {
   const { filterParams, isLoading, error, isValidating } = useFilters();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (isLoading || !filterParams || isValidating) {
     return <div>Loading...</div>;
@@ -45,34 +45,25 @@ function PlayerTabLayoutContent({
     {
       value: "main",
       label: "Main",
-      href: {
-        pathname: `/players/${steamId}`,
-        query: filterParamsToSearchParams(filterParams).toString()
-      }
+      pathname: `/players/${steamId}`
     },
     {
       value: "skills",
       label: "Skills",
-      href: {
-        pathname: `/players/${steamId}/skills`,
-        query: filterParamsToSearchParams(filterParams).toString()
-      }
+      pathname: `/players/${steamId}/skills`
     },
     {
       value: "mapstats",
       label: "Map Statistics",
-      href: {
-        pathname: `/players/${steamId}/mapstats`,
-        query: filterParamsToSearchParams(filterParams).toString()
-      }
+      pathname: `/players/${steamId}/mapstats`
     }
   ];
 
-  const isActiveTab = (href: { pathname: string; query: string }) => {
-    if (href.pathname === `/players/${steamId}`) {
-      return pathname === href.pathname;
+  const isActiveTab = (tabPathname: string) => {
+    if (tabPathname === `/players/${steamId}`) {
+      return pathname === tabPathname;
     }
-    return pathname.startsWith(href.pathname);
+    return pathname.startsWith(tabPathname);
   };
 
   return (
@@ -87,9 +78,9 @@ function PlayerTabLayoutContent({
           {tabs.map((tab) => (
             <Link
               key={tab.value}
-              href={tab.href}
+              href={`${tab.pathname}?${searchParams.toString()}`}
               className={`py-3 px-5 bg-transparent text-base font-semibold hover:bg-kanaliiga-light-brown/10 focus:outline-none cursor-pointer ${
-                isActiveTab(tab.href)
+                isActiveTab(tab.pathname)
                   ? "bg-kanaliiga-light-brown/20 border-b-2 border-kanaliiga-orange"
                   : ""
               }`}

@@ -4,8 +4,7 @@ import { TeamsHeader } from "@/components/teams/TeamsHeader";
 import { useFilters } from "@/context/FilterContext";
 import { FilterProvider } from "@/context/FilterContext";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { filterParamsToSearchParams } from "@/lib/utils";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function TeamTabLayoutClient({
   children,
@@ -30,6 +29,7 @@ function TeamTabLayoutContent({
 }) {
   const { filterParams, isLoading, error, isValidating } = useFilters();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (isLoading || !filterParams || isValidating) {
     return <div>Loading...</div>;
@@ -43,26 +43,20 @@ function TeamTabLayoutContent({
     {
       value: "main",
       label: "Main",
-      href: {
-        pathname: `/teams/${teamId}`,
-        query: filterParamsToSearchParams(filterParams).toString()
-      }
+      pathname: `/teams/${teamId}`
     },
     {
       value: "mapstats",
       label: "Map Statistics",
-      href: {
-        pathname: `/teams/${teamId}/mapstats`,
-        query: filterParamsToSearchParams(filterParams).toString()
-      }
+      pathname: `/teams/${teamId}/mapstats`
     }
   ];
 
-  const isActiveTab = (href: { pathname: string; query: string }) => {
-    if (href.pathname === `/teams/${teamId}`) {
-      return pathname === href.pathname;
+  const isActiveTab = (tabPathname: string) => {
+    if (tabPathname === `/teams/${teamId}`) {
+      return pathname === tabPathname;
     }
-    return pathname.startsWith(href.pathname);
+    return pathname.startsWith(tabPathname);
   };
 
   return (
@@ -84,9 +78,9 @@ function TeamTabLayoutContent({
           {tabs.map((tab) => (
             <Link
               key={tab.value}
-              href={tab.href}
+              href={`${tab.pathname}?${searchParams.toString()}`}
               className={`py-3 px-5 bg-transparent text-base font-semibold hover:bg-kanaliiga-light-brown/10 focus:outline-none cursor-pointer ${
-                isActiveTab(tab.href)
+                isActiveTab(tab.pathname)
                   ? "bg-kanaliiga-light-brown/20 border-b-2 border-kanaliiga-orange"
                   : ""
               }`}
