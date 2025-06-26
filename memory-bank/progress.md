@@ -4,7 +4,7 @@
 
 ### Completed Features
 
-**Core Infrastructure (2024-2025)**
+**Core Infrastructure (January - February 2025)**
 
 - ✅ **Database Schema**: Complete relational database with proper relationships
 - ✅ **Backend API**: Express.js REST API with authentication and authorization
@@ -13,28 +13,28 @@
 - ✅ **Email System**: Email verification and notification system
 - ✅ **Unit Testing Setup**: Jest + React Testing Library for frontend components
 
-**User Management (2024-2025)**
+**User Management (March 2025)**
 
 - ✅ **User Registration**: Steam-based account creation with email verification
 - ✅ **Profile Management**: User profile editing and preferences
 - ✅ **Role-Based Access**: Admin, moderator, and user role system
 - ✅ **Privacy Policy**: User acceptance tracking and management
 
-**Game Integration (2024-2025)**
+**Game Integration (March - April 2025)**
 
 - ✅ **Steam Integration**: Player data synchronization from Steam API
 - ✅ **FaceIT Integration**: Competitive match data and rankings
 - ✅ **Leetify Integration**: Performance analytics and statistics
 - ✅ **Game Statistics**: Comprehensive player performance tracking
 
-**Team Management (2024-2025)**
+**Team Management (April 2025)**
 
 - ✅ **Team Creation**: Team registration and management system
 - ✅ **Season Management**: Multi-season tournament structure
 - ✅ **Player Rosters**: Team player management and transfers
 - ✅ **League System**: Division-based competitive structure
 
-**Statistics & Analytics (2024-2025)**
+**Statistics & Analytics (April - May 2025)**
 
 - ✅ **Player Statistics**: Individual performance metrics and rankings
 - ✅ **Team Statistics**: Team performance and standings
@@ -44,7 +44,7 @@
 - ✅ **Map Statistics**: Performance breakdowns by map for teams and players
 - ✅ **Skill Comparison**: Compare player skills with team average, similar ranked players, or all players
 
-**Frontend Features (2024-2025)**
+**Frontend Features (May 2025)**
 
 - ✅ **Responsive Design**: Mobile-first design approach
 - ✅ **Dashboard**: User dashboard with personalized data
@@ -52,7 +52,7 @@
 - ✅ **Data Visualization**: Charts and graphs for statistics
 - ✅ **Navigation**: Intuitive navigation with breadcrumbs
 
-**Testing Infrastructure (2025)**
+**Testing Infrastructure (June 2025)**
 
 - ✅ **Frontend Unit Testing**: Jest + React Testing Library setup
 - ✅ **Component Testing**: Comprehensive unit tests for core components
@@ -90,7 +90,7 @@
 
 ### Active Development Areas
 
-**Frontend Testing (January 2025)**
+**Frontend Testing (June 2025)**
 
 - ✅ **Jest Configuration**: Properly configured for Next.js and TypeScript
 - ✅ **React Testing Library**: Set up with accessibility-focused testing
@@ -100,6 +100,23 @@
 - ✅ **E2E Test Files**: Signup form and email verification tests
 - 🔄 **Additional Components**: Expanding test coverage to remaining components
 - 🔄 **E2E Workflows**: Adding e2e tests for complex user journeys
+
+### Short-Mid Term Plans (Frontend Statistics)
+
+- 📋 **Trade Information**: Display in-game trade data from PlayerTrade table
+- 📋 **Parser Integration**: Update statistics based on new parser features (see parser-progress.md)
+- 📋 **Historical Data Visualization**: Player progress graphs over time
+- 📋 **Team Performance Trends**: Historical data visualization for teams
+- 📋 **Head-to-Head Comparison**: Tools for comparing teams and players
+- 📋 **Upcoming Match Information**: Display and manage upcoming matches
+- 📋 **FaceIT Webhooks**: Integration for automatic demo and match data retrieval
+- 📋 **Match Calendar**: Calendar view for upcoming matches
+- 📋 **Kanahautomo**: Player interest system (partially implemented)
+- 📋 **Player Avatars**: Profile image management
+- 📋 **Team Management**: Captain controls for team logo and settings
+- 📋 **Customizable Data Grid**: User-selectable columns for player statistics
+- 📋 **Team Trophies**: Achievement display system
+- 📋 **Team Calendar Doodle**: Scheduling tool for team availability
 
 ### Technical Debt & Improvements
 

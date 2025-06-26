@@ -881,3 +881,29 @@ it("should verify correct SQL queries and parameters", async () => {
 - Always use `text-kanaliiga-light-brown` instead of `kanaliiga-light-brown`
 - This follows Tailwind CSS conventions for text color utility classes
 - Apply this rule to all frontend code and reviews
+
+## Current Development Focus
+
+### In Progress (June 2025)
+
+- Performance optimizations for player statistics loading
+- Improving mobile responsiveness of match statistics page
+- API response caching for frequently accessed endpoints
+- Expanding test coverage for frontend components
+
+### Short-Term Priorities
+
+- Trade information display from PlayerTrade table
+- Parser integration with new statistics features
+- Historical data visualization for players and teams
+- Head-to-head comparison tools
+
+### Medium-Term Priorities
+
+- FaceIT webhooks for automatic data retrieval
+- Match calendar and upcoming match information
+- Kanahautomo player interest system completion
+- Team management features for captains
+- Customizable data grid with selectable columns
+
+### Recent Challenges
