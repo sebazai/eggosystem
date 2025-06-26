@@ -158,11 +158,6 @@ export const PlayerSkillRadar: React.FC<PlayerSkillRadarProps> = ({
   // Get comparison options based on whether player has a team
   const compareOptionGroups = getCompareOptionGroups(!!playerTeam?.team_id);
 
-  // Debug team info
-  console.log("PlayerSkillRadar - playerTeam:", playerTeam);
-  console.log("Team option available:", !!playerTeam?.team_id);
-  console.log("Compare options:", compareOptionGroups);
-
   // Flat map of all options for easy lookup
   const allCompareOptions = compareOptionGroups.flatMap(
     (group) => group.options

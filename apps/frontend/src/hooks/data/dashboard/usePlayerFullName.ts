@@ -24,7 +24,6 @@ export function usePlayerFullName(steamId: string) {
       }
     )
       .then(async (res) => {
-        console.log("res", res);
         setFullName(res.full_name || null);
       })
       .catch(() => {

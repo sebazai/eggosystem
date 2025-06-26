@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePlayerSkillDiagram } from "@/hooks/data/usePlayerSkillDiagram";
+import { usePlayerTeamDetails } from "@/hooks/data/usePlayerTeamDetails";
 import { PlayerSkillRadar } from "./PlayerSkillRadar";
 import type { FilterParamsQuery } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle } from "lucide-react";
 import type { PlayerSkillDiagram } from "@eggosystem/types";
-import { envConfig } from "@/configs/env";
-import { generateFiltersParamQuery } from "@/lib/utils";
-
-interface PlayerTeamDetails {
-  team_id: number;
-  team_name: string;
-}
 
 interface PlayerSkillTabProps {
   steamId: string;
@@ -25,49 +19,15 @@ export const PlayerSkillTab = ({
   filterQueryParams
 }: PlayerSkillTabProps) => {
   const [compareOption, setCompareOption] = useState<string>("none");
-  const [playerTeam, setPlayerTeam] = useState<PlayerTeamDetails | null>(null);
-  const [_isLoadingTeam, setIsLoadingTeam] = useState(true);
 
-  // Fetch player's team details when component loads
-  useEffect(() => {
-    const fetchPlayerTeam = async () => {
-      try {
-        setIsLoadingTeam(true);
-        console.log("Fetching team details for player:", steamId);
-        const response = await fetch(
-          `${envConfig.API_URL}/api/v1/filters/players/${steamId}/teams${filterQueryParams ? `?${generateFiltersParamQuery(filterQueryParams)}` : ""}`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Player team data received:", data);
-          // The API returns an array, so we need to get the first team
-          if (data && Array.isArray(data) && data.length > 0) {
-            setPlayerTeam({
-              team_id: data[0].team_id,
-              team_name: data[0].team_name
-            });
-          } else {
-            console.warn("Player has no teams in the response");
-            setPlayerTeam(null);
-          }
-        } else {
-          console.warn(
-            "Could not fetch player team details, status:",
-            response.status
-          );
-          setPlayerTeam(null);
-        }
-      } catch (error) {
-        console.error("Error fetching player team:", error);
-        setPlayerTeam(null);
-      } finally {
-        setIsLoadingTeam(false);
-      }
-    };
-
-    fetchPlayerTeam();
-  }, [steamId, filterQueryParams]);
+  const {
+    playerTeam,
+    isLoading: _isLoadingTeam,
+    error: teamError
+  } = usePlayerTeamDetails({
+    steamId,
+    filterQueryParams
+  });
 
   const {
     playerSkillData,
@@ -86,7 +46,7 @@ export const PlayerSkillTab = ({
     setCompareOption(option);
   };
 
-  if (error) {
+  if (error || teamError) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />

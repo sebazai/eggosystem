@@ -96,7 +96,6 @@ test.describe("Kanahautomo", () => {
 
     // Check if the response was successful
     const responseStatus = submissionResponse.status();
-    console.log(`API Response Status: ${responseStatus}`);
 
     if (responseStatus >= 200 && responseStatus < 300) {
       // If successful, wait for form to be reset
@@ -105,9 +104,6 @@ test.describe("Kanahautomo", () => {
         { timeout: 10000 }
       );
     } else {
-      // If failed, log the response for debugging
-      const responseBody = await submissionResponse.text();
-      console.log(`API Response Body: ${responseBody}`);
       // At least verify the request was made correctly
       expect(submissionRequest.method()).toBe("POST");
     }
@@ -227,7 +223,6 @@ test.describe("Kanahautomo", () => {
 
     // Check if the response was successful
     const responseStatus = submissionResponse.status();
-    console.log(`API Response Status: ${responseStatus}`);
 
     if (responseStatus >= 200 && responseStatus < 300) {
       // If successful, wait for form to be reset
@@ -236,9 +231,6 @@ test.describe("Kanahautomo", () => {
         { timeout: 10000 }
       );
     } else {
-      // If failed, log the response for debugging
-      const responseBody = await submissionResponse.text();
-      console.log(`API Response Body: ${responseBody}`);
       // At least verify the request was made correctly
       expect(submissionRequest.method()).toBe("POST");
     }
