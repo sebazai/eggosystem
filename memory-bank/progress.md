@@ -61,6 +61,31 @@
 - ✅ **Frontend E2E Testing**: Playwright setup for multi-component testing
 - ✅ **E2E Test Coverage**: Signup form and email verification workflows
 
+## Frontend Features
+
+### Completed
+
+- Player profile pages with statistics
+- Team profile pages with roster and match history
+- Match statistics page with basic player performance metrics
+- League standings with team rankings
+- Season navigation and filtering
+
+### In Progress
+
+- Performance optimizations for statistics components
+- Mobile responsiveness improvements
+
+### Planned
+
+- T/CT side toggle for player statistics in match view
+  - Feature attempted but encountered data structure challenges
+  - Will require refactoring of player statistics component
+  - Planned for next sprint after current optimizations
+- Advanced filtering options for match history
+- Player comparison tool
+- Team statistics visualization
+
 ## Current Development Status
 
 ### Active Development Areas

@@ -40,6 +40,20 @@
 - 🔄 Finalizing memory bank structure and content
 - 🔄 Cleaning up existing rule files to remove duplicated context
 - 🔄 Establishing progress tracking and active context documentation
+- Performance optimizations for player statistics loading
+- Improving mobile responsiveness of match statistics page
+- API response caching for frequently accessed endpoints
+
+### Planned Features
+
+- T/CT side toggle for player statistics in match view
+  - Will allow filtering player stats by T-side or CT-side
+  - Buttons will be positioned next to the "PLAYER" column header
+  - Each team will have independent toggle state
+  - Stats will update dynamically based on selected sides
+  - Visual indicators will show which side is currently displayed
+
+### Recent Challenges
 
 ### E2E Testing Strategy & Requirements (January 2025)
 
