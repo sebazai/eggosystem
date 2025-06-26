@@ -308,9 +308,9 @@ export const TeamMapStatsCards = ({
 
                   {/* Legend header - only A and B */}
                   <div className="grid grid-cols-3 text-center text-xs mb-1">
-                    <div className="text-white font-bold text-lg py-2">A</div>
-                    <div className="text-white"></div>
-                    <div className="text-white font-bold text-lg py-2">B</div>
+                    <div className="font-bold text-lg py-2">A</div>
+                    <div></div>
+                    <div className="font-bold text-lg py-2">B</div>
                   </div>
 
                   {/* Plant stats visualization */}
