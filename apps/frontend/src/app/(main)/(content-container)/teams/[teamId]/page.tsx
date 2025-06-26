@@ -3,9 +3,10 @@ import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import type { Metadata, ResolvedMetadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { Team } from "@eggosystem/types";
-import { TeamPageWithFilters } from "@/components/teams/TeamPageWithFilters";
+import { TeamMainContent } from "@/components/teams/TeamMainContent";
 import { createPageMetadata } from "@/lib/metadata";
 import { createBaseUrl, createTeamLogoUrl } from "@/lib/utils";
+import TeamTabLayoutClient from "./TeamTabLayoutClient";
 
 interface TeamDetailsPageProps {
   params: Promise<{
@@ -42,14 +43,17 @@ export async function generateMetadata(
 
 export default async function TeamDetailsPage({
   params
-}: TeamDetailsPageProps) {
-  const unwrappedParams = await params;
-  const teamId = Number(unwrappedParams.teamId);
+}: {
+  params: Promise<{ teamId: string }>;
+}) {
+  const { teamId } = await params;
 
   return (
     <div className="mx-auto py-4 px-2">
       <AutoBreadcrumbs />
-      <TeamPageWithFilters teamId={teamId} />
+      <TeamTabLayoutClient teamId={teamId}>
+        <TeamMainContent />
+      </TeamTabLayoutClient>
     </div>
   );
 }

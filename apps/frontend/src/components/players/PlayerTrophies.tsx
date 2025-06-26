@@ -37,7 +37,7 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
   const rankDescription = getRankDescription(data.rank, data.subrank);
 
   return (
-    <div className="bg-card p-3 rounded-lg mb-4">
+    <div className="bg-card rounded-lg mb-4">
       <h2 className="text-base font-bold mb-3">Trophies</h2>
       <div className="flex gap-3 items-center flex-wrap">
         {/* Kanarank trophy */}

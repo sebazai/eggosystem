@@ -1,3 +1,5 @@
+"use client";
+
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
 

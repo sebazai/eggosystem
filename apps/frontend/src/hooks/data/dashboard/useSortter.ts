@@ -138,7 +138,7 @@ export function useSortter() {
     ) {
       setSelectedSeason(seasons[0].id);
     }
-  }, [seasons, selectedSeason]);
+  }, [seasons, selectedSeason, setSelectedSeason]);
 
   return {
     teams: teams || [],

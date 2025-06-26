@@ -74,7 +74,6 @@ export const MapPerformanceRadar: React.FC<MapPerformanceRadarProps> = ({
   if (chartData.length === 0) {
     return (
       <div className="bg-card rounded-lg p-4 shadow-sm">
-        <h2 className="font-medium text-lg mb-4">Map Performance Overview</h2>
         <div className="h-[350px] w-full flex items-center justify-center">
           <p className="text-muted-foreground">
             No map performance data available
@@ -86,7 +85,6 @@ export const MapPerformanceRadar: React.FC<MapPerformanceRadarProps> = ({
 
   return (
     <div className="bg-card rounded-lg p-4 shadow-sm">
-      <h2 className="font-medium text-lg mb-4">Map Performance Overview</h2>
       <div className="h-[350px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
