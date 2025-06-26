@@ -23,7 +23,7 @@ export const useFilteredTeamPistolWins = ({
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   const { data, error, isValidating, isLoading } = useSWR<PistolWinsResponse>(
-    `/api/v1/stats/teams/${teamId}/pistol-wins?${sortedQuery}`,
+    `/api/v1/filters/stats/teams/${teamId}/pistol-wins?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false

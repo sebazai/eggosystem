@@ -8,7 +8,7 @@ describe("Team Stats Routes - Integration Tests", () => {
     it("should return pistol win statistics for team 1650 in season 14", async () => {
       // Integration test against the real endpoint
       const response = await request(app)
-        .get("/api/v1/stats/teams/1650/pistol-wins?season_ids=14")
+        .get("/api/v1/filters/stats/teams/1650/pistol-wins?season_ids=14")
         .expect(200);
 
       // Verify structure of response
@@ -35,7 +35,9 @@ describe("Team Stats Routes - Integration Tests", () => {
     it("should filter results when map_id is provided", async () => {
       // Test filtering by map
       const response = await request(app)
-        .get("/api/v1/stats/teams/1650/pistol-wins?season_ids=14&map_ids=1")
+        .get(
+          "/api/v1/filters/stats/teams/1650/pistol-wins?season_ids=14&map_ids=1"
+        )
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -51,7 +53,9 @@ describe("Team Stats Routes - Integration Tests", () => {
 
     it("should return exact expected data for team 1650 in season 14 on de_mirage map", async () => {
       const response = await request(app)
-        .get("/api/v1/stats/teams/1650/pistol-wins?season_ids=14&map_ids=1")
+        .get(
+          "/api/v1/filters/stats/teams/1650/pistol-wins?season_ids=14&map_ids=1"
+        )
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -77,7 +81,7 @@ describe("Team Stats Routes - Integration Tests", () => {
     it("should handle invalid team IDs gracefully", async () => {
       // Test with a non-existent team ID
       const response = await request(app)
-        .get("/api/v1/stats/teams/999999/pistol-wins")
+        .get("/api/v1/filters/stats/teams/999999/pistol-wins")
         .expect(200); // Still returns 200 with empty data array
 
       expect(response.body.success).toBe(true);

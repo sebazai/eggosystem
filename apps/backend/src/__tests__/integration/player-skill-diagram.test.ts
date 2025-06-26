@@ -92,7 +92,7 @@ describe("Player Skill Diagram API", () => {
     jest.clearAllMocks();
   });
 
-  describe("GET /api/v1/players/:steam_id/skill-diagram", () => {
+  describe("GET /api/v1/filters/players/:steam_id/skill-diagram", () => {
     it("should return player skill diagram data with 200 status code", async () => {
       // Mock the getPlayerSkillDiagram function to return mock data
       (getPlayerSkillDiagram as jest.Mock).mockResolvedValue(
@@ -101,7 +101,7 @@ describe("Player Skill Diagram API", () => {
 
       // Make the API request
       const response = await request(app).get(
-        `/api/v1/players/${mockSteamId}/skill-diagram`
+        `/api/v1/filters/players/${mockSteamId}/skill-diagram`
       );
 
       // Assertions
@@ -330,7 +330,7 @@ describe("Player Skill Diagram API", () => {
 
       // Make the API request
       const response = await request(app).get(
-        `/api/v1/players/${mockSteamId}/skill-diagram`
+        `/api/v1/filters/players/${mockSteamId}/skill-diagram`
       );
 
       // Assertions

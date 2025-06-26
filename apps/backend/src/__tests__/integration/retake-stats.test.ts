@@ -122,7 +122,7 @@ describe("Retake Stats Integration Tests", () => {
 
     // Make the API request
     const response = await request(app)
-      .get("/api/v1/stats/teams/1650/retake-stats")
+      .get("/api/v1/filters/stats/teams/1650/retake-stats")
       .expect("Content-Type", /json/)
       .expect(200);
 
@@ -195,7 +195,7 @@ describe("Retake Stats Integration Tests", () => {
 
     // Make the API request with map_id filter
     const response = await request(app)
-      .get("/api/v1/stats/teams/1650/retake-stats?map_ids=5")
+      .get("/api/v1/filters/stats/teams/1650/retake-stats?map_ids=5")
       .expect("Content-Type", /json/)
       .expect(200);
 

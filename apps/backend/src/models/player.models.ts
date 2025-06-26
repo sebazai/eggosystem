@@ -12,7 +12,8 @@ import {
   type PlayerGameDetailsByFilters,
   type PlayerTeamDetailsByFilters,
   type PlayerStatsTable,
-  type PlayerStatsForLatestSeason
+  type PlayerStatsForLatestSeason,
+  type PlayerMapStats
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
@@ -516,4 +517,71 @@ export const getPlayerOldKanaElo = async (steam_id: string) => {
   >(query, [steam_id, steam_id]);
 
   return result.length > 0 ? result[0] : null;
+};
+
+export const getPlayerMapStatsWithFilters = async (
+  steam_id: string,
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+) => {
+  // Fetch all maps once to get both IDs and names
+  const allMaps = await runQuery<Array<{ id: number; name: string }>>(
+    "SELECT id, name FROM Maps"
+  );
+  const mapsRecord = allMaps.reduce(
+    (acc, map) => {
+      acc[map.id] = map.name;
+      return acc;
+    },
+    {} as Record<number, string>
+  );
+
+  // Determine which maps to process
+  const mapsToProcess =
+    map_ids && map_ids.length > 0 ? map_ids : allMaps.map((m) => m.id);
+
+  // Create all the promises for parallel execution
+  const mapStatPromises = mapsToProcess.map(async (mapId) => {
+    // Create filter params for this specific map
+    const mapFilterParams = {
+      season_ids,
+      league_ids,
+      team_ids,
+      stages,
+      map_ids: [mapId]
+    };
+
+    // Get both player stats and game details in parallel
+    const [playerStats, gameDetails] = await Promise.all([
+      getPlayerStatsWithFilters(steam_id, mapFilterParams),
+      getPlayerGameDetailsWithFilters(steam_id, mapFilterParams)
+    ]);
+
+    if (playerStats && gameDetails && gameDetails.length > 0) {
+      const details = gameDetails[0];
+
+      if (!details) return null;
+
+      const mapStats: PlayerMapStats = {
+        ...playerStats,
+        map_id: mapId,
+        map_name: mapsRecord[mapId] || `unknown_map_${mapId}`,
+        wins: details.wins,
+        losses: details.losses,
+        win_percentage:
+          details.matches_played > 0
+            ? (details.wins / details.matches_played) * 100
+            : 0,
+        kills_t: playerStats.kills_t || 0,
+        kills_ct: playerStats.kills_ct || 0
+      };
+
+      return mapStats;
+    }
+
+    return null;
+  });
+
+  // Wait for all promises to resolve and filter out null results
+  const results = await Promise.all(mapStatPromises);
+  return results.filter(Boolean) as PlayerMapStats[];
 };

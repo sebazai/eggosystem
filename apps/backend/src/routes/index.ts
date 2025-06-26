@@ -8,7 +8,6 @@ import organizationRouter from "./v1/organization.routes";
 import mapsRouter from "./v1/map.routes";
 import filtersRouter from "./v1/filter.routes";
 import teamsRouter from "./v1/team.routes";
-import statsRouter from "./v1/stats.routes";
 import seasonsRouter from "./v1/season.routes";
 import leaguesRouter from "./v1/league.routes";
 import nowRouter from "./v1/now.routes";
@@ -47,7 +46,6 @@ v1Router.use(
 );
 v1Router.use("/maps", mapsRouter);
 v1Router.use("/teams", teamsRouter);
-v1Router.use("/stats", parseQueryFilterParams, statsRouter);
 v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/registrations", registrationsRouter);
 v1Router.use("/leagues", leaguesRouter);

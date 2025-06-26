@@ -8,7 +8,8 @@ import {
   getPlayerGameDetailsWithFilters,
   getPlayerTeamDetailsWithFilters,
   getPlayerStatsForLatestSeason,
-  getPlayerOldKanaElo
+  getPlayerOldKanaElo,
+  getPlayerMapStatsWithFilters
 } from "../models/player.models";
 
 import {
@@ -19,6 +20,7 @@ import {
 } from "../services/player-ranks.services";
 import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
+
 import {
   getPlayerSkillDiagram,
   getMultiplePlayersSkillDiagrams
@@ -304,4 +306,19 @@ export const getMultiplePlayersSkillDiagramController = async (
   }
 
   res.status(200).json(aggregatedSkillDiagram);
+};
+
+export const getFilteredPlayerMapStatsController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const playerMapStats = await getPlayerMapStatsWithFilters(
+    steam_id,
+    parsedParams
+  );
+
+  res.status(200).json(playerMapStats);
 };

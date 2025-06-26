@@ -8,15 +8,8 @@ import {
   getPlayerPlatformRank,
   getPlayerKanaRankController,
   getPlayerOldKanaEloController,
-  getPlayerStatsForLatestSeasonController,
-  getPlayerSkillDiagramController,
-  getMultiplePlayersSkillDiagramController,
-  getFilteredPlayerGameDetailsController,
-  getFilteredPlayerMatchHistoryController,
-  getFilteredPlayerStatisticsController,
-  getFilteredPlayerTeamDetailsController
+  getPlayerStatsForLatestSeasonController
 } from "../../controllers/players.controllers";
-import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 // New Router instance
@@ -44,39 +37,5 @@ router.get(
   getPlayerStatsForLatestSeasonController
 );
 router.get("/:steam_id/oldkanaelo", getPlayerOldKanaEloController);
-router.get(
-  "/:steam_id/skill-diagram",
-  parseQueryFilterParams,
-  getPlayerSkillDiagramController
-);
-router.get(
-  "/skill-diagram/aggregate",
-  parseQueryFilterParams,
-  getMultiplePlayersSkillDiagramController
-);
-
-router.get(
-  "/:steam_id/match-history",
-  parseQueryFilterParams,
-  getFilteredPlayerMatchHistoryController
-);
-
-router.get(
-  "/:steam_id/statistics",
-  parseQueryFilterParams,
-  getFilteredPlayerStatisticsController
-);
-
-router.get(
-  "/:steam_id/game-details",
-  parseQueryFilterParams,
-  getFilteredPlayerGameDetailsController
-);
-
-router.get(
-  "/:steam_id/team-details",
-  parseQueryFilterParams,
-  getFilteredPlayerTeamDetailsController
-);
 
 export default router;

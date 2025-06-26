@@ -21,7 +21,7 @@ export const useFilteredTeamRetakeStats = ({
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   const { data, error, isValidating, isLoading } = useSWR<RetakeStatsResponse>(
-    `/api/v1/stats/teams/${teamId}/retake-stats?${sortedQuery}`,
+    `/api/v1/filters/stats/teams/${teamId}/retake-stats?${sortedQuery}`,
     clientApiFetch,
     {
       revalidateOnFocus: false

@@ -4,7 +4,8 @@ import {
   getPlayerMatchHistoryByFilters,
   getPlayerStatsWithFilters,
   getPlayerTeamDetailsWithFilters,
-  getPlayerStatsForLatestSeason
+  getPlayerStatsForLatestSeason,
+  getPlayerMapStatsWithFilters
 } from "../../models/player.models";
 
 describe("getMultiplePlayerStatsByFilters", () => {
@@ -1603,5 +1604,89 @@ describe("getPlayerStatsForLatestSeason", () => {
     const result = await getPlayerStatsForLatestSeason("76561198000000000");
 
     expect(result).toBeNull();
+  });
+});
+
+describe("getPlayerMapStatsWithFilters", () => {
+  it("should return map stats for player with specific map filter", async () => {
+    const result = await getPlayerMapStatsWithFilters("76561197967885016", {
+      season_ids: [11],
+      league_ids: null,
+      team_ids: null,
+      stages: null,
+      map_ids: [5] // Anubis
+    });
+
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+
+    if (result.length > 0) {
+      const mapStat = result[0];
+      expect(mapStat.map_id).toBe(5);
+      expect(mapStat.steam_id).toBe("76561197967885016");
+      expect(mapStat.wins).toBeGreaterThanOrEqual(0);
+      expect(mapStat.losses).toBeGreaterThanOrEqual(0);
+      expect(mapStat.win_percentage).toBeGreaterThanOrEqual(0);
+      expect(mapStat.win_percentage).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("should return map stats for all maps when no map filter is specified", async () => {
+    const result = await getPlayerMapStatsWithFilters("76561197967885016", {
+      season_ids: [11],
+      league_ids: null,
+      team_ids: null,
+      stages: null,
+      map_ids: null
+    });
+
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+
+    // Should return stats for multiple maps
+    expect(result.length).toBeGreaterThan(0);
+
+    // Each result should have map-specific data
+    result.forEach((mapStat) => {
+      expect(mapStat.map_id).toBeDefined();
+      expect(mapStat.map_name).toBeDefined();
+      expect(mapStat.wins).toBeGreaterThanOrEqual(0);
+      expect(mapStat.losses).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it("should return empty array for player with no data", async () => {
+    const result = await getPlayerMapStatsWithFilters("99999999999999999", {
+      season_ids: [11],
+      league_ids: null,
+      team_ids: null,
+      stages: null,
+      map_ids: null
+    });
+
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(0);
+  });
+
+  it("should return correct map names for all map stats", async () => {
+    const result = await getPlayerMapStatsWithFilters("76561197967885016", {
+      season_ids: [11],
+      league_ids: null,
+      team_ids: null,
+      stages: null,
+      map_ids: [5] // Anubis
+    });
+
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+
+    if (result.length > 0) {
+      const mapStat = result[0];
+      expect(mapStat.map_id).toBe(5);
+      expect(mapStat.map_name).toBeDefined();
+      expect(mapStat.map_name).not.toBe(`unknown_map_${mapStat.map_id}`);
+      expect(typeof mapStat.map_name).toBe("string");
+    }
   });
 });

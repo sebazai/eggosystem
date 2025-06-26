@@ -1,5 +1,6 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PlayerSkillDiagram, type ParsedParams } from "@eggosystem/types";
+import { generateQueryWithFilters, type Filter } from "../utils/queryFilter";
 
 /**
  * Get player skill diagram data - comprehensive 5-section skill analysis
@@ -71,36 +72,42 @@ export const getPlayerSkillDiagram = async (
     molotov_damage_per_round: number;
   }
 
-  // Build query parameters and conditions
-  const queryParams: (string | number)[] = [steam_id];
-  const whereConditions: string[] = ["p.steam_id = ?"];
+  // Generate filter conditions for all queries
+  const { query: filterQuery, queryParams: filterParams } =
+    generateQueryWithFilters([
+      { column: "m.season_id", value: params?.season_ids || null },
+      { column: "mg.map_id", value: params?.map_ids || null },
+      { column: "m.stage_id", value: params?.stages || null }
+    ]);
 
-  // Add filter conditions if params are provided
-  if (params) {
-    // Filter by season_ids
-    if (params.season_ids && params.season_ids.length > 0) {
-      whereConditions.push(
-        "m.season_id IN (" + params.season_ids.map(() => "?").join(",") + ")"
-      );
-      queryParams.push(...params.season_ids);
-    }
+  // Generate filter conditions for subqueries with different table aliases
+  const { query: filterQueryM2, queryParams: filterParamsM2 } =
+    generateQueryWithFilters([
+      { column: "m2.season_id", value: params?.season_ids || null },
+      { column: "mg2.map_id", value: params?.map_ids || null },
+      { column: "m2.stage_id", value: params?.stages || null }
+    ]);
 
-    // Filter by map_ids
-    if (params.map_ids && params.map_ids.length > 0) {
-      whereConditions.push(
-        "mg.map_id IN (" + params.map_ids.map(() => "?").join(",") + ")"
-      );
-      queryParams.push(...params.map_ids);
-    }
+  const { query: filterQueryM3, queryParams: filterParamsM3 } =
+    generateQueryWithFilters([
+      { column: "m3.season_id", value: params?.season_ids || null },
+      { column: "mg3.map_id", value: params?.map_ids || null },
+      { column: "m3.stage_id", value: params?.stages || null }
+    ]);
 
-    // Filter by stages
-    if (params.stages && params.stages.length > 0) {
-      whereConditions.push(
-        "m.stage_id IN (" + params.stages.map(() => "?").join(",") + ")"
-      );
-      queryParams.push(...params.stages);
-    }
-  }
+  const { query: filterQueryM4, queryParams: filterParamsM4 } =
+    generateQueryWithFilters([
+      { column: "m4.season_id", value: params?.season_ids || null },
+      { column: "mg4.map_id", value: params?.map_ids || null },
+      { column: "m4.stage_id", value: params?.stages || null }
+    ]);
+
+  const { query: filterQueryM5, queryParams: filterParamsM5 } =
+    generateQueryWithFilters([
+      { column: "m5.season_id", value: params?.season_ids || null },
+      { column: "mg5.map_id", value: params?.map_ids || null },
+      { column: "m5.stage_id", value: params?.stages || null }
+    ]);
 
   // Get aggregate player stats
   const playerStats = await runQuery<PlayerStatsSummary[]>(
@@ -191,10 +198,10 @@ export const getPlayerSkillDiagram = async (
       FROM TeamGameScores
       GROUP BY game_id
     ) AS game_rounds ON game_rounds.game_id = mg.id
-    WHERE ${whereConditions.join(" AND ")}
+    WHERE p.steam_id = ? AND ${filterQuery}
     GROUP BY p.steam_id, p.nickname
   `,
-    queryParams
+    [steam_id, ...filterParams]
   );
 
   // Get first death trade data from PlayerTrades table
@@ -213,14 +220,9 @@ export const getPlayerSkillDiagram = async (
     FROM PlayerTrades pt
     JOIN MatchGames mg ON mg.id = pt.game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
-    WHERE victim_steam_id = ? AND first_death = 1
-    ${
-      whereConditions.length > 1
-        ? "AND " + whereConditions.slice(1).join(" AND ")
-        : ""
-    }
+    WHERE victim_steam_id = ? AND first_death = 1 AND ${filterQuery}
     `,
-    queryParams
+    [steam_id, ...filterParams]
   );
 
   // Get trade opportunity data from PlayerTrades table
@@ -243,33 +245,17 @@ export const getPlayerSkillDiagram = async (
        WHERE mrs.game_id IN (
          SELECT DISTINCT pt2.game_id FROM PlayerTrades pt2 
          WHERE pt2.trader_steam_id = ?
-         ${
-           whereConditions.length > 1
-             ? "AND pt2.game_id IN (SELECT mg3.id FROM MatchGames mg3 " +
-               (params ? "JOIN Matches m3 ON m3.id = mg3.match_id " : "") +
-               "WHERE " +
-               whereConditions
-                 .slice(1)
-                 .map((cond) =>
-                   cond.replace(/\bmg\b/g, "mg3").replace(/\bm\b(?!3)/g, "m3")
-                 )
-                 .join(" AND ") +
-               ")"
-             : ""
-         }
+         AND pt2.game_id IN (SELECT mg3.id FROM MatchGames mg3 
+                            JOIN Matches m3 ON m3.id = mg3.match_id 
+                            WHERE ${filterQueryM3})
        )
       ) as rounds_played
     FROM PlayerTrades pt
     JOIN MatchGames mg ON mg.id = pt.game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
-    WHERE trader_steam_id = ?
-    ${
-      whereConditions.length > 1
-        ? "AND " + whereConditions.slice(1).join(" AND ")
-        : ""
-    }
+    WHERE trader_steam_id = ? AND ${filterQuery}
     `,
-    [...queryParams, ...queryParams]
+    [steam_id, ...filterParamsM3, steam_id, ...filterParams]
   );
 
   /**
@@ -300,86 +286,42 @@ export const getPlayerSkillDiagram = async (
       (SELECT SUM(deaths) FROM PlayerStats ps2 
        JOIN MatchGames mg2 ON mg2.id = ps2.game_id
        ${params ? "JOIN Matches m2 ON m2.id = mg2.match_id" : ""}
-       WHERE ps2.steam_id = ?
-       ${
-         whereConditions.length > 1
-           ? "AND " +
-             whereConditions
-               .slice(1)
-               .map((cond) =>
-                 cond.replace(/\bmg\b/g, "mg2").replace(/\bm\b(?!2)/g, "m2")
-               )
-               .join(" AND ")
-           : ""
-       }
+       WHERE ps2.steam_id = ? AND ${filterQueryM2}
       ) as total_deaths,
       COUNT(DISTINCT CASE WHEN pt.attempted = 1 OR pt.traded = 1 THEN pt.id END) as tradeable_deaths,
       SUM(IF(pt.first_death = 1 AND (pt.attempted = 1 OR pt.traded = 1), 1, 0)) as tradeable_first_deaths,
       (SELECT SUM(first_deaths) FROM PlayerStats ps3 
        JOIN MatchGames mg3 ON mg3.id = ps3.game_id
        ${params ? "JOIN Matches m3 ON m3.id = mg3.match_id" : ""}
-       WHERE ps3.steam_id = ?
-       ${
-         whereConditions.length > 1
-           ? "AND " +
-             whereConditions
-               .slice(1)
-               .map((cond) =>
-                 cond.replace(/\bmg\b/g, "mg3").replace(/\bm\b(?!3)/g, "m3")
-               )
-               .join(" AND ")
-           : ""
-       }
+       WHERE ps3.steam_id = ? AND ${filterQueryM3}
       ) as total_first_deaths,
       (SELECT COUNT(*) FROM PlayerTrades pt2 
        JOIN MatchGames mg4 ON mg4.id = pt2.game_id
        ${params ? "JOIN Matches m4 ON m4.id = mg4.match_id" : ""}
-       WHERE pt2.victim_steam_id = ?
-       ${
-         whereConditions.length > 1
-           ? "AND " +
-             whereConditions
-               .slice(1)
-               .map((cond) =>
-                 cond.replace(/\bmg\b/g, "mg4").replace(/\bm\b(?!4)/g, "m4")
-               )
-               .join(" AND ")
-           : ""
-       }
+       WHERE pt2.victim_steam_id = ? AND ${filterQueryM4}
       ) as total_trade_opportunities,
       (SELECT COUNT(DISTINCT mrs.round_number) FROM MapRoundStats mrs
        JOIN MatchGames mg5 ON mrs.game_id = mg5.id
        JOIN PlayerStats ps5 ON ps5.game_id = mg5.id
        ${params ? "JOIN Matches m5 ON m5.id = mg5.match_id" : ""}
-       WHERE ps5.steam_id = ?
-       ${
-         whereConditions.length > 1
-           ? "AND " +
-             whereConditions
-               .slice(1)
-               .map((cond) =>
-                 cond.replace(/\bmg\b/g, "mg5").replace(/\bm\b(?!5)/g, "m5")
-               )
-               .join(" AND ")
-           : ""
-       }
+       WHERE ps5.steam_id = ? AND ${filterQueryM5}
       ) as rounds_played
     FROM PlayerTrades pt
     JOIN MatchGames mg ON mg.id = pt.game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
-    WHERE pt.victim_steam_id = ?
-    ${
-      whereConditions.length > 1
-        ? "AND " + whereConditions.slice(1).join(" AND ")
-        : ""
-    }
+    WHERE pt.victim_steam_id = ? AND ${filterQuery}
     `,
     [
-      ...queryParams,
-      ...queryParams,
-      ...queryParams,
-      ...queryParams,
-      ...queryParams
+      steam_id,
+      ...filterParamsM2,
+      steam_id,
+      ...filterParamsM3,
+      steam_id,
+      ...filterParamsM4,
+      steam_id,
+      ...filterParamsM5,
+      steam_id,
+      ...filterParams
     ]
   );
 
@@ -401,14 +343,9 @@ export const getPlayerSkillDiagram = async (
     FROM PlayerStats ps
     JOIN MatchGames mg ON mg.id = ps.game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
-    WHERE ps.steam_id = ?
-    ${
-      whereConditions.length > 1
-        ? "AND " + whereConditions.slice(1).join(" AND ")
-        : ""
-    }
+    WHERE ps.steam_id = ? AND ${filterQuery}
     `,
-    queryParams
+    [steam_id, ...filterParams]
   );
 
   if (!playerStats.length) {
@@ -826,17 +763,15 @@ export const getMultiplePlayersSkillDiagrams = async (
     tier
   } = params;
 
-  // Build the WHERE clause based on filter parameters
-  const whereConditions: string[] = [];
-  const queryParams: (string | number)[] = [];
+  // Build filters using generateQueryWithFilters
+  const filters: Filter[] = [
+    { column: "m.season_id", value: season_ids || null },
+    { column: "mg.map_id", value: map_ids || null }
+  ];
 
-  // Only apply one filter as per requirements
+  // Add player-specific filters (only one as per requirements)
   if (team_ids && team_ids.length > 0) {
-    // Team filter
-    whereConditions.push(
-      "stp.team_id IN (" + team_ids.map(() => "?").join(",") + ")"
-    );
-    queryParams.push(...team_ids);
+    filters.push({ column: "stp.team_id", value: team_ids });
   } else if (tier !== null && tier !== undefined) {
     // Since we removed the SeasonLeagues join, we need to handle tier filtering differently
     // For now, we'll skip this filter as it requires complex joins
@@ -844,39 +779,21 @@ export const getMultiplePlayersSkillDiagrams = async (
       "Tier filtering requires SeasonLeagues join which was removed to fix SQL error"
     );
   } else if (faceit_level !== null && faceit_level !== undefined) {
-    // Faceit level filter
-    whereConditions.push("spr.faceit_level = ?");
-    queryParams.push(faceit_level);
+    filters.push({ column: "spr.faceit_level", value: [faceit_level] });
   } else if (
     cs2_rank_min !== null &&
     cs2_rank_max !== null &&
     cs2_rank_min !== undefined &&
     cs2_rank_max !== undefined
   ) {
-    // CS2 rank range filter (in 1000 steps)
-    whereConditions.push("spr.cs2_rank BETWEEN ? AND ?");
-    queryParams.push(cs2_rank_min, cs2_rank_max);
+    filters.push({
+      column: "spr.cs2_rank",
+      between: [cs2_rank_min, cs2_rank_max]
+    });
   }
 
-  // Always apply season filter if provided
-  if (season_ids && season_ids.length > 0) {
-    whereConditions.push(
-      "m.season_id IN (" + season_ids.map(() => "?").join(",") + ")"
-    );
-    queryParams.push(...season_ids);
-  }
-
-  // Always apply map filter if provided
-  if (map_ids && map_ids.length > 0) {
-    whereConditions.push(
-      "mg.map_id IN (" + map_ids.map(() => "?").join(",") + ")"
-    );
-    queryParams.push(...map_ids);
-  }
-
-  // If no conditions, return null or find another fallback
-  const whereClause =
-    whereConditions.length > 0 ? "WHERE " + whereConditions.join(" AND ") : ""; // No specific filter - default to all players with a limit
+  const { query: filterQuery, queryParams: filterParams } =
+    generateQueryWithFilters(filters);
 
   // Create a descriptive name for the filter
   let filterDescription = "";
@@ -902,14 +819,14 @@ export const getMultiplePlayersSkillDiagrams = async (
     JOIN Matches m ON m.id = mg.match_id
     LEFT JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
     LEFT JOIN SeasonPlayerRanks spr ON spr.steam_id = p.steam_id AND spr.season_id = m.season_id
-    ${whereClause}
+    WHERE ${filterQuery}
     GROUP BY p.steam_id
     HAVING COUNT(DISTINCT ps.game_id) >= 3
   `;
 
   const players = await runQuery<{ steam_id: string }[]>(
     playerQuery,
-    queryParams
+    filterParams
   );
 
   if (!players.length) {
@@ -920,7 +837,7 @@ export const getMultiplePlayersSkillDiagrams = async (
   const playerSkillDiagrams: PlayerSkillDiagram[] = [];
 
   for (const player of players) {
-    const skillDiagram = await getPlayerSkillDiagram(player.steam_id);
+    const skillDiagram = await getPlayerSkillDiagram(player.steam_id, params);
     if (skillDiagram) {
       playerSkillDiagrams.push(skillDiagram);
     }

@@ -4,7 +4,7 @@ import { app } from "../../app";
 describe("Utility Metrics Tests", () => {
   it("should calculate correct utility metrics for player with good utility usage", async () => {
     const response = await request(app)
-      .get("/api/v1/players/76561198100952924/skill-diagram")
+      .get("/api/v1/filters/players/76561198100952924/skill-diagram")
       .expect(200);
 
     const { body } = response;
@@ -33,7 +33,7 @@ describe("Utility Metrics Tests", () => {
 
   it("should calculate correct utility metrics for player with low flash assists", async () => {
     const response = await request(app)
-      .get("/api/v1/players/76561198049745649/skill-diagram")
+      .get("/api/v1/filters/players/76561198049745649/skill-diagram")
       .expect(200);
 
     const { body } = response;
@@ -62,11 +62,11 @@ describe("Utility Metrics Tests", () => {
   it("should properly calculate utility score based on weighted metrics", async () => {
     // Get both players' data
     const player1 = await request(app)
-      .get("/api/v1/players/76561198100952924/skill-diagram")
+      .get("/api/v1/filters/players/76561198100952924/skill-diagram")
       .expect(200);
 
     const player2 = await request(app)
-      .get("/api/v1/players/76561198049745649/skill-diagram")
+      .get("/api/v1/filters/players/76561198049745649/skill-diagram")
       .expect(200);
 
     // Player with higher flash assists and balanced utility damage should have higher utility score
