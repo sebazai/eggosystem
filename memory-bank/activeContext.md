@@ -897,6 +897,7 @@ it("should verify correct SQL queries and parameters", async () => {
 - Parser integration with new statistics features
 - Historical data visualization for players and teams
 - Head-to-head comparison tools
+- Enhanced skill rating system implementation (KanaRating 2.0)
 
 ### Medium-Term Priorities
 
@@ -905,5 +906,20 @@ it("should verify correct SQL queries and parameters", async () => {
 - Kanahautomo player interest system completion
 - Team management features for captains
 - Customizable data grid with selectable columns
+- Advanced skill rating features (predictive modeling, role-based comparison)
+
+### Enhanced Skill Rating System Development
+
+**Priority Features from KanaRating 2.0:**
+
+- Round phase classification (pistol/eco/force-buy/full-buy performance)
+- Advanced trade mechanics with positioning and timing analysis
+- Situational performance metrics (under pressure, time constraints)
+- Enhanced positioning analysis with survival intelligence
+- Weapon-specific impact and efficiency tracking
+- Role-based consistency evaluation (entry fragger, support, anchor, lurker, IGL)
+- Dynamic normalization using percentile-based ranges
+- Utility intelligence with team coordination tracking
+- Advanced aim analysis with situational context
 
 ### Recent Challenges

@@ -118,6 +118,50 @@
 - 📋 **Team Trophies**: Achievement display system
 - 📋 **Team Calendar Doodle**: Scheduling tool for team availability
 
+### Enhanced Skill Rating System (Based on KanaRating 2.0)
+
+**Phase 1: Enhanced Data Collection (1-2 weeks)**
+
+- 📋 **Round Phase Classification**: Display pistol/eco/force-buy/full-buy performance breakdown
+- 📋 **Advanced Trade Metrics**: Enhanced trade tracking with positioning and timing
+- 📋 **Weapon Context Performance**: Weapon-specific statistics and efficiency metrics
+- 📋 **Situational Performance**: Performance under pressure and time constraints
+
+**Phase 2: Enhanced Skill Categories (2-3 weeks)**
+
+- 📋 **Enhanced Positioning Analysis**:
+  - Round phase context integration (pistol 20%, anti-eco 15%, full-buy 50%, force-buy 15%)
+  - Advanced trade mechanics with multi-trade sequences
+  - Survival intelligence (disadvantage/advantage scenarios)
+- 📋 **Enhanced Impact Measurement**:
+  - Situational clutch analysis (1v1, 1v2, 1v3+ with round economy context)
+  - Entry fragging with site-specific success rates
+  - Weapon impact context across different weapon classes
+- 📋 **Dynamic Consistency Evaluation**:
+  - Role-based consistency (entry fragger, support, anchor, lurker, IGL)
+  - Adaptive performance ranges using percentile-based normalization
+- 📋 **Utility Intelligence Enhancement**:
+  - Utility efficiency metrics (damage per utility, timing intelligence)
+  - Team utility coordination tracking
+- 📋 **Advanced Aim Analysis**:
+  - Situational aim (under pressure, through utility, movement accuracy)
+  - Range-based accuracy (close/medium/long range)
+  - Weapon specialization tracking
+
+**Phase 3: Advanced Features (3-4 weeks)**
+
+- 📋 **Predictive Modeling**: Historical data to predict future performance
+- 📋 **Role-Based Comparison**: Benchmark against role-specific peer groups
+- 📋 **Temporal Skill Trending**: Track skill development over time
+- 📋 **Meta Adaptation**: Dynamic weight adjustment based on current game meta
+
+**Database Schema Requirements**
+
+- 📋 **PlayerRoundPhaseStats**: Round type performance metrics
+- 📋 **PlayerWeaponContext**: Weapon-specific performance data
+- 📋 **PlayerSituationalMetrics**: Situational performance tracking
+- 📋 **Enhanced Trade Tables**: Advanced trade mechanics data
+
 ### Technical Debt & Improvements
 
 **Testing Infrastructure**
