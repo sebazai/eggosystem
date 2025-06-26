@@ -21,7 +21,7 @@ export const useFilteredPlayerMapStats = ({
 
   // Use SWR to fetch and cache the data from the new backend endpoint
   const { data, error, isValidating, isLoading } = useSWR<PlayerMapStats[]>(
-    `/api/v1/players/${steamId}/map-stats?${query}`,
+    `/api/v1/filters/players/${steamId}/map-stats?${query}`,
     expressFetcher,
     {
       revalidateOnFocus: false
