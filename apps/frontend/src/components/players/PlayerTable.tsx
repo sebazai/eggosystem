@@ -25,7 +25,7 @@ type SortDirection = "asc" | "desc";
 // Column definitions with full names for tooltips
 const COLUMN_TOOLTIPS: Record<string, string> = {
   nickname: "Player Nickname",
-  matches_played: "Number of Maps Played",
+  maps_played: "Number of Maps Played",
   kills: "Total Kills",
   assists: "Total Assists (Flash Assists in parentheses)",
   deaths: "Total Deaths",
@@ -37,7 +37,7 @@ const COLUMN_TOOLTIPS: Record<string, string> = {
   adr: "Average Damage per Round",
   hs_percent: "Headshot Percentage",
   kd: "Kill/Death Ratio",
-  kana_rating: "Kana Rating"
+  kana_rating: "Kanarating"
 };
 
 export const PlayerTable: React.FC<PlayerTableProps> = ({

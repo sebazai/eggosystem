@@ -3,7 +3,7 @@ import { envConfig } from "@/configs/env";
 import type { SteamPlayer } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import PlayerTabLayoutClient from "../PlayerTabLayoutClient";
-import { PlayerSkillsContent } from "./PlayerSkillsContent";
+import { PlayerSkillTab } from "@/components/players/PlayerSkillTab";
 
 interface PlayerSkillsProps {
   params: Promise<{
@@ -34,7 +34,7 @@ export default async function PlayerSkillsPage({ params }: PlayerSkillsProps) {
 
   return (
     <PlayerTabLayoutClient steamId={steamId}>
-      <PlayerSkillsContent steamId={steamId} />
+      <PlayerSkillTab steamId={steamId} />
     </PlayerTabLayoutClient>
   );
 }

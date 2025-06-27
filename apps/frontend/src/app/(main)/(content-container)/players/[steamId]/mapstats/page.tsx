@@ -3,7 +3,7 @@ import { envConfig } from "@/configs/env";
 import type { SteamPlayer } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import PlayerTabLayoutClient from "../PlayerTabLayoutClient";
-import { PlayerMapStatsContent } from "./PlayerMapStatsContent";
+import { PlayerMapStatsTab } from "@/components/players/PlayerMapStatsTab";
 
 interface PlayerMapStatsProps {
   params: Promise<{
@@ -36,7 +36,7 @@ export default async function PlayerMapStatsPage({
 
   return (
     <PlayerTabLayoutClient steamId={steamId}>
-      <PlayerMapStatsContent steamId={steamId} />
+      <PlayerMapStatsTab steamId={steamId} />
     </PlayerTabLayoutClient>
   );
 }

@@ -4,20 +4,17 @@ import { useState } from "react";
 import { usePlayerSkillDiagram } from "@/hooks/data/usePlayerSkillDiagram";
 import { usePlayerTeamDetails } from "@/hooks/data/usePlayerTeamDetails";
 import { PlayerSkillRadar } from "./PlayerSkillRadar";
-import type { FilterParamsQuery } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertCircle } from "lucide-react";
 import type { PlayerSkillDiagram } from "@eggosystem/types";
+import { useFilters } from "@/context/FilterContext";
 
 interface PlayerSkillTabProps {
   steamId: string;
-  filterQueryParams: FilterParamsQuery;
 }
 
-export const PlayerSkillTab = ({
-  steamId,
-  filterQueryParams
-}: PlayerSkillTabProps) => {
+export const PlayerSkillTab = ({ steamId }: PlayerSkillTabProps) => {
+  const { filterParams } = useFilters();
   const [compareOption, setCompareOption] = useState<string>("none");
 
   const {
@@ -26,7 +23,7 @@ export const PlayerSkillTab = ({
     error: teamError
   } = usePlayerTeamDetails({
     steamId,
-    filterQueryParams
+    filterQueryParams: filterParams
   });
 
   const {
@@ -38,7 +35,7 @@ export const PlayerSkillTab = ({
   } = usePlayerSkillDiagram({
     steamId,
     compareOption,
-    filterQueryParams,
+    filterQueryParams: filterParams,
     playerTeam: playerTeam
   });
 

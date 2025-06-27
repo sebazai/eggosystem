@@ -1,14 +1,14 @@
 "use client";
 
 import { useFilteredPlayerMapStats } from "@/hooks/data/filtered/useFilteredPlayerMapStats";
-import { mapToReadableName, type FilterParamsQuery } from "@/lib/utils";
+import { mapToReadableName } from "@/lib/utils";
 import Image from "next/image";
 import { Alert, AlertDescription } from "../ui/alert";
 import { InfoIcon } from "lucide-react";
+import { useFilters } from "@/context/FilterContext";
 
 interface PlayerMapStatsCardsProps {
   steamId: string;
-  filterQueryParams: FilterParamsQuery;
 }
 
 // Function to determine color based on win percentage
@@ -32,13 +32,11 @@ const getAdrColor = (adr: number) => {
   return "bg-green-400/50";
 };
 
-export const PlayerMapStatsCards = ({
-  steamId,
-  filterQueryParams
-}: PlayerMapStatsCardsProps) => {
+export const PlayerMapStatsCards = ({ steamId }: PlayerMapStatsCardsProps) => {
+  const { filterParams } = useFilters();
   const { playerMapStats, isLoading } = useFilteredPlayerMapStats({
     steamId,
-    filterQueryParams
+    filterQueryParams: filterParams
   });
 
   if (isLoading) {
