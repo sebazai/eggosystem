@@ -3,7 +3,6 @@ import {
   seasonPlayerRankFormSchema
 } from "@eggosystem/types";
 import { type Request, type Response } from "express";
-import * as z from "zod";
 import {
   addManuallyApprovedPartialSignupForSeason,
   addSeasonRankForPlayer,

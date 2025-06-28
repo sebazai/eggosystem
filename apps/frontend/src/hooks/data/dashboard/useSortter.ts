@@ -94,14 +94,17 @@ export function useSortter() {
   );
 
   // Handle the URL update when selected season changes
-  const setSelectedSeason = (seasonId: number) => {
-    setSelectedSeasonState(seasonId);
+  const setSelectedSeason = useCallback(
+    (seasonId: number) => {
+      setSelectedSeasonState(seasonId);
 
-    // Update URL with the season parameter
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("season", seasonId.toString());
-    router.push(`?${params.toString()}`);
-  };
+      // Update URL with the season parameter
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("season", seasonId.toString());
+      router.push(`?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
 
   // Show the floating team player values at the specified position
   const showTeamPlayerValues = useCallback(
