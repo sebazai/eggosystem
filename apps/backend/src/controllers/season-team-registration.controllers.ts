@@ -3,7 +3,7 @@ import {
   signupFormSchema,
   type SignupFormValues,
   type RequestWithParams,
-  RequestWithParamsAndQuery
+  type RequestWithParamsAndQuery
 } from "@eggosystem/types";
 import type { Response } from "express";
 import {
@@ -11,7 +11,6 @@ import {
   getTeamSignupData,
   updateSignupForSeason
 } from "../models/season-team-registration.models";
-import z from "zod";
 import {
   getValidSeason,
   checkExternalId
@@ -73,18 +72,7 @@ export const updateTeamSignupDetails = async (
   const season = await getValidSeason(seasonId);
   const formData = req.body;
 
-  try {
-    signupFormSchema({ platform: season.platform }).parse(formData);
-  } catch (error: unknown) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({
-        message: "Invalid signup form data",
-        errors: error.flatten()
-      });
-      return;
-    }
-    throw error;
-  }
+  signupFormSchema({ platform: season.platform }).parse(formData);
 
   await checkExternalId(season.platform, formData.teamExternalId);
 
@@ -105,18 +93,7 @@ export const addSignupForSeasonController = async (
   const season = await getValidSeason(id);
   const formData = req.body;
 
-  try {
-    signupFormSchema({ platform: season.platform }).parse(formData);
-  } catch (error: unknown) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({
-        message: "Invalid signup form data",
-        errors: error.flatten()
-      });
-      return;
-    }
-    throw error;
-  }
+  signupFormSchema({ platform: season.platform }).parse(formData);
 
   await checkExternalId(season.platform, formData.teamExternalId);
 

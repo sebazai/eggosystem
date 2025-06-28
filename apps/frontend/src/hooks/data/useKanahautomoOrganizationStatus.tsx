@@ -1,9 +1,9 @@
 import useSWR from "swr";
 import { clientApiFetch } from "@/lib/apiClient";
-import type { KanahautomoOrganizationStatus } from "@eggosystem/types";
+import type { KanahautomoOrganizationStatusWithGameTypes } from "@eggosystem/types";
 
 interface KanahautomoOrgStatusResponse {
-  organizations: KanahautomoOrganizationStatus[];
+  organizations: KanahautomoOrganizationStatusWithGameTypes[];
 }
 
 export function useKanahautomoOrganizationStatus() {

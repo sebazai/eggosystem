@@ -136,7 +136,7 @@ export default function KanahautomoPage() {
       // If creating new organization
       if (data.organizationId === -1 && data.newOrganization) {
         requestBody = {
-          new_organization: {
+          newOrganization: {
             name: data.newOrganization.name,
             organization_code: data.newOrganization.organization_code,
             website: data.newOrganization.website
@@ -146,7 +146,7 @@ export default function KanahautomoPage() {
         };
       } else {
         requestBody = {
-          organization_id: data.organizationId,
+          organizationId: data.organizationId,
           gameTypes: data.gameTypes,
           acceptedTerms: data.acceptedTerms
         };
@@ -482,27 +482,85 @@ export default function KanahautomoPage() {
                     {org.organization_name}
                   </h3>
 
-                  {/* Count and status */}
+                  {/* Total registrations */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <div className="flex -space-x-1">
-                        {[...Array(Math.min(org.count, 5))].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold`}
-                          >
-                            {i === 4 && org.count > 5 ? "+" : "👤"}
-                          </div>
-                        ))}
+                        {[...Array(Math.min(org.total_registrations, 5))].map(
+                          (_, i) => (
+                            <div
+                              key={i}
+                              className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold`}
+                            >
+                              {i === 4 && org.total_registrations > 5
+                                ? "+"
+                                : "👤"}
+                            </div>
+                          )
+                        )}
                       </div>
                       <span className="text-sm font-medium text-kanaliiga-light-brown">
-                        Registered: {org.count}
+                        Total: {org.total_registrations}
                       </span>
                     </div>
                   </div>
 
-                  {/* Status message */}
-                  <p className="text-xs text-kanaliiga-light-brown">Yalla</p>
+                  {/* Game type breakdown */}
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-medium text-kanaliiga-light-brown mb-2">
+                      Game Type Registrations:
+                    </h4>
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                      {org.game_type_counts.cs > 0 && (
+                        <div className="flex justify-between">
+                          <span>CS2 Comp:</span>
+                          <span className="font-medium">
+                            {org.game_type_counts.cs}
+                          </span>
+                        </div>
+                      )}
+                      {org.game_type_counts.csWingman > 0 && (
+                        <div className="flex justify-between">
+                          <span>CS2 Wingman:</span>
+                          <span className="font-medium">
+                            {org.game_type_counts.csWingman}
+                          </span>
+                        </div>
+                      )}
+                      {org.game_type_counts.pubgDuo > 0 && (
+                        <div className="flex justify-between">
+                          <span>PUBG Duo:</span>
+                          <span className="font-medium">
+                            {org.game_type_counts.pubgDuo}
+                          </span>
+                        </div>
+                      )}
+                      {org.game_type_counts.pubgSquad > 0 && (
+                        <div className="flex justify-between">
+                          <span>PUBG Squad:</span>
+                          <span className="font-medium">
+                            {org.game_type_counts.pubgSquad}
+                          </span>
+                        </div>
+                      )}
+                      {org.game_type_counts.rocketLeague > 0 && (
+                        <div className="flex justify-between">
+                          <span>Rocket League:</span>
+                          <span className="font-medium">
+                            {org.game_type_counts.rocketLeague}
+                          </span>
+                        </div>
+                      )}
+                      {org.game_type_counts.dota > 0 && (
+                        <div className="flex justify-between">
+                          <span>Dota 2:</span>
+                          <span className="font-medium">
+                            {org.game_type_counts.dota}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

@@ -2,7 +2,7 @@ import { type Request, type Response } from "express";
 import {
   registerPlayerForKanahautomo,
   insertKanahautomoGameTypes,
-  getKanahautomoOrganizationStatus as getKanahautomoOrganizationStatusModel
+  getKanahautomoOrganizationStatusWithGameTypes
 } from "../models/kanahautomo.models";
 import {
   getOrganizationById,
@@ -13,7 +13,6 @@ import { BadRequestError } from "../utils/errors";
 import type { KanahautomoRegistrationResponse } from "@eggosystem/types";
 import { kanahautomoSchema } from "@eggosystem/types";
 import { getConnection } from "../db/mysqlConnection";
-import { z } from "zod";
 
 export const registerForKanahautomoWithOrganization = async (
   req: Request,
@@ -27,22 +26,7 @@ export const registerForKanahautomoWithOrganization = async (
 
   const steamId = req.auth.provider_id; // From JWT token
 
-  // Validate input using Zod schema with proper error handling
-  let parsed;
-  try {
-    parsed = kanahautomoSchema.parse(req.body);
-  } catch (error: unknown) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({
-        message: "Invalid registration data",
-        errors: error.flatten()
-      });
-      return;
-    }
-    throw error;
-  }
-
-  // Map frontend field names to backend field names
+  const parsed = kanahautomoSchema.parse(req.body);
   const { organizationId, newOrganization, gameTypes, acceptedTerms } = parsed;
 
   const connection = await getConnection();
@@ -81,8 +65,8 @@ export const registerForKanahautomoWithOrganization = async (
 
     const response: KanahautomoRegistrationResponse = {
       message: "Successfully registered for Kanahautomo",
-      registration_id: result.insertId,
-      organization_id: finalOrganizationId
+      registrationId: result.insertId,
+      organizationId: finalOrganizationId
     };
 
     logger.info(
@@ -118,6 +102,6 @@ export const getKanahautomoOrganizationStatus = async (
   req: Request,
   res: Response
 ) => {
-  const data = await getKanahautomoOrganizationStatusModel();
+  const data = await getKanahautomoOrganizationStatusWithGameTypes();
   res.json({ organizations: data });
 };

@@ -5,6 +5,7 @@ import * as organizationModels from "../../models/organization.models";
 import * as dbConnection from "../../db/mysqlConnection";
 import type { JwtPayload } from "jsonwebtoken";
 import type { Organizations } from "@eggosystem/types";
+import { ZodError } from "zod";
 
 // Mock the models
 jest.mock("../../models/kanahautomo.models");
@@ -104,8 +105,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     expect(mockStatus).toHaveBeenCalledWith(201);
     expect(mockJson).toHaveBeenCalledWith({
       message: expect.any(String),
-      registration_id: 123,
-      organization_id: 1
+      registrationId: 123,
+      organizationId: 1
     });
   });
 
@@ -120,20 +121,28 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
     mockRequest = { auth: mockAuth, body: { organizationId: 1 } };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          gameTypes: ["Required"]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["gameTypes"],
+            message: "Required"
+          }),
+          expect.objectContaining({
+            path: ["acceptedTerms"],
+            message: "Required"
+          })
+        ])
+      );
+    }
   });
 
   it("throws if no game types are selected", async () => {
@@ -161,20 +170,24 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          gameTypes: ["Please select at least one game type"]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["gameTypes"],
+            message: "Please select at least one game type"
+          })
+        ])
+      );
+    }
   });
 
   it("registers with new organization and gameTypes", async () => {
@@ -286,20 +299,24 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
     mockRequest = { auth: mockAuth, body: { gameTypes: mockGameTypes } };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          acceptedTerms: ["Required"]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["acceptedTerms"],
+            message: "Required"
+          })
+        ])
+      );
+    }
   });
 
   it("throws if both org and new_org", async () => {
@@ -316,32 +333,42 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       body: {
         organizationId: 1,
         newOrganization: {
-          name: "X",
-          organization_code: "X",
-          website: "https://x.com"
+          name: "T",
+          organization_code: "1",
+          website: "invalid-url"
         },
         gameTypes: mockGameTypes,
         acceptedTerms: true
       }
     };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          newOrganization: [
-            "Organization name must be at least 2 characters",
-            "Business ID must be at least 2 characters"
-          ]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["newOrganization", "name"],
+            message: "Organization name must be at least 2 characters"
+          }),
+          expect.objectContaining({
+            path: ["newOrganization", "organization_code"],
+            message: "Business ID must be at least 2 characters"
+          }),
+          expect.objectContaining({
+            path: ["organizationId"],
+            message:
+              "Cannot select both existing organization and create new one"
+          })
+        ])
+      );
+    }
   });
 
   it("returns 400 if already registered", async () => {
@@ -456,20 +483,24 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          acceptedTerms: ["You must accept the terms and conditions"]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["acceptedTerms"],
+            message: "You must accept the terms and conditions"
+          })
+        ])
+      );
+    }
   });
 
   it("throws if organization ID is invalid (0)", async () => {
@@ -490,22 +521,25 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          organizationId: [
-            "Please select an existing organization or create a new one."
-          ]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["organizationId"],
+            message:
+              "Please select an existing organization or create a new one."
+          })
+        ])
+      );
+    }
   });
 
   it("throws if new organization data is invalid", async () => {
@@ -531,24 +565,32 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       }
     };
 
-    await registerForKanahautomoWithOrganization(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "Invalid registration data",
-      errors: expect.objectContaining({
-        fieldErrors: expect.objectContaining({
-          newOrganization: [
-            "Organization name must be at least 2 characters",
-            "Business ID must be at least 2 characters",
-            "Please enter a valid website URL"
-          ]
-        })
-      })
-    });
+    try {
+      await registerForKanahautomoWithOrganization(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+      fail("Expected ZodError to be thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      const zodError = error as ZodError;
+      expect(zodError.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            path: ["newOrganization", "name"],
+            message: "Organization name must be at least 2 characters"
+          }),
+          expect.objectContaining({
+            path: ["newOrganization", "organization_code"],
+            message: "Business ID must be at least 2 characters"
+          }),
+          expect.objectContaining({
+            path: ["newOrganization", "website"],
+            message: "Please enter a valid website URL"
+          })
+        ])
+      );
+    }
   });
 });
 
@@ -577,16 +619,24 @@ describe("Kanahautomo Organization Status Integration Tests", () => {
   describe("GET /api/v1/kanahautomo/organization-status", () => {
     it("should return organization status without authentication", async () => {
       // Mock successful organization status lookup
-      const mockGetKanahautomoOrganizationStatus =
-        kanahautomoModels.getKanahautomoOrganizationStatus as jest.MockedFunction<
-          typeof kanahautomoModels.getKanahautomoOrganizationStatus
+      const mockGetKanahautomoOrganizationStatusWithGameTypes =
+        kanahautomoModels.getKanahautomoOrganizationStatusWithGameTypes as jest.MockedFunction<
+          typeof kanahautomoModels.getKanahautomoOrganizationStatusWithGameTypes
         >;
 
-      mockGetKanahautomoOrganizationStatus.mockResolvedValue([
+      mockGetKanahautomoOrganizationStatusWithGameTypes.mockResolvedValue([
         {
           organization_id: 1,
           organization_name: "Test Organization",
-          count: 5
+          total_registrations: 5,
+          game_type_counts: {
+            cs: 2,
+            csWingman: 1,
+            pubgDuo: 1,
+            pubgSquad: 0,
+            rocketLeague: 0,
+            dota: 1
+          }
         }
       ] as never);
 
@@ -604,16 +654,22 @@ describe("Kanahautomo Organization Status Integration Tests", () => {
         "organization_name",
         "Test Organization"
       );
-      expect(response.body.organizations[0]).toHaveProperty("count", 5);
+      expect(response.body.organizations[0]).toHaveProperty(
+        "total_registrations",
+        5
+      );
+      expect(response.body.organizations[0]).toHaveProperty("game_type_counts");
     });
 
     it("should handle empty organization status", async () => {
-      const mockGetKanahautomoOrganizationStatus =
-        kanahautomoModels.getKanahautomoOrganizationStatus as jest.MockedFunction<
-          typeof kanahautomoModels.getKanahautomoOrganizationStatus
+      const mockGetKanahautomoOrganizationStatusWithGameTypes =
+        kanahautomoModels.getKanahautomoOrganizationStatusWithGameTypes as jest.MockedFunction<
+          typeof kanahautomoModels.getKanahautomoOrganizationStatusWithGameTypes
         >;
 
-      mockGetKanahautomoOrganizationStatus.mockResolvedValue([] as never);
+      mockGetKanahautomoOrganizationStatusWithGameTypes.mockResolvedValue(
+        [] as never
+      );
 
       const response = await request(app)
         .get("/api/v1/kanahautomo/organization-status")

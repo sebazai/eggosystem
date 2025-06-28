@@ -33,7 +33,7 @@
 ### Schema Location
 
 - **Documentation**: `docs/database.md`
-- **Migrations**: `apps/backend/migrations/20250127080330_database_schema.ts`
+- **CREATE TABLE Structures**: `apps/backend/dbdump/kanaliiga.sql`
 
 ### Key Relationships
 
@@ -52,7 +52,6 @@
 
 ### Frontend-Backend Integration
 
-- **Proxy Pattern**: Frontend API routes at `apps/frontend/src/app/api/v1/...`
 - **Request Forwarding**: All query parameters preserved to backend
 - **Error Handling**: Consistent error responses across all endpoints
 

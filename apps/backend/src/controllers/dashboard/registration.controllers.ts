@@ -18,52 +18,36 @@ export const addManuallyApprovedPlayersController = async (
   req: Request,
   res: Response
 ) => {
-  try {
-    const authedUser = req.auth;
-    if (!authedUser) {
-      res.sendStatus(401);
-      return;
-    }
-
-    const validatedData = postTeamManualPlayerApprovalSchema.parse(req.body);
-    const approvedByAccountId = authedUser.account_id;
-
-    const result = await addManuallyApprovedPartialSignupForSeason(
-      validatedData,
-      approvedByAccountId
-    );
-
-    res.status(200).json(result);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ errors: error.errors });
-      return;
-    }
-    throw error;
+  const authedUser = req.auth;
+  if (!authedUser) {
+    res.sendStatus(401);
+    return;
   }
+
+  const validatedData = postTeamManualPlayerApprovalSchema.parse(req.body);
+  const approvedByAccountId = authedUser.account_id;
+
+  const result = await addManuallyApprovedPartialSignupForSeason(
+    validatedData,
+    approvedByAccountId
+  );
+
+  res.status(200).json(result);
 };
 
 export const addManualRankForPlayerController = async (
   req: Request,
   res: Response
 ) => {
-  try {
-    const activeSeason = await getActiveSignupSeasonForAppId(730);
-    if (!activeSeason) {
-      throw new BadRequestError("No signup for any season for app id 730");
-    }
-    const validatedData = seasonPlayerRankFormSchema.parse(req.body);
-
-    await addSeasonRankForPlayer(validatedData, activeSeason);
-
-    res.status(200).json({ ok: true });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ errors: error.errors });
-      return;
-    }
-    throw error;
+  const activeSeason = await getActiveSignupSeasonForAppId(730);
+  if (!activeSeason) {
+    throw new BadRequestError("No signup for any season for app id 730");
   }
+  const validatedData = seasonPlayerRankFormSchema.parse(req.body);
+
+  await addSeasonRankForPlayer(validatedData, activeSeason);
+
+  res.status(200).json({ ok: true });
 };
 
 export const getRegisteredTeamsController = async (

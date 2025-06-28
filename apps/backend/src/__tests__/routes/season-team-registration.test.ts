@@ -6,6 +6,7 @@ import _ from "lodash";
 import express from "express";
 import seasonTeamRegRoute from "../../routes/v1/season-team-registration.routes";
 import { validSignupData, invalidSignupData } from "@eggosystem/shared-msw";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 const mockSeasonWith = (returnValue: Partial<SeasonDetails> | undefined) => {
   jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue(
@@ -25,6 +26,7 @@ beforeAll(() => {
   const app = express();
   app.use(express.json());
   app.use(seasonTeamRegRoute);
+  app.use(expressErrorHandler);
 
   // Create a Supertest agent with default cookie set
   agent = request.agent(app);
@@ -88,41 +90,54 @@ describe("POST /:id/signup", () => {
         .send(invalidSignupData);
       expect(res.status).toBe(400);
 
-      expect(res.body.errors.fieldErrors.newOrganization).toEqual([
+      expect(res.body.error).toContain(
         "New organization details are required when 'Add new...' is selected."
-      ]);
+      );
     });
+
     it("should return 400 if teamId -1 and missing newTeam", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
+
       const res = await agent
         .post("/season/123/signup")
         .send(invalidSignupData);
       expect(res.status).toBe(400);
-
-      expect(res.body.errors.fieldErrors.newTeam).toEqual([
+      expect(res.body.error).toContain(
         "New team details are required when 'Add new...' is selected."
-      ]);
+      );
     });
+
     it("should return 400 if missing discord for captain", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
+
       const res = await agent
         .post("/season/123/signup")
         .send(invalidSignupData);
       expect(res.status).toBe(400);
-
-      expect(res.body.errors.fieldErrors.players).toEqual([
+      expect(res.body.error).toContain(
         "Captains and co-captains must provide a Discord username."
-      ]);
+      );
     });
+
     it("should return 400 if duplicate steamId", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
-      invalidSignupData.players[0].steamId =
-        invalidSignupData.players[1].steamId;
+      const dataWithDuplicateSteamId = {
+        ...invalidSignupData,
+        players: [
+          ...invalidSignupData.players.slice(0, 1),
+          {
+            ...invalidSignupData.players[1],
+            steamId: invalidSignupData.players[0].steamId
+          },
+          ...invalidSignupData.players.slice(2)
+        ]
+      };
+
       const res = await agent
         .post("/season/123/signup")
-        .send(invalidSignupData);
+        .send(dataWithDuplicateSteamId);
       expect(res.status).toBe(400);
-      expect(res.body.errors.fieldErrors.players).toContain(
+      expect(res.body.error).toContain(
         "Each player must have a unique Steam ID."
       );
     });

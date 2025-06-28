@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Jun 21, 2025 at 06:55 AM
+-- Generation Time: Jun 28, 2025 at 09:39 AM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -110,6 +110,69 @@ CREATE TABLE `Games` (
   `name` varchar(255) NOT NULL,
   `abbreviation` varchar(255) NOT NULL,
   `app_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `GameTypes`
+--
+
+CREATE TABLE `GameTypes` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `min_players` int(11) DEFAULT NULL,
+  `max_players` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `KanahautomoRegistrationGameTypes`
+--
+
+CREATE TABLE `KanahautomoRegistrationGameTypes` (
+  `game_type_id` int(10) UNSIGNED NOT NULL,
+  `kanahautomo_registration_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `KanahautomoRegistrations`
+--
+
+CREATE TABLE `KanahautomoRegistrations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `organization_id` int(10) UNSIGNED NOT NULL,
+  `accepted_terms` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `knex_migrations`
+--
+
+CREATE TABLE `knex_migrations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `batch` int(11) DEFAULT NULL,
+  `migration_time` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `knex_migrations_lock`
+--
+
+CREATE TABLE `knex_migrations_lock` (
+  `index` int(10) UNSIGNED NOT NULL,
+  `is_locked` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -558,6 +621,7 @@ CREATE TABLE `SeasonPlayerRanks` (
 CREATE TABLE `Seasons` (
   `id` int(10) UNSIGNED NOT NULL,
   `game_id` int(10) UNSIGNED NOT NULL,
+  `game_type_id` int(10) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `signup_start_date` datetime DEFAULT NULL,
@@ -851,6 +915,40 @@ ALTER TABLE `Games`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `GameTypes`
+--
+ALTER TABLE `GameTypes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_game_types_game` (`game_id`);
+
+--
+-- Indexes for table `KanahautomoRegistrationGameTypes`
+--
+ALTER TABLE `KanahautomoRegistrationGameTypes`
+  ADD PRIMARY KEY (`game_type_id`,`kanahautomo_registration_id`),
+  ADD KEY `fk_kana_reg_game_types_reg` (`kanahautomo_registration_id`);
+
+--
+-- Indexes for table `KanahautomoRegistrations`
+--
+ALTER TABLE `KanahautomoRegistrations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kanahautomoregistrations_steam_id_organization_id_unique` (`steam_id`,`organization_id`),
+  ADD KEY `kanahautomoregistrations_organization_id_foreign` (`organization_id`);
+
+--
+-- Indexes for table `knex_migrations`
+--
+ALTER TABLE `knex_migrations`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `knex_migrations_lock`
+--
+ALTER TABLE `knex_migrations_lock`
+  ADD PRIMARY KEY (`index`);
+
+--
 -- Indexes for table `Leagues`
 --
 ALTER TABLE `Leagues`
@@ -1009,7 +1107,8 @@ ALTER TABLE `SeasonPlayerRanks`
 --
 ALTER TABLE `Seasons`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `seasons_game_id_foreign` (`game_id`);
+  ADD KEY `seasons_game_id_foreign` (`game_id`),
+  ADD KEY `seasons_game_type_id_foreign` (`game_type_id`);
 
 --
 -- Indexes for table `SeasonTeamPlayers`
@@ -1094,6 +1193,30 @@ ALTER TABLE `AuditLog`
 --
 ALTER TABLE `Games`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `GameTypes`
+--
+ALTER TABLE `GameTypes`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `KanahautomoRegistrations`
+--
+ALTER TABLE `KanahautomoRegistrations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `knex_migrations`
+--
+ALTER TABLE `knex_migrations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `knex_migrations_lock`
+--
+ALTER TABLE `knex_migrations_lock`
+  MODIFY `index` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Leagues`
@@ -1243,6 +1366,26 @@ ALTER TABLE `AuditLog`
   ADD CONSTRAINT `auditlog_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL;
 
 --
+-- Constraints for table `GameTypes`
+--
+ALTER TABLE `GameTypes`
+  ADD CONSTRAINT `fk_game_types_game` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `KanahautomoRegistrationGameTypes`
+--
+ALTER TABLE `KanahautomoRegistrationGameTypes`
+  ADD CONSTRAINT `fk_kana_reg_game_types_game_type` FOREIGN KEY (`game_type_id`) REFERENCES `GameTypes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_kana_reg_game_types_reg` FOREIGN KEY (`kanahautomo_registration_id`) REFERENCES `KanahautomoRegistrations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `KanahautomoRegistrations`
+--
+ALTER TABLE `KanahautomoRegistrations`
+  ADD CONSTRAINT `kanahautomoregistrations_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `Organizations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `kanahautomoregistrations_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `LinkedAccounts`
 --
 ALTER TABLE `LinkedAccounts`
@@ -1354,7 +1497,8 @@ ALTER TABLE `SeasonPlayerRanks`
 -- Constraints for table `Seasons`
 --
 ALTER TABLE `Seasons`
-  ADD CONSTRAINT `seasons_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `seasons_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `seasons_game_type_id_foreign` FOREIGN KEY (`game_type_id`) REFERENCES `GameTypes` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `SeasonTeamPlayers`

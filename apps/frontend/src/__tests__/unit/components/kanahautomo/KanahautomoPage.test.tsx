@@ -86,20 +86,41 @@ const mockOrgStatus = [
   {
     organization_id: 1,
     organization_name: "Test Organization 1",
-    count: 3,
-    status: "ready" as const
+    total_registrations: 3,
+    game_type_counts: {
+      cs: 2,
+      csWingman: 1,
+      pubgDuo: 0,
+      pubgSquad: 0,
+      rocketLeague: 0,
+      dota: 0
+    }
   },
   {
     organization_id: 2,
     organization_name: "Test Organization 2",
-    count: 1,
-    status: "waiting" as const
+    total_registrations: 1,
+    game_type_counts: {
+      cs: 0,
+      csWingman: 0,
+      pubgDuo: 1,
+      pubgSquad: 0,
+      rocketLeague: 0,
+      dota: 0
+    }
   },
   {
     organization_id: 3,
     organization_name: "Test Organization 3",
-    count: 5,
-    status: "ready" as const
+    total_registrations: 5,
+    game_type_counts: {
+      cs: 2,
+      csWingman: 1,
+      pubgDuo: 1,
+      pubgSquad: 1,
+      rocketLeague: 0,
+      dota: 0
+    }
   }
 ];
 
@@ -645,9 +666,9 @@ describe("KanahautomoPage", () => {
       expect(screen.getByText("Test Organization 3")).toBeInTheDocument();
 
       // Check for registration counts
-      expect(screen.getByText("Registered: 3")).toBeInTheDocument();
-      expect(screen.getByText("Registered: 1")).toBeInTheDocument();
-      expect(screen.getByText("Registered: 5")).toBeInTheDocument();
+      expect(screen.getByText("Total: 3")).toBeInTheDocument();
+      expect(screen.getByText("Total: 1")).toBeInTheDocument();
+      expect(screen.getByText("Total: 5")).toBeInTheDocument();
     });
   });
 

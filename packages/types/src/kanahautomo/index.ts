@@ -41,6 +41,19 @@ export const kanahautomoSchema = z
   )
   .refine(
     (data) => {
+      // Cannot have both existing organization and new organization
+      const hasExistingOrg =
+        data.organizationId !== undefined && data.organizationId > 0;
+      const hasNewOrg = data.newOrganization !== undefined;
+      return !(hasExistingOrg && hasNewOrg);
+    },
+    {
+      message: "Cannot select both existing organization and create new one",
+      path: ["organizationId"]
+    }
+  )
+  .refine(
+    (data) => {
       // Must have at least one game type selected
       const gameTypes = data.gameTypes;
       return (
@@ -64,4 +77,18 @@ export interface KanahautomoOrganizationStatus {
   organization_id: Organizations["id"];
   organization_name: Organizations["name"];
   count: number;
+}
+
+export interface KanahautomoOrganizationStatusWithGameTypes {
+  organization_id: Organizations["id"];
+  organization_name: Organizations["name"];
+  total_registrations: number;
+  game_type_counts: {
+    cs: number;
+    csWingman: number;
+    pubgDuo: number;
+    pubgSquad: number;
+    rocketLeague: number;
+    dota: number;
+  };
 }
