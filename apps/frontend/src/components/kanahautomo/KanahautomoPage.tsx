@@ -128,7 +128,7 @@ export default function KanahautomoPage() {
 
   if (authLoading || orgsLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto px-4 py-8">
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
@@ -138,7 +138,7 @@ export default function KanahautomoPage() {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto px-4 py-8">
         <Card>
           <CardContent className="p-6">
             <h1 className="text-2xl font-bold pb-7">Join Kanahautomo</h1>
@@ -153,7 +153,7 @@ export default function KanahautomoPage() {
 
   if (orgsError || !organizations) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto px-4 py-8">
         <Card>
           <CardContent className="p-6">
             <h1 className="text-2xl font-bold pb-7">Join Kanahautomo</h1>
@@ -219,7 +219,7 @@ export default function KanahautomoPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto px-4 py-8">
       <Card className="mb-8">
         <CardHeader>
           <div
@@ -482,10 +482,6 @@ export default function KanahautomoPage() {
                 )}
               />
 
-              {error && (
-                <div className="text-kanaliiga-orange text-sm">{error}</div>
-              )}
-
               {/* Discord Link Section */}
               <div className="space-y-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
@@ -493,7 +489,7 @@ export default function KanahautomoPage() {
                     <h3 className="text-lg font-semibold mb-2">
                       Link Discord Account
                     </h3>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm">
                       Link your Discord account to automatically receive the
                       correct role when you join the server.
                     </p>
@@ -532,6 +528,8 @@ export default function KanahautomoPage() {
                   </div>
                 </div>
               </div>
+
+              {error && <div className="text-red-500 text-sm">{error}</div>}
 
               <Button
                 type="submit"
@@ -584,9 +582,7 @@ export default function KanahautomoPage() {
                               key={i}
                               className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold`}
                             >
-                              {i === 4 && org.total_registrations > 5
-                                ? "+"
-                                : "👤"}
+                              👤
                             </div>
                           )
                         )}
