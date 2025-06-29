@@ -220,7 +220,7 @@ interface UserOrganizationData {
 }
 
 // Get user's organization and game data from database
-const getUserOrganizationData = async (
+export const getUserOrganizationData = async (
   discordUserId: string
 ): Promise<UserOrganizationData | null> => {
   try {

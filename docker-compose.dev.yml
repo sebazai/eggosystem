@@ -21,15 +21,6 @@ services:
       OTEL_SERVICE_NAME: eggosystem-dev-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=dev,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
-      SMTP_HOST: $SMTP_HOST
-      SMTP_USER: $SMTP_USER
-      SMTP_PASSWORD: $SMTP_PASSWORD
-      ALLSTAR_WEBHOOK_TOKEN: $ALLSTAR_WEBHOOK_TOKEN
-      ALLSTAR_API_KEY: $ALLSTAR_API_KEY
-      DISCORD_CLIENT_ID: $DISCORD_CLIENT_ID
-      DISCORD_CLIENT_SECRET: $DISCORD_CLIENT_SECRET
-      DISCORD_BOT_TOKEN: $DISCORD_BOT_TOKEN
-      DISCORD_GUILD_ID: $DISCORD_GUILD_ID
     networks:
       - web
     volumes:

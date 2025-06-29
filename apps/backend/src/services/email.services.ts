@@ -18,9 +18,8 @@ function createTransporter() {
   });
 }
 
-const transporter = createTransporter();
-
 export const sendVerificationEmail = async (to: string, token: string) => {
+  const transporter = createTransporter();
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   const mailOptions = {
@@ -87,6 +86,7 @@ export const sendDiscordInviteEmail = async (
   inviteUrl: string,
   gameTypes: string[]
 ) => {
+  const transporter = createTransporter();
   const mailOptions = {
     from: "Kanahub by Kanaliiga <noreply@kanaliiga.fi>",
     to,
@@ -129,20 +129,10 @@ export const sendDiscordInviteEmail = async (
             <a href="${inviteUrl}">${inviteUrl}</a>
           </p>
   
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
-            <h3 style="margin-top: 0; color: #333;">What happens next?</h3>
-            <ul style="margin: 10px 0; padding-left: 20px;">
-              <li style="margin: 5px 0;">Join the Discord server using the link above</li>
-              <li style="margin: 5px 0;">You'll be automatically assigned to your organization's role</li>
-              <li style="margin: 5px 0;">Find your organization's channels for the games you registered for</li>
-              <li style="margin: 5px 0;">Start connecting with teammates and finding matches!</li>
-            </ul>
-          </div>
-  
           <hr style="border: none; border-top: 1px solid #eee; margin: 40px 0;" />
   
           <p style="font-size: 14px; color: #777;">
-            If you have any questions or need assistance, please contact us through the Discord server or email us at <a href="mailto:info@kanaliiga.fi">info@kanaliiga.fi</a>.
+            If you have any questions or need assistance, please don't hesitate to reach out to our support team.
           </p>
   
           <p style="font-size: 14px; color: #777;">
