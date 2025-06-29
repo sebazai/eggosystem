@@ -522,7 +522,7 @@ export default function KanahautomoPage() {
                   </Button>
 
                   <div className="text-sm">
-                    {user?.discord_user_id ? (
+                    {user?.discordLinked ? (
                       <span className="text-green-600">✓ Discord linked</span>
                     ) : (
                       <span>Not linked</span>

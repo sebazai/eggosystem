@@ -229,14 +229,15 @@ const getUserOrganizationData = async (
             'game_type_name', gt.name
           )
         ) as game_types
-      FROM Accounts a
+      FROM LinkedAccounts la
+      JOIN Accounts a ON la.account_id = a.id
       JOIN SteamPlayers sp ON a.id = sp.account_id
       JOIN KanahautomoRegistrations khr ON sp.steam_id = khr.steam_id
       JOIN Organizations o ON khr.organization_id = o.id
       JOIN KanahautomoRegistrationGameTypes krgt ON khr.id = krgt.kanahautomo_registration_id
       JOIN GameTypes gt ON krgt.game_type_id = gt.id
       JOIN Games g ON gt.game_id = g.id
-      WHERE a.discord_user_id = ?
+      WHERE la.provider = 'discord' AND la.provider_id = ?
       GROUP BY a.id, sp.steam_id, o.name
     `,
       [discordUserId]

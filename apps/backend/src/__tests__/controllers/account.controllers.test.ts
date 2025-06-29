@@ -20,7 +20,6 @@ const mockedAccount = {
   work_email_token_expires_at: null,
   is_work_email_personal_email: false,
   discord: null,
-  discord_user_id: null,
   updated_at: "",
   created_at: ""
 } satisfies Account;

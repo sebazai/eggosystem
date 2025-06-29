@@ -70,7 +70,6 @@ describe("GET /me", () => {
       steam_id: "76561198049745649",
       nickname: "sububobi",
       is_work_email_personal_email: false,
-      discord_user_id: null,
       provider: "steam",
       full_name: "Test User",
       work_email: "test@example.com",

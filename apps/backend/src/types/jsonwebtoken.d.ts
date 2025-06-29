@@ -7,6 +7,6 @@ declare module "jsonwebtoken" {
     permissions: string[];
     roles: string[];
     nickname: string;
-    provider: "steam";
+    provider: "steam" | "discord";
   }
 }

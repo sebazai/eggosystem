@@ -11,7 +11,6 @@ export interface Account {
   work_email_token_expires_at: Nullable<string>;
   is_work_email_personal_email: boolean;
   discord: Nullable<string>;
-  discord_user_id: Nullable<string>;
   created_at: string;
   updated_at: string;
 }

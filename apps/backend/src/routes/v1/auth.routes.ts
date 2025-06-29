@@ -15,7 +15,10 @@ import {
 } from "../../models/account.models";
 import { getRolesForAccountId } from "../../services/auth.services";
 import { logger } from "../../utils/app-logger";
-import { updateUserDiscordId } from "../../models/discord.models";
+import {
+  updateUserDiscordId,
+  getDiscordIdByAccountId
+} from "../../models/discord.models";
 
 const router = Router();
 
@@ -113,6 +116,10 @@ router.get("/me", authenticateJWT, async (req, res) => {
       : // Tick the marketing box if privacy_policy version changes and user had it ticked.
         await getLatestUserProfileMarketingConsent(req.auth.account_id);
 
+    // Check if user has Discord linked
+    const discordId = await getDiscordIdByAccountId(userInDb.account_id);
+    const discordLinked = !!discordId;
+
     const userPayload = {
       account_id: userInDb.account_id,
       provider_id: userInDb.steam_id,
@@ -123,7 +130,7 @@ router.get("/me", authenticateJWT, async (req, res) => {
         : false,
       acceptedMarketing: hasMarketingConsent,
       isPersonalEmail: userInDb.is_work_email_personal_email,
-      discord_user_id: userInDb.discord_user_id,
+      discordLinked,
       roles
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
