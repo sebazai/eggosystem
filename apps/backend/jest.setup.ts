@@ -136,7 +136,6 @@ jest.mock("./src/services/discord.services", () => ({
     }
   }),
   createOrGetOrganizationRole: jest.fn().mockResolvedValue("mock-role-id"),
-  createOrGetGameChannel: jest.fn().mockResolvedValue("mock-channel-id"),
   findOrCreateOrganizationGameChannel: jest.fn().mockResolvedValue({
     id: "mock-channel-id",
     name: "Mock Channel"

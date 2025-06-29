@@ -2,9 +2,7 @@ import { runQuery } from "../../db/mysqlRunQuery";
 import {
   updateUserDiscordId,
   linkDiscordAccount,
-  getAccountByDiscordId,
-  getDiscordIdByAccountId,
-  unlinkDiscordAccount
+  getDiscordIdByAccountId
 } from "../../models/discord.models";
 
 // Mock the database connection
@@ -64,48 +62,42 @@ describe("Discord Models", () => {
       );
     });
 
-    it("should update existing Discord link", async () => {
+    it("should not update existing Discord link for same account", async () => {
       const accountId = 123;
       const discordUserId = "456789";
 
-      mockRunQuery.mockResolvedValueOnce([{ account_id: 999 }]); // Existing link
-      mockRunQuery.mockResolvedValueOnce([]); // Update result
+      // Mock existing link for the same account
+      mockRunQuery.mockResolvedValueOnce([{ account_id: accountId }]);
 
       await linkDiscordAccount(accountId, discordUserId);
 
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("UPDATE LinkedAccounts SET account_id = ?"),
-        [accountId, discordUserId],
-        undefined
-      );
-    });
-  });
-
-  describe("getAccountByDiscordId", () => {
-    it("should return account ID when Discord link exists", async () => {
-      const discordUserId = "456789";
-      const expectedAccountId = 123;
-
-      mockRunQuery.mockResolvedValueOnce([{ account_id: expectedAccountId }]);
-
-      const result = await getAccountByDiscordId(discordUserId);
-
-      expect(result).toBe(expectedAccountId);
+      // Should only call the SELECT query, no INSERT or UPDATE
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("SELECT account_id FROM LinkedAccounts"),
         [discordUserId],
         undefined
       );
+
+      // Should not call INSERT or UPDATE since link already exists for this account
+      expect(mockRunQuery).toHaveBeenCalledTimes(1);
     });
 
-    it("should return null when Discord link does not exist", async () => {
+    it("should throw error when Discord account is linked to different account", async () => {
+      const accountId = 123;
       const discordUserId = "456789";
 
-      mockRunQuery.mockResolvedValueOnce([]);
+      // Mock existing link for a different account
+      mockRunQuery.mockResolvedValueOnce([{ account_id: 999 }]);
 
-      const result = await getAccountByDiscordId(discordUserId);
+      await expect(
+        linkDiscordAccount(accountId, discordUserId)
+      ).rejects.toThrow("Discord account already linked to another account");
 
-      expect(result).toBeNull();
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT account_id FROM LinkedAccounts"),
+        [discordUserId],
+        undefined
+      );
     });
   });
 
@@ -136,22 +128,6 @@ describe("Discord Models", () => {
       const result = await getDiscordIdByAccountId(accountId);
 
       expect(result).toBeNull();
-    });
-  });
-
-  describe("unlinkDiscordAccount", () => {
-    it("should remove Discord link from LinkedAccounts", async () => {
-      const accountId = 123;
-
-      mockRunQuery.mockResolvedValue([]);
-
-      await unlinkDiscordAccount(accountId);
-
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("DELETE FROM LinkedAccounts"),
-        [accountId],
-        undefined
-      );
     });
   });
 });

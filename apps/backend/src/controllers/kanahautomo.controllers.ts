@@ -60,13 +60,12 @@ export const registerForKanahautomoWithOrganization = async (
   req: Request,
   res: Response
 ) => {
-  // JWT authentication ensures req.auth exists
   if (!req.auth) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const steamId = req.auth.provider_id; // From JWT token
+  const steamId = req.auth.provider_id;
 
   const parsed = kanahautomoSchema.parse(req.body);
   const { organizationId, newOrganization, gameTypes, acceptedTerms } = parsed;

@@ -2,7 +2,6 @@ import {
   Client,
   GatewayIntentBits,
   ChannelType,
-  PermissionFlagsBits,
   Events,
   TextChannel,
   NewsChannel,
@@ -17,16 +16,6 @@ import { runQuery } from "../db/mysqlRunQuery";
 // Discord client instance
 let discordClient: Client | null = null;
 let eventHandlersSetup = false; // Flag to prevent duplicate event handler setup
-
-// Game type to channel name mapping
-const GAME_CHANNEL_MAPPING = {
-  cs: "cs2",
-  csWingman: "cs2-wingman",
-  pubgDuo: "pubg-duo",
-  pubgSquad: "pubg-squad",
-  rocketLeague: "rocket-league",
-  dota: "dota2"
-} as const;
 
 // Initialize Discord client
 export const initializeDiscordClient = async (): Promise<Client> => {
@@ -188,61 +177,6 @@ const findOrCreateOrganizationCategory = async (
   return category;
 };
 
-// Create or get game channel
-export const createOrGetGameChannel = async (
-  gameType: keyof typeof GAME_CHANNEL_MAPPING,
-  organizationName: string
-): Promise<string> => {
-  const client = await getDiscordClient();
-  const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID!);
-
-  const channelName = `${organizationName}-${GAME_CHANNEL_MAPPING[gameType]}`;
-
-  // Check if channel already exists
-  const existingChannel = guild.channels.cache.find(
-    (channel) =>
-      channel.type === ChannelType.GuildText &&
-      channel.name.toLowerCase() === channelName.toLowerCase()
-  );
-
-  if (existingChannel) {
-    logger.info(`Game channel already exists: ${existingChannel.name}`);
-    return existingChannel.id;
-  }
-
-  // Get or create organization category
-  const category = await findOrCreateOrganizationCategory(
-    guild,
-    organizationName
-  );
-
-  // Create new game channel
-  const newChannel = await guild.channels.create({
-    name: channelName,
-    type: ChannelType.GuildText,
-    parent: category.id,
-    reason: `Channel created for ${gameType} in organization: ${organizationName}`,
-    permissionOverwrites: [
-      {
-        id: guild.roles.everyone.id,
-        deny: [PermissionFlagsBits.ViewChannel]
-      },
-      {
-        id: await createOrGetOrganizationRole(organizationName),
-        allow: [
-          PermissionFlagsBits.ViewChannel,
-          PermissionFlagsBits.SendMessages
-        ]
-      }
-    ]
-  });
-
-  logger.info(
-    `Created new game channel: ${newChannel.name} (${newChannel.id}) in category: ${category.name}`
-  );
-  return newChannel.id;
-};
-
 // Create invite link for a channel
 export const createInviteLink = async (channelId: string): Promise<string> => {
   // If in e2e test environment, return mock invite link
@@ -265,7 +199,7 @@ export const createInviteLink = async (channelId: string): Promise<string> => {
 
   const invite = await channel.createInvite({
     maxAge: 0, // Never expire
-    maxUses: 0, // Unlimited uses
+    maxUses: 1,
     unique: true
   });
 

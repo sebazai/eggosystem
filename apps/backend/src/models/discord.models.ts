@@ -26,14 +26,8 @@ export const linkDiscordAccount = async (
   );
 
   if (existingLink.length > 0) {
-    // Update existing link to point to this account if needed
-    if (existingLink[0].account_id !== accountId) {
-      await runQuery(
-        `UPDATE LinkedAccounts SET account_id = ? 
-         WHERE provider = 'discord' AND provider_id = ?`,
-        [accountId, discordUserId],
-        connection
-      );
+    if (existingLink.some((link) => link.account_id !== accountId)) {
+      throw new Error("Discord account already linked to another account");
     }
   } else {
     // Create new Discord link
@@ -44,21 +38,6 @@ export const linkDiscordAccount = async (
       connection
     );
   }
-};
-
-// Get account by Discord user ID
-export const getAccountByDiscordId = async (
-  discordUserId: string,
-  connection?: PoolConnection
-) => {
-  const [account] = await runQuery<{ account_id: number }[]>(
-    `SELECT account_id FROM LinkedAccounts 
-     WHERE provider = 'discord' AND provider_id = ?`,
-    [discordUserId],
-    connection
-  );
-
-  return account?.account_id || null;
 };
 
 // Get Discord user ID by account ID
@@ -74,18 +53,4 @@ export const getDiscordIdByAccountId = async (
   );
 
   return discordLink?.provider_id || null;
-};
-
-// Unlink Discord account
-export const unlinkDiscordAccount = async (
-  accountId: number,
-  connection?: PoolConnection
-) => {
-  // Remove from LinkedAccounts
-  await runQuery(
-    `DELETE FROM LinkedAccounts 
-     WHERE provider = 'discord' AND account_id = ?`,
-    [accountId],
-    connection
-  );
 };
