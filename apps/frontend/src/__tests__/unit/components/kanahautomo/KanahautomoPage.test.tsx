@@ -8,10 +8,23 @@ import type { Organizations } from "@eggosystem/types";
 import { useAuth } from "@/context/AuthContext";
 import React from "react";
 import { clientApiFetch } from "@/lib/apiClient";
+import { useRouter } from "next/navigation";
 
 // Mock the hooks
 jest.mock("@/hooks/data/useOrganizations");
 jest.mock("@/hooks/data/useKanahautomoOrganizationStatus");
+jest.mock("next/navigation", () => ({
+  useRouter: jest.fn(),
+  useSearchParams: jest.fn(() => ({
+    get: jest.fn(),
+    has: jest.fn(),
+    forEach: jest.fn(),
+    entries: jest.fn(),
+    keys: jest.fn(),
+    values: jest.fn(),
+    toString: jest.fn()
+  }))
+}));
 
 // Mock the AuthContext
 jest.mock("@/context/AuthContext", () => ({
@@ -49,7 +62,8 @@ const mockUser = {
   email: "test@example.com",
   avatar: "test-avatar.jpg",
   created_at: "2024-01-01T00:00:00Z",
-  updated_at: "2024-01-01T00:00:00Z"
+  updated_at: "2024-01-01T00:00:00Z",
+  discordLinked: false
 };
 
 const mockOrganizations: Organizations[] = [
@@ -713,6 +727,85 @@ describe("KanahautomoPage", () => {
           screen.getByText("You must accept the terms and conditions")
         ).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("Discord Linking", () => {
+    it("shows Link Discord Account button when Discord is not linked", () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...mockAuthContext,
+        user: { ...mockUser, discordLinked: false }
+      });
+      renderKanahautomoPage();
+
+      // There should be two elements: the section title (h3) and the button <span>
+      const allLinkDiscordTexts = screen.getAllByText("Link Discord Account");
+      // The button <span> should be present
+      expect(allLinkDiscordTexts.length).toBeGreaterThan(1);
+      // The "Not linked" status should be present
+      expect(screen.getByText("Not linked")).toBeInTheDocument();
+    });
+
+    it("hides Link Discord Account button when Discord is already linked", () => {
+      (useAuth as jest.Mock).mockReturnValue({
+        ...mockAuthContext,
+        user: { ...mockUser, discordLinked: true }
+      });
+      renderKanahautomoPage();
+
+      // The button <span> should not be present, only the section title (h3)
+      const allLinkDiscordTexts = screen.getAllByText("Link Discord Account");
+      // Only the section title should be present
+      expect(allLinkDiscordTexts.length).toBe(1);
+      expect(screen.getByText("✓ Discord linked")).toBeInTheDocument();
+    });
+
+    it("shows Discord linking section title and description", () => {
+      renderKanahautomoPage();
+      // The section title should always be present
+      expect(
+        screen.getByRole("heading", { name: "Link Discord Account" })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /Link your Discord account to automatically receive the correct role when you join the server/
+        )
+      ).toBeInTheDocument();
+    });
+
+    it("navigates to Discord OAuth when Link Discord Account button is clicked", async () => {
+      const user = userEvent.setup();
+      (useAuth as jest.Mock).mockReturnValue({
+        ...mockAuthContext,
+        user: { ...mockUser, discordLinked: false }
+      });
+
+      // Mock window.location
+      const mockPush = jest.fn();
+      const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
+      mockUseRouter.mockReturnValue({
+        push: mockPush,
+        back: jest.fn(),
+        forward: jest.fn(),
+        refresh: jest.fn(),
+        replace: jest.fn(),
+        prefetch: jest.fn()
+      });
+
+      renderKanahautomoPage();
+
+      // Find the button <span> (not the h3)
+      const allLinkDiscordTexts = screen.getAllByText("Link Discord Account");
+      // The button <span> is the one that is not a heading
+      const buttonSpan = allLinkDiscordTexts.find(
+        (el) => el.tagName.toLowerCase() === "span"
+      );
+      expect(buttonSpan).toBeDefined();
+      await user.click(buttonSpan!);
+
+      expect(mockPush).toHaveBeenCalledWith(
+        expect.stringContaining("/api/v1/auth/discord/login")
+      );
     });
   });
 });
