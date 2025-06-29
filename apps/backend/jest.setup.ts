@@ -144,12 +144,7 @@ jest.mock("./src/services/discord.services", () => ({
   createInviteLink: jest
     .fn()
     .mockResolvedValue("https://discord.gg/mock-invite"),
-  setupDiscordEventHandlers: jest.fn().mockResolvedValue(undefined),
-  cleanupDiscordClient: jest.fn().mockResolvedValue(undefined),
-  getOrganizationDiscordInfo: jest.fn().mockResolvedValue({
-    roleId: "mock-role-id",
-    channels: []
-  })
+  setupDiscordEventHandlers: jest.fn().mockResolvedValue(undefined)
 }));
 
 jest.mock("fs", () => {
