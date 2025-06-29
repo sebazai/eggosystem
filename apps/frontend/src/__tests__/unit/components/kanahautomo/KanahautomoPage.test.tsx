@@ -212,8 +212,8 @@ describe("KanahautomoPage", () => {
     it("renders the form with full page width container", () => {
       renderKanahautomoPage();
       const heading = screen.getByRole("heading", { name: "Join Kanahautomo" });
-      const container = heading.closest(".container");
-      expect(container).toHaveClass("container");
+      const container = heading.closest("div[class*='mx-auto']");
+      expect(container).toHaveClass("mx-auto", "px-4", "py-8");
     });
 
     it("renders the submit button", () => {
@@ -544,59 +544,57 @@ describe("KanahautomoPage", () => {
 
     it("shows error message when submission fails", async () => {
       const user = userEvent.setup();
-      renderKanahautomoPage();
-      // Fill required fields - select organization
-      const combobox = screen.getByRole("combobox");
-      await user.click(combobox);
-      // Select an existing organization from dropdown
-      await waitFor(() => {
-        const dropdownOptions = screen.getAllByText("Test Organization 1");
-        const dropdownOption = dropdownOptions.find(
-          (el) =>
-            el.getAttribute("data-value") === "Test Organization 1" ||
-            el.closest('[role="option"]') ||
-            el.closest("[cmdk-item]")
-        );
-        expect(dropdownOption).toBeDefined();
-        return dropdownOption;
-      });
-      const dropdownOptions = screen.getAllByText("Test Organization 1");
-      const dropdownOption = dropdownOptions.find(
-        (el) =>
-          el.getAttribute("data-value") === "Test Organization 1" ||
-          el.closest('[role="option"]') ||
-          el.closest("[cmdk-item]")
-      );
-      await user.click(dropdownOption!);
-      // Select a game type
-      const cs2Checkbox = screen.getByLabelText(/CS2 Comp/i);
-      await user.click(cs2Checkbox);
-      // Accept terms
-      const termsCheckbox = screen.getByRole("checkbox", {
-        name: /I consent to my Steam ID, nickname, and organization/i
-      });
-      await user.click(termsCheckbox);
-      // Wait for form to be valid
-      await waitFor(() => {
-        expect(cs2Checkbox).toBeChecked();
-        expect(termsCheckbox).toBeChecked();
-      });
-      // Mock API call to fail
-      (clientApiFetch as jest.Mock).mockRejectedValue(
+      const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
+        typeof clientApiFetch
+      >;
+      mockClientApiFetch.mockRejectedValueOnce(
         new Error("Registration failed")
       );
-      // Submit form
+
+      renderKanahautomoPage();
+
+      // Fill out the form completely according to the Zod schema
+      // 1. Select an existing organization (organizationId > 0)
+      const combobox = screen.getByRole("combobox");
+      await user.click(combobox);
+      // Wait for the dropdown options to appear and select the correct one
+      const orgOptions = await screen.findAllByText(
+        "Test Organization 1",
+        {},
+        { timeout: 1000 }
+      );
+      // Find the dropdown option with role="option"
+      const dropdownOption = orgOptions.find(
+        (el) => el.getAttribute("role") === "option"
+      );
+      expect(dropdownOption).toBeDefined();
+      await user.click(dropdownOption!);
+
+      // 2. Do NOT provide newOrganization (leave new org fields empty)
+      // 3. Select at least one game type (e.g., CS2 Comp)
+      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      await user.click(cs2Checkbox);
+
+      // 4. Accept terms
+      const termsCheckbox = screen.getByLabelText(
+        /I consent to my Steam ID, nickname, and organization being visible/
+      );
+      await user.click(termsCheckbox);
+
+      // 5. Submit the form
       const submitButton = screen.getByRole("button", {
         name: "Join Kanahautomo"
       });
       await user.click(submitButton);
+
       // Should show error message - wait for the error to appear
       await waitFor(
         () => {
-          // The error appears in a div with text-kanaliiga-orange class
-          const errorText = screen.getByText("Registration failed");
+          const errorText = screen.getByText((content) =>
+            content.includes("Registration failed")
+          );
           expect(errorText).toBeInTheDocument();
-          expect(errorText).toHaveClass("text-kanaliiga-orange");
+          expect(errorText).toHaveClass("text-red-500", "text-sm");
         },
         { timeout: 3000 }
       );

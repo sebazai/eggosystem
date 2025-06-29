@@ -30,6 +30,36 @@ const GAME_CHANNEL_MAPPING = {
 
 // Initialize Discord client
 export const initializeDiscordClient = async (): Promise<Client> => {
+  // If in e2e test environment, return a mock client
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    logger.info("E2E test environment detected, using mock Discord client");
+    const mockClient = {
+      login: jest.fn().mockResolvedValue(undefined),
+      on: jest.fn(),
+      guilds: {
+        fetch: jest.fn().mockResolvedValue({
+          id: "mock-guild-id",
+          name: "Mock Guild",
+          roles: {
+            cache: new Map(),
+            create: jest.fn().mockResolvedValue({
+              id: "mock-role-id",
+              name: "Mock Role"
+            })
+          },
+          channels: {
+            cache: new Map(),
+            create: jest.fn().mockResolvedValue({
+              id: "mock-channel-id",
+              name: "Mock Channel"
+            })
+          }
+        })
+      }
+    };
+    return mockClient as unknown as Client;
+  }
+
   if (!process.env.DISCORD_BOT_TOKEN) {
     throw new Error("DISCORD_BOT_TOKEN environment variable is required");
   }
@@ -60,22 +90,50 @@ export const initializeDiscordClient = async (): Promise<Client> => {
 // Get Discord client instance
 export const getDiscordClient = async (): Promise<Client> => {
   if (!discordClient) {
-    return initializeDiscordClient();
+    return await initializeDiscordClient();
   }
   return discordClient;
 };
 
-// Get Discord guild instance
+// Get Discord guild
 export const getDiscordGuild = async (): Promise<Guild> => {
   const client = await getDiscordClient();
-  const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID!);
-  return guild;
+
+  // If in e2e test environment, return mock guild
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    return {
+      id: "mock-guild-id",
+      name: "Mock Guild",
+      roles: {
+        cache: new Map(),
+        create: jest.fn().mockResolvedValue({
+          id: "mock-role-id",
+          name: "Mock Role"
+        })
+      },
+      channels: {
+        cache: new Map(),
+        create: jest.fn().mockResolvedValue({
+          id: "mock-channel-id",
+          name: "Mock Channel"
+        })
+      }
+    } as unknown as Guild;
+  }
+
+  return await client.guilds.fetch(process.env.DISCORD_GUILD_ID!);
 };
 
 // Create or get organization role
 export const createOrGetOrganizationRole = async (
   organizationName: string
 ): Promise<string> => {
+  // If in e2e test environment, return mock role ID
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    logger.info(`Mock: Creating organization role for ${organizationName}`);
+    return "mock-role-id";
+  }
+
   const client = await getDiscordClient();
   const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID!);
 
@@ -101,6 +159,35 @@ export const createOrGetOrganizationRole = async (
   return newRole.id;
 };
 
+// Find or create organization category
+const findOrCreateOrganizationCategory = async (
+  guild: Guild,
+  organizationName: string
+) => {
+  const cleanOrgName = organizationName
+    .replace(/[^a-zA-Z0-9\s]/g, "") // Remove special characters
+    .trim()
+    .substring(0, 30);
+
+  // Check if category already exists
+  let category = guild.channels.cache.find(
+    (channel) =>
+      channel.type === ChannelType.GuildCategory &&
+      channel.name.toLowerCase() === cleanOrgName.toLowerCase()
+  );
+
+  if (!category) {
+    category = await guild.channels.create({
+      name: cleanOrgName,
+      type: ChannelType.GuildCategory,
+      reason: `Category created for organization: ${organizationName}`
+    });
+    logger.info(`Created new organization category: ${category.name}`);
+  }
+
+  return category;
+};
+
 // Create or get game channel
 export const createOrGetGameChannel = async (
   gameType: keyof typeof GAME_CHANNEL_MAPPING,
@@ -110,7 +197,6 @@ export const createOrGetGameChannel = async (
   const guild = await client.guilds.fetch(process.env.DISCORD_GUILD_ID!);
 
   const channelName = `${organizationName}-${GAME_CHANNEL_MAPPING[gameType]}`;
-  const categoryName = `${organizationName}`;
 
   // Check if channel already exists
   const existingChannel = guild.channels.cache.find(
@@ -125,20 +211,10 @@ export const createOrGetGameChannel = async (
   }
 
   // Get or create organization category
-  let category = guild.channels.cache.find(
-    (channel) =>
-      channel.type === ChannelType.GuildCategory &&
-      channel.name.toLowerCase() === categoryName.toLowerCase()
+  const category = await findOrCreateOrganizationCategory(
+    guild,
+    organizationName
   );
-
-  if (!category) {
-    category = await guild.channels.create({
-      name: categoryName,
-      type: ChannelType.GuildCategory,
-      reason: `Category created for organization: ${organizationName}`
-    });
-    logger.info(`Created new organization category: ${category.name}`);
-  }
 
   // Create new game channel
   const newChannel = await guild.channels.create({
@@ -162,13 +238,19 @@ export const createOrGetGameChannel = async (
   });
 
   logger.info(
-    `Created new game channel: ${newChannel.name} (${newChannel.id})`
+    `Created new game channel: ${newChannel.name} (${newChannel.id}) in category: ${category.name}`
   );
   return newChannel.id;
 };
 
 // Create invite link for a channel
 export const createInviteLink = async (channelId: string): Promise<string> => {
+  // If in e2e test environment, return mock invite link
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    logger.info(`Mock: Creating invite link for channel ${channelId}`);
+    return "https://discord.gg/mock-invite";
+  }
+
   const client = await getDiscordClient();
   const channel = await client.channels.fetch(channelId);
 
@@ -182,13 +264,12 @@ export const createInviteLink = async (channelId: string): Promise<string> => {
   }
 
   const invite = await channel.createInvite({
-    maxAge: 0, // Never expires
+    maxAge: 0, // Never expire
     maxUses: 0, // Unlimited uses
-    unique: true,
-    reason: "Invite link for Kanahautomo registration"
+    unique: true
   });
 
-  logger.info(`Created invite link for channel ${channel.name}: ${invite.url}`);
+  logger.info(`Created invite link: ${invite.url}`);
   return invite.url;
 };
 
@@ -338,6 +419,17 @@ export const findOrCreateOrganizationGameChannel = async (
   organizationName: string,
   gameType: { name: string; abbreviation: string; game_type_name: string }
 ): Promise<TextChannel> => {
+  // If in e2e test environment, return mock channel
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    logger.info(
+      `Mock: Creating game channel for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name}`
+    );
+    return {
+      id: "mock-channel-id",
+      name: "mock-game-channel"
+    } as unknown as TextChannel;
+  }
+
   // Clean names for channel name (Discord has restrictions)
   const cleanOrgName = organizationName
     .replace(/[^a-zA-Z0-9\s]/g, "") // Remove special characters
@@ -370,10 +462,17 @@ export const findOrCreateOrganizationGameChannel = async (
     // Get or create the game type role
     const gameRole = await findOrCreateGameRole(guild, gameType);
 
-    // Create new channel with proper permissions
+    // Get or create organization category
+    const category = await findOrCreateOrganizationCategory(
+      guild,
+      organizationName
+    );
+
+    // Create new channel with proper permissions and category
     channel = await guild.channels.create({
       name: channelName,
       type: 0, // Text channel
+      parent: category.id, // Assign to organization category
       topic: `Channel for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name} players`,
       reason: `Auto-created channel for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name}`,
       permissionOverwrites: [
@@ -398,7 +497,7 @@ export const findOrCreateOrganizationGameChannel = async (
       ]
     });
     logger.info(
-      `Created new channel: ${channelName} for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name} with proper permissions`
+      `Created new channel: ${channelName} for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name} with proper permissions in category: ${category.name}`
     );
   }
 
@@ -411,6 +510,13 @@ const createOrganizationGameChannels = async (
   userData: UserOrganizationData
 ): Promise<void> => {
   try {
+    // Create general channel for the organization
+    await findOrCreateOrganizationGeneralChannel(
+      guild,
+      userData.organization_name
+    );
+
+    // Create game-specific channels
     for (const gameType of userData.game_types) {
       await findOrCreateOrganizationGameChannel(
         guild,
@@ -419,7 +525,7 @@ const createOrganizationGameChannels = async (
       );
     }
     logger.info(
-      `Created/verified channels for ${userData.organization_name} - ${userData.game_types.map((gt) => `${gt.abbreviation} ${gt.game_type_name}`).join(", ")}`
+      `Created/verified channels for ${userData.organization_name} - General + ${userData.game_types.map((gt) => `${gt.abbreviation} ${gt.game_type_name}`).join(", ")}`
     );
   } catch (error) {
     logger.error(
@@ -472,7 +578,7 @@ const assignRolesToMember = async (
     if (welcomeChannel && welcomeChannel.type === 0) {
       // TextChannel
       await (welcomeChannel as TextChannel).send({
-        content: `Welcome <@${member.id}>! You've been automatically assigned roles for **${userData.organization_name}** and your game types: **${userData.game_types.map((gt) => `${gt.abbreviation} ${gt.game_type_name}`).join(", ")}**. Check out your organization's game-specific channels!`
+        content: `Welcome <@${member.id}>! You've been automatically assigned roles for **${userData.organization_name}** and your game types: **${userData.game_types.map((gt) => `${gt.abbreviation} ${gt.game_type_name}`).join(", ")}**. Check out your organization's general channel and game-specific channels in the **${userData.organization_name}** category!`
       });
     }
   } catch (error) {
@@ -482,6 +588,14 @@ const assignRolesToMember = async (
 
 // Setup Discord event handlers for automatic role assignment
 export const setupDiscordEventHandlers = async (): Promise<void> => {
+  // If in e2e test environment, skip event handler setup
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    logger.info(
+      "E2E test environment detected, skipping Discord event handlers"
+    );
+    return;
+  }
+
   logger.info(
     `setupDiscordEventHandlers called. eventHandlersSetup flag: ${eventHandlersSetup}`
   );
@@ -522,4 +636,71 @@ export const setupDiscordEventHandlers = async (): Promise<void> => {
   logger.info(
     `Discord event handlers set up successfully. eventHandlersSetup flag set to: ${eventHandlersSetup}`
   );
+};
+
+// Find or create organization general channel
+export const findOrCreateOrganizationGeneralChannel = async (
+  guild: Guild,
+  organizationName: string
+): Promise<TextChannel> => {
+  // If in e2e test environment, return mock channel
+  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+    logger.info(`Mock: Creating general channel for ${organizationName}`);
+    return {
+      id: "mock-general-channel-id",
+      name: "mock-general-channel"
+    } as unknown as TextChannel;
+  }
+
+  const cleanOrgName = organizationName
+    .replace(/[^a-zA-Z0-9\s]/g, "") // Remove special characters
+    .trim()
+    .substring(0, 30);
+
+  const channelName = `${cleanOrgName}-general`
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+  // Try to find existing general channel
+  let channel = guild.channels.cache.find(
+    (ch) => ch.type === 0 && ch.name === channelName
+  ) as TextChannel;
+
+  if (!channel) {
+    // Get or create the organization role
+    const orgRole = await findOrCreateOrganizationRole(guild, organizationName);
+
+    // Get or create organization category
+    const category = await findOrCreateOrganizationCategory(
+      guild,
+      organizationName
+    );
+
+    // Create new general channel
+    channel = await guild.channels.create({
+      name: channelName,
+      type: 0, // Text channel
+      parent: category.id, // Assign to organization category
+      topic: `General discussion channel for ${organizationName} members`,
+      reason: `Auto-created general channel for organization: ${organizationName}`,
+      permissionOverwrites: [
+        {
+          id: guild.id, // @everyone role
+          deny: [PermissionsBitField.Flags.ViewChannel]
+        },
+        {
+          id: orgRole.id,
+          allow: [
+            PermissionsBitField.Flags.ViewChannel,
+            PermissionsBitField.Flags.SendMessages
+          ]
+        }
+      ]
+    });
+    logger.info(
+      `Created new general channel: ${channelName} for ${organizationName} in category: ${category.name}`
+    );
+  }
+
+  return channel;
 };

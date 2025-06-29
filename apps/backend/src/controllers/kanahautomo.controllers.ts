@@ -19,7 +19,8 @@ import {
   createInviteLink,
   initializeDiscordClient,
   getDiscordGuild,
-  findOrCreateOrganizationGameChannel
+  findOrCreateOrganizationGameChannel,
+  findOrCreateOrganizationGeneralChannel
 } from "../services/discord.services";
 import { sendDiscordInviteEmail } from "../services/email.services";
 
@@ -130,6 +131,13 @@ export const registerForKanahautomoWithOrganization = async (
         const guild = await getDiscordGuild();
         const channelIds: string[] = [];
 
+        // Create general channel for the organization
+        const generalChannel = await findOrCreateOrganizationGeneralChannel(
+          guild,
+          organizationName
+        );
+        channelIds.push(generalChannel.id);
+
         for (const gameType of selectedGameTypes) {
           const gameTypeData = GAME_TYPE_MAPPING[gameType];
           const channel = await findOrCreateOrganizationGameChannel(
@@ -140,9 +148,11 @@ export const registerForKanahautomoWithOrganization = async (
           channelIds.push(channel.id);
         }
 
-        // Create invite link for the first channel (or a general channel)
+        // Create invite link for the general channel (or fallback to first game channel)
         const inviteUrl = await createInviteLink(
-          channelIds[0] || process.env.DISCORD_GENERAL_CHANNEL_ID!
+          generalChannel.id ||
+            channelIds[0] ||
+            process.env.DISCORD_GENERAL_CHANNEL_ID!
         );
 
         // Send Discord invite email
@@ -157,7 +167,7 @@ export const registerForKanahautomoWithOrganization = async (
         );
 
         logger.info(
-          `Discord setup completed for ${steamId} in organization ${organizationName}. Created ${channelIds.length} channels and sent invite email.`
+          `Discord setup completed for ${steamId} in organization ${organizationName}. Created general channel + ${channelIds.length - 1} game channels and sent invite email.`
         );
       } catch (discordError) {
         logger.error(

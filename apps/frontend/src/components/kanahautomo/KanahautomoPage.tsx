@@ -179,6 +179,7 @@ export default function KanahautomoPage() {
       // If creating new organization
       if (data.organizationId === -1 && data.newOrganization) {
         requestBody = {
+          organizationId: -1,
           newOrganization: {
             name: data.newOrganization.name,
             organization_code: data.newOrganization.organization_code,
@@ -196,7 +197,7 @@ export default function KanahautomoPage() {
       }
 
       // Register for Kanahautomo with organization handling
-      const _response = await clientApiFetch<{
+      await clientApiFetch<{
         message: string;
         registration_id: number;
         organization_id: number;
