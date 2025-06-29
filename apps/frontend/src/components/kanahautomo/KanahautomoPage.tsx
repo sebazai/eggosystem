@@ -43,6 +43,7 @@ import { ChevronsUpDown } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { envConfig } from "@/configs/env";
+import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 
 const KANAHUTOMO_FORM_STORAGE_KEY = "kanahautomo_form_data";
 
@@ -176,11 +177,44 @@ export default function KanahautomoPage() {
     return (
       <div className="mx-auto px-4 py-8">
         <Card>
+          <CardHeader>
+            <div className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6">
+              <h1 className="text-2xl font-bold mb-4" data-slot="card-title">
+                Join Kanahautomo
+              </h1>
+              <p className="text-muted-foreground">
+                Find teammates from your organization and join dedicated Discord
+                channels for your game types.
+              </p>
+            </div>
+          </CardHeader>
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold pb-7">Join Kanahautomo</h1>
-            <p className="text-kanaliiga-light-brown">
-              Please log in with Steam to join Kanahautomo
-            </p>
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold mb-3">
+                  What is Kanahautomo?
+                </h2>
+                <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                  <li>Connect with players from your organization</li>
+                  <li>Join game-specific Discord channels</li>
+                  <li>
+                    Find teammates for CS2, PUBG, Rocket League, and Dota 2
+                  </li>
+                  <li>Organized by company/organization</li>
+                </ul>
+              </div>
+
+              <div className="border-t pt-6">
+                <p className="text-center text-sm text-muted-foreground mb-4">
+                  Please log in with Steam to join Kanahautomo
+                </p>
+                <div className="flex justify-center">
+                  <SteamLoginButton returnUrl="/kanahautomo">
+                    Login and join Kanahautomo!
+                  </SteamLoginButton>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -191,11 +225,21 @@ export default function KanahautomoPage() {
     return (
       <div className="mx-auto px-4 py-8">
         <Card>
+          <CardHeader>
+            <h1 className="text-2xl font-bold mb-4">Join Kanahautomo</h1>
+          </CardHeader>
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold pb-7">Join Kanahautomo</h1>
-            <p className="text-kanaliiga-light-brown">
-              Failed to load organizations. Please try again later.
-            </p>
+            <div className="text-center space-y-4">
+              <p className="text-muted-foreground">
+                Failed to load organizations. This might be a temporary issue.
+              </p>
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

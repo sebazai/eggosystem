@@ -139,7 +139,7 @@ export const createOrGetOrganizationRole = async (
   // Create new role
   const newRole = await guild.roles.create({
     name: organizationName,
-    color: 0x00ff00, // Green color
+    color: generateRandomColor(),
     reason: `Role created for organization: ${organizationName}`,
     permissions: []
   });

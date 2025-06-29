@@ -98,6 +98,11 @@ const defaultProps: NavbarProps = {
       title: "Leaderboards",
       url: "/leaderboards",
       hasFilters: true
+    },
+    {
+      title: "Kanahautomo",
+      url: "/kanahautomo",
+      hasFilters: false
     }
   ]
   // mobileExtraLinks: [
@@ -183,7 +188,7 @@ export const Navigation = (props: NavbarProps) => {
     >
       <div className="py-4 lg:py-8 mx-auto max-w-screen-2xl">
         {/* Desktop Navigation - Sticky by Default */}
-        <div className="hidden w-full items-center justify-center gap-6 md:flex pointer-events-auto">
+        <div className="hidden w-full items-center justify-center gap-6 lg:flex pointer-events-auto">
           {logo && (
             <Link href={logo.url}>
               <Image
@@ -219,13 +224,10 @@ export const Navigation = (props: NavbarProps) => {
         </div>
 
         {/* Mobile Navigation - Sticky in Portrait Mode, Non-Sticky in Landscape */}
-        <div className="block md:hidden sm:landscape:relative sticky top-0 z-50">
+        <div className="block lg:hidden sm:landscape:relative sticky top-0 z-50">
           <div className="flex items-center justify-between xs:landscape:justify-end md:landscape:justify-between">
             {logo && (
-              <Link
-                href={logo.url}
-                className="flex items-center gap-2 landscape:hidden"
-              >
+              <Link href={logo.url} className="flex items-center gap-2">
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
               </Link>
             )}
@@ -272,6 +274,16 @@ export const Navigation = (props: NavbarProps) => {
                         () => setIsSheetOpen(false),
                         params
                       )
+                    )}
+                    {seasonWithSignupOpen && (
+                      <Link
+                        href={`/seasons/${seasonWithSignupOpen.season_id}/signup`}
+                        onClick={() => setIsSheetOpen(false)}
+                        className="font-semibold font-headings text-kanaliiga-orange"
+                      >
+                        Register{" "}
+                        {convertSeasonToS(seasonWithSignupOpen.full_name)}
+                      </Link>
                     )}
                   </Accordion>
                   {mobileExtraLinks && (
