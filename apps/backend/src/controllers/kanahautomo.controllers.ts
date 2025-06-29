@@ -110,73 +110,65 @@ export const registerForKanahautomoWithOrganization = async (
     // Get user's email for Discord invite
     const account = await getAccountById(req.auth.account_id);
     if (!account.work_email || !account.work_email_verified) {
-      logger.warn(
+      logger.error(
         `User ${steamId} has no verified email, skipping Discord invite`
       );
-    } else {
-      try {
-        // Initialize Discord client
-        await initializeDiscordClient();
-
-        // Create organization role if it doesn't exist
-        await createOrGetOrganizationRole(organizationName);
-
-        // Get selected game types
-        const selectedGameTypes = Object.entries(gameTypes)
-          .filter(([_, selected]) => selected)
-          .map(([gameType, _]) => gameType as keyof typeof GAME_TYPE_NAMES);
-
-        // Create channels for organization + game type combinations
-        const guild = await getDiscordGuild();
-        const channelIds: string[] = [];
-
-        // Create general channel for the organization
-        const generalChannel = await findOrCreateOrganizationGeneralChannel(
-          guild,
-          organizationName
-        );
-        channelIds.push(generalChannel.id);
-
-        for (const gameType of selectedGameTypes) {
-          const gameTypeData = GAME_TYPE_MAPPING[gameType];
-          const channel = await findOrCreateOrganizationGameChannel(
-            guild,
-            organizationName,
-            gameTypeData
-          );
-          channelIds.push(channel.id);
-        }
-
-        // Create invite link for the general channel (or fallback to first game channel)
-        const inviteUrl = await createInviteLink(
-          generalChannel.id ||
-            channelIds[0] ||
-            process.env.DISCORD_GENERAL_CHANNEL_ID!
-        );
-
-        // Send Discord invite email
-        const gameTypeNames = selectedGameTypes.map(
-          (gameType) => GAME_TYPE_NAMES[gameType]
-        );
-        await sendDiscordInviteEmail(
-          account.work_email,
-          organizationName,
-          inviteUrl,
-          gameTypeNames
-        );
-
-        logger.info(
-          `Discord setup completed for ${steamId} in organization ${organizationName}. Created general channel + ${channelIds.length - 1} game channels and sent invite email.`
-        );
-      } catch (discordError) {
-        logger.error(
-          `Discord integration failed for user ${steamId}:`,
-          discordError
-        );
-        // Don't fail the registration if Discord integration fails
-        // The user can still register and we can handle Discord setup later
-      }
+      throw new BadRequestError("User has not verified their email.");
     }
+
+    // Initialize Discord client
+    await initializeDiscordClient();
+
+    // Create organization role if it doesn't exist
+    await createOrGetOrganizationRole(organizationName);
+
+    // Get selected game types
+    const selectedGameTypes = Object.entries(gameTypes)
+      .filter(([_, selected]) => selected)
+      .map(([gameType, _]) => gameType as keyof typeof GAME_TYPE_NAMES);
+
+    // Create channels for organization + game type combinations
+    const guild = await getDiscordGuild();
+    const channelIds: string[] = [];
+
+    // Create general channel for the organization
+    const generalChannel = await findOrCreateOrganizationGeneralChannel(
+      guild,
+      organizationName
+    );
+    channelIds.push(generalChannel.id);
+
+    for (const gameType of selectedGameTypes) {
+      const gameTypeData = GAME_TYPE_MAPPING[gameType];
+      const channel = await findOrCreateOrganizationGameChannel(
+        guild,
+        organizationName,
+        gameTypeData
+      );
+      channelIds.push(channel.id);
+    }
+
+    // Create invite link for the general channel (or fallback to first game channel)
+    const inviteUrl = await createInviteLink(
+      generalChannel.id ||
+        channelIds[0] ||
+        process.env.DISCORD_GENERAL_CHANNEL_ID!
+    );
+
+    // Send Discord invite email
+    const gameTypeNames = selectedGameTypes.map(
+      (gameType) => GAME_TYPE_NAMES[gameType]
+    );
+    await sendDiscordInviteEmail(
+      account.work_email,
+      organizationName,
+      inviteUrl,
+      gameTypeNames
+    );
+
+    logger.info(
+      `Discord setup completed for ${steamId} in organization ${organizationName}. Created general channel + ${channelIds.length - 1} game channels and sent invite email.`
+    );
 
     const response: KanahautomoRegistrationResponse = {
       message: "Successfully registered for Kanahautomo",

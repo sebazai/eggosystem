@@ -171,7 +171,7 @@ router.get("/discord/login", authenticateJWT, (req, res) => {
   res.redirect(discordAuthUrl);
 });
 
-router.get("/discord/callback", authenticateJWT, async (req, res) => {
+router.get("/discord/callback", async (req, res) => {
   try {
     const code = req.query.code as string;
     const accountId = req.cookies.discord_link_account_id;

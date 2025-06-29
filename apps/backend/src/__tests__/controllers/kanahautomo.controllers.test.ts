@@ -14,6 +14,32 @@ jest.mock("../../models/organization.models");
 jest.mock("../../db/mysqlConnection");
 jest.mock("../../db/mysqlRunQuery");
 
+// Mock discord services
+jest.mock("../../services/discord.services", () => ({
+  createOrGetOrganizationRole: jest.fn().mockResolvedValue("mock-role-id"),
+  createInviteLink: jest
+    .fn()
+    .mockResolvedValue("https://discord.gg/mock-invite"),
+  initializeDiscordClient: jest.fn().mockResolvedValue({}),
+  getDiscordGuild: jest.fn().mockResolvedValue({
+    id: "mock-guild-id",
+    name: "Mock Guild"
+  }),
+  findOrCreateOrganizationGameChannel: jest.fn().mockResolvedValue({
+    id: "mock-game-channel-id",
+    name: "mock-game-channel"
+  }),
+  findOrCreateOrganizationGeneralChannel: jest.fn().mockResolvedValue({
+    id: "mock-general-channel-id",
+    name: "mock-general-channel"
+  })
+}));
+
+// Mock email services
+jest.mock("../../services/email.services", () => ({
+  sendDiscordInviteEmail: jest.fn().mockResolvedValue(undefined)
+}));
+
 const mockKanahautomoModels = kanahautomoModels as jest.Mocked<
   typeof kanahautomoModels
 >;

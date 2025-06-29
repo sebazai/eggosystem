@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -43,6 +43,8 @@ import { ChevronsUpDown } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { envConfig } from "@/configs/env";
+
+const KANAHUTOMO_FORM_STORAGE_KEY = "kanahautomo_form_data";
 
 export default function KanahautomoPage() {
   const { user, loading: authLoading } = useAuth();
@@ -88,6 +90,27 @@ export default function KanahautomoPage() {
     (org) => org.id === watchOrganizationId
   );
 
+  // Save form data to localStorage
+  const saveFormToStorage = () => {
+    const formData = form.getValues();
+    localStorage.setItem(KANAHUTOMO_FORM_STORAGE_KEY, JSON.stringify(formData));
+  };
+
+  // Load form data from localStorage
+  const loadFormFromStorage = useCallback(() => {
+    try {
+      const storedData = localStorage.getItem(KANAHUTOMO_FORM_STORAGE_KEY);
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        form.reset(parsedData);
+        localStorage.removeItem(KANAHUTOMO_FORM_STORAGE_KEY);
+      }
+    } catch (error) {
+      console.error("Failed to load form data from localStorage:", error);
+      localStorage.removeItem(KANAHUTOMO_FORM_STORAGE_KEY);
+    }
+  }, [form]);
+
   // Handle Discord OAuth callback parameters
   useEffect(() => {
     const discordLinked = searchParams.get("discordLinked");
@@ -98,6 +121,8 @@ export default function KanahautomoPage() {
       toast.success(
         `Discord account linked successfully! User ID: ${discordUserId}`
       );
+      // Load saved form data after successful Discord linking
+      loadFormFromStorage();
       // Clear URL parameters
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("discordLinked");
@@ -119,12 +144,23 @@ export default function KanahautomoPage() {
           break;
       }
       toast.error(errorMessage);
+      // Load saved form data even on error so user doesn't lose their progress
+      loadFormFromStorage();
       // Clear URL parameters
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("discordError");
       router.replace(newUrl.pathname);
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, loadFormFromStorage]);
+
+  // Load form data on initial load if no Discord callback parameters
+  useEffect(() => {
+    const hasDiscordParams =
+      searchParams.get("discordLinked") || searchParams.get("discordError");
+    if (!hasDiscordParams) {
+      loadFormFromStorage();
+    }
+  }, []);
 
   if (authLoading || orgsLoading) {
     return (
@@ -502,11 +538,12 @@ export default function KanahautomoPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() =>
+                      onClick={() => {
+                        saveFormToStorage();
                         router.push(
                           `${envConfig.CLIENT_API_URL}/api/v1/auth/discord/login`
-                        )
-                      }
+                        );
+                      }}
                       className="flex items-center space-x-2"
                     >
                       <svg
