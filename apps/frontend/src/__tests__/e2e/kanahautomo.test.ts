@@ -66,14 +66,14 @@ test.describe("Kanahautomo", () => {
     // Accept terms and conditions (required for form validation)
     await page
       .getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/i
+        name: /I consent to my Steam ID, nickname, and organization being visible to other Kanahautomo players in Discord/i
       })
       .check();
 
     // Verify terms checkbox is checked
     await expect(
       page.getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/i
+        name: /I consent to my Steam ID, nickname, and organization being visible to other Kanahautomo players in Discord/i
       })
     ).toBeChecked();
 
@@ -200,7 +200,7 @@ test.describe("Kanahautomo", () => {
     // Accept terms
     await page
       .getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/i
+        name: /I consent to my Steam ID, nickname, and organization being visible to other Kanahautomo players in Discord/i
       })
       .check();
 
@@ -283,7 +283,7 @@ test.describe("Kanahautomo", () => {
     await page.getByLabel("CS2 Comp").check();
     await page
       .getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/i
+        name: /I consent to my Steam ID, nickname, and organization being visible to other Kanahautomo players in Discord/i
       })
       .check();
 

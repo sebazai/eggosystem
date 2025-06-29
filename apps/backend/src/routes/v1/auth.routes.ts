@@ -15,6 +15,7 @@ import {
 } from "../../models/account.models";
 import { getRolesForAccountId } from "../../services/auth.services";
 import { logger } from "../../utils/app-logger";
+import { updateUserDiscordId } from "../../models/discord.models";
 
 const router = Router();
 
@@ -122,12 +123,175 @@ router.get("/me", authenticateJWT, async (req, res) => {
         : false,
       acceptedMarketing: hasMarketingConsent,
       isPersonalEmail: userInDb.is_work_email_personal_email,
+      discord_user_id: userInDb.discord_user_id,
       roles
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
     return;
   }
   res.status(401).json({ message: "Unauthorized" });
+});
+
+// Discord OAuth endpoints
+router.get("/discord/login", authenticateJWT, (req, res) => {
+  if (!req.auth) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  logger.info(
+    `Setting Discord link cookie for account_id: ${req.auth.account_id}`
+  );
+
+  // Store the user's account_id in a cookie for the callback
+  res.cookie("discord_link_account_id", req.auth.account_id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/v1/auth",
+    maxAge: 5 * 60 * 1000 // 5 minutes
+  });
+
+  // Also set a non-httpOnly cookie for debugging
+  res.cookie("discord_link_account_id_debug", req.auth.account_id, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 5 * 60 * 1000
+  });
+
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID!,
+    redirect_uri: `${process.env.BACKEND_URL}/api/v1/auth/discord/callback`,
+    response_type: "code",
+    scope: "identify"
+  });
+
+  const discordAuthUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
+  logger.info(`Redirecting to Discord OAuth: ${discordAuthUrl}`);
+  res.redirect(discordAuthUrl);
+});
+
+router.get("/discord/callback", async (req, res) => {
+  try {
+    const code = req.query.code as string;
+    const accountId = req.cookies.discord_link_account_id;
+    const debugAccountId = req.cookies.discord_link_account_id_debug;
+
+    logger.info(
+      `Discord callback received. Code: ${code ? "present" : "missing"}, Account ID: ${accountId || "missing"}, Debug Account ID: ${debugAccountId || "missing"}`
+    );
+    logger.info(`All cookies:`, req.cookies);
+    logger.info(`Request headers:`, req.headers);
+
+    if (!code) {
+      logger.error("No code provided in Discord callback");
+      res.redirect(
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_code`
+      );
+      return;
+    }
+
+    // Try both cookie names
+    const finalAccountId = accountId || debugAccountId;
+
+    if (!finalAccountId) {
+      logger.error("No account_id found in any cookies for Discord callback");
+      res.redirect(
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_account`
+      );
+      return;
+    }
+
+    // Clear the cookie
+    res.clearCookie("discord_link_account_id");
+
+    // Exchange code for access token
+    const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID!,
+        client_secret: process.env.DISCORD_CLIENT_SECRET!,
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: `${process.env.BACKEND_URL}/api/v1/auth/discord/callback`
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      throw new Error(`Token exchange failed: ${tokenResponse.statusText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const { access_token } = tokenData;
+
+    // Fetch user info from Discord
+    const userResponse = await fetch("https://discord.com/api/users/@me", {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      throw new Error(`User info fetch failed: ${userResponse.statusText}`);
+    }
+
+    const discordUser = await userResponse.json();
+    const discordUserId = discordUser.id;
+
+    // Store Discord user ID in database
+    await updateUserDiscordId(Number(finalAccountId), discordUserId);
+
+    logger.info(
+      `Discord account linked for user ${finalAccountId}: ${discordUserId}`
+    );
+
+    // Redirect back to frontend with success
+    res.redirect(
+      `${process.env.FRONTEND_URL}/kanahautomo?discordLinked=1&discordUserId=${discordUserId}`
+    );
+  } catch (error) {
+    logger.error("Discord OAuth callback error:", error);
+    res.redirect(
+      `${process.env.FRONTEND_URL}/kanahautomo?discordError=callback_failed`
+    );
+  }
+});
+
+// Test endpoint to debug cookies
+router.get("/discord/test-cookie", authenticateJWT, (req, res) => {
+  if (!req.auth) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  // Set a test cookie
+  res.cookie("test_cookie", "test_value", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/v1/auth",
+    maxAge: 5 * 60 * 1000
+  });
+
+  res.json({
+    message: "Test cookie set",
+    account_id: req.auth.account_id,
+    cookies: req.cookies
+  });
+});
+
+router.get("/discord/check-cookie", (req, res) => {
+  res.json({
+    message: "Cookie check",
+    cookies: req.cookies,
+    test_cookie: req.cookies.test_cookie,
+    discord_cookie: req.cookies.discord_link_account_id
+  });
 });
 
 export default router;

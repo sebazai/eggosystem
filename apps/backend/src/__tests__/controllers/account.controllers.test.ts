@@ -11,11 +11,18 @@ jest.mock("../../db/mysqlConnection", () => ({
 
 const mockedAccount = {
   id: 1,
+  steam_id: "12345",
+  nickname: "TestUser",
+  full_name: "Test User",
   work_email: "new@kana.fi",
   work_email_verified: false,
+  work_email_token: null,
+  work_email_token_expires_at: null,
+  is_work_email_personal_email: false,
+  discord: null,
+  discord_user_id: null,
   updated_at: "",
-  created_at: "",
-  is_work_email_personal_email: false
+  created_at: ""
 } satisfies Account;
 
 describe("updateProfile Controller", () => {
@@ -126,8 +133,10 @@ describe("updateProfile Controller", () => {
   });
 
   it("should insert policy acceptance if none exists", async () => {
-    const newMock: Account = _.omit(_.cloneDeep(mockedAccount), "work_email");
-    newMock.work_email = "test@example.com";
+    const newMock: Account = {
+      ..._.cloneDeep(mockedAccount),
+      work_email: "test@example.com"
+    };
 
     jest.spyOn(accountModels, "getAccountById").mockResolvedValue(newMock);
     jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(null);

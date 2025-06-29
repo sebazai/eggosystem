@@ -40,6 +40,10 @@ import passport from "./configs/passport";
 import v1Router from "./routes";
 import { expressErrorHandler } from "./middlewares/express-error-handler";
 import cookieParser from "cookie-parser";
+import {
+  initializeDiscordClient,
+  setupDiscordEventHandlers
+} from "./services/discord.services";
 
 const app = express();
 
@@ -80,5 +84,27 @@ app.use(passport.initialize());
 app.use("/api/v1", v1Router);
 
 app.use(expressErrorHandler);
+
+// Initialize Discord client if environment variables are available and not in test mode
+if (
+  process.env.DISCORD_BOT_TOKEN &&
+  process.env.DISCORD_GUILD_ID &&
+  process.env.NODE_ENV !== "test"
+) {
+  initializeDiscordClient()
+    .then(() => {
+      logger.info("Discord client initialized successfully");
+      return setupDiscordEventHandlers();
+    })
+    .catch((error) => {
+      logger.error("Failed to initialize Discord client:", error);
+    });
+} else if (process.env.NODE_ENV === "test") {
+  logger.info("Skipping Discord initialization in test environment");
+} else {
+  logger.info(
+    "Discord environment variables not found, skipping Discord initialization"
+  );
+}
 
 export { app };

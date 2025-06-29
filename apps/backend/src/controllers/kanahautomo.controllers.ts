@@ -13,6 +13,47 @@ import { BadRequestError } from "../utils/errors";
 import type { KanahautomoRegistrationResponse } from "@eggosystem/types";
 import { kanahautomoSchema } from "@eggosystem/types";
 import { getConnection } from "../db/mysqlConnection";
+import { getAccountById } from "../models/account.models";
+import {
+  createOrGetOrganizationRole,
+  createInviteLink,
+  initializeDiscordClient,
+  getDiscordGuild,
+  findOrCreateOrganizationGameChannel
+} from "../services/discord.services";
+import { sendDiscordInviteEmail } from "../services/email.services";
+
+// Game type mapping from frontend keys to database structure
+const GAME_TYPE_MAPPING = {
+  cs: { name: "Comp", abbreviation: "CS2", game_type_name: "Comp" },
+  csWingman: {
+    name: "Wingman",
+    abbreviation: "CS2",
+    game_type_name: "Wingman"
+  },
+  pubgDuo: { name: "Duo", abbreviation: "PUBG", game_type_name: "Duo" },
+  pubgSquad: { name: "Squad", abbreviation: "PUBG", game_type_name: "Squad" },
+  rocketLeague: {
+    name: "Standard",
+    abbreviation: "RL",
+    game_type_name: "Standard"
+  },
+  dota: {
+    name: "Team clash",
+    abbreviation: "Dota",
+    game_type_name: "Team clash"
+  }
+} as const;
+
+// Game type display names (for email)
+const GAME_TYPE_NAMES = {
+  cs: "CS2 Competitive",
+  csWingman: "CS2 Wingman",
+  pubgDuo: "PUBG Duo",
+  pubgSquad: "PUBG Squad",
+  rocketLeague: "Rocket League",
+  dota: "Dota 2"
+} as const;
 
 export const registerForKanahautomoWithOrganization = async (
   req: Request,
@@ -33,6 +74,7 @@ export const registerForKanahautomoWithOrganization = async (
   try {
     await connection.beginTransaction();
     let finalOrganizationId: number;
+    let organizationName: string;
 
     if (newOrganization) {
       // Create new organization
@@ -41,6 +83,7 @@ export const registerForKanahautomoWithOrganization = async (
         connection
       );
       finalOrganizationId = newOrgResult.insertId;
+      organizationName = newOrganization.name;
     } else if (organizationId && organizationId > 0) {
       // Verify existing organization exists
       const organization = await getOrganizationById(organizationId);
@@ -48,6 +91,7 @@ export const registerForKanahautomoWithOrganization = async (
         throw new BadRequestError("Organization not found");
       }
       finalOrganizationId = organizationId;
+      organizationName = organization[0].name;
     } else {
       throw new BadRequestError("Invalid request: no organization specified");
     }
@@ -62,6 +106,68 @@ export const registerForKanahautomoWithOrganization = async (
 
     // Insert selected game types
     await insertKanahautomoGameTypes(result.insertId, gameTypes, connection);
+
+    // Get user's email for Discord invite
+    const account = await getAccountById(req.auth.account_id);
+    if (!account.work_email || !account.work_email_verified) {
+      logger.warn(
+        `User ${steamId} has no verified email, skipping Discord invite`
+      );
+    } else {
+      try {
+        // Initialize Discord client
+        await initializeDiscordClient();
+
+        // Create organization role if it doesn't exist
+        await createOrGetOrganizationRole(organizationName);
+
+        // Get selected game types
+        const selectedGameTypes = Object.entries(gameTypes)
+          .filter(([_, selected]) => selected)
+          .map(([gameType, _]) => gameType as keyof typeof GAME_TYPE_NAMES);
+
+        // Create channels for organization + game type combinations
+        const guild = await getDiscordGuild();
+        const channelIds: string[] = [];
+
+        for (const gameType of selectedGameTypes) {
+          const gameTypeData = GAME_TYPE_MAPPING[gameType];
+          const channel = await findOrCreateOrganizationGameChannel(
+            guild,
+            organizationName,
+            gameTypeData
+          );
+          channelIds.push(channel.id);
+        }
+
+        // Create invite link for the first channel (or a general channel)
+        const inviteUrl = await createInviteLink(
+          channelIds[0] || process.env.DISCORD_GENERAL_CHANNEL_ID!
+        );
+
+        // Send Discord invite email
+        const gameTypeNames = selectedGameTypes.map(
+          (gameType) => GAME_TYPE_NAMES[gameType]
+        );
+        await sendDiscordInviteEmail(
+          account.work_email,
+          organizationName,
+          inviteUrl,
+          gameTypeNames
+        );
+
+        logger.info(
+          `Discord setup completed for ${steamId} in organization ${organizationName}. Created ${channelIds.length} channels and sent invite email.`
+        );
+      } catch (discordError) {
+        logger.error(
+          `Discord integration failed for user ${steamId}:`,
+          discordError
+        );
+        // Don't fail the registration if Discord integration fails
+        // The user can still register and we can handle Discord setup later
+      }
+    }
 
     const response: KanahautomoRegistrationResponse = {
       message: "Successfully registered for Kanahautomo",

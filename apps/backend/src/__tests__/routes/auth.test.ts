@@ -3,6 +3,8 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "../../routes/v1/auth.routes";
 import * as authServices from "../../services/auth.services";
+import * as authModels from "../../models/auth.models";
+import * as accountModels from "../../models/account.models";
 import jwt from "jsonwebtoken";
 
 jest.mock("jsonwebtoken", () => ({
@@ -14,14 +16,82 @@ jest.mock("jsonwebtoken", () => ({
   })
 }));
 
+// Mock express-jwt middleware
+jest.mock("express-jwt", () => ({
+  expressjwt: jest.fn(
+    () =>
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction
+      ) => {
+        // Check if Authorization header exists and has valid token
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          res.status(401).json({ message: "Unauthorized" });
+          return;
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        // Only allow "valid_token" as a valid token
+        if (token === "valid_token") {
+          req.auth = {
+            account_id: 1,
+            provider_id: "76561198049745649",
+            provider: "steam",
+            permissions: [],
+            roles: [],
+            nickname: "sububobi"
+          };
+          next();
+        } else {
+          res.status(401).json({ message: "Unauthorized" });
+        }
+      }
+  )
+}));
+
 describe("GET /me", () => {
   const app = express();
   app.use(express.json());
   app.use(authRouter);
 
-  jest.mock("express-jwt");
   beforeEach(() => {
     process.env.PRIVACY_POLICY_VERSION = "1";
+
+    // Mock auth services
+    jest.spyOn(authServices, "getRolesForAccountId").mockResolvedValue([]);
+
+    // Mock auth models
+    jest.spyOn(authModels, "getAuthUserBySteamId").mockResolvedValue({
+      account_id: 1,
+      steam_id: "76561198049745649",
+      nickname: "sububobi",
+      is_work_email_personal_email: false,
+      discord_user_id: null,
+      provider: "steam",
+      full_name: "Test User",
+      work_email: "test@example.com",
+      discord: null
+    });
+
+    // Mock account models
+    jest
+      .spyOn(accountModels, "getUserProfileAcceptanceForVersion")
+      .mockResolvedValue({
+        id: 1,
+        account_id: 1,
+        accepted_privacy_policy: true,
+        accepted_marketing: false,
+        privacy_policy_version: "1",
+        created_at: new Date(),
+        updated_at: new Date()
+      });
+    jest
+      .spyOn(accountModels, "getLatestUserProfileMarketingConsent")
+      .mockResolvedValue(false);
   });
 
   it("should return user data when token is valid", async () => {

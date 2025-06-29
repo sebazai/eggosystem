@@ -445,17 +445,10 @@ describe("KanahautomoPage", () => {
   });
 
   describe("Terms and Conditions", () => {
-    it("renders terms and conditions checkbox", () => {
+    it("renders terms consent checkbox", () => {
       renderKanahautomoPage();
-
-      expect(
-        screen.getByText(
-          /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
-        )
-      ).toBeInTheDocument();
-
       const termsCheckbox = screen.getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+        name: /I consent to my Steam ID, nickname, and organization/i
       });
       expect(termsCheckbox).toBeInTheDocument();
     });
@@ -463,19 +456,14 @@ describe("KanahautomoPage", () => {
     it("allows toggling terms checkbox", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       const termsCheckbox = screen.getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+        name: /I consent to my Steam ID, nickname, and organization/i
       });
-
       // Initially unchecked
       expect(termsCheckbox).not.toBeChecked();
-
       // Check it
       await user.click(termsCheckbox);
-
-      // Now checked
-      expect(termsCheckbox).toBeChecked();
+      await waitFor(() => expect(termsCheckbox).toBeChecked());
     });
   });
 
@@ -483,11 +471,9 @@ describe("KanahautomoPage", () => {
     it("disables submit button when form is submitting", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       // Fill required fields first - select organization
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
-
       // Select an existing organization from dropdown
       await waitFor(() => {
         const dropdownOptions = screen.getAllByText("Test Organization 1");
@@ -500,7 +486,6 @@ describe("KanahautomoPage", () => {
         expect(dropdownOption).toBeDefined();
         return dropdownOption;
       });
-
       const dropdownOptions = screen.getAllByText("Test Organization 1");
       const dropdownOption = dropdownOptions.find(
         (el) =>
@@ -509,34 +494,28 @@ describe("KanahautomoPage", () => {
           el.closest("[cmdk-item]")
       );
       await user.click(dropdownOption!);
-
       // Select a game type
-      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      const cs2Checkbox = screen.getByLabelText(/CS2 Comp/i);
       await user.click(cs2Checkbox);
-
       // Accept terms
       const termsCheckbox = screen.getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+        name: /I consent to my Steam ID, nickname, and organization/i
       });
       await user.click(termsCheckbox);
-
       // Wait for form to be valid
       await waitFor(() => {
         expect(cs2Checkbox).toBeChecked();
         expect(termsCheckbox).toBeChecked();
       });
-
       // Mock API call to hang (never resolves) to keep form in submitting state
       let resolveApiCall: () => void;
       const apiPromise = new Promise<void>((resolve) => {
         resolveApiCall = resolve;
       });
       (clientApiFetch as jest.Mock).mockReturnValue(apiPromise);
-
       // Submit form
       const submitButton = screen.getByTestId("kanahautomo-submit");
       await user.click(submitButton);
-
       // Button should be disabled and show loading text
       await waitFor(
         () => {
@@ -545,7 +524,6 @@ describe("KanahautomoPage", () => {
         },
         { timeout: 2000 }
       );
-
       // Clean up - resolve the promise to avoid hanging
       resolveApiCall!();
     });
@@ -553,11 +531,9 @@ describe("KanahautomoPage", () => {
     it("shows error message when submission fails", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       // Fill required fields - select organization
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
-
       // Select an existing organization from dropdown
       await waitFor(() => {
         const dropdownOptions = screen.getAllByText("Test Organization 1");
@@ -570,7 +546,6 @@ describe("KanahautomoPage", () => {
         expect(dropdownOption).toBeDefined();
         return dropdownOption;
       });
-
       const dropdownOptions = screen.getAllByText("Test Organization 1");
       const dropdownOption = dropdownOptions.find(
         (el) =>
@@ -579,34 +554,28 @@ describe("KanahautomoPage", () => {
           el.closest("[cmdk-item]")
       );
       await user.click(dropdownOption!);
-
       // Select a game type
-      const cs2Checkbox = screen.getByLabelText("CS2 Comp");
+      const cs2Checkbox = screen.getByLabelText(/CS2 Comp/i);
       await user.click(cs2Checkbox);
-
       // Accept terms
       const termsCheckbox = screen.getByRole("checkbox", {
-        name: /I consent to my Steam ID and nickname being shared with other Kanahautomo players/
+        name: /I consent to my Steam ID, nickname, and organization/i
       });
       await user.click(termsCheckbox);
-
       // Wait for form to be valid
       await waitFor(() => {
         expect(cs2Checkbox).toBeChecked();
         expect(termsCheckbox).toBeChecked();
       });
-
       // Mock API call to fail
       (clientApiFetch as jest.Mock).mockRejectedValue(
         new Error("Registration failed")
       );
-
       // Submit form
       const submitButton = screen.getByRole("button", {
         name: "Join Kanahautomo"
       });
       await user.click(submitButton);
-
       // Should show error message - wait for the error to appear
       await waitFor(
         () => {

@@ -8,5 +8,6 @@ export interface AuthSteamUser {
   full_name: Account["full_name"];
   work_email: Account["work_email"];
   discord: Account["discord"];
+  discord_user_id: Account["discord_user_id"];
   is_work_email_personal_email: Account["is_work_email_personal_email"];
 }

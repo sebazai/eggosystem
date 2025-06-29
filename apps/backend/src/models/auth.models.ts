@@ -16,6 +16,7 @@ export const getAuthUserBySteamId = async (steamId: string) => {
       a.full_name, 
       a.work_email, 
       a.discord,
+      a.discord_user_id,
       a.is_work_email_personal_email, 
       la.provider 
     FROM LinkedAccounts la 

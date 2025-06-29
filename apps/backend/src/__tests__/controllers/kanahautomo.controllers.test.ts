@@ -3,6 +3,7 @@ import { registerForKanahautomoWithOrganization } from "../../controllers/kanaha
 import * as kanahautomoModels from "../../models/kanahautomo.models";
 import * as organizationModels from "../../models/organization.models";
 import * as dbConnection from "../../db/mysqlConnection";
+import * as mysqlRunQuery from "../../db/mysqlRunQuery";
 import type { JwtPayload } from "jsonwebtoken";
 import type { Organizations } from "@eggosystem/types";
 import { ZodError } from "zod";
@@ -11,6 +12,7 @@ import { ZodError } from "zod";
 jest.mock("../../models/kanahautomo.models");
 jest.mock("../../models/organization.models");
 jest.mock("../../db/mysqlConnection");
+jest.mock("../../db/mysqlRunQuery");
 
 const mockKanahautomoModels = kanahautomoModels as jest.Mocked<
   typeof kanahautomoModels
@@ -19,6 +21,7 @@ const mockOrganizationModels = organizationModels as jest.Mocked<
   typeof organizationModels
 >;
 const mockGetConnection = dbConnection.getConnection as jest.Mock;
+const mockRunQuery = mysqlRunQuery.runQuery as jest.Mock;
 
 const mockOrg: Organizations = {
   id: 1,
@@ -61,6 +64,24 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     mockResponse = { json: mockJson, status: mockStatus };
     connection = getMockConnection();
     mockGetConnection.mockResolvedValue(connection);
+
+    // Mock runQuery for getAccountById calls
+    mockRunQuery.mockResolvedValue([
+      {
+        id: 1,
+        provider_id: "steamid",
+        full_name: "Test User",
+        work_email: "test@example.com",
+        work_email_verified: true,
+        work_email_token: null,
+        work_email_token_expires_at: null,
+        is_work_email_personal_email: false,
+        discord: null,
+        created_at: new Date(),
+        updated_at: new Date()
+      }
+    ]);
+
     jest.clearAllMocks();
   });
 
