@@ -14,6 +14,91 @@ export default function NewFeaturesPage() {
       <h1 className="text-4xl font-heading font-bold mb-6">New Features</h1>
 
       <div className="space-y-8">
+        {/* July 1, 2025 Features */}
+        <section className="bg-card p-6 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">July 1, 2025</h2>
+          </div>
+
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold mb-2">
+                Kanahautomo: Find Your Gaming Squad 🎮
+              </h3>
+              <p className="mb-2">
+                Introducing Kanahautomo, our new teammate finder system! Connect
+                with players from your company and join dedicated Discord
+                channels for competitive gaming.
+              </p>
+
+              <h4 className="font-bold text-lg mb-2">Key Features</h4>
+              <ul className="list-disc pl-5 mb-3">
+                <li>
+                  <span className="font-medium">Company-Based Matching</span> -
+                  Connect with colleagues and teammates from your company
+                </li>
+                <li>
+                  <span className="font-medium">Multi-Game Support</span> - Find
+                  teammates for CS2 (Competitive & Wingman), PUBG (Duo & Squad),
+                  Rocket League, and Dota 2
+                </li>
+                <li>
+                  <span className="font-medium">Discord Integration</span> -
+                  Automatically join game-specific Discord channels with proper
+                  roles
+                </li>
+                <li>
+                  <span className="font-medium">Company Management</span> - Join
+                  existing companies or create new ones for your organization
+                </li>
+                <li>
+                  <span className="font-medium">Registration Dashboard</span> -
+                  View how many players from each company have joined
+                </li>
+              </ul>
+
+              <h4 className="font-bold text-lg mb-2">How It Works</h4>
+              <ol className="list-decimal pl-5 mb-3">
+                <li>Select your company (or create a new one)</li>
+                <li>Choose which games you want to play</li>
+                <li>Link your Discord account for automatic role assignment</li>
+                <li>
+                  Accept terms for visibility within the Discord community
+                </li>
+                <li>
+                  Receive a Discord invite via email to join your gaming
+                  community
+                </li>
+                <li>
+                  Start playing with your co-workers straight away - just handle
+                  the communication on the channel and start playing together
+                  for fun!
+                </li>
+              </ol>
+
+              <p className="mb-2">
+                Perfect for companies who want to organize their employees and
+                help them find teammates for both casual and competitive
+                matches! No need to wait - once you&apos;re in the Discord
+                channels, you can immediately start coordinating games with your
+                colleagues.
+              </p>
+
+              <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                <strong>Where to find it:</strong> Visit the new
+                <a
+                  href="/kanahautomo"
+                  className="text-kanaliiga-orange hover:underline ml-1"
+                >
+                  Kanahautomo page
+                </a>{" "}
+                to register and find your gaming squad!
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* June 22, 2025 Features */}
         <section className="bg-card p-6 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
@@ -338,6 +423,13 @@ export default function NewFeaturesPage() {
           <h2 className="text-2xl font-heading font-bold mb-4">Coming Soon</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>Trophies for teams and players (from earlier seasons)</li>
+            <li>CT/T side statistics from match to players</li>
+            <li>Trade information from match</li>
+            <li>Upcoming match information page</li>
+            <li>Match calendar with filters</li>
+            <li>Team management dashboard for captains</li>
+            <li>Historical data visualization with interactive charts</li>
+            <li>Team calendar doodle for scheduling matches with opponents</li>
           </ul>
         </section>
       </div>
