@@ -356,7 +356,7 @@ export const findOrCreateOrganizationGameChannel = async (
   // If in e2e test environment, return mock channel
   if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
     logger.info(
-      `Mock: Creating game channel for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name}`
+      `Mock: Creating game channel for ${organizationName} - ${gameType.abbreviation}`
     );
     return {
       id: "mock-channel-id",
@@ -375,12 +375,8 @@ export const findOrCreateOrganizationGameChannel = async (
     .trim()
     .substring(0, 10);
 
-  const cleanGameType = gameType.game_type_name
-    .replace(/[^a-zA-Z0-9\s]/g, "")
-    .trim()
-    .substring(0, 15);
-
-  const channelName = `${cleanOrgName}-${cleanGameAbbrev}-${cleanGameType}`
+  // Changed: Only use organization name and game abbreviation (no game type)
+  const channelName = `${cleanOrgName}-${cleanGameAbbrev}`
     .toLowerCase()
     .replace(/\s+/g, "-");
 
@@ -393,22 +389,19 @@ export const findOrCreateOrganizationGameChannel = async (
     // Get or create the organization role
     const orgRole = await findOrCreateOrganizationRole(guild, organizationName);
 
-    // Get or create the game type role
-    const gameRole = await findOrCreateGameRole(guild, gameType);
-
     // Get or create organization category
     const category = await findOrCreateOrganizationCategory(
       guild,
       organizationName
     );
 
-    // Create new channel with proper permissions and category
+    // Create new channel with only organization role permissions (no game role)
     channel = await guild.channels.create({
       name: channelName,
       type: 0, // Text channel
       parent: category.id, // Assign to organization category
-      topic: `Channel for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name} players`,
-      reason: `Auto-created channel for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name}`,
+      topic: `Channel for ${organizationName} - ${gameType.abbreviation} players`,
+      reason: `Auto-created channel for ${organizationName} - ${gameType.abbreviation}`,
       permissionOverwrites: [
         {
           id: guild.id, // @everyone role
@@ -420,25 +413,19 @@ export const findOrCreateOrganizationGameChannel = async (
             PermissionsBitField.Flags.ViewChannel,
             PermissionsBitField.Flags.SendMessages
           ]
-        },
-        {
-          id: gameRole.id,
-          allow: [
-            PermissionsBitField.Flags.ViewChannel,
-            PermissionsBitField.Flags.SendMessages
-          ]
         }
+        // Removed: Game role permissions are no longer added to organization channels
       ]
     });
     logger.info(
-      `Created new channel: ${channelName} for ${organizationName} - ${gameType.abbreviation} ${gameType.game_type_name} with proper permissions in category: ${category.name}`
+      `Created new channel: ${channelName} for ${organizationName} - ${gameType.abbreviation} with organization-only permissions in category: ${category.name}`
     );
   }
 
   return channel;
 };
 
-// Create channels for organization + game type combinations
+// Create channels for organization + game combinations (one per game, not per game type)
 const createOrganizationGameChannels = async (
   guild: Guild,
   userData: UserOrganizationData
@@ -450,16 +437,32 @@ const createOrganizationGameChannels = async (
       userData.organization_name
     );
 
-    // Create game-specific channels
+    // Group game types by game abbreviation to create one channel per game
+    const gameChannelsToCreate = new Map<
+      string,
+      { name: string; abbreviation: string; game_type_name: string }
+    >();
+
     for (const gameType of userData.game_types) {
+      if (!gameChannelsToCreate.has(gameType.abbreviation)) {
+        gameChannelsToCreate.set(gameType.abbreviation, gameType);
+      }
+    }
+
+    // Create one channel per unique game (not per game type)
+    for (const gameType of gameChannelsToCreate.values()) {
       await findOrCreateOrganizationGameChannel(
         guild,
         userData.organization_name,
         gameType
       );
     }
+
+    const uniqueGames = Array.from(gameChannelsToCreate.values()).map(
+      (gt) => gt.abbreviation
+    );
     logger.info(
-      `Created/verified channels for ${userData.organization_name} - General + ${userData.game_types.map((gt) => `${gt.abbreviation} ${gt.game_type_name}`).join(", ")}`
+      `Created/verified channels for ${userData.organization_name} - General + ${uniqueGames.join(", ")}`
     );
   } catch (error) {
     logger.error(
@@ -511,8 +514,13 @@ const assignRolesToMember = async (
       );
     if (welcomeChannel && welcomeChannel.type === 0) {
       // TextChannel
+      // Get unique games for the welcome message
+      const uniqueGames = Array.from(
+        new Set(userData.game_types.map((gt) => gt.abbreviation))
+      );
+
       await (welcomeChannel as TextChannel).send({
-        content: `Welcome <@${member.id}>! You've been automatically assigned roles for **${userData.organization_name}** and your game types: **${userData.game_types.map((gt) => `${gt.abbreviation} ${gt.game_type_name}`).join(", ")}**. Check out your organization's general channel and game-specific channels in the **${userData.organization_name}** category!`
+        content: `Welcome <@${member.id}>! You've been automatically assigned roles for **${userData.organization_name}** and your games: **${uniqueGames.join(", ")}**. Check out your organization's general channel and game channels in the **${userData.organization_name}** category!`
       });
     }
   } catch (error) {
