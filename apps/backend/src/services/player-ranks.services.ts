@@ -248,12 +248,20 @@ export const getPlayerRankForPlatform = async (
   }
 };
 
-// Kanarank rank configuration
-const KANARANKS = [
-  { name: "EGG", thresholds: [0, 33, 67] },
-  { name: "CHICK", thresholds: [100, 134, 167] },
-  { name: "CHICKEN", thresholds: [200, 234, 267] },
-  { name: "COCK", thresholds: [300, 334, 367] }
+// Kanarank rank configuration based on elo thresholds
+const KANARANK_THRESHOLDS = [
+  { rank: "COCK", subrank: 1, min_elo: 280 }, // COCK_1: 280+ elo
+  { rank: "COCK", subrank: 2, min_elo: 263 }, // COCK_2: 263-279 elo
+  { rank: "COCK", subrank: 3, min_elo: 248 }, // COCK_3: 248-262 elo
+  { rank: "CHICKEN", subrank: 1, min_elo: 224 }, // CHICKEN_1: 224-247 elo
+  { rank: "CHICKEN", subrank: 2, min_elo: 204 }, // CHICKEN_2: 204-223 elo
+  { rank: "CHICKEN", subrank: 3, min_elo: 182 }, // CHICKEN_3: 182-203 elo
+  { rank: "CHICK", subrank: 1, min_elo: 165 }, // CHICK_1: 165-181 elo
+  { rank: "CHICK", subrank: 2, min_elo: 142 }, // CHICK_2: 142-164 elo
+  { rank: "CHICK", subrank: 3, min_elo: 125 }, // CHICK_3: 125-141 elo
+  { rank: "EGG", subrank: 1, min_elo: 107 }, // EGG_1: 107-124 elo
+  { rank: "EGG", subrank: 2, min_elo: 82 }, // EGG_2: 82-106 elo
+  { rank: "EGG", subrank: 3, min_elo: 0 } // EGG_3: 0-81 elo
 ];
 
 // Top rankings configuration
@@ -313,28 +321,17 @@ export const getPlayerKanaRank = async (steam_id: string) => {
     // Fall through to regular rank determination
   }
 
-  // Determine regular rank based on kana_elo
-  for (const rank of KANARANKS) {
-    // Check if player's elo is in this rank's range
-    if (kana_elo <= rank.thresholds[2]) {
-      response.rank = rank.name;
-
-      // Determine subrank
-      if (kana_elo <= rank.thresholds[0]) {
-        response.subrank = 1;
-      } else if (kana_elo <= rank.thresholds[1]) {
-        response.subrank = 2;
-      } else {
-        response.subrank = 3;
-      }
-
+  // Determine regular rank based on kana_elo using new thresholds
+  for (const threshold of KANARANK_THRESHOLDS) {
+    if (kana_elo >= threshold.min_elo) {
+      response.rank = threshold.rank;
+      response.subrank = threshold.subrank;
       return response;
     }
   }
 
-  // If player's elo is higher than any defined rank but not in top 10,
-  // assign highest regular rank
-  response.rank = "COCK";
+  // Fallback to lowest rank if somehow no threshold matches
+  response.rank = "EGG";
   response.subrank = 3;
   return response;
 };
