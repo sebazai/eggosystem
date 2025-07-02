@@ -144,6 +144,8 @@ export const createOrGetOrganizationRole = async (
     permissions: []
   });
 
+  await newRole.setPosition(3);
+
   logger.info(`Created new organization role: ${newRole.name} (${newRole.id})`);
   return newRole.id;
 };
@@ -316,6 +318,8 @@ const findOrCreateOrganizationRole = async (
       `Created new organization role: ${roleName} with color: #${randomColor.toString(16).padStart(6, "0")}`
     );
   }
+
+  await role.setPosition(3);
 
   return role;
 };
