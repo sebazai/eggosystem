@@ -99,7 +99,11 @@ export const getFaceITGameRank = async (
 const getFaceITMetaData = async (
   faceit_player_id: string,
   game: "cs2" | "csgo" = "cs2"
-) => {
+): Promise<{
+  faceit_kdr: number;
+  faceit_matches_played: number;
+  faceit_last_match: number;
+} | null> => {
   const { controller, clearAbortTimeout } =
     createAbortController("getFaceITMetaData");
 
@@ -361,4 +365,98 @@ export const getFaceITTeamDetails = async (faceit_team_id: string) => {
   const data: FaceITTeamDetails = await response.json();
   await redisClient.set(redisKey, JSON.stringify(data), "EX", expireInOneDay);
   return data;
+};
+
+export interface FaceITMatchDetails {
+  match_id: string;
+  version: number;
+  game: string;
+  region: string;
+  competition_id: string;
+  competition_type: string;
+  competition_name: string;
+  organizer_id: string;
+  teams: {
+    faction1: FaceITMatchTeam;
+    faction2: FaceITMatchTeam;
+  };
+  voting: {
+    voted_entity_types: string[];
+    location: {
+      entities: FaceITVotingEntity[];
+      pick: string[];
+    };
+    map: {
+      entities: FaceITVotingEntity[];
+      pick: string[];
+    };
+  };
+  calculate_elo: boolean;
+  scheduled_at: number;
+  configured_at: number;
+  started_at: number;
+  finished_at: number;
+  demo_url: string[];
+  chat_room_id: string;
+  best_of: number;
+  results: {
+    winner: string;
+    score: {
+      faction1: number;
+      faction2: number;
+    };
+  };
+  detailed_results: Array<{
+    asc_score: boolean;
+    winner: string;
+    factions: {
+      faction1: { score: number };
+      faction2: { score: number };
+    };
+  }>;
+  status: string;
+  round: number;
+  group: number;
+  faceit_url: string;
+}
+
+interface FaceITMatchTeam {
+  faction_id: string;
+  leader: string;
+  avatar: string;
+  roster: FaceITMatchPlayer[];
+  substituted: boolean;
+  name: string;
+  type: string;
+}
+
+interface FaceITMatchPlayer {
+  player_id: string;
+  nickname: string;
+  avatar: string;
+  membership: string;
+  game_player_id: string;
+  game_player_name: string;
+  game_skill_level: number;
+  anticheat_required: boolean;
+}
+
+interface FaceITVotingEntity {
+  image_lg: string;
+  image_sm: string;
+  name: string;
+  class_name: string;
+  game_location_id?: string;
+  game_map_id?: string;
+  guid: string;
+}
+
+export const getFaceITMatchDetails = async (match_id: string) => {
+  const webURL = `https://open.faceit.com/data/v4/matches/${match_id}`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  return response.json() as Promise<FaceITMatchDetails>;
 };
