@@ -13,9 +13,3 @@ export const saveWebhookData = async (data: any, details: any) => {
     JSON.stringify(details)
   ]);
 };
-
-export const getWebhookData = async () => {
-  return runQuery<{ id: number; received_at: string; data: string }[]>(
-    "SELECT * FROM Webhooks"
-  );
-};
