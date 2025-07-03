@@ -16,7 +16,6 @@ import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
-import { type FaceITMatchDetails } from "../services/faceit.services";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -272,62 +271,4 @@ export const getMatchMapVetoes = async (match_id: number) => {
     ORDER BY v.veto_order ASC
   `;
   return runQuery<MatchMapVetoes[]>(query, [match_id]);
-};
-
-export const addMatchToDatabase = async (
-  matchDetails: FaceITMatchDetails,
-  externalLeagueId: string
-) => {
-  // Look up league_id and season_id from SeasonLeagues using external_id
-  const seasonLeagueResult = await runQuery<
-    Array<{ league_id: number; season_id: number }>
-  >(
-    "SELECT league_id, season_id FROM SeasonLeagues WHERE external_id = ? LIMIT 1",
-    [externalLeagueId]
-  );
-  const seasonLeague = seasonLeagueResult[0];
-  if (!seasonLeague) {
-    throw new Error(
-      `No SeasonLeagues entry found for external_id: ${externalLeagueId}`
-    );
-  }
-  const { league_id, season_id } = seasonLeague;
-
-  // Parse date and time fields from FaceITMatchDetails
-  const matchDate = new Date(matchDetails.scheduled_at * 1000); // scheduled_at is unix timestamp (seconds)
-  const match_date = matchDate.toISOString().slice(0, 10); // YYYY-MM-DD
-  const start_time = matchDetails.started_at
-    ? new Date(matchDetails.started_at * 1000).toISOString().slice(11, 19) // HH:MM:SS
-    : "00:00:00";
-  const end_time = matchDetails.finished_at
-    ? new Date(matchDetails.finished_at * 1000).toISOString().slice(11, 19)
-    : "00:00:00";
-
-  // Determine stage from competition_name, TODO: Make this more robust
-  const stage = /playoff/i.test(matchDetails.competition_name) ? 2 : 1;
-  const params = [
-    league_id,
-    season_id,
-    stage,
-    matchDetails.best_of,
-    match_date,
-    start_time,
-    end_time,
-    matchDetails.match_id
-  ];
-
-  const query = `
-    INSERT INTO Matches (
-      league_id,
-      season_id,
-      stage,
-      best_of,
-      match_date,
-      start_time,
-      end_time,
-      external_match_room_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  return runQuery(query, params);
 };
