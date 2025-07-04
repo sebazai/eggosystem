@@ -29,7 +29,11 @@ class MockTextChannel {
 }
 class MockNewsChannel extends MockTextChannel {}
 
-const mockRole = { id: "mock-role-id", name: "Mock Role" };
+const mockRole = {
+  id: "mock-role-id",
+  name: "Mock Role",
+  setPosition: jest.fn().mockResolvedValue(undefined)
+};
 const mockChannel = new MockTextChannel();
 const mockGuild = {
   id: "mock-guild-id",
