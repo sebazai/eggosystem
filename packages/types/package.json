@@ -4,7 +4,7 @@
   "description": "Shared TypeScript types for the Eggosystem project",
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "build": "tsc",
     "dev": "tsc --watch"
   },

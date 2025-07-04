@@ -1,4 +1,5 @@
 import {
+  isNonNullable,
   postTeamManualPlayerApprovalSchema,
   seasonPlayerRankFormSchema
 } from "@eggosystem/types";
@@ -13,7 +14,7 @@ import { getActiveSignupSeasonForAppId } from "../../models/season.models";
 import { BadRequestError } from "../../utils/errors";
 import { type RequestWithParams } from "@eggosystem/types";
 import { redisClient } from "../../utils/redisClient";
-import type { RegistrationDraft } from "@eggosystem/types";
+import { isRegistrationDraftRaw } from "@eggosystem/types";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
@@ -78,34 +79,26 @@ export const getPlayerFullNameController = async (
   res.status(200).json(playerFullName);
 };
 
-/**
- * GET /dashboard/registration/drafts
- * Fetch all registration drafts from Redis (keys: signup-*)
- * Returns array of parsed draft objects for admin/helpdesk
- */
 export const getAllRegistrationDraftsController = async (
   req: Request,
   res: Response
 ) => {
-  // Only allow admin/helpdesk (route-level check)
   const keys = await redisClient.keys("signup-*");
   if (!keys.length) {
     res.status(200).json([]);
     return;
   }
   const draftsRaw = await redisClient.mget(...keys);
-  // Filter out nulls and parse JSON
   const drafts = draftsRaw
     .map((val) => {
       if (!val) return null;
       try {
-        return {
-          ...JSON.parse(val)
-        } as RegistrationDraft;
+        const parsed = JSON.parse(val);
+        return isRegistrationDraftRaw(parsed) ? parsed : null;
       } catch (_e) {
         return null;
       }
     })
-    .filter(Boolean) as RegistrationDraft[];
+    .filter(isNonNullable);
   res.status(200).json(drafts);
 };

@@ -168,11 +168,11 @@ install:
   script:
     - pnpm install --frozen-lockfile
 
-check-types:
+typecheck:
   stage: lint
   extends: [.prepare-pnpm, .mr-all-app]
   script:
-    - npx turbo check-types
+    - npx turbo typecheck
 
 lint-all:
   stage: lint

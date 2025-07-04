@@ -13,13 +13,11 @@ import {
 } from "@tanstack/react-table";
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
-import Link from "next/link";
-import { ExternalLink } from "lucide-react";
-import { SeasonPlatform, type RegistrationDraft } from "@eggosystem/types";
+import { type RegistrationDraftRaw } from "@eggosystem/types";
 
 export const ListRegistrationDrafts = () => {
   const { registrationDrafts, isLoading, error } = useRegistrationDrafts();
-  const columnHelper = createColumnHelper<RegistrationDraft>();
+  const columnHelper = createColumnHelper<RegistrationDraftRaw>();
 
   const columns = useMemo(
     () => [
@@ -85,44 +83,12 @@ export const ListRegistrationDrafts = () => {
         header: () => "Platform ID",
         cell: ({ row }) => {
           const draft = row.original;
-          const platform = draft.season_platform;
           const id = draft.teamExternalId;
-          if (!id) return <span className="text-muted-foreground">-</span>;
-          let url: string | null = null;
-          if (platform === SeasonPlatform.FACEIT) {
-            url = `https://www.faceit.com/en/teams/${id}`;
-          } else if (platform === SeasonPlatform.Esportal) {
-            url = `https://esportal.com/team/${id}`;
-          } else if (platform === SeasonPlatform.PopFlash) {
-            url = `https://popflash.site/team/${id}`;
-          } else if (platform === SeasonPlatform.Kanaliiga) {
-            url = `/teams/${id}`;
-          }
-          if (url?.startsWith("/")) {
-            return (
-              <Link
-                href={url || "#"}
-                className="hover:underline inline-flex items-center gap-1"
-              >
-                {id}
-                <ExternalLink className="inline w-3 h-3" />
-              </Link>
-            );
-          } else if (url) {
-            return (
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:underline inline-flex items-center gap-1"
-              >
-                {id}
-                <ExternalLink className="inline w-3 h-3" />
-              </a>
-            );
-          } else {
-            return <span>{id}</span>;
-          }
+          return id ? (
+            <span>{id}</span>
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          );
         },
         meta: { className: "text-center" }
       })
@@ -225,7 +191,7 @@ export const ListRegistrationDrafts = () => {
                     <div className="flex flex-wrap gap-3 md:gap-4">
                       {row.original.players?.map((player) => (
                         <div
-                          key={player.steam_id}
+                          key={player.accountId}
                           className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm"
                         >
                           <span className="font-semibold text-foreground break-words">
@@ -233,7 +199,7 @@ export const ListRegistrationDrafts = () => {
                           </span>
                           <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
                             <a
-                              href={`https://steamcommunity.com/profiles/${player.steam_id}`}
+                              href={`https://steamcommunity.com/profiles/${player.steamId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="hover:underline flex items-center gap-1"
@@ -256,7 +222,7 @@ export const ListRegistrationDrafts = () => {
 };
 
 // Subcomponent for team name cell
-const TeamNameCell = ({ draft }: { draft: RegistrationDraft }) => {
+const TeamNameCell = ({ draft }: { draft: RegistrationDraftRaw }) => {
   const teamId = draft.teamId ? String(draft.teamId) : null;
   const { data: team } = useSWR(
     teamId ? `/api/v1/filters/teams/${teamId}` : null,

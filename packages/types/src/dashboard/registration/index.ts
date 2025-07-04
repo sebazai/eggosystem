@@ -171,5 +171,3 @@ export const seasonPlayerRankFormSchema = z
 export type SeasonPlayerRankFormValues = z.infer<
   typeof seasonPlayerRankFormSchema
 >;
-
-export * from "./RegistrationDraft.interface";

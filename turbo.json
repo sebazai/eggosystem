@@ -84,9 +84,9 @@
     "format:check": {
       "dependsOn": ["^format:check"]
     },
-    "check-types": {
+    "typecheck": {
       "dependsOn": [
-        "^check-types",
+        "^typecheck",
         "@eggosystem/types#build",
         "@eggosystem/shared-msw#build"
       ]

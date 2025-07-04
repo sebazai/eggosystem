@@ -11,7 +11,7 @@
     "start:standalone": "PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/apps/frontend/server.js",
     "start": "next start",
     "lint": "next lint",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "jest --",
     "test:watch": "jest --watch",
     "test:e2e": "PW_TEST_HTML_REPORT_OPEN='never' TEST_TYPE=e2e playwright test",
