@@ -40,7 +40,6 @@ async function fetchLabelFor(resource: string, id: string): Promise<string> {
       );
 
       const data: Match & Stage = await response.json();
-      console.log(data);
       return (
         matchBreadcrumbLabel(data.best_of, data.name) ||
         `${resource.slice(0, -1)} ${id}`
