@@ -316,7 +316,7 @@ export const SignupForm = ({
       method: "POST",
       body: JSON.stringify(formDataStripped)
     });
-    setSuccessMessage("Saved draft for 7 days.");
+    setSuccessMessage("Saved draft for 30 days.");
     toast.success("Draft saved successfully", {
       description: "You can continue editing your draft later on this page."
     });

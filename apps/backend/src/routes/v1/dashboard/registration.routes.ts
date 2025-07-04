@@ -3,7 +3,8 @@ import {
   addManuallyApprovedPlayersController,
   addManualRankForPlayerController,
   getRegisteredTeamsController,
-  getPlayerFullNameController
+  getPlayerFullNameController,
+  getAllRegistrationDraftsController
 } from "../../../controllers/dashboard/registration.controllers";
 import { checkPermissions } from "../../../middlewares/auth.middleware";
 import { auditReadEntity } from "../../../middlewares/audit-log.middleware";
@@ -42,6 +43,15 @@ router.get(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   getRegisteredTeamsController
+);
+
+router.get(
+  "/drafts",
+  checkPermissions({
+    staticPermissions: ["read:registration"],
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  getAllRegistrationDraftsController
 );
 
 export default router;

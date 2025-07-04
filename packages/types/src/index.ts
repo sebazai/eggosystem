@@ -25,3 +25,4 @@ export * from "./steam/index";
 export * from "./leetify/index";
 export * from "./sortter/index";
 export * from "./kanahautomo/index";
+export * from "./dashboard/registration";

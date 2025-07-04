@@ -11,7 +11,7 @@ import {
   authenticateJWT,
   checkJWTPermissions
 } from "../../middlewares/auth.middleware";
-import { expireIn7Days, redisClient } from "../../utils/redisClient";
+import { expireIn30Days, redisClient } from "../../utils/redisClient";
 
 const router = Router();
 router.get(
@@ -49,7 +49,7 @@ router.post(
       redisKey,
       JSON.stringify(req.body),
       "EX",
-      expireIn7Days
+      expireIn30Days
     );
     res.sendStatus(200);
   }
