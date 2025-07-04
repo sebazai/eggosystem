@@ -206,12 +206,14 @@ router.post(
       }
       if (webhookData.data.event === "match_status_finished") {
         // Update the match start and end time
+        const endTime = webhookData.data.payload.finished_at;
       }
       if (webhookData.data.event === "match_status_ready") {
-        // Get map vetos and bans here?
+        // Do we need this, indicates that the is ready and the server is ready to start the match
       }
       if (webhookData.data.event === "match_status_configuring") {
         // Do we need this? When do we need this?
+        // Get map vetos and bans here?
       }
       if (webhookData.data.event === "match_demo_ready") {
         // Validate players in both teams and push the demo url to parser

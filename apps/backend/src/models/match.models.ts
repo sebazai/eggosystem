@@ -288,6 +288,9 @@ export const addMatchToDatabase = async (
 ) => {
   // Look up for the SeasonLeagueExternalRooms using externalLeagueId
   // TODO: Figure out what the type is from existing championship id's
+  // TODO: if it's a BO2, and we want it to be 2xBO1, use your brain for this, tomorrow.
+  // What if we have SeasonLeagueExternalRooms.isBO2PlayedAs2xBO1?
+  // We need to create two matches, and when the games are played, we need to create MatchGames
   // Check if type is something else then the big bad upperlowerbracket hell, it's probably a non playoff, i.e. regular stage 1.
   const seasonLeagueResult = await runQuery<
     Array<{ league_id: number; season_id: number }>
