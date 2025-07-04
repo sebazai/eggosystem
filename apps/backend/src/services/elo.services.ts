@@ -4,22 +4,6 @@ import { redisClient, expireIn7Days } from "../utils/redisClient";
 const expireIn30Days = 30 * 24 * 60 * 60; // 30 days for team flags
 import { logger } from "../utils/app-logger";
 
-interface StabilizeResult {
-  adjusted_elo: number;
-  reason?: string;
-  details?: {
-    current_elo: number;
-    offered_elo: number;
-    player_rating: number;
-    league_avg_rating: number;
-    season_id: number;
-    league_id: number;
-    sample_size: number;
-  };
-  teamFlagged?: boolean;
-  flagReason?: string;
-}
-
 interface PlayerEloRow {
   kana_elo: number | null;
 }
@@ -72,10 +56,22 @@ interface TeamFlagData {
   timestamp: string;
 }
 
+interface StabilizationResponse {
+  stabilizedValue: number; // Adjusted kanaelo value (0-400)
+  confidence: number; // Confidence level (0.0-1.0)
+  adjustmentFactor: number; // Multiplier applied (0.5-2.0 typical range)
+  metadata: {
+    processed: boolean; // Whether stabilization was applied
+    timestamp: string; // ISO timestamp
+    method: string; // Stabilization method used
+  };
+}
+
 export const stabilizePlayerElo = async (
   steam_id: string,
-  offered_elo: number
-): Promise<StabilizeResult> => {
+  offered_elo: number,
+  _season?: string
+): Promise<StabilizationResponse> => {
   // Get current player ELO
   const currentEloResults = await runQuery<PlayerEloRow[]>(
     "SELECT kana_elo FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC LIMIT 1",
@@ -91,8 +87,14 @@ export const stabilizePlayerElo = async (
       `Could not find current ELO for ${steam_id}, returning offered ELO`
     );
     return {
-      adjusted_elo: offered_elo,
-      reason: "No current ELO found for player"
+      stabilizedValue: offered_elo,
+      confidence: 0.1,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: new Date().toISOString(),
+        method: "no-current-elo"
+      }
     };
   }
 
@@ -101,16 +103,16 @@ export const stabilizePlayerElo = async (
   // Get latest season and league data for the player
   const seasonLeagueResults = await runQuery<SeasonLeagueRow[]>(
     `SELECT 
-       ps.season_id,
+       mt.season_id,
        mt.league_id,
-       AVG(ps.rating) as avg_kana_rating
+       AVG(ps.kana_rating) as avg_kana_rating
      FROM PlayerStats ps
      INNER JOIN MatchGames mg ON ps.game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
      INNER JOIN MatchTeams mt ON m.id = mt.match_id
      WHERE ps.steam_id = ?
-     GROUP BY ps.season_id, mt.league_id
-     ORDER BY ps.season_id DESC, AVG(ps.rating) DESC
+     GROUP BY mt.season_id, mt.league_id
+     ORDER BY mt.season_id DESC, AVG(ps.kana_rating) DESC
      LIMIT 1`,
     [steam_id]
   );
@@ -120,8 +122,14 @@ export const stabilizePlayerElo = async (
       `Could not find season/league data for ${steam_id}, returning offered ELO`
     );
     return {
-      adjusted_elo: offered_elo,
-      reason: "No season or league data found for player"
+      stabilizedValue: offered_elo,
+      confidence: 0.1,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: new Date().toISOString(),
+        method: "no-season-data"
+      }
     };
   }
 
@@ -133,7 +141,7 @@ export const stabilizePlayerElo = async (
 
   // Get player's average rating for validation
   const playerRatingResults = await runQuery<PlayerRatingRow[]>(
-    `SELECT AVG(ps.rating) as avg_player_rating
+    `SELECT AVG(ps.kana_rating) as avg_player_rating
      FROM PlayerStats ps
      INNER JOIN MatchGames mg ON ps.game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
@@ -147,8 +155,14 @@ export const stabilizePlayerElo = async (
       `Could not find player rating for ${steam_id}, returning offered ELO`
     );
     return {
-      adjusted_elo: offered_elo,
-      reason: "No player rating data found"
+      stabilizedValue: offered_elo,
+      confidence: 0.1,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: new Date().toISOString(),
+        method: "no-player-rating"
+      }
     };
   }
 
@@ -156,7 +170,7 @@ export const stabilizePlayerElo = async (
   const leagueAvgResults = await runQuery<LeagueAvgRatingRow[]>(
     `SELECT 
        COUNT(DISTINCT ps.steam_id) as rowCount,
-       AVG(ps.rating) as leagueAvgRating
+       AVG(ps.kana_rating) as leagueAvgRating
      FROM PlayerStats ps
      INNER JOIN MatchGames mg ON ps.game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
@@ -167,16 +181,22 @@ export const stabilizePlayerElo = async (
     [season_id, league_id, current_elo - 10, current_elo + 10]
   );
 
-  if (!leagueAvgResults.length || leagueAvgResults[0].rowCount < 100) {
+  if (!leagueAvgResults.length || leagueAvgResults[0].rowCount < 10) {
     const sample_size = leagueAvgResults.length
       ? leagueAvgResults[0].rowCount
       : 0;
     logger.info(
-      `Sample size for ${steam_id} stabilizer is too low: ${sample_size} (minimum 100 required)`
+      `Sample size for ${steam_id} stabilizer is too low: ${sample_size} (minimum 10 required)`
     );
     return {
-      adjusted_elo: offered_elo,
-      reason: `Sample size too small (${sample_size} players, minimum 100 required)`
+      stabilizedValue: offered_elo,
+      confidence: 0.2,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: new Date().toISOString(),
+        method: "insufficient-sample-size"
+      }
     };
   }
 
@@ -193,6 +213,10 @@ export const stabilizePlayerElo = async (
   logger.info(
     `Stabilizing ${steam_id}: offered ${offered_elo}, returning ${adjusted_elo}`
   );
+
+  // Calculate adjustment factor and confidence
+  const adjustmentFactor = offered_elo !== 0 ? adjusted_elo / offered_elo : 1.0;
+  const confidence = Math.min(0.95, 0.3 + sample_size / 1000); // Higher confidence with more data
 
   // Get player's team for this season/league
   const teamResults = await runQuery<TeamRow[]>(
@@ -218,9 +242,6 @@ export const stabilizePlayerElo = async (
   });
 
   // Validate team adjustments and flag if necessary
-  let teamFlagged = false;
-  let flagReason: string | undefined;
-
   if (team_id > 0) {
     const validation = await validateTeamEloAdjustments(
       steam_id,
@@ -232,9 +253,6 @@ export const stabilizePlayerElo = async (
     );
 
     if (!validation.isValid) {
-      teamFlagged = true;
-      flagReason = validation.reason;
-
       // Get all adjustments for flag data
       const allAdjustments = await getTeamEloAdjustments(
         season_id,
@@ -262,18 +280,14 @@ export const stabilizePlayerElo = async (
   }
 
   return {
-    adjusted_elo,
-    details: {
-      current_elo,
-      offered_elo,
-      player_rating,
-      league_avg_rating,
-      season_id,
-      league_id,
-      sample_size
-    },
-    teamFlagged,
-    flagReason
+    stabilizedValue: adjusted_elo,
+    confidence,
+    adjustmentFactor,
+    metadata: {
+      processed: true,
+      timestamp: new Date().toISOString(),
+      method: "kanarating-stabilization"
+    }
   };
 };
 
@@ -447,8 +461,8 @@ function adjuster(
   avgRating: number
 ): number {
   const diff = kanaRating - avgRating;
-  let minmax = -0.2;
-  let maxmin = 0.2;
+  let minmax = -0.15;
+  let maxmin = 0.15;
 
   if (offeredElo > 270) {
     // Scale difference to directly map to 0.9 - 1.1 for high ELO players

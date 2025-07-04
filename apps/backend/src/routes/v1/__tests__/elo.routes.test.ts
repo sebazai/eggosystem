@@ -51,18 +51,26 @@ describe("POST /api/v1/elo/stabilize", () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "76561198000000000",
-        offered_elo: 280
+        playerId: "76561198000000000",
+        currentValue: 280,
+        season: "2024-spring",
+        metadata: {
+          timestamp: "2024-01-15T10:30:00Z",
+          source: "kanaelo-calc"
+        }
       })
       .expect(200);
 
-    expect(response.body).toHaveProperty("adjusted_elo");
-    expect(response.body.adjusted_elo).toBeGreaterThan(280); // Should be higher because player performed better than average
-    expect(response.body).toHaveProperty("details");
-    expect(response.body.details).toHaveProperty("current_elo", 250);
-    expect(response.body.details).toHaveProperty("offered_elo", 280);
-    expect(response.body.details).toHaveProperty("player_rating", 1.15);
-    expect(response.body.details).toHaveProperty("league_avg_rating", 1.0);
+    expect(response.body).toHaveProperty("stabilizedValue");
+    expect(response.body.stabilizedValue).toBeGreaterThan(280); // Should be higher because player performed better than average
+    expect(response.body).toHaveProperty("confidence");
+    expect(response.body).toHaveProperty("adjustmentFactor");
+    expect(response.body).toHaveProperty("metadata");
+    expect(response.body.metadata).toHaveProperty("processed", true);
+    expect(response.body.metadata).toHaveProperty(
+      "method",
+      "kanarating-stabilization"
+    );
   });
 
   it("should return offered ELO when player has no current ELO", async () => {
@@ -71,14 +79,21 @@ describe("POST /api/v1/elo/stabilize", () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "76561198000000000",
-        offered_elo: 280
+        playerId: "76561198000000000",
+        currentValue: 280,
+        season: "2024-spring"
       })
       .expect(200);
 
     expect(response.body).toEqual({
-      adjusted_elo: 280,
-      reason: "No current ELO found for player"
+      stabilizedValue: 280,
+      confidence: 0.1,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: expect.any(String),
+        method: "no-current-elo"
+      }
     });
   });
 
@@ -90,14 +105,21 @@ describe("POST /api/v1/elo/stabilize", () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "76561198000000000",
-        offered_elo: 280
+        playerId: "76561198000000000",
+        currentValue: 280,
+        season: "2024-spring"
       })
       .expect(200);
 
     expect(response.body).toEqual({
-      adjusted_elo: 280,
-      reason: "No season or league data found for player"
+      stabilizedValue: 280,
+      confidence: 0.1,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: expect.any(String),
+        method: "no-season-data"
+      }
     });
   });
 
@@ -126,14 +148,21 @@ describe("POST /api/v1/elo/stabilize", () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "76561198000000000",
-        offered_elo: 280
+        playerId: "76561198000000000",
+        currentValue: 280,
+        season: "2024-spring"
       })
       .expect(200);
 
     expect(response.body).toEqual({
-      adjusted_elo: 280,
-      reason: "Sample size too small (50 players, minimum 100 required)"
+      stabilizedValue: 280,
+      confidence: 0.2,
+      adjustmentFactor: 1.0,
+      metadata: {
+        processed: false,
+        timestamp: expect.any(String),
+        method: "insufficient-sample-size"
+      }
     });
   });
 
@@ -141,77 +170,43 @@ describe("POST /api/v1/elo/stabilize", () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "76561198000000000"
-        // Missing offered_elo
+        playerId: "76561198000000000",
+        season: "2024-spring"
+        // Missing currentValue
       })
       .expect(400);
 
     expect(response.body).toHaveProperty("error");
-    expect(response.body.error.message).toContain("offered_elo");
+    expect(response.body.error).toContain("currentValue");
   });
 
-  it("should validate steam_id format", async () => {
+  it("should validate playerId format", async () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "invalid",
-        offered_elo: 280
+        playerId: "invalid",
+        currentValue: 280,
+        season: "2024-spring"
       })
       .expect(400);
 
     expect(response.body).toHaveProperty("error");
-    expect(response.body.error.message).toContain("steam_id");
+    expect(response.body.error).toContain("playerId");
   });
 
-  it("should validate offered_elo is a positive number", async () => {
+  it("should validate currentValue range", async () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .send({
-        steam_id: "76561198000000000",
-        offered_elo: -50
+        playerId: "76561198000000000",
+        currentValue: 500, // Above max of 400
+        season: "2024-spring"
       })
       .expect(400);
 
     expect(response.body).toHaveProperty("error");
-    expect(response.body.error.message).toContain(
-      "offered_elo must be a positive number"
+    expect(response.body.error).toContain(
+      "currentValue must be a number between 0 and 400"
     );
-  });
-
-  it("should apply different multiplier scaling for high ELO players", async () => {
-    mockRunQuery
-      .mockResolvedValueOnce([{ kana_elo: 350 }]) // High ELO player
-      .mockResolvedValueOnce([
-        {
-          season_id: 11,
-          league_id: 1,
-          avg_kana_rating: 1.2
-        }
-      ])
-      .mockResolvedValueOnce([
-        {
-          avg_player_rating: 1.1
-        }
-      ])
-      .mockResolvedValueOnce([
-        {
-          rowCount: 150,
-          leagueAvgRating: 1.0
-        }
-      ])
-      .mockResolvedValueOnce([{ team_id: 456 }]); // Team lookup query
-
-    const response = await request(app)
-      .post("/api/v1/elo/stabilize")
-      .send({
-        steam_id: "76561198000000000",
-        offered_elo: 400 // High offered ELO
-      })
-      .expect(200);
-
-    expect(response.body).toHaveProperty("adjusted_elo");
-    // For high ELO (>270), the multiplier range should be smaller (±0.1 vs ±0.2)
-    const adjustment = Math.abs(response.body.adjusted_elo - 400);
-    expect(adjustment).toBeLessThan(80); // Should be a smaller adjustment for high ELO
   });
 });

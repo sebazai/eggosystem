@@ -59,10 +59,12 @@ describe("ELO Services Enhanced", () => {
 
       const result = await stabilizePlayerElo(testSteamId, 220);
 
-      expect(result.adjusted_elo).toBeGreaterThan(220); // Should be adjusted upward
-      expect(result.details).toBeDefined();
-      expect(result.details?.season_id).toBe(testSeasonId);
-      expect(result.details?.league_id).toBe(testLeagueId);
+      expect(result.stabilizedValue).toBeGreaterThan(220); // Should be adjusted upward
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.adjustmentFactor).toBeGreaterThan(1);
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata.processed).toBe(true);
+      expect(result.metadata.method).toBe("kanarating-stabilization");
 
       // Verify Redis storage - check that it was called with the correct key and contains expected data
       expect(mockRedisClient.set).toHaveBeenCalledWith(
@@ -80,7 +82,7 @@ describe("ELO Services Enhanced", () => {
       expect(storedData.season_id).toBe(testSeasonId);
       expect(storedData.league_id).toBe(testLeagueId);
       expect(storedData.offered_elo).toBe(220);
-      expect(storedData.adjusted_elo).toBe(result.adjusted_elo);
+      expect(storedData.adjusted_elo).toBe(result.stabilizedValue);
       expect(storedData.adjustment_reason).toBe("stabilized");
       expect(storedData.timestamp).toBeDefined();
     });
@@ -168,8 +170,12 @@ describe("ELO Services Enhanced", () => {
       const result = await stabilizePlayerElo(testSteamId, 220);
 
       // Should still proceed with adjustment
-      expect(result.adjusted_elo).toBeGreaterThan(220);
-      expect(result.details).toBeDefined();
+      expect(result.stabilizedValue).toBeGreaterThan(220);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.adjustmentFactor).toBeGreaterThan(1);
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata.processed).toBe(true);
+      expect(result.metadata.method).toBe("kanarating-stabilization");
 
       // Should store the adjustment
       expect(mockRedisClient.set).toHaveBeenCalledWith(
@@ -187,9 +193,8 @@ describe("ELO Services Enhanced", () => {
         30 * 24 * 60 * 60 // Team flags use 30 days
       );
 
-      // Should include flag information in result
-      expect(result.teamFlagged).toBe(true);
-      expect(result.flagReason).toContain("Too many high adjustments for team");
+      // Team flagging is handled internally but not exposed in the response
+      // The stabilization still proceeds and stores the flag in Redis
     });
   });
 
@@ -676,10 +681,14 @@ describe("ELO Services Enhanced", () => {
 
       const result = await stabilizePlayerElo(testSteamId, 195);
 
-      expect(result.adjusted_elo).toBeGreaterThan(195);
-      expect(result.details?.season_id).toBe(14);
-      expect(result.details?.player_rating).toBe(1.08);
-      expect(result.details?.league_avg_rating).toBe(1.02);
+      expect(result.stabilizedValue).toBeGreaterThan(195);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.adjustmentFactor).toBeGreaterThan(1);
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata.processed).toBe(true);
+      expect(result.metadata.method).toBe("kanarating-stabilization");
+      // Note: detailed calculation data is no longer included in the response
+      // as per CSRankker requirements
     });
   });
 });

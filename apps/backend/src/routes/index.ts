@@ -18,6 +18,7 @@ import registrationsRouter from "./v1/season-team-registration.routes";
 import gameRouter from "./v1/game.routes";
 import sortterRouter from "./v1/sortter.routes";
 import discordRouter from "./v1/discord.routes";
+import eloRouter from "./v1/elo.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
@@ -58,6 +59,7 @@ v1Router.use("/faceit", faceitRouter);
 v1Router.use("/allstar", allstarRouter);
 v1Router.use("/discord", discordRouter);
 v1Router.use("/stages", stageRouter);
+v1Router.use("/elo", eloRouter);
 
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();

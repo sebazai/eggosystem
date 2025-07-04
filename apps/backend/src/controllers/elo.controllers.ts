@@ -2,36 +2,66 @@ import { type Request, type Response } from "express";
 import { stabilizePlayerElo } from "../services/elo.services";
 import { BadRequestError } from "../utils/errors";
 
-interface StabilizeEloRequest {
-  steam_id: string;
-  offered_elo: number;
+interface StabilizationRequest {
+  playerId: string; // Steam ID of the player
+  currentValue: number; // Calculated kanaelo value (0-400)
+  season: string; // Season ID
+  metadata?: {
+    timestamp: string; // ISO timestamp
+    source: string; // Always "kanaelo-calc"
+  };
+}
+
+interface StabilizationResponse {
+  stabilizedValue: number; // Adjusted kanaelo value (0-400)
+  confidence: number; // Confidence level (0.0-1.0)
+  adjustmentFactor: number; // Multiplier applied (0.5-2.0 typical range)
+  metadata: {
+    processed: boolean; // Whether stabilization was applied
+    timestamp: string; // ISO timestamp
+    method: string; // Stabilization method used
+  };
 }
 
 export const stabilizeEloController = async (
-  req: Request<Record<string, never>, unknown, StabilizeEloRequest>,
-  res: Response
+  req: Request<
+    Record<string, never>,
+    StabilizationResponse,
+    StabilizationRequest
+  >,
+  res: Response<StabilizationResponse>
 ): Promise<void> => {
-  const { steam_id, offered_elo } = req.body;
+  const { playerId, currentValue, season, metadata: _metadata } = req.body;
 
   // Validate input
-  if (!steam_id) {
-    throw new BadRequestError("steam_id is required");
+  if (!playerId) {
+    throw new BadRequestError("playerId is required");
   }
 
-  if (offered_elo === undefined || offered_elo === null) {
-    throw new BadRequestError("offered_elo is required");
+  if (currentValue === undefined || currentValue === null) {
+    throw new BadRequestError("currentValue is required");
   }
 
-  if (typeof offered_elo !== "number" || offered_elo <= 0) {
-    throw new BadRequestError("offered_elo must be a positive number");
+  if (
+    typeof currentValue !== "number" ||
+    currentValue < 0 ||
+    currentValue > 400
+  ) {
+    throw new BadRequestError(
+      "currentValue must be a number between 0 and 400"
+    );
+  }
+
+  if (!season) {
+    throw new BadRequestError("season is required");
   }
 
   // Validate Steam ID format (basic validation)
-  if (!/^\d{17}$/.test(steam_id)) {
-    throw new BadRequestError("steam_id must be a valid 17-digit Steam ID");
+  if (!/^\d{17}$/.test(playerId)) {
+    throw new BadRequestError("playerId must be a valid 17-digit Steam ID");
   }
 
-  const result = await stabilizePlayerElo(steam_id, offered_elo);
+  const result = await stabilizePlayerElo(playerId, currentValue, season);
 
   res.status(200).json(result);
 };
