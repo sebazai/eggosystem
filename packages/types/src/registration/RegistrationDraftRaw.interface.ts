@@ -53,8 +53,10 @@ export function isRegistrationDraftRaw(
     if (Object.keys(player).some((k) => !allowedPlayerKeys.includes(k)))
       return false;
     if (typeof player.accountId !== "number") return false;
-    if (typeof player.steamId !== "string") return false;
-    if (typeof player.nickname !== "string") return false;
+    if (typeof player.steamId !== "string" || player.steamId.length > 100)
+      return false;
+    if (typeof player.nickname !== "string" || player.nickname.length > 100)
+      return false;
     if ("captain" in player && typeof player.captain !== "boolean")
       return false;
     if ("coCaptain" in player && typeof player.coCaptain !== "boolean")
@@ -66,9 +68,14 @@ export function isRegistrationDraftRaw(
     const org = d.newOrganization as Record<string, unknown>;
     const allowedOrgKeys = ["name", "website", "organization_code"];
     if (Object.keys(org).some((k) => !allowedOrgKeys.includes(k))) return false;
-    if (typeof org.name !== "string") return false;
-    if (typeof org.website !== "string") return false;
-    if (typeof org.organization_code !== "string") return false;
+    if (typeof org.name !== "string" || org.name.length > 100) return false;
+    if (typeof org.website !== "string" || org.website.length > 100)
+      return false;
+    if (
+      typeof org.organization_code !== "string" ||
+      org.organization_code.length > 100
+    )
+      return false;
   }
   if (d.newTeam !== undefined) {
     if (typeof d.newTeam !== "object" || d.newTeam === null) return false;
@@ -76,9 +83,12 @@ export function isRegistrationDraftRaw(
     const allowedTeamKeys = ["name"];
     if (Object.keys(team).some((k) => !allowedTeamKeys.includes(k)))
       return false;
-    if (typeof team.name !== "string") return false;
+    if (typeof team.name !== "string" || team.name.length > 100) return false;
   }
-  if (d.teamExternalId !== undefined && typeof d.teamExternalId !== "string")
+  if (
+    d.teamExternalId !== undefined &&
+    (typeof d.teamExternalId !== "string" || d.teamExternalId.length > 100)
+  )
     return false;
   return true;
 }
