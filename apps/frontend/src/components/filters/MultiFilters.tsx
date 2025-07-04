@@ -8,7 +8,8 @@ import type {
   Season,
   Team,
   Map,
-  MultiFilterSelectableIds
+  MultiFilterSelectableIds,
+  Stage
 } from "@eggosystem/types";
 import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -51,7 +52,7 @@ const getFilterComponent = (
   switch (key) {
     case "stages":
       return (
-        <ItemFilter<{ id: number; name: string }>
+        <ItemFilter<Stage>
           key={key}
           filterName="stages"
           labelKey="name"
