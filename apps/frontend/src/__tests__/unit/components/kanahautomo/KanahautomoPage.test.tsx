@@ -4,7 +4,6 @@ import KanahautomoPage from "@/components/kanahautomo/KanahautomoPage";
 import { AuthProvider } from "@/context/AuthContext";
 import { useOrganizations } from "@/hooks/data/useOrganizations";
 import { useKanahautomoOrganizationStatus } from "@/hooks/data/useKanahautomoOrganizationStatus";
-import type { Organizations } from "@eggosystem/types";
 import { useAuth } from "@/context/AuthContext";
 import React from "react";
 import { clientApiFetch } from "@/lib/apiClient";
@@ -15,6 +14,7 @@ jest.mock("@/hooks/data/useOrganizations");
 jest.mock("@/hooks/data/useKanahautomoOrganizationStatus");
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
+  usePathname: jest.fn(() => "/test-path"),
   useSearchParams: jest.fn(() => ({
     get: jest.fn(),
     has: jest.fn(),
@@ -66,7 +66,8 @@ const mockUser = {
   discordLinked: false
 };
 
-const mockOrganizations: Organizations[] = [
+// Memoized mock return values
+const stableMockOrganizations = [
   {
     id: 1,
     name: "Test Organization 1",
@@ -95,8 +96,7 @@ const mockOrganizations: Organizations[] = [
     sort_order: 3
   }
 ];
-
-const mockOrgStatus = [
+const stableMockOrgStatus = [
   {
     organization_id: 1,
     organization_name: "Test Organization 1",
@@ -137,9 +137,7 @@ const mockOrgStatus = [
     }
   }
 ];
-
-// Mock the AuthContext
-const mockAuthContext = {
+const stableMockAuthContext = {
   user: mockUser,
   loading: false,
   checkAuth: jest.fn(),
@@ -173,23 +171,20 @@ describe("KanahautomoPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockScrollIntoView.mockClear();
-
     mockUseOrganizations.mockReturnValue({
-      organizations: mockOrganizations,
+      organizations: stableMockOrganizations,
       isLoading: false,
       isError: undefined,
       isValidating: false
     });
-
     mockUseKanahautomoOrganizationStatus.mockReturnValue({
-      orgStatus: mockOrgStatus,
+      orgStatus: stableMockOrgStatus,
       orgStatusLoading: false,
       orgStatusError: undefined,
       isValidating: false,
       mutate: jest.fn()
     });
-
-    (useAuth as jest.Mock).mockReturnValue(mockAuthContext);
+    (useAuth as jest.Mock).mockReturnValue(stableMockAuthContext);
   });
 
   describe("Basic Rendering", () => {
@@ -280,7 +275,7 @@ describe("KanahautomoPage", () => {
       renderKanahautomoPage();
       expect(
         screen.getByText(
-          "Failed to load organizations. Please try again later."
+          "Failed to load organizations. This might be a temporary issue."
         )
       ).toBeInTheDocument();
     });
@@ -301,10 +296,8 @@ describe("KanahautomoPage", () => {
     it("opens organization dropdown when clicked", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
-
       // Check that the dropdown content is visible
       expect(screen.getByText("Add new organization...")).toBeInTheDocument();
       // Use getAllByText to handle multiple elements with same text
@@ -317,15 +310,12 @@ describe("KanahautomoPage", () => {
     it("allows selecting an existing organization", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
-
       // Select an organization from the dropdown (use getAllByText and get the first one which should be the dropdown option)
       const orgOptions = screen.getAllByText("Test Organization 1");
       expect(orgOptions[0]).toBeDefined();
       await user.click(orgOptions[0]!); // First one should be the dropdown option
-
       // Check that the selected organization is displayed in the combobox
       expect(screen.getByText("Test Organization 1")).toBeInTheDocument();
     });
@@ -333,10 +323,8 @@ describe("KanahautomoPage", () => {
     it("shows 'Add new organization...' option", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
-
       expect(screen.getByText("Add new organization...")).toBeInTheDocument();
     });
   });
@@ -345,11 +333,9 @@ describe("KanahautomoPage", () => {
     it("shows new organization form when 'Add new organization...' is selected", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
       await user.click(screen.getByText("Add new organization..."));
-
       // Check that the form fields appear
       await waitFor(() => {
         expect(
@@ -367,22 +353,18 @@ describe("KanahautomoPage", () => {
     it("hides new organization form when existing organization is selected", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       // First select "Add new organization..."
       const combobox = screen.getByRole("combobox");
       await user.click(combobox);
       await user.click(screen.getByText("Add new organization..."));
-
       // Verify form is visible
       await waitFor(() => {
         expect(
           screen.getByTestId("organization-name-input")
         ).toBeInTheDocument();
       });
-
       // Now select an existing organization - click the combobox again to open dropdown
       await user.click(combobox);
-
       // Find the organization option in the dropdown (not in the status cards)
       await waitFor(() => {
         const dropdownOptions = screen.getAllByText("Test Organization 1");
@@ -396,7 +378,6 @@ describe("KanahautomoPage", () => {
         expect(dropdownOption).toBeDefined();
         return dropdownOption;
       });
-
       // Click on the dropdown option
       const dropdownOptions = screen.getAllByText("Test Organization 1");
       const dropdownOption = dropdownOptions.find(
@@ -406,7 +387,6 @@ describe("KanahautomoPage", () => {
           el.closest("[cmdk-item]")
       );
       await user.click(dropdownOption!);
-
       // Wait for the form to be hidden - the watchOrganizationId should no longer be -1
       await waitFor(
         () => {
@@ -440,18 +420,14 @@ describe("KanahautomoPage", () => {
     it("allows toggling game type checkboxes", async () => {
       const user = userEvent.setup();
       renderKanahautomoPage();
-
       const cs2Checkbox = screen.getByLabelText("CS2 Comp");
       const pubgCheckbox = screen.getByLabelText("PUBG Squad");
-
       // Initially unchecked
       expect(cs2Checkbox).not.toBeChecked();
       expect(pubgCheckbox).not.toBeChecked();
-
       // Check them
       await user.click(cs2Checkbox);
       await user.click(pubgCheckbox);
-
       // Now checked
       expect(cs2Checkbox).toBeChecked();
       expect(pubgCheckbox).toBeChecked();
@@ -731,7 +707,7 @@ describe("KanahautomoPage", () => {
   describe("Discord Linking", () => {
     it("shows Link Discord Account button when Discord is not linked", () => {
       (useAuth as jest.Mock).mockReturnValue({
-        ...mockAuthContext,
+        ...stableMockAuthContext,
         user: { ...mockUser, discordLinked: false }
       });
       renderKanahautomoPage();
@@ -746,7 +722,7 @@ describe("KanahautomoPage", () => {
 
     it("hides Link Discord Account button when Discord is already linked", () => {
       (useAuth as jest.Mock).mockReturnValue({
-        ...mockAuthContext,
+        ...stableMockAuthContext,
         user: { ...mockUser, discordLinked: true }
       });
       renderKanahautomoPage();
@@ -774,7 +750,7 @@ describe("KanahautomoPage", () => {
     it("navigates to Discord OAuth when Link Discord Account button is clicked", async () => {
       const user = userEvent.setup();
       (useAuth as jest.Mock).mockReturnValue({
-        ...mockAuthContext,
+        ...stableMockAuthContext,
         user: { ...mockUser, discordLinked: false }
       });
 
