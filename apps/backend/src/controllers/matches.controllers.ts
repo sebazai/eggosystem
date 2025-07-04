@@ -9,7 +9,8 @@ import {
   getMatchInfo,
   getMatch,
   getMatchGame,
-  getMatchMapVetoes
+  getMatchMapVetoes,
+  getMatchWithBreadcrumbInfo
 } from "../models/match.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
@@ -31,6 +32,19 @@ export const getMatchController = async (
     return;
   }
 
+  res.json(match);
+};
+
+export const getMatchBreadcrumbController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+  const [match] = await getMatchWithBreadcrumbInfo(matchId);
+  if (!match) {
+    res.status(404).json({ error: "Match data not found" });
+    return;
+  }
   res.json(match);
 };
 

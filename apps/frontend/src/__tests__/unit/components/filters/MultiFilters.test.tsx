@@ -20,14 +20,6 @@ jest.mock("@/components/filters/ItemFilter", () => ({
   )
 }));
 
-jest.mock("@/components/filters/StageFilter", () => ({
-  StageFilter: ({ selectedStages }: { selectedStages: number[] }) => (
-    <div data-testid="stage-filter">
-      stages filter ({selectedStages.length} selected)
-    </div>
-  )
-}));
-
 jest.mock("@/components/ui/button", () => ({
   Button: ({
     children,
@@ -104,7 +96,7 @@ describe("MultiFilters", () => {
 
       expect(screen.getByTestId("item-filter-seasons")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.getByTestId("stage-filter")).toBeInTheDocument();
+      expect(screen.getByTestId("item-filter-stages")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-maps")).toBeInTheDocument();
       expect(screen.getByTestId("clear-filters-button")).toBeInTheDocument();
@@ -122,7 +114,7 @@ describe("MultiFilters", () => {
         />
       );
 
-      const filters = screen.getAllByTestId(/item-filter-|stage-filter/);
+      const filters = screen.getAllByTestId(/item-filter-|item-filter-stages/);
       expect(filters).toHaveLength(5);
     });
 
@@ -131,7 +123,7 @@ describe("MultiFilters", () => {
 
       expect(screen.getByTestId("item-filter-seasons")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.getByTestId("stage-filter")).toBeInTheDocument();
+      expect(screen.getByTestId("item-filter-stages")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-maps")).toBeInTheDocument();
     });
@@ -154,7 +146,7 @@ describe("MultiFilters", () => {
         screen.queryByTestId("item-filter-seasons")
       ).not.toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.getByTestId("stage-filter")).toBeInTheDocument();
+      expect(screen.getByTestId("item-filter-stages")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-maps")).toBeInTheDocument();
     });
@@ -175,7 +167,9 @@ describe("MultiFilters", () => {
         screen.queryByTestId("item-filter-seasons")
       ).not.toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.queryByTestId("stage-filter")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("item-filter-stages")
+      ).not.toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.queryByTestId("item-filter-maps")).not.toBeInTheDocument();
     });
@@ -203,7 +197,9 @@ describe("MultiFilters", () => {
       expect(
         screen.queryByTestId("item-filter-leagues")
       ).not.toBeInTheDocument();
-      expect(screen.queryByTestId("stage-filter")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("item-filter-stages")
+      ).not.toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.queryByTestId("item-filter-maps")).not.toBeInTheDocument();
     });
@@ -221,7 +217,7 @@ describe("MultiFilters", () => {
 
       expect(screen.getByTestId("item-filter-seasons")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.getByTestId("stage-filter")).toBeInTheDocument();
+      expect(screen.getByTestId("item-filter-stages")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-maps")).toBeInTheDocument();
     });
@@ -240,7 +236,7 @@ describe("MultiFilters", () => {
 
       expect(screen.getByTestId("item-filter-seasons")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.getByTestId("stage-filter")).toBeInTheDocument();
+      expect(screen.getByTestId("item-filter-stages")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-maps")).toBeInTheDocument();
     });
@@ -451,7 +447,7 @@ describe("MultiFilters", () => {
 
       expect(screen.getByTestId("item-filter-seasons")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-leagues")).toBeInTheDocument();
-      expect(screen.getByTestId("stage-filter")).toBeInTheDocument();
+      expect(screen.getByTestId("item-filter-stages")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-teams")).toBeInTheDocument();
       expect(screen.getByTestId("item-filter-maps")).toBeInTheDocument();
       expect(screen.getByTestId("clear-filters-button")).toBeInTheDocument();

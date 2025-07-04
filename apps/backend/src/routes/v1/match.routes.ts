@@ -8,7 +8,8 @@ import {
   getMatchInfoController,
   getMatchController,
   getMatchGameController,
-  getMatchMapVetoesController
+  getMatchMapVetoesController,
+  getMatchBreadcrumbController
 } from "../../controllers/matches.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -16,6 +17,11 @@ import { validateNumericParams } from "../../middlewares/validate-numeric-params
 const router = Router();
 
 router.get("/:match_id", validateNumericParams(), getMatchController);
+router.get(
+  "/:match_id/breadcrumb",
+  validateNumericParams(),
+  getMatchBreadcrumbController
+);
 router.get("/:match_id/info", validateNumericParams(), getMatchInfoController);
 router.get(
   "/:match_id/games/:game_id",

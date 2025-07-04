@@ -10,7 +10,8 @@ import {
   type MatchGame,
   type MatchPlayerStats,
   type MatchTeamStats,
-  type MatchMapVetoes
+  type MatchMapVetoes,
+  type Stage
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -24,6 +25,13 @@ export const getMatches = (): Promise<Match[]> => {
 export const getMatch = (matchId: number) => {
   return runQuery<Array<Match | undefined>>(
     "SELECT * FROM Matches WHERE id = ?",
+    [matchId]
+  );
+};
+
+export const getMatchWithBreadcrumbInfo = (matchId: number) => {
+  return runQuery<Array<(Match & Stage) | undefined>>(
+    "SELECT * FROM Matches m JOIN Stages s ON m.stage = s.id WHERE m.id = ?",
     [matchId]
   );
 };
