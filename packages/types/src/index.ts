@@ -26,3 +26,4 @@ export * from "./leetify/index";
 export * from "./sortter/index";
 export * from "./kanahautomo/index";
 export * from "./dashboard/registration";
+export * from "./registration";

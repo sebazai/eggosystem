@@ -12,6 +12,7 @@ import {
   checkJWTPermissions
 } from "../../middlewares/auth.middleware";
 import { expireIn30Days, redisClient } from "../../utils/redisClient";
+import { isRegistrationDraftRaw } from "@eggosystem/types";
 
 const router = Router();
 router.get(
@@ -45,6 +46,10 @@ router.post(
   async (req, res) => {
     const steamId = req.auth?.provider_id;
     const redisKey = `signup-${steamId}`;
+    if (!isRegistrationDraftRaw(req.body)) {
+      res.status(400).json({ error: "Invalid draft structure" });
+      return;
+    }
     await redisClient.set(
       redisKey,
       JSON.stringify(req.body),
@@ -63,7 +68,12 @@ router.get(
     const redisKey = `signup-${steamId}`;
     const data = await redisClient.get(redisKey);
     if (data) {
-      res.json(JSON.parse(data));
+      const parsed = JSON.parse(data);
+      if (!isRegistrationDraftRaw(parsed)) {
+        res.status(500).json({ error: "Corrupted draft data in Redis" });
+        return;
+      }
+      res.json(parsed);
       return;
     }
     res.sendStatus(404);
