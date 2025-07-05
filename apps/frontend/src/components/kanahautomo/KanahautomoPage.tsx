@@ -44,6 +44,7 @@ import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { envConfig } from "@/configs/env";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
+import { OrganizationDiscordInviteLink } from "@/components/organizations/OrganizationDiscordInviteLink";
 
 const KANAHUTOMO_FORM_STORAGE_KEY = "kanahautomo_form_data";
 
@@ -161,7 +162,7 @@ export default function KanahautomoPage() {
     if (!hasDiscordParams) {
       loadFormFromStorage();
     }
-  }, []);
+  }, [loadFormFromStorage, searchParams]);
 
   if (authLoading || orgsLoading) {
     return (
@@ -609,6 +610,15 @@ export default function KanahautomoPage() {
                     )}
                   </div>
                 </div>
+                {selectedOrg && (
+                  <div className="w-full mt-6 flex flex-col">
+                    <OrganizationDiscordInviteLink
+                      organizationId={selectedOrg.id}
+                      organizationName={selectedOrg.name}
+                      renderInfoText
+                    />
+                  </div>
+                )}
               </div>
 
               {error && <div className="text-red-500 text-sm">{error}</div>}

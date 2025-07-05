@@ -6,4 +6,8 @@ export interface Organizations {
   website: string;
   country: string;
   sort_order: number | null;
+  /**
+   * Discord invite link for the organization (nullable)
+   */
+  discord_invite_link: string | null;
 }

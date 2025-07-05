@@ -75,7 +75,8 @@ const stableMockOrganizations = [
     organization_code: "ORG1",
     website: "https://org1.com",
     country: "Finland",
-    sort_order: 1
+    sort_order: 1,
+    discord_invite_link: "https://discord.com/invite/test"
   },
   {
     id: 2,
@@ -84,7 +85,8 @@ const stableMockOrganizations = [
     organization_code: "ORG2",
     website: "https://org2.com",
     country: "Finland",
-    sort_order: 2
+    sort_order: 2,
+    discord_invite_link: null
   },
   {
     id: 3,
@@ -93,7 +95,8 @@ const stableMockOrganizations = [
     organization_code: "ORG3",
     website: "https://org3.com",
     country: "Finland",
-    sort_order: 3
+    sort_order: 3,
+    discord_invite_link: null
   }
 ];
 const stableMockOrgStatus = [

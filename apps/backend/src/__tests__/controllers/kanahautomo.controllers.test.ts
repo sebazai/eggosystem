@@ -56,7 +56,8 @@ const mockOrg: Organizations = {
   organization_code: "TEST",
   website: "",
   country: "",
-  sort_order: null
+  sort_order: null,
+  discord_invite_link: "https://discord.com/invite/test"
 };
 
 const mockGameTypes = {

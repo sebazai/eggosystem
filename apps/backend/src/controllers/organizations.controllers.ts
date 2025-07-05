@@ -3,7 +3,8 @@ import {
   getOrganizations,
   getOrganizationById,
   getOrganizationApprovedTeams,
-  getOrganizationTeamTrophies
+  getOrganizationTeamTrophies,
+  getOrganizationDiscordInviteLink
 } from "../models/organization.models";
 import { NotFoundError } from "../utils/errors";
 import { type RequestWithParams } from "@eggosystem/types";
@@ -39,4 +40,13 @@ export const getOrgTeamTrophiesController = async (
   const orgId = Number(req.params.id);
   const trophies = await getOrganizationTeamTrophies(orgId);
   res.json(trophies);
+};
+
+export const getOrgDiscordInviteLinkController = async (
+  req: Request,
+  res: Response
+) => {
+  const orgId = Number(req.params.id);
+  const inviteLink = await getOrganizationDiscordInviteLink(orgId);
+  res.json({ discord_invite_link: inviteLink });
 };

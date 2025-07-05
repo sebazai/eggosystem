@@ -6,6 +6,7 @@ import OrganizationTrophies from "@/components/organizations/OrganizationTrophie
 import OrganizationTeams from "@/components/organizations/OrganizationTeams";
 import type { Metadata } from "next";
 import { createPageMetadata } from "@/lib/metadata";
+import { OrganizationDiscordInviteLink } from "@/components/organizations/OrganizationDiscordInviteLink";
 
 interface OrganizationProps {
   params: Promise<{
@@ -46,6 +47,10 @@ export default async function Organization({ params }: OrganizationProps) {
         website={organization.website}
       />
       <OrganizationTrophies organizationId={id} />
+      <OrganizationDiscordInviteLink
+        organizationId={organization.id}
+        organizationName={organization.name}
+      />
       <OrganizationTeams organizationId={id} />
     </div>
   );
