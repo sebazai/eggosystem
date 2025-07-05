@@ -7,6 +7,7 @@ import {
   getOrgDiscordInviteLinkController
 } from "../../controllers/organizations.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import { authenticateJWT } from "../../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.get(
 router.get(
   "/:id/discord-invite-link",
   validateNumericParams(),
+  authenticateJWT,
   getOrgDiscordInviteLinkController
 );
 
