@@ -14,14 +14,26 @@ const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 // Mock the logger
 jest.mock("../../../utils/app-logger");
 
+// Mock API key
+const TEST_API_KEY = "test-api-key-for-unit-tests";
+
 describe("POST /api/v1/elo/stabilize", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Set environment variable for API key
+    process.env.PARSER_API_KEY = TEST_API_KEY;
+
     // Mock Redis operations
     mockRedisClient.set.mockResolvedValue("OK");
     mockRedisClient.get.mockResolvedValue(null);
     mockRedisClient.keys.mockResolvedValue([]);
     mockRedisClient.mget.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    // Clean up environment variables
+    delete process.env.PARSER_API_KEY;
   });
 
   it("should stabilize ELO for a player with valid data", async () => {
@@ -50,6 +62,7 @@ describe("POST /api/v1/elo/stabilize", () => {
 
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
         currentValue: 280,
@@ -78,6 +91,7 @@ describe("POST /api/v1/elo/stabilize", () => {
 
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
         currentValue: 280,
@@ -104,6 +118,7 @@ describe("POST /api/v1/elo/stabilize", () => {
 
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
         currentValue: 280,
@@ -140,15 +155,16 @@ describe("POST /api/v1/elo/stabilize", () => {
       ])
       .mockResolvedValueOnce([
         {
-          rowCount: 50, // Too small sample
+          rowCount: 5, // Too small sample (less than 10)
           leagueAvgRating: 1.0
         }
       ]);
 
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
-        playerId: "76561198000000000",
+        playerId: "76561198000000000", // Valid 17-digit Steam ID
         currentValue: 280,
         season: "2024-spring"
       })
@@ -169,6 +185,7 @@ describe("POST /api/v1/elo/stabilize", () => {
   it("should validate required fields", async () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
         season: "2024-spring"
@@ -183,6 +200,7 @@ describe("POST /api/v1/elo/stabilize", () => {
   it("should validate playerId format", async () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "invalid",
         currentValue: 280,
@@ -197,6 +215,7 @@ describe("POST /api/v1/elo/stabilize", () => {
   it("should validate currentValue range", async () => {
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
         currentValue: 500, // Above max of 400
@@ -208,5 +227,32 @@ describe("POST /api/v1/elo/stabilize", () => {
     expect(response.body.error).toContain(
       "currentValue must be a number between 0 and 400"
     );
+  });
+
+  it("should reject requests with invalid API key", async () => {
+    const response = await request(app)
+      .post("/api/v1/elo/stabilize")
+      .set("X-API-KEY", "invalid-api-key")
+      .send({
+        playerId: "76561198000000000",
+        currentValue: 280,
+        season: "2024-spring"
+      })
+      .expect(401);
+
+    expect(response.body.error).toHaveProperty("message", "Invalid API key");
+  });
+
+  it("should reject requests with missing API key", async () => {
+    const response = await request(app)
+      .post("/api/v1/elo/stabilize")
+      .send({
+        playerId: "76561198000000000",
+        currentValue: 280,
+        season: "2024-spring"
+      })
+      .expect(401);
+
+    expect(response.body.error).toHaveProperty("message", "API key required");
   });
 });
