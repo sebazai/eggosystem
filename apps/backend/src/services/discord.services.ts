@@ -141,10 +141,9 @@ export const createOrGetOrganizationRole = async (
     name: organizationName,
     color: generateRandomColor(),
     reason: `Role created for organization: ${organizationName}`,
-    permissions: []
+    permissions: [],
+    position: 3
   });
-
-  await newRole.setPosition(3);
 
   logger.info(`Created new organization role: ${newRole.name} (${newRole.id})`);
   return newRole.id;
