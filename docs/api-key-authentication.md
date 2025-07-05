@@ -12,13 +12,13 @@ Currently, the following endpoints are protected with API key authentication:
 
 ### Setting Up API Keys
 
-API keys are configured through the `API_KEYS` environment variable. This variable supports multiple comma-separated keys to allow different integration partners to have their own unique keys.
+API keys are configured through the `PARSER_API_KEY` environment variable. This defines a single API key to be used for authentication.
 
-1. Add the API keys to your environment variables in the appropriate environment file:
+1. Add the API key to your environment variables in the appropriate environment file:
 
 ```bash
 # .env.local, .env.production, etc.
-API_KEYS=your_secret_key_1,your_secret_key_2,your_secret_key_3
+PARSER_API_KEY=your_secret_key
 ```
 
 2. For Docker/Docker Compose environments, add the environment variable in the docker-compose file:
@@ -27,7 +27,7 @@ API_KEYS=your_secret_key_1,your_secret_key_2,your_secret_key_3
 services:
   backend:
     environment:
-      - API_KEYS=your_secret_key_1,your_secret_key_2,your_secret_key_3
+      - PARSER_API_KEY=your_secret_key
 ```
 
 3. For production environments, set this in your deployment configuration.
@@ -45,12 +45,12 @@ node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
 
 ### Making API Requests
 
-To access protected endpoints, include the API key in the `x-api-key` header with your HTTP requests:
+To access protected endpoints, include the API key in the `X-API-KEY` header with your HTTP requests:
 
 ```bash
 curl -X POST https://api.example.com/api/v1/elo/stabilize \
   -H "Content-Type: application/json" \
-  -H "x-api-key: your_secret_key_1" \
+  -H "X-API-KEY: your_secret_key" \
   -d '{"playerId": "76561198123456789", "currentValue": 150}'
 ```
 
@@ -61,7 +61,7 @@ const response = await fetch("https://api.example.com/api/v1/elo/stabilize", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
-    "x-api-key": "your_secret_key_1"
+    "X-API-KEY": "your_secret_key"
   },
   body: JSON.stringify({
     playerId: "76561198123456789",
@@ -87,7 +87,6 @@ If authentication fails, the API will respond with:
 
 - Never hardcode API keys directly in your source code
 - Rotate keys periodically for security best practices
-- Use different keys for different integration partners
 - Monitor for unusual access patterns that might indicate a compromised key
 
 ## Implementation Details

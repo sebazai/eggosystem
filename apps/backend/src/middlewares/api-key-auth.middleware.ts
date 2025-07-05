@@ -4,7 +4,7 @@ import { logger } from "../utils/app-logger";
 
 /**
  * API key authentication middleware
- * Validates API key from the x-api-key header against environment variable API_KEYS
+ * Validates API key from the X-API-KEY header against environment variable PARSER_API_KEY
  */
 export function validateApiKey(
   req: Request,
@@ -21,11 +21,11 @@ export function validateApiKey(
       throw new UnauthorizedError("API key required");
     }
 
-    // Get allowed keys from environment variable (comma separated list)
-    const allowedApiKeys = process.env.API_KEYS?.split(",") || [];
+    // Get allowed key from environment variable
+    const apiKey = process.env.PARSER_API_KEY;
 
     // Check if API key is valid
-    if (!allowedApiKeys.includes(providedKey)) {
+    if (!apiKey || providedKey !== apiKey) {
       logger.warn(`Invalid API key provided: ${providedKey.slice(0, 5)}...`);
       throw new UnauthorizedError("Invalid API key");
     }
