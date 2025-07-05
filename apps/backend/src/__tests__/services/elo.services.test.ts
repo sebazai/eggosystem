@@ -3,8 +3,8 @@ import {
   validateTeamEloAdjustments,
   getTeamEloAdjustments,
   storeEloAdjustment,
-  storeTeamFlag,
-  getTeamFlag
+  storeTeamFlag as _storeTeamFlag,
+  getTeamFlag as _getTeamFlag
 } from "../../services/elo.services";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { redisClient } from "../../utils/redisClient";
@@ -562,11 +562,47 @@ describe("ELO Services Enhanced", () => {
     });
   });
 
+  describe("Integration with season 14 data patterns", () => {
+    it("should work with realistic season 14 ELO ranges", async () => {
+      // Mock realistic season 14 data patterns
+      mockRunQuery
+        .mockResolvedValueOnce([{ kana_elo: 185 }]) // Typical season 14 ELO
+        .mockResolvedValueOnce([
+          {
+            season_id: 14,
+            league_id: 1,
+            avg_kana_rating: 1.08 // Realistic kana rating for season 14
+          }
+        ])
+        .mockResolvedValueOnce([{ avg_player_rating: 1.08 }])
+        .mockResolvedValueOnce([
+          {
+            rowCount: 120,
+            leagueAvgRating: 1.02 // Realistic league average
+          }
+        ])
+        .mockResolvedValueOnce([{ team_id: 15 }]); // Realistic team ID
+
+      mockRedisClient.set.mockResolvedValue("OK");
+
+      const result = await stabilizePlayerElo(testSteamId, 195);
+
+      expect(result.stabilizedValue).toBeGreaterThan(195);
+      expect(result.confidence).toBeGreaterThan(0);
+      expect(result.adjustmentFactor).toBeGreaterThan(1);
+      expect(result.metadata).toBeDefined();
+      expect(result.metadata.processed).toBe(true);
+      expect(result.metadata.method).toBe("kanarating-stabilization");
+      // Note: detailed calculation data is no longer included in the response
+      // as per CSRankker requirements
+    });
+  });
+
   describe("storeTeamFlag", () => {
     it("should store team flag data in Redis with proper expiration", async () => {
       mockRedisClient.set.mockResolvedValue("OK");
 
-      await storeTeamFlag({
+      await _storeTeamFlag({
         season_id: testSeasonId,
         league_id: testLeagueId,
         team_id: testTeamId,
@@ -587,7 +623,7 @@ describe("ELO Services Enhanced", () => {
       mockRedisClient.set.mockResolvedValue("OK");
       const beforeTime = new Date();
 
-      await storeTeamFlag({
+      await _storeTeamFlag({
         season_id: testSeasonId,
         league_id: testLeagueId,
         team_id: testTeamId,
@@ -631,7 +667,7 @@ describe("ELO Services Enhanced", () => {
 
       mockRedisClient.get.mockResolvedValue(JSON.stringify(mockFlagData));
 
-      const result = await getTeamFlag(testSeasonId, testLeagueId, testTeamId);
+      const result = await _getTeamFlag(testSeasonId, testLeagueId, testTeamId);
 
       expect(result).toEqual(mockFlagData);
       expect(mockRedisClient.get).toHaveBeenCalledWith(
@@ -642,7 +678,7 @@ describe("ELO Services Enhanced", () => {
     it("should return null when no flag exists", async () => {
       mockRedisClient.get.mockResolvedValue(null);
 
-      const result = await getTeamFlag(testSeasonId, testLeagueId, testTeamId);
+      const result = await _getTeamFlag(testSeasonId, testLeagueId, testTeamId);
 
       expect(result).toBeNull();
     });
@@ -650,45 +686,9 @@ describe("ELO Services Enhanced", () => {
     it("should handle JSON parse errors gracefully", async () => {
       mockRedisClient.get.mockResolvedValue("invalid json");
 
-      const result = await getTeamFlag(testSeasonId, testLeagueId, testTeamId);
+      const result = await _getTeamFlag(testSeasonId, testLeagueId, testTeamId);
 
       expect(result).toBeNull();
-    });
-  });
-
-  describe("Integration with season 14 data patterns", () => {
-    it("should work with realistic season 14 ELO ranges", async () => {
-      // Mock realistic season 14 data patterns
-      mockRunQuery
-        .mockResolvedValueOnce([{ kana_elo: 185 }]) // Typical season 14 ELO
-        .mockResolvedValueOnce([
-          {
-            season_id: 14,
-            league_id: 1,
-            avg_kana_rating: 1.08 // Realistic kana rating for season 14
-          }
-        ])
-        .mockResolvedValueOnce([{ avg_player_rating: 1.08 }])
-        .mockResolvedValueOnce([
-          {
-            rowCount: 120,
-            leagueAvgRating: 1.02 // Realistic league average
-          }
-        ])
-        .mockResolvedValueOnce([{ team_id: 15 }]); // Realistic team ID
-
-      mockRedisClient.set.mockResolvedValue("OK");
-
-      const result = await stabilizePlayerElo(testSteamId, 195);
-
-      expect(result.stabilizedValue).toBeGreaterThan(195);
-      expect(result.confidence).toBeGreaterThan(0);
-      expect(result.adjustmentFactor).toBeGreaterThan(1);
-      expect(result.metadata).toBeDefined();
-      expect(result.metadata.processed).toBe(true);
-      expect(result.metadata.method).toBe("kanarating-stabilization");
-      // Note: detailed calculation data is no longer included in the response
-      // as per CSRankker requirements
     });
   });
 });

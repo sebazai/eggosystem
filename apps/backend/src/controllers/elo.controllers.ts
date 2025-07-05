@@ -1,6 +1,8 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import { stabilizePlayerElo } from "../services/elo.services";
 import { BadRequestError } from "../utils/errors";
+import { validateSteamId } from "../utils/steam-id-validator";
+import { type RequestWithBody } from "@eggosystem/types";
 
 interface StabilizationRequest {
   playerId: string; // Steam ID of the player
@@ -24,11 +26,7 @@ interface StabilizationResponse {
 }
 
 export const stabilizeEloController = async (
-  req: Request<
-    Record<string, never>,
-    StabilizationResponse,
-    StabilizationRequest
-  >,
+  req: RequestWithBody<StabilizationRequest>,
   res: Response<StabilizationResponse>
 ): Promise<void> => {
   const { playerId, currentValue, season, metadata: _metadata } = req.body;
@@ -56,10 +54,8 @@ export const stabilizeEloController = async (
     throw new BadRequestError("season is required");
   }
 
-  // Validate Steam ID format (basic validation)
-  if (!/^\d{17}$/.test(playerId)) {
-    throw new BadRequestError("playerId must be a valid 17-digit Steam ID");
-  }
+  // Validate Steam ID format using the utility function
+  validateSteamId(playerId, "playerId must be a valid 17-digit Steam ID");
 
   const result = await stabilizePlayerElo(playerId, currentValue, season);
 

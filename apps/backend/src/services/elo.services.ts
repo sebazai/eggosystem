@@ -1,7 +1,10 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import { redisClient, expireIn7Days } from "../utils/redisClient";
+import {
+  redisClient,
+  expireIn7Days,
+  expireIn30Days
+} from "../utils/redisClient";
 
-const expireIn30Days = 30 * 24 * 60 * 60; // 30 days for team flags
 import { logger } from "../utils/app-logger";
 
 interface PlayerEloRow {

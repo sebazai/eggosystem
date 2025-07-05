@@ -3,23 +3,36 @@ import { BaseError, UnauthorizedError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import { ZodError } from "zod";
 
+interface UnauthorizedErrorLike {
+  name: string;
+  status: number;
+  message: string;
+}
+
+/**
+ * Type guard to check if an error is an UnauthorizedError or similar
+ */
+function isUnauthorizedError(err: unknown): err is UnauthorizedErrorLike {
+  return (
+    err instanceof UnauthorizedError ||
+    (typeof err === "object" &&
+      err !== null &&
+      "name" in err &&
+      (err as { name: string }).name === "UnauthorizedError" &&
+      "status" in err &&
+      "message" in err)
+  );
+}
+
 export const expressErrorHandler = (
   err: unknown,
   req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-  if (
-    (typeof UnauthorizedError !== "undefined" &&
-      err instanceof UnauthorizedError) ||
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (err && (err as any).name === "UnauthorizedError")
-  ) {
-    res
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .status((err as any).status || 401)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .json({ error: (err as any).message });
+  // Handle UnauthorizedError (both our own and from express-jwt)
+  if (isUnauthorizedError(err)) {
+    res.status(err.status || 401).json({ error: err.message });
     return;
   }
 
