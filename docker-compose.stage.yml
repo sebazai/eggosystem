@@ -30,6 +30,9 @@ services:
       DISCORD_CLIENT_SECRET: $DISCORD_CLIENT_SECRET
       DISCORD_BOT_TOKEN: $DISCORD_BOT_TOKEN
       DISCORD_GUILD_ID: $DISCORD_GUILD_ID
+      RABBITMQ_HOST: eggo-stage-rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_STAGE_PASS}
     networks:
       - web
     volumes:
@@ -162,6 +165,32 @@ services:
     networks:
       - web
     restart: no
+
+  eggo-stage-rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: eggo-stage-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_STAGE_PASS}
+    networks:
+      - web
+    ports:
+      - "5672:5672"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq-hubstage.entrypoints=http"
+      - "traefik.http.routers.rabbitmq-hubstage.rule=Host(`hubdev-mq.kanaliiga.fi`)"
+      - "traefik.http.middlewares.rabbitmq-hubstage-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.rabbitmq-hubstage.middlewares=rabbitmq-hubstage-https-redirect"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.entrypoints=https"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.rule=Host(`hubdev-mq.kanaliiga.fi`)"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls=true"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls.domains[0].main=hubdev-mq.kanaliiga.fi"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls.certresolver=http"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.service=rabbitmq-hubstage"
+      - "traefik.http.services.rabbitmq-hubstage.loadbalancer.server.port=15672"
+      - "traefik.docker.network=web"
 
 networks:
   web:
