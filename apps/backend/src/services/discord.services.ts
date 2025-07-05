@@ -136,13 +136,19 @@ export const createOrGetOrganizationRole = async (
     return existingRole.id;
   }
 
+  // Find CS2 Comp role position
+  const cs2CompRole = guild.roles.cache.find(
+    (role) => role.name === "CS2 Comp"
+  );
+  const orgRolePosition = cs2CompRole ? cs2CompRole.position + 1 : 7;
+
   // Create new role
   const newRole = await guild.roles.create({
     name: organizationName,
     color: generateRandomColor(),
     reason: `Role created for organization: ${organizationName}`,
     permissions: [],
-    position: 3
+    position: orgRolePosition
   });
 
   logger.info(`Created new organization role: ${newRole.name} (${newRole.id})`);
