@@ -15,6 +15,10 @@ variables:
   TRANSFER_METER_FREQUENCY: "10s"
   CACHE_COMPRESSION_LEVEL: "fastest"
   FF_USE_FASTZIP: 1
+  # Tag variables for Docker images
+  BACKEND_TAG: $CI_COMMIT_SHA
+  FRONTEND_TAG: $CI_COMMIT_SHA
+  MIGRATIONS_TAG: $CI_COMMIT_SHA
 
 # Define on-demand environment variables
 .overwrite-variables: &overwrite-variables
@@ -38,6 +42,9 @@ variables:
   KANA: $KANA
   PORTAINER_URL: $PORTAINER_URL
   PORTAINER_TOKEN: $PORTAINER_TOKEN
+  # Add deployment version for traceability
+  DEPLOYED_VERSION: $CI_COMMIT_SHA
+  DEPLOYED_REF: $CI_COMMIT_REF_NAME
 
 .prepare-pnpm:
   before_script:
@@ -356,9 +363,10 @@ build-dockerfile:backend:
       elif [ "$BUILD_TYPE" == "production" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:$CI_COMMIT_SHA \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache \
           --build-arg CI=true \
-          -t eggo-backend:latest \
+          -t eggo-backend:$CI_COMMIT_SHA \
           -f $DOCKERFILE .
       elif [ "$BUILD_TYPE" == "migrations" ]; then
         docker buildx build \
@@ -386,15 +394,23 @@ build-dockerfile:frontend:
       - BUILD_TYPE: [dev, production]
   script:
     - |
-      if [ "$BUILD_TYPE" == "dev" ]; then
+      if [ "$BUILD_TYPE" == "dev" ] && [ "$CI_COMMIT_BRANCH" == "development" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
+          --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
+          --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
-          -t $REGISTRY/eggo-frontend:cache \
-          -f $DOCKERFILE_DEV .
-      elif [ "$BUILD_TYPE" == "production" ]; then
+          --push \
+          -t $REGISTRY/eggo-frontend:dev \
+          -f apps/frontend/Dockerfile.dev .
+      elif [ "$BUILD_TYPE" == "production" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache \
@@ -403,6 +419,8 @@ build-dockerfile:frontend:
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
           --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
+          --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
           -t eggo-frontend \
           -f $DOCKERFILE .
@@ -431,11 +449,12 @@ push-dockerfile:backend:
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:latest \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:$CI_COMMIT_SHA \
           --cache-to type=registry,ref=$REGISTRY/eggo-backend:cache,mode=max,compression=zstd \
           --build-arg CI=true \
           --push \
+          -t $REGISTRY/eggo-backend:$CI_COMMIT_SHA \
           -t $REGISTRY/eggo-backend:latest \
-          -t $REGISTRY/eggo-backend:stage \
           -f apps/backend/Dockerfile .
       fi
 
@@ -460,9 +479,11 @@ push-dockerfile:migrations:
           docker buildx build \
             --cache-from type=registry,ref=$REGISTRY/eggo-migrations:latest \
             --cache-from type=registry,ref=$REGISTRY/eggo-migrations:cache \
+            --cache-from type=registry,ref=$REGISTRY/eggo-migrations:$CI_COMMIT_SHA \
             --cache-to type=registry,ref=$REGISTRY/eggo-migrations:cache,mode=max,compression=zstd \
             --build-arg CI=true \
             --push \
+            -t $REGISTRY/eggo-migrations:$CI_COMMIT_SHA \
             -t $REGISTRY/eggo-migrations:latest \
             -t $REGISTRY/eggo-migrations:staging \
             -f apps/backend/Dockerfile.migrations.dev .
@@ -486,29 +507,44 @@ push-dockerfile:frontend:
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
+          --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
           --push \
           -t $REGISTRY/eggo-frontend:dev \
           -f apps/frontend/Dockerfile.dev .
       elif [ "$BUILD_TYPE" == "stage" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        # Build a stage-specific image with stage URLs
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA-stage \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:stage-cache,mode=max,compression=zstd \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBSTAGE_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
+          --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
           --push \
+          -t $REGISTRY/eggo-frontend:$CI_COMMIT_SHA-stage \
           -t $REGISTRY/eggo-frontend:stage \
           -f apps/frontend/Dockerfile .
       elif [ "$BUILD_TYPE" == "latest" ] && [ "$CI_COMMIT_BRANCH" == "main" ]; then
+        # Build a production image with production URLs
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:latest \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUB_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_BASE_URL=https://$HUB_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
+          --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
           --push \
+          -t $REGISTRY/eggo-frontend:$CI_COMMIT_SHA \
           -t $REGISTRY/eggo-frontend:latest \
           -f apps/frontend/Dockerfile .
       fi
@@ -524,6 +560,9 @@ deploy-prod:
     url: https://${HUB_PUBLIC_URL}
   variables:
     <<: *deploy-variables
+    BACKEND_VERSION: $CI_COMMIT_SHA
+    FRONTEND_VERSION: $CI_COMMIT_SHA
+    MIGRATIONS_VERSION: $CI_COMMIT_SHA
   before_script:
     - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
     - eval $(ssh-agent -s)
@@ -554,6 +593,9 @@ deploy-stage:
   variables:
     <<: *deploy-variables
     ENV_ID: stage
+    BACKEND_VERSION: $CI_COMMIT_SHA
+    FRONTEND_VERSION: $CI_COMMIT_SHA-stage # Use the stage-specific frontend build
+    MIGRATIONS_VERSION: $CI_COMMIT_SHA
   before_script:
     - "which ssh-agent || ( apk update -q && apk add openssh-client gettext rsync -q )"
     - eval $(ssh-agent -s)
