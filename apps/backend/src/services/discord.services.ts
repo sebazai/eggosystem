@@ -22,23 +22,26 @@ export const initializeDiscordClient = async (): Promise<Client> => {
   // If in e2e test environment, return a mock client
   if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
     logger.info("E2E test environment detected, using mock Discord client");
+    // Manual stub functions for E2E
+    const stub = () => {};
+    const stubAsync = async () => {};
     const mockClient = {
-      login: jest.fn().mockResolvedValue(undefined),
-      on: jest.fn(),
+      login: stubAsync,
+      on: stub,
       guilds: {
-        fetch: jest.fn().mockResolvedValue({
+        fetch: async () => ({
           id: "mock-guild-id",
           name: "Mock Guild",
           roles: {
             cache: new Map(),
-            create: jest.fn().mockResolvedValue({
+            create: async () => ({
               id: "mock-role-id",
               name: "Mock Role"
             })
           },
           channels: {
             cache: new Map(),
-            create: jest.fn().mockResolvedValue({
+            create: async () => ({
               id: "mock-channel-id",
               name: "Mock Channel"
             })
@@ -95,14 +98,14 @@ export const getDiscordGuild = async (): Promise<Guild> => {
       name: "Mock Guild",
       roles: {
         cache: new Map(),
-        create: jest.fn().mockResolvedValue({
+        create: async () => ({
           id: "mock-role-id",
           name: "Mock Role"
         })
       },
       channels: {
         cache: new Map(),
-        create: jest.fn().mockResolvedValue({
+        create: async () => ({
           id: "mock-channel-id",
           name: "Mock Channel"
         })

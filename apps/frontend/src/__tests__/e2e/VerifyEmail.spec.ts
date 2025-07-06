@@ -221,8 +221,10 @@ test.describe("Email Verification Page", () => {
       ).toBeVisible();
 
       // Check that card doesn't overflow
-      const card = page.locator("div").first();
+      const card = page.locator("div[data-testid='verify-email-success-card']");
+      await expect(card).toBeVisible();
       const cardBox = await card.boundingBox();
+      expect(cardBox).not.toBeNull(); // Fail with clear message if not found
       expect(cardBox!.width).toBeLessThanOrEqual(375);
     });
   });

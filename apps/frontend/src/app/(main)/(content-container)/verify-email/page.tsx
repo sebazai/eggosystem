@@ -50,7 +50,7 @@ async function VerifyEmailContent({ token }: { token: string }) {
 
   if (success) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md" data-testid="verify-email-success-card">
         <CardContent className="flex flex-col items-center gap-4">
           <CheckCircleIcon
             className="h-16 w-16 text-[hsl(35,93%,49%)]"
