@@ -293,7 +293,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.52.0-jammy
+  image: mcr.microsoft.com/playwright:v1.53.2-jammy
   stage: test-e2e
   dependencies:
     - build:backend
