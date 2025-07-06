@@ -34,6 +34,7 @@ export const usePlayerSkillDiagram = ({
   playerTeam
 }: UsePlayerSkillDiagramParams): UsePlayerSkillDiagramResult => {
   // Use the same filter param query generator used by other components
+  // For player's own skill diagram, use all filters
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   // Helper function to add parameters to URL correctly
@@ -55,6 +56,28 @@ export const usePlayerSkillDiagram = ({
     return url;
   };
 
+  // For aggregate queries, we should only use season_ids to avoid excessive filtering
+  const createAggregateQueryParams = () => {
+    // For aggregated data, only include season_ids
+    const params = new URLSearchParams();
+
+    // Add season_ids filter if available
+    if (filterQueryParams.seasons?.length) {
+      filterQueryParams.seasons.forEach((season) =>
+        params.append("season_ids", String(season))
+      );
+    }
+
+    // Only include map_ids if specified
+    if (filterQueryParams.maps?.length) {
+      filterQueryParams.maps.forEach((map) =>
+        params.append("map_ids", String(map))
+      );
+    }
+
+    return params.toString();
+  };
+
   // Fetch player skill data
   const {
     data: playerData,
@@ -73,28 +96,32 @@ export const usePlayerSkillDiagram = ({
   let compareUrl: string | null = null;
 
   if (compareOption === "aggregate") {
-    // All players aggregate
-    compareUrl = sortedQuery
-      ? `/api/v1/filters/players/skill-diagram/aggregate?${sortedQuery}`
+    // All players aggregate - only use seasons filter
+    const aggregateQueryParams = createAggregateQueryParams();
+    compareUrl = aggregateQueryParams
+      ? `/api/v1/filters/players/skill-diagram/aggregate?${aggregateQueryParams}`
       : "/api/v1/filters/players/skill-diagram/aggregate";
   } else if (compareOption.startsWith("faceit_")) {
     // Faceit level comparison (e.g., faceit_3 for Faceit Level 3)
     const faceitLevel = compareOption.split("_")[1] || "5"; // Default to level 5 if not specified
-    const baseUrl = `/api/v1/filters/players/skill-diagram/aggregate${sortedQuery ? `?${sortedQuery}` : ""}`;
+    const aggregateQueryParams = createAggregateQueryParams();
+    const baseUrl = `/api/v1/filters/players/skill-diagram/aggregate${aggregateQueryParams ? `?${aggregateQueryParams}` : ""}`;
     compareUrl = addParamsToUrl(baseUrl, { faceit_level: faceitLevel });
   } else if (compareOption.startsWith("cs2rank_")) {
     // CS2 rank comparison (e.g., cs2rank_2000 for rank 2000)
     const rankValue = compareOption.split("_")[1] || "2000"; // Default to 2000 if not specified
     const rankMin = parseInt(rankValue) - 500;
     const rankMax = parseInt(rankValue) + 500;
-    const baseUrl = `/api/v1/filters/players/skill-diagram/aggregate${sortedQuery ? `?${sortedQuery}` : ""}`;
+    const aggregateQueryParams = createAggregateQueryParams();
+    const baseUrl = `/api/v1/filters/players/skill-diagram/aggregate${aggregateQueryParams ? `?${aggregateQueryParams}` : ""}`;
     compareUrl = addParamsToUrl(baseUrl, {
       cs2_rank_min: rankMin,
       cs2_rank_max: rankMax
     });
   } else if (compareOption === "team" && playerTeam?.team_id) {
-    // Player's own team - use the team_id from playerTeam prop
-    const baseUrl = `/api/v1/filters/players/skill-diagram/aggregate${sortedQuery ? `?${sortedQuery}` : ""}`;
+    // Player's own team - only pass team_id and season_id
+    const aggregateQueryParams = createAggregateQueryParams();
+    const baseUrl = `/api/v1/filters/players/skill-diagram/aggregate${aggregateQueryParams ? `?${aggregateQueryParams}` : ""}`;
     compareUrl = addParamsToUrl(baseUrl, { team_ids: playerTeam.team_id });
   }
 
