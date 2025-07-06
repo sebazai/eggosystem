@@ -42,11 +42,9 @@ export const ItemFilter = <T extends { id: number }>(
   );
 
   useEffect(() => {
-    const selectableIdsIntersection: T[] = _.intersectionWith(
-      data,
-      props.selectableIds ?? [],
-      (a: T, b: number) => a.id === b
-    );
+    const selectableIdsIntersection: T[] =
+      data?.filter((item) => (props.selectableIds ?? []).includes(item.id)) ??
+      [];
     if (props.sorter) selectableIdsIntersection.sort(props.sorter);
     setSelectableIds(selectableIdsIntersection);
   }, [data, props.selectableIds, props.sorter]);

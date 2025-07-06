@@ -9,7 +9,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "msw": "2.10.2",
+    "msw": "2.10.3",
     "@eggosystem/types": "workspace:*"
   },
   "devDependencies": {

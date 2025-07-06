@@ -60,13 +60,11 @@
 **CRITICAL E2E Testing Rules:**
 
 1. **ALWAYS run e2e tests from monorepo root**: `cd $(git rev-parse --show-toplevel) && pnpm test:e2e`
-
    - This ensures proper database seeding (`reseed:e2e`, `seed`, `seed:e2e`)
    - Triggers necessary builds before running tests
    - **Note**: This does NOT start the `dev:e2e` backend - that's handled separately
 
 2. **Boundary Value Testing Strategy**: Apply Test Boundary Analysis for robust tests
-
    - Test **minimum valid values** (e.g., 2-character organization names)
    - Test **maximum valid values** (e.g., maximum length strings)
    - Test **just below minimum** (e.g., 1-character names - should fail)
@@ -121,7 +119,6 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 ### Immediate (This Session)
 
 1. **Complete Memory Bank Setup**
-
    - Create progress.md to track current project status
    - Validate all memory bank files are complete and accurate
    - Test memory bank structure with actual development work
@@ -134,7 +131,6 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 ### Short Term (Next Few Sessions)
 
 1. **Memory Bank Refinement**
-
    - Add any missing technical patterns or context
    - Create additional specialized documentation as needed
    - Establish update workflows for memory bank maintenance
@@ -436,13 +432,11 @@ This fix enables targeted e2e testing for faster development feedback and better
 **Immediate Priorities**
 
 1. **Expand Unit Test Coverage**
-
    - Add unit tests for remaining core components
    - Focus on user interaction patterns and form validation
    - Ensure all critical user flows have unit test coverage
 
 2. **Expand E2E Test Coverage**
-
    - Add e2e tests for complex user workflows
    - Test multi-component interactions
    - Ensure critical user journeys are covered

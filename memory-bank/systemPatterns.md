@@ -27,13 +27,11 @@ The Kanaliiga Eggosystem follows a monorepo structure using PNPM workspaces with
 **Testing Strategy Rules:**
 
 1. **E2E Command Requirements**:
-
    - **MUST run from monorepo root**: Ensures proper database seeding and builds
    - **Does NOT start dev:e2e backend**: That's handled separately
    - **Includes build step**: Ensures latest code is tested
 
 2. **Boundary Value Testing Strategy**:
-
    - **Minimum Valid Values**: Test smallest acceptable inputs (e.g., 2-char names)
    - **Maximum Valid Values**: Test largest acceptable inputs (e.g., max length strings)
    - **Below Minimum**: Test values just under the limit (should fail validation)
@@ -218,29 +216,24 @@ export async function getTeamValuesForSorter(
 Key patterns demonstrated:
 
 1. **WITH Clause for Temporary Result Sets**:
-
    - Creates intermediate result sets (`player_values`, `team_stats`) for step-by-step calculations
    - Improves query readability and maintainability
    - Allows for complex calculations to be broken down into logical components
 
 2. **Window Functions for Ranking**:
-
    - `ROW_NUMBER() OVER (PARTITION BY team_id ORDER BY kanaelo_value DESC)`
    - Efficiently ranks players within each team without multiple queries
 
 3. **JSON Aggregation for Structured Data**:
-
    - `json_agg(json_build_object(...))` builds structured arrays for nested data
    - Returns player details as a structured JSON array
    - Filters aggregation with `FILTER (WHERE value_rank <= 5)` to limit to top players
 
 4. **COALESCE for Null Handling**:
-
    - Provides default values when data is missing (e.g., league name, sums, averages)
    - Ensures consistent response structure regardless of data completeness
 
 5. **Subqueries for Aggregation**:
-
    - Uses subqueries for specific calculations (`SUM`, `AVG`) within specific player rankings
    - Ensures calculations only include the top N players based on ranking
 

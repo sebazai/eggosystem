@@ -13,7 +13,6 @@ Migrate ebinstats prod database to your env.
 3. Wait for `migrations` container to start
 
 4. Go to environment phpMyAdmin
-
    - Create database `kana`
    - Grant `kanadbuser` same privileges as for `kanaliiga` table
    - Import the `kana.sql` table
@@ -41,7 +40,6 @@ Migrate ebinstats prod database to your env.
 3. Wait for `migrations` container to start in portainer.
 
 4. Go to environment phpMyAdmin
-
    - Create database `kana`
    - Grant `kanadbuser` same privileges as for `kanaliiga` table
    - Import the `kana.sql` table
