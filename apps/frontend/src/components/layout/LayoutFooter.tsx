@@ -107,13 +107,7 @@ const Footer = () => {
             {shortSha && (
               <>
                 <br />
-                Current build:{" "}
-                <Link
-                  href={gitlabUrl}
-                  className="text-blue-400 hover:underline"
-                >
-                  {shortSha}
-                </Link>
+                Current build: <Link href={gitlabUrl}>{shortSha}</Link>
               </>
             )}
           </p>
