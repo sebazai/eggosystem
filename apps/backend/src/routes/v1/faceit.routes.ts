@@ -187,7 +187,6 @@ router.post(
     }
     try {
       const webhookData = req.body;
-      // Save entire JSON to the database
       await saveWebhookData(webhookData, null);
       if (webhookData.data.event === "match_object_created") {
         const matchDetails = await getFaceITMatchDetails(
@@ -197,7 +196,7 @@ router.post(
           logger.error(
             `Failed to fetch match details for match ${webhookData.data.payload.id}`
           );
-          res.status(500).send("Failed to fetch match details");
+          res.status(400).send("Failed to fetch match details");
           return;
         }
 
@@ -206,14 +205,13 @@ router.post(
       }
       if (webhookData.data.event === "match_status_finished") {
         // Update the match start and end time
-        const endTime = webhookData.data.payload.finished_at;
+        const _endTime = webhookData.data.payload.finished_at;
       }
       if (webhookData.data.event === "match_status_ready") {
         // Do we need this, indicates that the is ready and the server is ready to start the match
       }
       if (webhookData.data.event === "match_status_configuring") {
-        // Do we need this? When do we need this?
-        // Get map vetos and bans here?
+        // Get map vetos and bans here
       }
       if (webhookData.data.event === "match_demo_ready") {
         // Validate players in both teams and push the demo url to parser
@@ -222,7 +220,6 @@ router.post(
 
       if (webhookData.data.event === "championship_created") {
         // Parse the name and add to database SeasonLeagueExternalRooms
-        // Move SeasonLeagues.external_id to SeasonLeagueExternalRooms.external_id
         // Add type (roundRobin etc.)
       }
 

@@ -11,7 +11,9 @@ import {
   type MatchPlayerStats,
   type MatchTeamStats,
   type MatchMapVetoes,
-  type Stage
+  type Stage,
+  type SeasonLeagueExternalId,
+  type SeasonLeagueTeam
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -282,31 +284,46 @@ export const getMatchMapVetoes = async (match_id: number) => {
   return runQuery<MatchMapVetoes[]>(query, [match_id]);
 };
 
+// TODO: Make this in transaction
 export const addMatchToDatabase = async (
   matchDetails: FaceITMatchDetails,
   externalLeagueId: string
 ) => {
-  // Look up for the SeasonLeagueExternalRooms using externalLeagueId
-  // TODO: Figure out what the type is from existing championship id's
-  // TODO: if it's a BO2, and we want it to be 2xBO1, use your brain for this, tomorrow.
-  // What if we have SeasonLeagueExternalRooms.isBO2PlayedAs2xBO1?
-  // We need to create two matches, and when the games are played, we need to create MatchGames
-  // Check if type is something else then the big bad upperlowerbracket hell, it's probably a non playoff, i.e. regular stage 1.
-  const seasonLeagueResult = await runQuery<
-    Array<{ league_id: number; season_id: number }>
-  >(
-    "SELECT league_id, season_id FROM SeasonLeagues WHERE external_id = ? LIMIT 1",
-    [externalLeagueId]
-  );
-  const seasonLeague = seasonLeagueResult[0];
-  if (!seasonLeague) {
+  const seasonLeagueExternalRoomResult = await runQuery<
+    Array<SeasonLeagueExternalId>
+  >("SELECT * FROM SeasonLeagueExternalIds WHERE external_id = ? LIMIT 1", [
+    externalLeagueId
+  ]);
+  const seasonLeagueExternalRoom = seasonLeagueExternalRoomResult[0];
+  if (!seasonLeagueExternalRoom) {
     throw new Error(
-      `No SeasonLeagues entry found for external_id: ${externalLeagueId}`
+      `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
     );
   }
-  const { league_id, season_id } = seasonLeague;
+  const teamOneExternalId = matchDetails.teams.faction1.faction_id;
+  const teamTwoExternalId = matchDetails.teams.faction2.faction_id;
+  const [teamOne] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
+    `SELECT slt.* FROM SeasonTeamRegistrations str 
+      JOIN SeasonLeagueTeams slt ON str.season_id = slt.season_id AND str.league_id = slt.league_id AND str.team_id = slt.team_id
+      WHERE str.external_platform_id = ? LIMIT 1`,
+    [teamOneExternalId]
+  );
+  const [teamTwo] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
+    `SELECT slt.* FROM SeasonTeamRegistrations str 
+      JOIN SeasonLeagueTeams slt ON str.season_id = slt.season_id AND str.league_id = slt.league_id AND str.team_id = slt.team_id
+      WHERE str.external_platform_id = ? LIMIT 1`,
+    [teamTwoExternalId]
+  );
+  if (!teamOne || !teamTwo) {
+    throw new Error(
+      `No SeasonLeagueTeam entry found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
+    );
+  }
 
-  // Parse date and time fields from FaceITMatchDetails
+  const { league_id, season_id, stage_id } = seasonLeagueExternalRoom;
+
+  const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
+
   const matchDate = new Date(matchDetails.scheduled_at * 1000); // scheduled_at is unix timestamp (seconds)
   const match_date = matchDate.toISOString().slice(0, 10); // YYYY-MM-DD
   const start_time = matchDetails.started_at
@@ -316,12 +333,10 @@ export const addMatchToDatabase = async (
     ? new Date(matchDetails.finished_at * 1000).toISOString().slice(11, 19)
     : "00:00:00";
 
-  // Determine stage from competition_name, TODO: Make this more robust
-  const stage = /playoff/i.test(matchDetails.competition_name) ? 2 : 1;
   const params = [
     league_id,
     season_id,
-    stage,
+    stage_id,
     matchDetails.best_of,
     match_date,
     start_time,
@@ -329,18 +344,44 @@ export const addMatchToDatabase = async (
     matchDetails.match_id
   ];
 
-  const query = `
-    INSERT INTO Matches (
-      league_id,
-      season_id,
-      stage,
-      best_of,
-      match_date,
-      start_time,
-      end_time,
-      external_match_room_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+  const matchQuery = `
+      INSERT INTO Matches (
+        league_id,
+        season_id,
+        stage,
+        best_of,
+        match_date,
+        start_time,
+        end_time,
+        external_match_room_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
-  return runQuery(query, params);
+  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
+  if (isBO2PlayedAs2xBO1) {
+    const firstMatch = await runQuery<Array<{ insertId: number }>>(
+      matchQuery,
+      params
+    );
+    const firstMatchId = firstMatch[0].insertId;
+    const secondMatch = await runQuery<Array<{ insertId: number }>>(
+      matchQuery,
+      params
+    );
+    const secondMatchId = secondMatch[0].insertId;
+    await runQuery(addMatchTeamsQuery, [firstMatchId, teamOne.team_id]);
+    await runQuery(addMatchTeamsQuery, [firstMatchId, teamTwo.team_id]);
+    await runQuery(addMatchTeamsQuery, [secondMatchId, teamOne.team_id]);
+    await runQuery(addMatchTeamsQuery, [secondMatchId, teamTwo.team_id]);
+    return { matchIds: [firstMatchId, secondMatchId] };
+  } else {
+    const match = await runQuery<Array<{ insertId: number }>>(
+      matchQuery,
+      params
+    );
+    const matchId = match[0].insertId;
+    await runQuery(addMatchTeamsQuery, [matchId, teamOne.team_id]);
+    await runQuery(addMatchTeamsQuery, [matchId, teamTwo.team_id]);
+    return { matchIds: [matchId] };
+  }
 };
