@@ -25,7 +25,7 @@ export const registerPlayerForKanahautomo = async (
       (error as { code?: string }).code === "ER_DUP_ENTRY"
     ) {
       throw new Error(
-        "Player is already registered for Kanahautomo in this organization"
+        `Player ${steamId} is already registered for Kanahautomo in organization ${organizationId}`
       );
     }
     throw error;

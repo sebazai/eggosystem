@@ -150,7 +150,7 @@ describe("Kanahautomo Models Integration Tests", () => {
       await expect(
         registerPlayerForKanahautomo(testSteamId, testOrganizationId, false)
       ).rejects.toThrow(
-        "Player is already registered for Kanahautomo in this organization"
+        `Player ${testSteamId} is already registered for Kanahautomo in organization ${testOrganizationId}`
       );
     });
 

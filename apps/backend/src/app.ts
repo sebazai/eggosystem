@@ -10,11 +10,9 @@ if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV is not defined");
 }
 
-// Update with your config settings.
 if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
   logger.info("Loading .env.development & .env file");
-  dotenv.config({ path: ".env" });
-  dotenv.config({ path: ".env.development" });
+  dotenv.config({ path: [".env", ".env.development"], quiet: true });
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
