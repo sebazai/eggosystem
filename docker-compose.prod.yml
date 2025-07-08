@@ -40,6 +40,7 @@ services:
       RABBITMQ_HOST: eggo-prod-rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PROD_PASS}
+      BACKEND_SERVICE_API_KEY: ${PROD_SERVICE_API_KEY}
     networks:
       - web
     volumes:

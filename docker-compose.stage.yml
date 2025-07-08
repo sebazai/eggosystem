@@ -33,6 +33,7 @@ services:
       RABBITMQ_HOST: eggo-stage-rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_STAGE_PASS}
+      BACKEND_SERVICE_API_KEY: ${STAGE_SERVICE_API_KEY}
     networks:
       - web
     volumes:

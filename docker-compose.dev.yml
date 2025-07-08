@@ -21,6 +21,7 @@ services:
       OTEL_SERVICE_NAME: eggosystem-dev-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=dev,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
+      BACKEND_SERVICE_API_KEY: "development_api_key"
     networks:
       - web
     volumes:

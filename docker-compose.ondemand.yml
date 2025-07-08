@@ -31,6 +31,7 @@ services:
       SMTP_PASSWORD: $SMTP_PASSWORD
       ALLSTAR_WEBHOOK_TOKEN: $ALLSTAR_WEBHOOK_TOKEN
       ALLSTAR_API_KEY: $ALLSTAR_API_KEY
+      BACKEND_SERVICE_API_KEY: "ondemand_test_api_key"
     networks:
       web:
         aliases:

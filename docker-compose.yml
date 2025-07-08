@@ -25,6 +25,8 @@ services:
       - ./apps/backend/private_refresh_token.pem:/usr/src/app/apps/backend/private_refresh_token.pem
       - ./apps/backend/public_refresh_token.pem:/usr/src/app/apps/backend/public_refresh_token.pem
     env_file: .env.development
+    environment:
+      - BACKEND_SERVICE_API_KEY=local_development_key
     command: "pnpm --filter=backend dev"
 
   seed:
