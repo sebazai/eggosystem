@@ -27,13 +27,3 @@ export class NotFoundError extends BaseError {
     this.status = status ?? 404;
   }
 }
-
-export class UnauthorizedError extends BaseError {
-  status: number;
-
-  constructor(message: string, status?: number) {
-    super(message);
-    this.name = "Unauthorized";
-    this.status = status ?? 401;
-  }
-}

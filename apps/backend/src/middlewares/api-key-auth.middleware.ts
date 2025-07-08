@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { UnauthorizedError } from "../utils/errors";
+import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 
 /**
@@ -18,7 +18,7 @@ export function validateApiKey(
     // If no key provided
     if (!providedKey) {
       logger.warn("API key missing from request");
-      throw new UnauthorizedError("API key required");
+      throw new BadRequestError("API key required", 401);
     }
 
     // Get allowed key from environment variable
@@ -27,14 +27,14 @@ export function validateApiKey(
     // Check if API key is valid
     if (!apiKey || providedKey !== apiKey) {
       logger.warn(`Invalid API key provided: ${providedKey.slice(0, 5)}...`);
-      throw new UnauthorizedError("Invalid API key");
+      throw new BadRequestError("Invalid API key", 401);
     }
 
     // Key is valid, proceed
     logger.info("API key validated successfully");
     next();
   } catch (error) {
-    if (error instanceof UnauthorizedError) {
+    if (error instanceof BadRequestError) {
       res.status(401).json({ error: { message: error.message } });
     } else {
       logger.error("API key validation error", error);

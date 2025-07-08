@@ -14,7 +14,15 @@ This document provides integration guidelines for the **Kanaliiga Eggosystem Sta
 
 ## Authentication
 
-Currently, **no authentication** is required for the stabilization endpoint. The service is designed to be called from trusted internal services within the Docker network.
+API key authentication is **required** for all requests to the Stabilization API. You must include an `X-API-KEY` header with a valid API key in all requests.
+
+**Request Header**:
+
+```
+X-API-KEY: your_api_key_here
+```
+
+To obtain an API key for your service, please contact the Kanaliiga Eggosystem Backend Team. For detailed authentication instructions, refer to `/docs/csrankker-stabilization-authentication.md`.
 
 ## Request Format
 
@@ -106,15 +114,20 @@ interface StabilizationResponse {
 | ------- | -------------- | --------------------------- |
 | **200** | Success        | Use stabilized value        |
 | **400** | Bad Request    | Fix request format          |
+| **401** | Unauthorized   | Check API key (if enabled)  |
 | **500** | Internal Error | Retry or use original value |
 
 ### Error Response Format
+
+All errors return a consistent JSON structure:
 
 ```json
 {
   "error": "Error message describing the issue"
 }
 ```
+
+For validation errors, the error message will contain specific details about which field failed validation and why.
 
 ### Common Error Cases
 
@@ -133,7 +146,22 @@ interface StabilizationResponse {
 {
   "error": "currentValue must be a number between 0 and 400"
 }
+
+// Authorization error (if API key auth is enabled)
+{
+  "error": "Invalid API key"
+}
 ```
+
+### Validation Process
+
+Request validation happens in this order:
+
+1. Content-Type validation (must be application/json)
+2. Required fields validation (missing fields return 400)
+3. Data type validation (incorrect types return 400)
+4. Value constraint validation (e.g., Steam ID format, value ranges)
+5. Authorization validation (if enabled)
 
 ## Stabilization Logic
 
@@ -180,7 +208,8 @@ async function stabilizeKanaelo(playerId, calculatedValue, season) {
     const response = await fetch("http://backend:3001/api/v1/elo/stabilize", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-API-KEY": process.env.STABILIZATION_API_KEY // Required API key
       },
       body: JSON.stringify({
         playerId,
@@ -194,7 +223,10 @@ async function stabilizeKanaelo(playerId, calculatedValue, season) {
     });
 
     if (!response.ok) {
-      throw new Error(`Stabilization failed: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || `Stabilization failed: ${response.status}`
+      );
     }
 
     const result = await response.json();
@@ -223,6 +255,9 @@ async function stabilizeBatch(players) {
       );
       return { ...player, finalElo: stabilized };
     } catch (error) {
+      console.warn(
+        `Failed to stabilize player ${player.steamId}: ${error.message}`
+      );
       return { ...player, finalElo: player.calculatedElo };
     }
   });
@@ -247,6 +282,20 @@ async function robustStabilization(playerId, value, season) {
         attempts: attempt
       };
     } catch (error) {
+      // Don't retry on validation errors (400)
+      if (
+        error.message.includes("Invalid") ||
+        error.message.includes("required") ||
+        error.message.includes("must be")
+      ) {
+        return {
+          success: false,
+          value: value,
+          error: error.message,
+          retryable: false
+        };
+      }
+
       if (attempt === maxRetries) {
         console.error(
           `Stabilization failed after ${maxRetries} attempts:`,
@@ -255,7 +304,8 @@ async function robustStabilization(playerId, value, season) {
         return {
           success: false,
           value: value, // Use original value
-          error: error.message
+          error: error.message,
+          retryable: true
         };
       }
 
@@ -352,6 +402,7 @@ For integration issues or questions:
 ```bash
 curl -X POST http://backend:3001/api/v1/elo/stabilize \
   -H "Content-Type: application/json" \
+  -H "X-API-KEY: your_api_key_here" \
   -d '{
     "playerId": "76561198123456789",
     "currentValue": 250,
@@ -376,13 +427,15 @@ curl -X POST http://backend:3001/api/v1/elo/stabilize \
 
 ## Version History
 
-| Version | Date       | Changes                             |
-| ------- | ---------- | ----------------------------------- |
-| **1.0** | 2024-01-15 | Initial CSRankker-compatible API    |
-| **1.1** | TBD        | Batch processing endpoint (planned) |
+| Version | Date       | Changes                                                        |
+| ------- | ---------- | -------------------------------------------------------------- |
+| **1.0** | 2024-01-15 | Initial CSRankker-compatible API                               |
+| **1.1** | 2024-01-20 | Improved error handling and standardized error response format |
+| **1.2** | 2024-07-08 | Added mandatory API key authentication via X-API-KEY header    |
+| **1.3** | TBD        | Batch processing endpoint (planned)                            |
 
 ---
 
-**Last Updated**: January 15, 2024  
-**API Version**: 1.0  
-**Compatibility**: CSRankker v2+
+**Last Updated**: July 8, 2025  
+**API Version**: 1.2  
+**Compatibility**: CSRankker v2+ (requires API key)

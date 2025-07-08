@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { expressErrorHandler } from "../express-error-handler";
-import { BaseError, UnauthorizedError } from "../../utils/errors";
+import { BaseError } from "../../utils/errors";
 import { type ZodError } from "zod";
 import { z } from "zod";
 
@@ -25,7 +25,13 @@ describe("Express Error Handler", () => {
     // Arrange
     const req = mockRequest();
     const res = mockResponse();
-    const error = new UnauthorizedError("Unauthorized access");
+    // Create a mock UnauthorizedError object that matches the interface
+    const error = {
+      name: "UnauthorizedError",
+      status: 401,
+      message: "Unauthorized access",
+      code: "invalid_token"
+    };
 
     // Act
     expressErrorHandler(error, req, res, mockNext);

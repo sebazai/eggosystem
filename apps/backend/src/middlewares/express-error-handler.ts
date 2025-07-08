@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { BaseError, UnauthorizedError } from "../utils/errors";
+import { BaseError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import { ZodError } from "zod";
 
@@ -14,13 +14,12 @@ interface UnauthorizedErrorLike {
  */
 function isUnauthorizedError(err: unknown): err is UnauthorizedErrorLike {
   return (
-    err instanceof UnauthorizedError ||
-    (typeof err === "object" &&
-      err !== null &&
-      "name" in err &&
-      (err as { name: string }).name === "UnauthorizedError" &&
-      "status" in err &&
-      "message" in err)
+    typeof err === "object" &&
+    err !== null &&
+    "name" in err &&
+    (err as { name: string }).name === "UnauthorizedError" &&
+    "status" in err &&
+    "message" in err
   );
 }
 
@@ -30,7 +29,7 @@ export const expressErrorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
-  // Handle UnauthorizedError (both our own and from express-jwt)
+  // Handle UnauthorizedError (primarily from express-jwt)
   if (isUnauthorizedError(err)) {
     res.status(err.status || 401).json({ error: err.message });
     return;
