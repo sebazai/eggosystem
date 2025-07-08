@@ -139,11 +139,12 @@ export const createOrGetOrganizationRole = async (
     return existingRole.id;
   }
 
-  console.log(JSON.stringify(guild.roles.cache, null, 2));
+  logger.info(JSON.stringify(guild.roles.cache, null, 2));
   const cs2CompRole = guild.roles.cache.find(
     (role) => role.name === "CS2 Comp"
   );
-  const orgRolePosition = cs2CompRole ? cs2CompRole.position + 1 : 7;
+  const orgRolePosition = cs2CompRole ? cs2CompRole.rawPosition + 1 : 7;
+  logger.info(`CS2 Comp role position: ${cs2CompRole?.rawPosition}`);
 
   // Create new role
   const newRole = await guild.roles.create({
@@ -153,8 +154,13 @@ export const createOrGetOrganizationRole = async (
     permissions: [],
     position: orgRolePosition
   });
-
-  console.log(newRole);
+  logger.info(
+    `New role position: ${newRole.rawPosition} / ${newRole.position}`
+  );
+  await newRole.setPosition(orgRolePosition);
+  logger.info(
+    `New role position: ${newRole.rawPosition} / ${newRole.position}`
+  );
 
   logger.info(`Created new organization role: ${newRole.name} (${newRole.id})`);
   return newRole.id;
