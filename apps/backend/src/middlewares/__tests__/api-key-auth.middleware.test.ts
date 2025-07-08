@@ -25,7 +25,7 @@ describe("API Key Authentication Middleware", () => {
     jest.clearAllMocks();
     // Mock environment variables
     process.env = { ...originalEnv };
-    process.env.PARSER_API_KEY = "valid-api-key";
+    process.env.BACKEND_SERVICE_API_KEY = "valid-api-key";
   });
 
   afterAll(() => {
@@ -81,12 +81,12 @@ describe("API Key Authentication Middleware", () => {
     });
   });
 
-  it("should handle undefined PARSER_API_KEY environment variable", () => {
+  it("should handle undefined BACKEND_SERVICE_API_KEY environment variable", () => {
     // Arrange
     const req = mockRequest();
     const res = mockResponse();
     req.headers["x-api-key"] = "any-key";
-    delete process.env.PARSER_API_KEY;
+    delete process.env.BACKEND_SERVICE_API_KEY;
 
     // Act
     validateApiKey(req, res, mockNext);

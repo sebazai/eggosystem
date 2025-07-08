@@ -209,7 +209,7 @@ async function stabilizeKanaelo(playerId, calculatedValue, season) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-KEY": process.env.STABILIZATION_API_KEY // Required API key
+        "X-API-KEY": process.env.BACKEND_SERVICE_API_KEY // Required API key
       },
       body: JSON.stringify({
         playerId,

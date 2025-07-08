@@ -22,7 +22,7 @@ describe("POST /api/v1/elo/stabilize", () => {
     jest.clearAllMocks();
 
     // Set environment variable for API key
-    process.env.PARSER_API_KEY = TEST_API_KEY;
+    process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
 
     // Mock Redis operations
     mockRedisClient.set.mockResolvedValue("OK");
@@ -33,7 +33,7 @@ describe("POST /api/v1/elo/stabilize", () => {
 
   afterEach(() => {
     // Clean up environment variables
-    delete process.env.PARSER_API_KEY;
+    delete process.env.BACKEND_SERVICE_API_KEY;
   });
 
   it("should stabilize ELO for a player with valid data", async () => {

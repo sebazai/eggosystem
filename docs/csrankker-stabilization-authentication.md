@@ -29,7 +29,7 @@ Add the API key to your environment variables:
 
 ```env
 # CSRankker service .env file
-STABILIZATION_API_KEY=your_provided_api_key
+BACKEND_SERVICE_API_KEY=your_provided_api_key
 ```
 
 ### 2. Update API Requests
@@ -59,7 +59,7 @@ async function stabilizeKanaelo(playerId, calculatedValue, season) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-API-KEY": process.env.STABILIZATION_API_KEY // Include API key in header
+      "X-API-KEY": process.env.BACKEND_SERVICE_API_KEY // Include API key in header
     },
     body: JSON.stringify({
       playerId,
@@ -82,7 +82,7 @@ async function stabilizeKanaelo(playerId, calculatedValue, season) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-KEY": process.env.STABILIZATION_API_KEY
+        "X-API-KEY": process.env.BACKEND_SERVICE_API_KEY
       },
       body: JSON.stringify({
         playerId,
@@ -153,7 +153,7 @@ A successful response will have a status code of 200 and a JSON body similar to:
 
 | Issue                   | Solution                                                                |
 | ----------------------- | ----------------------------------------------------------------------- |
-| Missing API key         | Ensure STABILIZATION_API_KEY is set in your environment variables       |
+| Missing API key         | Ensure BACKEND_SERVICE_API_KEY is set in your environment variables     |
 | 401 Unauthorized        | Verify the API key value is correct and properly included in the header |
 | Header case sensitivity | Ensure the header name is exactly `X-API-KEY` (case sensitive)          |
 

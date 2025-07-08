@@ -4,7 +4,7 @@ import { logger } from "../utils/app-logger";
 
 /**
  * API key authentication middleware
- * Validates API key from the X-API-KEY header against environment variable PARSER_API_KEY
+ * Validates API key from the X-API-KEY header against environment variable BACKEND_SERVICE_API_KEY
  */
 export function validateApiKey(
   req: Request,
@@ -22,7 +22,7 @@ export function validateApiKey(
     }
 
     // Get allowed key from environment variable
-    const apiKey = process.env.PARSER_API_KEY;
+    const apiKey = process.env.BACKEND_SERVICE_API_KEY;
 
     // Check if API key is valid
     if (!apiKey || providedKey !== apiKey) {

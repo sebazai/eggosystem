@@ -12,13 +12,13 @@ Currently, the following endpoints are protected with API key authentication:
 
 ### Setting Up API Keys
 
-API keys are configured through the `PARSER_API_KEY` environment variable. This defines a single API key to be used for authentication.
+API keys are configured through the `BACKEND_SERVICE_API_KEY` environment variable. This defines a single API key to be used for authentication.
 
 1. Add the API key to your environment variables in the appropriate environment file:
 
 ```bash
 # .env.local, .env.production, etc.
-PARSER_API_KEY=your_secret_key
+BACKEND_SERVICE_API_KEY=your_secret_key
 ```
 
 2. For Docker/Docker Compose environments, add the environment variable in the docker-compose file:
@@ -27,7 +27,7 @@ PARSER_API_KEY=your_secret_key
 services:
   backend:
     environment:
-      - PARSER_API_KEY=your_secret_key
+      - BACKEND_SERVICE_API_KEY=your_secret_key
 ```
 
 3. For production environments, set this in your deployment configuration.
