@@ -20,6 +20,8 @@ import {
   matchTopStats
 } from "../shared/fetch-stat";
 import { type FaceITMatchDetails } from "../services/faceit.services";
+import { getConnection } from "../db/mysqlConnection";
+import { logger } from "../utils/app-logger";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -284,67 +286,73 @@ export const getMatchMapVetoes = async (match_id: number) => {
   return runQuery<MatchMapVetoes[]>(query, [match_id]);
 };
 
-// TODO: Make this in transaction
 export const addMatchToDatabase = async (
   matchDetails: FaceITMatchDetails,
   externalLeagueId: string
 ) => {
-  const seasonLeagueExternalRoomResult = await runQuery<
-    Array<SeasonLeagueExternalId>
-  >("SELECT * FROM SeasonLeagueExternalIds WHERE external_id = ? LIMIT 1", [
-    externalLeagueId
-  ]);
-  const seasonLeagueExternalRoom = seasonLeagueExternalRoomResult[0];
-  if (!seasonLeagueExternalRoom) {
-    throw new Error(
-      `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const seasonLeagueExternalRoomResult = await runQuery<
+      Array<SeasonLeagueExternalId>
+    >(
+      "SELECT * FROM SeasonLeagueExternalIds WHERE external_id = ? LIMIT 1",
+      [externalLeagueId],
+      connection
     );
-  }
-  const teamOneExternalId = matchDetails.teams.faction1.faction_id;
-  const teamTwoExternalId = matchDetails.teams.faction2.faction_id;
-  const [teamOne] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
-    `SELECT slt.* FROM SeasonTeamRegistrations str 
+    const seasonLeagueExternalRoom = seasonLeagueExternalRoomResult[0];
+    if (!seasonLeagueExternalRoom) {
+      throw new Error(
+        `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
+      );
+    }
+    const teamOneExternalId = matchDetails.teams.faction1.faction_id;
+    const teamTwoExternalId = matchDetails.teams.faction2.faction_id;
+    const [teamOne] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
+      `SELECT slt.* FROM SeasonTeamRegistrations str 
       JOIN SeasonLeagueTeams slt ON str.season_id = slt.season_id AND str.league_id = slt.league_id AND str.team_id = slt.team_id
       WHERE str.external_platform_id = ? LIMIT 1`,
-    [teamOneExternalId]
-  );
-  const [teamTwo] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
-    `SELECT slt.* FROM SeasonTeamRegistrations str 
+      [teamOneExternalId],
+      connection
+    );
+    const [teamTwo] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
+      `SELECT slt.* FROM SeasonTeamRegistrations str 
       JOIN SeasonLeagueTeams slt ON str.season_id = slt.season_id AND str.league_id = slt.league_id AND str.team_id = slt.team_id
       WHERE str.external_platform_id = ? LIMIT 1`,
-    [teamTwoExternalId]
-  );
-  if (!teamOne || !teamTwo) {
-    throw new Error(
-      `No SeasonLeagueTeam entry found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
+      [teamTwoExternalId],
+      connection
     );
-  }
+    if (!teamOne || !teamTwo) {
+      throw new Error(
+        `No SeasonLeagueTeam entry found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
+      );
+    }
 
-  const { league_id, season_id, stage_id } = seasonLeagueExternalRoom;
+    const { league_id, season_id, stage_id } = seasonLeagueExternalRoom;
 
-  const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
+    const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
 
-  const matchDate = new Date(matchDetails.scheduled_at * 1000); // scheduled_at is unix timestamp (seconds)
-  const match_date = matchDate.toISOString().slice(0, 10); // YYYY-MM-DD
-  const start_time = matchDetails.started_at
-    ? new Date(matchDetails.started_at * 1000).toISOString().slice(11, 19) // HH:MM:SS
-    : "00:00:00";
-  const end_time = matchDetails.finished_at
-    ? new Date(matchDetails.finished_at * 1000).toISOString().slice(11, 19)
-    : "00:00:00";
+    const matchDate = new Date(matchDetails.scheduled_at * 1000); // scheduled_at is unix timestamp (seconds)
+    const match_date = matchDate.toISOString().slice(0, 10); // YYYY-MM-DD
+    const start_time = matchDetails.started_at
+      ? new Date(matchDetails.started_at * 1000).toISOString().slice(11, 19) // HH:MM:SS
+      : "00:00:00";
+    const end_time = matchDetails.finished_at
+      ? new Date(matchDetails.finished_at * 1000).toISOString().slice(11, 19)
+      : "00:00:00";
 
-  const params = [
-    league_id,
-    season_id,
-    stage_id,
-    matchDetails.best_of,
-    match_date,
-    start_time,
-    end_time,
-    matchDetails.match_id
-  ];
+    const params = [
+      league_id,
+      season_id,
+      stage_id,
+      matchDetails.best_of,
+      match_date,
+      start_time,
+      end_time,
+      matchDetails.match_id
+    ];
 
-  const matchQuery = `
+    const matchQuery = `
       INSERT INTO Matches (
         league_id,
         season_id,
@@ -357,31 +365,73 @@ export const addMatchToDatabase = async (
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
-  if (isBO2PlayedAs2xBO1) {
-    const firstMatch = await runQuery<Array<{ insertId: number }>>(
-      matchQuery,
-      params
+    const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
+    if (isBO2PlayedAs2xBO1) {
+      const firstMatch = await runQuery<Array<{ insertId: number }>>(
+        matchQuery,
+        params,
+        connection
+      );
+      const firstMatchId = firstMatch[0].insertId;
+      const secondMatch = await runQuery<Array<{ insertId: number }>>(
+        matchQuery,
+        params,
+        connection
+      );
+      const secondMatchId = secondMatch[0].insertId;
+
+      await runQuery(
+        addMatchTeamsQuery,
+        [firstMatchId, teamOne.team_id],
+        connection
+      );
+      await runQuery(
+        addMatchTeamsQuery,
+        [firstMatchId, teamTwo.team_id],
+        connection
+      );
+      await runQuery(
+        addMatchTeamsQuery,
+        [secondMatchId, teamOne.team_id],
+        connection
+      );
+      await runQuery(
+        addMatchTeamsQuery,
+        [secondMatchId, teamTwo.team_id],
+        connection
+      );
+
+      await connection.commit();
+
+      return { matchIds: [firstMatchId, secondMatchId] };
+    } else {
+      const match = await runQuery<Array<{ insertId: number }>>(
+        matchQuery,
+        params,
+        connection
+      );
+      const matchId = match[0].insertId;
+      await runQuery(
+        addMatchTeamsQuery,
+        [matchId, teamOne.team_id],
+        connection
+      );
+      await runQuery(
+        addMatchTeamsQuery,
+        [matchId, teamTwo.team_id],
+        connection
+      );
+
+      await connection.commit();
+      return { matchIds: [matchId] };
+    }
+  } catch (error) {
+    await connection.rollback();
+    logger.error(
+      `Failed to insert match ${matchDetails.match_id} into database`,
+      error
     );
-    const firstMatchId = firstMatch[0].insertId;
-    const secondMatch = await runQuery<Array<{ insertId: number }>>(
-      matchQuery,
-      params
-    );
-    const secondMatchId = secondMatch[0].insertId;
-    await runQuery(addMatchTeamsQuery, [firstMatchId, teamOne.team_id]);
-    await runQuery(addMatchTeamsQuery, [firstMatchId, teamTwo.team_id]);
-    await runQuery(addMatchTeamsQuery, [secondMatchId, teamOne.team_id]);
-    await runQuery(addMatchTeamsQuery, [secondMatchId, teamTwo.team_id]);
-    return { matchIds: [firstMatchId, secondMatchId] };
-  } else {
-    const match = await runQuery<Array<{ insertId: number }>>(
-      matchQuery,
-      params
-    );
-    const matchId = match[0].insertId;
-    await runQuery(addMatchTeamsQuery, [matchId, teamOne.team_id]);
-    await runQuery(addMatchTeamsQuery, [matchId, teamTwo.team_id]);
-    return { matchIds: [matchId] };
+  } finally {
+    connection.release();
   }
 };
