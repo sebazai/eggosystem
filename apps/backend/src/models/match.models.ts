@@ -431,6 +431,7 @@ export const addMatchToDatabase = async (
       `Failed to insert match ${matchDetails.match_id} into database`,
       error
     );
+    throw error;
   } finally {
     connection.release();
   }
