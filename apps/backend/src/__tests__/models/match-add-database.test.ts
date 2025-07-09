@@ -1,4 +1,4 @@
-import { addMatchToDatabase } from "../match.models";
+import { addMatchToDatabase } from "../../models/match.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import { logger } from "../../utils/app-logger";
