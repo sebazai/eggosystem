@@ -436,3 +436,32 @@ export const addMatchToDatabase = async (
     connection.release();
   }
 };
+
+export const updateMatchEndTime = async (
+  externalMatchRoomId: string,
+  finishedAt: string
+): Promise<void> => {
+  const matches = await runQuery<Array<{ id: number }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+
+  if (matches.length === 0) {
+    logger.warn(
+      `No matches found with external_match_room_id: ${externalMatchRoomId}`
+    );
+    return;
+  }
+
+  // Convert ISO timestamp to time format (HH:MM:SS)
+  const endTime = new Date(finishedAt).toISOString().slice(11, 19);
+
+  await runQuery(
+    "UPDATE Matches SET end_time = ? WHERE external_match_room_id = ?",
+    [endTime, externalMatchRoomId]
+  );
+
+  logger.info(
+    `Updated end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+  );
+};

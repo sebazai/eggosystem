@@ -8,7 +8,10 @@ import { authenticateJWT } from "../../middlewares/auth.middleware";
 import { saveWebhookData } from "../../models/faceit.models";
 import { logger } from "../../utils/app-logger";
 import { type RequestWithBody } from "@eggosystem/types";
-import { addMatchToDatabase } from "../../models/match.models";
+import {
+  addMatchToDatabase,
+  updateMatchEndTime
+} from "../../models/match.models";
 
 const router = Router();
 
@@ -204,8 +207,8 @@ router.post(
         await addMatchToDatabase(matchDetails, externalLeagueId);
       }
       if (webhookData.data.event === "match_status_finished") {
-        // Update the match start and end time
         const _endTime = webhookData.data.payload.finished_at;
+        await updateMatchEndTime(webhookData.data.payload.id, _endTime);
       }
       if (webhookData.data.event === "match_status_ready") {
         // Do we need this, indicates that the is ready and the server is ready to start the match
