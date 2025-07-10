@@ -21,6 +21,10 @@ import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PlayerValuesFloatingWindow } from "@/components/dashboard/PlayerValuesFloatingWindow";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { clientApiFetch } from "@/lib/apiClient";
+import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 
 // Enhanced line chart component using shadcn Chart
 const MiniChart = ({ data }: { data: number[] }) => {
@@ -155,6 +159,7 @@ export default function SortterPage() {
   } = useSortter();
 
   const [comments, setComments] = useState<{ [key: number]: string }>({});
+  const [isPopulatingQueue, setIsPopulatingQueue] = useState(false);
 
   const handleCommentChange = (teamId: number, value: string) => {
     setComments((prev) => ({ ...prev, [teamId]: value }));
@@ -180,152 +185,204 @@ export default function SortterPage() {
   // Find the selected team name
   const selectedTeam = teams.find((team) => team.team_id === selectedTeamId);
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sortter</h1>
-          <p className="text-muted-foreground">
-            Team ranking management and analysis tool
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium">Season:</span>
-          <SeasonSelector
-            seasons={seasons}
-            selectedSeason={selectedSeason}
-            onChange={setSelectedSeason}
-            isLoading={isLoadingSeasons}
-          />
-        </div>
-      </div>
+  // Handle populating kanaelo queue
+  const handlePopulateKanaeloQueue = async () => {
+    if (!selectedSeason) {
+      toast.error("Please select a season first");
+      return;
+    }
 
-      {error && (
-        <div className="p-4 border border-red-400 bg-red-100 dark:bg-red-900/20 rounded-lg">
-          <h5 className="text-sm font-medium text-red-800 dark:text-red-300">
-            Error
-          </h5>
-          <div className="text-sm text-red-700 dark:text-red-400">
-            {error.message}
+    try {
+      setIsPopulatingQueue(true);
+      const response = await clientApiFetch<{
+        message: string;
+        season_id: number;
+        total_players: number;
+        queued_players: number;
+        failed_players: number;
+      }>(`/api/v1/sortter/season/${selectedSeason}/populate-kanaelo-queue`, {
+        method: "POST"
+      });
+
+      toast.success(
+        `Successfully added ${response.queued_players} players to the kanaelo calculation queue`
+      );
+    } catch (error) {
+      console.error("Failed to populate kanaelo queue", error);
+      toast.error("Failed to populate kanaelo queue");
+    } finally {
+      setIsPopulatingQueue(false);
+    }
+  };
+
+  return (
+    <WithRoleProtection allowedRoles={["admin"]}>
+      <div className="space-y-6">
+        <div className="flex flex-col space-y-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sortter</h1>
+            <p className="text-muted-foreground">
+              Team ranking management and analysis tool
+            </p>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium">Season:</span>
+              <SeasonSelector
+                seasons={seasons}
+                selectedSeason={selectedSeason}
+                onChange={setSelectedSeason}
+                isLoading={isLoadingSeasons}
+              />
+            </div>
+            <Button
+              onClick={handlePopulateKanaeloQueue}
+              disabled={!selectedSeason || isPopulatingQueue}
+              variant="default"
+              className="ml-auto"
+            >
+              {isPopulatingQueue ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Populating Queue...
+                </>
+              ) : (
+                "Populate Kanaelo Queue"
+              )}
+            </Button>
           </div>
         </div>
-      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Rankings</CardTitle>
-          <CardDescription>
-            View and manage team rankings with kanapoints analysis
-            {teams.length > 0 && ` (${teams.length} teams)`}
-            <span className="ml-2 text-xs text-muted-foreground italic">
-              Double-click a team to view player details
-            </span>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4">
-          {isLoadingTeams ? (
-            <div className="flex justify-center items-center p-12">
-              <Spinner size="lg" />
-              <span className="ml-4 text-muted-foreground">
-                Loading team data...
+        {error && (
+          <div className="p-4 border border-red-400 bg-red-100 dark:bg-red-900/20 rounded-lg">
+            <h5 className="text-sm font-medium text-red-800 dark:text-red-300">
+              Error
+            </h5>
+            <div className="text-sm text-red-700 dark:text-red-400">
+              {error}
+            </div>
+          </div>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Rankings</CardTitle>
+            <CardDescription>
+              View and manage team rankings with kanapoints analysis
+              {teams.length > 0 && ` (${teams.length} teams)`}
+              <span className="ml-2 text-xs text-muted-foreground italic">
+                Double-click a team to view player details
               </span>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr className="border-b">
-                    <th className="text-left p-2 font-medium text-xs w-16">
-                      ID
-                    </th>
-                    <th className="text-left p-2 font-medium text-xs w-44">
-                      Team
-                    </th>
-                    <th className="text-left p-2 font-medium text-xs w-32">
-                      kanaelo (sum 5 / avg4)
-                    </th>
-                    <th className="text-left p-2 font-medium text-xs w-20">
-                      League
-                    </th>
-                    <th className="text-center p-2 font-medium text-xs w-96">
-                      Graph (0-350)
-                    </th>
-                    <th className="text-left p-2 font-medium text-xs w-96">
-                      Comments
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teams.map((team, index) => {
-                    const totalValue = team.top5_values.reduce(
-                      (sum, val) => sum + val,
-                      0
-                    );
-                    const avgValue = calculateAvg(team.top5_values);
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4">
+            {isLoadingTeams ? (
+              <div className="flex justify-center items-center p-12">
+                <Spinner size="lg" />
+                <span className="ml-4 text-muted-foreground">
+                  Loading team data...
+                </span>
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-medium text-xs w-16">
+                        ID
+                      </th>
+                      <th className="text-left p-2 font-medium text-xs w-44">
+                        Team
+                      </th>
+                      <th className="text-left p-2 font-medium text-xs w-32">
+                        kanaelo (sum 5 / avg4)
+                      </th>
+                      <th className="text-left p-2 font-medium text-xs w-20">
+                        League
+                      </th>
+                      <th className="text-center p-2 font-medium text-xs w-96">
+                        Graph (0-350)
+                      </th>
+                      <th className="text-left p-2 font-medium text-xs w-96">
+                        Comments
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teams.map((team, index) => {
+                      const totalValue = team.top5_values.reduce(
+                        (sum, val) => sum + val,
+                        0
+                      );
+                      const avgValue = calculateAvg(team.top5_values);
 
-                    return (
-                      <tr
-                        key={team.team_id}
-                        className={`border-b ${getRowColorClass(
-                          index
-                        )} transition-colors hover:bg-opacity-80 cursor-pointer`}
-                        onDoubleClick={(e) =>
-                          handleTeamDoubleClick(team.team_id, e)
-                        }
-                        onMouseEnter={() => handleTeamHover(team.team_id)}
-                      >
-                        <td className="p-2 font-medium text-xs">
-                          {team.team_id}
-                        </td>
-                        <td className="p-2 font-medium text-xs">
-                          {team.team_name}
-                        </td>
-                        <td className="p-2 text-xs">
-                          <div className="font-medium">
-                            {totalValue} / {avgValue}
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {Math.floor(index / 12) + 1}
-                          </Badge>
-                        </td>
-                        <td className="p-1">
-                          <MiniChart data={team.top5_values} />
-                        </td>
-                        <td className="p-2">
-                          <Textarea
-                            placeholder="Add comments..."
-                            value={
-                              comments[team.team_id] || team.comments || ""
-                            }
-                            onChange={(e) =>
-                              handleCommentChange(team.team_id, e.target.value)
-                            }
-                            className="text-xs bg-background/80 w-[360px] h-[192px] resize-none overflow-hidden"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      return (
+                        <tr
+                          key={team.team_id}
+                          className={`border-b ${getRowColorClass(
+                            index
+                          )} transition-colors hover:bg-opacity-80 cursor-pointer`}
+                          onDoubleClick={(e) =>
+                            handleTeamDoubleClick(team.team_id, e)
+                          }
+                          onMouseEnter={() => handleTeamHover(team.team_id)}
+                        >
+                          <td className="p-2 font-medium text-xs">
+                            {team.team_id}
+                          </td>
+                          <td className="p-2 font-medium text-xs">
+                            {team.team_name}
+                          </td>
+                          <td className="p-2 text-xs">
+                            <div className="font-medium">
+                              {totalValue} / {avgValue}
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {Math.floor(index / 12) + 1}
+                            </Badge>
+                          </td>
+                          <td className="p-1">
+                            <MiniChart data={team.top5_values} />
+                          </td>
+                          <td className="p-2">
+                            <Textarea
+                              placeholder="Add comments..."
+                              value={
+                                comments[team.team_id] || team.comments || ""
+                              }
+                              onChange={(e) =>
+                                handleCommentChange(
+                                  team.team_id,
+                                  e.target.value
+                                )
+                              }
+                              className="text-xs bg-background/80 w-[360px] h-[192px] resize-none overflow-hidden"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Floating player values window */}
-      {selectedTeamId && floatingPosition && selectedTeam && (
-        <PlayerValuesFloatingWindow
-          playerValues={playerValues}
-          teamName={selectedTeam.team_name}
-          position={floatingPosition}
-          isLoading={isLoadingPlayerValues}
-          onClose={closeTeamPlayerValues}
-        />
-      )}
-    </div>
+        {/* Floating player values window */}
+        {selectedTeamId && floatingPosition && selectedTeam && (
+          <PlayerValuesFloatingWindow
+            playerValues={playerValues}
+            teamName={selectedTeam.team_name}
+            position={floatingPosition}
+            isLoading={isLoadingPlayerValues}
+            onClose={closeTeamPlayerValues}
+          />
+        )}
+      </div>
+    </WithRoleProtection>
   );
 }

@@ -4,6 +4,7 @@ import {
   getTeamValueByIdController,
   getTeamPlayerValuesController
 } from "../../controllers/sortter.controllers";
+import { populateKanaeloQueueController } from "../../controllers/kanaelo.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 const router = Router();
@@ -27,6 +28,13 @@ router.get(
   "/season/:season/team/:team/playervalues",
   validateNumericParams(["season", "team"]),
   getTeamPlayerValuesController
+);
+
+// POST /api/v1/sortter/season/:season_id/populate-kanaelo-queue
+router.post(
+  "/season/:season_id/populate-kanaelo-queue",
+  validateNumericParams(["season_id"]),
+  populateKanaeloQueueController
 );
 
 export default router;

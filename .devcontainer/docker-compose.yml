@@ -36,5 +36,14 @@ services:
     networks:
       - eggo-dev
 
+  eggo-rabbitmq:
+    extends:
+      file: ../docker-compose.yml
+      service: eggo-rabbitmq
+    networks:
+      - eggo-dev
+    ports:
+      - 15674:15672 # Different port from main docker-compose
+
 networks:
   eggo-dev:

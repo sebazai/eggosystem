@@ -1,0 +1,26 @@
+import { runQuery } from "../db/mysqlRunQuery";
+
+/**
+ * Gets all unique players for a specific season
+ * Returns their steam IDs to be used for kanaelo calculation
+ *
+ * @param seasonId The season ID to filter players by
+ * @returns Array of steam IDs
+ */
+export const getAllPlayersForSeason = async (
+  seasonId: number
+): Promise<string[]> => {
+  const query = `
+    SELECT DISTINCT
+      stp.steam_id
+    FROM SeasonTeamPlayers stp
+    JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
+    JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
+    WHERE stp.season_id = ?
+  `;
+
+  const results = await runQuery<{ steam_id: string }[]>(query, [seasonId]);
+
+  // Extract just the steam IDs from the results
+  return results.map((player) => player.steam_id);
+};
