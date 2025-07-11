@@ -37,7 +37,15 @@
         "DISCORD_CLIENT_ID",
         "DISCORD_CLIENT_SECRET",
         "DISCORD_BOT_TOKEN",
-        "DISCORD_GUILD_ID"
+        "DISCORD_GUILD_ID",
+        "TEST_TYPE_ENV",
+        "DISCORD_GENERAL_CHANNEL_ID",
+        "BACKEND_SERVICE_API_KEY",
+        "RABBITMQ_HOST",
+        "RABBITMQ_PORT",
+        "RABBITMQ_USER",
+        "RABBITMQ_PASSWORD",
+        "RABBITMQ_VHOST"
       ],
       "dependsOn": ["^build"],
       "inputs": [

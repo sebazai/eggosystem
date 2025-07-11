@@ -12,25 +12,6 @@ interface TeamMapStatsCardsProps {
   filterQueryParams: FilterParamsQuery;
 }
 
-// CT and T side stats are simulated based on the win percentage since the backend
-// doesn't seem to have this split in the current data model
-const simulateSideStats = (winPct: number) => {
-  // We'll generate realistic but simulated CT/T stats
-  // In reality, these would come from the backend
-  return {
-    ctKd: (
-      1 +
-      (Math.min(100, Math.max(0, winPct + (Math.random() * 20 - 10))) - 50) /
-        100
-    ).toFixed(2),
-    tKd: (
-      1 +
-      (Math.min(100, Math.max(0, winPct + (Math.random() * 20 - 10))) - 50) /
-        100
-    ).toFixed(2)
-  };
-};
-
 // Function to determine color based on win percentage
 const getPistolRoundColor = (winPercentage: number) => {
   if (winPercentage <= 25) return "bg-red-400/50";
@@ -139,8 +120,9 @@ export const TeamMapStatsCards = ({
         const retakeStat = retakeStatsByMapId[mapStat.map_id];
         const mapName = mapToReadableName(mapStat.map_name);
 
-        // Simulate CT/T stats for display purposes
-        const { ctKd, tKd } = simulateSideStats(mapStat.win_percentage);
+        // Use real CT/T stats from the API response
+        const ctKd = mapStat.ct_kd;
+        const tKd = mapStat.t_kd;
 
         return (
           <div

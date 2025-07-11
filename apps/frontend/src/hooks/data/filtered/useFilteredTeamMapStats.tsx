@@ -7,22 +7,31 @@ import {
   generateFiltersParamQuery,
   type FilterParamsQuery
 } from "@/lib/utils";
+import type { KeyedMutator } from "swr";
 
 interface UseFilteredTeamMapStatsProps {
   teamId: number | string;
   filterQueryParams: FilterParamsQuery;
 }
 
+export interface UseFilteredTeamMapStatsReturn {
+  teamMapStats?: TeamMapStats[];
+  isLoading: boolean;
+  error?: Error;
+  isValidating: boolean;
+  mutate: KeyedMutator<TeamMapStats[]>;
+}
+
 export const useFilteredTeamMapStats = ({
   teamId,
   filterQueryParams
-}: UseFilteredTeamMapStatsProps) => {
+}: UseFilteredTeamMapStatsProps): UseFilteredTeamMapStatsReturn => {
   const sortedQuery = generateFiltersParamQuery(filterQueryParams);
 
   const { data, error, isValidating, isLoading, mutate } = useSWR<
     TeamMapStats[]
   >(
-    `/api/v1/filters/teams/${teamId}/map-stats?${sortedQuery}`,
+    `/api/v1/teams/${teamId}/enhanced-map-stats?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false,

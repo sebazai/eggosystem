@@ -48,7 +48,7 @@ v1Router.use(
   filtersRouter
 );
 v1Router.use("/maps", mapsRouter);
-v1Router.use("/teams", teamsRouter);
+v1Router.use("/teams", parseQueryFilterParams, teamsRouter);
 v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/registrations", registrationsRouter);
 v1Router.use("/leagues", leaguesRouter);
