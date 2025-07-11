@@ -31,3 +31,4 @@ export * from "./AccountPermissionScopes.interface";
 export * from "./MatchGameClips.interface";
 export * from "./SeasonPlayerApprovals.interface";
 export * from "./Stage.interface";
+export * from "./SeasonTeamRegistrationPlayer.interface";
