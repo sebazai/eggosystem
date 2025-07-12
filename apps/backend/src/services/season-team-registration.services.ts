@@ -11,9 +11,10 @@ import {
   type SignupFormValues,
   type InsertSeasonTeamRegistration,
   SeasonPlatform,
-  type SeasonTeamRegistration,
   isFaceITCSRank,
-  type UpdateSeasonTeamRegistration
+  type UpdateSeasonTeamRegistration,
+  type SteamPlayer,
+  type PlayerDetailsBySteamId
 } from "@eggosystem/types";
 import { getDBPermissionsForAccountId } from "./auth.services";
 import {
@@ -176,7 +177,9 @@ export const validatePlayersFromDBForSignup = async (
   const data = await Promise.all(
     playerSteamIds.map((steamId) => getPlayerDetailsBySteamId(steamId))
   );
-  const filteredData = data.filter((player) => !!player);
+  const filteredData = data.filter(
+    (player): player is PlayerDetailsBySteamId => !!player
+  );
   if (filteredData.length !== playerSteamIds.length) {
     throw new BadRequestError(
       "Could not find players in database that is provided in the form"
@@ -213,10 +216,10 @@ export const validatePlayersFromDBForSignup = async (
 export const updateCaptainPermissionsForSeasonTeam = async (
   season_id: number,
   team_id: number,
-  new_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
-  old_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
-  new_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
-  old_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
+  new_captain_steam_id: SteamPlayer["steam_id"],
+  old_captain_steam_id: SteamPlayer["steam_id"],
+  new_co_captain_steam_id: SteamPlayer["steam_id"],
+  old_co_captain_steam_id: SteamPlayer["steam_id"],
   connection?: PoolConnection
 ) => {
   const newCaptain =
@@ -262,8 +265,8 @@ export const updateCaptainPermissionsForSeasonTeam = async (
 export const setCaptainPermissionsForSeason = async (
   season_id: number,
   team_id: number,
-  captain_steam_id?: SeasonTeamRegistration["captain_steam_id"],
-  co_captain_steam_id?: SeasonTeamRegistration["co_captain_steam_id"],
+  captain_steam_id?: SteamPlayer["steam_id"],
+  co_captain_steam_id?: SteamPlayer["steam_id"],
   connection?: PoolConnection
 ) => {
   const roleName = `captain`;
@@ -338,8 +341,8 @@ export const handleUpdateSeasonTeamRegistration = async (
   teamId: number,
   organizationId: number,
   teamData: UpdateSeasonTeamRegistration,
-  old_captain_steam_id: SeasonTeamRegistration["captain_steam_id"],
-  old_co_captain_steam_id: SeasonTeamRegistration["co_captain_steam_id"],
+  old_captain_steam_id: SteamPlayer["steam_id"],
+  old_co_captain_steam_id: SteamPlayer["steam_id"],
   playerSteamIds: string[],
   connection?: PoolConnection
 ) => {

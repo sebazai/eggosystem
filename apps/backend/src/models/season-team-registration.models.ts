@@ -7,6 +7,7 @@ import type {
   SeasonDetails,
   SeasonTeamPlayer,
   SeasonTeamRegistration,
+  SeasonTeamRegistrationPlayer,
   SignupFormValues,
   SignupPlayerType,
   SteamPlayer,
@@ -26,8 +27,22 @@ export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
   teamId: number,
   connection?: PoolConnection
 ) => {
-  const result = await runQuery<SeasonTeamRegistration[]>(
-    `SELECT * FROM SeasonTeamRegistrations WHERE season_id = ? AND team_id = ? LIMIT 1`,
+  const result = await runQuery<
+    Array<
+      SeasonTeamRegistration & {
+        captain_steam_id: SteamPlayer["steam_id"];
+        co_captain_steam_id: SteamPlayer["steam_id"];
+      }
+    >
+  >(
+    `SELECT str.*, 
+            MAX(CASE WHEN stp.is_captain = 1 THEN stp.steam_id END) as captain_steam_id,
+            MAX(CASE WHEN stp.is_co_captain = 1 THEN stp.steam_id END) as co_captain_steam_id
+     FROM SeasonTeamRegistrations str 
+       INNER JOIN SeasonTeamRegistrationPlayers stp 
+         ON stp.season_id = str.season_id AND stp.team_id = str.team_id 
+     WHERE str.season_id = ? AND str.team_id = ? 
+     GROUP BY str.season_id, str.team_id`,
     [seasonId, teamId],
     connection
   );
@@ -122,29 +137,24 @@ export const updatePlayersForSeasonTeamRegistration = async (
   return { removed: steamIdsToDelete, added: steamIdsToAdd };
 };
 
-interface TeamSignupQueryData extends SeasonTeamRegistration {
+interface TeamSignupQueryData extends SeasonTeamRegistrationPlayer {
   account_id: SteamPlayer["account_id"];
   nickname: SteamPlayer["nickname"];
-  steam_id: SeasonTeamPlayer["steam_id"];
+  steam_id: SeasonTeamRegistrationPlayer["steam_id"];
   organization_id: Organizations["id"];
   team_id: Team["id"];
+  external_platform_id: SeasonTeamRegistration["external_platform_id"];
 }
 const transformTeamSignupData = (rows: TeamSignupQueryData[]) => {
   if (!rows.length) return null;
 
-  const captain = rows.find((row) => row.steam_id === row.captain_steam_id);
-  const coCaptain = rows.find(
-    (row) => row.steam_id === row.co_captain_steam_id
-  );
-
   const players = rows.map((row) => {
-    const steamId = row.steam_id;
     return {
       accountId: 0,
       nickname: "",
       steamId: String(row.steam_id),
-      captain: steamId === captain?.steam_id,
-      coCaptain: steamId === coCaptain?.steam_id
+      captain: row.is_captain,
+      coCaptain: row.is_co_captain
     } satisfies SignupPlayerType;
   });
 
@@ -161,9 +171,9 @@ const transformTeamSignupData = (rows: TeamSignupQueryData[]) => {
 
 export const getTeamSignupData = async (seasonId: number, teamId: number) => {
   const query = `
-    SELECT str.*, stp.steam_id, o.id as organization_id, t.id as team_id 
+    SELECT str.external_platform_id, stp.*, o.id as organization_id, t.id as team_id 
     FROM SeasonTeamRegistrations str
-      INNER JOIN SeasonTeamPlayers stp ON stp.season_id = str.season_id AND stp.team_id = str.team_id
+      INNER JOIN SeasonTeamRegistrationPlayers stp ON stp.season_id = str.season_id AND stp.team_id = str.team_id
       INNER JOIN Teams t ON t.id = str.team_id
       INNER JOIN Organizations o ON o.id = t.organization_id
     WHERE str.season_id = ? AND str.team_id = ?;
