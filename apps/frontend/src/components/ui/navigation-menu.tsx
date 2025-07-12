@@ -71,7 +71,7 @@ function NavigationMenuTrigger({
     <NavigationMenuPrimitive.Trigger
       data-slot="navigation-menu-trigger"
       className={cn(navigationMenuTriggerStyle(), "group", className)}
-      // DO NOT MERGE THIS CHANGE
+      // DO NOT MERGE THIS REMOVAL WHEN UPDATING TO NEW VERSION OF SHADCN UI
       onPointerMove={(event) => event.preventDefault()}
       onPointerLeave={(event) => event.preventDefault()}
       {...props}
@@ -114,6 +114,7 @@ function NavigationMenuViewport({
     >
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
+        // DO NOT MERGE THIS REMOVAL WHEN UPDATING TO NEW VERSION OF SHADCN UI
         onPointerLeave={(event) => event.preventDefault()}
         className={cn(
           "origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow md:w-[var(--radix-navigation-menu-viewport-width)]",
