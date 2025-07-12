@@ -1,8 +1,7 @@
 import {
   type SeasonPlayerRank,
   type CS2LeetifyAvgRank,
-  SeasonPlatform,
-  type SteamPlayer
+  SeasonPlatform
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import _ from "lodash";
@@ -290,7 +289,6 @@ interface PlayerKanaRank {
 
 export const getPlayerKanaRank = async (steam_id: string) => {
   const { kana_elo } = await getPlayerKanaElo(steam_id);
-  console.log(kana_elo);
 
   const topPlayers = await getTopXPlayersKanaElo(TOP_PLAYERS_COUNT);
 
@@ -310,7 +308,6 @@ export const getPlayerKanaRank = async (steam_id: string) => {
   }
 
   const playerThreshold = getPlayerThreshold(kana_elo);
-  console.log(playerThreshold);
 
   return {
     rank: playerThreshold.rank,
