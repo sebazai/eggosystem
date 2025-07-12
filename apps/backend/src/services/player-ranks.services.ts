@@ -1,7 +1,8 @@
 import {
   type SeasonPlayerRank,
   type CS2LeetifyAvgRank,
-  SeasonPlatform
+  SeasonPlatform,
+  type SteamPlayer
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import _ from "lodash";
@@ -9,7 +10,8 @@ import { expireIn30Days, redisClient } from "../utils/redisClient";
 import {
   getPlayerHoursForSeason,
   getPlayerRankForSeason,
-  getPlayerKanaElo
+  getPlayerKanaElo,
+  getTopXPlayersKanaElo
 } from "../models/season-player-ranks.models";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
@@ -268,70 +270,52 @@ const KANARANK_THRESHOLDS = [
 const TOP_PLAYERS_COUNT = 50; // Total players to track positions for
 const TOP_COCK_COUNT = 10; // Only top 10 get the TOP_COCK rank
 
+const getPlayerThreshold = (kana_elo: number) => {
+  for (const threshold of KANARANK_THRESHOLDS) {
+    if (kana_elo >= threshold.min_elo) {
+      return threshold;
+    }
+  }
+  throw new Error("No threshold found");
+};
 /**
  * Get player's kanarank based on their kana_elo value and position among all players
  */
+interface PlayerKanaRank {
+  rank: string;
+  subrank: number;
+  is_top50: boolean;
+  position: number | null;
+}
+
 export const getPlayerKanaRank = async (steam_id: string) => {
-  // Get the player's kana_elo
   const { kana_elo } = await getPlayerKanaElo(steam_id);
+  console.log(kana_elo);
 
-  // Default response structure
-  const response: {
-    rank: string;
-    subrank: number;
-    is_top50: boolean;
-    position: number | null;
-  } = {
-    rank: "",
-    subrank: 0,
-    is_top50: false,
-    position: null
-  };
+  const topPlayers = await getTopXPlayersKanaElo(TOP_PLAYERS_COUNT);
 
-  // Get top 50 players by kana_elo
-  const topPlayers = await runQuery<
-    Array<{ steam_id: string; kana_elo: number }>
-  >(
-    `SELECT steam_id, kana_elo 
-     FROM SeasonPlayerRanks 
-     GROUP BY steam_id
-     ORDER BY kana_elo DESC
-     LIMIT ?`,
-    [TOP_PLAYERS_COUNT]
-  );
-
-  // Find player position in top players
   const playerPosition = topPlayers.findIndex(
     (player) => player.steam_id === steam_id
   );
 
-  // Player is in top 50
-  if (playerPosition !== -1) {
-    const position = playerPosition + 1; // +1 because array is 0-indexed
-    response.position = position;
-    response.is_top50 = true;
+  const position = playerPosition + 1;
 
-    // Only top 10 get the special TOP_COCK rank
-    if (position <= TOP_COCK_COUNT) {
-      response.rank = "TOP_COCK";
-      return response;
-    }
-
-    // For positions 11-50, determine their regular rank but include position
-    // Fall through to regular rank determination
+  if (position <= TOP_COCK_COUNT) {
+    return {
+      rank: "TOP_COCK",
+      subrank: 1,
+      is_top50: true,
+      position: position
+    } satisfies PlayerKanaRank;
   }
 
-  // Determine regular rank based on kana_elo using new thresholds
-  for (const threshold of KANARANK_THRESHOLDS) {
-    if (kana_elo >= threshold.min_elo) {
-      response.rank = threshold.rank;
-      response.subrank = threshold.subrank;
-      return response;
-    }
-  }
+  const playerThreshold = getPlayerThreshold(kana_elo);
+  console.log(playerThreshold);
 
-  // Fallback to lowest rank if somehow no threshold matches
-  response.rank = "EGG";
-  response.subrank = 3;
-  return response;
+  return {
+    rank: playerThreshold.rank,
+    subrank: playerThreshold.subrank,
+    is_top50: playerPosition !== -1,
+    position: playerPosition !== -1 ? position : null
+  } satisfies PlayerKanaRank;
 };

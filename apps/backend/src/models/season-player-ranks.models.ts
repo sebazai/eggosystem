@@ -1,7 +1,8 @@
 import {
   type SeasonPlayerRank,
   type FaceITCSRank,
-  type SeasonPlatform
+  type SeasonPlatform,
+  type SteamPlayer
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
@@ -163,9 +164,30 @@ export const insertFaceITPlayerRankForSeason = async (
 
 export const getPlayerKanaElo = async (steam_id: string) => {
   const result = await runQuery<Array<{ kana_elo: number }>>(
-    "SELECT kana_elo FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC LIMIT 1",
+    `SELECT kana_elo 
+      FROM SeasonPlayerRanks 
+      WHERE steam_id = ? AND kana_elo IS NOT NULL
+      ORDER BY season_id DESC 
+      LIMIT 1`,
     [steam_id]
   );
 
   return result.length > 0 ? result[0] : { kana_elo: 0 };
+};
+
+export const getTopXPlayersKanaElo = async (x: number) => {
+  return runQuery<
+    Array<{
+      steam_id: SteamPlayer["steam_id"];
+      kana_elo: SeasonPlayerRank["kana_elo"];
+    }>
+  >(
+    `SELECT steam_id, kana_elo 
+   FROM SeasonPlayerRanks 
+   WHERE kana_elo IS NOT NULL
+   GROUP BY steam_id
+   ORDER BY kana_elo DESC
+   LIMIT ?`,
+    [x]
+  );
 };
