@@ -7,9 +7,10 @@ import { runQuery } from "../db/mysqlRunQuery";
 // );
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const saveWebhookData = async (data: any) => {
-  return runQuery("INSERT INTO Webhooks (data) VALUES (?)", [
-    JSON.stringify(data)
+export const saveWebhookData = async (data: any, details: any) => {
+  return runQuery("INSERT INTO Webhooks (data, details) VALUES (?, ?)", [
+    JSON.stringify(data),
+    JSON.stringify(details)
   ]);
 };
 

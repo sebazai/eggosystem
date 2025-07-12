@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getFaceITTeamDetails } from "../../services/faceit.services";
+import {
+  getFaceITMatchDetails,
+  getFaceITTeamDetails
+} from "../../services/faceit.services";
 import { type Request, type Response } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
 import { getWebhookData, saveWebhookData } from "../../models/faceit.models";
@@ -27,7 +30,7 @@ router.post("/webhook", async (req: Request, res: Response) => {
     const webhookData = req.body;
 
     // Save entire JSON to the database
-    await saveWebhookData(webhookData);
+    await saveWebhookData(webhookData, null);
 
     res.status(200).send("Webhook received");
   } catch (error) {
@@ -45,6 +48,20 @@ router.get("/webhook", async (req: Request, res: Response) => {
   } catch (error) {
     logger.error("Error handling webhook data:", error);
     res.status(500).send("Something went wrong");
+  }
+});
+
+router.post("/webhook-test", async (req: Request, res: Response) => {
+  try {
+    const webhookData = req.body;
+
+    const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
+    await saveWebhookData(webhookData, matchDetails);
+
+    res.status(200).send("Webhook received");
+  } catch (error) {
+    logger.error("Error handling webhook", error);
+    res.status(200).send("Something went wrong");
   }
 });
 

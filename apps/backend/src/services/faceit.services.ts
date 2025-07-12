@@ -362,3 +362,13 @@ export const getFaceITTeamDetails = async (faceit_team_id: string) => {
   await redisClient.set(redisKey, JSON.stringify(data), "EX", expireInOneDay);
   return data;
 };
+
+export const getFaceITMatchDetails = async (match_id: string) => {
+  const webURL = `https://open.faceit.com/data/v4/matches/${match_id}`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  return response.json() as unknown;
+};
