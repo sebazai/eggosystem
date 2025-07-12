@@ -1,0 +1,156 @@
+{
+  "match_id": "1-f7f36eb4-10cd-45a9-a076-3178f7edcce9",
+  "version": 2,
+  "game": "cs2",
+  "region": "EU",
+  "competition_id": "6771e94f-44e5-437f-91a8-2c43f8a29192",
+  "competition_type": "championship",
+  "competition_name": "Masters S3 Playoffs",
+  "organizer_id": "d2372a88-623d-4ca3-9248-a480b6dfbe1a",
+  "teams": {
+    "faction2": {
+      "faction_id": "04e26309-6d9a-48d5-9a8b-ca5f0a8e7fa3",
+      "leader": "001961ee-2501-4289-8bf5-6e48bfa249c3",
+      "avatar": "https://distribution.faceit-cdn.net/images/e51898db-9e9d-45d9-9339-1af26c44ef43.jpeg",
+      "roster": [
+        {
+          "player_id": "001961ee-2501-4289-8bf5-6e48bfa249c3",
+          "nickname": "willey-",
+          "avatar": "https://assets.faceit-cdn.net/avatars/001961ee-2501-4289-8bf5-6e48bfa249c3_1550641093114.jpg",
+          "membership": "free",
+          "game_player_id": "76561197967217654",
+          "game_player_name": "willey-",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "489a607b-368d-4467-bf4c-53d7d205ce72",
+          "nickname": "Niksuwii",
+          "avatar": "https://assets.faceit-cdn.net/avatars/489a607b-368d-4467-bf4c-53d7d205ce72_1550581402730.png",
+          "membership": "plus",
+          "game_player_id": "76561198070192702",
+          "game_player_name": "Niksu",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "1a871ee0-c6b0-4d13-a90c-64c1d502d531",
+          "nickname": "armad4",
+          "avatar": "https://distribution.faceit-cdn.net/images/5b6e1268-1ea4-4d92-81c2-9625288da35e.jpg",
+          "membership": "premium",
+          "game_player_id": "76561198072022630",
+          "game_player_name": "ARMADA",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "e4a52b7d-1ec2-435a-8ff6-d2c9e2238cf4",
+          "nickname": "jopsykka",
+          "avatar": "https://assets.faceit-cdn.net/avatars/e4a52b7d-1ec2-435a-8ff6-d2c9e2238cf4_1565532991210.jpg",
+          "membership": "plus",
+          "game_player_id": "76561197998229790",
+          "game_player_name": "jöpsykkä",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "f8d3b66d-61d8-48d7-936e-0cc69b11de96",
+          "nickname": "Susikoira",
+          "avatar": "https://assets.faceit-cdn.net/avatars/f8d3b66d-61d8-48d7-936e-0cc69b11de96_1550967811745.jpg",
+          "membership": "free",
+          "game_player_id": "76561197981546947",
+          "game_player_name": "گu گi ҚОІЯA",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        }
+      ],
+      "substituted": false,
+      "name": "ALMP Default",
+      "type": "premade"
+    },
+    "faction1": {
+      "faction_id": "7b644292-2d8d-4108-b28d-90ba148d14cf",
+      "leader": "d97e97b0-435c-47c6-9994-160e47e2e498",
+      "avatar": "https://distribution.faceit-cdn.net/images/a77c485e-49e8-4bed-bcff-b5a4e80c06f2.jpeg",
+      "roster": [
+        {
+          "player_id": "d97e97b0-435c-47c6-9994-160e47e2e498",
+          "nickname": "remaiN",
+          "avatar": "https://distribution.faceit-cdn.net/images/6ce458d2-ecf5-4d5d-815a-711118ac65d7.jpeg",
+          "membership": "plus",
+          "game_player_id": "76561198148189098",
+          "game_player_name": "remain",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "45509ce6-b8e1-44be-89bc-f75b4ae2ae41",
+          "nickname": "eLsea_",
+          "avatar": "https://distribution.faceit-cdn.net/images/86a0e7d4-e56d-44fb-a4f2-d27f59c5990f.jpeg",
+          "membership": "plus",
+          "game_player_id": "76561198055861096",
+          "game_player_name": "eLsea",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "e38c1847-0f61-47b9-864e-f067c2560a24",
+          "nickname": "--Meli--",
+          "avatar": "https://distribution.faceit-cdn.net/images/e33bae27-0202-428c-a057-1b548d3ae651.jpeg",
+          "membership": "premium",
+          "game_player_id": "76561198026696373",
+          "game_player_name": "Meli",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "0ca98e5b-7a0a-4ffa-9ee8-fd2af05e495f",
+          "nickname": "nipa",
+          "avatar": "https://distribution.faceit-cdn.net/images/e7e501ac-7095-48de-8d96-a18d82abdfda.jpeg",
+          "membership": "free",
+          "game_player_id": "76561198058215818",
+          "game_player_name": "nipa =)",
+          "game_skill_level": 10,
+          "anticheat_required": true
+        },
+        {
+          "player_id": "14a4be61-dd78-4838-8124-fa033c1f8e78",
+          "nickname": "NUKKlS",
+          "avatar": "https://distribution.faceit-cdn.net/images/e86624ed-7619-41cf-8ed7-502d0f13b9ce.jpeg",
+          "membership": "free",
+          "game_player_id": "76561197983184888",
+          "game_player_name": "ADUBA",
+          "game_skill_level": 8,
+          "anticheat_required": true
+        }
+      ],
+      "substituted": false,
+      "name": "JIS AUTOMATION",
+      "type": "premade"
+    }
+  },
+  "calculate_elo": false,
+  "finished_at": 1747591244,
+  "chat_room_id": "match-1-f7f36eb4-10cd-45a9-a076-3178f7edcce9",
+  "best_of": 3,
+  "results": {
+    "winner": "faction2",
+    "score": { "faction2": 2, "faction1": 0 }
+  },
+  "detailed_results": [
+    {
+      "asc_score": false,
+      "winner": "faction2",
+      "factions": { "faction2": { "score": 1 }, "faction1": { "score": 0 } }
+    },
+    {
+      "asc_score": false,
+      "winner": "faction2",
+      "factions": { "faction2": { "score": 1 }, "faction1": { "score": 0 } }
+    }
+  ],
+  "status": "FINISHED",
+  "round": 2,
+  "group": 3,
+  "faceit_url": "https://www.faceit.com/{lang}/cs2/room/1-f7f36eb4-10cd-45a9-a076-3178f7edcce9"
+}

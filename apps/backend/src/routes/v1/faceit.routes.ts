@@ -207,8 +207,8 @@ router.post(
         await addMatchToDatabase(matchDetails, externalLeagueId);
       }
       if (webhookData.data.event === "match_status_finished") {
-        const _endTime = webhookData.data.payload.finished_at;
-        await updateMatchEndTime(webhookData.data.payload.id, _endTime);
+        const endTime = webhookData.data.payload.finished_at;
+        await updateMatchEndTime(webhookData.data.payload.id, endTime);
       }
       if (webhookData.data.event === "match_status_ready") {
         // Do we need this, indicates that the is ready and the server is ready to start the match
