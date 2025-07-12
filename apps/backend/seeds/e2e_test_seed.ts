@@ -37,14 +37,13 @@ export async function seed(knex: Knex): Promise<void> {
     // Delete from SeasonTeamPlayers for ALL seasons (not just season 16)
     await knex("SeasonTeamPlayers").where({ steam_id: steamId }).del();
 
+    // Delete from SeasonTeamRegistrationPlayers for ALL seasons (not just season 16)
+    await knex("SeasonTeamRegistrationPlayers")
+      .where({ steam_id: steamId })
+      .del();
+
     // remove all manual approvals
     await knex("SeasonPlayerApprovals").where({ steam_id: steamId }).del();
-
-    // Delete from SeasonTeamRegistrations where this player is captain or co-captain
-    await knex("SeasonTeamRegistrations")
-      .where({ captain_steam_id: steamId })
-      .orWhere({ co_captain_steam_id: steamId })
-      .del();
   }
 
   // Clean up existing E2E test data
@@ -53,6 +52,7 @@ export async function seed(knex: Knex): Promise<void> {
     .del();
   await knex("AccountRoles").where({ account_id: 15003, game_id: 1 }).del();
   await knex("SeasonTeamPlayers").where({ season_id: 16 }).del();
+  await knex("SeasonTeamRegistrationPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
   await knex("Teams").where({ id: 999 }).del();
   await knex("Organizations").where({ id: 999 }).del();

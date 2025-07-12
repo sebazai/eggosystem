@@ -29,8 +29,6 @@ import {
   removeTestSeason,
   removeTestTeam,
   setCaptainEditRegistrationForAccountId,
-  setSeasonTeamPlayer,
-  setSeasonTeamPlayers,
   setSeasonTeamRegistration,
   unsetSeasonTeamRegistration
 } from "../../__utils__/seed-database";
@@ -333,13 +331,15 @@ describe("Season team registration services", () => {
         formData.teamId,
         formData.organizationId,
         {
-          captain_steam_id: formData.players[0].steamId,
-          co_captain_steam_id: formData.players[1].steamId,
           external_platform_id: formData.teamExternalId,
           terms_and_conditions_approved:
             formData.captainHasReadTermAndConditions
         } satisfies InsertSeasonTeamRegistration,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
       );
       expect(validatePlayersInDb).toHaveBeenCalledWith(
         seasonDetails.id,
@@ -351,8 +351,6 @@ describe("Season team registration services", () => {
         seasonDetails.id,
         formData.teamId,
         {
-          captain_steam_id: formData.players[0].steamId,
-          co_captain_steam_id: formData.players[1].steamId,
           external_platform_id: formData.teamExternalId,
           terms_and_conditions_approved: true
         } satisfies InsertSeasonTeamRegistration,
@@ -363,7 +361,11 @@ describe("Season team registration services", () => {
         seasonDetails.app_id,
         seasonDetails.platform,
         formData.teamId,
-        formData.players.map((player) => player.steamId),
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        })),
         undefined
       );
       expect(captainPerm).toHaveBeenCalledWith(
@@ -623,7 +625,11 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           seasonDetails.platform,
           formData.teamId,
-          formData.players.map((player) => player.steamId)
+          formData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          }))
         );
       } catch (error) {
         const asBadreq = error as BadRequestError;
@@ -640,7 +646,11 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           seasonDetails.platform,
           formData.teamId,
-          formData.players.map((player) => player.steamId)
+          formData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          }))
         );
       } catch (error) {
         const asBadreq = error as BadRequestError;
@@ -662,7 +672,11 @@ describe("Season team registration services", () => {
         seasonDetails.app_id,
         seasonDetails.platform,
         formData.teamId,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
       );
       const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -685,7 +699,11 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           SeasonPlatform.FACEIT,
           formData.teamId,
-          formData.players.map((player) => player.steamId)
+          formData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          }))
         );
       } catch (error) {
         const errorAsBadReq = error as BadRequestError;
@@ -708,7 +726,11 @@ describe("Season team registration services", () => {
           seasonDetails.app_id,
           SeasonPlatform.FACEIT,
           formData.teamId,
-          formData.players.map((player) => player.steamId)
+          formData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          }))
         );
       } catch (error) {
         const errorAsBadReq = error as BadRequestError;
@@ -729,7 +751,11 @@ describe("Season team registration services", () => {
         seasonDetails.app_id,
         seasonDetails.platform,
         formData.teamId,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
       );
       const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -780,7 +806,11 @@ describe("Season team registration services", () => {
         seasonDetails.app_id,
         seasonDetails.platform,
         formData.teamId,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
       );
       const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -807,7 +837,11 @@ describe("Season team registration services", () => {
         seasonDetails.app_id,
         SeasonPlatform.FACEIT,
         formData.teamId,
-        formData.players.map((player) => player.steamId)
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
       );
       const [getPlayerRank] = await runQuery<[SeasonPlayerRank]>(
         "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
@@ -1020,7 +1054,7 @@ describe("Season team registration services", () => {
         const data = await runQuery<Array<AccountPermissionScopes>>(
           "SELECT * FROM AccountPermissionScopes"
         );
-        const accountRole = await runQuery<Array<AccountRole>>(
+        const accountRole = await runQuery<Array<AccountPermissionScopes>>(
           "SELECT * FROM AccountPermissionScopes"
         );
         expect(data.length).toEqual(1);
@@ -1039,16 +1073,29 @@ describe("Season team registration services", () => {
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
       await runQuery(
-        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id, terms_and_conditions_approved) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, terms_and_conditions_approved) VALUES (?, ?, ?)",
+        [seasonDetails.id, validSignupData.teamId, true]
+      );
+      await runQuery(
+        "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
         [
           seasonDetails.id,
           validSignupData.teamId,
           validSignupData.players[0].steamId,
+          true,
+          false
+        ]
+      );
+      await runQuery(
+        "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
+        [
+          seasonDetails.id,
+          validSignupData.teamId,
           validSignupData.players[1].steamId,
+          false,
           true
         ]
       );
-      await setSeasonTeamPlayers();
     });
     it("happy path, have called all functions with correct params", async () => {
       const formData = _.cloneDeep(validSignupData);
@@ -1086,8 +1133,6 @@ describe("Season team registration services", () => {
         seasonDetails.id,
         formData.teamId,
         {
-          captain_steam_id: formData.players[3].steamId,
-          co_captain_steam_id: formData.players[1].steamId,
           external_platform_id: formData.teamExternalId,
           terms_and_conditions_approved: true
         } satisfies UpdateSeasonTeamRegistration,
@@ -1096,7 +1141,11 @@ describe("Season team registration services", () => {
       expect(updateAddPlayers).toHaveBeenCalledWith(
         seasonDetails.id,
         2,
-        formData.players.map((player) => player.steamId),
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        })),
         undefined
       );
       expect(captainPerm).toHaveBeenCalledWith(
@@ -1145,23 +1194,33 @@ describe("Season team registration services", () => {
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
       await runQuery(
-        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, captain_steam_id, co_captain_steam_id, terms_and_conditions_approved) VALUES (?, ?, ?, ?, ?)",
-        [
-          seasonDetails.id,
-          validSignupData.teamId,
-          validSignupData.players[0].steamId,
-          validSignupData.players[1].steamId,
-          true
-        ]
+        "INSERT INTO SeasonTeamRegistrations (season_id, team_id, terms_and_conditions_approved) VALUES (?, ?, ?)",
+        [seasonDetails.id, validSignupData.teamId, true]
       );
-      await setSeasonTeamPlayers();
+      // Add all players from validSignupData to the SeasonTeamRegistrationPlayers table
+      for (const player of validSignupData.players) {
+        await runQuery(
+          "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
+          [
+            seasonDetails.id,
+            validSignupData.teamId,
+            player.steamId,
+            Boolean(player.captain),
+            Boolean(player.coCaptain)
+          ]
+        );
+      }
     });
     it("should return nothing when trying to insert same team", async () => {
       const nothingChanged =
         await registrationModels.updatePlayersForSeasonTeamRegistration(
           1,
           2,
-          validSignupData.players.map((player) => player.steamId)
+          validSignupData.players.map((player) => ({
+            steam_id: player.steamId,
+            is_captain: Boolean(player.captain),
+            is_co_captain: Boolean(player.coCaptain)
+          }))
         );
       expect(nothingChanged.added.length).toEqual(0);
       expect(nothingChanged.removed.length).toEqual(0);
@@ -1187,9 +1246,17 @@ describe("Season team registration services", () => {
             1,
             2,
             [
-              ...validSignupData.players.map((player) => player.steamId),
+              ...validSignupData.players.map((player) => ({
+                steam_id: player.steamId,
+                is_captain: Boolean(player.captain),
+                is_co_captain: Boolean(player.coCaptain)
+              })),
 
-              "12345678912345601"
+              {
+                steam_id: "12345678912345601",
+                is_captain: false,
+                is_co_captain: false
+              }
             ]
           );
         const [account] = await runQuery<Array<Account & SteamPlayer>>(
@@ -1211,7 +1278,17 @@ describe("Season team registration services", () => {
           "Nakki Kauppias",
           "nakki#123"
         );
-        await setSeasonTeamPlayer("12345678912345601");
+        // Add the player to the SeasonTeamRegistrationPlayers table
+        await runQuery(
+          "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
+          [
+            seasonDetails.id,
+            validSignupData.teamId,
+            "12345678912345601",
+            false,
+            false
+          ]
+        );
       });
       afterEach(async () => {
         await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
@@ -1224,7 +1301,11 @@ describe("Season team registration services", () => {
           await registrationModels.updatePlayersForSeasonTeamRegistration(
             1,
             2,
-            validSignupData.players.map((player) => player.steamId)
+            validSignupData.players.map((player) => ({
+              steam_id: player.steamId,
+              is_captain: Boolean(player.captain),
+              is_co_captain: Boolean(player.coCaptain)
+            }))
           );
         const [account] = await runQuery<Array<Account & SteamPlayer>>(
           "SELECT a.*, sp.* FROM Accounts a JOIN SteamPlayers sp ON sp.account_id = a.id WHERE a.id = ?",
@@ -1268,12 +1349,36 @@ describe("Season team registration services", () => {
             1,
             2,
             [
-              validSignupData.players[0].steamId,
-              validSignupData.players[1].steamId,
-              validSignupData.players[3].steamId,
-              validSignupData.players[4].steamId,
-              "12345678912345601",
-              "12345678912345603"
+              {
+                steam_id: validSignupData.players[0].steamId,
+                is_captain: Boolean(validSignupData.players[0].captain),
+                is_co_captain: Boolean(validSignupData.players[0].coCaptain)
+              },
+              {
+                steam_id: validSignupData.players[1].steamId,
+                is_captain: Boolean(validSignupData.players[1].captain),
+                is_co_captain: Boolean(validSignupData.players[1].coCaptain)
+              },
+              {
+                steam_id: validSignupData.players[3].steamId,
+                is_captain: Boolean(validSignupData.players[3].captain),
+                is_co_captain: Boolean(validSignupData.players[3].coCaptain)
+              },
+              {
+                steam_id: validSignupData.players[4].steamId,
+                is_captain: Boolean(validSignupData.players[4].captain),
+                is_co_captain: Boolean(validSignupData.players[4].coCaptain)
+              },
+              {
+                steam_id: "12345678912345601",
+                is_captain: false,
+                is_co_captain: false
+              },
+              {
+                steam_id: "12345678912345603",
+                is_captain: false,
+                is_co_captain: false
+              }
             ]
           );
         expect(addedOne.added.length).toEqual(2);
@@ -1290,6 +1395,19 @@ describe("Season team registration services", () => {
       await runQuery("DELETE FROM AccountPermissionScopes");
       await runQuery("DELETE FROM AccountRoles");
       await setSeasonTeamRegistration();
+      // Add player records to the new SeasonTeamRegistrationPlayers table
+      for (const player of validSignupData.players) {
+        await runQuery(
+          "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
+          [
+            seasonDetails.id,
+            validSignupData.teamId,
+            player.steamId,
+            Boolean(player.captain),
+            Boolean(player.coCaptain)
+          ]
+        );
+      }
       await setCaptainEditRegistrationForAccountId(
         validSignupData.players[0].accountId
       );

@@ -9,7 +9,7 @@ import * as teamModels from "../../models/team.models";
 import * as organizationModels from "../../models/organization.models";
 import * as seasonTeamRegistrationModels from "../../models/season-team-registration.models";
 import * as seasonTeamRegistrationServices from "../../services/season-team-registration.services";
-import * as seasonTeamPlayersModels from "../../models/season-team-players.models";
+import * as seasonTeamRegistrationPlayerModels from "../../models/season-team-registration-player.models";
 import type { Response } from "express";
 import {
   type SignupFormValues,
@@ -112,8 +112,6 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       2,
       {
-        captain_steam_id: "12345678901234566",
-        co_captain_steam_id: "12345678901234567",
         external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
@@ -125,7 +123,11 @@ describe("addSignupForSeason - database transaction testing", () => {
       730,
       SeasonPlatform.FACEIT,
       2,
-      req.body.players.map((player) => player.steamId),
+      req.body.players.map((player) => ({
+        steam_id: player.steamId,
+        is_captain: Boolean(player.captain),
+        is_co_captain: Boolean(player.coCaptain)
+      })),
       mockConnection
     );
 
@@ -134,14 +136,17 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(res.json).toHaveBeenCalledWith({ team_id: 2, organization_id: 102 });
   });
 
-  it("insertSeasonTeamRegistration & insertSeasonTeamPlayer in addPlayersForTeamInSeason and it's subfunctions should be called with correct parameters", async () => {
+  it("insertSeasonTeamRegistration & insertSeasonTeamRegistrationPlayer in addPlayersForTeamInSeason and it's subfunctions should be called with correct parameters", async () => {
     const insertSeasonTeamReg = jest
       .spyOn(seasonTeamRegistrationModels, "insertSeasonTeamRegistration")
       .mockResolvedValue({
         insertId: 1
       });
-    const insertSeasonTeamPlayer = jest
-      .spyOn(seasonTeamPlayersModels, "insertSeasonTeamPlayer")
+    const insertSeasonTeamRegistrationPlayer = jest
+      .spyOn(
+        seasonTeamRegistrationPlayerModels,
+        "insertSeasonTeamRegistrationPlayer"
+      )
       .mockResolvedValue({
         insertId: 1
       });
@@ -165,18 +170,18 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       2,
       {
-        captain_steam_id: "12345678901234566",
-        co_captain_steam_id: "12345678901234567",
         external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
       mockConnection
     );
-    expect(insertSeasonTeamPlayer).toHaveBeenCalledWith(
+    expect(insertSeasonTeamRegistrationPlayer).toHaveBeenCalledWith(
       1,
       2,
       {
-        steam_id: "12345678901234566"
+        steam_id: "12345678901234566",
+        is_captain: true,
+        is_co_captain: false
       },
       mockConnection
     );
@@ -186,7 +191,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     expect(res.json).toHaveBeenCalledWith({ team_id: 2, organization_id: 102 });
     // TODO: Figure out why these are not resetting/clearing, if we run this test with .only, these assertions work.
     // expect(faceItRank).toHaveBeenCalledTimes(5);
-    // expect(insertSeasonTeamPlayer).toHaveBeenCalledTimes(5);
+    // expect(insertSeasonTeamRegistrationPlayer).toHaveBeenCalledTimes(5);
   });
 
   it("should handle new organization and new team successfully", async () => {
@@ -228,8 +233,6 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       666,
       {
-        captain_steam_id: "12345678901234566",
-        co_captain_steam_id: "12345678901234567",
         external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
@@ -241,7 +244,11 @@ describe("addSignupForSeason - database transaction testing", () => {
       730,
       SeasonPlatform.FACEIT,
       666,
-      req.body.players.map((player) => player.steamId),
+      req.body.players.map((player) => ({
+        steam_id: player.steamId,
+        is_captain: Boolean(player.captain),
+        is_co_captain: Boolean(player.coCaptain)
+      })),
       mockConnection
     );
 
@@ -280,8 +287,6 @@ describe("addSignupForSeason - database transaction testing", () => {
       1,
       1337,
       {
-        captain_steam_id: "12345678901234566",
-        co_captain_steam_id: "12345678901234567",
         external_platform_id: "facded66-34dd-4a81-8a58-4d59c8b391d5",
         terms_and_conditions_approved: true
       },
@@ -293,7 +298,11 @@ describe("addSignupForSeason - database transaction testing", () => {
       730,
       SeasonPlatform.FACEIT,
       1337,
-      req.body.players.map((player) => player.steamId),
+      req.body.players.map((player) => ({
+        steam_id: player.steamId,
+        is_captain: Boolean(player.captain),
+        is_co_captain: Boolean(player.coCaptain)
+      })),
       mockConnection
     );
 

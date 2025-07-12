@@ -14,7 +14,9 @@ import {
   isFaceITCSRank,
   type UpdateSeasonTeamRegistration,
   type SteamPlayer,
-  type PlayerDetailsBySteamId
+  type PlayerDetailsBySteamId,
+  type InsertSeasonTeamRegistrationPlayer,
+  type UpdateSeasonTeamRegistrationPlayer
 } from "@eggosystem/types";
 import { getDBPermissionsForAccountId } from "./auth.services";
 import {
@@ -33,10 +35,7 @@ import {
   insertCSPlayerRankForSeason,
   insertFaceITPlayerRankForSeason
 } from "../models/season-player-ranks.models";
-import {
-  insertSeasonTeamPlayer,
-  isPlayerApprovedForSeasonManually
-} from "../models/season-team-players.models";
+import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
 import { getSeasonDetailsById } from "../models/season.models";
 import { NotFoundError, BadRequestError } from "../utils/errors";
 import { getFaceITTeamDetails } from "./faceit.services";
@@ -46,6 +45,7 @@ import {
   getPlayerRankForPlatform
 } from "./player-ranks.services";
 import { runQuery } from "../db/mysqlRunQuery";
+import { insertSeasonTeamRegistrationPlayer } from "../models/season-team-registration-player.models";
 
 export const ensurePlayerSteamProfilesPublic = async (
   playerSteamIds: string[]
@@ -98,30 +98,32 @@ export const addPlayersForTeamInSeason = async (
   appId: number,
   platform: SeasonPlatform | null,
   teamId: number,
-  playerSteamIds: string[],
+  playerInsertData: InsertSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
-  for (const steamId of playerSteamIds) {
-    await insertSeasonTeamPlayer(
+  for (const player of playerInsertData) {
+    await insertSeasonTeamRegistrationPlayer(
       seasonId,
       teamId,
       {
-        steam_id: steamId
+        steam_id: player.steam_id,
+        is_captain: player.is_captain,
+        is_co_captain: player.is_co_captain
       },
       connection
     );
     const [rank, { hours }, externalRank] = await Promise.all([
-      getPlayerAppIdRank(steamId, appId, seasonId),
-      getPlayerHoursForSteamAppId(steamId, appId, seasonId),
-      getPlayerRankForPlatform(steamId, platform, seasonId)
+      getPlayerAppIdRank(player.steam_id, appId, seasonId),
+      getPlayerHoursForSteamAppId(player.steam_id, appId, seasonId),
+      getPlayerRankForPlatform(player.steam_id, platform, seasonId)
     ]);
 
     if (hours === -1) {
-      throw new BadRequestError(`Player ${steamId} hours not found.`);
+      throw new BadRequestError(`Player ${player.steam_id} hours not found.`);
     }
 
     if (rank.average_rank === -1) {
-      throw new BadRequestError(`Player ${steamId} has no app id rank`);
+      throw new BadRequestError(`Player ${player.steam_id} has no app id rank`);
     }
 
     if (
@@ -129,12 +131,14 @@ export const addPlayersForTeamInSeason = async (
       externalRank.faceit_elo === -1 &&
       platform !== SeasonPlatform.Kanaliiga
     ) {
-      throw new BadRequestError(`Player ${steamId} has no ${platform} rank.`);
+      throw new BadRequestError(
+        `Player ${player.steam_id} has no ${platform} rank.`
+      );
     }
 
     if (isFaceITCSRank(externalRank)) {
       await insertFaceITPlayerRankForSeason(
-        steamId,
+        player.steam_id,
         seasonId,
         rank.average_rank,
         hours,
@@ -143,7 +147,7 @@ export const addPlayersForTeamInSeason = async (
       );
     } else {
       await insertCSPlayerRankForSeason(
-        steamId,
+        player.steam_id,
         seasonId,
         rank.average_rank,
         hours,
@@ -343,9 +347,10 @@ export const handleUpdateSeasonTeamRegistration = async (
   teamData: UpdateSeasonTeamRegistration,
   old_captain_steam_id: SteamPlayer["steam_id"],
   old_co_captain_steam_id: SteamPlayer["steam_id"],
-  playerSteamIds: string[],
+  playerUpdateData: UpdateSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
+  const playerSteamIds = playerUpdateData.map((player) => player.steam_id);
   await Promise.all([
     validatePlayersFromDBForSignup(
       seasonId,
@@ -357,15 +362,15 @@ export const handleUpdateSeasonTeamRegistration = async (
     updatePlayersForSeasonTeamRegistration(
       seasonId,
       teamId,
-      playerSteamIds,
+      playerUpdateData,
       connection
     ),
     updateCaptainPermissionsForSeasonTeam(
       seasonId,
       teamId,
-      teamData.captain_steam_id,
+      playerUpdateData.find((player) => player.is_captain)!.steam_id!,
       old_captain_steam_id,
-      teamData.co_captain_steam_id,
+      playerUpdateData.find((player) => player.is_co_captain)!.steam_id!,
       old_co_captain_steam_id,
       connection
     )
@@ -379,9 +384,10 @@ export const handleSeasonTeamRegistration = async (
   teamId: number,
   organizationId: number,
   teamData: InsertSeasonTeamRegistration,
-  playerSteamIds: string[],
+  playerInsertData: InsertSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
+  const playerSteamIds = playerInsertData.map((player) => player.steam_id);
   await Promise.all([
     validatePlayersFromDBForSignup(
       seasonId,
@@ -395,14 +401,14 @@ export const handleSeasonTeamRegistration = async (
       appId,
       seasonPlatform,
       teamId,
-      playerSteamIds,
+      playerInsertData,
       connection
     ),
     setCaptainPermissionsForSeason(
       seasonId,
       teamId,
-      teamData.captain_steam_id,
-      teamData.co_captain_steam_id,
+      playerInsertData.find((player) => player.is_captain)?.steam_id,
+      playerInsertData.find((player) => player.is_co_captain)?.steam_id,
       connection
     )
   ]);
@@ -437,14 +443,18 @@ export const handleSignupFormForSeasonUpdate = async (
     teamId,
     formData.organizationId,
     {
-      captain_steam_id: captainSteamId,
-      co_captain_steam_id: coCaptainSteamId,
       external_platform_id: formData.teamExternalId ?? null,
       terms_and_conditions_approved: formData.captainHasReadTermAndConditions
     },
     oldCaptain,
     oldCoCaptain,
-    formData.players.map((player) => player.steamId),
+    formData.players.map((player) => {
+      return {
+        steam_id: player.steamId,
+        is_captain: captainSteamId === player.steamId,
+        is_co_captain: coCaptainSteamId === player.steamId
+      };
+    }),
     connection
   );
 };
@@ -463,6 +473,14 @@ export const handleSignupFormForSeason = async (
   if (!coCaptainSteamId) {
     throw new BadRequestError("Could not determine co-captain.");
   }
+
+  const playerInsertData = formData.players.map((player) => {
+    return {
+      steam_id: player.steamId,
+      is_captain: captainSteamId === player.steamId,
+      is_co_captain: coCaptainSteamId === player.steamId
+    };
+  });
 
   // If someone selected a team that is not tied to organization
   const [rogueTeam] = await getTeamWithIdWithoutOrg(formData.teamId);
@@ -500,13 +518,11 @@ export const handleSignupFormForSeason = async (
           formData.teamId,
           newOrg.insertId,
           {
-            captain_steam_id: captainSteamId,
-            co_captain_steam_id: coCaptainSteamId,
             external_platform_id: formData.teamExternalId,
             terms_and_conditions_approved:
               formData.captainHasReadTermAndConditions
           },
-          formData.players.map((player) => player.steamId),
+          playerInsertData,
           connection
         );
 
@@ -534,13 +550,11 @@ export const handleSignupFormForSeason = async (
           newTeam.insertId,
           newOrg.insertId,
           {
-            captain_steam_id: captainSteamId,
-            co_captain_steam_id: coCaptainSteamId,
             external_platform_id: formData.teamExternalId,
             terms_and_conditions_approved:
               formData.captainHasReadTermAndConditions
           },
-          formData.players.map((player) => player.steamId),
+          playerInsertData,
           connection
         );
 
@@ -571,13 +585,11 @@ export const handleSignupFormForSeason = async (
         newTeam.insertId,
         formData.organizationId,
         {
-          captain_steam_id: captainSteamId,
-          co_captain_steam_id: coCaptainSteamId,
           external_platform_id: formData.teamExternalId,
           terms_and_conditions_approved:
             formData.captainHasReadTermAndConditions
         },
-        formData.players.map((player) => player.steamId),
+        playerInsertData,
         connection
       );
 
@@ -622,12 +634,10 @@ export const handleSignupFormForSeason = async (
       formData.teamId,
       formData.organizationId,
       {
-        captain_steam_id: captainSteamId,
-        co_captain_steam_id: coCaptainSteamId,
         external_platform_id: formData.teamExternalId,
         terms_and_conditions_approved: formData.captainHasReadTermAndConditions
       },
-      formData.players.map((player) => player.steamId),
+      playerInsertData,
       connection
     );
 

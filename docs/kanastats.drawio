@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" version="27.1.6">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" version="28.0.3">
   <diagram id="R2lEEEUBdFMjLlhIrx00" name="Page-1">
-    <mxGraphModel dx="1634" dy="1153" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
+    <mxGraphModel dx="1473" dy="1055" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -88,16 +88,18 @@
           <mxGeometry x="610" y="570" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--9" value="&lt;font&gt;SeasonTeamPlayers&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="720" y="300" width="120" height="60" as="geometry" />
+          <mxGeometry x="690" y="300" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--10" value="SeasonPlayerRanks" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="340" y="420" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="dKHTl3ugD8U6ugzTKof--21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="dKHTl3ugD8U6ugzTKof--14" target="dKHTl3ugD8U6ugzTKof--19" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="dKHTl3ugD8U6ugzTKof--23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="dKHTl3ugD8U6ugzTKof--14" target="dKHTl3ugD8U6ugzTKof--9" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="dGR-M94kmv4eZaq2_EhC-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="dKHTl3ugD8U6ugzTKof--14" target="dGR-M94kmv4eZaq2_EhC-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="580" y="270" />
+              <mxPoint x="900" y="270" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--14" value="SeasonTeam&lt;br&gt;Registrations" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="520" y="180" width="120" height="60" as="geometry" />
@@ -112,11 +114,19 @@
             </Array>
           </mxGeometry>
         </mxCell>
+        <mxCell id="dGR-M94kmv4eZaq2_EhC-1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="dKHTl3ugD8U6ugzTKof--19" target="dKHTl3ugD8U6ugzTKof--9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--19" value="SeasonLeagueTeams" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="520" y="300" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="dKHTl3ugD8U6ugzTKof--22" target="dKHTl3ugD8U6ugzTKof--9" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="410" />
+              <mxPoint x="750" y="410" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="dKHTl3ugD8U6ugzTKof--22" target="dKHTl3ugD8U6ugzTKof--7" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -152,6 +162,9 @@
             </Array>
           </mxGeometry>
         </mxCell>
+        <mxCell id="dGR-M94kmv4eZaq2_EhC-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="dKHTl3ugD8U6ugzTKof--22" target="dGR-M94kmv4eZaq2_EhC-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--22" value="SteamPlayers" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="720" y="420" width="120" height="60" as="geometry" />
         </mxCell>
@@ -164,7 +177,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--31" value="Worker Steamlogin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" parent="1" vertex="1">
-          <mxGeometry x="590" y="40" width="30" height="60" as="geometry" />
+          <mxGeometry x="930" y="-90" width="30" height="60" as="geometry" />
         </mxCell>
         <mxCell id="dKHTl3ugD8U6ugzTKof--37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="dKHTl3ugD8U6ugzTKof--36" target="dKHTl3ugD8U6ugzTKof--35" edge="1">
           <mxGeometry relative="1" as="geometry">
@@ -243,7 +256,7 @@
         <mxCell id="o9AhvC0HvdwyfK4o88L1-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="o9AhvC0HvdwyfK4o88L1-3" target="dKHTl3ugD8U6ugzTKof--19" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Yjllae0rSOblL3_Xvtxp-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="o9AhvC0HvdwyfK4o88L1-3" target="Yjllae0rSOblL3_Xvtxp-1">
+        <mxCell id="Yjllae0rSOblL3_Xvtxp-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="o9AhvC0HvdwyfK4o88L1-3" target="Yjllae0rSOblL3_Xvtxp-1" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="265" y="320" />
@@ -337,8 +350,11 @@
         <mxCell id="SxjZ03fZ5D-6qTnAl0oS-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1.006;entryY=0.322;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="dKHTl3ugD8U6ugzTKof--5" target="SxjZ03fZ5D-6qTnAl0oS-16" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="Yjllae0rSOblL3_Xvtxp-1" value="SeasonLeague&lt;br&gt;ExternalIds" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="Yjllae0rSOblL3_Xvtxp-1" value="SeasonLeague&lt;br&gt;ExternalIds" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="220" y="250" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="dGR-M94kmv4eZaq2_EhC-2" value="SeasonTeam&lt;br&gt;Registration&lt;br&gt;Player" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="300" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

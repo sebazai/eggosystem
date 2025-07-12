@@ -1,6 +1,6 @@
-import type { SeasonTeamPlayer } from "../db";
+import type { SteamPlayer } from "../db";
 
 export interface InsertSeasonTeamPlayer {
-  steam_id: SeasonTeamPlayer["steam_id"];
+  steam_id: SteamPlayer["steam_id"];
   role?: "primary" | "substitute";
 }

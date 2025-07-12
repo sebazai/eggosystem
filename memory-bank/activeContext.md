@@ -205,6 +205,29 @@ The pattern is now documented in the SystemPatterns.md file under "Type Manageme
 - **Boundary Testing**: Testing edge cases prevents production issues
 - **Proper E2E Setup**: Correct test environment setup prevents flaky tests
 
+### Critical Lessons from E2E Test Seed (January 2025)
+
+**Step-by-Step Analysis Rule**:
+
+- **ALWAYS understand existing working solutions before making changes**
+- **Run existing tests first** to see what's actually working
+- **Identify the actual problem** - don't assume what needs to be fixed
+- **Make minimal changes** - avoid over-engineering solutions
+- **Test incrementally** - verify each small change before proceeding
+
+**E2E Test Seed Guidelines**:
+
+- **Minimal seed data**: Only include what tests actually require
+- **Focus on validation**: Most E2E tests validate UI behavior, not full flows
+- **Test existing state first**: Always run tests with current seed before making changes
+- **Avoid pre-seeding complex scenarios**: Let tests create their own data when possible
+
+**Database Schema Migration Rules**:
+
+- **Analyze test impact**: Understand which tests use which tables/columns
+- **Preserve working patterns**: If tests work with current data structure, don't change unnecessarily
+- **Incremental migration**: Update only what's actually broken, not everything related
+
 ## Context Update Strategy
 
 ### When to Update Memory Bank

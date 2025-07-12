@@ -5,22 +5,22 @@ import type {
   InsertSeasonTeamRegistration,
   Organizations,
   SeasonDetails,
-  SeasonTeamPlayer,
   SeasonTeamRegistration,
   SeasonTeamRegistrationPlayer,
   SignupFormValues,
   SignupPlayerType,
   SteamPlayer,
   Team,
-  UpdateSeasonTeamRegistration
+  UpdateSeasonTeamRegistration,
+  UpdateSeasonTeamRegistrationPlayer
 } from "@eggosystem/types";
 import _ from "lodash";
-import { insertSeasonTeamPlayer } from "./season-team-players.models";
 import { getConnection } from "../db/mysqlConnection";
 import {
   handleSignupFormForSeason,
   handleSignupFormForSeasonUpdate
 } from "../services/season-team-registration.services";
+import { insertSeasonTeamRegistrationPlayer } from "./season-team-registration-player.models";
 
 export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
   seasonId: number,
@@ -75,16 +75,10 @@ export const updateSeasonTeamRegistration = async (
   data: UpdateSeasonTeamRegistration,
   connection?: PoolConnection
 ) => {
-  const query = `UPDATE SeasonTeamRegistrations SET captain_steam_id = ?, co_captain_steam_id = ?, external_platform_id = ? WHERE season_id = ? AND team_id = ?;`;
+  const query = `UPDATE SeasonTeamRegistrations SET external_platform_id = ? WHERE season_id = ? AND team_id = ?;`;
   return runQuery(
     query,
-    [
-      data.captain_steam_id,
-      data.co_captain_steam_id,
-      data.external_platform_id ?? null,
-      seasonId,
-      teamId
-    ],
+    [data.external_platform_id ?? null, seasonId, teamId],
     connection
   );
 };
@@ -92,11 +86,12 @@ export const updateSeasonTeamRegistration = async (
 export const updatePlayersForSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
-  playerSteamIds: string[],
+  playerUpdateData: UpdateSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
-  const existingPlayers = await runQuery<SeasonTeamPlayer[]>(
-    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ?`,
+  const playerSteamIds = playerUpdateData.map((player) => player.steam_id);
+  const existingPlayers = await runQuery<SeasonTeamRegistrationPlayer[]>(
+    `SELECT * FROM SeasonTeamRegistrationPlayers WHERE season_id = ? AND team_id = ?`,
     [seasonId, teamId],
     connection
   );
@@ -116,19 +111,23 @@ export const updatePlayersForSeasonTeamRegistration = async (
   if (steamIdsToDelete.length > 0) {
     const placeholders = steamIdsToDelete.map(() => "?").join(", ");
     await runQuery(
-      `DELETE FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (${placeholders})`,
+      `DELETE FROM SeasonTeamRegistrationPlayers 
+        WHERE season_id = ? AND team_id = ? AND steam_id IN (${placeholders})`,
       [seasonId, teamId, ...steamIdsToDelete],
       connection
     );
   }
 
+  const playerInsertData = playerUpdateData.filter((player) =>
+    steamIdsToAdd.includes(player.steam_id)
+  );
   if (steamIdsToAdd.length > 0) {
     await Promise.all(
-      steamIdsToAdd.map((steamId) =>
-        insertSeasonTeamPlayer(
+      playerInsertData.map((playerUpdateData) =>
+        insertSeasonTeamRegistrationPlayer(
           seasonId,
           teamId,
-          { steam_id: steamId },
+          playerUpdateData,
           connection
         )
       )
