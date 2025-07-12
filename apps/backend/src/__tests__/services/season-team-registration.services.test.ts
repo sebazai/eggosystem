@@ -29,6 +29,8 @@ import {
   removeTestSeason,
   removeTestTeam,
   setCaptainEditRegistrationForAccountId,
+  setSeasonTeamPlayer,
+  setSeasonTeamPlayers,
   setSeasonTeamRegistration,
   unsetSeasonTeamRegistration
 } from "../../__utils__/seed-database";
@@ -1076,26 +1078,7 @@ describe("Season team registration services", () => {
         "INSERT INTO SeasonTeamRegistrations (season_id, team_id, terms_and_conditions_approved) VALUES (?, ?, ?)",
         [seasonDetails.id, validSignupData.teamId, true]
       );
-      await runQuery(
-        "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
-        [
-          seasonDetails.id,
-          validSignupData.teamId,
-          validSignupData.players[0].steamId,
-          true,
-          false
-        ]
-      );
-      await runQuery(
-        "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
-        [
-          seasonDetails.id,
-          validSignupData.teamId,
-          validSignupData.players[1].steamId,
-          false,
-          true
-        ]
-      );
+      await setSeasonTeamPlayers();
     });
     it("happy path, have called all functions with correct params", async () => {
       const formData = _.cloneDeep(validSignupData);
@@ -1197,19 +1180,7 @@ describe("Season team registration services", () => {
         "INSERT INTO SeasonTeamRegistrations (season_id, team_id, terms_and_conditions_approved) VALUES (?, ?, ?)",
         [seasonDetails.id, validSignupData.teamId, true]
       );
-      // Add all players from validSignupData to the SeasonTeamRegistrationPlayers table
-      for (const player of validSignupData.players) {
-        await runQuery(
-          "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
-          [
-            seasonDetails.id,
-            validSignupData.teamId,
-            player.steamId,
-            Boolean(player.captain),
-            Boolean(player.coCaptain)
-          ]
-        );
-      }
+      await setSeasonTeamPlayers();
     });
     it("should return nothing when trying to insert same team", async () => {
       const nothingChanged =
@@ -1278,16 +1249,12 @@ describe("Season team registration services", () => {
           "Nakki Kauppias",
           "nakki#123"
         );
-        // Add the player to the SeasonTeamRegistrationPlayers table
-        await runQuery(
-          "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
-          [
-            seasonDetails.id,
-            validSignupData.teamId,
-            "12345678912345601",
-            false,
-            false
-          ]
+        await setSeasonTeamPlayer(
+          "12345678912345601",
+          false,
+          false,
+          seasonDetails.id,
+          validSignupData.teamId
         );
       });
       afterEach(async () => {
@@ -1395,19 +1362,7 @@ describe("Season team registration services", () => {
       await runQuery("DELETE FROM AccountPermissionScopes");
       await runQuery("DELETE FROM AccountRoles");
       await setSeasonTeamRegistration();
-      // Add player records to the new SeasonTeamRegistrationPlayers table
-      for (const player of validSignupData.players) {
-        await runQuery(
-          "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
-          [
-            seasonDetails.id,
-            validSignupData.teamId,
-            player.steamId,
-            Boolean(player.captain),
-            Boolean(player.coCaptain)
-          ]
-        );
-      }
+      await setSeasonTeamPlayers();
       await setCaptainEditRegistrationForAccountId(
         validSignupData.players[0].accountId
       );

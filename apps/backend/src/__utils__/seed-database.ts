@@ -137,18 +137,32 @@ export const setSeasonTeamPlayers = async (
   teamId?: number
 ) => {
   for (const player of validSignupData.players) {
-    await setSeasonTeamPlayer(player.steamId, seasonId, teamId);
+    await setSeasonTeamPlayer(
+      player.steamId,
+      Boolean(player.captain),
+      Boolean(player.coCaptain),
+      seasonId,
+      teamId
+    );
   }
 };
 
 export const setSeasonTeamPlayer = async (
   steamId: string,
+  isCaptain: boolean,
+  isCoCaptain: boolean,
   seasonId?: number,
   teamId?: number
 ) => {
   await runQuery(
-    "INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id) VALUES (?, ?, ?)",
-    [seasonId ?? 1, validSignupData.teamId ?? teamId, steamId]
+    "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
+    [
+      seasonId ?? 1,
+      validSignupData.teamId ?? teamId,
+      steamId,
+      Boolean(isCaptain),
+      Boolean(isCoCaptain)
+    ]
   );
 };
 
