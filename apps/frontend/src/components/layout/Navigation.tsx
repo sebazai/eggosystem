@@ -316,7 +316,10 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
   if (item.items) {
     return (
       <NavigationMenuItem key={item.title}>
-        <NavigationMenuTrigger className="text-kanaliiga-orange">
+        <NavigationMenuTrigger
+          onPointerMove={(event) => event.preventDefault()}
+          className="text-kanaliiga-orange"
+        >
           {item.title}
         </NavigationMenuTrigger>
         <NavigationMenuContent>
