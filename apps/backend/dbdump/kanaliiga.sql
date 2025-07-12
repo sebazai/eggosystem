@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Jun 28, 2025 at 09:39 AM
+-- Generation Time: Jul 12, 2025 at 10:27 AM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -195,7 +195,7 @@ CREATE TABLE `Leagues` (
 
 CREATE TABLE `LinkedAccounts` (
   `account_id` int(10) UNSIGNED NOT NULL,
-  `provider` enum('steam') NOT NULL,
+  `provider` enum('steam','discord') NOT NULL,
   `provider_id` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -238,7 +238,7 @@ CREATE TABLE `Matches` (
   `id` int(10) UNSIGNED NOT NULL,
   `league_id` int(10) UNSIGNED NOT NULL,
   `season_id` int(10) UNSIGNED NOT NULL,
-  `stage` tinyint(3) UNSIGNED NOT NULL DEFAULT 2,
+  `stage` int(10) UNSIGNED NOT NULL,
   `best_of` tinyint(3) UNSIGNED NOT NULL,
   `match_date` date NOT NULL,
   `start_time` time NOT NULL,
@@ -324,7 +324,8 @@ CREATE TABLE `Organizations` (
   `organization_code` varchar(255) NOT NULL,
   `logo` varchar(255) NOT NULL DEFAULT 'nologo.png',
   `website` varchar(255) NOT NULL,
-  `sort_order` int(10) UNSIGNED DEFAULT NULL
+  `sort_order` int(10) UNSIGNED DEFAULT NULL,
+  `discord_invite_link` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -519,14 +520,29 @@ CREATE TABLE `Roles` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `SeasonLeagueExternalIds`
+--
+
+CREATE TABLE `SeasonLeagueExternalIds` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `league_id` int(10) UNSIGNED NOT NULL,
+  `stage_id` int(10) UNSIGNED NOT NULL,
+  `external_id` varchar(255) NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `isBO2PlayedAs2xBO1` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `SeasonLeagues`
 --
 
 CREATE TABLE `SeasonLeagues` (
   `tier` int(11) NOT NULL,
   `season_id` int(10) UNSIGNED NOT NULL,
-  `league_id` int(10) UNSIGNED NOT NULL,
-  `external_id` varchar(255) DEFAULT NULL
+  `league_id` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -641,7 +657,9 @@ CREATE TABLE `SeasonTeamPlayers` (
   `season_id` int(10) UNSIGNED NOT NULL,
   `team_id` int(10) UNSIGNED NOT NULL,
   `steam_id` bigint(20) NOT NULL,
-  `role` enum('primary','substitute') DEFAULT 'primary'
+  `role` enum('primary','substitute') DEFAULT 'primary',
+  `is_captain` tinyint(1) NOT NULL DEFAULT 0,
+  `is_co_captain` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -693,14 +711,26 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `SeasonTeamRegistrationPlayers`
+--
+
+CREATE TABLE `SeasonTeamRegistrationPlayers` (
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `is_captain` tinyint(1) NOT NULL DEFAULT 0,
+  `is_co_captain` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `SeasonTeamRegistrations`
 --
 
 CREATE TABLE `SeasonTeamRegistrations` (
   `season_id` int(10) UNSIGNED NOT NULL,
   `team_id` int(10) UNSIGNED NOT NULL,
-  `captain_steam_id` bigint(20) DEFAULT NULL,
-  `co_captain_steam_id` bigint(20) DEFAULT NULL,
   `approved` tinyint(1) NOT NULL DEFAULT 0,
   `external_platform_id` varchar(255) DEFAULT NULL,
   `terms_and_conditions_approved` tinyint(1) NOT NULL
@@ -790,6 +820,17 @@ CREATE TRIGGER `before_update_unique_external_platform` BEFORE UPDATE ON `Season
     END
 $$
 DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Stages`
+--
+
+CREATE TABLE `Stages` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -982,7 +1023,8 @@ ALTER TABLE `Maps`
 --
 ALTER TABLE `Matches`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `matches_season_id_league_id_foreign` (`season_id`,`league_id`);
+  ADD KEY `matches_season_id_league_id_foreign` (`season_id`,`league_id`),
+  ADD KEY `matches_stage_foreign` (`stage`);
 
 --
 -- Indexes for table `MatchGameClips`
@@ -1070,6 +1112,14 @@ ALTER TABLE `Roles`
   ADD UNIQUE KEY `roles_role_name_unique` (`role_name`);
 
 --
+-- Indexes for table `SeasonLeagueExternalIds`
+--
+ALTER TABLE `SeasonLeagueExternalIds`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `seasonleagueexternalids_season_id_league_id_external_id_unique` (`season_id`,`league_id`,`external_id`),
+  ADD KEY `seasonleagueexternalids_stage_id_foreign` (`stage_id`);
+
+--
 -- Indexes for table `SeasonLeagues`
 --
 ALTER TABLE `SeasonLeagues`
@@ -1119,14 +1169,25 @@ ALTER TABLE `SeasonTeamPlayers`
   ADD KEY `seasonteamplayers_steam_id_foreign` (`steam_id`);
 
 --
+-- Indexes for table `SeasonTeamRegistrationPlayers`
+--
+ALTER TABLE `SeasonTeamRegistrationPlayers`
+  ADD PRIMARY KEY (`season_id`,`team_id`,`steam_id`),
+  ADD KEY `seasonteamregistrationplayers_steam_id_foreign` (`steam_id`);
+
+--
 -- Indexes for table `SeasonTeamRegistrations`
 --
 ALTER TABLE `SeasonTeamRegistrations`
   ADD PRIMARY KEY (`season_id`,`team_id`),
   ADD UNIQUE KEY `unique_season_external_platform_id` (`season_id`,`external_platform_id`),
-  ADD KEY `seasonteamregistrations_team_id_foreign` (`team_id`),
-  ADD KEY `seasonteamregistrations_captain_steam_id_foreign` (`captain_steam_id`),
-  ADD KEY `seasonteamregistrations_co_captain_steam_id_foreign` (`co_captain_steam_id`);
+  ADD KEY `seasonteamregistrations_team_id_foreign` (`team_id`);
+
+--
+-- Indexes for table `Stages`
+--
+ALTER TABLE `Stages`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `SteamPlayers`
@@ -1297,6 +1358,12 @@ ALTER TABLE `Roles`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `SeasonLeagueExternalIds`
+--
+ALTER TABLE `SeasonLeagueExternalIds`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `SeasonPlayerApprovals`
 --
 ALTER TABLE `SeasonPlayerApprovals`
@@ -1312,6 +1379,12 @@ ALTER TABLE `SeasonPlayerRanks`
 -- AUTO_INCREMENT for table `Seasons`
 --
 ALTER TABLE `Seasons`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Stages`
+--
+ALTER TABLE `Stages`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1403,7 +1476,8 @@ ALTER TABLE `MapRoundStats`
 -- Constraints for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD CONSTRAINT `matches_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `matches_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `matches_stage_foreign` FOREIGN KEY (`stage`) REFERENCES `Stages` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `MatchGameClips`
@@ -1463,6 +1537,13 @@ ALTER TABLE `RolePermissions`
   ADD CONSTRAINT `rolepermissions_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `SeasonLeagueExternalIds`
+--
+ALTER TABLE `SeasonLeagueExternalIds`
+  ADD CONSTRAINT `seasonleagueexternalids_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonleagueexternalids_stage_id_foreign` FOREIGN KEY (`stage_id`) REFERENCES `Stages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `SeasonLeagues`
 --
 ALTER TABLE `SeasonLeagues`
@@ -1473,8 +1554,7 @@ ALTER TABLE `SeasonLeagues`
 -- Constraints for table `SeasonLeagueTeams`
 --
 ALTER TABLE `SeasonLeagueTeams`
-  ADD CONSTRAINT `seasonleagueteams_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `seasonleagueteams_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `seasonleagueteams_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SeasonPlayerApprovals`
@@ -1504,15 +1584,19 @@ ALTER TABLE `Seasons`
 -- Constraints for table `SeasonTeamPlayers`
 --
 ALTER TABLE `SeasonTeamPlayers`
-  ADD CONSTRAINT `seasonteamplayers_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `seasonteamplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SeasonTeamRegistrationPlayers`
+--
+ALTER TABLE `SeasonTeamRegistrationPlayers`
+  ADD CONSTRAINT `seasonteamregistrationplayers_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonteamregistrationplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SeasonTeamRegistrations`
 --
 ALTER TABLE `SeasonTeamRegistrations`
-  ADD CONSTRAINT `seasonteamregistrations_captain_steam_id_foreign` FOREIGN KEY (`captain_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `seasonteamregistrations_co_captain_steam_id_foreign` FOREIGN KEY (`co_captain_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL,
   ADD CONSTRAINT `seasonteamregistrations_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `seasonteamregistrations_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
