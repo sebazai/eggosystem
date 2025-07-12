@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Jul 12, 2025 at 10:27 AM
+-- Generation Time: Jul 12, 2025 at 10:34 AM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -556,7 +556,8 @@ CREATE TABLE `SeasonLeagueTeams` (
   `team_id` int(10) UNSIGNED NOT NULL,
   `league_id` int(10) UNSIGNED NOT NULL,
   `placement` tinyint(3) UNSIGNED DEFAULT NULL,
-  `position_offset` tinyint(3) UNSIGNED DEFAULT NULL
+  `position_offset` tinyint(3) UNSIGNED DEFAULT NULL,
+  `external_team_id` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
