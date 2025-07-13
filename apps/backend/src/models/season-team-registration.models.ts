@@ -20,7 +20,7 @@ import {
   handleSignupFormForSeason,
   handleSignupFormForSeasonUpdate
 } from "../services/season-team-registration.services";
-import { insertSeasonTeamRegistrationPlayer } from "./season-team-registration-player.models";
+import { upsertSeasonTeamRegistrationPlayer } from "./season-team-registration-player.models";
 
 export const getSeasonTeamRegistrationBySeasonAndTeamId = async (
   seasonId: number,
@@ -118,21 +118,24 @@ export const updatePlayersForSeasonTeamRegistration = async (
     );
   }
 
-  const playerInsertData = playerUpdateData.filter((player) =>
-    steamIdsToAdd.includes(player.steam_id)
+  await runQuery(
+    `UPDATE SeasonTeamRegistrationPlayers 
+     SET is_captain = 0, is_co_captain = 0 
+     WHERE season_id = ? AND team_id = ?`,
+    [seasonId, teamId],
+    connection
   );
-  if (steamIdsToAdd.length > 0) {
-    await Promise.all(
-      playerInsertData.map((playerUpdateData) =>
-        insertSeasonTeamRegistrationPlayer(
-          seasonId,
-          teamId,
-          playerUpdateData,
-          connection
-        )
-      )
+
+  // Process all players sequentially to avoid race conditions
+  for (const playerData of playerUpdateData) {
+    await upsertSeasonTeamRegistrationPlayer(
+      seasonId,
+      teamId,
+      playerData,
+      connection
     );
   }
+
   return { removed: steamIdsToDelete, added: steamIdsToAdd };
 };
 
