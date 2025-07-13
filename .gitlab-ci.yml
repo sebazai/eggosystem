@@ -29,7 +29,6 @@ variables:
   MARIADB_DATABASE: kanaliiga
   DB_PASSWORD: dev-pass
   DB_USER: kanadbuser
-  DB_HOST: eggo-devdb
   REDIS_HOST: eggo-redis
   REDIS_PORT: 6379
 
