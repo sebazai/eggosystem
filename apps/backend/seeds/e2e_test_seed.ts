@@ -428,46 +428,47 @@ export async function seed(knex: Knex): Promise<void> {
     is_work_email_personal_email: true
   });
 
-  // Set up captain permissions for account_id 15003 (the auth user)
-  // First ensure the captain role exists
-  await knex.raw(
-    `
-    INSERT INTO Roles (role_name)
-    VALUES ('captain')
-    ON DUPLICATE KEY UPDATE role_name = VALUES(role_name)
-  `
-  );
+  // Create team registration and player records for season 16, team 999
+  // This will automatically create captain permissions via database triggers
+  await knex("SeasonTeamRegistrations").insert({
+    season_id: 16,
+    team_id: 999,
+    approved: true,
+    terms_and_conditions_approved: true
+  });
 
-  // Ensure the edit-registration permission exists
-  await knex.raw(
-    `
-    INSERT INTO Permissions (permission_name)
-    VALUES ('edit-registration')
-    ON DUPLICATE KEY UPDATE permission_name = VALUES(permission_name)
-  `
-  );
+  // Add players to the team registration with captain status
+  // This will automatically trigger captain permission creation
+  const teamPlayers = [
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999901", // account_id 15003 - Aabe (captain)
+      is_captain: true,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999902", // account_id 15004 - heppajpg (co-captain)
+      is_captain: false,
+      is_co_captain: true
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999903", // account_id 15005 - Quattra
+      is_captain: false,
+      is_co_captain: false
+    }
+  ];
 
-  // Add captain role to account_id 15003
-  await knex.raw(
-    `
-    INSERT INTO AccountRoles (account_id, role_id, game_id)
-    SELECT 15003, r.id, 1
-    FROM Roles r
-    WHERE r.role_name = 'captain'
-    ON DUPLICATE KEY UPDATE account_id = VALUES(account_id)
-  `
-  );
+  for (const player of teamPlayers) {
+    await knex("SeasonTeamRegistrationPlayers").insert(player);
+  }
 
-  // Add edit-registration permission scope for season 16, team 999 to account_id 15003
-  await knex.raw(
-    `
-    INSERT INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
-    SELECT 15003, p.id, 16, 999
-    FROM Permissions p
-    WHERE p.permission_name = 'edit-registration'
-    ON DUPLICATE KEY UPDATE account_id = VALUES(account_id)
-  `
-  );
+  // Captain permissions are now handled automatically by database triggers
+  // No need to manually insert AccountPermissionScopes or AccountRoles
 
   // Add SeasonPlayerRanks data for our NEW test players
   // This ensures backend validation passes during submission
