@@ -5,6 +5,7 @@ import type { SeasonDetails } from "@eggosystem/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import type React from "react";
+import { RedirectType, redirect } from "next/navigation";
 
 type SignupPageProps = {
   params: Promise<{ season: string }>;
@@ -35,6 +36,33 @@ export default async function SignupPage({ params }: SignupPageProps) {
     `${envConfig.API_URL}/api/v1/seasons/${season}/details`
   );
   const data: SeasonDetails = await result.json();
+
+  // Check if user is already a captain or co-captain for this season
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  if (token) {
+    const myRegRes = await fetch(
+      `${envConfig.API_URL}/api/v1/registrations/season/${season}/my-registration`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        cache: "no-store"
+      }
+    );
+    if (myRegRes.ok) {
+      const myReg = await myRegRes.json();
+      if (myReg.teamId) {
+        // Redirect to edit form
+        console.log("redirecting to edit form");
+        redirect(
+          `/seasons/${season}/signup/team/${myReg.teamId}/edit`,
+          RedirectType.replace
+        );
+      }
+    }
+  }
 
   // See if saved draft
   try {

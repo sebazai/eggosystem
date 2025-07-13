@@ -13,6 +13,7 @@ import {
 } from "../../middlewares/auth.middleware";
 import { expireIn30Days, redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";
+import { runQuery } from "../../db/mysqlRunQuery";
 
 const router = Router();
 router.get(
@@ -90,6 +91,41 @@ router.put(
     fallbackRoles: ["admin"]
   }),
   updateTeamSignupDetails
+);
+router.get(
+  "/season/:season_id/my-registration",
+  validateNumericParams(["season_id"]),
+  authenticateJWT,
+  async (req, res) => {
+    const seasonId = Number(req.params.season_id);
+    const steamId = req.auth?.provider_id;
+    if (!steamId) {
+      res.status(401).json({ error: "Not authenticated" });
+      return;
+    }
+    // Find if this steamId is a captain or co-captain for any team in this season
+    const query = `
+      SELECT str.team_id,
+      FROM SeasonTeamRegistrations str
+        INNER JOIN SeasonTeamRegistrationPlayers stp ON stp.season_id = str.season_id AND stp.team_id = str.team_id
+      WHERE str.season_id = ? AND stp.steam_id = ? AND (stp.is_captain = 1 OR stp.is_co_captain = 1)
+      LIMIT 1
+    `;
+    type MyRegistrationResult = {
+      team_id: number;
+    };
+    const result = await runQuery<MyRegistrationResult[]>(query, [
+      seasonId,
+      steamId
+    ]);
+    if (result.length === 0) {
+      res.status(404).json({ found: false });
+      return;
+    }
+    res.json({
+      teamId: result[0].team_id
+    });
+  }
 );
 
 export default router;
