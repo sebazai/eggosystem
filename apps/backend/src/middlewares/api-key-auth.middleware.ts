@@ -1,5 +1,4 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 
 /**
@@ -11,34 +10,33 @@ export function validateApiKey(
   res: Response,
   next: NextFunction
 ): void {
-  try {
-    // Get API key from header
-    const providedKey = req.headers["x-api-key"] as string;
+  const providedKey = req.headers["x-api-key"];
 
-    // If no key provided
-    if (!providedKey) {
-      logger.warn("API key missing from request");
-      throw new BadRequestError("API key required", 401);
-    }
-
-    // Get allowed key from environment variable
-    const apiKey = process.env.BACKEND_SERVICE_API_KEY;
-
-    // Check if API key is valid
-    if (!apiKey || providedKey !== apiKey) {
-      logger.warn(`Invalid API key provided: ${providedKey.slice(0, 5)}...`);
-      throw new BadRequestError("Invalid API key", 401);
-    }
-
-    // Key is valid, proceed
-    logger.info("API key validated successfully");
-    next();
-  } catch (error) {
-    if (error instanceof BadRequestError) {
-      res.status(401).json({ error: { message: error.message } });
-    } else {
-      logger.error("API key validation error", error);
-      res.status(500).json({ error: { message: "Internal server error" } });
-    }
+  if (!providedKey) {
+    logger.warn("API key missing from request");
+    res.status(401).json({
+      error: { message: "API key required" }
+    });
+    return;
   }
+
+  if (Array.isArray(providedKey)) {
+    res.status(401).json({
+      error: { message: "API key must be a string" }
+    });
+    return;
+  }
+
+  const apiKey = process.env.BACKEND_SERVICE_API_KEY;
+
+  if (!apiKey || providedKey !== apiKey) {
+    logger.warn(`Invalid API key provided: ${providedKey.slice(0, 5)}...`);
+    res.status(401).json({
+      error: { message: "Invalid API key" }
+    });
+    return;
+  }
+
+  logger.info("API key validated successfully");
+  next();
 }

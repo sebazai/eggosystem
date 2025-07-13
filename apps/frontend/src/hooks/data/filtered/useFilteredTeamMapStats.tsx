@@ -31,7 +31,7 @@ export const useFilteredTeamMapStats = ({
   const { data, error, isValidating, isLoading, mutate } = useSWR<
     TeamMapStats[]
   >(
-    `/api/v1/teams/${teamId}/enhanced-map-stats?${sortedQuery}`,
+    `/api/v1/filters/teams/${teamId}/enhanced-map-stats?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false,
