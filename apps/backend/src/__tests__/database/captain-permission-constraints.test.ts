@@ -4,13 +4,14 @@ import {
   type AccountRole
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { type PoolConnection } from "mysql2/promise";
+import { type PoolConnection, type Pool } from "mysql2/promise";
 
 describe("Captain Permission Triggers", () => {
   let connection: PoolConnection;
+  let pool: Pool;
 
   beforeAll(async () => {
-    const pool = mysql.createPool({
+    pool = mysql.createPool({
       host: process.env.DB_HOST || "localhost",
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "dev-pass",
@@ -21,7 +22,12 @@ describe("Captain Permission Triggers", () => {
   });
 
   afterAll(async () => {
-    if (connection) connection.release();
+    if (connection) {
+      await connection.release();
+    }
+    if (pool) {
+      await pool.end();
+    }
   });
 
   beforeEach(async () => {
