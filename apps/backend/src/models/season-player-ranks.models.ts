@@ -6,6 +6,7 @@ import {
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
+import { getActiveOrLatestSeasonForAppId } from "./season.models";
 
 export const getPlayerHoursForSeason = async (
   steam_id: string,
@@ -176,6 +177,10 @@ export const getPlayerKanaElo = async (steam_id: string) => {
 };
 
 export const getTopXPlayersKanaElo = async (x: number) => {
+  const activeSeason = (await getActiveOrLatestSeasonForAppId(730)) || {
+    season_id: 0
+  };
+
   return runQuery<
     Array<{
       steam_id: SteamPlayer["steam_id"];
@@ -183,11 +188,12 @@ export const getTopXPlayersKanaElo = async (x: number) => {
     }>
   >(
     `SELECT steam_id, kana_elo 
-   FROM SeasonPlayerRanks 
-   WHERE kana_elo IS NOT NULL
-   GROUP BY steam_id
-   ORDER BY kana_elo DESC
-   LIMIT ?`,
-    [x]
+     FROM SeasonPlayerRanks 
+     WHERE kana_elo IS NOT NULL
+     AND season_id = ?
+     GROUP BY steam_id
+     ORDER BY kana_elo DESC
+     LIMIT ?`,
+    [activeSeason.season_id, x]
   );
 };
