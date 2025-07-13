@@ -32,6 +32,81 @@ SeasonTeamRegistrationPlayers.steam_id
   → AccountRoles.account_id
 ```
 
+## Cascade Deletion Flow
+
+When a `SeasonTeamRegistration` is deleted, a **multi-layered cascade deletion system** ensures all related data is properly cleaned up:
+
+### 🎯 **Complete Cascade Flow**
+
+#### 1. **Database Foreign Key Cascade**
+
+```sql
+-- SeasonTeamRegistrationPlayers has CASCADE DELETE
+ALTER TABLE SeasonTeamRegistrationPlayers
+ADD CONSTRAINT seasonteamregistrationplayers_season_id_team_id_foreign
+FOREIGN KEY (season_id, team_id)
+REFERENCES SeasonTeamRegistrations (season_id, team_id)
+ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+**What happens:** When `SeasonTeamRegistration` is deleted, all related `SeasonTeamRegistrationPlayers` records are **automatically deleted** by the database.
+
+#### 2. **Captain Permission Cleanup Trigger**
+
+```sql
+CREATE TRIGGER cleanup_captain_permissions_on_registration_delete
+BEFORE DELETE ON SeasonTeamRegistrations
+FOR EACH ROW
+BEGIN
+  -- Iterates through ALL players in the team registration
+  -- Cleans up permissions for captains/co-captains BEFORE cascade deletion
+END
+```
+
+**What happens:** This trigger runs **BEFORE** the deletion and:
+
+- Finds all players in the team registration
+- Identifies captains/co-captains
+- Removes their captain permissions from `AccountPermissionScopes`
+- Removes captain roles from `AccountRoles` if no other captain permissions exist
+
+#### 3. **Individual Player Deletion Trigger**
+
+```sql
+CREATE TRIGGER cleanup_captain_permissions_on_delete
+AFTER DELETE ON SeasonTeamRegistrationPlayers
+FOR EACH ROW
+BEGIN
+  -- Cleans up permissions for individual players when they're deleted
+END
+```
+
+**What happens:** This trigger runs **AFTER** each `SeasonTeamRegistrationPlayers` record is deleted and provides additional cleanup.
+
+### 📋 **What Gets Deleted**
+
+When you delete a `SeasonTeamRegistration`:
+
+1. ✅ **Team Registration** - The main registration record
+2. ✅ **All Players** - All `SeasonTeamRegistrationPlayers` records (via CASCADE)
+3. ✅ **Captain Permissions** - All captain-related `AccountPermissionScopes` for that team/season
+4. ✅ **Captain Roles** - `AccountRoles` entries if no other captain permissions exist
+5. ✅ **Related Data** - Any other tables with CASCADE constraints
+
+### 🎯 **Why This Design?**
+
+#### **Problem Solved:**
+
+- **Orphaned Permissions**: Without proper cleanup, captain permissions would remain even after the team registration is deleted
+- **Data Integrity**: Ensures permissions always match actual captain status
+- **Performance**: Prevents accumulation of stale permission data
+
+#### **Trigger Order:**
+
+1. **BEFORE DELETE** on `SeasonTeamRegistrations` → Clean up permissions
+2. **Database CASCADE** → Delete all `SeasonTeamRegistrationPlayers`
+3. **AFTER DELETE** on `SeasonTeamRegistrationPlayers` → Additional cleanup (redundant but safe)
+
 ## Constraints and Triggers
 
 ### 1. Validation Triggers
@@ -91,14 +166,14 @@ SeasonTeamRegistrationPlayers.steam_id
 #### `unique_captain_per_team_season`
 
 - **Purpose**: Ensures only one captain per team per season
-- **Type**: CHECK constraint
-- **Logic**: Counts captains per team/season and ensures ≤ 1
+- **Type**: TRIGGER (BEFORE INSERT/UPDATE on `SeasonTeamRegistrationPlayers`)
+- **Logic**: Prevents inserting/updating when another captain already exists for the team/season
 
 #### `unique_co_captain_per_team_season`
 
 - **Purpose**: Ensures only one co-captain per team per season
-- **Type**: CHECK constraint
-- **Logic**: Counts co-captains per team/season and ensures ≤ 1
+- **Type**: TRIGGER (BEFORE INSERT/UPDATE on `SeasonTeamRegistrationPlayers`)
+- **Logic**: Prevents inserting/updating when another co-captain already exists for the team/season
 
 ## Helper Function
 
@@ -139,6 +214,13 @@ SET is_captain = 0
 WHERE season_id = 1 AND team_id = 2 AND steam_id = 76561198012345678;
 ```
 
+### Deleting Team Registration (Cascade)
+
+```sql
+-- This will automatically delete all players AND clean up captain permissions
+DELETE FROM SeasonTeamRegistrations WHERE season_id = 1 AND team_id = 2;
+```
+
 ### Invalid Operation (Will Fail)
 
 ```sql
@@ -150,43 +232,8 @@ VALUES (123, 456, 1, 2); -- Where 123 is not a captain for season 1, team 2
 ## Error Messages
 
 - **"Cannot assign captain permissions to non-captain/co-captain player"**: Triggered when trying to assign captain permissions to someone who isn't a captain/co-captain
-- **"Team X is already registered for season Y"**: Triggered when trying to register the same team twice for a season
-- **Platform ID conflicts**: Triggered when using duplicate external platform IDs
-
-## Maintenance
-
-### Checking for Orphaned Permissions
-
-```sql
-SELECT aps.*
-FROM AccountPermissionScopes aps
-LEFT JOIN SeasonTeamRegistrationPlayers strp ON
-  aps.season_id = strp.season_id
-  AND aps.team_id = strp.team_id
-  AND aps.account_id = (
-    SELECT la.account_id
-    FROM LinkedAccounts la
-    WHERE la.provider = 'steam'
-    AND la.provider_id = CAST(strp.steam_id AS CHAR)
-  )
-WHERE strp.season_id IS NULL
-  OR (strp.is_captain = 0 AND strp.is_co_captain = 0);
-```
-
-### Checking for Orphaned Roles
-
-```sql
-SELECT ar.*
-FROM AccountRoles ar
-JOIN Roles r ON r.id = ar.role_id
-WHERE r.role_name = 'captain'
-AND ar.account_id NOT IN (
-  SELECT DISTINCT la.account_id
-  FROM SeasonTeamRegistrationPlayers strp
-  JOIN LinkedAccounts la ON la.provider = 'steam' AND la.provider_id = CAST(strp.steam_id AS CHAR)
-  WHERE (strp.is_captain = 1 OR strp.is_co_captain = 1)
-);
-```
+- **"Only one captain allowed per team per season"**: Triggered when trying to assign captain status when another captain already exists
+- **"Only one co-captain allowed per team per season"**: Triggered when trying to assign co-captain status when another co-captain already exists
 
 ## Benefits
 
@@ -196,3 +243,4 @@ AND ar.account_id NOT IN (
 4. **Cleanup**: Automatically removes orphaned permissions
 5. **Performance**: Optimized with proper indexes
 6. **Audit Trail**: All changes are automatic and consistent
+7. **Cascade Safety**: Comprehensive cleanup when team registrations are deleted
