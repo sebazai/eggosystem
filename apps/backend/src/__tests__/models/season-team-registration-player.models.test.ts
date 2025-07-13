@@ -8,13 +8,13 @@ import type {
 } from "@eggosystem/types";
 
 describe("SeasonTeamRegistrationPlayer Models - Captain/Co-Captain Constraint Tests", () => {
-  const testSeasonId = 999;
-  const testTeamId = 999;
+  const testSeasonId = 888;
+  const testTeamId = 1337;
   const testSteamIds = {
-    player1: "76561198000000999",
-    player2: "76561198000000998",
-    player3: "76561198000000997",
-    player4: "76561198000000996"
+    player1: "76561198000000888",
+    player2: "76561198000000887",
+    player3: "76561198000000886",
+    player4: "76561198000000885"
   };
 
   beforeEach(async () => {
@@ -33,16 +33,17 @@ describe("SeasonTeamRegistrationPlayer Models - Captain/Co-Captain Constraint Te
       testSteamIds.player3,
       testSteamIds.player4
     ]);
-    await runQuery("DELETE FROM Accounts WHERE id IN (999, 998, 997, 996)");
+    await runQuery("DELETE FROM Accounts WHERE id IN (888, 887, 886, 885)");
 
     // Set up test data
     await runQuery(
       "INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date, platform) VALUES (?, 1, 'Test Season', 'Test Season Full Name', NOW(), NOW(), 'kanaliiga')",
       [testSeasonId]
     );
-    await runQuery("INSERT INTO Teams (id, name) VALUES (?, 'Test Team')", [
-      testTeamId
-    ]);
+    await runQuery(
+      "INSERT INTO Teams (id, name) VALUES (?, 'Test Team 1337')",
+      [testTeamId]
+    );
     await runQuery(
       "INSERT INTO SeasonTeamRegistrations (season_id, team_id, approved, terms_and_conditions_approved) VALUES (?, ?, 1, TRUE)",
       [testSeasonId, testTeamId]
@@ -50,10 +51,10 @@ describe("SeasonTeamRegistrationPlayer Models - Captain/Co-Captain Constraint Te
 
     // Create test players
     const testPlayers = [
-      { accountId: 999, steamId: testSteamIds.player1, nickname: "Player1" },
-      { accountId: 998, steamId: testSteamIds.player2, nickname: "Player2" },
-      { accountId: 997, steamId: testSteamIds.player3, nickname: "Player3" },
-      { accountId: 996, steamId: testSteamIds.player4, nickname: "Player4" }
+      { accountId: 888, steamId: testSteamIds.player1, nickname: "Player1" },
+      { accountId: 887, steamId: testSteamIds.player2, nickname: "Player2" },
+      { accountId: 886, steamId: testSteamIds.player3, nickname: "Player3" },
+      { accountId: 885, steamId: testSteamIds.player4, nickname: "Player4" }
     ];
 
     for (const player of testPlayers) {
@@ -92,7 +93,7 @@ describe("SeasonTeamRegistrationPlayer Models - Captain/Co-Captain Constraint Te
       testSteamIds.player3,
       testSteamIds.player4
     ]);
-    await runQuery("DELETE FROM Accounts WHERE id IN (999, 998, 997, 996)");
+    await runQuery("DELETE FROM Accounts WHERE id IN (888, 887, 886, 885)");
     await runQuery("DELETE FROM Seasons WHERE id = ?", [testSeasonId]);
     await runQuery("DELETE FROM Teams WHERE id = ?", [testTeamId]);
   });
