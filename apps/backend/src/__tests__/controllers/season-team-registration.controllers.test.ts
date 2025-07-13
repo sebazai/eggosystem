@@ -101,9 +101,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
 
-    jest
-      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
-      .mockResolvedValue();
+    // Captain permissions are now handled automatically by database triggers
 
     await addSignupForSeasonController(req, res);
     expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -151,9 +149,7 @@ describe("addSignupForSeason - database transaction testing", () => {
         insertId: 1
       });
 
-    jest
-      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
-      .mockResolvedValue();
+    // Captain permissions are now handled automatically by database triggers
 
     // TODO: See todo below
     // const faceItRank = jest.spyOn(
@@ -215,9 +211,7 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
 
-    jest
-      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
-      .mockResolvedValue();
+    // Captain permissions are now handled automatically by database triggers
 
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 666
@@ -272,9 +266,7 @@ describe("addSignupForSeason - database transaction testing", () => {
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(true));
-    jest
-      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
-      .mockResolvedValue();
+    // Captain permissions are now handled automatically by database triggers
 
     jest.spyOn(teamModels, "insertTeam").mockResolvedValue({
       insertId: 1337
@@ -318,10 +310,6 @@ describe("addSignupForSeason - database transaction testing", () => {
     jest
       .spyOn(teamServices, "isTeamPartOfOrganization")
       .mockImplementation(() => Promise.resolve(false));
-
-    jest
-      .spyOn(seasonTeamRegistrationServices, "setCaptainPermissionsForSeason")
-      .mockResolvedValue();
 
     try {
       await addSignupForSeasonController(req, res);
