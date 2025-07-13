@@ -43,7 +43,7 @@ describe("Captain Permission Triggers", () => {
       connection
     );
     await runQuery(
-      "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id = 999",
+      "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id IN (999, 998)",
       [],
       connection
     );
@@ -53,7 +53,7 @@ describe("Captain Permission Triggers", () => {
       connection
     );
     await runQuery(
-      "DELETE FROM SeasonTeamRegistrations WHERE season_id = 999",
+      "DELETE FROM SeasonTeamRegistrations WHERE season_id IN (999, 998)",
       [],
       connection
     );
@@ -77,9 +77,13 @@ describe("Captain Permission Triggers", () => {
       [],
       connection
     );
-    await runQuery("DELETE FROM Seasons WHERE id = 999", [], connection);
-    await runQuery("DELETE FROM Teams WHERE id = 999", [], connection);
-    await runQuery("DELETE FROM Games WHERE id = 999", [], connection);
+    await runQuery(
+      "DELETE FROM Seasons WHERE id IN (999, 998)",
+      [],
+      connection
+    );
+    await runQuery("DELETE FROM Teams WHERE id IN (999, 998)", [], connection);
+    await runQuery("DELETE FROM Games WHERE id IN (999, 998)", [], connection);
     await runQuery(
       "DELETE FROM LinkedAccounts WHERE account_id IN (999, 998, 997)",
       [],

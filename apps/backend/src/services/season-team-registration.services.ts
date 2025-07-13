@@ -1,11 +1,4 @@
 import { type PoolConnection } from "mysql2/promise";
-import { getAccountIdBySteamId } from "../models/account.models";
-import {
-  removeRoleForAccount,
-  removeScopedPermissionForAccount,
-  setRoleForAccount,
-  setScopedPermissionForAccount
-} from "../models/account-roles.models";
 import {
   type SeasonDetails,
   type SignupFormValues,
@@ -13,14 +6,11 @@ import {
   SeasonPlatform,
   isFaceITCSRank,
   type UpdateSeasonTeamRegistration,
-  type SteamPlayer,
   type PlayerDetailsBySteamId,
   type InsertSeasonTeamRegistrationPlayer,
   type UpdateSeasonTeamRegistrationPlayer
 } from "@eggosystem/types";
-import { getDBPermissionsForAccountId } from "./auth.services";
 import {
-  getSeasonTeamRegistrationBySeasonAndTeamId,
   insertSeasonTeamRegistration,
   updatePlayersForSeasonTeamRegistration,
   updateSeasonTeamRegistration
@@ -217,136 +207,11 @@ export const validatePlayersFromDBForSignup = async (
   }
 };
 
-export const updateCaptainPermissionsForSeasonTeam = async (
-  season_id: number,
-  team_id: number,
-  new_captain_steam_id: SteamPlayer["steam_id"],
-  old_captain_steam_id: SteamPlayer["steam_id"],
-  new_co_captain_steam_id: SteamPlayer["steam_id"],
-  old_co_captain_steam_id: SteamPlayer["steam_id"],
-  connection?: PoolConnection
-) => {
-  const newCaptain =
-    new_captain_steam_id !== old_captain_steam_id
-      ? new_captain_steam_id
-      : undefined;
-  const newCoCaptain =
-    new_co_captain_steam_id !== old_co_captain_steam_id
-      ? new_co_captain_steam_id
-      : undefined;
-
-  if (newCaptain || newCoCaptain) {
-    await setCaptainPermissionsForSeason(
-      season_id,
-      team_id,
-      newCaptain,
-      newCoCaptain,
-      connection
-    );
-  }
-
-  if (newCaptain && old_captain_steam_id) {
-    const oldAccount = await getAccountIdBySteamId(old_captain_steam_id);
-    await removeCaptainPermissionForAccountId(
-      oldAccount.account_id,
-      season_id,
-      team_id,
-      connection
-    );
-  }
-
-  if (newCoCaptain && old_co_captain_steam_id) {
-    const oldAccount = await getAccountIdBySteamId(old_co_captain_steam_id);
-    await removeCaptainPermissionForAccountId(
-      oldAccount.account_id,
-      season_id,
-      team_id,
-      connection
-    );
-  }
-};
-
-export const setCaptainPermissionsForSeason = async (
-  season_id: number,
-  team_id: number,
-  captain_steam_id?: SteamPlayer["steam_id"],
-  co_captain_steam_id?: SteamPlayer["steam_id"],
-  connection?: PoolConnection
-) => {
-  const roleName = `captain`;
-  const permissionName = `edit-registration`;
-  if (captain_steam_id) {
-    const captainAccount = await getAccountIdBySteamId(
-      captain_steam_id,
-      connection
-    );
-    await setRoleForAccount(roleName, captainAccount.account_id, connection);
-    await setScopedPermissionForAccount(
-      permissionName,
-      captainAccount.account_id,
-      season_id,
-      team_id,
-      connection
-    );
-  }
-  if (co_captain_steam_id) {
-    const coCaptainAccount = await getAccountIdBySteamId(
-      co_captain_steam_id,
-      connection
-    );
-
-    await setRoleForAccount(roleName, coCaptainAccount.account_id, connection);
-    await setScopedPermissionForAccount(
-      permissionName,
-      coCaptainAccount.account_id,
-      season_id,
-      team_id,
-      connection
-    );
-  }
-};
-
-export const removeCaptainPermissionForAccountId = async (
-  accountId: number,
-  season_id: number,
-  team_id: number,
-  connection?: PoolConnection
-) => {
-  const roleName = "captain";
-  const permissionName = "edit-registration";
-
-  await removeScopedPermissionForAccount(
-    permissionName,
-    accountId,
-    season_id,
-    team_id,
-    connection
-  );
-
-  const captainAccountPermissions = await getDBPermissionsForAccountId(
-    accountId,
-    connection
-  );
-
-  const accountHasOtherCaptainSeasonTeamScope = captainAccountPermissions.some(
-    (accountPermission) =>
-      accountPermission.role_name === "captain" &&
-      accountPermission.season_id &&
-      accountPermission.team_id
-  );
-
-  if (!accountHasOtherCaptainSeasonTeamScope) {
-    await removeRoleForAccount(roleName, accountId, connection);
-  }
-};
-
 export const handleUpdateSeasonTeamRegistration = async (
   seasonId: number,
   teamId: number,
   organizationId: number,
   teamData: UpdateSeasonTeamRegistration,
-  old_captain_steam_id: SteamPlayer["steam_id"],
-  old_co_captain_steam_id: SteamPlayer["steam_id"],
   playerUpdateData: UpdateSeasonTeamRegistrationPlayer[],
   connection?: PoolConnection
 ) => {
@@ -364,16 +229,8 @@ export const handleUpdateSeasonTeamRegistration = async (
       teamId,
       playerUpdateData,
       connection
-    ),
-    updateCaptainPermissionsForSeasonTeam(
-      seasonId,
-      teamId,
-      playerUpdateData.find((player) => player.is_captain)!.steam_id!,
-      old_captain_steam_id,
-      playerUpdateData.find((player) => player.is_co_captain)!.steam_id!,
-      old_co_captain_steam_id,
-      connection
     )
+    // Captain permissions are now handled automatically by database triggers
   ]);
 };
 
@@ -403,14 +260,8 @@ export const handleSeasonTeamRegistration = async (
       teamId,
       playerInsertData,
       connection
-    ),
-    setCaptainPermissionsForSeason(
-      seasonId,
-      teamId,
-      playerInsertData.find((player) => player.is_captain)?.steam_id,
-      playerInsertData.find((player) => player.is_co_captain)?.steam_id,
-      connection
     )
+    // Captain permissions are now handled automatically by database triggers
   ]);
 };
 
@@ -430,13 +281,7 @@ export const handleSignupFormForSeasonUpdate = async (
     throw new Error("Could not determine new co-captain.");
   }
 
-  const oldRegistration = await getSeasonTeamRegistrationBySeasonAndTeamId(
-    seasonId,
-    teamId
-  );
-
-  const oldCaptain = oldRegistration.captain_steam_id;
-  const oldCoCaptain = oldRegistration.co_captain_steam_id;
+  // Old captain/co-captain information is no longer needed since database triggers handle permission management
 
   await handleUpdateSeasonTeamRegistration(
     seasonId,
@@ -446,8 +291,6 @@ export const handleSignupFormForSeasonUpdate = async (
       external_platform_id: formData.teamExternalId ?? null,
       terms_and_conditions_approved: formData.captainHasReadTermAndConditions
     },
-    oldCaptain,
-    oldCoCaptain,
     formData.players.map((player) => {
       return {
         steam_id: player.steamId,
