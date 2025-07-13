@@ -65,3 +65,6 @@ packages/*/dist.turbo
 .pnpm-store/
 
 .cursor/settings.json
+
+# Datbase
+dbdoc/

@@ -27,13 +27,22 @@
         },
         "[javascriptreact]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode"
-        }
+        },
+        "triggerTaskOnSave.tasks": {
+          "Generate Database Diagram": [
+            "apps/backend/migrations/*",
+            "apps/backend/dbdump/*"
+          ]
+        },
+        "triggerTaskOnSave.on": true,
+        "triggerTaskOnSave.showNotifications": true
       },
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "ms-vscode.vscode-typescript-next",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "gruntfuggly.triggertaskonsave"
       ]
     }
   },

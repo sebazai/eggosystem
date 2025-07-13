@@ -1,0 +1,270 @@
+---
+config:
+  layout: elk # %% dagre, elk
+  look: classic # %% handDrawn, classic
+  theme: forest # %% default, neutral, dark, forest, base
+  elk: # %% for layout: elk
+    mergeEdges: false # %% true, false
+    nodePlacementStrategy: NETWORK_SIMPLEX
+      # %% SIMPLE, NETWORK_SIMPLEX, LINEAR_SEGMENTS, BRANDES_KOEPF
+  themeCSS:
+    - ".relationshipLine[id*=entity-Accounts] { stroke: #7dd3fc; }"
+    - ".relationshipLine[id*=entity-SteamPlayers] { stroke: #fbbf24; }"
+    - ".relationshipLine[id*=entity-Seasons] { stroke: #a78bfa; }"
+    - ".relationshipLine[id*=entity-Teams] { stroke: #f472b6; }"
+    - ".relationshipLine[id*=entity-MatchGames] { stroke: #34d399; }"
+    - ".relationshipLine[id*=entity-Matches] { stroke: #f87171; }"
+---
+erDiagram
+  direction TB # %% TB, BT, LR, RL
+
+"AccountPermissionScopes" }o--|| "Accounts" : ""
+"AccountPermissionScopes" }o--|| "Permissions" : ""
+"AccountPermissionScopes" }o--|| "Seasons" : ""
+"AccountPermissionScopes" }o--|| "Teams" : ""
+"AccountRoles" }o--|| "Accounts" : ""
+"AccountRoles" }o--|| "Games" : ""
+"AccountRoles" }o--|| "Roles" : ""
+"AuditLog" }o--o| "Accounts" : ""
+"GameTypes" }o--|| "Games" : ""
+"KanahautomoRegistrationGameTypes" }o--|| "GameTypes" : ""
+"KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
+"KanahautomoRegistrations" }o--|| "Organizations" : ""
+"KanahautomoRegistrations" }o--|| "SteamPlayers" : ""
+"LinkedAccounts" }o--|| "Accounts" : ""
+"MapRoundStats" }o--|| "Teams" : ""
+"MapRoundStats" }o--|| "MatchGames" : ""
+"MapRoundStats" }o--|| "Teams" : ""
+"Matches" }o--|| "SeasonLeagues" : ""
+"Matches" }o--|| "Stages" : ""
+"MatchGameClips" }o--o| "SteamPlayers" : ""
+"MatchGameClips" }o--|| "MatchGames" : ""
+"MatchGames" }o--|| "Maps" : ""
+"MatchGames" }o--|| "Matches" : ""
+"MatchTeamMapVetoes" }o--|| "Maps" : ""
+"MatchTeamMapVetoes" }o--|| "MatchTeams" : ""
+"MatchTeams" }o--|| "Matches" : ""
+"MatchTeams" }o--|| "SeasonLeagueTeams" : ""
+"PlayerStats" }o--|| "MatchGames" : ""
+"PlayerStats" }o--|| "SteamPlayers" : ""
+"PlayerTrades" }o--|| "MatchGames" : ""
+"PlayerTrades" }o--|| "SteamPlayers" : ""
+"PlayerTrades" }o--|| "SteamPlayers" : ""
+"PlayerTrades" }o--|| "SteamPlayers" : ""
+"Reservations" }o--|| "Matches" : ""
+"RolePermissions" }o--|| "Permissions" : ""
+"RolePermissions" }o--|| "Roles" : ""
+"SeasonLeagueExternalIds" }o--|| "SeasonLeagues" : ""
+"SeasonLeagueExternalIds" }o--|| "Stages" : ""
+"SeasonLeagues" }o--|| "Leagues" : ""
+"SeasonLeagues" }o--|| "Seasons" : ""
+"SeasonLeagueTeams" }o--|| "SeasonLeagues" : ""
+"SeasonLeagueTeams" }o--|| "SeasonTeamRegistrations" : ""
+"SeasonPlayerApprovals" }o--o| "Accounts" : ""
+"SeasonPlayerApprovals" }o--o| "Organizations" : ""
+"SeasonPlayerApprovals" }o--o| "Seasons" : ""
+"SeasonPlayerApprovals" }o--|| "SteamPlayers" : ""
+"SeasonPlayerApprovals" }o--o| "Teams" : ""
+"SeasonPlayerRanks" }o--|| "Seasons" : ""
+"SeasonPlayerRanks" }o--|| "SteamPlayers" : ""
+"Seasons" }o--|| "Games" : ""
+"Seasons" }o--o| "GameTypes" : ""
+"SeasonTeamPlayers" }o--|| "SeasonTeamRegistrations" : ""
+"SeasonTeamPlayers" }o--|| "SteamPlayers" : ""
+"SeasonTeamRegistrations" }o--o| "SteamPlayers" : ""
+"SeasonTeamRegistrations" }o--o| "SteamPlayers" : ""
+"SeasonTeamRegistrations" }o--|| "Seasons" : ""
+"SeasonTeamRegistrations" }o--|| "Teams" : ""
+"SteamPlayers" }o--o| "Accounts" : ""
+"TeamGameScores" }o--|| "MatchGames" : ""
+"TeamGameScores" }o--|| "MatchTeams" : ""
+"TeamRosters" }o--|| "SteamPlayers" : ""
+"TeamRosters" }o--|| "Teams" : ""
+"Teams" }o--o| "Organizations" : ""
+"UserPolicyAcceptances" }o--|| "Accounts" : ""
+
+"AccountPermissionScopes" {
+  int_10__unsigned id PK
+  int_10__unsigned account_id FK
+  int_10__unsigned permission_id FK
+  int_10__unsigned season_id FK
+  int_10__unsigned team_id FK
+}
+"AccountRoles" {
+  int_10__unsigned account_id PK
+  int_10__unsigned role_id PK
+  int_10__unsigned game_id PK
+}
+"Accounts" {
+  int_10__unsigned id PK
+}
+"AuditLog" {
+  bigint_20__unsigned id PK
+  int_10__unsigned user_id FK
+}
+"Games" {
+  int_10__unsigned id PK
+}
+"GameTypes" {
+  int_10__unsigned id PK
+  int_10__unsigned game_id FK
+}
+"KanahautomoRegistrationGameTypes" {
+  int_10__unsigned game_type_id PK
+  int_10__unsigned kanahautomo_registration_id PK
+}
+"KanahautomoRegistrations" {
+  int_10__unsigned id PK
+  bigint_20_ steam_id FK
+  int_10__unsigned organization_id FK
+}
+"knex_migrations" {
+  int_10__unsigned id PK
+}
+"knex_migrations_lock" {
+  int_10__unsigned index PK
+}
+"Leagues" {
+  int_10__unsigned id PK
+}
+"LinkedAccounts" {
+  int_10__unsigned account_id FK
+  enum__steam___discord__ provider PK
+  varchar_255_ provider_id PK
+}
+"MapRoundStats" {
+  int_10__unsigned id PK
+  int_10__unsigned game_id FK
+  int_10__unsigned ct_team_id FK
+  int_10__unsigned t_team_id FK
+}
+"Maps" {
+  tinyint_3__unsigned id PK
+}
+"Matches" {
+  int_10__unsigned id PK
+  int_10__unsigned league_id FK
+  int_10__unsigned season_id FK
+  int_10__unsigned stage FK
+}
+"MatchGameClips" {
+  int_10__unsigned id PK
+  int_10__unsigned game_id FK
+  bigint_20_ clip_steam_id FK
+}
+"MatchGames" {
+  int_10__unsigned id PK
+  int_10__unsigned match_id FK
+  tinyint_3__unsigned map_id FK
+}
+"MatchTeamMapVetoes" {
+  int_10__unsigned id PK
+  int_10__unsigned match_id FK
+  int_10__unsigned team_id FK
+  tinyint_3__unsigned map_id FK
+}
+"MatchTeams" {
+  int_10__unsigned match_id PK
+  int_10__unsigned team_id PK
+  int_10__unsigned season_id FK
+  int_10__unsigned league_id FK
+}
+"Organizations" {
+  int_10__unsigned id PK
+}
+"Permissions" {
+  int_10__unsigned id PK
+}
+"PlayerStats" {
+  int_10__unsigned id PK
+  bigint_20_ steam_id FK
+  int_10__unsigned game_id FK
+}
+"PlayerTrades" {
+  int_10__unsigned id PK
+  int_10__unsigned game_id FK
+  bigint_20_ trader_steam_id FK
+  bigint_20_ killer_steam_id FK
+  bigint_20_ victim_steam_id FK
+}
+"Reservations" {
+  int_10__unsigned id PK
+  int_10__unsigned match_id FK
+}
+"RolePermissions" {
+  int_10__unsigned role_id PK
+  int_10__unsigned permission_id PK
+}
+"Roles" {
+  int_10__unsigned id PK
+}
+"SeasonLeagueExternalIds" {
+  int_10__unsigned id PK
+  int_10__unsigned season_id FK
+  int_10__unsigned league_id FK
+  int_10__unsigned stage_id FK
+}
+"SeasonLeagues" {
+  int_10__unsigned season_id PK
+  int_10__unsigned league_id PK
+}
+"SeasonLeagueTeams" {
+  int_10__unsigned season_id PK
+  int_10__unsigned team_id PK
+  int_10__unsigned league_id PK
+}
+"SeasonPlayerApprovals" {
+  int_10__unsigned id PK
+  bigint_20_ steam_id FK
+  int_10__unsigned season_id FK
+  int_10__unsigned organization_id FK
+  int_10__unsigned team_id FK
+  int_10__unsigned approved_by_id FK
+}
+"SeasonPlayerRanks" {
+  int_10__unsigned id PK
+  bigint_20_ steam_id FK
+  int_10__unsigned season_id FK
+}
+"Seasons" {
+  int_10__unsigned id PK
+  int_10__unsigned game_id FK
+  int_10__unsigned game_type_id FK
+}
+"SeasonTeamPlayers" {
+  int_10__unsigned season_id PK
+  int_10__unsigned team_id PK
+  bigint_20_ steam_id PK
+}
+"SeasonTeamRegistrations" {
+  int_10__unsigned season_id PK
+  int_10__unsigned team_id PK
+  bigint_20_ captain_steam_id FK
+  bigint_20_ co_captain_steam_id FK
+}
+"Stages" {
+  int_10__unsigned id PK
+}
+"SteamPlayers" {
+  bigint_20_ steam_id PK
+  int_10__unsigned account_id FK
+}
+"TeamGameScores" {
+  int_10__unsigned id PK
+  int_10__unsigned match_id FK
+  int_10__unsigned team_id FK
+  int_10__unsigned game_id FK
+}
+"TeamRosters" {
+  int_10__unsigned id PK
+  int_10__unsigned team_id FK
+  bigint_20_ steam_id FK
+}
+"Teams" {
+  int_10__unsigned id PK
+  int_10__unsigned organization_id FK
+}
+"UserPolicyAcceptances" {
+  int_10__unsigned id PK
+  int_10__unsigned account_id FK
+}
