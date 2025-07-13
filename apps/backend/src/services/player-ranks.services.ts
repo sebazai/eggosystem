@@ -251,18 +251,18 @@ export const getPlayerRankForPlatform = async (
 
 // Kanarank rank configuration based on elo thresholds
 const KANARANK_THRESHOLDS = [
-  { rank: "COCK", subrank: 1, min_elo: 280 }, // COCK_1: 280+ elo
-  { rank: "COCK", subrank: 2, min_elo: 263 }, // COCK_2: 263-279 elo
-  { rank: "COCK", subrank: 3, min_elo: 248 }, // COCK_3: 248-262 elo
-  { rank: "CHICKEN", subrank: 1, min_elo: 224 }, // CHICKEN_1: 224-247 elo
-  { rank: "CHICKEN", subrank: 2, min_elo: 204 }, // CHICKEN_2: 204-223 elo
-  { rank: "CHICKEN", subrank: 3, min_elo: 182 }, // CHICKEN_3: 182-203 elo
-  { rank: "CHICK", subrank: 1, min_elo: 165 }, // CHICK_1: 165-181 elo
-  { rank: "CHICK", subrank: 2, min_elo: 142 }, // CHICK_2: 142-164 elo
-  { rank: "CHICK", subrank: 3, min_elo: 125 }, // CHICK_3: 125-141 elo
-  { rank: "EGG", subrank: 1, min_elo: 107 }, // EGG_1: 107-124 elo
-  { rank: "EGG", subrank: 2, min_elo: 82 }, // EGG_2: 82-106 elo
-  { rank: "EGG", subrank: 3, min_elo: 0 } // EGG_3: 0-81 elo
+  { rank: "COCK", subrank: 1, min_elo: 320 }, // COCK_1: 320+ elo
+  { rank: "COCK", subrank: 2, min_elo: 300 }, // COCK_2: 300-319 elo
+  { rank: "COCK", subrank: 3, min_elo: 280 }, // COCK_3: 280-299 elo
+  { rank: "CHICKEN", subrank: 1, min_elo: 250 }, // CHICKEN_1: 250-279 elo
+  { rank: "CHICKEN", subrank: 2, min_elo: 220 }, // CHICKEN_2: 220-249 elo
+  { rank: "CHICKEN", subrank: 3, min_elo: 185 }, // CHICKEN_3: 185-219 elo
+  { rank: "CHICK", subrank: 1, min_elo: 145 }, // CHICK_1: 145-184 elo
+  { rank: "CHICK", subrank: 2, min_elo: 120 }, // CHICK_2: 120-144 elo
+  { rank: "CHICK", subrank: 3, min_elo: 100 }, // CHICK_3: 100-119 elo
+  { rank: "EGG", subrank: 1, min_elo: 85 }, // EGG_1: 85-99 elo
+  { rank: "EGG", subrank: 2, min_elo: 60 }, // EGG_2: 60-84 elo
+  { rank: "EGG", subrank: 3, min_elo: 0 } // EGG_3: 0-59 elo
 ];
 
 // Top rankings configuration
