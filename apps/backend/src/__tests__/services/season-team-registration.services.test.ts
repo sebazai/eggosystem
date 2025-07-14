@@ -814,7 +814,7 @@ describe("Season team registration services", () => {
         [formData.players[5].steamId, seasonDetails.id]
       );
       expect(getPlayerRank.cs2_rank).toEqual(23000);
-      expect(getPlayerRank.csgo_rank).toEqual(-1);
+      expect(getPlayerRank.csgo_rank).toEqual(null);
       expect(getPlayerRank.cs_hours).toEqual(112);
 
       // 10 % away as it's over 12 months
