@@ -67,7 +67,7 @@ services:
       - 6379:6379
 
   eggo-rabbitmq:
-    image: rabbitmq:3.12-management
+    image: rabbitmq:4.1-management
     restart: always
     environment:
       - RABBITMQ_DEFAULT_USER=test
