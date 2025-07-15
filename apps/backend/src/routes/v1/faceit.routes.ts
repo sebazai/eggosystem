@@ -139,13 +139,16 @@ router.post(
     try {
       if (webhookData.data.event === "match_object_created") {
         if (validateMatchObjectCreatedWebhook(webhookData.data)) {
+          const externalMatchRoomId = webhookData.data.payload.id;
           const matchDetails =
             await getFaceITMatchDetails<DetailsObjectCreated>(
-              webhookData.data.payload.id
+              externalMatchRoomId
             );
           if (validateDetailsObjectCreated(matchDetails)) {
             const externalLeagueId = webhookData.data.payload.entity.id;
             await saveWebhookData(
+              externalMatchRoomId,
+              "match_object_created",
               JSON.stringify(webhookData),
               JSON.stringify(matchDetails)
             );
@@ -157,6 +160,7 @@ router.post(
       // This should be ok now, but ensure this happens for Match, not MatchGame.
       if (webhookData.data.event === "match_status_finished") {
         if (validateMatchStatusFinishedWebhook(webhookData.data)) {
+          const externalMatchRoomId = webhookData.data.payload.id;
           const startTime = webhookData.data.payload.started_at;
           // Match was aborted due to AFK.
           if (startTime === "1970-01-01T00:00:00Z") {
@@ -166,7 +170,12 @@ router.post(
               const endTime = webhookData.data.payload.finished_at;
               // We do not want to change the match status, as this means it was aborted due to AFK.
               await updateMatchEndTime(webhookData.data.payload.id, endTime);
-              await saveWebhookData(JSON.stringify(webhookData), null);
+              await saveWebhookData(
+                externalMatchRoomId,
+                "match_status_finished",
+                JSON.stringify(webhookData),
+                null
+              );
               return;
             }
           }
@@ -176,7 +185,12 @@ router.post(
             startTime,
             endTime
           );
-          await saveWebhookData(JSON.stringify(webhookData), null);
+          await saveWebhookData(
+            externalMatchRoomId,
+            "match_status_finished",
+            JSON.stringify(webhookData),
+            null
+          );
           return;
         }
       }
@@ -204,9 +218,12 @@ router.post(
       res.status(200).send("Webhook received");
       return;
     } catch (error) {
+      const externalMatchRoomId = webhookData.data.payload.id;
       if (error instanceof WebhookValidationError) {
         logger.error("Webhook validation error", error);
         await saveWebhookData(
+          externalMatchRoomId,
+          webhookData.data.event,
           JSON.stringify(webhookData),
           JSON.stringify(error),
           "WEBHOOK_VALIDATION_ERROR"
@@ -215,6 +232,8 @@ router.post(
       if (error instanceof MatchDetailsValidationError) {
         logger.error("Match details validation error", error);
         await saveWebhookData(
+          externalMatchRoomId,
+          webhookData.data.event,
           JSON.stringify(webhookData),
           JSON.stringify(error),
           "MATCH_DETAILS_VALIDATION_ERROR"
@@ -222,6 +241,8 @@ router.post(
       }
       logger.error("Error handling webhook", error);
       await saveWebhookData(
+        externalMatchRoomId,
+        webhookData.data.event,
         JSON.stringify(webhookData),
         JSON.stringify(error),
         "UNKNOWN_ERROR"

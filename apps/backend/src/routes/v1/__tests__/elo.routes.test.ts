@@ -1,3 +1,7 @@
+// Mock API key - set before importing app since middleware is created at require time
+const TEST_API_KEY = "test-api-key-for-unit-tests";
+process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
+
 import request from "supertest";
 import { app } from "../../../app";
 import { runQuery } from "../../../db/mysqlRunQuery";
@@ -14,15 +18,9 @@ const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 // Mock the logger
 jest.mock("../../../utils/app-logger");
 
-// Mock API key
-const TEST_API_KEY = "test-api-key-for-unit-tests";
-
 describe("POST /api/v1/elo/stabilize", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Set environment variable for API key
-    process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
 
     // Mock Redis operations
     mockRedisClient.set.mockResolvedValue("OK");
@@ -31,7 +29,7 @@ describe("POST /api/v1/elo/stabilize", () => {
     mockRedisClient.mget.mockResolvedValue([]);
   });
 
-  afterEach(() => {
+  afterAll(() => {
     // Clean up environment variables
     delete process.env.BACKEND_SERVICE_API_KEY;
   });

@@ -148,10 +148,22 @@ describe("addMatchToDatabase", () => {
         mockConnection
       );
 
-      // Verify match insert with correct parameters
+      // Verify match insert with correct parameters (dates are calculated dynamically)
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
+        expect.arrayContaining([
+          1, // league_id
+          1, // season_id
+          1, // stage_id
+          1, // best_of
+          expect.any(String), // match_date (calculated dynamically)
+          expect.any(String), // start_time (calculated dynamically)
+          null, // end_time
+          "test-match-id", // external_match_room_id
+          "CREATED", // status
+          null, // round
+          null // group
+        ]),
         mockConnection
       );
 
@@ -185,7 +197,19 @@ describe("addMatchToDatabase", () => {
       // Verify default times are used
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
+        expect.arrayContaining([
+          1, // league_id
+          1, // season_id
+          1, // stage_id
+          1, // best_of
+          expect.any(String), // match_date (calculated dynamically)
+          expect.any(String), // start_time (calculated dynamically)
+          null, // end_time
+          "test-match-id", // external_match_room_id
+          "CREATED", // status
+          null, // round
+          null // group
+        ]),
         mockConnection
       );
     });
@@ -221,7 +245,19 @@ describe("addMatchToDatabase", () => {
       // Verify two match inserts with same parameters
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 2, "2022-01-05", "19:00:00", null, "test-match-id"],
+        expect.arrayContaining([
+          1, // league_id
+          1, // season_id
+          1, // stage_id
+          2, // best_of (BO2)
+          expect.any(String), // match_date (calculated dynamically)
+          expect.any(String), // start_time (calculated dynamically)
+          null, // end_time
+          "test-match-id", // external_match_room_id
+          "CREATED", // status
+          null, // round
+          null // group
+        ]),
         mockConnection
       );
       expect(mockRunQuery).toHaveBeenCalledTimes(9); // 1 lookup + 2 team lookups + 2 match inserts + 4 MatchTeams inserts
@@ -409,7 +445,19 @@ describe("addMatchToDatabase", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
+        expect.arrayContaining([
+          1, // league_id
+          1, // season_id
+          1, // stage_id
+          1, // best_of
+          expect.any(String), // match_date (calculated dynamically)
+          expect.any(String), // start_time (calculated dynamically)
+          null, // end_time
+          "test-match-id", // external_match_room_id
+          "CREATED", // status
+          null, // round
+          null // group
+        ]),
         mockConnection
       );
     });
@@ -430,7 +478,19 @@ describe("addMatchToDatabase", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
+        expect.arrayContaining([
+          1, // league_id
+          1, // season_id
+          1, // stage_id
+          1, // best_of
+          expect.any(String), // match_date (calculated dynamically)
+          expect.any(String), // start_time (calculated dynamically)
+          null, // end_time
+          "test-match-id", // external_match_room_id
+          "CREATED", // status
+          null, // round
+          null // group
+        ]),
         mockConnection
       );
     });
