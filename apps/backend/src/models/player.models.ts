@@ -489,22 +489,21 @@ export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
 };
 
 export const getPlayerOldKanaElo = async (steam_id: string) => {
+  // Find the most recent season where player has both kana_rating and kana_elo data
   const query = `
     SELECT 
-      spr.steam_id,
-      spr.season_id as last_played_season_id,
+      ps.steam_id,
+      m.season_id as last_played_season_id,
       spr.kana_elo
-    FROM SeasonPlayerRanks spr
-    INNER JOIN (
-      SELECT DISTINCT m.season_id
-      FROM PlayerStats ps
-      INNER JOIN MatchGames mg ON mg.id = ps.game_id
-      INNER JOIN Matches m ON m.id = mg.match_id
-      WHERE ps.steam_id = ?
-      ORDER BY m.season_id DESC
-      LIMIT 1
-    ) last_season ON last_season.season_id = spr.season_id
-    WHERE spr.steam_id = ?
+    FROM PlayerStats ps 
+    JOIN MatchGames mg ON ps.game_id = mg.id 
+    LEFT JOIN Matches m ON m.id = mg.match_id 
+    LEFT JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id 
+    WHERE ps.steam_id = ? 
+      AND spr.kana_elo IS NOT NULL 
+      AND ps.kana_rating IS NOT NULL 
+    GROUP BY m.season_id 
+    ORDER BY m.season_id DESC 
     LIMIT 1
   `;
 
@@ -514,8 +513,9 @@ export const getPlayerOldKanaElo = async (steam_id: string) => {
       last_played_season_id: number;
       kana_elo: number;
     }>
-  >(query, [steam_id, steam_id]);
+  >(query, [steam_id]);
 
+  // If no data found with both kana_rating and kana_elo, return null
   return result.length > 0 ? result[0] : null;
 };
 

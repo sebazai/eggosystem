@@ -133,7 +133,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       metadata: {
         processed: false,
         timestamp: expect.any(String),
-        method: "no-season-data"
+        method: "no-game-data"
       }
     });
   });

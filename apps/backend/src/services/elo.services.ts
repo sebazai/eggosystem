@@ -103,7 +103,7 @@ export const stabilizePlayerElo = async (
 
   const current_elo = currentEloResults[0].kana_elo;
 
-  // Get latest season and league data for the player
+  // Get latest season and league data for the player where they have both kana_rating and kana_elo
   const seasonLeagueResults = await runQuery<SeasonLeagueRow[]>(
     `SELECT 
        mt.season_id,
@@ -113,7 +113,10 @@ export const stabilizePlayerElo = async (
      INNER JOIN MatchGames mg ON ps.game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
      INNER JOIN MatchTeams mt ON m.id = mt.match_id
-     WHERE ps.steam_id = ?
+     INNER JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id
+     WHERE ps.steam_id = ? 
+       AND spr.kana_elo IS NOT NULL 
+       AND ps.kana_rating IS NOT NULL
      GROUP BY mt.season_id, mt.league_id
      ORDER BY mt.season_id DESC, AVG(ps.kana_rating) DESC
      LIMIT 1`,
@@ -122,7 +125,7 @@ export const stabilizePlayerElo = async (
 
   if (!seasonLeagueResults.length) {
     logger.info(
-      `Could not find season/league data for ${steam_id}, returning offered ELO`
+      `No game data found for ${steam_id}, returning offered ELO without stabilization`
     );
     return {
       stabilizedValue: offered_elo,
@@ -131,7 +134,7 @@ export const stabilizePlayerElo = async (
       metadata: {
         processed: false,
         timestamp: new Date().toISOString(),
-        method: "no-season-data"
+        method: "no-game-data"
       }
     };
   }
@@ -170,8 +173,7 @@ export const stabilizePlayerElo = async (
   }
 
   // Get league average rating for players with similar ELO (±10)
-  const leagueAvgResults = await runQuery<LeagueAvgRatingRow[]>(
-    `SELECT 
+  const leagueAvgQuery = `SELECT 
        COUNT(DISTINCT ps.steam_id) as rowCount,
        AVG(ps.kana_rating) as leagueAvgRating
      FROM PlayerStats ps
@@ -180,17 +182,40 @@ export const stabilizePlayerElo = async (
      INNER JOIN MatchTeams mt ON m.id = mt.match_id
      INNER JOIN SeasonPlayerRanks spr ON ps.steam_id = spr.steam_id AND spr.season_id = ?
      WHERE mt.league_id = ? 
-       AND spr.kana_elo BETWEEN ? AND ?`,
-    [season_id, league_id, current_elo - 10, current_elo + 10]
+       AND spr.kana_elo BETWEEN ? AND ?`;
+
+  const leagueAvgParams = [
+    season_id,
+    league_id,
+    current_elo - 10,
+    current_elo + 10
+  ];
+
+  logger.info(
+    `Running league avg query for ${steam_id} with params: season_id=${season_id}, league_id=${league_id}, elo_range=${current_elo - 10} to ${current_elo + 10}`
+  );
+
+  const leagueAvgResults = await runQuery<LeagueAvgRatingRow[]>(
+    leagueAvgQuery,
+    leagueAvgParams
   );
 
   if (!leagueAvgResults.length || leagueAvgResults[0].rowCount < 10) {
     const sample_size = leagueAvgResults.length
       ? leagueAvgResults[0].rowCount
       : 0;
+
+    // Enhanced debug logging
     logger.info(
       `Sample size for ${steam_id} stabilizer is too low: ${sample_size} (minimum 10 required)`
     );
+    logger.info(`Query details: ${leagueAvgQuery.replace(/\s+/g, " ")}`);
+    logger.info(`Query params: ${JSON.stringify(leagueAvgParams)}`);
+    logger.info(
+      `Current ELO: ${current_elo}, Offered ELO: ${offered_elo}, Season: ${season_id}, League: ${league_id}`
+    );
+    logger.info(`Raw league avg results: ${JSON.stringify(leagueAvgResults)}`);
+
     return {
       stabilizedValue: offered_elo,
       confidence: 0.2,
@@ -207,7 +232,7 @@ export const stabilizePlayerElo = async (
     leagueAvgResults[0];
 
   logger.info(
-    `Stabilizing ${steam_id}: season ${season_id}, league ${league_id}, player rating ${player_rating}, league avg ${league_avg_rating}`
+    `Stabilizing ${steam_id}: season ${season_id}, league ${league_id}, player rating ${player_rating}, league avg ${league_avg_rating}, sample size ${sample_size}`
   );
 
   // Apply adjustment using the adjuster function logic
