@@ -13,6 +13,8 @@ export async function up(knex: Knex): Promise<void> {
         MatchStatus.CANCELLED
       ])
       .defaultTo(MatchStatus.CREATED);
+    table.tinyint("group").nullable().defaultTo(null);
+    table.tinyint("round").nullable().defaultTo(null);
   });
   await knex.schema.alterTable("MatchGames", (table) => {
     table
@@ -30,6 +32,8 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable("Matches", (table) => {
     table.dropColumn("status");
+    table.dropColumn("group");
+    table.dropColumn("round");
   });
   await knex.schema.alterTable("MatchGames", (table) => {
     table.dropColumn("status");

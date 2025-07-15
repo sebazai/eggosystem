@@ -11,6 +11,8 @@ export interface Match {
   best_of: number; // TINYINT UNSIGNED, stored as number
   external_match_room_id: string | null;
   status: MatchStatus;
+  round: number; // Round in Faceit bracket // TODO: Special case, group 3, round 2, should be a setting in SeasonLeague, i.e. if we play the grand final so that we only care about round 1.
+  group: number; // 3 = Grand final, 2 = Lowerbracket, 1 = Upperbracket
 }
 
 export enum MatchStatus {

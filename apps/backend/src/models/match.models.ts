@@ -354,7 +354,9 @@ export const addMatchToDatabase = async (
       start_time,
       null,
       matchDetails.match_id,
-      MatchStatus.CREATED
+      MatchStatus.CREATED,
+      matchDetails.round,
+      matchDetails.group
     ];
 
     const matchQuery = `
@@ -367,8 +369,10 @@ export const addMatchToDatabase = async (
         start_time,
         end_time,
         external_match_room_id,
-        status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        status,
+        round,
+        group
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
