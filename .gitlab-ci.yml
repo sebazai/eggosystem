@@ -434,12 +434,13 @@ push-dockerfile:backend:
     REGISTRY: $CI_REGISTRY/kanaliiga_public/kanahub/eggosystem
   parallel:
     matrix:
-      - BUILD_TYPE: [dev, production]
+      - BUILD_TYPE: [dev, production] # No stage, because we use latest or GIT_COMMIT_SHA
   script:
     - |
       if [ "$BUILD_TYPE" == "dev" ] && [ "$CI_COMMIT_BRANCH" == "development" ]; then
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-backend:dev-cache \
+          --cache-from type=registry,ref=$REGISTRY/eggo-backend:$CI_COMMIT_SHA \
           --cache-to type=registry,ref=$REGISTRY/eggo-backend:dev-cache,mode=max,compression=zstd \
           --build-arg CI=true \
           --push \

@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:${BACKEND_VERSION:-latest}
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:${BACKEND_VERSION}
     pull_policy: always
     depends_on:
       eggo-prod-db:
@@ -65,7 +65,7 @@ services:
     restart: always
 
   frontend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${FRONTEND_VERSION:-latest}
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${FRONTEND_VERSION}
     pull_policy: always
     depends_on:
       - backend
@@ -128,7 +128,7 @@ services:
     restart: always
 
   migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${MIGRATIONS_VERSION:-latest}
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${MIGRATIONS_VERSION}
     depends_on:
       eggo-prod-db:
         condition: service_healthy
