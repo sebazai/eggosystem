@@ -1,4 +1,11 @@
-import { MatchEntity, MatchTeam } from "./Webhooks.interface";
+import { z } from "zod";
+import {
+  MatchEntity,
+  FaceitMatchTeam,
+  MatchEntitySchema,
+  MatchTeamSchema,
+  BaseWebhookSchema
+} from "./Webhooks.interface";
 
 interface MatchStatusConfiguringPayload {
   id: string;
@@ -7,7 +14,7 @@ interface MatchStatusConfiguringPayload {
   game: string;
   version: number;
   entity: MatchEntity;
-  teams: MatchTeam[];
+  teams: FaceitMatchTeam[];
   created_at: string;
   updated_at: string;
 }
@@ -22,4 +29,30 @@ export interface MatchStatusConfiguringWebhook {
   retry_count: number;
   version: number;
   payload: MatchStatusConfiguringPayload;
+}
+
+// Zod schemas for runtime validation
+const MatchStatusConfiguringPayloadSchema = z.object({
+  id: z.string(),
+  organizer_id: z.string(),
+  region: z.string(),
+  game: z.string(),
+  version: z.number(),
+  entity: MatchEntitySchema,
+  teams: z.array(MatchTeamSchema),
+  created_at: z.string(),
+  updated_at: z.string()
+});
+
+export const MatchStatusConfiguringWebhookSchema = BaseWebhookSchema.extend({
+  event: z.literal("match_status_configuring"),
+  payload: MatchStatusConfiguringPayloadSchema
+});
+
+// Runtime validation function
+export function validateMatchStatusConfiguringWebhook(
+  data: unknown
+): MatchStatusConfiguringWebhook {
+  const safeType = MatchStatusConfiguringWebhookSchema.parse(data);
+  return safeType satisfies MatchStatusConfiguringWebhook;
 }

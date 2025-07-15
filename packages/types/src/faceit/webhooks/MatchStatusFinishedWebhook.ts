@@ -1,4 +1,11 @@
-import { MatchEntity, MatchTeam } from "./Webhooks.interface";
+import { z } from "zod";
+import {
+  MatchEntity,
+  FaceitMatchTeam,
+  MatchEntitySchema,
+  MatchTeamSchema,
+  BaseWebhookSchema
+} from "./Webhooks.interface";
 
 interface MatchStatusFinishedPayload {
   id: string;
@@ -7,7 +14,7 @@ interface MatchStatusFinishedPayload {
   game: string;
   version: number;
   entity: MatchEntity;
-  teams: MatchTeam[];
+  teams: FaceitMatchTeam[];
   created_at: string;
   updated_at: string;
   started_at: string; // Real timestamp for matches that actually started
@@ -24,4 +31,32 @@ export interface MatchStatusFinishedWebhook {
   retry_count: number;
   version: number;
   payload: MatchStatusFinishedPayload;
+}
+
+// Zod schemas for runtime validation
+const MatchStatusFinishedPayloadSchema = z.object({
+  id: z.string(),
+  organizer_id: z.string(),
+  region: z.string(),
+  game: z.string(),
+  version: z.number(),
+  entity: MatchEntitySchema,
+  teams: z.array(MatchTeamSchema),
+  created_at: z.string(),
+  updated_at: z.string(),
+  started_at: z.string(),
+  finished_at: z.string()
+});
+
+export const MatchStatusFinishedWebhookSchema = BaseWebhookSchema.extend({
+  event: z.literal("match_status_finished"),
+  payload: MatchStatusFinishedPayloadSchema
+});
+
+// Runtime validation function
+export function validateMatchStatusFinishedWebhook(
+  data: unknown
+): MatchStatusFinishedWebhook {
+  const safeType = MatchStatusFinishedWebhookSchema.parse(data);
+  return safeType satisfies MatchStatusFinishedWebhook;
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FaceitGame } from "../match-details/Details.interface";
+import { BaseWebhookSchema } from "./Webhooks.interface";
 
 interface MatchObjectCreatedEntity {
   id: string;
@@ -48,15 +49,8 @@ const MatchObjectCreatedPayloadSchema = z.object({
   updated_at: z.string()
 });
 
-export const MatchObjectCreatedWebhookSchema = z.object({
-  transaction_id: z.string(),
+export const MatchObjectCreatedWebhookSchema = BaseWebhookSchema.extend({
   event: z.literal("match_object_created"),
-  event_id: z.string(),
-  third_party_id: z.string(),
-  app_id: z.string(),
-  timestamp: z.string(),
-  retry_count: z.number(),
-  version: z.number(),
   payload: MatchObjectCreatedPayloadSchema
 });
 

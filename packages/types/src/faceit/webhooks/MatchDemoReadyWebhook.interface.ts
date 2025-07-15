@@ -1,4 +1,11 @@
-import { MatchEntity, MatchTeam } from "./Webhooks.interface";
+import { z } from "zod";
+import {
+  MatchEntity,
+  FaceitMatchTeam,
+  MatchEntitySchema,
+  MatchTeamSchema,
+  BaseWebhookSchema
+} from "./Webhooks.interface";
 
 interface MatchDemoReadyPayload {
   id: string;
@@ -10,7 +17,7 @@ interface MatchDemoReadyPayload {
   updated_at: string;
   version: number;
   demo_url: string; // URL to download the demo file
-  teams: MatchTeam[];
+  teams: FaceitMatchTeam[];
 }
 
 export interface MatchDemoReadyWebhook {
@@ -23,4 +30,31 @@ export interface MatchDemoReadyWebhook {
   retry_count: number;
   version: number;
   payload: MatchDemoReadyPayload;
+}
+
+// Zod schemas for runtime validation
+const MatchDemoReadyPayloadSchema = z.object({
+  id: z.string(),
+  organizer_id: z.string(),
+  region: z.string(),
+  game: z.string(),
+  entity: MatchEntitySchema,
+  created_at: z.string(),
+  updated_at: z.string(),
+  version: z.number(),
+  demo_url: z.string().url(), // Validate it's a proper URL
+  teams: z.array(MatchTeamSchema)
+});
+
+export const MatchDemoReadyWebhookSchema = BaseWebhookSchema.extend({
+  event: z.literal("match_demo_ready"),
+  payload: MatchDemoReadyPayloadSchema
+});
+
+// Runtime validation function
+export function validateMatchDemoReadyWebhook(
+  data: unknown
+): MatchDemoReadyWebhook {
+  const safeType = MatchDemoReadyWebhookSchema.parse(data);
+  return safeType satisfies MatchDemoReadyWebhook;
 }

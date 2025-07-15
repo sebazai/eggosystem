@@ -1,4 +1,11 @@
-import { MatchEntity, MatchTeam } from "./Webhooks.interface";
+import { z } from "zod";
+import {
+  MatchEntity,
+  FaceitMatchTeam,
+  MatchEntitySchema,
+  MatchTeamSchema,
+  BaseWebhookSchema
+} from "./Webhooks.interface";
 
 interface MatchStatusCancelledPayload {
   id: string;
@@ -10,7 +17,7 @@ interface MatchStatusCancelledPayload {
   players: unknown[]; // Empty in example, type unclear
   afk: string[]; // Faceit player ids
   entity: MatchEntity;
-  teams: MatchTeam[];
+  teams: FaceitMatchTeam[];
   created_at: string;
   updated_at: string;
 }
@@ -25,4 +32,33 @@ export interface MatchStatusCancelledWebhook {
   retry_count: number;
   version: number;
   payload: MatchStatusCancelledPayload;
+}
+
+// Zod schemas for runtime validation
+const MatchStatusCancelledPayloadSchema = z.object({
+  id: z.string(),
+  organizer_id: z.string(),
+  region: z.string(),
+  game: z.string(),
+  version: z.number(),
+  reason: z.enum(["AFK", "MANUAL"]),
+  players: z.array(z.unknown()),
+  afk: z.array(z.string()),
+  entity: MatchEntitySchema,
+  teams: z.array(MatchTeamSchema),
+  created_at: z.string(),
+  updated_at: z.string()
+});
+
+export const MatchStatusCancelledWebhookSchema = BaseWebhookSchema.extend({
+  event: z.literal("match_status_cancelled"),
+  payload: MatchStatusCancelledPayloadSchema
+});
+
+// Runtime validation function
+export function validateMatchStatusCancelledWebhook(
+  data: unknown
+): MatchStatusCancelledWebhook {
+  const safeType = MatchStatusCancelledWebhookSchema.parse(data);
+  return safeType satisfies MatchStatusCancelledWebhook;
 }
