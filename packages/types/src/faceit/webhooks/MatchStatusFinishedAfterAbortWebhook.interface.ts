@@ -6,6 +6,7 @@ import {
   MatchTeamSchema,
   BaseWebhookSchema
 } from "./Webhooks.interface";
+import { WebhookValidationError } from ".";
 
 interface MatchStatusFinishedAfterAbortPayload {
   id: string;
@@ -58,6 +59,11 @@ export const MatchStatusFinishedAfterAbortWebhookSchema =
 export function validateMatchStatusFinishedAfterAbortWebhook(
   data: unknown
 ): MatchStatusFinishedAfterAbortWebhook {
-  const safeType = MatchStatusFinishedAfterAbortWebhookSchema.parse(data);
-  return safeType satisfies MatchStatusFinishedAfterAbortWebhook;
+  const safeType = MatchStatusFinishedAfterAbortWebhookSchema.safeParse(data);
+  if (!safeType.success) {
+    throw new WebhookValidationError(
+      `MatchStatusFinishedAfterAbortWebhook validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies MatchStatusFinishedAfterAbortWebhook;
 }

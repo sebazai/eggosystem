@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export enum FaceitGame {
   CS2 = "cs2",
   CSGO = "csgo"
@@ -107,3 +109,111 @@ interface FaceitLocationEntity {
   guid: string;
   image_lg: string;
 }
+
+// Shared Zod schemas for runtime validation
+export const FaceitGameSchema = z.nativeEnum(FaceitGame);
+export const FaceitMatchStatusSchema = z.nativeEnum(FaceitMatchStatus);
+
+const FaceitMapEntitySchema = z.object({
+  image_sm: z.string(),
+  name: z.string(),
+  class_name: z.string(),
+  game_map_id: z.string(),
+  guid: z.string(),
+  image_lg: z.string()
+});
+
+const FaceitLocationEntitySchema = z.object({
+  image_sm: z.string(),
+  name: z.string(),
+  class_name: z.string(),
+  game_location_id: z.string(),
+  guid: z.string(),
+  image_lg: z.string()
+});
+
+export const FaceitPlayerRosterSchema = z.object({
+  player_id: z.string(),
+  nickname: z.string(),
+  avatar: z.string(),
+  membership: z.string(),
+  game_player_id: z.string(),
+  game_player_name: z.string(),
+  game_skill_level: z.number(),
+  anticheat_required: z.boolean()
+});
+
+export const FaceitTeamFactionSchema = z.object({
+  faction_id: z.string(),
+  leader: z.string(),
+  avatar: z.string(),
+  roster: z.array(FaceitPlayerRosterSchema),
+  substituted: z.boolean(),
+  name: z.string(),
+  type: z.literal("premade")
+});
+
+export const FaceitMatchTeamsSchema = z.object({
+  faction1: FaceitTeamFactionSchema,
+  faction2: FaceitTeamFactionSchema
+});
+
+export const FaceitMapVotingSchema = z.object({
+  pick: z.array(z.string()),
+  entities: z.array(FaceitMapEntitySchema)
+});
+
+export const FaceitLocationVotingSchema = z.object({
+  pick: z.array(z.string()),
+  entities: z.array(FaceitLocationEntitySchema)
+});
+
+const FaceitFactionScoresSchema = z.object({
+  faction1: z.number(),
+  faction2: z.number()
+});
+
+const FaceitFactionScoreSchema = z.object({
+  score: z.number()
+});
+
+export const FaceitMatchResultsAbortedAndCancelledSchema = z.object({
+  winner: z.literal(""),
+  score: z.object({})
+});
+
+export const FaceitDetailedResultsAbortedAndCancelledSchema = z.object({
+  asc_score: z.boolean(),
+  winner: z.literal(""),
+  factions: z.object({})
+});
+
+export const FaceitMatchResultsFinishedSchema = z.object({
+  winner: z.string(),
+  score: FaceitFactionScoresSchema
+});
+
+export const FaceitDetailedResultsFinishedSchema = z.object({
+  asc_score: z.boolean(),
+  winner: z.string(),
+  factions: z.record(FaceitFactionScoreSchema)
+});
+
+// Base match details schema with common fields
+export const BaseMatchDetailsSchema = z.object({
+  match_id: z.string(),
+  version: z.number(),
+  game: FaceitGameSchema,
+  region: z.string(),
+  competition_id: z.string(),
+  competition_type: z.string(),
+  competition_name: z.string(),
+  organizer_id: z.string(),
+  teams: FaceitMatchTeamsSchema,
+  calculate_elo: z.boolean(),
+  chat_room_id: z.string(),
+  best_of: z.number(),
+  round: z.number(),
+  group: z.number(),
+  faceit_url: z.string()
+});

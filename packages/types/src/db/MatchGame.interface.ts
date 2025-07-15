@@ -7,4 +7,15 @@ export interface MatchGame {
   demofile: string; // demo file
   map_order?: number | null; // TINYINT UNSIGNED, optional
   regulation_rounds: number;
+  status: MatchGameStatus;
+}
+
+export enum MatchGameStatus {
+  CREATED = "CREATED",
+  CONFIGURING = "CONFIGURING",
+  READY = "READY",
+  ONGOING = "ONGOING",
+  FINISHED = "FINISHED",
+  ABORTED = "ABORTED",
+  CANCELLED = "CANCELLED"
 }

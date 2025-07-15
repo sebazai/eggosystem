@@ -1,8 +1,11 @@
+import { z } from "zod";
 import {
   FaceitGame,
-  FaceitMatchStatus,
-  FaceitMatchTeams
+  FaceitMatchTeams,
+  BaseMatchDetailsSchema,
+  FaceitGameSchema
 } from "./Details.interface";
+import { MatchDetailsValidationError } from ".";
 
 export interface DetailsObjectCreated {
   match_id: string;
@@ -17,8 +20,27 @@ export interface DetailsObjectCreated {
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status: FaceitMatchStatus.VOTING | FaceitMatchStatus.CREATED; // Could be something else as well
+  status: string; // TODO: Figure out this status
   round: number;
   group: number;
   faceit_url: string;
+}
+
+// Zod schemas for runtime validation
+export const DetailsObjectCreatedSchema = BaseMatchDetailsSchema.extend({
+  game: FaceitGameSchema,
+  status: z.string() // TODO: Figure out this status
+});
+
+// Runtime validation function
+export function validateDetailsObjectCreated(
+  data: unknown
+): DetailsObjectCreated {
+  const safeType = DetailsObjectCreatedSchema.safeParse(data);
+  if (!safeType.success) {
+    throw new MatchDetailsValidationError(
+      `DetailsObjectCreated validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies DetailsObjectCreated;
 }

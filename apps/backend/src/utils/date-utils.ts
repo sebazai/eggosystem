@@ -13,3 +13,7 @@ export const getMonthDifference = (timestamp1: number, timestamp2: number) => {
 
   return yearsDiff * 12 + monthsDiff;
 };
+
+export const convertISOToTime = (isoString: string) => {
+  return new Date(isoString).toISOString().slice(11, 19);
+};

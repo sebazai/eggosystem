@@ -451,12 +451,12 @@ interface FaceITVotingEntity {
   guid: string;
 }
 
-export const getFaceITMatchDetails = async (match_id: string) => {
+export const getFaceITMatchDetails = async <T>(match_id: string) => {
   const webURL = `https://open.faceit.com/data/v4/matches/${match_id}`;
   const headers = {
     Accept: "application/json",
     Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
   };
   const response = await fetch(webURL, { headers });
-  return response.json() as Promise<FaceITMatchDetails>;
+  return response.json() as Promise<T>;
 };

@@ -6,6 +6,7 @@ import {
   MatchTeamSchema,
   BaseWebhookSchema
 } from "./Webhooks.interface";
+import { WebhookValidationError } from ".";
 
 interface MatchDemoReadyPayload {
   id: string;
@@ -55,6 +56,11 @@ export const MatchDemoReadyWebhookSchema = BaseWebhookSchema.extend({
 export function validateMatchDemoReadyWebhook(
   data: unknown
 ): MatchDemoReadyWebhook {
-  const safeType = MatchDemoReadyWebhookSchema.parse(data);
-  return safeType satisfies MatchDemoReadyWebhook;
+  const safeType = MatchDemoReadyWebhookSchema.safeParse(data);
+  if (!safeType.success) {
+    throw new WebhookValidationError(
+      `MatchDemoReadyWebhook validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies MatchDemoReadyWebhook;
 }

@@ -1,15 +1,24 @@
+import { type FaceitValidationError } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
-// CREATE TABLE webhooks (
-//   id INT AUTO_INCREMENT PRIMARY KEY,
-//   received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-//   data JSON                   -- This stores the raw webhook payload
-// );
+export const saveWebhookData = async (
+  data: string,
+  details: string | null,
+  errorType: FaceitValidationError | null = null
+) => {
+  return runQuery<{ insertId: number }>(
+    "INSERT INTO FaceitWebhooks (data, details, error_type) VALUES (?, ?, ?)",
+    [JSON.stringify(data), JSON.stringify(details), errorType]
+  );
+};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const saveWebhookData = async (data: any, details: any) => {
-  return runQuery("INSERT INTO Webhooks (data, details) VALUES (?, ?)", [
-    JSON.stringify(data),
-    JSON.stringify(details)
-  ]);
+export const updateWebhookData = async (
+  id: number,
+  details: string | null,
+  errorType: FaceitValidationError | null = null
+) => {
+  return runQuery<{ insertId: number }>(
+    "UPDATE FaceitWebhooks SET details = ?, error_type = ? WHERE id = ?",
+    [JSON.stringify(details), errorType, id]
+  );
 };

@@ -6,7 +6,7 @@ import {
 } from "../../controllers/sortter.controllers";
 import { populateKanaeloQueueController } from "../../controllers/kanaelo.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
-import { validateApiKey } from "../../middlewares/api-key-auth.middleware";
+import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.get(
 // POST /api/v1/sortter/season/:season_id/populate-kanaelo-queue
 router.post(
   "/season/:season_id/populate-kanaelo-queue",
-  validateApiKey,
+  createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY),
   validateNumericParams(["season_id"]),
   populateKanaeloQueueController
 );

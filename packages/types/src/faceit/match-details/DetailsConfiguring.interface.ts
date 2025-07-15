@@ -1,9 +1,16 @@
+import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
   FaceitMapVoting,
-  FaceitLocationVoting
+  FaceitLocationVoting,
+  BaseMatchDetailsSchema,
+  FaceitGameSchema,
+  FaceitMapVotingSchema,
+  FaceitLocationVotingSchema,
+  FaceitMatchStatus
 } from "./Details.interface";
+import { MatchDetailsValidationError } from ".";
 
 // Voting system for configuring matches
 export interface FaceitConfiguringVoting {
@@ -33,4 +40,30 @@ export interface DetailsConfiguring {
   round: number;
   group: number;
   faceit_url: string;
+}
+
+// Zod schemas for runtime validation
+const FaceitConfiguringVotingSchema = z.object({
+  map: FaceitMapVotingSchema,
+  voted_entity_types: z.array(z.string()),
+  location: FaceitLocationVotingSchema
+});
+
+export const DetailsConfiguringSchema = BaseMatchDetailsSchema.extend({
+  game: FaceitGameSchema,
+  voting: FaceitConfiguringVotingSchema,
+  scheduled_at: z.number().optional(),
+  configured_at: z.number(),
+  status: z.literal(FaceitMatchStatus.CONFIGURING)
+});
+
+// Runtime validation function
+export function validateDetailsConfiguring(data: unknown): DetailsConfiguring {
+  const safeType = DetailsConfiguringSchema.safeParse(data);
+  if (!safeType.success) {
+    throw new MatchDetailsValidationError(
+      `DetailsConfiguring validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies DetailsConfiguring;
 }

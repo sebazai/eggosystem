@@ -10,4 +10,14 @@ export interface Match {
   end_time: string; // TIME, represented as string (ISO format)
   best_of: number; // TINYINT UNSIGNED, stored as number
   external_match_room_id: string | null;
+  status: MatchStatus;
+}
+
+export enum MatchStatus {
+  CREATED = "CREATED",
+  VOTING = "VOTING",
+  ONGOING = "ONGOING",
+  FINISHED = "FINISHED",
+  ABORTED = "ABORTED",
+  CANCELLED = "CANCELLED"
 }

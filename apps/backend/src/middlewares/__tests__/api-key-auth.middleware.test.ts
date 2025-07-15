@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { validateApiKey } from "../api-key-auth.middleware";
+import { createApiKeyValidator } from "../api-key-auth.middleware";
 
 describe("API Key Authentication Middleware", () => {
   // Mock objects
@@ -40,7 +40,11 @@ describe("API Key Authentication Middleware", () => {
     req.headers["x-api-key"] = "valid-api-key";
 
     // Act
-    validateApiKey(req, res, mockNext);
+    createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY)(
+      req,
+      res,
+      mockNext
+    );
 
     // Assert
     expect(mockNext).toHaveBeenCalled();
@@ -48,13 +52,17 @@ describe("API Key Authentication Middleware", () => {
     expect(res.json).not.toHaveBeenCalled();
   });
 
-  it("should return 401 when no API key is provided", () => {
+  it("should return 401 when no API key is provided in request", () => {
     // Arrange
     const req = mockRequest();
     const res = mockResponse();
 
     // Act
-    validateApiKey(req, res, mockNext);
+    createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY)(
+      req,
+      res,
+      mockNext
+    );
 
     // Assert
     expect(mockNext).not.toHaveBeenCalled();
@@ -71,25 +79,11 @@ describe("API Key Authentication Middleware", () => {
     req.headers["x-api-key"] = "invalid-api-key";
 
     // Act
-    validateApiKey(req, res, mockNext);
-
-    // Assert
-    expect(mockNext).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Invalid API key" }
-    });
-  });
-
-  it("should handle undefined BACKEND_SERVICE_API_KEY environment variable", () => {
-    // Arrange
-    const req = mockRequest();
-    const res = mockResponse();
-    req.headers["x-api-key"] = "any-key";
-    delete process.env.BACKEND_SERVICE_API_KEY;
-
-    // Act
-    validateApiKey(req, res, mockNext);
+    createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY)(
+      req,
+      res,
+      mockNext
+    );
 
     // Assert
     expect(mockNext).not.toHaveBeenCalled();

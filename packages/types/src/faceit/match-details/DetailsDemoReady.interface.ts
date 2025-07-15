@@ -1,10 +1,17 @@
+import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
   FaceitMapVoting,
   FaceitMatchResultsFinished,
-  FaceitDetailedResultsFinished
+  FaceitDetailedResultsFinished,
+  BaseMatchDetailsSchema,
+  FaceitMapVotingSchema,
+  FaceitMatchResultsFinishedSchema,
+  FaceitDetailedResultsFinishedSchema,
+  FaceitMatchStatus
 } from "./Details.interface";
+import { MatchDetailsValidationError } from ".";
 
 export interface DetailsDemoReady {
   match_id: string;
@@ -27,7 +34,7 @@ export interface DetailsDemoReady {
   best_of: number;
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
-  status: string;
+  status: FaceitMatchStatus;
   round: number;
   group: number;
   faceit_url: string;
@@ -36,4 +43,34 @@ export interface DetailsDemoReady {
 export interface Voting {
   voted_entity_types: string[];
   map: FaceitMapVoting;
+}
+
+// Zod schemas for runtime validation
+const VotingSchema = z.object({
+  voted_entity_types: z.array(z.string()),
+  map: FaceitMapVotingSchema
+});
+
+export const DetailsDemoReadySchema = BaseMatchDetailsSchema.extend({
+  game: z.literal(FaceitGame.CS2),
+  voting: VotingSchema,
+  scheduled_at: z.number().optional(),
+  configured_at: z.number(),
+  started_at: z.number(),
+  finished_at: z.number(),
+  demo_url: z.array(z.string().url()),
+  results: FaceitMatchResultsFinishedSchema,
+  detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
+  status: z.literal(FaceitMatchStatus.FINISHED)
+});
+
+// Runtime validation function
+export function validateDetailsDemoReady(data: unknown): DetailsDemoReady {
+  const safeType = DetailsDemoReadySchema.safeParse(data);
+  if (!safeType.success) {
+    throw new MatchDetailsValidationError(
+      `DetailsDemoReady validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies DetailsDemoReady;
 }

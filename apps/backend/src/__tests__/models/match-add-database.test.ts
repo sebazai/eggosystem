@@ -2,10 +2,12 @@ import { addMatchToDatabase } from "../../models/match.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getConnection } from "../../db/mysqlConnection";
 import { logger } from "../../utils/app-logger";
-import { type FaceITMatchDetails } from "../../services/faceit.services";
 import {
+  type DetailsObjectCreated,
   type SeasonLeagueExternalId,
-  type SeasonLeagueTeam
+  type SeasonLeagueTeam,
+  FaceitGame,
+  FaceitMatchStatus
 } from "@eggosystem/types";
 
 // Mock dependencies
@@ -22,6 +24,7 @@ const mockLogger = logger as jest.Mocked<typeof logger>;
 describe("addMatchToDatabase", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockConnection: any;
+  let mockDate: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -35,16 +38,36 @@ describe("addMatchToDatabase", () => {
     };
 
     mockGetConnection.mockResolvedValue(mockConnection);
+
+    // Mock Date to return predictable values
+    // Mock a Saturday (day 6) so next Wednesday is predictable
+    const RealDate = Date;
+    const fixedDate = new RealDate("2022-01-01T10:00:00.000Z"); // Saturday
+    mockDate = jest
+      .spyOn(global, "Date")
+      .mockImplementation((arg?: string | number | Date) => {
+        if (arg) return new RealDate(arg);
+        return fixedDate;
+      });
+    // @ts-expect-error Mocking static property
+    mockDate.now = jest.fn(() => fixedDate.getTime());
+  });
+
+  afterEach(() => {
+    mockDate.mockRestore();
   });
 
   const createMockMatchDetails = (
-    overrides: Partial<FaceITMatchDetails> = {}
-  ): FaceITMatchDetails => ({
+    overrides: Partial<DetailsObjectCreated> = {}
+  ): DetailsObjectCreated => ({
     match_id: "test-match-id",
-    best_of: 1,
-    scheduled_at: 1640995200, // 2022-01-01 00:00:00 UTC
-    started_at: 1640995800, // 2022-01-01 00:10:00 UTC
-    finished_at: 1640999400, // 2022-01-01 01:10:00 UTC
+    version: 1,
+    game: FaceitGame.CS2,
+    region: "EU",
+    competition_id: "test-competition",
+    competition_type: "championship",
+    competition_name: "Test Championship",
+    organizer_id: "test-organizer",
     teams: {
       faction1: {
         faction_id: "team1-external-id",
@@ -65,38 +88,10 @@ describe("addMatchToDatabase", () => {
         type: "premade"
       }
     },
-    // Add other required properties to satisfy the interface
-    version: 1,
-    game: "cs2",
-    region: "EU",
-    competition_id: "test-competition",
-    competition_type: "championship",
-    competition_name: "Test Championship",
-    organizer_id: "test-organizer",
-    voting: {
-      voted_entity_types: [],
-      location: {
-        entities: [],
-        pick: []
-      },
-      map: {
-        entities: [],
-        pick: []
-      }
-    },
     calculate_elo: true,
-    configured_at: 1640995200,
-    demo_url: [],
     chat_room_id: "test-chat-room",
-    results: {
-      winner: "faction1",
-      score: {
-        faction1: 1,
-        faction2: 0
-      }
-    },
-    detailed_results: [],
-    status: "finished",
+    best_of: 1,
+    status: FaceitMatchStatus.CREATED,
     round: 1,
     group: 1,
     faceit_url: "https://faceit.com/test-match",
@@ -156,7 +151,7 @@ describe("addMatchToDatabase", () => {
       // Verify match insert with correct parameters
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-01", "00:10:00", "01:10:00", "test-match-id"],
+        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
         mockConnection
       );
 
@@ -174,10 +169,7 @@ describe("addMatchToDatabase", () => {
     });
 
     it("should handle matches with null start_time and end_time", async () => {
-      const matchDetails = createMockMatchDetails({
-        started_at: undefined,
-        finished_at: undefined
-      });
+      const matchDetails = createMockMatchDetails();
       const externalLeagueId = "league-external-id";
 
       mockRunQuery
@@ -193,7 +185,7 @@ describe("addMatchToDatabase", () => {
       // Verify default times are used
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-01", "00:00:00", "00:00:00", "test-match-id"],
+        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
         mockConnection
       );
     });
@@ -229,7 +221,7 @@ describe("addMatchToDatabase", () => {
       // Verify two match inserts with same parameters
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 2, "2022-01-01", "00:10:00", "01:10:00", "test-match-id"],
+        [1, 1, 1, 2, "2022-01-05", "19:00:00", null, "test-match-id"],
         mockConnection
       );
       expect(mockRunQuery).toHaveBeenCalledTimes(9); // 1 lookup + 2 team lookups + 2 match inserts + 4 MatchTeams inserts
@@ -263,7 +255,8 @@ describe("addMatchToDatabase", () => {
       const matchDetails = createMockMatchDetails();
       const externalLeagueId = "non-existent-league";
 
-      mockRunQuery.mockResolvedValueOnce([]); // Empty result for SeasonLeagueExternalId lookup
+      // First query: SeasonLeagueExternalId lookup - empty result
+      mockRunQuery.mockResolvedValueOnce([]);
 
       await expect(
         addMatchToDatabase(matchDetails, externalLeagueId)
@@ -321,10 +314,13 @@ describe("addMatchToDatabase", () => {
       const matchDetails = createMockMatchDetails();
       const externalLeagueId = "league-external-id";
 
+      // First query: SeasonLeagueExternalId lookup - success
+      // Second query: Team 1 lookup - empty result
+      // Third query: Team 2 lookup - empty result
       mockRunQuery
-        .mockResolvedValueOnce([createMockSeasonLeagueExternalId()]) // SeasonLeagueExternalId lookup
-        .mockResolvedValueOnce([]) // Team 1 lookup (empty result)
-        .mockResolvedValueOnce([]); // Team 2 lookup (empty result)
+        .mockResolvedValueOnce([createMockSeasonLeagueExternalId()])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
 
       await expect(
         addMatchToDatabase(matchDetails, externalLeagueId)
@@ -341,11 +337,15 @@ describe("addMatchToDatabase", () => {
       const matchDetails = createMockMatchDetails();
       const externalLeagueId = "league-external-id";
 
+      // First query: SeasonLeagueExternalId lookup - success
+      // Second query: Team 1 lookup - success
+      // Third query: Team 2 lookup - success
+      // Fourth query: Match insert - fails
       mockRunQuery
-        .mockResolvedValueOnce([createMockSeasonLeagueExternalId()]) // SeasonLeagueExternalId lookup
-        .mockResolvedValueOnce([createMockSeasonLeagueTeam(1)]) // Team 1 lookup
-        .mockResolvedValueOnce([createMockSeasonLeagueTeam(2)]) // Team 2 lookup
-        .mockRejectedValueOnce(new Error("Database connection failed")); // Match insert fails
+        .mockResolvedValueOnce([createMockSeasonLeagueExternalId()])
+        .mockResolvedValueOnce([createMockSeasonLeagueTeam(1)])
+        .mockResolvedValueOnce([createMockSeasonLeagueTeam(2)])
+        .mockRejectedValueOnce(new Error("Database connection failed"));
 
       await expect(
         addMatchToDatabase(matchDetails, externalLeagueId)
@@ -364,14 +364,19 @@ describe("addMatchToDatabase", () => {
       const matchDetails = createMockMatchDetails({ best_of: 2 });
       const externalLeagueId = "league-external-id";
 
+      // First query: SeasonLeagueExternalId lookup - success with BO2 flag
+      // Second query: Team 1 lookup - success
+      // Third query: Team 2 lookup - success
+      // Fourth query: First match insert - success
+      // Fifth query: Second match insert - fails
       mockRunQuery
         .mockResolvedValueOnce([
           createMockSeasonLeagueExternalId({ isBO2PlayedAs2xBO1: true })
-        ]) // SeasonLeagueExternalId lookup
-        .mockResolvedValueOnce([createMockSeasonLeagueTeam(1)]) // Team 1 lookup
-        .mockResolvedValueOnce([createMockSeasonLeagueTeam(2)]) // Team 2 lookup
-        .mockResolvedValueOnce([{ insertId: 100 }]) // First match insert
-        .mockRejectedValueOnce(new Error("Second match insert failed")); // Second match insert fails
+        ])
+        .mockResolvedValueOnce([createMockSeasonLeagueTeam(1)])
+        .mockResolvedValueOnce([createMockSeasonLeagueTeam(2)])
+        .mockResolvedValueOnce([{ insertId: 100 }])
+        .mockRejectedValueOnce(new Error("Second match insert failed"));
 
       await expect(
         addMatchToDatabase(matchDetails, externalLeagueId)
@@ -389,11 +394,7 @@ describe("addMatchToDatabase", () => {
 
   describe("Time formatting", () => {
     it("should correctly format Unix timestamps to database format", async () => {
-      const matchDetails = createMockMatchDetails({
-        scheduled_at: 1640995200, // 2022-01-01 00:00:00 UTC
-        started_at: 1640995800, // 2022-01-01 00:10:00 UTC
-        finished_at: 1640999400 // 2022-01-01 01:10:00 UTC
-      });
+      const matchDetails = createMockMatchDetails();
       const externalLeagueId = "league-external-id";
 
       mockRunQuery
@@ -408,17 +409,13 @@ describe("addMatchToDatabase", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "2022-01-01", "00:10:00", "01:10:00", "test-match-id"],
+        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
         mockConnection
       );
     });
 
     it("should handle edge case timestamps", async () => {
-      const matchDetails = createMockMatchDetails({
-        scheduled_at: 0, // 1970-01-01 00:00:00 UTC
-        started_at: 0, // 1970-01-01 00:00:00 UTC
-        finished_at: 0 // 1970-01-01 00:00:00 UTC
-      });
+      const matchDetails = createMockMatchDetails();
       const externalLeagueId = "league-external-id";
 
       mockRunQuery
@@ -433,7 +430,7 @@ describe("addMatchToDatabase", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
-        [1, 1, 1, 1, "1970-01-01", "00:00:00", "00:00:00", "test-match-id"],
+        [1, 1, 1, 1, "2022-01-05", "19:00:00", null, "test-match-id"],
         mockConnection
       );
     });

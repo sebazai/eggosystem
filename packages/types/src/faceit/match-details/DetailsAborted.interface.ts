@@ -1,21 +1,25 @@
 import { z } from "zod";
 import {
   FaceitGame,
-  FaceitMatchTeams,
   FaceitMapVoting,
   FaceitMatchResultsAbortedAndCancelled,
   FaceitDetailedResultsAbortedAndCancelled,
-  FaceitLocationVoting,
+  FaceitMatchTeams,
   BaseMatchDetailsSchema,
   FaceitMapVotingSchema,
-  FaceitLocationVotingSchema,
   FaceitMatchResultsAbortedAndCancelledSchema,
   FaceitDetailedResultsAbortedAndCancelledSchema,
   FaceitMatchStatus
 } from "./Details.interface";
 import { MatchDetailsValidationError } from ".";
 
-export interface FaceitDetailsCancelled {
+// Voting interface
+interface FaceitMatchVotingAborted {
+  map: FaceitMapVoting;
+  voted_entity_types: string[];
+}
+// Main match details interface for aborted matches
+export interface FaceitMatchDetailsAborted {
   match_id: string;
   version: number;
   game: FaceitGame.CS2;
@@ -25,51 +29,43 @@ export interface FaceitDetailsCancelled {
   competition_name: string;
   organizer_id: string;
   teams: FaceitMatchTeams;
-  voting: FaceitCancelledVoting;
+  voting: FaceitMatchVotingAborted;
   calculate_elo: boolean;
   configured_at: number;
-  finished_at: number;
   chat_room_id: string;
   best_of: number;
   results: FaceitMatchResultsAbortedAndCancelled;
   detailed_results: FaceitDetailedResultsAbortedAndCancelled[];
-  status: "CANCELLED";
+  status: "ABORTED";
+  round: number;
+  group: number;
   faceit_url: string;
 }
 
-// Extended voting interface that includes location voting (not in Details.interface.ts)
-interface FaceitCancelledVoting {
-  map: FaceitMapVoting;
-  voted_entity_types: string[];
-  location: FaceitLocationVoting;
-}
-
 // Zod schemas for runtime validation
-const FaceitCancelledVotingSchema = z.object({
+const FaceitMatchVotingAbortedSchema = z.object({
   map: FaceitMapVotingSchema,
-  voted_entity_types: z.array(z.string()),
-  location: FaceitLocationVotingSchema
+  voted_entity_types: z.array(z.string())
 });
 
-export const FaceitDetailsCancelledSchema = BaseMatchDetailsSchema.extend({
+export const FaceitMatchDetailsAbortedSchema = BaseMatchDetailsSchema.extend({
   game: z.literal(FaceitGame.CS2),
-  voting: FaceitCancelledVotingSchema,
+  voting: FaceitMatchVotingAbortedSchema,
   configured_at: z.number(),
-  finished_at: z.number(),
   results: FaceitMatchResultsAbortedAndCancelledSchema,
   detailed_results: z.array(FaceitDetailedResultsAbortedAndCancelledSchema),
-  status: z.literal(FaceitMatchStatus.CANCELLED)
+  status: z.literal(FaceitMatchStatus.ABORTED)
 });
 
 // Runtime validation function
-export function validateFaceitDetailsCancelled(
+export function validateFaceitMatchDetailsAborted(
   data: unknown
-): FaceitDetailsCancelled {
-  const safeType = FaceitDetailsCancelledSchema.safeParse(data);
+): FaceitMatchDetailsAborted {
+  const safeType = FaceitMatchDetailsAbortedSchema.safeParse(data);
   if (!safeType.success) {
     throw new MatchDetailsValidationError(
-      `FaceitDetailsCancelled validation failed: ${JSON.stringify(safeType.error)}`
+      `FaceitMatchDetailsAborted validation failed: ${JSON.stringify(safeType.error)}`
     );
   }
-  return safeType.data satisfies FaceitDetailsCancelled;
+  return safeType.data satisfies FaceitMatchDetailsAborted;
 }

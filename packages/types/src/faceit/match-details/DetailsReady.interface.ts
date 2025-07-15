@@ -1,9 +1,15 @@
+import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
   FaceitMapVoting,
-  FaceitLocationVoting
+  FaceitLocationVoting,
+  BaseMatchDetailsSchema,
+  FaceitMapVotingSchema,
+  FaceitLocationVotingSchema,
+  FaceitMatchStatus
 } from "./Details.interface";
+import { MatchDetailsValidationError } from ".";
 
 // Voting system for ready matches (same structure as configuring)
 export interface FaceitReadyVoting {
@@ -33,4 +39,30 @@ export interface DetailsReady {
   round: number;
   group: number;
   faceit_url: string;
+}
+
+// Zod schemas for runtime validation
+const FaceitReadyVotingSchema = z.object({
+  map: FaceitMapVotingSchema,
+  voted_entity_types: z.array(z.string()),
+  location: FaceitLocationVotingSchema
+});
+
+export const DetailsReadySchema = BaseMatchDetailsSchema.extend({
+  game: z.literal(FaceitGame.CS2),
+  voting: FaceitReadyVotingSchema,
+  scheduled_at: z.number(),
+  configured_at: z.number(),
+  status: z.literal(FaceitMatchStatus.READY)
+});
+
+// Runtime validation function
+export function validateDetailsReady(data: unknown): DetailsReady {
+  const safeType = DetailsReadySchema.safeParse(data);
+  if (!safeType.success) {
+    throw new MatchDetailsValidationError(
+      `DetailsReady validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies DetailsReady;
 }

@@ -10,3 +10,11 @@ export * from "./MatchStatusReadyWebhook.interface";
 export * from "./MatchStatusAbortedWebhook.interface";
 export * from "./MatchObjectCreatedWebhook.interface";
 export * from "./MatchDemoReadyWebhook.interface";
+export * from "./ChampionshipCreatedWebhook.interface";
+
+export class WebhookValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebhookValidationError";
+  }
+}

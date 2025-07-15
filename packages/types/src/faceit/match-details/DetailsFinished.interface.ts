@@ -1,10 +1,17 @@
+import { z } from "zod";
 import {
   FaceitDetailedResultsFinished,
   FaceitGame,
   FaceitMapVoting,
   FaceitMatchResultsFinished,
-  FaceitMatchTeams
+  FaceitMatchTeams,
+  BaseMatchDetailsSchema,
+  FaceitMapVotingSchema,
+  FaceitMatchResultsFinishedSchema,
+  FaceitDetailedResultsFinishedSchema,
+  FaceitMatchStatus
 } from "./Details.interface";
+import { MatchDetailsValidationError } from ".";
 
 // Voting interface
 interface FaceitMatchVotingFinished {
@@ -36,4 +43,35 @@ export interface FaceitMatchDetailsFinishedAfterAborted {
   round: number;
   group: number;
   faceit_url: string;
+}
+
+// Zod schemas for runtime validation
+const FaceitMatchVotingFinishedSchema = z.object({
+  map: FaceitMapVotingSchema,
+  voted_entity_types: z.array(z.string())
+});
+
+export const FaceitMatchDetailsFinishedAfterAbortedSchema =
+  BaseMatchDetailsSchema.extend({
+    game: z.literal(FaceitGame.CS2),
+    voting: FaceitMatchVotingFinishedSchema,
+    scheduled_at: z.number().optional(),
+    configured_at: z.number(),
+    finished_at: z.number(),
+    results: FaceitMatchResultsFinishedSchema,
+    detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
+    status: z.literal(FaceitMatchStatus.FINISHED)
+  });
+
+// Runtime validation function
+export function validateFaceitMatchDetailsFinishedAfterAborted(
+  data: unknown
+): FaceitMatchDetailsFinishedAfterAborted {
+  const safeType = FaceitMatchDetailsFinishedAfterAbortedSchema.safeParse(data);
+  if (!safeType.success) {
+    throw new MatchDetailsValidationError(
+      `FaceitMatchDetailsFinishedAfterAborted validation failed: ${JSON.stringify(safeType.error)}`
+    );
+  }
+  return safeType.data satisfies FaceitMatchDetailsFinishedAfterAborted;
 }

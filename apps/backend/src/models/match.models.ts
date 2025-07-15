@@ -13,15 +13,17 @@ import {
   type MatchMapVetoes,
   type Stage,
   type SeasonLeagueExternalId,
-  type SeasonLeagueTeam
+  type SeasonLeagueTeam,
+  type DetailsObjectCreated,
+  MatchStatus
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
-import { type FaceITMatchDetails } from "../services/faceit.services";
 import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
+import { convertISOToTime } from "../utils/date-utils";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -287,7 +289,7 @@ export const getMatchMapVetoes = async (match_id: number) => {
 };
 
 export const addMatchToDatabase = async (
-  matchDetails: FaceITMatchDetails,
+  matchDetails: DetailsObjectCreated,
   externalLeagueId: string
 ) => {
   const connection = await getConnection();
@@ -332,13 +334,15 @@ export const addMatchToDatabase = async (
 
     const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
 
-    const matchDate = new Date(matchDetails.scheduled_at * 1000); // scheduled_at is unix timestamp (seconds)
-    const match_date = matchDate.toISOString().slice(0, 10); // YYYY-MM-DD
-    const start_time = matchDetails.started_at
-      ? new Date(matchDetails.started_at * 1000).toISOString().slice(11, 19) // HH:MM:SS
-      : "00:00:00";
-    const end_time = matchDetails.finished_at
-      ? new Date(matchDetails.finished_at * 1000).toISOString().slice(11, 19)
+    // TODO: Default time next weeks wednesday at 19:00, figure out how to handle this, do we have scheduled_at?
+    const now = new Date();
+    const nextWednesday = new Date(now);
+    nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
+    nextWednesday.setHours(19, 0, 0, 0);
+
+    const match_date = nextWednesday.toISOString().slice(0, 10); // YYYY-MM-DD
+    const start_time = nextWednesday
+      ? new Date(nextWednesday).toISOString().slice(11, 19) // HH:MM:SS
       : "00:00:00";
 
     const params = [
@@ -348,7 +352,7 @@ export const addMatchToDatabase = async (
       matchDetails.best_of,
       match_date,
       start_time,
-      end_time,
+      null,
       matchDetails.match_id
     ];
 
@@ -437,6 +441,35 @@ export const addMatchToDatabase = async (
   }
 };
 
+export const updateMatchFinished = async (
+  externalMatchRoomId: string,
+  startedAt: string,
+  finishedAt: string
+): Promise<void> => {
+  const matches = await runQuery<Array<{ id: number }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+
+  if (matches.length === 0) {
+    logger.warn(
+      `No matches found with external_match_room_id: ${externalMatchRoomId}`
+    );
+    return;
+  }
+
+  const startTime = convertISOToTime(startedAt);
+  const endTime = convertISOToTime(finishedAt);
+
+  await runQuery(
+    "UPDATE Matches SET start_time = ?, end_time = ?, status = ? WHERE external_match_room_id = ?",
+    [startTime, endTime, MatchStatus.FINISHED, externalMatchRoomId]
+  );
+  logger.info(
+    `Updated start_time to ${startTime} and end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+  );
+};
+
 export const updateMatchEndTime = async (
   externalMatchRoomId: string,
   finishedAt: string
@@ -453,8 +486,7 @@ export const updateMatchEndTime = async (
     return;
   }
 
-  // Convert ISO timestamp to time format (HH:MM:SS)
-  const endTime = new Date(finishedAt).toISOString().slice(11, 19);
+  const endTime = convertISOToTime(finishedAt);
 
   await runQuery(
     "UPDATE Matches SET end_time = ? WHERE external_match_room_id = ?",
