@@ -142,7 +142,8 @@ export const TeamMatchHistory = ({
                       router.push(
                         match.game_id
                           ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`
+                          : `/matches/${match.match_id}`,
+                        { scroll: false }
                       )
                     }
                     onMouseDown={(e) => {
