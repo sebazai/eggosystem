@@ -335,8 +335,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
                       router.push(
                         match.game_id
                           ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`,
-                        { scroll: false }
+                          : `/matches/${match.match_id}`
                       )
                     }
                     onMouseDown={(e) => {
