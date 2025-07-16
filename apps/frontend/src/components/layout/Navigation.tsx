@@ -127,6 +127,7 @@ export const Navigation = (props: NavbarProps) => {
 
   const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const params = useSearchParams();
 
   useEffect(() => {
@@ -134,6 +135,12 @@ export const Navigation = (props: NavbarProps) => {
       setIsSheetOpen(false);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    if (isScrolled && !hasScrolled) {
+      setHasScrolled(true);
+    }
+  }, [isScrolled, hasScrolled]);
 
   const [height, setHeight] = useState(0);
 
@@ -170,7 +177,7 @@ export const Navigation = (props: NavbarProps) => {
       );
       logoEl.removeEventListener("resize", updateNavHeightAndCheckMobile);
     };
-  }, [isScrolled]);
+  }, []);
 
   return (
     <div
@@ -193,11 +200,14 @@ export const Navigation = (props: NavbarProps) => {
             <Link href={logo.url}>
               <Image
                 ref={logoRef}
-                className="logo transition-all duration-500"
+                className={cn(
+                  "logo transition-all duration-500",
+                  hasScrolled || pathname === "/" ? "logo-small" : "logo-large"
+                )}
                 src={logo.src}
                 alt={logo.alt}
-                width={isScrolled || pathname === "/" ? 80 : 153}
-                height={isScrolled || pathname === "/" ? 80 : 175}
+                width={153}
+                height={175}
                 priority
               />
             </Link>
