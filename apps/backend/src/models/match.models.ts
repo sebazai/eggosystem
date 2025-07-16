@@ -24,6 +24,7 @@ import {
 import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
 import { convertISOToTime } from "../utils/date-utils";
+import { type PoolConnection } from "mysql2/promise";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -288,6 +289,20 @@ export const getMatchMapVetoes = async (match_id: number) => {
   return runQuery<MatchMapVetoes[]>(query, [match_id]);
 };
 
+const addTeamToMatch = async (
+  matchId: number,
+  teamId: number,
+  connection?: PoolConnection
+): Promise<void> => {
+  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
+
+  if (connection) {
+    await runQuery(addMatchTeamsQuery, [matchId, teamId], connection);
+  } else {
+    await runQuery(addMatchTeamsQuery, [matchId, teamId]);
+  }
+};
+
 export const addMatchToDatabase = async (
   matchDetails: DetailsObjectCreated,
   externalLeagueId: string
@@ -308,28 +323,26 @@ export const addMatchToDatabase = async (
         `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
       );
     }
+
     const teamOneExternalId = matchDetails.teams.faction1.faction_id;
     const teamTwoExternalId = matchDetails.teams.faction2.faction_id;
+
     const [teamOne] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
-      `SELECT slt.* FROM SeasonTeamRegistrations str 
-      JOIN SeasonLeagueTeams slt ON str.season_id = slt.season_id AND str.league_id = slt.league_id AND str.team_id = slt.team_id
-      WHERE str.external_platform_id = ? LIMIT 1`,
+      `SELECT * FROM SeasonLeagueTeams WHERE stl.external_platform_id = ? LIMIT 1`,
       [teamOneExternalId],
       connection
     );
     const [teamTwo] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
-      `SELECT slt.* FROM SeasonTeamRegistrations str 
-      JOIN SeasonLeagueTeams slt ON str.season_id = slt.season_id AND str.league_id = slt.league_id AND str.team_id = slt.team_id
-      WHERE str.external_platform_id = ? LIMIT 1`,
-      [teamTwoExternalId],
+      `SELECT * FROM SeasonLeagueTeams WHERE stl.external_platform_id = ? LIMIT 1`,
+      [teamOneExternalId],
       connection
     );
+
     if (!teamOne || !teamTwo) {
       throw new Error(
         `No SeasonLeagueTeam entry found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
       );
     }
-
     const { league_id, season_id, stage_id } = seasonLeagueExternalRoom;
 
     const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
@@ -375,7 +388,6 @@ export const addMatchToDatabase = async (
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
     if (isBO2PlayedAs2xBO1) {
       const firstMatch = await runQuery<Array<{ insertId: number }>>(
         matchQuery,
@@ -390,26 +402,10 @@ export const addMatchToDatabase = async (
       );
       const secondMatchId = secondMatch[0].insertId;
 
-      await runQuery(
-        addMatchTeamsQuery,
-        [firstMatchId, teamOne.team_id],
-        connection
-      );
-      await runQuery(
-        addMatchTeamsQuery,
-        [firstMatchId, teamTwo.team_id],
-        connection
-      );
-      await runQuery(
-        addMatchTeamsQuery,
-        [secondMatchId, teamOne.team_id],
-        connection
-      );
-      await runQuery(
-        addMatchTeamsQuery,
-        [secondMatchId, teamTwo.team_id],
-        connection
-      );
+      await addTeamToMatch(firstMatchId, teamOne.team_id, connection);
+      await addTeamToMatch(firstMatchId, teamTwo.team_id, connection);
+      await addTeamToMatch(secondMatchId, teamOne.team_id, connection);
+      await addTeamToMatch(secondMatchId, teamTwo.team_id, connection);
 
       await connection.commit();
 
@@ -421,16 +417,9 @@ export const addMatchToDatabase = async (
         connection
       );
       const matchId = match[0].insertId;
-      await runQuery(
-        addMatchTeamsQuery,
-        [matchId, teamOne.team_id],
-        connection
-      );
-      await runQuery(
-        addMatchTeamsQuery,
-        [matchId, teamTwo.team_id],
-        connection
-      );
+
+      await addTeamToMatch(matchId, teamOne.team_id, connection);
+      await addTeamToMatch(matchId, teamTwo.team_id, connection);
 
       await connection.commit();
       return { matchIds: [matchId] };

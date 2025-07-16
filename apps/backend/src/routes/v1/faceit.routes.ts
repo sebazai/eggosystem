@@ -188,7 +188,7 @@ router.post(
         );
         await addMatchToDatabase(
           validatedMatchDetails,
-          validatedWebhook.payload.id
+          validatedWebhook.payload.entity.id
         );
       }
 
