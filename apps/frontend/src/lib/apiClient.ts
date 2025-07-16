@@ -60,12 +60,20 @@ export async function clientApiFetch<T>(
   };
 
   const fetchWithRetry = async (retryAttempted = false): Promise<T> => {
+    // Prepare headers
+    const headers: Record<string, string> = {
+      ...((options?.headers as Record<string, string>) || {}),
+      ...((options?.method === "POST" || options?.method === "PUT") && {
+        "Content-Type": "application/json"
+      })
+    };
+
     const response = await fetch(`${envConfig.CLIENT_API_URL}${url}`, {
       method: options?.method ?? "GET",
       ...((options?.method === "POST" || options?.method === "PUT") && {
-        body: options?.body,
-        headers: { "Content-Type": "application/json" }
+        body: options?.body
       }),
+      headers,
       credentials: "include"
     });
 

@@ -9,8 +9,11 @@ import {
   type TeamSortterValues,
   type RequestWithParams
 } from "@eggosystem/types";
+import { runQuery } from "../../db/mysqlRunQuery";
 
 jest.mock("../../models/sortter.models");
+jest.mock("../../db/mysqlRunQuery");
+const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 describe("Sortter Controllers", () => {
   let mockRequest: Partial<RequestWithParams<Record<string, string>>>;
@@ -46,6 +49,7 @@ describe("Sortter Controllers", () => {
       ];
 
       mockRequest.params = { season_id: "1" };
+      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
       mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
         mockTeamValues
       );
@@ -55,7 +59,10 @@ describe("Sortter Controllers", () => {
         mockResponse as Response
       );
 
-      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(1);
+      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+        1,
+        false
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues);
     });
   });
@@ -75,6 +82,7 @@ describe("Sortter Controllers", () => {
       ];
 
       mockRequest.params = { season_id: "1", team_id: "1" };
+      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
       mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
         mockTeamValues
       );
@@ -87,7 +95,10 @@ describe("Sortter Controllers", () => {
         mockResponse as Response
       );
 
-      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(1);
+      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+        1,
+        false
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues[0]);
     });
 
@@ -105,6 +116,7 @@ describe("Sortter Controllers", () => {
       ];
 
       mockRequest.params = { season_id: "1", team_id: "2" };
+      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
       mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
         mockTeamValues
       );
@@ -117,7 +129,10 @@ describe("Sortter Controllers", () => {
         mockResponse as Response
       );
 
-      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(1);
+      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+        1,
+        false
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: "Team with ID 2 not found for season 1"
@@ -136,11 +151,14 @@ describe("Sortter Controllers", () => {
           faceit_elo: 1954,
           hours: 3382,
           kanarating: 1.296875,
-          fkd: 1.21
+          fkd: 1.21,
+          kana_elo: 1200,
+          calculus: "A"
         }
       ];
 
       mockRequest.params = { season: "14", team: "1" };
+      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
       mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue(
         mockPlayerValues
       );
@@ -152,12 +170,13 @@ describe("Sortter Controllers", () => {
 
       expect(
         mockSortterModels.getTeamPlayerValuesForSortter
-      ).toHaveBeenCalledWith(14, 1);
+      ).toHaveBeenCalledWith(14, 1, false);
       expect(mockResponse.json).toHaveBeenCalledWith(mockPlayerValues);
     });
 
     it("should return 404 if no players found", async () => {
       mockRequest.params = { season: "14", team: "999" };
+      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
       mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue([]);
 
       await getTeamPlayerValuesController(
@@ -167,7 +186,7 @@ describe("Sortter Controllers", () => {
 
       expect(
         mockSortterModels.getTeamPlayerValuesForSortter
-      ).toHaveBeenCalledWith(14, 999);
+      ).toHaveBeenCalledWith(14, 999, false);
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: "No players found for team 999 in season 14"

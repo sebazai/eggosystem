@@ -1,11 +1,14 @@
 import request from "supertest";
 import { app } from "../../app";
 import { getTeamValuesForSorter } from "../../models/sortter.models";
+import { runQuery } from "../../db/mysqlRunQuery";
 
 // Mock the model function
 jest.mock("../../models/sortter.models");
+jest.mock("../../db/mysqlRunQuery");
 const mockGetTeamValuesForSorter =
   getTeamValuesForSorter as jest.MockedFunction<typeof getTeamValuesForSorter>;
+const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 describe("Sortter Controller", () => {
   beforeEach(() => {
@@ -26,6 +29,7 @@ describe("Sortter Controller", () => {
       }
     ];
 
+    mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
     mockGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
 
     // Make request to the endpoint
@@ -36,7 +40,7 @@ describe("Sortter Controller", () => {
     expect(response.body).toEqual(mockTeamValues);
 
     // Verify model function was called with correct season ID
-    expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14);
+    expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14, false);
   });
 
   it("should get a specific team by ID", async () => {
@@ -62,6 +66,7 @@ describe("Sortter Controller", () => {
       }
     ];
 
+    mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
     mockGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
 
     // Make request to the endpoint
@@ -74,7 +79,7 @@ describe("Sortter Controller", () => {
     expect(response.body).toEqual(mockTeamValues[0]);
 
     // Verify model function was called with correct season ID
-    expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14);
+    expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14, false);
   });
 
   it("should handle invalid season ID parameter", async () => {
@@ -87,6 +92,7 @@ describe("Sortter Controller", () => {
 
   it("should handle team not found", async () => {
     // Mock empty data
+    mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
     mockGetTeamValuesForSorter.mockResolvedValue([]);
 
     // Make request with valid season but non-existent team

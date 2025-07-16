@@ -113,7 +113,7 @@ export function checkJWTPermissions({
     const roles = req.auth.roles;
 
     // Static permission check
-    if (staticPermissions?.some((perm) => roles.includes(perm))) {
+    if (staticPermissions?.some((perm) => permissions.includes(perm))) {
       return next();
     }
 
@@ -142,7 +142,7 @@ export function checkJWTPermissions({
       }
     }
 
-    if (fallbackRoles.some((role) => permissions.includes(role))) {
+    if (fallbackRoles.some((role) => roles.includes(role))) {
       return next();
     }
 

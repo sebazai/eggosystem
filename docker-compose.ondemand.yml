@@ -134,39 +134,22 @@ services:
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:5.2.2
+    restart: always
     depends_on:
-      eggo-devdb-${ENV_ID}:
-        condition: service_healthy
+      - eggo-db
     environment:
-      PMA_HOST: eggo-devdb-${ENV_ID}
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: "${MARIADB_ROOT_PASSWORD}"
-      PMA_ABSOLUTE_URI: https://hubod.kanaliiga.fi/${ENV_ID}/phpmyadmin/
-      UPLOAD_LIMIT: 200M
+      - PMA_HOST=eggo-db-${ENV_ID}
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "${PHPMYADMIN_PORT}:80"
     networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.entrypoints=http"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}/phpmyadmin/`)"
-      - "traefik.http.middlewares.hubphpmyadmin-${ENV_ID}-auth.basicauth.users=${PHPMYADMIN_AUTH}"
-      - "traefik.http.middlewares.hubphpmyadmin-${ENV_ID}-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.hubphpmyadmin-${ENV_ID}-stripprefix.stripprefix.prefixes=/${ENV_ID}/phpmyadmin"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.middlewares=hubphpmyadmin-${ENV_ID}-https-redirect"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.entrypoints=https"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.rule=Host(`hubod.kanaliiga.fi`) && PathPrefix(`/${ENV_ID}/phpmyadmin/`)"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.tls=true"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.tls.domains[0].main=hubod.kanaliiga.fi"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.priority=100"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}.priority=100"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.middlewares=hubphpmyadmin-${ENV_ID}-stripprefix,hubphpmyadmin-${ENV_ID}-auth"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.tls.certresolver=http"
-      - "traefik.http.routers.hubphpmyadmin-${ENV_ID}-secure.service=hubphpmyadmin-${ENV_ID}"
-      - "traefik.http.services.hubphpmyadmin-${ENV_ID}.loadbalancer.server.port=80"
-      - "traefik.docker.network=web"
+      - eggo-network-${ENV_ID}
+
+volumes:
+  mysql-data:
+  redis-data:
 
 networks:
-  web:
-    external: true
-    name: web
+  eggo-network-${ENV_ID}:
+    driver: bridge

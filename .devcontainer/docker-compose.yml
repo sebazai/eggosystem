@@ -47,3 +47,7 @@ services:
 
 networks:
   eggo-dev:
+
+volumes:
+  redis-data:
+    driver: local

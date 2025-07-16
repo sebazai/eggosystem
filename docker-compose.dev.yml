@@ -106,9 +106,12 @@ services:
 
   eggo-dev-redis:
     image: redis:8-alpine
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
     networks:
       - web
     restart: always
+    volumes:
+      - redis-data:/data
 
   phpmyadmin-hubdev:
     depends_on:
@@ -161,3 +164,6 @@ services:
 networks:
   web:
     external: true
+
+volumes:
+  redis-data:

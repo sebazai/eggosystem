@@ -51,7 +51,7 @@ export function PlayerValuesFloatingWindow({
     if (typeof window === "undefined")
       return { top: position.y, left: position.x };
 
-    const windowWidth = 450; // Approximate width of the window
+    const windowWidth = 650; // Approximate width of the window
     const windowHeight = 350; // Approximate height of the window
 
     let left = position.x;
@@ -75,7 +75,7 @@ export function PlayerValuesFloatingWindow({
   return (
     <div
       ref={windowRef}
-      className={`fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border border-gray-200 dark:border-gray-700 w-[450px] transition-all duration-200 ease-out ${
+      className={`fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border border-gray-200 dark:border-gray-700 w-[650px] transition-all duration-200 ease-out ${
         isVisible ? "opacity-100 transform-none" : "opacity-0 scale-95"
       }`}
       style={{ top: `${top}px`, left: `${left}px` }}
@@ -133,6 +133,12 @@ export function PlayerValuesFloatingWindow({
                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   RATING
                 </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  KANA_ELO
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  CALCULUS
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -155,6 +161,12 @@ export function PlayerValuesFloatingWindow({
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs">
                     {player.kanarating ? player.kanarating.toFixed(2) : "0.00"}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs">
+                    {player.kana_elo}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs">
+                    {player.calculus || "-"}
                   </td>
                 </tr>
               ))}

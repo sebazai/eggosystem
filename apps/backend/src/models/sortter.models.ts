@@ -14,10 +14,12 @@ import {
  * - Kanaelo values for top 5 players as an array
  *
  * @param seasonId The season ID to filter teams by
+ * @param isHistorical If true, don't filter by approved=true (for historical data)
  * @returns Array of team values
  */
 export const getTeamValuesForSorter = async (
-  seasonId: number
+  seasonId: number,
+  isHistorical: boolean = false
 ): Promise<TeamSortterValues[]> => {
   const query = `
     WITH TeamPlayersKanaElo AS (
@@ -25,16 +27,18 @@ export const getTeamValuesForSorter = async (
         t.id AS team_id,
         t.name AS team_name,
         t.team_logo,
-        l.name AS league_name,
+        COALESCE(l.name, 'Unassigned') AS league_name,
         spr.steam_id,
         spr.kana_elo,
         ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
-      JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
-      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = slt.season_id
-      JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
-      JOIN Leagues l ON l.id = slt.league_id
-      WHERE slt.season_id = ?
+      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
+      JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
+      ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+      LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+      LEFT JOIN Leagues l ON l.id = slt.league_id
+      WHERE stp.season_id = ?
+        ${!isHistorical ? "AND str.approved = 1" : ""}
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamTop5Players AS (
@@ -69,6 +73,7 @@ export const getTeamValuesForSorter = async (
       avg4,
       top5_values
     FROM TeamValues
+    ORDER BY avg4 DESC
     ORDER BY avg4 DESC
   `;
 
@@ -106,11 +111,13 @@ export const getTeamValuesForSorter = async (
  *
  * @param seasonId The season ID to filter by
  * @param teamId The team ID to filter by
+ * @param isHistorical If true, don't filter by approved=true (for historical data)
  * @returns Array of player values
  */
 export const getTeamPlayerValuesForSortter = async (
   seasonId: number,
-  teamId: number
+  teamId: number,
+  isHistorical: boolean = false
 ): Promise<PlayerSortterValues[]> => {
   const query = `
     SELECT
@@ -121,17 +128,20 @@ export const getTeamPlayerValuesForSortter = async (
       spr.faceit_elo,
       spr.cs_hours AS hours,
       ROUND(AVG(ps.kana_rating), 6) AS kanarating,
-      spr.faceit_kd AS fkd
+      spr.faceit_kd AS fkd,
+      spr.kana_elo,
+      NULL AS calculus
     FROM Teams t
-    JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
-    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = slt.season_id
+    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
+    ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
     JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
-    JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
+    JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
     LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
     LEFT JOIN MatchGames mg ON mg.id = ps.game_id
-    LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = slt.season_id
-    WHERE slt.season_id = ?
-      AND slt.team_id = ?
+    LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = stp.season_id
+    WHERE stp.season_id = ?
+      AND stp.team_id = ?
+      ${!isHistorical ? "AND str.approved = 1" : ""}
     GROUP BY
       sp.nickname,
       sp.steam_id,
@@ -139,7 +149,8 @@ export const getTeamPlayerValuesForSortter = async (
       spr.faceit_level,
       spr.faceit_elo,
       spr.cs_hours,
-      spr.faceit_kd
+      spr.faceit_kd,
+      spr.kana_elo
     ORDER BY
       spr.kana_elo DESC
   `;
@@ -155,9 +166,13 @@ export const getTeamPlayerValuesForSortter = async (
 /**
  * Gets teams for a specific season for the add player functionality
  * Returns teams with their league information
+ *
+ * @param seasonId The season ID to filter by
+ * @param isHistorical If true, don't filter by approved=true (for historical data)
  */
 export const getTeamsForSeason = async (
-  seasonId: number
+  seasonId: number,
+  isHistorical: boolean = false
 ): Promise<
   Array<{ team_id: number; team_name: string; league_name: string }>
 > => {
@@ -165,11 +180,14 @@ export const getTeamsForSeason = async (
     SELECT DISTINCT
       t.id AS team_id,
       t.name AS team_name,
-      l.name AS league_name
+      COALESCE(l.name, 'Unassigned') AS league_name
     FROM Teams t
-    JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
-    JOIN Leagues l ON l.id = slt.league_id
-    WHERE slt.season_id = ?
+    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
+    ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+    LEFT JOIN Leagues l ON l.id = slt.league_id
+    WHERE stp.season_id = ?
+      ${!isHistorical ? "AND str.approved = 1" : ""}
     ORDER BY t.name ASC
   `;
 
@@ -241,11 +259,17 @@ const getStabilizedKanaElo = async (steamId: string): Promise<number> => {
  * - Selected team's current top 3 players + new player average
  * - Top 3 teams in the same league with their avg4 values
  * - Whether the player can be added
+ *
+ * @param seasonId The season ID
+ * @param teamId The team ID
+ * @param newPlayerSteamId The steam ID of the player to check
+ * @param isHistorical If true, don't filter by approved=true (for historical data)
  */
 export const checkPlayerAdditionEligibility = async (
   seasonId: number,
   teamId: number,
-  newPlayerSteamId: string
+  newPlayerSteamId: string,
+  isHistorical: boolean = false
 ): Promise<{
   selectedTeam: {
     team_id: number;
@@ -271,22 +295,27 @@ export const checkPlayerAdditionEligibility = async (
 }> => {
   // First, get the league for the selected team
   const leagueQuery = `
-    SELECT l.name AS league_name
-    FROM SeasonLeagueTeams slt
-    JOIN Leagues l ON l.id = slt.league_id
-    WHERE slt.season_id = ? AND slt.team_id = ?
+    SELECT COALESCE(l.name, 'Unassigned') AS league_name
+    FROM Teams t
+    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
+    ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+    LEFT JOIN Leagues l ON l.id = slt.league_id
+    WHERE stp.season_id = ? AND stp.team_id = ?
+      ${!isHistorical ? "AND str.approved = 1" : ""}
     LIMIT 1
   `;
 
-  const [leagueResult] = await runQuery<Array<{ league_name: string }>>(
+  const leagueResults = await runQuery<Array<{ league_name: string }>>(
     leagueQuery,
     [seasonId, teamId]
   );
-  if (!leagueResult) {
+
+  if (!leagueResults || leagueResults.length === 0) {
     throw new Error(`Team ${teamId} not found in season ${seasonId}`);
   }
 
-  const leagueName = leagueResult.league_name;
+  const leagueName = leagueResults[0].league_name;
 
   // Get stabilized kana_elo from CSRankker service
   const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
@@ -346,8 +375,10 @@ export const checkPlayerAdditionEligibility = async (
         ROW_NUMBER() OVER (ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
       JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = ?
+      ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = ?
       WHERE t.id = ?
+        ${!isHistorical ? "AND str.approved = 1" : ""}
     )
     SELECT
       ttp.team_id,
@@ -388,9 +419,11 @@ export const checkPlayerAdditionEligibility = async (
       FROM Teams t
       JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
       JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = slt.season_id
+      ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id
       WHERE slt.season_id = ? AND l.name = ?
+        ${!isHistorical ? "AND str.approved = 1" : ""}
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamAvg4 AS (

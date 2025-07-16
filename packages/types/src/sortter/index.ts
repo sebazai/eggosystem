@@ -25,6 +25,18 @@ export interface TeamSortterValuesRaw
 }
 
 /**
+ * Interface for team placement data stored in Redis
+ */
+export interface TeamPlacement {
+  team_id: number;
+  team_name: string;
+  division: number;
+  comments: string;
+  original_avg: number;
+  original_position: number;
+}
+
+/**
  * Interface for player values used in the sortter functionality
  * Contains player statistics and ranking information
  * Values can be null from the database
@@ -40,6 +52,8 @@ export interface PlayerSortterValues {
   hours: SeasonPlayerRank["cs_hours"] | null;
   kanarating: number | null;
   fkd: number | null;
+  kana_elo: SeasonPlayerRank["kana_elo"];
+  calculus: string | null;
 }
 
 /**

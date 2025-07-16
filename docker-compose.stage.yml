@@ -1,19 +1,18 @@
 services:
-  backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:${BACKEND_VERSION}
-    pull_policy: always
+  eggo-stage-backend:
+    image: ${CI_REGISTRY_IMAGE}/backend:${CI_COMMIT_REF_SLUG}
+    restart: always
     depends_on:
-      eggo-stage-db:
-        condition: service_healthy
+      - eggo-stage-redis
+      - eggo-stage-db
     environment:
       NODE_ENV: production
-      DB_HOST: eggo-stage-db
-      DB_USER: ${MARIADB_USER}
-      DB_PASSWORD: "${MARIADB_STAGE_PASSWORD}"
-      DB_NAME: ${MARIADB_DATABASE}
-      DB_PORT: 3306
-      FRONTEND_URL: https://${HUBSTAGE_PUBLIC_URL}
-      BACKEND_URL: https://${HUBSTAGE_PUBLIC_URL}
+      PORT: 3001
+      MYSQL_HOST: eggo-stage-db
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
       REDIS_HOST: eggo-stage-redis
       REDIS_PORT: 6379
       STEAM_API_KEY: $STEAM_API_KEY
@@ -38,133 +37,51 @@ services:
       FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
     networks:
       - web
-    volumes:
-      - ./public_access_token.pem:/usr/src/app/public_access_token.pem
-      - ./public_refresh_token.pem:/usr/src/app/public_refresh_token.pem
-      - ./private_access_token.pem:/usr/src/app/private_access_token.pem
-      - ./private_refresh_token.pem:/usr/src/app/private_refresh_token.pem
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hubbestage.entrypoints=http"
-      - "traefik.http.routers.hubbestage.rule=Host(`${HUBSTAGE_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.middlewares.hubbestage-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.hubbestage.middlewares=hubbestage-https-redirect"
-      - "traefik.http.routers.hubbestage-secure.entrypoints=https"
-      - "traefik.http.routers.hubbestage-secure.rule=Host(`${HUBSTAGE_PUBLIC_URL}`) && PathPrefix(`/api/v1`)"
-      - "traefik.http.routers.hubbestage-secure.tls=true"
-      - "traefik.http.routers.hubbestage-secure.tls.domains[0].main=${HUBSTAGE_PUBLIC_URL}"
-      - "traefik.http.routers.hubbestage-secure.tls.certresolver=http"
-      - "traefik.http.routers.hubbestage-secure.service=hubbestage"
-      - "traefik.http.services.hubbestage.loadbalancer.server.port=3001"
-      - "traefik.docker.network=web"
-    restart: always
 
-  frontend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${FRONTEND_VERSION}
-    pull_policy: always
+  eggo-stage-frontend:
+    image: ${CI_REGISTRY_IMAGE}/frontend:${CI_COMMIT_REF_SLUG}
+    restart: always
     depends_on:
-      - backend
+      - eggo-stage-backend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: https://${HUBSTAGE_PUBLIC_URL}
-      NEXT_PUBLIC_CLIENT_API_URL: https://${HUBSTAGE_PUBLIC_URL}
-      NEXT_PUBLIC_BASE_URL: https://${HUBSTAGE_PUBLIC_URL}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_CLIENT_API_URL: ${NEXT_PUBLIC_CLIENT_API_URL}
+      NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL}
     networks:
       - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.kanahubstage.entrypoints=http"
-      - "traefik.http.routers.kanahubstage.rule=Host(`${HUBSTAGE_PUBLIC_URL}`)"
-      - "traefik.http.middlewares.kanahubstage-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.kanahubstage.middlewares=kanahubstage-https-redirect"
-      - "traefik.http.routers.kanahubstage-secure.entrypoints=https"
-      - "traefik.http.routers.kanahubstage-secure.rule=Host(`${HUBSTAGE_PUBLIC_URL}`)"
-      - "traefik.http.routers.kanahubstage-secure.tls=true"
-      - "traefik.http.routers.kanahubstage-secure.tls.domains[0].main=${HUBSTAGE_PUBLIC_URL}"
-      - "traefik.http.routers.kanahubstage-secure.tls.certresolver=http"
-      - "traefik.http.routers.kanahubstage-secure.service=kanahubstage"
-      - "traefik.http.services.kanahubstage.loadbalancer.server.port=3000"
-      - "traefik.docker.network=web"
-    restart: always
 
   eggo-stage-db:
     image: bitnami/mariadb:11.7.2
-    container_name: eggo-stage-db
     restart: always
     environment:
-      MARIADB_ROOT_PASSWORD: "${MARIADB_STAGE_ROOT_PASSWORD}"
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: "${MARIADB_STAGE_PASSWORD}"
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MARIADB_USER=${MYSQL_USER}
+      - MARIADB_PASSWORD=${MYSQL_PASSWORD}
+      - MARIADB_DATABASE=${MYSQL_DATABASE}
+    volumes:
+      - mysql-data:/bitnami/mariadb
     networks:
       - web
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "mariadb-admin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p$MARIADB_STAGE_ROOT_PASSWORD"
-        ]
-      timeout: 20s
-      retries: 10
-    volumes:
-      - ./my.cnf:/opt/bitnami/mariadb/conf/my.cnf
-      - ./db-data:/bitnami/mariadb
 
   eggo-stage-redis:
     image: redis:8-alpine
+    restart: always
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
+    volumes:
+      - redis-data:/data
     networks:
       - web
-    restart: always
 
-  phpmyadmin-hubstage:
-    depends_on:
-      - eggo-stage-db
+  eggo-stage-phpmyadmin:
     image: phpmyadmin/phpmyadmin:5.2.2
     restart: always
-    environment:
-      PMA_HOST: eggo-stage-db
-      PMA_ABSOLUTE_URI: https://${HUBSTAGE_PUBLIC_URL}/mysadmin/
-      UPLOAD_LIMIT: 1G
-    networks:
-      - web
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.phpmyadmin-hubstage.entrypoints=http"
-      - "traefik.http.routers.phpmyadmin-hubstage.rule=Host(`${HUBSTAGE_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
-      - "traefik.http.middlewares.phpmyadmin-hubstage-stripprefix.stripprefix.prefixes=/mysadmin"
-      - "traefik.http.middlewares.phpmyadmin-hubstage-auth.basicauth.users=${PHPMYADMIN_AUTH}"
-      - "traefik.http.middlewares.phpmyadmin-hubstage-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.phpmyadmin-hubstage.middlewares=phpmyadmin-hubstage-https-redirect"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.entrypoints=https"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.rule=Host(`${HUBSTAGE_PUBLIC_URL}`) && PathPrefix(`/mysadmin/`)"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.tls=true"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.tls.domains[0].main=${HUBSTAGE_PUBLIC_URL}"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.tls.certresolver=http"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.service=phpmyadmin-hubstage"
-      - "traefik.http.routers.phpmyadmin-hubstage-secure.middlewares=phpmyadmin-hubstage-stripprefix,phpmyadmin-hubstage-auth"
-      - "traefik.http.services.phpmyadmin-hubstage.loadbalancer.server.port=80"
-      - "traefik.docker.network=web"
-
-  eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${MIGRATIONS_VERSION}
     depends_on:
-      eggo-stage-db:
-        condition: service_healthy
+      - eggo-stage-db
     environment:
-      DB_HOST: eggo-stage-db
-      DB_USER: ${MARIADB_USER}
-      DB_PASSWORD: "${MARIADB_STAGE_PASSWORD}"
-      DB_NAME: ${MARIADB_DATABASE}
-      DB_PORT: 3306
-      WAIT_FOR_DB: ${KANA}
-    entrypoint: ["scripts/wait-for-kanadb.sh"]
-    command: "npx knex migrate:latest"
+      - PMA_HOST=eggo-stage-db
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
     networks:
       - web
     restart: no
@@ -183,13 +100,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rabbitmq-hubstage.entrypoints=http"
-      - "traefik.http.routers.rabbitmq-hubstage.rule=Host(`hubstage-mq.kanaliiga.fi`)"
+      - "traefik.http.routers.rabbitmq-hubstage.rule=Host(`hubdev-mq.kanaliiga.fi`)"
       - "traefik.http.middlewares.rabbitmq-hubstage-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.rabbitmq-hubstage.middlewares=rabbitmq-hubstage-https-redirect"
       - "traefik.http.routers.rabbitmq-hubstage-secure.entrypoints=https"
-      - "traefik.http.routers.rabbitmq-hubstage-secure.rule=Host(`hubstage-mq.kanaliiga.fi`)"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.rule=Host(`hubdev-mq.kanaliiga.fi`)"
       - "traefik.http.routers.rabbitmq-hubstage-secure.tls=true"
-      - "traefik.http.routers.rabbitmq-hubstage-secure.tls.domains[0].main=hubstage-mq.kanaliiga.fi"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls.domains[0].main=hubdev-mq.kanaliiga.fi"
       - "traefik.http.routers.rabbitmq-hubstage-secure.tls.certresolver=http"
       - "traefik.http.routers.rabbitmq-hubstage-secure.service=rabbitmq-hubstage"
       - "traefik.http.services.rabbitmq-hubstage.loadbalancer.server.port=15672"

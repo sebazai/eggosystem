@@ -43,7 +43,9 @@ const mockPlayerValues: PlayerSortterValues[] = [
     faceit_elo: 2450,
     hours: 1500,
     kanarating: 1.25,
-    fkd: 1.5
+    fkd: 1.5,
+    kana_elo: 1200,
+    calculus: "A"
   },
   {
     name: "TestPlayer2",
@@ -53,7 +55,9 @@ const mockPlayerValues: PlayerSortterValues[] = [
     faceit_elo: 2100,
     hours: 800,
     kanarating: 0.95,
-    fkd: 0.8
+    fkd: 0.8,
+    kana_elo: 1100,
+    calculus: "B"
   }
 ];
 
@@ -309,7 +313,9 @@ describe("PlayerValuesFloatingWindow", () => {
           faceit_elo: 800, // faceit_elo cannot be null according to the type
           hours: null,
           kanarating: null,
-          fkd: null
+          fkd: null,
+          kana_elo: 900,
+          calculus: null
         }
       ];
 
