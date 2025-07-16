@@ -298,7 +298,7 @@ export const getPlayerKanaRank = async (steam_id: string) => {
 
   const position = playerPosition + 1;
 
-  if (position <= TOP_COCK_COUNT) {
+  if (position <= TOP_COCK_COUNT && position > 0) {
     return {
       rank: "TOP_COCK",
       subrank: 1,
