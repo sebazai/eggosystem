@@ -125,12 +125,9 @@ services:
 
   eggo-prod-redis:
     image: redis:8-alpine
-    command: redis-server --appendonly yes --save 60 1 --loglevel warning
     networks:
       - web
     restart: always
-    volumes:
-      - redis-data:/data
 
   migrations:
     image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${MIGRATIONS_VERSION}
@@ -245,4 +242,3 @@ networks:
 volumes:
   mariadb_data:
     name: eggo_mariadb_data
-  redis-data:

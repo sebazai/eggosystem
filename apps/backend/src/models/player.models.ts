@@ -585,3 +585,25 @@ export const getPlayerMapStatsWithFilters = async (
   const results = await Promise.all(mapStatPromises);
   return results.filter(Boolean) as PlayerMapStats[];
 };
+
+export const setPlayerKanaElo = async (
+  steam_id: string,
+  kana_elo: number,
+  calculus: string,
+  season_id: number
+): Promise<boolean> => {
+  const query = `
+    UPDATE SeasonPlayerRanks 
+    SET calculus = ?, kana_elo = ? 
+    WHERE season_id = ? AND steam_id = ?
+  `;
+
+  const result = await runQuery<{ affectedRows: number }>(query, [
+    calculus,
+    kana_elo,
+    season_id,
+    steam_id
+  ]);
+
+  return result.affectedRows > 0;
+};

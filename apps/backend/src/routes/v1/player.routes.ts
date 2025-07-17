@@ -8,9 +8,11 @@ import {
   getPlayerPlatformRank,
   getPlayerKanaRankController,
   getPlayerOldKanaEloController,
-  getPlayerStatsForLatestSeasonController
+  getPlayerStatsForLatestSeasonController,
+  setPlayerKanaEloController
 } from "../../controllers/players.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 
 // New Router instance
 const router = Router();
@@ -37,5 +39,12 @@ router.get(
   getPlayerStatsForLatestSeasonController
 );
 router.get("/:steam_id/oldkanaelo", getPlayerOldKanaEloController);
+
+// Protected route for setting kanaelo - requires API key authentication
+router.post(
+  "/:steam_id/set-kanaelo",
+  createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY),
+  setPlayerKanaEloController
+);
 
 export default router;

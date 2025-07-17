@@ -94,7 +94,6 @@ erDiagram
 "SeasonLeagues" }o--|| "Leagues" : ""
 "SeasonLeagues" }o--|| "Seasons" : ""
 "SeasonLeagueTeams" }o--|| "SeasonLeagues" : ""
-"SeasonLeagueTeams" }o--|| "SeasonTeamRegistrations" : ""
 "SeasonPlayerApprovals" }o--o| "Accounts" : ""
 "SeasonPlayerApprovals" }o--o| "Organizations" : ""
 "SeasonPlayerApprovals" }o--o| "Seasons" : ""
@@ -104,10 +103,9 @@ erDiagram
 "SeasonPlayerRanks" }o--|| "SteamPlayers" : ""
 "Seasons" }o--|| "Games" : ""
 "Seasons" }o--o| "GameTypes" : ""
-"SeasonTeamPlayers" }o--|| "SeasonTeamRegistrations" : ""
 "SeasonTeamPlayers" }o--|| "SteamPlayers" : ""
-"SeasonTeamRegistrations" }o--o| "SteamPlayers" : ""
-"SeasonTeamRegistrations" }o--o| "SteamPlayers" : ""
+"SeasonTeamRegistrationPlayers" }o--|| "SeasonTeamRegistrations" : ""
+"SeasonTeamRegistrationPlayers" }o--|| "SteamPlayers" : ""
 "SeasonTeamRegistrations" }o--|| "Seasons" : ""
 "SeasonTeamRegistrations" }o--|| "Teams" : ""
 "SteamPlayers" }o--o| "Accounts" : ""
@@ -271,11 +269,14 @@ erDiagram
   int_10__unsigned team_id PK
   bigint_20_ steam_id PK
 }
+"SeasonTeamRegistrationPlayers" {
+  int_10__unsigned season_id PK
+  int_10__unsigned team_id PK
+  bigint_20_ steam_id PK
+}
 "SeasonTeamRegistrations" {
   int_10__unsigned season_id PK
   int_10__unsigned team_id PK
-  bigint_20_ captain_steam_id FK
-  bigint_20_ co_captain_steam_id FK
 }
 "Stages" {
   int_10__unsigned id PK

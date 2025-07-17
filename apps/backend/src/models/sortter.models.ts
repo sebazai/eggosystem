@@ -38,6 +38,7 @@ export const getTeamValuesForSorter = async (
       LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
       LEFT JOIN Leagues l ON l.id = slt.league_id
       WHERE stp.season_id = ?
+        AND spr.kana_elo IS NOT NULL
         ${!isHistorical ? "AND str.approved = 1" : ""}
       ORDER BY t.id, spr.kana_elo DESC
     ),
@@ -141,6 +142,7 @@ export const getTeamPlayerValuesForSortter = async (
     LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = stp.season_id
     WHERE stp.season_id = ?
       AND stp.team_id = ?
+      AND spr.kana_elo IS NOT NULL
       ${!isHistorical ? "AND str.approved = 1" : ""}
     GROUP BY
       sp.nickname,
@@ -378,6 +380,7 @@ export const checkPlayerAdditionEligibility = async (
       ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = ?
       WHERE t.id = ?
+        AND spr.kana_elo IS NOT NULL
         ${!isHistorical ? "AND str.approved = 1" : ""}
     )
     SELECT
@@ -423,6 +426,7 @@ export const checkPlayerAdditionEligibility = async (
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id
       WHERE slt.season_id = ? AND l.name = ?
+        AND spr.kana_elo IS NOT NULL
         ${!isHistorical ? "AND str.approved = 1" : ""}
       ORDER BY t.id, spr.kana_elo DESC
     ),

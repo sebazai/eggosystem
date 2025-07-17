@@ -9,7 +9,8 @@ import {
   getPlayerTeamDetailsWithFilters,
   getPlayerStatsForLatestSeason,
   getPlayerOldKanaElo,
-  getPlayerMapStatsWithFilters
+  getPlayerMapStatsWithFilters,
+  setPlayerKanaElo
 } from "../models/player.models";
 
 import {
@@ -20,7 +21,7 @@ import {
 } from "../services/player-ranks.services";
 import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
-
+import { getActiveSignupOrActiveSeasonForAppId } from "../models/season.models";
 import {
   getPlayerSkillDiagram,
   getMultiplePlayersSkillDiagrams
@@ -68,7 +69,7 @@ export const getPlayerSteamAppIdHours = async (req: Request, res: Response) => {
   const app_id = Number(req.params.app_id);
   const season_id = req.query.season_id?.toString()
     ? parseInt(req.query.season_id.toString(), 10)
-    : undefined;
+    : (await getActiveSignupOrActiveSeasonForAppId(730))?.season_id;
 
   if (season_id && isNaN(season_id)) {
     throw new Error("Season id query param is not a number.");
@@ -321,4 +322,73 @@ export const getFilteredPlayerMapStatsController = async (
   );
 
   res.status(200).json(playerMapStats);
+};
+
+export const setPlayerKanaEloController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { steam_id } = req.params;
+    const { kana_elo, calculus, season_id } = req.body;
+
+    // Validate required fields
+    if (kana_elo === undefined || kana_elo === null) {
+      res.status(400).json({ error: "kana_elo is required" });
+      return;
+    }
+
+    if (!calculus) {
+      res.status(400).json({ error: "calculus is required" });
+      return;
+    }
+
+    if (season_id === undefined || season_id === null) {
+      res.status(400).json({ error: "season_id is required" });
+      return;
+    }
+
+    // Validate data types
+    if (typeof kana_elo !== "number") {
+      res.status(400).json({ error: "kana_elo must be a number" });
+      return;
+    }
+
+    if (typeof season_id !== "number") {
+      res.status(400).json({ error: "season_id must be a number" });
+      return;
+    }
+
+    // Validate kana_elo range
+    if (kana_elo < 0 || kana_elo > 400) {
+      res.status(400).json({ error: "kana_elo must be between 0 and 400" });
+      return;
+    }
+
+    // Update the kana_elo using the model function
+    const success = await setPlayerKanaElo(
+      steam_id,
+      kana_elo,
+      calculus,
+      season_id
+    );
+
+    if (!success) {
+      res
+        .status(404)
+        .json({ error: "Player not found for the specified season" });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Kana ELO updated successfully",
+      steam_id,
+      kana_elo,
+      calculus,
+      season_id
+    });
+  } catch (error) {
+    console.error("Error updating kana ELO:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };

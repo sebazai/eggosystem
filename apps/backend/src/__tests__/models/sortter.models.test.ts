@@ -5,7 +5,6 @@ import {
   checkPlayerAdditionEligibility
 } from "../../models/sortter.models";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { mswServer } from "@eggosystem/shared-msw";
 
 // Mock the runQuery function
 jest.mock("../../db/mysqlRunQuery");
@@ -41,41 +40,23 @@ describe("Sortter Models", () => {
   describe("getTeamValuesForSorter", () => {
     it("should return all teams with their values for a given season", async () => {
       const mockData = [
-      const mockData = [
         {
           team_id: 1,
           team_name: "Test Team",
           team_logo: "logo.png",
           league_name: "Test League",
-          team_id: 1,
-          team_name: "Test Team",
-          team_logo: "logo.png",
-          league_name: "Test League",
           top5_sum: 1000,
-          avg4: 250,
-          top5_values: "[100, 200, 300, 400, 500]"
           avg4: 250,
           top5_values: "[100, 200, 300, 400, 500]"
         }
       ];
 
       mockRunQuery.mockResolvedValue(mockData);
-      mockRunQuery.mockResolvedValue(mockData);
 
-      const result = await getTeamValuesForSorter(1);
       const result = await getTeamValuesForSorter(1);
 
       expect(result).toEqual([
         {
-          team_id: 1,
-          team_name: "Test Team",
-          team_logo: "logo.png",
-          league_name: "Test League",
-          top5_sum: 1000,
-          avg4: 250,
-          top5_values: [100, 200, 300, 400, 500]
-        }
-      ]);
           team_id: 1,
           team_name: "Test Team",
           team_logo: "logo.png",
@@ -91,16 +72,13 @@ describe("Sortter Models", () => {
       mockRunQuery.mockResolvedValue([]);
 
       const result = await getTeamValuesForSorter(1);
-      const result = await getTeamValuesForSorter(1);
 
       expect(result).toEqual([]);
     });
 
     it("should match expected values for team CSKeisari", async () => {
       const mockData = [
-      const mockData = [
         {
-          team_id: 1,
           team_id: 1,
           team_name: "CSKeisari",
           team_logo: "logo.png",
@@ -108,28 +86,18 @@ describe("Sortter Models", () => {
           top5_sum: 1000,
           avg4: 250,
           top5_values: "[100, 200, 300, 400, 500]"
-          team_logo: "logo.png",
-          league_name: "Test League",
-          top5_sum: 1000,
-          avg4: 250,
-          top5_values: "[100, 200, 300, 400, 500]"
         }
       ];
 
       mockRunQuery.mockResolvedValue(mockData);
-      mockRunQuery.mockResolvedValue(mockData);
 
       const result = await getTeamValuesForSorter(1);
-      const result = await getTeamValuesForSorter(1);
 
-      expect(result[0].team_name).toBe("CSKeisari");
-      expect(result[0].top5_values).toEqual([100, 200, 300, 400, 500]);
       expect(result[0].team_name).toBe("CSKeisari");
       expect(result[0].top5_values).toEqual([100, 200, 300, 400, 500]);
     });
 
     it("should convert team values from raw database format to expected format", async () => {
-      const mockData = [
       const mockData = [
         {
           team_id: 1,
@@ -139,23 +107,13 @@ describe("Sortter Models", () => {
           top5_sum: 1000,
           avg4: 250,
           top5_values: "[100, 200, 300, 400, 500]"
-          team_name: "Test Team",
-          team_logo: "logo.png",
-          league_name: "Test League",
-          top5_sum: 1000,
-          avg4: 250,
-          top5_values: "[100, 200, 300, 400, 500]"
         }
       ];
 
       mockRunQuery.mockResolvedValue(mockData);
-      mockRunQuery.mockResolvedValue(mockData);
 
       const result = await getTeamValuesForSorter(1);
 
-      expect(result[0].top5_values).toEqual([100, 200, 300, 400, 500]);
-      expect(typeof result[0].top5_values).toBe("object");
-      expect(Array.isArray(result[0].top5_values)).toBe(true);
       expect(result[0].top5_values).toEqual([100, 200, 300, 400, 500]);
       expect(typeof result[0].top5_values).toBe("object");
       expect(Array.isArray(result[0].top5_values)).toBe(true);
@@ -199,16 +157,7 @@ describe("Sortter Models", () => {
   describe("getTeamPlayerValuesForSortter", () => {
     it("should return player values for a specific team and season", async () => {
       const mockData = [
-      const mockData = [
         {
-          name: "Test Player",
-          steamid: "123456789",
-          cs2_rank: 10,
-          faceit_level: 5,
-          faceit_elo: 1500,
-          hours: 1000,
-          kanarating: 1.5,
-          fkd: 1.2
           name: "Test Player",
           steamid: "123456789",
           cs2_rank: 10,
@@ -221,20 +170,15 @@ describe("Sortter Models", () => {
       ];
 
       mockRunQuery.mockResolvedValue(mockData);
-      mockRunQuery.mockResolvedValue(mockData);
 
       const result = await getTeamPlayerValuesForSortter(1, 1);
-      const result = await getTeamPlayerValuesForSortter(1, 1);
 
-      expect(result).toEqual(mockData);
       expect(result).toEqual(mockData);
     });
 
     it("should handle null values in the result", async () => {
       const mockData = [
-      const mockData = [
         {
-          name: "Test Player",
           name: "Test Player",
           steamid: "123456789",
           cs2_rank: null,
