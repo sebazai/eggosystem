@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Router } from "express";
 import {
@@ -80,23 +81,60 @@ const processWebhookWithDetails = async <
   detailsValidator: (data: unknown) => MD,
   eventType: string
 ) => {
-  // Validate webhook data
-  const validatedWebhook = webhookValidator(webhookData);
-  const externalMatchRoomId = validatedWebhook.payload.id;
+  let matchDetails: MD | null = null;
+  let externalMatchRoomId = "";
+  try {
+    // Validate webhook data
+    const validatedWebhook = webhookValidator(webhookData);
+    externalMatchRoomId = validatedWebhook.payload.id;
 
-  // Fetch and validate match details
-  const matchDetails = await getDetailsFunction(externalMatchRoomId);
-  const validatedMatchDetails = detailsValidator(matchDetails);
+    // Fetch and validate match details
+    matchDetails = await getDetailsFunction(externalMatchRoomId);
+    const validatedMatchDetails = detailsValidator(matchDetails);
 
-  // Save to database
-  await saveWebhookData(
-    externalMatchRoomId,
-    eventType,
-    JSON.stringify(validatedWebhook),
-    JSON.stringify(validatedMatchDetails)
-  );
+    // Save to database
+    await saveWebhookData(
+      externalMatchRoomId,
+      eventType,
+      JSON.stringify(validatedWebhook),
+      JSON.stringify(validatedMatchDetails)
+    );
 
-  return { webhookData: validatedWebhook, matchDetails: validatedMatchDetails };
+    return {
+      webhookData: validatedWebhook,
+      matchDetails: validatedMatchDetails
+    };
+  } catch (error) {
+    if (error instanceof WebhookValidationError) {
+      logger.error("Webhook validation error", error);
+      await saveWebhookData(
+        externalMatchRoomId,
+        String((webhookData as any).event),
+        JSON.stringify(matchDetails),
+        JSON.stringify(error),
+        "WEBHOOK_VALIDATION_ERROR"
+      );
+    }
+    if (error instanceof MatchDetailsValidationError) {
+      logger.error("Match details validation error", error);
+      await saveWebhookData(
+        externalMatchRoomId,
+        String((webhookData as any).event),
+        JSON.stringify(matchDetails),
+        JSON.stringify(error),
+        "MATCH_DETAILS_VALIDATION_ERROR"
+      );
+    }
+    logger.error("Error handling webhook", error);
+    await saveWebhookData(
+      externalMatchRoomId,
+      String((webhookData as any).event),
+      JSON.stringify(matchDetails),
+      JSON.stringify(error),
+      "UNKNOWN_ERROR"
+    );
+    throw error;
+  }
 };
 
 router.post(
