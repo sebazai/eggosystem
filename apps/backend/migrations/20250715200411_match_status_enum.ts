@@ -1,5 +1,23 @@
-import { MatchGameStatus, MatchStatus } from "@eggosystem/types";
 import type { Knex } from "knex";
+
+export enum MatchStatus {
+  CREATED = "CREATED",
+  VOTING = "VOTING",
+  ONGOING = "ONGOING",
+  FINISHED = "FINISHED",
+  ABORTED = "ABORTED",
+  CANCELLED = "CANCELLED"
+}
+
+export enum MatchGameStatus {
+  CREATED = "CREATED",
+  CONFIGURING = "CONFIGURING",
+  READY = "READY",
+  ONGOING = "ONGOING",
+  FINISHED = "FINISHED",
+  ABORTED = "ABORTED",
+  CANCELLED = "CANCELLED"
+}
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable("Matches", (table) => {
