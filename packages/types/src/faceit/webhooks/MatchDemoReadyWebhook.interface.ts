@@ -1,10 +1,11 @@
 import { z } from "zod";
 import {
-  MatchEntity,
   FaceitMatchTeam,
-  MatchEntitySchema,
-  MatchTeamSchema,
-  BaseWebhookSchema
+  FaceitMatchmakingTeam,
+  FlexibleTeamSchema,
+  BaseWebhookSchema,
+  MatchEntity,
+  MatchEntitySchema
 } from "./Webhooks.interface";
 import { WebhookValidationError } from ".";
 
@@ -18,7 +19,7 @@ interface MatchDemoReadyPayload {
   updated_at: string;
   version: number;
   demo_url: string; // URL to download the demo file
-  teams: FaceitMatchTeam[];
+  teams: (FaceitMatchTeam | FaceitMatchmakingTeam)[];
 }
 
 export interface MatchDemoReadyWebhook {
@@ -44,7 +45,7 @@ const MatchDemoReadyPayloadSchema = z.object({
   updated_at: z.string(),
   version: z.number(),
   demo_url: z.string().url(), // Validate it's a proper URL
-  teams: z.array(MatchTeamSchema)
+  teams: z.array(FlexibleTeamSchema)
 });
 
 export const MatchDemoReadyWebhookSchema = BaseWebhookSchema.extend({

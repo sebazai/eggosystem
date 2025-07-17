@@ -33,3 +33,4 @@ export * from "./SeasonPlayerApprovals.interface";
 export * from "./Stage.interface";
 export * from "./SeasonTeamRegistrationPlayer.interface";
 export * from "./SeasonLeagueExternalId.interface";
+export * from "./FaceitWebhook.interface";

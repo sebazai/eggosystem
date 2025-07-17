@@ -3,7 +3,7 @@ import { z } from "zod";
 export interface MatchEntity {
   id: string;
   name: string;
-  type: string;
+  type: "championship" | "matchmaking";
 }
 
 export interface FaceitMatchTeam {
@@ -16,6 +16,13 @@ export interface FaceitMatchTeam {
   roster: TeamPlayer[];
   substitutions: number;
   substitutes: TeamPlayer[];
+}
+
+// Simplified team structure for matchmaking webhooks
+export interface FaceitMatchmakingTeam {
+  id: string;
+  name: string;
+  players: unknown[]; // Empty array in matchmaking webhooks
 }
 
 export interface TeamPlayer {
@@ -53,10 +60,23 @@ export const MatchTeamSchema = z.object({
   substitutes: z.array(TeamPlayerSchema)
 });
 
+// Schema for matchmaking teams (simplified structure)
+export const MatchmakingTeamSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  players: z.array(z.unknown()) // Empty array in matchmaking webhooks
+});
+
+// Union schema that can handle both championship and matchmaking team structures
+export const FlexibleTeamSchema = z.union([
+  MatchTeamSchema,
+  MatchmakingTeamSchema
+]);
+
 export const MatchEntitySchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.string()
+  type: z.literal("championship").or(z.literal("matchmaking"))
 });
 
 // Base webhook structure schema

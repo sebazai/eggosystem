@@ -110,9 +110,10 @@ const processWebhookWithDetails = async <
       await saveWebhookData(
         externalMatchRoomId,
         String((webhookData as any).event),
+        JSON.stringify(webhookData),
         JSON.stringify(matchDetails),
-        JSON.stringify(error),
-        "WEBHOOK_VALIDATION_ERROR"
+        "WEBHOOK_VALIDATION_ERROR",
+        JSON.stringify(error)
       );
     }
     if (error instanceof MatchDetailsValidationError) {
@@ -120,18 +121,20 @@ const processWebhookWithDetails = async <
       await saveWebhookData(
         externalMatchRoomId,
         String((webhookData as any).event),
+        JSON.stringify(webhookData),
         JSON.stringify(matchDetails),
-        JSON.stringify(error),
-        "MATCH_DETAILS_VALIDATION_ERROR"
+        "MATCH_DETAILS_VALIDATION_ERROR",
+        JSON.stringify(error)
       );
     }
     logger.error("Error handling webhook", error);
     await saveWebhookData(
       externalMatchRoomId,
       String((webhookData as any).event),
+      JSON.stringify(webhookData),
       JSON.stringify(matchDetails),
-      JSON.stringify(error),
-      "UNKNOWN_ERROR"
+      "UNKNOWN_ERROR",
+      JSON.stringify(error)
     );
     throw error;
   }
@@ -145,49 +148,37 @@ router.post(
     res: Response
   ): Promise<void> => {
     const webhookData = req.body;
-    console.log(webhookData);
-    try {
-      if (webhookData.event === "match_object_created") {
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateMatchObjectCreatedWebhook,
-          getFaceITMatchDetails<DetailsObjectCreated>,
-          validateDetailsObjectCreated,
-          "match_object_created"
-        );
-        await addMatchToDatabase(
-          validatedMatchDetails,
-          validatedWebhook.payload.entity.id
-        );
-      }
 
-      // This should be ok now, but ensure this happens for Match, not MatchGame.
-      if (webhookData.event === "match_status_finished") {
-        if (validateMatchStatusFinishedWebhook(webhookData)) {
-          const externalMatchRoomId = webhookData.payload.id;
-          const startTime = webhookData.payload.started_at;
-          if (
-            // Match was aborted due to AFK.
-            startTime === "1970-01-01T00:00:00Z" &&
-            validateMatchStatusFinishedAfterAbortWebhook(webhookData)
-          ) {
-            const endTime = webhookData.payload.finished_at;
-            // We do not want to change the match status, as this means it was aborted due to AFK.
-            await updateMatchEndTime(webhookData.payload.id, endTime);
-            await saveWebhookData(
-              externalMatchRoomId,
-              "match_status_finished",
-              JSON.stringify(webhookData),
-              null
-            );
-            return;
-          }
+    if (webhookData.event === "match_object_created") {
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateMatchObjectCreatedWebhook,
+        getFaceITMatchDetails<DetailsObjectCreated>,
+        validateDetailsObjectCreated,
+        "match_object_created"
+      );
+      await addMatchToDatabase(
+        validatedMatchDetails,
+        validatedWebhook.payload.entity.id
+      );
+    }
 
+    // This should be ok now, but ensure this happens for Match, not MatchGame.
+    if (webhookData.event === "match_status_finished") {
+      if (validateMatchStatusFinishedWebhook(webhookData)) {
+        const externalMatchRoomId = webhookData.payload.id;
+        const startTime = webhookData.payload.started_at;
+        if (
+          // Match was aborted due to AFK.
+          startTime === "1970-01-01T00:00:00Z" &&
+          validateMatchStatusFinishedAfterAbortWebhook(webhookData)
+        ) {
           const endTime = webhookData.payload.finished_at;
-          await updateMatchFinished(webhookData.payload.id, startTime, endTime);
+          // We do not want to change the match status, as this means it was aborted due to AFK.
+          await updateMatchEndTime(webhookData.payload.id, endTime);
           await saveWebhookData(
             externalMatchRoomId,
             "match_status_finished",
@@ -196,122 +187,100 @@ router.post(
           );
           return;
         }
-      }
-      if (webhookData.event === "match_status_ready") {
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateMatchStatusReadyWebhook,
-          getFaceITMatchDetails<DetailsObjectCreated>,
-          validateDetailsObjectCreated,
-          "match_status_ready"
-        );
-      }
-      if (webhookData.event === "match_status_configuring") {
-        // Get map vetos and bans here
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateMatchStatusConfiguringWebhook,
-          getFaceITMatchDetails<DetailsConfiguring>,
-          validateDetailsObjectCreated,
-          "match_status_ready"
-        );
-      }
-      if (webhookData.event === "match_demo_ready") {
-        // Validate players in both teams and push the demo url to parser
-        // Send demo_url to parser
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateMatchDemoReadyWebhook,
-          getFaceITMatchDetails<DetailsDemoReady>,
-          validateDetailsObjectCreated,
-          "match_status_ready"
-        );
-      }
-      if (webhookData.event === "match_status_aborted") {
-        // Do we need this?
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateMatchStatusAbortedWebhook,
-          getFaceITMatchDetails<DetailsObjectCreated>,
-          validateDetailsObjectCreated,
-          "match_status_ready"
-        );
-      }
-      if (webhookData.event === "match_status_cancelled") {
-        // Do we need this?
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateMatchStatusCancelledWebhook,
-          getFaceITMatchDetails<DetailsObjectCreated>,
-          validateDetailsObjectCreated,
-          "match_status_ready"
-        );
-      }
-      if (webhookData.event === "championship_created") {
-        // Parse the name and add to database SeasonLeagueExternalRooms
-        // Add type (roundRobin etc.)
-        const {
-          webhookData: validatedWebhook,
-          matchDetails: validatedMatchDetails
-        } = await processWebhookWithDetails(
-          webhookData,
-          validateChampionshipCreatedWebhook,
-          getFaceITMatchDetails<DetailsObjectCreated>,
-          validateDetailsObjectCreated,
-          "championship_created"
-        );
-      }
 
-      res.status(200).send("Webhook received");
-      return;
-    } catch (error) {
-      const externalMatchRoomId = webhookData.payload.id;
-      if (error instanceof WebhookValidationError) {
-        logger.error("Webhook validation error", error);
+        const endTime = webhookData.payload.finished_at;
+        await updateMatchFinished(webhookData.payload.id, startTime, endTime);
         await saveWebhookData(
           externalMatchRoomId,
-          webhookData.event,
+          "match_status_finished",
           JSON.stringify(webhookData),
-          JSON.stringify(error),
-          "WEBHOOK_VALIDATION_ERROR"
+          null
         );
+        return;
       }
-      if (error instanceof MatchDetailsValidationError) {
-        logger.error("Match details validation error", error);
-        await saveWebhookData(
-          externalMatchRoomId,
-          webhookData.event,
-          JSON.stringify(webhookData),
-          JSON.stringify(error),
-          "MATCH_DETAILS_VALIDATION_ERROR"
-        );
-      }
-      logger.error("Error handling webhook", error);
-      await saveWebhookData(
-        externalMatchRoomId,
-        webhookData.event,
-        JSON.stringify(webhookData),
-        JSON.stringify(error),
-        "UNKNOWN_ERROR"
-      );
-      res.status(500).send("Something went wrong");
-      return;
     }
+    if (webhookData.event === "match_status_ready") {
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateMatchStatusReadyWebhook,
+        getFaceITMatchDetails<DetailsObjectCreated>,
+        validateDetailsObjectCreated,
+        "match_status_ready"
+      );
+    }
+    if (webhookData.event === "match_status_configuring") {
+      // Get map vetos and bans here
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateMatchStatusConfiguringWebhook,
+        getFaceITMatchDetails<DetailsConfiguring>,
+        validateDetailsObjectCreated,
+        "match_status_ready"
+      );
+    }
+    if (webhookData.event === "match_demo_ready") {
+      // Validate players in both teams and push the demo url to parser
+      // Send demo_url to parser
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateMatchDemoReadyWebhook,
+        getFaceITMatchDetails<DetailsDemoReady>,
+        validateDetailsObjectCreated,
+        "match_status_ready"
+      );
+    }
+    if (webhookData.event === "match_status_aborted") {
+      // Do we need this?
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateMatchStatusAbortedWebhook,
+        getFaceITMatchDetails<DetailsObjectCreated>,
+        validateDetailsObjectCreated,
+        "match_status_ready"
+      );
+    }
+    if (webhookData.event === "match_status_cancelled") {
+      // Do we need this?
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateMatchStatusCancelledWebhook,
+        getFaceITMatchDetails<DetailsObjectCreated>,
+        validateDetailsObjectCreated,
+        "match_status_ready"
+      );
+    }
+    if (webhookData.event === "championship_created") {
+      // Parse the name and add to database SeasonLeagueExternalRooms
+      // Add type (roundRobin etc.)
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateChampionshipCreatedWebhook,
+        getFaceITMatchDetails<DetailsObjectCreated>,
+        validateDetailsObjectCreated,
+        "championship_created"
+      );
+    }
+
+    res.status(200).send("Webhook received");
+    return;
   }
 );
 
