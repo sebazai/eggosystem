@@ -111,6 +111,7 @@ router.post(
     res: Response
   ): Promise<void> => {
     const webhookData = req.body;
+    console.log("Deploy");
     try {
       if (webhookData.data.event === "match_object_created") {
         const {
