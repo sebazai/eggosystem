@@ -59,69 +59,6 @@ router.get(
   }
 );
 
-export interface FaceITWebhookPlayer {
-  id: string;
-  nickname: string;
-  avatar: string;
-  game_id: string;
-  game_name: string;
-  game_skill_level: number;
-  membership: string;
-  anticheat_required?: boolean;
-}
-
-export interface FaceITWebhookTeam {
-  id: string;
-  name: string;
-  type: string;
-  avatar: string;
-  leader_id: string;
-  co_leader_id: string;
-  roster: FaceITWebhookPlayer[];
-  substitutions: number;
-  substitutes: FaceITWebhookPlayer[];
-}
-
-export interface FaceITWebhookEntity {
-  id: string;
-  name: string;
-  type: string;
-}
-
-export interface FaceITPayloadMatchStatusConfiguring {
-  id: string;
-  organizer_id: string;
-  region: string;
-  game: string;
-  version: number;
-  entity: FaceITWebhookEntity;
-  teams: FaceITWebhookTeam[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface FaceITPayloadMatchDemoReady
-  extends FaceITPayloadMatchStatusConfiguring {
-  demo_url: string;
-}
-
-export interface FaceITPayloadMatchStatusFinished
-  extends FaceITPayloadMatchStatusConfiguring {
-  started_at: string;
-  finished_at: string;
-}
-
-export interface FaceITPayloadMatchObjectCreated {
-  id: string;
-  organizer_id: string;
-  region: string;
-  game: string;
-  version: number;
-  entity: FaceITWebhookEntity;
-  created_at: string;
-  updated_at: string;
-}
-
 type FaceITWebhookData = {
   id: number;
   received_at: string;
