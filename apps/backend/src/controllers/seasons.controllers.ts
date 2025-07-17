@@ -4,7 +4,8 @@ import {
   getSeasonById,
   getSeasonDetailsById,
   getActiveOrLatestSeasonForAppId,
-  getActiveSignupSeasonForAppId
+  getActiveSignupSeasonForAppId,
+  getActiveSignupOrActiveSeasonForAppId
 } from "../models/season.models";
 import { type RequestWithParams } from "@eggosystem/types";
 import _ from "lodash";
@@ -79,4 +80,15 @@ export const getActiveSignupSeasonForApp = async (
   }
 
   res.json(activeSignupSeason);
+};
+
+export const GetActiveSignupOrActiveSeasonForAppId = async (
+  req: RequestWithParams<{ app_id: string }>,
+  res: Response
+) => {
+  const app_id = Number(req.params.app_id);
+
+  const ActiveSignupOrActiveSeason =
+    await getActiveSignupOrActiveSeasonForAppId(app_id);
+  res.json(ActiveSignupOrActiveSeason);
 };

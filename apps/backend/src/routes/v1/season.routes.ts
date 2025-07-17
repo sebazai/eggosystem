@@ -4,7 +4,8 @@ import {
   getSeasonByIdController,
   getSeasonDetailsByIdController,
   getActiveSeasonForApp,
-  getActiveSignupSeasonForApp
+  getActiveSignupSeasonForApp,
+  GetActiveSignupOrActiveSeasonForAppId
 } from "../../controllers/seasons.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
@@ -27,6 +28,12 @@ router.get(
   "/app/:app_id/signup-open",
   validateNumericParams(),
   getActiveSignupSeasonForApp
+);
+
+router.get(
+  "/app/:app_id/active-signup",
+  validateNumericParams(),
+  GetActiveSignupOrActiveSeasonForAppId
 );
 
 export default router;

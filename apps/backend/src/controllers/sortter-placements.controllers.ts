@@ -124,8 +124,24 @@ export const getPreliminaryPlacementsController = async (
     );
 
     // If no placements exist, generate initial placements from team values
-    const teams = await getTeamValuesForSorter(seasonId);
+    logger.info(
+      `Getting team values for season ${seasonId} to generate initial placements`
+    );
+    const teams = await getTeamValuesForSorter(seasonId, true); // Use historical=true to get all teams
+    logger.info(`Retrieved ${teams.length} teams for initial placements`);
+
+    if (teams.length === 0) {
+      logger.warn(
+        `No teams found for season ${seasonId} - cannot generate initial placements`
+      );
+      res.status(404).json({
+        error: { message: "No teams found for this season" }
+      });
+      return;
+    }
+
     const initialPlacements = generateInitialPlacements(teams);
+    logger.info(`Generated ${initialPlacements.length} initial placements`);
 
     // Save the initial placements to Redis
     await savePreliminaryPlacements(seasonId, initialPlacements);

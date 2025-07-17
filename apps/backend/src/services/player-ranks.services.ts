@@ -17,6 +17,7 @@ import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
 import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
+import { getActiveSignupOrActiveSeasonForAppId } from "../models/season.models";
 
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
@@ -190,6 +191,10 @@ export const getCSRank = async (
   season_id?: number
 ): Promise<CS2LeetifyAvgRank> => {
   try {
+    if (season_id === undefined) {
+      season_id = (await getActiveSignupOrActiveSeasonForAppId(730))?.season_id;
+    }
+
     // 1. Try database first if season_id is provided
     if (season_id) {
       const dbRank = await getRankFromDatabase(steam_id, season_id);
