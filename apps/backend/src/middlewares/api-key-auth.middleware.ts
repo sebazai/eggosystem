@@ -25,6 +25,8 @@ export function createApiKeyValidator(expectedApiKey: string | undefined) {
       return;
     }
 
+    console.log("expectedApiKey", expectedApiKey);
+    console.log("providedKey", providedKey);
     if (!expectedApiKey || providedKey !== expectedApiKey) {
       logger.warn(`Invalid API key provided: ${providedKey.slice(0, 5)}...`);
       res.status(401).json({
