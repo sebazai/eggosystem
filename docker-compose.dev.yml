@@ -23,6 +23,7 @@ services:
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
       BACKEND_SERVICE_API_KEY: "development_api_key"
       JWT_SECRET: $JWT_SECRET
+      FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
     networks:
       - web
     volumes:
