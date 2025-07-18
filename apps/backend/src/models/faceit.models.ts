@@ -21,14 +21,3 @@ export const saveWebhookData = async (
     ]
   );
 };
-
-export const updateWebhookData = async (
-  id: number,
-  details: string | null,
-  errorType: FaceitValidationError | null = null
-) => {
-  return runQuery<{ insertId: number }>(
-    "UPDATE FaceitWebhooks SET details = ?, error_type = ? WHERE id = ?",
-    [JSON.stringify(details), errorType, id]
-  );
-};
