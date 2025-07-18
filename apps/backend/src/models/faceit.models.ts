@@ -17,7 +17,7 @@ export const saveWebhookData = async (
       JSON.stringify(data),
       JSON.stringify(details),
       errorType,
-      JSON.stringify(errorDetails)
+      errorDetails ? JSON.stringify(errorDetails) : null
     ]
   );
 };
