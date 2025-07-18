@@ -34,8 +34,8 @@ export interface DetailsDemoReady {
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
   status: FaceitMatchStatus;
-  round: number;
-  group: number;
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 

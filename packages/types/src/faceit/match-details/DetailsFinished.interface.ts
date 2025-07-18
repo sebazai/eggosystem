@@ -9,8 +9,10 @@ import {
   FaceitMapVotingSchema,
   FaceitMatchResultsFinishedSchema,
   FaceitDetailedResultsFinishedSchema,
-  FaceitMatchStatus
+  FaceitMatchStatus,
+  FaceitGameSchema
 } from "./Details.interface";
+
 // Voting interface
 interface FaceitMatchVotingFinished {
   map: FaceitMapVoting;
@@ -21,7 +23,7 @@ interface FaceitMatchVotingFinished {
 export interface FaceitMatchDetailsFinishedAfterAborted {
   match_id: string;
   version: number;
-  game: FaceitGame.CS2;
+  game: FaceitGame;
   region: string;
   competition_id: string;
   competition_type: string;
@@ -38,8 +40,8 @@ export interface FaceitMatchDetailsFinishedAfterAborted {
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
   status: "FINISHED";
-  round: number;
-  group: number;
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
@@ -51,14 +53,16 @@ const FaceitMatchVotingFinishedSchema = z.object({
 
 export const FaceitMatchDetailsFinishedAfterAbortedSchema =
   BaseMatchDetailsSchema.extend({
-    game: z.literal(FaceitGame.CS2),
+    game: FaceitGameSchema,
     voting: FaceitMatchVotingFinishedSchema,
     scheduled_at: z.number().optional(),
     configured_at: z.number(),
     finished_at: z.number(),
     results: FaceitMatchResultsFinishedSchema,
     detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
-    status: z.literal(FaceitMatchStatus.FINISHED)
+    status: z.literal(FaceitMatchStatus.FINISHED),
+    round: z.number().optional(),
+    group: z.number().optional()
   });
 
 // Runtime validation function

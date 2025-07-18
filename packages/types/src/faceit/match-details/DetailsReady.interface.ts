@@ -7,7 +7,8 @@ import {
   BaseMatchDetailsSchema,
   FaceitMapVotingSchema,
   FaceitLocationVotingSchema,
-  FaceitMatchStatus
+  FaceitMatchStatus,
+  FaceitGameSchema
 } from "./Details.interface";
 
 // Voting system for ready matches (same structure as configuring)
@@ -21,7 +22,7 @@ export interface FaceitReadyVoting {
 export interface DetailsReady {
   match_id: string;
   version: number;
-  game: FaceitGame.CS2;
+  game: FaceitGame;
   region: string;
   competition_id: string;
   competition_type: string;
@@ -30,13 +31,13 @@ export interface DetailsReady {
   teams: FaceitMatchTeams;
   voting: FaceitReadyVoting;
   calculate_elo: boolean;
-  scheduled_at: number; // Unix timestamp
+  scheduled_at?: number; // Unix timestamp
   configured_at: number; // Unix timestamp
   chat_room_id: string;
   best_of: number;
   status: "READY";
-  round: number;
-  group: number;
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
@@ -48,11 +49,13 @@ const FaceitReadyVotingSchema = z.object({
 });
 
 export const DetailsReadySchema = BaseMatchDetailsSchema.extend({
-  game: z.literal(FaceitGame.CS2),
+  game: FaceitGameSchema,
   voting: FaceitReadyVotingSchema,
-  scheduled_at: z.number(),
+  scheduled_at: z.number().optional(),
   configured_at: z.number(),
-  status: z.literal(FaceitMatchStatus.READY)
+  status: z.literal(FaceitMatchStatus.READY),
+  round: z.number().optional(),
+  group: z.number().optional()
 });
 
 // Runtime validation function

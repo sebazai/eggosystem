@@ -2,9 +2,12 @@ import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
+  FaceitMatchStatus,
   BaseMatchDetailsSchema,
-  FaceitGameSchema
+  FaceitGameSchema,
+  FaceitMatchStatusSchema
 } from "./Details.interface";
+
 export interface DetailsObjectCreated {
   match_id: string;
   version: number;
@@ -18,16 +21,18 @@ export interface DetailsObjectCreated {
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status: string; // TODO: Figure out this status
-  round: number;
-  group: number;
+  status: FaceitMatchStatus;
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
 // Zod schemas for runtime validation
 export const DetailsObjectCreatedSchema = BaseMatchDetailsSchema.extend({
   game: FaceitGameSchema,
-  status: z.string() // TODO: Figure out this status
+  status: FaceitMatchStatusSchema,
+  round: z.number().optional(),
+  group: z.number().optional()
 });
 
 // Runtime validation function

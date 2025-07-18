@@ -36,8 +36,8 @@ export interface DetailsConfiguring {
   chat_room_id: string;
   best_of: number;
   status: "CONFIGURING";
-  round: number;
-  group: number;
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
@@ -53,7 +53,9 @@ export const DetailsConfiguringSchema = BaseMatchDetailsSchema.extend({
   voting: FaceitConfiguringVotingSchema,
   scheduled_at: z.number().optional(),
   configured_at: z.number(),
-  status: z.literal(FaceitMatchStatus.CONFIGURING)
+  status: z.literal(FaceitMatchStatus.CONFIGURING),
+  round: z.number().optional(),
+  group: z.number().optional()
 });
 
 // Runtime validation function

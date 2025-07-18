@@ -368,8 +368,8 @@ export const addMatchToDatabase = async (
       null,
       matchDetails.match_id,
       MatchStatus.CREATED,
-      matchDetails.round,
-      matchDetails.group
+      matchDetails.round ?? null,
+      matchDetails.group ?? null
     ];
 
     const matchQuery = `

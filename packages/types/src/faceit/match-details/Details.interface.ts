@@ -7,7 +7,8 @@ export enum FaceitGame {
 
 export enum FaceitMatchStatus {
   CREATED = "CREATED",
-  VOTING = "VOTING",
+  CHECK_IN = "CHECK_IN", // Added based on actual data
+  VOTING = "VOTING", // Added based on actual data
   CONFIGURING = "CONFIGURING",
   READY = "READY",
   ONGOING = "ONGOING",
@@ -36,7 +37,7 @@ export interface FaceitTeamFaction {
   roster: FaceitPlayerRoster[];
   substituted: boolean;
   name: string;
-  type: "premade";
+  type: "premade" | ""; // Allow empty string for early match states
 }
 
 // Teams container interface
@@ -150,7 +151,7 @@ export const FaceitTeamFactionSchema = z.object({
   roster: z.array(FaceitPlayerRosterSchema),
   substituted: z.boolean(),
   name: z.string(),
-  type: z.literal("premade")
+  type: z.union([z.literal("premade"), z.literal("")]) // Allow both "premade" and empty string
 });
 
 export const FaceitMatchTeamsSchema = z.object({
@@ -213,7 +214,7 @@ export const BaseMatchDetailsSchema = z.object({
   calculate_elo: z.boolean(),
   chat_room_id: z.string(),
   best_of: z.number(),
-  round: z.number(),
-  group: z.number(),
+  round: z.number().optional(), // Make optional since not always present
+  group: z.number().optional(), // Make optional since not always present
   faceit_url: z.string()
 });

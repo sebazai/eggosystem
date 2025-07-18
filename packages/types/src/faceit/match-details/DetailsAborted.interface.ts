@@ -9,7 +9,8 @@ import {
   FaceitMapVotingSchema,
   FaceitMatchResultsAbortedAndCancelledSchema,
   FaceitDetailedResultsAbortedAndCancelledSchema,
-  FaceitMatchStatus
+  FaceitMatchStatus,
+  FaceitGameSchema
 } from "./Details.interface";
 
 // Voting interface
@@ -17,11 +18,12 @@ interface FaceitMatchVotingAborted {
   map: FaceitMapVoting;
   voted_entity_types: string[];
 }
+
 // Main match details interface for aborted matches
-export interface FaceitMatchDetailsAborted {
+export interface DetailsAborted {
   match_id: string;
   version: number;
-  game: FaceitGame.CS2;
+  game: FaceitGame;
   region: string;
   competition_id: string;
   competition_type: string;
@@ -36,8 +38,8 @@ export interface FaceitMatchDetailsAborted {
   results: FaceitMatchResultsAbortedAndCancelled;
   detailed_results: FaceitDetailedResultsAbortedAndCancelled[];
   status: "ABORTED";
-  round: number;
-  group: number;
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
@@ -48,17 +50,17 @@ const FaceitMatchVotingAbortedSchema = z.object({
 });
 
 export const FaceitMatchDetailsAbortedSchema = BaseMatchDetailsSchema.extend({
-  game: z.literal(FaceitGame.CS2),
+  game: FaceitGameSchema,
   voting: FaceitMatchVotingAbortedSchema,
   configured_at: z.number(),
   results: FaceitMatchResultsAbortedAndCancelledSchema,
   detailed_results: z.array(FaceitDetailedResultsAbortedAndCancelledSchema),
-  status: z.literal(FaceitMatchStatus.ABORTED)
+  status: z.literal(FaceitMatchStatus.ABORTED),
+  round: z.number().optional(),
+  group: z.number().optional()
 });
 
 // Runtime validation function
-export function validateFaceitMatchDetailsAborted(
-  data: unknown
-): FaceitMatchDetailsAborted {
+export function validateDetailsAborted(data: unknown): DetailsAborted {
   return FaceitMatchDetailsAbortedSchema.parse(data);
 }

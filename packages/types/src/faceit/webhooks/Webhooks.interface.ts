@@ -51,7 +51,7 @@ export const TeamPlayerSchema = z.object({
 export const MatchTeamSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.string(),
+  type: z.union([z.string(), z.literal("")]), // Allow any string or empty string
   avatar: z.string(),
   leader_id: z.string(),
   co_leader_id: z.string(),

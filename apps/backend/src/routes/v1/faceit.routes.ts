@@ -33,7 +33,15 @@ import {
   type DetailsDemoReady,
   validateMatchStatusAbortedWebhook,
   validateMatchStatusCancelledWebhook,
-  validateChampionshipCreatedWebhook
+  validateChampionshipCreatedWebhook,
+  validateDetailsReady,
+  DetailsReady,
+  validateDetailsConfiguring,
+  validateDetailsDemoReady,
+  DetailsAborted,
+  validateDetailsAborted,
+  validateDetailsCancelled,
+  DetailsCancelled
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -147,7 +155,7 @@ router.post(
         validateMatchObjectCreatedWebhook,
         getFaceITMatchDetails<DetailsObjectCreated>,
         validateDetailsObjectCreated,
-        "match_object_created"
+        webhookData.event
       );
       await addMatchToDatabase(
         validatedMatchDetails,
@@ -170,7 +178,7 @@ router.post(
           await updateMatchEndTime(webhookData.payload.id, endTime);
           await saveWebhookData(
             externalMatchRoomId,
-            "match_status_finished",
+            webhookData.event,
             JSON.stringify(webhookData),
             null
           );
@@ -181,7 +189,7 @@ router.post(
         await updateMatchFinished(webhookData.payload.id, startTime, endTime);
         await saveWebhookData(
           externalMatchRoomId,
-          "match_status_finished",
+          webhookData.event,
           JSON.stringify(webhookData),
           null
         );
@@ -195,9 +203,9 @@ router.post(
       } = await processWebhookWithDetails(
         webhookData,
         validateMatchStatusReadyWebhook,
-        getFaceITMatchDetails<DetailsObjectCreated>,
-        validateDetailsObjectCreated,
-        "match_status_ready"
+        getFaceITMatchDetails<DetailsReady>,
+        validateDetailsReady,
+        webhookData.event
       );
     }
     if (webhookData.event === "match_status_configuring") {
@@ -209,8 +217,8 @@ router.post(
         webhookData,
         validateMatchStatusConfiguringWebhook,
         getFaceITMatchDetails<DetailsConfiguring>,
-        validateDetailsObjectCreated,
-        "match_status_ready"
+        validateDetailsConfiguring,
+        webhookData.event
       );
     }
     if (webhookData.event === "match_demo_ready") {
@@ -223,8 +231,8 @@ router.post(
         webhookData,
         validateMatchDemoReadyWebhook,
         getFaceITMatchDetails<DetailsDemoReady>,
-        validateDetailsObjectCreated,
-        "match_status_ready"
+        validateDetailsDemoReady,
+        webhookData.event
       );
     }
     if (webhookData.event === "match_status_aborted") {
@@ -235,9 +243,9 @@ router.post(
       } = await processWebhookWithDetails(
         webhookData,
         validateMatchStatusAbortedWebhook,
-        getFaceITMatchDetails<DetailsObjectCreated>,
-        validateDetailsObjectCreated,
-        "match_status_ready"
+        getFaceITMatchDetails<DetailsAborted>,
+        validateDetailsAborted,
+        webhookData.event
       );
     }
     if (webhookData.event === "match_status_cancelled") {
@@ -248,9 +256,9 @@ router.post(
       } = await processWebhookWithDetails(
         webhookData,
         validateMatchStatusCancelledWebhook,
-        getFaceITMatchDetails<DetailsObjectCreated>,
-        validateDetailsObjectCreated,
-        "match_status_ready"
+        getFaceITMatchDetails<DetailsCancelled>,
+        validateDetailsCancelled,
+        webhookData.event
       );
     }
     if (webhookData.event === "championship_created") {
@@ -262,9 +270,9 @@ router.post(
       } = await processWebhookWithDetails(
         webhookData,
         validateChampionshipCreatedWebhook,
-        getFaceITMatchDetails<DetailsObjectCreated>,
-        validateDetailsObjectCreated,
-        "championship_created"
+        getFaceITMatchDetails<DetailsObjectCreated>, // FIXME
+        validateDetailsObjectCreated, // FIXME
+        webhookData.event
       );
     }
 

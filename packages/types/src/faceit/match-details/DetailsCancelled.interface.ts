@@ -11,13 +11,14 @@ import {
   FaceitLocationVotingSchema,
   FaceitMatchResultsAbortedAndCancelledSchema,
   FaceitDetailedResultsAbortedAndCancelledSchema,
-  FaceitMatchStatus
+  FaceitMatchStatus,
+  FaceitGameSchema
 } from "./Details.interface";
 
-export interface FaceitDetailsCancelled {
+export interface DetailsCancelled {
   match_id: string;
   version: number;
-  game: FaceitGame.CS2;
+  game: FaceitGame;
   region: string;
   competition_id: string;
   competition_type: string;
@@ -33,6 +34,8 @@ export interface FaceitDetailsCancelled {
   results: FaceitMatchResultsAbortedAndCancelled;
   detailed_results: FaceitDetailedResultsAbortedAndCancelled[];
   status: "CANCELLED";
+  round?: number; // Optional since not always present
+  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
@@ -51,18 +54,18 @@ const FaceitCancelledVotingSchema = z.object({
 });
 
 export const FaceitDetailsCancelledSchema = BaseMatchDetailsSchema.extend({
-  game: z.literal(FaceitGame.CS2),
+  game: FaceitGameSchema,
   voting: FaceitCancelledVotingSchema,
   configured_at: z.number(),
   finished_at: z.number(),
   results: FaceitMatchResultsAbortedAndCancelledSchema,
   detailed_results: z.array(FaceitDetailedResultsAbortedAndCancelledSchema),
-  status: z.literal(FaceitMatchStatus.CANCELLED)
+  status: z.literal(FaceitMatchStatus.CANCELLED),
+  round: z.number().optional(),
+  group: z.number().optional()
 });
 
 // Runtime validation function
-export function validateFaceitDetailsCancelled(
-  data: unknown
-): FaceitDetailsCancelled {
+export function validateDetailsCancelled(data: unknown): DetailsCancelled {
   return FaceitDetailsCancelledSchema.parse(data);
 }
