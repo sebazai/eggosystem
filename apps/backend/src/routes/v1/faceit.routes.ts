@@ -115,6 +115,7 @@ const processWebhookWithDetails = async <
         "WEBHOOK_VALIDATION_ERROR",
         JSON.stringify(error)
       );
+      throw error;
     }
     if (error instanceof MatchDetailsValidationError) {
       logger.error("Match details validation error", error);
@@ -126,6 +127,7 @@ const processWebhookWithDetails = async <
         "MATCH_DETAILS_VALIDATION_ERROR",
         JSON.stringify(error)
       );
+      throw error;
     }
     logger.error("Error handling webhook", error);
     await saveWebhookData(
