@@ -166,7 +166,9 @@ router.get("/discord/login", authenticateJWT, (req, res) => {
   });
 
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
-  logger.info(`Redirecting to Discord OAuth: ${discordAuthUrl}`);
+  logger.info(
+    `Redirecting to Discord OAuth for account_id: ${req.auth.account_id}`
+  );
   res.redirect(discordAuthUrl);
 });
 
@@ -228,11 +230,24 @@ router.get("/discord/callback", async (req, res) => {
     });
 
     if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      logger.error(
+        `Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`,
+        {
+          status: tokenResponse.status,
+          statusText: tokenResponse.statusText,
+          error: errorText
+        }
+      );
       throw new Error(`Token exchange failed: ${tokenResponse.statusText}`);
     }
 
     const tokenData = await tokenResponse.json();
     const { access_token } = tokenData;
+
+    if (!access_token) {
+      throw new Error("No access token received from Discord");
+    }
 
     // Fetch user info from Discord
     const userResponse = await fetch("https://discord.com/api/users/@me", {
@@ -242,11 +257,24 @@ router.get("/discord/callback", async (req, res) => {
     });
 
     if (!userResponse.ok) {
+      const errorText = await userResponse.text();
+      logger.error(
+        `User info fetch failed: ${userResponse.status} ${userResponse.statusText}`,
+        {
+          status: userResponse.status,
+          statusText: userResponse.statusText,
+          error: errorText
+        }
+      );
       throw new Error(`User info fetch failed: ${userResponse.statusText}`);
     }
 
     const discordUser = await userResponse.json();
     const discordUserId = discordUser.id;
+
+    if (!discordUserId) {
+      throw new Error("No Discord user ID received");
+    }
 
     // Store Discord user ID in database
     await updateUserDiscordId(accountId, discordUserId);
