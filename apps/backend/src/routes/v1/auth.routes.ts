@@ -1,5 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
+import jwt from "jsonwebtoken";
 
 import {
   login,
@@ -147,23 +148,21 @@ router.get("/discord/login", authenticateJWT, (req, res) => {
   }
 
   logger.info(
-    `Setting Discord link cookie for account_id: ${req.auth.account_id}`
+    `Initiating Discord OAuth for account_id: ${req.auth.account_id}`
   );
 
-  // Store the user's account_id in a cookie for the callback
-  res.cookie("discord_link_account_id", req.auth.account_id, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/v1/auth",
-    maxAge: 5 * 60 * 1000 // 5 minutes
-  });
+  const stateToken = jwt.sign(
+    { account_id: req.auth.account_id },
+    process.env.JWT_SECRET!,
+    { expiresIn: "5m" }
+  );
 
   const params = new URLSearchParams({
     client_id: process.env.DISCORD_CLIENT_ID!,
     redirect_uri: `${process.env.BACKEND_URL}/api/v1/auth/discord/callback`,
     response_type: "code",
-    scope: "identify"
+    scope: "identify",
+    state: stateToken
   });
 
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
@@ -174,10 +173,10 @@ router.get("/discord/login", authenticateJWT, (req, res) => {
 router.get("/discord/callback", async (req, res) => {
   try {
     const code = req.query.code as string;
-    const accountId = req.cookies.discord_link_account_id;
+    const state = req.query.state as string;
 
     logger.info(
-      `Discord callback received. Code: ${code ? "present" : "missing"}, Account ID: ${accountId || "missing"}}`
+      `Discord callback received. Code: ${code ? "present" : "missing"}, State: ${state ? "present" : "missing"}`
     );
 
     if (!code) {
@@ -188,16 +187,30 @@ router.get("/discord/callback", async (req, res) => {
       return;
     }
 
-    if (!accountId) {
-      logger.error("No account_id found in any cookies for Discord callback");
+    if (!state) {
+      logger.error("No state parameter provided in Discord callback");
       res.redirect(
-        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_account`
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_state`
       );
       return;
     }
 
-    // Clear the cookie
-    res.clearCookie("discord_link_account_id");
+    let accountId: number;
+    try {
+      const decoded = jwt.verify(state, process.env.JWT_SECRET!) as {
+        account_id: number;
+      };
+      accountId = decoded.account_id;
+    } catch (jwtError) {
+      logger.error(
+        "Invalid or expired state token in Discord callback:",
+        jwtError
+      );
+      res.redirect(
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=invalid_state`
+      );
+      return;
+    }
 
     // Exchange code for access token
     const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
@@ -236,7 +249,7 @@ router.get("/discord/callback", async (req, res) => {
     const discordUserId = discordUser.id;
 
     // Store Discord user ID in database
-    await updateUserDiscordId(Number(accountId), discordUserId);
+    await updateUserDiscordId(accountId, discordUserId);
 
     logger.info(
       `Discord account linked for user ${accountId}: ${discordUserId}`

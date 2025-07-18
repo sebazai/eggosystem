@@ -34,6 +34,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_STAGE_PASS}
       BACKEND_SERVICE_API_KEY: ${STAGE_SERVICE_API_KEY}
+      JWT_SECRET: $JWT_SECRET
     networks:
       - web
     volumes:

@@ -41,6 +41,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PROD_PASS}
       BACKEND_SERVICE_API_KEY: ${PROD_SERVICE_API_KEY}
+      JWT_SECRET: $JWT_SECRET
     networks:
       - web
     volumes:

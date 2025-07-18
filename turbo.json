@@ -15,6 +15,7 @@
         "FACEIT_API_KEY",
         "JWT_EXPIRES_IN",
         "JWT_REFRESH_EXPIRES_IN",
+        "JWT_SECRET",
         "REDIS_HOST",
         "REDIS_PORT",
         "FRONTEND_URL",
