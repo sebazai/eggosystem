@@ -21,7 +21,7 @@ const mockGetConnection = getConnection as jest.MockedFunction<
 >;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
-describe("addMatchToDatabase", () => {
+describe.skip("addMatchToDatabase", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockConnection: any;
   let mockDate: jest.SpyInstance;

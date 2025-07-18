@@ -56,6 +56,14 @@ export const getGameTopPlayersController = async (
 ) => {
   const game_id = parseInt(req.params.game_id, 10);
   const topplayers = await getGameTopPlayers(game_id);
+  if (
+    topplayers === null ||
+    topplayers === undefined ||
+    JSON.stringify(topplayers) === "{}"
+  ) {
+    res.status(404).json({ message: "Could not find season for match id" });
+    return;
+  }
   res.json(topplayers);
 };
 

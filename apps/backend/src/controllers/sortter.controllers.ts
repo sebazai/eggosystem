@@ -1,7 +1,9 @@
 import { type Response } from "express";
 import {
   getTeamValuesForSorter,
-  getTeamPlayerValuesForSortter
+  getTeamPlayerValuesForSortter,
+  getTeamsForSeason,
+  checkPlayerAdditionEligibility
 } from "../models/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
 
@@ -92,4 +94,39 @@ export const getTeamPlayerValuesController = async (
   }));
 
   res.json(formattedPlayerValues);
+};
+
+/**
+ * Controller to get teams for a specific season for add player functionality
+ */
+export const getTeamsForSeasonController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
+): Promise<void> => {
+  const seasonId = Number(req.params.season_id);
+  const teams = await getTeamsForSeason(seasonId);
+  res.json(teams);
+};
+
+/**
+ * Controller to check if a player can be added to a team
+ */
+export const checkPlayerAdditionEligibilityController = async (
+  req: RequestWithParams<{
+    season_id: string;
+    team_id: string;
+    steam_id: string;
+  }>,
+  res: Response
+): Promise<void> => {
+  const seasonId = Number(req.params.season_id);
+  const teamId = Number(req.params.team_id);
+  const steamId = req.params.steam_id;
+
+  const eligibility = await checkPlayerAdditionEligibility(
+    seasonId,
+    teamId,
+    steamId
+  );
+  res.json(eligibility);
 };

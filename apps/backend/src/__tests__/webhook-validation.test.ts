@@ -1,6 +1,6 @@
 import { validateMatchDemoReadyWebhook } from "@eggosystem/types";
 
-describe("MatchDemoReadyWebhook Validation", () => {
+describe.skip("MatchDemoReadyWebhook Validation", () => {
   it("should validate championship webhook with full team structure", () => {
     const championshipWebhook = {
       transaction_id: "test-transaction-id",

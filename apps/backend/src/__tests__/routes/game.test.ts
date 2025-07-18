@@ -8,9 +8,19 @@ import {
 } from "@eggosystem/types";
 
 describe("Game Routes", () => {
-  const app = express();
-  app.use(express.json());
-  app.use(gameRouter);
+  let app: express.Application;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use(gameRouter);
+  });
+
+  afterEach(async () => {
+    // Ensure all pending operations are completed
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  });
+
   describe("GET /games/:game_id/teamstats", () => {
     it("should return team stats for game id 104729", async () => {
       const expectedStats = [
@@ -77,6 +87,7 @@ describe("Game Routes", () => {
       expect(response.body).toEqual([]);
     });
   });
+
   describe("GET /games/:game_id/topplayers", () => {
     it("should return top players for match 7750 and game id 10340", async () => {
       const expectedTopPlayers = {
@@ -139,13 +150,11 @@ describe("Game Routes", () => {
     });
 
     it("should handle non-existent match id", async () => {
-      try {
-        await request(app).get("/99999/topplayers");
-      } catch (error) {
-        expect(error).toEqual({
-          message: "Could not find season for match id"
-        });
-      }
+      const response = await request(app).get("/99999/topplayers").expect(404);
+
+      expect(response.body).toEqual({
+        message: "Could not find season for match id"
+      });
     });
   });
 });

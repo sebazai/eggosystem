@@ -2,7 +2,9 @@ import { Router } from "express";
 import {
   getTeamValuesController,
   getTeamValueByIdController,
-  getTeamPlayerValuesController
+  getTeamPlayerValuesController,
+  getTeamsForSeasonController,
+  checkPlayerAdditionEligibilityController
 } from "../../controllers/sortter.controllers";
 import { populateKanaeloQueueController } from "../../controllers/kanaelo.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -29,6 +31,20 @@ router.get(
   "/season/:season/team/:team/playervalues",
   validateNumericParams(["season", "team"]),
   getTeamPlayerValuesController
+);
+
+// GET /api/v1/sortter/season/:season_id/teams
+router.get(
+  "/season/:season_id/teams",
+  validateNumericParams(["season_id"]),
+  getTeamsForSeasonController
+);
+
+// GET /api/v1/sortter/season/:season_id/team/:team_id/player/:steam_id/eligibility
+router.get(
+  "/season/:season_id/team/:team_id/player/:steam_id/eligibility",
+  validateNumericParams(["season_id", "team_id"]),
+  checkPlayerAdditionEligibilityController
 );
 
 // POST /api/v1/sortter/season/:season_id/populate-kanaelo-queue

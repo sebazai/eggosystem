@@ -5,9 +5,18 @@ import matchRouter from "../../routes/v1/match.routes";
 import type { MatchMapsPlayed, MatchTeamStats } from "@eggosystem/types";
 
 describe("Match Routes", () => {
-  const app = express();
-  app.use(express.json());
-  app.use("/matches", matchRouter);
+  let app: express.Application;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use("/matches", matchRouter);
+  });
+
+  afterEach(async () => {
+    // Ensure all pending operations are completed
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  });
 
   describe("GET /matches/:game_id/teamstats", () => {
     it("should return team stats for game id 10154", async () => {
