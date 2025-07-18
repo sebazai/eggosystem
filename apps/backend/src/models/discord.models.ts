@@ -19,7 +19,6 @@ export const linkDiscordAccount = async (
     throw new Error("Invalid account ID provided");
   }
 
-  console.log(typeof discordUserId);
   if (!discordUserId) {
     throw new Error("Invalid Discord user ID provided");
   }
