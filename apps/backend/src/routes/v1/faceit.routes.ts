@@ -9,6 +9,7 @@ import { type Request, type Response } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
 import { saveWebhookData } from "../../models/faceit.models";
 import { logger } from "../../utils/app-logger";
+import { ZodError } from "zod";
 import {
   type MatchStatusReadyWebhook,
   type MatchStatusConfiguringWebhook,
@@ -23,8 +24,6 @@ import {
   validateMatchObjectCreatedWebhook,
   validateDetailsObjectCreated,
   type DetailsObjectCreated,
-  WebhookValidationError,
-  MatchDetailsValidationError,
   type MatchStatusAbortedWebhook,
   type MatchStatusCancelledWebhook,
   validateMatchStatusReadyWebhook,
@@ -105,26 +104,14 @@ const processWebhookWithDetails = async <
       matchDetails: validatedMatchDetails
     };
   } catch (error) {
-    if (error instanceof WebhookValidationError) {
-      logger.error("Webhook validation error", error);
+    if (error instanceof ZodError) {
+      logger.error("Zod validation error", error);
       await saveWebhookData(
         externalMatchRoomId,
         String((webhookData as any).event),
         JSON.stringify(webhookData),
         JSON.stringify(matchDetails),
-        "WEBHOOK_VALIDATION_ERROR",
-        JSON.stringify(error)
-      );
-      throw error;
-    }
-    if (error instanceof MatchDetailsValidationError) {
-      logger.error("Match details validation error", error);
-      await saveWebhookData(
-        externalMatchRoomId,
-        String((webhookData as any).event),
-        JSON.stringify(webhookData),
-        JSON.stringify(matchDetails),
-        "MATCH_DETAILS_VALIDATION_ERROR",
+        "ZOD_VALIDATION_ERROR",
         JSON.stringify(error)
       );
       throw error;

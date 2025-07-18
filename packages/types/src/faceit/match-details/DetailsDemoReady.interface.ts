@@ -11,7 +11,6 @@ import {
   FaceitDetailedResultsFinishedSchema,
   FaceitMatchStatus
 } from "./Details.interface";
-import { MatchDetailsValidationError } from ".";
 
 export interface DetailsDemoReady {
   match_id: string;
@@ -66,11 +65,5 @@ export const DetailsDemoReadySchema = BaseMatchDetailsSchema.extend({
 
 // Runtime validation function
 export function validateDetailsDemoReady(data: unknown): DetailsDemoReady {
-  const safeType = DetailsDemoReadySchema.safeParse(data);
-  if (!safeType.success) {
-    throw new MatchDetailsValidationError(
-      `DetailsDemoReady validation failed: ${JSON.stringify(safeType.error)}`
-    );
-  }
-  return safeType.data satisfies DetailsDemoReady;
+  return DetailsDemoReadySchema.parse(data);
 }

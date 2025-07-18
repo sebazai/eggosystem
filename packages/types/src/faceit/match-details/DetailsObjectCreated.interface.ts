@@ -5,8 +5,6 @@ import {
   BaseMatchDetailsSchema,
   FaceitGameSchema
 } from "./Details.interface";
-import { MatchDetailsValidationError } from ".";
-
 export interface DetailsObjectCreated {
   match_id: string;
   version: number;
@@ -36,11 +34,5 @@ export const DetailsObjectCreatedSchema = BaseMatchDetailsSchema.extend({
 export function validateDetailsObjectCreated(
   data: unknown
 ): DetailsObjectCreated {
-  const safeType = DetailsObjectCreatedSchema.safeParse(data);
-  if (!safeType.success) {
-    throw new MatchDetailsValidationError(
-      `DetailsObjectCreated validation failed: ${JSON.stringify(safeType.error)}`
-    );
-  }
-  return safeType.data satisfies DetailsObjectCreated;
+  return DetailsObjectCreatedSchema.parse(data);
 }

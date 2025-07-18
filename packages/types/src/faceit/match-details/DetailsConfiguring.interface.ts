@@ -10,7 +10,6 @@ import {
   FaceitLocationVotingSchema,
   FaceitMatchStatus
 } from "./Details.interface";
-import { MatchDetailsValidationError } from ".";
 
 // Voting system for configuring matches
 export interface FaceitConfiguringVoting {
@@ -59,11 +58,5 @@ export const DetailsConfiguringSchema = BaseMatchDetailsSchema.extend({
 
 // Runtime validation function
 export function validateDetailsConfiguring(data: unknown): DetailsConfiguring {
-  const safeType = DetailsConfiguringSchema.safeParse(data);
-  if (!safeType.success) {
-    throw new MatchDetailsValidationError(
-      `DetailsConfiguring validation failed: ${JSON.stringify(safeType.error)}`
-    );
-  }
-  return safeType.data satisfies DetailsConfiguring;
+  return DetailsConfiguringSchema.parse(data);
 }

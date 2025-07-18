@@ -9,10 +9,3 @@ export * from "./DetailsDemoReady.interface";
 export * from "./DetailsFinished.interface";
 export * from "./DetailsObjectCreated.interface";
 export * from "./DetailsReady.interface";
-
-export class MatchDetailsValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "MatchDetailsValidationError";
-  }
-}

@@ -11,8 +11,6 @@ import {
   FaceitDetailedResultsFinishedSchema,
   FaceitMatchStatus
 } from "./Details.interface";
-import { MatchDetailsValidationError } from ".";
-
 // Voting interface
 interface FaceitMatchVotingFinished {
   map: FaceitMapVoting;
@@ -67,11 +65,5 @@ export const FaceitMatchDetailsFinishedAfterAbortedSchema =
 export function validateFaceitMatchDetailsFinishedAfterAborted(
   data: unknown
 ): FaceitMatchDetailsFinishedAfterAborted {
-  const safeType = FaceitMatchDetailsFinishedAfterAbortedSchema.safeParse(data);
-  if (!safeType.success) {
-    throw new MatchDetailsValidationError(
-      `FaceitMatchDetailsFinishedAfterAborted validation failed: ${JSON.stringify(safeType.error)}`
-    );
-  }
-  return safeType.data satisfies FaceitMatchDetailsFinishedAfterAborted;
+  return FaceitMatchDetailsFinishedAfterAbortedSchema.parse(data);
 }

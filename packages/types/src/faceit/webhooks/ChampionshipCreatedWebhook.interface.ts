@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { BaseWebhookSchema } from "./Webhooks.interface";
-import { WebhookValidationError } from ".";
 
 export interface ChampionshipCreatedWebhook {
   transaction_id: string;
@@ -112,11 +111,5 @@ export const ChampionshipCreatedWebhookSchema = BaseWebhookSchema.extend({
 export function validateChampionshipCreatedWebhook(
   data: unknown
 ): ChampionshipCreatedWebhook {
-  const safeType = ChampionshipCreatedWebhookSchema.safeParse(data);
-  if (!safeType.success) {
-    throw new WebhookValidationError(
-      `ChampionshipCreatedWebhook validation failed: ${JSON.stringify(safeType.error)}`
-    );
-  }
-  return safeType.data satisfies ChampionshipCreatedWebhook;
+  return ChampionshipCreatedWebhookSchema.parse(data);
 }

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { FaceitGame } from "../match-details/Details.interface";
 import { BaseWebhookSchema } from "./Webhooks.interface";
-import { WebhookValidationError } from ".";
 
 interface MatchObjectCreatedEntity {
   id: string;
@@ -59,13 +58,5 @@ export const MatchObjectCreatedWebhookSchema = BaseWebhookSchema.extend({
 export function validateMatchObjectCreatedWebhook(
   data: unknown
 ): MatchObjectCreatedWebhook {
-  const safeType = MatchObjectCreatedWebhookSchema.safeParse(data);
-  if (!safeType.success) {
-    throw new WebhookValidationError(
-      `MatchObjectCreatedWebhook validation failed: ${JSON.stringify(
-        safeType.error
-      )}`
-    );
-  }
-  return safeType.data satisfies MatchObjectCreatedWebhook;
+  return MatchObjectCreatedWebhookSchema.parse(data);
 }

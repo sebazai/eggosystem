@@ -13,7 +13,6 @@ import {
   FaceitDetailedResultsAbortedAndCancelledSchema,
   FaceitMatchStatus
 } from "./Details.interface";
-import { MatchDetailsValidationError } from ".";
 
 export interface FaceitDetailsCancelled {
   match_id: string;
@@ -65,11 +64,5 @@ export const FaceitDetailsCancelledSchema = BaseMatchDetailsSchema.extend({
 export function validateFaceitDetailsCancelled(
   data: unknown
 ): FaceitDetailsCancelled {
-  const safeType = FaceitDetailsCancelledSchema.safeParse(data);
-  if (!safeType.success) {
-    throw new MatchDetailsValidationError(
-      `FaceitDetailsCancelled validation failed: ${JSON.stringify(safeType.error)}`
-    );
-  }
-  return safeType.data satisfies FaceitDetailsCancelled;
+  return FaceitDetailsCancelledSchema.parse(data);
 }
