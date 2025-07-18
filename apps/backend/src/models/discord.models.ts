@@ -37,9 +37,9 @@ export const linkDiscordAccount = async (
       );
       throw new Error("Discord account already linked to another account");
     }
+    return;
   }
 
-  // Create new Discord link
   await runQuery(
     `INSERT INTO LinkedAccounts (account_id, provider, provider_id) 
      VALUES (?, 'discord', ?)`,
