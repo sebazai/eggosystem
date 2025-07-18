@@ -603,7 +603,7 @@ deploy-stage:
     - echo "$HUB_PROD_SSH" | base64 -d | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan $HUB_DEV_IP >> ~/.ssh/known_hosts
+    - ssh-keyscan $HUB_STAGE_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
     - export PHPMYADMIN_AUTH=$(echo $PHPMYADMIN_AUTH_BASE64 | base64 -d)
