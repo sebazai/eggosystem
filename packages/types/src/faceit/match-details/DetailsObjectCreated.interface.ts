@@ -3,41 +3,133 @@ import {
   FaceitGame,
   FaceitMatchTeams,
   FaceitMatchStatus,
-  BaseMatchDetailsSchema,
   FaceitGameSchema,
-  FaceitMatchStatusSchema
+  FaceitMatchTeamsSchema
 } from "./Details.interface";
 
-export interface DetailsObjectCreated {
+interface DetailsObjectCreatedBase {
   match_id: string;
   version: number;
   game: FaceitGame;
   region: string;
   competition_id: string;
-  competition_type: string;
   competition_name: string;
-  organizer_id: string;
-  teams: FaceitMatchTeams;
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status: FaceitMatchStatus;
-  round?: number; // Optional since not always present
-  group?: number; // Optional since not always present
   faceit_url: string;
 }
 
-// Zod schemas for runtime validation
-export const DetailsObjectCreatedSchema = BaseMatchDetailsSchema.extend({
+interface MatchmakingDetailsObjectCreatedBase extends DetailsObjectCreatedBase {
+  organizer_id: "faceit";
+  competition_type: "matchmaking";
+}
+
+interface MatchmakingDetailsObjectCreatedCheckIn
+  extends MatchmakingDetailsObjectCreatedBase {
+  teams: unknown; // {}
+  status: FaceitMatchStatus.CHECK_IN;
+}
+
+interface MatchmakingDetailsObjectCreatedVoting
+  extends MatchmakingDetailsObjectCreatedBase {
+  teams: FaceitMatchTeams;
+  status: FaceitMatchStatus.VOTING;
+}
+
+export type MatchmakingDetailsObjectCreated =
+  | MatchmakingDetailsObjectCreatedCheckIn
+  | MatchmakingDetailsObjectCreatedVoting;
+
+const MatchmakingDetailsObjectCreatedBaseSchema = z.object({
+  match_id: z.string(),
+  version: z.number(),
   game: FaceitGameSchema,
-  status: FaceitMatchStatusSchema,
-  round: z.number().optional(),
-  group: z.number().optional()
+  region: z.string(),
+  competition_id: z.string(),
+  competition_type: z.literal("matchmaking"),
+  competition_name: z.string(),
+  organizer_id: z.literal("faceit"),
+  calculate_elo: z.boolean(),
+  chat_room_id: z.string(),
+  best_of: z.number(),
+  faceit_url: z.string()
 });
 
-// Runtime validation function
-export function validateDetailsObjectCreated(
+const MatchmakingDetailsObjectCreatedCheckInSchema = z.object({
+  status: z.literal(FaceitMatchStatus.CHECK_IN),
+  teams: z.object({}),
+  ...MatchmakingDetailsObjectCreatedBaseSchema.shape
+});
+
+const MatchmakingDetailsObjectCreatedVotingSchema = z.object({
+  status: z.literal(FaceitMatchStatus.VOTING),
+  teams: FaceitMatchTeamsSchema,
+  ...MatchmakingDetailsObjectCreatedBaseSchema.shape
+});
+
+const MatchmakingDetailsObjectCreatedSchema = z.discriminatedUnion("status", [
+  MatchmakingDetailsObjectCreatedCheckInSchema,
+  MatchmakingDetailsObjectCreatedVotingSchema
+]);
+
+export function validateMatchmakingDetailsObjectCreated(
   data: unknown
-): DetailsObjectCreated {
-  return DetailsObjectCreatedSchema.parse(data);
+): MatchmakingDetailsObjectCreated {
+  return MatchmakingDetailsObjectCreatedSchema.parse(data);
+}
+
+interface ChampionshipDetailsObjectCreatedBase
+  extends DetailsObjectCreatedBase {
+  organizer_id: string;
+  competition_type: "championship";
+  round: number;
+  group: number;
+}
+
+interface ChampionshipDetailsObjectCreatedCheckIn
+  extends ChampionshipDetailsObjectCreatedBase {
+  teams: unknown; // {}
+  status: FaceitMatchStatus.CHECK_IN;
+}
+
+export interface ChampionshipDetailsObjectCreatedVoting
+  extends ChampionshipDetailsObjectCreatedBase {
+  teams: FaceitMatchTeams;
+  status: FaceitMatchStatus.VOTING;
+}
+
+export type ChampionshipDetailsObjectCreated =
+  | ChampionshipDetailsObjectCreatedCheckIn
+  | ChampionshipDetailsObjectCreatedVoting;
+
+const ChampionshipDetailsObjectCreatedBaseSchema = z.object({
+  ...MatchmakingDetailsObjectCreatedBaseSchema.shape,
+  organizer_id: z.string(),
+  competition_type: z.literal("championship"),
+  round: z.number(),
+  group: z.number()
+});
+
+const ChampionshipDetailsObjectCreatedCheckInSchema = z.object({
+  status: z.literal(FaceitMatchStatus.CHECK_IN),
+  teams: z.object({}),
+  ...ChampionshipDetailsObjectCreatedBaseSchema.shape
+});
+
+const ChampionshipDetailsObjectCreatedVotingSchema = z.object({
+  status: z.literal(FaceitMatchStatus.VOTING),
+  teams: FaceitMatchTeamsSchema,
+  ...ChampionshipDetailsObjectCreatedBaseSchema.shape
+});
+
+const ChampionshipDetailsObjectCreatedSchema = z.discriminatedUnion("status", [
+  ChampionshipDetailsObjectCreatedCheckInSchema,
+  ChampionshipDetailsObjectCreatedVotingSchema
+]);
+
+export function validateChampionshipDetailsObjectCreated(
+  data: unknown
+): ChampionshipDetailsObjectCreated {
+  return ChampionshipDetailsObjectCreatedSchema.parse(data);
 }

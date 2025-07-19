@@ -2,14 +2,14 @@ import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
-  FaceitMapVoting,
   FaceitMatchResultsFinished,
   FaceitDetailedResultsFinished,
   BaseMatchDetailsSchema,
-  FaceitMapVotingSchema,
   FaceitMatchResultsFinishedSchema,
   FaceitDetailedResultsFinishedSchema,
-  FaceitMatchStatus
+  FaceitMatchStatus,
+  FaceitVoting,
+  FaceitVotingSchema
 } from "./Details.interface";
 
 export interface DetailsDemoReady {
@@ -22,7 +22,7 @@ export interface DetailsDemoReady {
   competition_name: string;
   organizer_id: string;
   teams: FaceitMatchTeams;
-  voting: Voting;
+  voting: FaceitVoting;
   calculate_elo: boolean;
   scheduled_at?: number;
   configured_at: number;
@@ -39,20 +39,9 @@ export interface DetailsDemoReady {
   faceit_url: string;
 }
 
-export interface Voting {
-  voted_entity_types: string[];
-  map: FaceitMapVoting;
-}
-
-// Zod schemas for runtime validation
-const VotingSchema = z.object({
-  voted_entity_types: z.array(z.string()),
-  map: FaceitMapVotingSchema
-});
-
 export const DetailsDemoReadySchema = BaseMatchDetailsSchema.extend({
   game: z.literal(FaceitGame.CS2),
-  voting: VotingSchema,
+  voting: FaceitVotingSchema,
   scheduled_at: z.number().optional(),
   configured_at: z.number(),
   started_at: z.number(),

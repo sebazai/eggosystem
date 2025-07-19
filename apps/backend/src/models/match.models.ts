@@ -14,7 +14,6 @@ import {
   type Stage,
   type SeasonLeagueExternalId,
   type SeasonLeagueTeam,
-  type DetailsObjectCreated,
   MatchStatus
 } from "@eggosystem/types";
 import {
@@ -304,7 +303,8 @@ const addTeamToMatch = async (
 };
 
 export const addMatchToDatabase = async (
-  matchDetails: DetailsObjectCreated,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  matchDetails: any,
   externalLeagueId: string
 ) => {
   const connection = await getConnection();

@@ -46,7 +46,6 @@ export interface FaceitMatchTeams {
   faction2: FaceitTeamFaction;
 }
 
-// Map voting interface
 export interface FaceitMapVoting {
   pick: string[];
   entities: FaceitMapEntity[];
@@ -56,6 +55,46 @@ export interface FaceitLocationVoting {
   pick: string[];
   entities: FaceitLocationEntity[];
 }
+
+export interface FaceitVoting {
+  map: FaceitMapVoting;
+  voted_entity_types: string[];
+  location: FaceitLocationVoting;
+}
+
+const FaceitMapEntitySchema = z.object({
+  image_sm: z.string(),
+  name: z.string(),
+  class_name: z.string(),
+  game_map_id: z.string(),
+  guid: z.string(),
+  image_lg: z.string()
+});
+
+const FaceitLocationEntitySchema = z.object({
+  image_sm: z.string(),
+  name: z.string(),
+  class_name: z.string(),
+  game_location_id: z.string(),
+  guid: z.string(),
+  image_lg: z.string()
+});
+
+const FaceitMapVotingSchema = z.object({
+  pick: z.array(z.string()),
+  entities: z.array(FaceitMapEntitySchema)
+});
+
+const FaceitLocationVotingSchema = z.object({
+  pick: z.array(z.string()),
+  entities: z.array(FaceitLocationEntitySchema)
+});
+
+export const FaceitVotingSchema = z.object({
+  map: FaceitMapVotingSchema,
+  voted_entity_types: z.array(z.string()),
+  location: FaceitLocationVotingSchema
+});
 
 export interface FaceitMatchResultsAbortedAndCancelled {
   winner: "";
@@ -115,24 +154,6 @@ interface FaceitLocationEntity {
 export const FaceitGameSchema = z.nativeEnum(FaceitGame);
 export const FaceitMatchStatusSchema = z.nativeEnum(FaceitMatchStatus);
 
-const FaceitMapEntitySchema = z.object({
-  image_sm: z.string(),
-  name: z.string(),
-  class_name: z.string(),
-  game_map_id: z.string(),
-  guid: z.string(),
-  image_lg: z.string()
-});
-
-const FaceitLocationEntitySchema = z.object({
-  image_sm: z.string(),
-  name: z.string(),
-  class_name: z.string(),
-  game_location_id: z.string(),
-  guid: z.string(),
-  image_lg: z.string()
-});
-
 export const FaceitPlayerRosterSchema = z.object({
   player_id: z.string(),
   nickname: z.string(),
@@ -157,16 +178,6 @@ export const FaceitTeamFactionSchema = z.object({
 export const FaceitMatchTeamsSchema = z.object({
   faction1: FaceitTeamFactionSchema,
   faction2: FaceitTeamFactionSchema
-});
-
-export const FaceitMapVotingSchema = z.object({
-  pick: z.array(z.string()),
-  entities: z.array(FaceitMapEntitySchema)
-});
-
-export const FaceitLocationVotingSchema = z.object({
-  pick: z.array(z.string()),
-  entities: z.array(FaceitLocationEntitySchema)
 });
 
 const FaceitFactionScoresSchema = z.object({

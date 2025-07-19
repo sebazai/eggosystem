@@ -7,12 +7,11 @@ import {
   FaceitDetailedResultsAbortedAndCancelled,
   FaceitLocationVoting,
   BaseMatchDetailsSchema,
-  FaceitMapVotingSchema,
-  FaceitLocationVotingSchema,
   FaceitMatchResultsAbortedAndCancelledSchema,
   FaceitDetailedResultsAbortedAndCancelledSchema,
   FaceitMatchStatus,
-  FaceitGameSchema
+  FaceitGameSchema,
+  FaceitVotingSchema
 } from "./Details.interface";
 
 export interface DetailsCancelled {
@@ -46,16 +45,9 @@ interface FaceitCancelledVoting {
   location: FaceitLocationVoting;
 }
 
-// Zod schemas for runtime validation
-const FaceitCancelledVotingSchema = z.object({
-  map: FaceitMapVotingSchema,
-  voted_entity_types: z.array(z.string()),
-  location: FaceitLocationVotingSchema
-});
-
 export const FaceitDetailsCancelledSchema = BaseMatchDetailsSchema.extend({
   game: FaceitGameSchema,
-  voting: FaceitCancelledVotingSchema,
+  voting: FaceitVotingSchema,
   configured_at: z.number(),
   finished_at: z.number(),
   results: FaceitMatchResultsAbortedAndCancelledSchema,

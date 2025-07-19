@@ -2,63 +2,77 @@ import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
-  FaceitMapVoting,
-  FaceitLocationVoting,
-  BaseMatchDetailsSchema,
   FaceitGameSchema,
-  FaceitMapVotingSchema,
-  FaceitLocationVotingSchema,
-  FaceitMatchStatus
+  FaceitMatchStatus,
+  FaceitMatchTeamsSchema,
+  FaceitVoting,
+  FaceitVotingSchema
 } from "./Details.interface";
 
-// Voting system for configuring matches
-export interface FaceitConfiguringVoting {
-  map: FaceitMapVoting;
-  voted_entity_types: string[];
-  location: FaceitLocationVoting;
-}
-
-// Main interface for FACEIT match details when status is CONFIGURING
-export interface DetailsConfiguring {
+interface DetailsConfiguringBase {
   match_id: string;
   version: number;
   game: FaceitGame;
   region: string;
   competition_id: string;
-  competition_type: string;
   competition_name: string;
   organizer_id: string;
+  voting: FaceitVoting;
   teams: FaceitMatchTeams;
-  voting: FaceitConfiguringVoting;
   calculate_elo: boolean;
-  scheduled_at?: number; // Unix timestamp
-  configured_at: number; // Unix timestamp
   chat_room_id: string;
   best_of: number;
-  status: "CONFIGURING";
-  round?: number; // Optional since not always present
-  group?: number; // Optional since not always present
+  status: FaceitMatchStatus.CONFIGURING;
   faceit_url: string;
+  configured_at: number;
 }
 
-// Zod schemas for runtime validation
-const FaceitConfiguringVotingSchema = z.object({
-  map: FaceitMapVotingSchema,
-  voted_entity_types: z.array(z.string()),
-  location: FaceitLocationVotingSchema
-});
-
-export const DetailsConfiguringSchema = BaseMatchDetailsSchema.extend({
+const DetailsConfiguringBaseSchema = z.object({
+  match_id: z.string(),
+  version: z.number(),
   game: FaceitGameSchema,
-  voting: FaceitConfiguringVotingSchema,
-  scheduled_at: z.number().optional(),
-  configured_at: z.number(),
+  region: z.string(),
+  competition_id: z.string(),
+  competition_name: z.string(),
+  organizer_id: z.string(),
+  voting: FaceitVotingSchema,
+  teams: FaceitMatchTeamsSchema,
+  calculate_elo: z.boolean(),
+  chat_room_id: z.string(),
+  best_of: z.number(),
   status: z.literal(FaceitMatchStatus.CONFIGURING),
-  round: z.number().optional(),
-  group: z.number().optional()
+  faceit_url: z.string(),
+  configured_at: z.number()
 });
 
-// Runtime validation function
-export function validateDetailsConfiguring(data: unknown): DetailsConfiguring {
-  return DetailsConfiguringSchema.parse(data);
+export interface MatchmakingDetailsConfiguring extends DetailsConfiguringBase {
+  competition_type: "matchmaking";
+}
+
+const MatchmakingDetailsConfiguringSchema = z.object({
+  ...DetailsConfiguringBaseSchema.shape,
+  competition_type: z.literal("matchmaking")
+});
+
+export function validateMatchmakingDetailsConfiguring(
+  data: unknown
+): MatchmakingDetailsConfiguring {
+  return MatchmakingDetailsConfiguringSchema.parse(data);
+}
+
+export interface ChampionshipDetailsConfiguring extends DetailsConfiguringBase {
+  competition_type: "championship";
+  round: number;
+  group: number;
+}
+
+const ChampionshipDetailsConfiguringSchema = z.object({
+  ...DetailsConfiguringBaseSchema.shape,
+  competition_type: z.literal("championship"),
+  round: z.number(),
+  group: z.number()
+});
+
+export function validateChampionshipDetailsConfiguring(data: unknown) {
+  return ChampionshipDetailsConfiguringSchema.parse(data);
 }

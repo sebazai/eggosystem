@@ -3,7 +3,8 @@
 import { Router } from "express";
 import {
   getFaceITTeamDetails,
-  getFaceITMatchDetails
+  getFaceITMatchDetails,
+  getFaceITChampionshipDetails
 } from "../../services/faceit.services";
 import { type Request, type Response } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
@@ -22,26 +23,32 @@ import {
   validateMatchStatusFinishedWebhook,
   validateMatchStatusFinishedAfterAbortWebhook,
   validateMatchObjectCreatedWebhook,
-  validateDetailsObjectCreated,
-  type DetailsObjectCreated,
   type MatchStatusAbortedWebhook,
   type MatchStatusCancelledWebhook,
   validateMatchStatusReadyWebhook,
-  type DetailsConfiguring,
   validateMatchStatusConfiguringWebhook,
   validateMatchDemoReadyWebhook,
-  type DetailsDemoReady,
   validateMatchStatusAbortedWebhook,
   validateMatchStatusCancelledWebhook,
   validateChampionshipCreatedWebhook,
-  validateDetailsReady,
-  DetailsReady,
-  validateDetailsConfiguring,
-  validateDetailsDemoReady,
-  DetailsAborted,
+  type DetailsAborted,
   validateDetailsAborted,
   validateDetailsCancelled,
-  DetailsCancelled
+  type DetailsCancelled,
+  validateMatchmakingDetailsObjectCreated,
+  type MatchmakingDetailsObjectCreated,
+  validateChampionshipDetailsObjectCreated,
+  type ChampionshipDetailsObjectCreated,
+  validateMatchmakingDetailsConfiguring,
+  type MatchmakingDetailsConfiguring,
+  type ChampionshipDetailsConfiguring,
+  validateChampionshipDetailsConfiguring,
+  type ChampionshipDetailsReady,
+  validateChampionshipDetailsReady,
+  validateMatchmakingDetailsReady,
+  type MatchmakingDetailsReady,
+  validateDetailsDemoReady,
+  type DetailsDemoReady
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -67,6 +74,7 @@ router.get(
   }
 );
 
+// championship_cancelled, championship_checkin, championship_created, championship_finished, championship_seeding, championship_started,
 type FaceITWebhookData =
   | MatchStatusConfiguringWebhook
   | MatchStatusReadyWebhook
@@ -76,7 +84,16 @@ type FaceITWebhookData =
   | MatchStatusFinishedWebhook
   | MatchStatusFinishedAfterAbortWebhook
   | MatchObjectCreatedWebhook
-  | ChampionshipCreatedWebhook;
+  | ChampionshipCreatedWebhook
+  | {
+      event:
+        | "championship_cancelled"
+        | "championship_checkin"
+        | "championship_finished"
+        | "championship_seeding"
+        | "championship_started";
+      payload: { id: string };
+    };
 
 const processWebhookWithDetails = async <
   W extends { payload: { id: string } },
@@ -147,26 +164,102 @@ router.post(
     const webhookData = req.body;
 
     if (webhookData.event === "match_object_created") {
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateMatchObjectCreatedWebhook,
-        getFaceITMatchDetails<DetailsObjectCreated>,
-        validateDetailsObjectCreated,
-        webhookData.event
-      );
-      await addMatchToDatabase(
-        validatedMatchDetails,
-        validatedWebhook.payload.entity.id
-      );
+      if (webhookData.payload.entity.type === "matchmaking") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchObjectCreatedWebhook,
+          getFaceITMatchDetails<MatchmakingDetailsObjectCreated>,
+          validateMatchmakingDetailsObjectCreated,
+          webhookData.event
+        );
+      }
+      if (webhookData.payload.entity.type === "championship") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchObjectCreatedWebhook,
+          getFaceITMatchDetails<ChampionshipDetailsObjectCreated>,
+          validateChampionshipDetailsObjectCreated,
+          webhookData.event
+        );
+        await addMatchToDatabase(
+          validatedMatchDetails,
+          validatedWebhook.payload.entity.id
+        );
+      }
+      res.status(200).send("Webhook received");
+      return;
+    }
+
+    if (webhookData.event === "match_status_configuring") {
+      // Get map vetos and bans here
+      if (webhookData.payload.entity.type === "matchmaking") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchStatusConfiguringWebhook,
+          getFaceITMatchDetails<MatchmakingDetailsConfiguring>,
+          validateMatchmakingDetailsConfiguring,
+          webhookData.event
+        );
+      }
+      if (webhookData.payload.entity.type === "championship") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchStatusConfiguringWebhook,
+          getFaceITMatchDetails<ChampionshipDetailsConfiguring>,
+          validateChampionshipDetailsConfiguring,
+          webhookData.event
+        );
+      }
+      res.status(200).send("Webhook received");
+      return;
+    }
+
+    if (webhookData.event === "match_status_ready") {
+      if (webhookData.payload.entity.type === "matchmaking") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchStatusReadyWebhook,
+          getFaceITMatchDetails<MatchmakingDetailsReady>,
+          validateMatchmakingDetailsReady,
+          webhookData.event
+        );
+      }
+      if (webhookData.payload.entity.type === "championship") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchStatusReadyWebhook,
+          getFaceITMatchDetails<ChampionshipDetailsReady>,
+          validateChampionshipDetailsReady,
+          webhookData.event
+        );
+      }
+      res.status(200).send("Webhook received");
+      return;
     }
 
     // This should be ok now, but ensure this happens for Match, not MatchGame.
     if (webhookData.event === "match_status_finished") {
       if (validateMatchStatusFinishedWebhook(webhookData)) {
         const externalMatchRoomId = webhookData.payload.id;
+        const matchDetails = await getFaceITMatchDetails(externalMatchRoomId);
         const startTime = webhookData.payload.started_at;
         if (
           // Match was aborted due to AFK.
@@ -180,9 +273,8 @@ router.post(
             externalMatchRoomId,
             webhookData.event,
             JSON.stringify(webhookData),
-            null
+            JSON.stringify(matchDetails)
           );
-          return;
         }
 
         const endTime = webhookData.payload.finished_at;
@@ -191,90 +283,61 @@ router.post(
           externalMatchRoomId,
           webhookData.event,
           JSON.stringify(webhookData),
-          null
+          JSON.stringify(matchDetails)
         );
-        return;
       }
+      res.status(200).send("Webhook received");
+      return;
     }
-    if (webhookData.event === "match_status_ready") {
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateMatchStatusReadyWebhook,
-        getFaceITMatchDetails<DetailsReady>,
-        validateDetailsReady,
-        webhookData.event
-      );
-    }
-    if (webhookData.event === "match_status_configuring") {
-      // Get map vetos and bans here
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateMatchStatusConfiguringWebhook,
-        getFaceITMatchDetails<DetailsConfiguring>,
-        validateDetailsConfiguring,
-        webhookData.event
-      );
-    }
+
     if (webhookData.event === "match_demo_ready") {
       // Validate players in both teams and push the demo url to parser
       // Send demo_url to parser
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateMatchDemoReadyWebhook,
-        getFaceITMatchDetails<DetailsDemoReady>,
-        validateDetailsDemoReady,
-        webhookData.event
+      const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
+      await saveWebhookData(
+        webhookData.payload.id,
+        webhookData.event,
+        JSON.stringify(webhookData),
+        JSON.stringify(matchDetails)
       );
+      res.status(200).send("Webhook received");
+      return;
     }
     if (webhookData.event === "match_status_aborted") {
       // Do we need this?
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateMatchStatusAbortedWebhook,
-        getFaceITMatchDetails<DetailsAborted>,
-        validateDetailsAborted,
-        webhookData.event
+      const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
+      await saveWebhookData(
+        webhookData.payload.id,
+        webhookData.event,
+        JSON.stringify(webhookData),
+        JSON.stringify(matchDetails)
       );
+      res.status(200).send("Webhook received");
+      return;
     }
+
     if (webhookData.event === "match_status_cancelled") {
-      // Do we need this?
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateMatchStatusCancelledWebhook,
-        getFaceITMatchDetails<DetailsCancelled>,
-        validateDetailsCancelled,
-        webhookData.event
+      const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
+      await saveWebhookData(
+        webhookData.payload.id,
+        webhookData.event,
+        JSON.stringify(webhookData),
+        JSON.stringify(matchDetails)
       );
+      res.status(200).send("Webhook received");
+      return;
     }
-    if (webhookData.event === "championship_created") {
-      // Parse the name and add to database SeasonLeagueExternalRooms
-      // Add type (roundRobin etc.)
-      const {
-        webhookData: validatedWebhook,
-        matchDetails: validatedMatchDetails
-      } = await processWebhookWithDetails(
-        webhookData,
-        validateChampionshipCreatedWebhook,
-        getFaceITMatchDetails<DetailsObjectCreated>, // FIXME
-        validateDetailsObjectCreated, // FIXME
-        webhookData.event
-      );
-    }
+
+    const championshipDetails = await getFaceITChampionshipDetails(
+      webhookData.payload.id
+    );
+
+    await saveWebhookData(
+      webhookData.payload.id,
+      webhookData.event,
+      JSON.stringify(webhookData),
+      JSON.stringify(championshipDetails)
+    );
 
     res.status(200).send("Webhook received");
     return;

@@ -376,3 +376,15 @@ export const getFaceITMatchDetails = async <T>(match_id: string) => {
   const response = await fetch(webURL, { headers });
   return response.json() as Promise<T>;
 };
+
+export const getFaceITChampionshipDetails = async <T>(
+  championship_id: string
+) => {
+  const webURL = `https://open.faceit.com/data/v4/championships/${championship_id}`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  return response.json() as Promise<T>;
+};

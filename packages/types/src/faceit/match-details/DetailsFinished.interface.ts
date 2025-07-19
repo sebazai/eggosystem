@@ -6,11 +6,11 @@ import {
   FaceitMatchResultsFinished,
   FaceitMatchTeams,
   BaseMatchDetailsSchema,
-  FaceitMapVotingSchema,
   FaceitMatchResultsFinishedSchema,
   FaceitDetailedResultsFinishedSchema,
   FaceitMatchStatus,
-  FaceitGameSchema
+  FaceitGameSchema,
+  FaceitVotingSchema
 } from "./Details.interface";
 
 // Voting interface
@@ -45,16 +45,10 @@ export interface FaceitMatchDetailsFinishedAfterAborted {
   faceit_url: string;
 }
 
-// Zod schemas for runtime validation
-const FaceitMatchVotingFinishedSchema = z.object({
-  map: FaceitMapVotingSchema,
-  voted_entity_types: z.array(z.string())
-});
-
 export const FaceitMatchDetailsFinishedAfterAbortedSchema =
   BaseMatchDetailsSchema.extend({
     game: FaceitGameSchema,
-    voting: FaceitMatchVotingFinishedSchema,
+    voting: FaceitVotingSchema,
     scheduled_at: z.number().optional(),
     configured_at: z.number(),
     finished_at: z.number(),
