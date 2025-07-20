@@ -18,6 +18,15 @@ import {
   FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
 
+export const convertFaceitGameToAppId = (game: string) => {
+  switch (game) {
+    case "6d9298b7-73e4-4672-96b5-720293ba2a4a":
+      return 730;
+    default:
+      throw new Error(`Unknown game: ${game}`);
+  }
+};
+
 // E2E Test mode mocking
 const isE2EMode =
   process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";

@@ -4,7 +4,8 @@ import { Router } from "express";
 import {
   getFaceITTeamDetails,
   getFaceITMatchDetails,
-  getFaceITChampionshipDetails
+  getFaceITChampionshipDetails,
+  convertFaceitGameToAppId
 } from "../../services/faceit.services";
 import { type Request, type Response } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
@@ -46,6 +47,7 @@ import {
   updateMatchFinished
 } from "../../models/match.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
+import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
 
 const router = Router();
 
@@ -76,13 +78,14 @@ type FaceITWebhookData =
   | MatchObjectCreatedWebhook
   | ChampionshipCreatedWebhook
   | {
+      app_id: string;
       event:
         | "championship_cancelled"
         | "championship_checkin"
         | "championship_finished"
         | "championship_seeding"
         | "championship_started";
-      payload: { id: string };
+      payload: { id: string; organizer_id: string };
     };
 
 const processWebhookWithDetails = async <
@@ -152,6 +155,20 @@ router.post(
     res: Response
   ): Promise<void> => {
     const webhookData = req.body;
+    const appId = convertFaceitGameToAppId(webhookData.app_id);
+    const organizer = await getOrganizerByFaceitIdAndGameAppId(
+      webhookData.payload.organizer_id,
+      appId
+    );
+
+    if (!organizer) {
+      logger.error(
+        `Organizer not found for faceit_id ${webhookData.payload.organizer_id} and app_id ${appId}`
+      );
+      // TODO: Handle this when we go live
+      // res.status(404).send("Organizer not found");
+      // return;
+    }
 
     if (webhookData.event === "match_object_created") {
       if (webhookData.payload.entity.type === "matchmaking") {

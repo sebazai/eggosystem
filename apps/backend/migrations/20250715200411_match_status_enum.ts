@@ -1,6 +1,6 @@
 import type { Knex } from "knex";
 
-export enum MatchStatus {
+enum MatchStatus {
   CREATED = "CREATED",
   VOTING = "VOTING",
   ONGOING = "ONGOING",
@@ -9,7 +9,7 @@ export enum MatchStatus {
   CANCELLED = "CANCELLED"
 }
 
-export enum MatchGameStatus {
+enum MatchGameStatus {
   CREATED = "CREATED",
   CONFIGURING = "CONFIGURING",
   READY = "READY",

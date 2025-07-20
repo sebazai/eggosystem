@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Jul 12, 2025 at 10:34 AM
+-- Generation Time: Jul 20, 2025 at 05:13 PM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -21,6 +21,24 @@ SET time_zone = "+00:00";
 -- Database: `kanaliiga`
 --
 
+DELIMITER $$
+--
+-- Functions
+--
+CREATE DEFINER=`kanadbuser`@`%` FUNCTION `get_account_id_from_steam_id` (`steam_id_param` BIGINT) RETURNS INT(10) UNSIGNED DETERMINISTIC READS SQL DATA BEGIN
+      DECLARE account_id_result INT UNSIGNED;
+      
+      SELECT la.account_id INTO account_id_result
+      FROM LinkedAccounts la
+      WHERE la.provider = 'steam' 
+      AND la.provider_id = CAST(steam_id_param AS CHAR)
+      LIMIT 1;
+      
+      RETURN account_id_result;
+    END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -36,6 +54,80 @@ CREATE TABLE `AccountPermissionScopes` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `AccountPermissionScopes`
+--
+DELIMITER $$
+CREATE TRIGGER `validate_captain_permission_on_insert` BEFORE INSERT ON `AccountPermissionScopes` FOR EACH ROW BEGIN
+      DECLARE captain_status BOOLEAN DEFAULT FALSE;
+      DECLARE steam_id_found BIGINT;
+      
+      -- Check if this permission is for a captain-related permission
+      IF EXISTS (
+        SELECT 1 FROM Permissions p 
+        WHERE p.id = NEW.permission_id 
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+      ) THEN
+        
+        -- Find the steam_id for this account
+        SELECT strp.steam_id INTO steam_id_found
+        FROM SeasonTeamRegistrationPlayers strp
+        WHERE strp.season_id = NEW.season_id
+        AND strp.team_id = NEW.team_id
+        AND get_account_id_from_steam_id(strp.steam_id) = NEW.account_id
+        LIMIT 1;
+        
+        -- Check if this account is actually a captain or co-captain for this season/team
+        SELECT (is_captain = 1 OR is_co_captain = 1) INTO captain_status
+        FROM SeasonTeamRegistrationPlayers
+        WHERE season_id = NEW.season_id
+        AND team_id = NEW.team_id
+        AND steam_id = steam_id_found;
+        
+        IF NOT captain_status THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Cannot assign captain permissions to non-captain/co-captain player';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `validate_captain_permission_on_update` BEFORE UPDATE ON `AccountPermissionScopes` FOR EACH ROW BEGIN
+      DECLARE captain_status BOOLEAN DEFAULT FALSE;
+      DECLARE steam_id_found BIGINT;
+      
+      -- Check if this permission is for a captain-related permission
+      IF EXISTS (
+        SELECT 1 FROM Permissions p 
+        WHERE p.id = NEW.permission_id 
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+      ) THEN
+        
+        -- Find the steam_id for this account
+        SELECT strp.steam_id INTO steam_id_found
+        FROM SeasonTeamRegistrationPlayers strp
+        WHERE strp.season_id = NEW.season_id
+        AND strp.team_id = NEW.team_id
+        AND get_account_id_from_steam_id(strp.steam_id) = NEW.account_id
+        LIMIT 1;
+        
+        -- Check if this account is actually a captain or co-captain for this season/team
+        SELECT (is_captain = 1 OR is_co_captain = 1) INTO captain_status
+        FROM SeasonTeamRegistrationPlayers
+        WHERE season_id = NEW.season_id
+        AND team_id = NEW.team_id
+        AND steam_id = steam_id_found;
+        
+        IF NOT captain_status THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Cannot assign captain permissions to non-captain/co-captain player';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -98,6 +190,23 @@ CREATE TABLE `AuditLog` (
   `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`)),
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `FaceitWebhooks`
+--
+
+CREATE TABLE `FaceitWebhooks` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `received_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `external_match_room_id` varchar(255) NOT NULL,
+  `event` varchar(255) NOT NULL,
+  `data` text NOT NULL,
+  `details` text NOT NULL,
+  `error_type` varchar(255) DEFAULT NULL,
+  `error_details` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -243,7 +352,10 @@ CREATE TABLE `Matches` (
   `match_date` date NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
-  `external_match_room_id` varchar(255) DEFAULT NULL
+  `external_match_room_id` varchar(255) DEFAULT NULL,
+  `group` tinyint(4) DEFAULT NULL,
+  `round` tinyint(4) DEFAULT NULL,
+  `status` enum('SCHEDULED','CHECK_IN','VOTING','CONFIGURING','READY','ONGOING','FINISHED','ABORTED','CANCELLED','FORFEIT') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -327,6 +439,34 @@ CREATE TABLE `Organizations` (
   `sort_order` int(10) UNSIGNED DEFAULT NULL,
   `discord_invite_link` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `OrganizerGames`
+--
+
+CREATE TABLE `OrganizerGames` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `organizer_id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Organizers`
+--
+
+CREATE TABLE `Organizers` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `faceit_id` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -613,14 +753,14 @@ CREATE TABLE `SeasonPlayerRanks` (
   `steam_id` bigint(20) NOT NULL,
   `season_id` int(10) UNSIGNED NOT NULL,
   `rank_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
-  `csgo_rank` int(11) DEFAULT -1,
+  `csgo_rank` int(11) DEFAULT NULL,
   `cs2_rank` int(11) DEFAULT NULL,
   `cs_hours` int(11) DEFAULT NULL,
   `faceit_level` int(11) DEFAULT NULL,
   `faceit_elo` int(11) DEFAULT NULL,
   `faceit_kd` decimal(3,2) DEFAULT NULL,
   `faceit_date` timestamp NULL DEFAULT '1970-01-01 10:00:00',
-  `kana_elo` int(11) DEFAULT 0,
+  `kana_elo` int(11) DEFAULT NULL,
   `esportal_kd` decimal(4,2) DEFAULT NULL,
   `esportal_elo` int(11) DEFAULT NULL,
   `esportal_rank` int(11) DEFAULT NULL,
@@ -723,6 +863,204 @@ CREATE TABLE `SeasonTeamRegistrationPlayers` (
   `is_co_captain` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
+--
+-- Triggers `SeasonTeamRegistrationPlayers`
+--
+DELIMITER $$
+CREATE TRIGGER `add_captain_permissions_on_insert` AFTER INSERT ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      DECLARE permission_id_found INT UNSIGNED;
+      DECLARE role_id_found INT UNSIGNED;
+      
+      -- Only proceed if this is a captain or co-captain
+      IF NEW.is_captain = 1 OR NEW.is_co_captain = 1 THEN
+        
+        -- Get the account_id for this steam_id
+        SET account_id_found = get_account_id_from_steam_id(NEW.steam_id);
+        
+        -- Get the edit-registration permission id
+        SELECT id INTO permission_id_found FROM Permissions WHERE permission_name = 'edit-registration' LIMIT 1;
+        
+        -- Get the captain role id
+        SELECT id INTO role_id_found FROM Roles WHERE role_name = 'captain' LIMIT 1;
+        
+        -- Add the permission scope if it doesn't exist
+        INSERT IGNORE INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
+        VALUES (account_id_found, permission_id_found, NEW.season_id, NEW.team_id);
+        
+        -- Add the captain role if it doesn't exist
+        INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id)
+        VALUES (account_id_found, role_id_found, 1);
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `add_captain_permissions_on_update` AFTER UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      DECLARE permission_id_found INT UNSIGNED;
+      DECLARE role_id_found INT UNSIGNED;
+      
+      -- Only proceed if captain or co-captain status was added
+      IF ((OLD.is_captain = 0 AND NEW.is_captain = 1) OR (OLD.is_co_captain = 0 AND NEW.is_co_captain = 1)) THEN
+        
+        -- Get the account_id for this steam_id
+        SET account_id_found = get_account_id_from_steam_id(NEW.steam_id);
+        
+        -- Get the edit-registration permission id
+        SELECT id INTO permission_id_found FROM Permissions WHERE permission_name = 'edit-registration' LIMIT 1;
+        
+        -- Get the captain role id
+        SELECT id INTO role_id_found FROM Roles WHERE role_name = 'captain' LIMIT 1;
+        
+        -- Add the permission scope if it doesn't exist
+        INSERT IGNORE INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
+        VALUES (account_id_found, permission_id_found, NEW.season_id, NEW.team_id);
+        
+        -- Add the captain role if it doesn't exist
+        INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id)
+        VALUES (account_id_found, role_id_found, 1);
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `cleanup_captain_permissions_on_delete` AFTER DELETE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      
+      -- Get the account_id for this steam_id
+      SET account_id_found = get_account_id_from_steam_id(OLD.steam_id);
+      
+      -- If this was a captain or co-captain, clean up permissions
+      IF OLD.is_captain = 1 OR OLD.is_co_captain = 1 THEN
+        
+        -- Remove captain-related permissions for this season/team
+        DELETE aps FROM AccountPermissionScopes aps
+        JOIN Permissions p ON p.id = aps.permission_id
+        WHERE aps.account_id = account_id_found
+        AND aps.season_id = OLD.season_id
+        AND aps.team_id = OLD.team_id
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions');
+        
+        -- Check if this account has any other captain permissions
+        IF NOT EXISTS (
+          SELECT 1 FROM AccountPermissionScopes aps2
+          JOIN Permissions p2 ON p2.id = aps2.permission_id
+          WHERE aps2.account_id = account_id_found
+          AND p2.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+        ) THEN
+          -- Remove captain role if no other captain permissions exist
+          DELETE ar FROM AccountRoles ar
+          JOIN Roles r ON r.id = ar.role_id
+          WHERE ar.account_id = account_id_found
+          AND r.role_name = 'captain';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `cleanup_captain_permissions_on_update` AFTER UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      
+      -- Get the account_id for this steam_id
+      SET account_id_found = get_account_id_from_steam_id(NEW.steam_id);
+      
+      -- If captain or co-captain status was removed, clean up permissions
+      IF (OLD.is_captain = 1 AND NEW.is_captain = 0) OR (OLD.is_co_captain = 1 AND NEW.is_co_captain = 0) THEN
+        
+        -- Remove captain-related permissions for this season/team
+        DELETE aps FROM AccountPermissionScopes aps
+        JOIN Permissions p ON p.id = aps.permission_id
+        WHERE aps.account_id = account_id_found
+        AND aps.season_id = NEW.season_id
+        AND aps.team_id = NEW.team_id
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions');
+        
+        -- Check if this account has any other captain permissions
+        IF NOT EXISTS (
+          SELECT 1 FROM AccountPermissionScopes aps2
+          JOIN Permissions p2 ON p2.id = aps2.permission_id
+          WHERE aps2.account_id = account_id_found
+          AND p2.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+        ) THEN
+          -- Remove captain role if no other captain permissions exist
+          DELETE ar FROM AccountRoles ar
+          JOIN Roles r ON r.id = ar.role_id
+          WHERE ar.account_id = account_id_found
+          AND r.role_name = 'captain';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_captain_per_team_season` BEFORE INSERT ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_captain = 1 THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_captain = 1
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_captain_per_team_season_update` BEFORE UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_captain = 1 AND (OLD.is_captain = 0 OR OLD.is_captain IS NULL) THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_captain = 1
+          AND steam_id != NEW.steam_id
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_co_captain_per_team_season` BEFORE INSERT ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_co_captain = 1 THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_co_captain = 1
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one co-captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_co_captain_per_team_season_update` BEFORE UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_co_captain = 1 AND (OLD.is_co_captain = 0 OR OLD.is_co_captain IS NULL) THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_co_captain = 1
+          AND steam_id != NEW.steam_id
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one co-captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -818,6 +1156,60 @@ CREATE TRIGGER `before_update_unique_external_platform` BEFORE UPDATE ON `Season
         END IF;
 
       END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `cleanup_captain_permissions_on_registration_delete` BEFORE DELETE ON `SeasonTeamRegistrations` FOR EACH ROW BEGIN
+      DECLARE done INT DEFAULT FALSE;
+      DECLARE steam_id_val BIGINT;
+      DECLARE is_captain_val BOOLEAN;
+      DECLARE is_co_captain_val BOOLEAN;
+      DECLARE account_id_found INT UNSIGNED;
+      DECLARE cur CURSOR FOR 
+        SELECT steam_id, is_captain, is_co_captain 
+        FROM SeasonTeamRegistrationPlayers 
+        WHERE season_id = OLD.season_id AND team_id = OLD.team_id;
+      DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+      
+      OPEN cur;
+      
+      read_loop: LOOP
+        FETCH cur INTO steam_id_val, is_captain_val, is_co_captain_val;
+        IF done THEN
+          LEAVE read_loop;
+        END IF;
+        
+        -- If this was a captain or co-captain, clean up permissions
+        IF is_captain_val = 1 OR is_co_captain_val = 1 THEN
+          -- Get the account_id for this steam_id
+          SET account_id_found = get_account_id_from_steam_id(steam_id_val);
+          
+          -- Remove captain-related permissions for this season/team
+          DELETE aps FROM AccountPermissionScopes aps
+          JOIN Permissions p ON p.id = aps.permission_id
+          WHERE aps.account_id = account_id_found
+          AND aps.season_id = OLD.season_id
+          AND aps.team_id = OLD.team_id
+          AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions');
+          
+          -- Check if this account has any other captain permissions
+          IF NOT EXISTS (
+            SELECT 1 FROM AccountPermissionScopes aps2
+            JOIN Permissions p2 ON p2.id = aps2.permission_id
+            WHERE aps2.account_id = account_id_found
+            AND p2.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+          ) THEN
+            -- Remove captain role if no other captain permissions exist
+            DELETE ar FROM AccountRoles ar
+            JOIN Roles r ON r.id = ar.role_id
+            WHERE ar.account_id = account_id_found
+            AND r.role_name = 'captain';
+          END IF;
+        END IF;
+      END LOOP;
+      
+      CLOSE cur;
     END
 $$
 DELIMITER ;
@@ -924,7 +1316,8 @@ ALTER TABLE `AccountPermissionScopes`
   ADD KEY `accountpermissionscopes_account_id_foreign` (`account_id`),
   ADD KEY `accountpermissionscopes_permission_id_foreign` (`permission_id`),
   ADD KEY `accountpermissionscopes_season_id_foreign` (`season_id`),
-  ADD KEY `accountpermissionscopes_team_id_foreign` (`team_id`);
+  ADD KEY `accountpermissionscopes_team_id_foreign` (`team_id`),
+  ADD KEY `idx_account_permission_scopes_captain_validation` (`account_id`,`season_id`,`team_id`,`permission_id`);
 
 --
 -- Indexes for table `AccountRoles`
@@ -949,6 +1342,12 @@ ALTER TABLE `AuditLog`
   ADD KEY `auditlog_entity_type_entity_id_index` (`entity_type`,`entity_id`),
   ADD KEY `auditlog_user_id_index` (`user_id`),
   ADD KEY `auditlog_created_at_index` (`created_at`);
+
+--
+-- Indexes for table `FaceitWebhooks`
+--
+ALTER TABLE `FaceitWebhooks`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `Games`
@@ -1067,6 +1466,21 @@ ALTER TABLE `Organizations`
   ADD UNIQUE KEY `organizations_name_unique` (`name`);
 
 --
+-- Indexes for table `OrganizerGames`
+--
+ALTER TABLE `OrganizerGames`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `organizergames_organizer_id_game_id_unique` (`organizer_id`,`game_id`),
+  ADD KEY `organizergames_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `Organizers`
+--
+ALTER TABLE `Organizers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `organizers_faceit_id_unique` (`faceit_id`);
+
+--
 -- Indexes for table `Permissions`
 --
 ALTER TABLE `Permissions`
@@ -1174,7 +1588,8 @@ ALTER TABLE `SeasonTeamPlayers`
 --
 ALTER TABLE `SeasonTeamRegistrationPlayers`
   ADD PRIMARY KEY (`season_id`,`team_id`,`steam_id`),
-  ADD KEY `seasonteamregistrationplayers_steam_id_foreign` (`steam_id`);
+  ADD KEY `seasonteamregistrationplayers_steam_id_foreign` (`steam_id`),
+  ADD KEY `idx_season_team_registration_players_captain` (`season_id`,`team_id`,`is_captain`,`is_co_captain`);
 
 --
 -- Indexes for table `SeasonTeamRegistrations`
@@ -1249,6 +1664,12 @@ ALTER TABLE `Accounts`
 --
 ALTER TABLE `AuditLog`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `FaceitWebhooks`
+--
+ALTER TABLE `FaceitWebhooks`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Games`
@@ -1326,6 +1747,18 @@ ALTER TABLE `MatchTeamMapVetoes`
 -- AUTO_INCREMENT for table `Organizations`
 --
 ALTER TABLE `Organizations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `OrganizerGames`
+--
+ALTER TABLE `OrganizerGames`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Organizers`
+--
+ALTER TABLE `Organizers`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1509,6 +1942,13 @@ ALTER TABLE `MatchTeams`
   ADD CONSTRAINT `matchteams_season_id_team_id_league_id_foreign` FOREIGN KEY (`season_id`,`team_id`,`league_id`) REFERENCES `SeasonLeagueTeams` (`season_id`, `team_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `OrganizerGames`
+--
+ALTER TABLE `OrganizerGames`
+  ADD CONSTRAINT `organizergames_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `organizergames_organizer_id_foreign` FOREIGN KEY (`organizer_id`) REFERENCES `Organizers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `PlayerStats`
 --
 ALTER TABLE `PlayerStats`
@@ -1632,6 +2072,14 @@ ALTER TABLE `Teams`
 --
 ALTER TABLE `UserPolicyAcceptances`
   ADD CONSTRAINT `userpolicyacceptances_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+
+DELIMITER $$
+--
+-- Events
+--
+CREATE DEFINER=`kanamain`@`%` EVENT `delete_old_audit_logs` ON SCHEDULE EVERY 1 DAY STARTS '2025-05-21 06:26:17' ON COMPLETION NOT PRESERVE ENABLE DO DELETE FROM AuditLog WHERE created_at < NOW() - INTERVAL 1 YEAR$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

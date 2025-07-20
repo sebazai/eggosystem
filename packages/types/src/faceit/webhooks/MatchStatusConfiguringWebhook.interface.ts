@@ -10,6 +10,7 @@ import {
 interface MatchStatusConfiguringPayload {
   id: string;
   organizer_id: string;
+  app_id: string;
   region: string;
   game: string;
   version: number;
@@ -35,6 +36,7 @@ export interface MatchStatusConfiguringWebhook {
 const MatchStatusConfiguringPayloadSchema = z.object({
   id: z.string(),
   organizer_id: z.string(),
+  app_id: z.string(),
   region: z.string(),
   game: z.string(),
   version: z.number(),
