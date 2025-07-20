@@ -194,10 +194,12 @@ router.post(
           validateChampionshipDetailsObjectCreated,
           webhookData.event
         );
-        await addMatchToDatabase(
-          validatedMatchDetails,
-          validatedWebhook.payload.entity.id
-        );
+        if (organizer) {
+          await addMatchToDatabase(
+            validatedMatchDetails,
+            validatedWebhook.payload.entity.id
+          );
+        }
       }
       res.status(200).send("Webhook received");
       return;
