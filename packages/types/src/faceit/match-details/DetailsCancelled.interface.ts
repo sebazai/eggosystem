@@ -2,62 +2,87 @@ import { z } from "zod";
 import {
   FaceitGame,
   FaceitMatchTeams,
-  FaceitMapVoting,
-  FaceitMatchResultsAbortedAndCancelled,
-  FaceitDetailedResultsAbortedAndCancelled,
-  FaceitLocationVoting,
-  BaseMatchDetailsSchema,
-  FaceitMatchResultsAbortedAndCancelledSchema,
-  FaceitDetailedResultsAbortedAndCancelledSchema,
   FaceitMatchStatus,
   FaceitGameSchema,
-  FaceitVotingSchema
+  FaceitMatchTeamsSchema,
+  FaceitDetailedResultsAbortedAndCancelledSchema,
+  FaceitMatchResultsAbortedAndCancelledSchema,
+  FaceitDetailedResultsAbortedAndCancelled,
+  FaceitMatchResultsAbortedAndCancelled
 } from "./Details.interface";
 
-export interface DetailsCancelled {
+interface DetailsCancelledBase {
   match_id: string;
   version: number;
   game: FaceitGame;
   region: string;
   competition_id: string;
-  competition_type: string;
   competition_name: string;
   organizer_id: string;
   teams: FaceitMatchTeams;
-  voting: FaceitCancelledVoting;
   calculate_elo: boolean;
-  configured_at: number;
+  results?: FaceitMatchResultsAbortedAndCancelled;
+  detailed_results?: FaceitDetailedResultsAbortedAndCancelled[];
   finished_at: number;
   chat_room_id: string;
   best_of: number;
-  results: FaceitMatchResultsAbortedAndCancelled;
-  detailed_results: FaceitDetailedResultsAbortedAndCancelled[];
-  status: "CANCELLED";
-  round?: number; // Optional since not always present
-  group?: number; // Optional since not always present
+  status: FaceitMatchStatus.CANCELLED;
   faceit_url: string;
 }
 
-// Extended voting interface that includes location voting (not in Details.interface.ts)
-interface FaceitCancelledVoting {
-  map: FaceitMapVoting;
-  voted_entity_types: string[];
-  location: FaceitLocationVoting;
-}
-
-export const FaceitDetailsCancelledSchema = BaseMatchDetailsSchema.extend({
+const MatchDetailsCancelledBaseSchema = z.object({
+  match_id: z.string(),
+  version: z.number(),
   game: FaceitGameSchema,
-  voting: FaceitVotingSchema,
-  configured_at: z.number(),
+  region: z.string(),
+  competition_id: z.string(),
+  competition_name: z.string(),
+  organizer_id: z.string(),
+  teams: FaceitMatchTeamsSchema,
+  calculate_elo: z.boolean(),
+  chat_room_id: z.string(),
+  results: FaceitMatchResultsAbortedAndCancelledSchema.optional(),
+  detailed_results: z
+    .array(FaceitDetailedResultsAbortedAndCancelledSchema)
+    .optional(),
+  faceit_url: z.string(),
   finished_at: z.number(),
-  results: FaceitMatchResultsAbortedAndCancelledSchema,
-  detailed_results: z.array(FaceitDetailedResultsAbortedAndCancelledSchema),
-  status: z.literal(FaceitMatchStatus.CANCELLED),
-  round: z.number().optional(),
-  group: z.number().optional()
+  best_of: z.number(),
+  status: z.literal(FaceitMatchStatus.CANCELLED)
 });
 
+export interface MatchmakingDetailsCancelled extends DetailsCancelledBase {
+  competition_type: "matchmaking";
+}
+
+export const MatchmakingFaceitDetailsCancelledSchema =
+  MatchDetailsCancelledBaseSchema.extend({
+    competition_type: z.literal("matchmaking")
+  });
+
 // Runtime validation function
-export function validateDetailsCancelled(data: unknown): DetailsCancelled {
-  return FaceitDetailsCancelledSchema.parse(data);
+export function validateMatchmakingDetailsCancelled(
+  data: unknown
+): MatchmakingDetailsCancelled {
+  return MatchmakingFaceitDetailsCancelledSchema.parse(data);
+}
+
+export interface ChampionshipDetailsCancelled extends DetailsCancelledBase {
+  competition_type: "championship";
+  round: number;
+  group: number;
+}
+
+export const ChampionshipDetailsCancelledSchema =
+  MatchDetailsCancelledBaseSchema.extend({
+    competition_type: z.literal("championship"),
+    finished_at: z.number(),
+    round: z.number(),
+    group: z.number()
+  });
+
+export function validateChampionshipDetailsCancelled(
+  data: unknown
+): ChampionshipDetailsCancelled {
+  return ChampionshipDetailsCancelledSchema.parse(data);
 }

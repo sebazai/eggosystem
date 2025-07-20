@@ -4,21 +4,21 @@ import {
   FaceitMatchTeams,
   FaceitMatchResultsFinished,
   FaceitDetailedResultsFinished,
-  BaseMatchDetailsSchema,
   FaceitMatchResultsFinishedSchema,
   FaceitDetailedResultsFinishedSchema,
   FaceitMatchStatus,
   FaceitVoting,
-  FaceitVotingSchema
+  FaceitVotingSchema,
+  FaceitMatchTeamsSchema,
+  FaceitGameSchema
 } from "./Details.interface";
 
-export interface DetailsDemoReady {
+export interface DetailsDemoReadBase {
   match_id: string;
   version: number;
-  game: FaceitGame.CS2;
+  game: FaceitGame;
   region: string;
   competition_id: string;
-  competition_type: string;
   competition_name: string;
   organizer_id: string;
   teams: FaceitMatchTeams;
@@ -28,31 +28,67 @@ export interface DetailsDemoReady {
   configured_at: number;
   started_at: number;
   finished_at: number;
-  demo_url: string[];
+  demo_url: string[] | string;
   chat_room_id: string;
   best_of: number;
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
-  status: FaceitMatchStatus;
-  round?: number; // Optional since not always present
-  group?: number; // Optional since not always present
+  status: FaceitMatchStatus.FINISHED;
   faceit_url: string;
 }
 
-export const DetailsDemoReadySchema = BaseMatchDetailsSchema.extend({
-  game: z.literal(FaceitGame.CS2),
+const DetailsDemoReadBaseSchema = z.object({
+  match_id: z.string(),
+  version: z.number(),
+  game: FaceitGameSchema,
+  region: z.string(),
+  competition_id: z.string(),
+  competition_name: z.string(),
+  organizer_id: z.string(),
+  teams: FaceitMatchTeamsSchema,
   voting: FaceitVotingSchema,
+  calculate_elo: z.boolean(),
   scheduled_at: z.number().optional(),
   configured_at: z.number(),
   started_at: z.number(),
   finished_at: z.number(),
-  demo_url: z.array(z.string().url()),
+  demo_url: z.array(z.string().url()).or(z.string().url()),
+  chat_room_id: z.string(),
+  best_of: z.number(),
   results: FaceitMatchResultsFinishedSchema,
   detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
-  status: z.literal(FaceitMatchStatus.FINISHED)
+  status: z.literal(FaceitMatchStatus.FINISHED),
+  faceit_url: z.string()
 });
 
-// Runtime validation function
-export function validateDetailsDemoReady(data: unknown): DetailsDemoReady {
-  return DetailsDemoReadySchema.parse(data);
+export interface MatchmakingDetailsDemoReady extends DetailsDemoReadBase {
+  competition_type: "matchmaking";
+}
+
+const MatchmakingDetailsDemoReadySchema = DetailsDemoReadBaseSchema.extend({
+  competition_type: z.literal("matchmaking")
+});
+
+export function validateMatchmakingDetailsDemoReady(
+  data: unknown
+): MatchmakingDetailsDemoReady {
+  return MatchmakingDetailsDemoReadySchema.parse(data);
+}
+
+export interface ChampionshipDetailsDemoReady extends DetailsDemoReadBase {
+  competition_type: "championship";
+  round: number;
+  group: number;
+}
+
+const ChampionshipDetailsDemoReadySchema = DetailsDemoReadBaseSchema.extend({
+  competition_type: z.literal("championship"),
+  round: z.number(),
+  group: z.number()
+});
+
+export function validateChampionshipDetailsDemoReady(
+  data: unknown
+): ChampionshipDetailsDemoReady {
+  return ChampionshipDetailsDemoReadySchema.parse(data);
 }

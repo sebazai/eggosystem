@@ -27,14 +27,6 @@ import {
   type MatchStatusCancelledWebhook,
   validateMatchStatusReadyWebhook,
   validateMatchStatusConfiguringWebhook,
-  validateMatchDemoReadyWebhook,
-  validateMatchStatusAbortedWebhook,
-  validateMatchStatusCancelledWebhook,
-  validateChampionshipCreatedWebhook,
-  type DetailsAborted,
-  validateDetailsAborted,
-  validateDetailsCancelled,
-  type DetailsCancelled,
   validateMatchmakingDetailsObjectCreated,
   type MatchmakingDetailsObjectCreated,
   validateChampionshipDetailsObjectCreated,
@@ -46,9 +38,7 @@ import {
   type ChampionshipDetailsReady,
   validateChampionshipDetailsReady,
   validateMatchmakingDetailsReady,
-  type MatchmakingDetailsReady,
-  validateDetailsDemoReady,
-  type DetailsDemoReady
+  type MatchmakingDetailsReady
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,

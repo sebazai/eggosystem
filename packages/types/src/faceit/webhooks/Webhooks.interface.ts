@@ -1,10 +1,18 @@
 import { z } from "zod";
 
-export interface MatchEntity {
+export interface MatchmakingEntity {
   id: string;
   name: string;
-  type: "championship" | "matchmaking";
+  type: "matchmaking";
 }
+
+export interface ChampionshipEntity {
+  id: string;
+  name: string;
+  type: "championship";
+}
+
+export type MatchEntity = MatchmakingEntity | ChampionshipEntity;
 
 export interface FaceitMatchTeam {
   id: string;

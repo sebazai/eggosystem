@@ -1,23 +1,17 @@
 import { z } from "zod";
 import {
   FaceitGame,
-  FaceitMapVoting,
   FaceitMatchResultsAbortedAndCancelled,
   FaceitDetailedResultsAbortedAndCancelled,
   FaceitMatchTeams,
-  BaseMatchDetailsSchema,
   FaceitMatchResultsAbortedAndCancelledSchema,
   FaceitDetailedResultsAbortedAndCancelledSchema,
   FaceitMatchStatus,
   FaceitGameSchema,
-  FaceitVotingSchema
+  FaceitVotingSchema,
+  FaceitVoting,
+  FaceitMatchTeamsSchema
 } from "./Details.interface";
-
-// Voting interface
-interface FaceitMatchVotingAborted {
-  map: FaceitMapVoting;
-  voted_entity_types: string[];
-}
 
 // Main match details interface for aborted matches
 export interface DetailsAborted {
@@ -26,35 +20,74 @@ export interface DetailsAborted {
   game: FaceitGame;
   region: string;
   competition_id: string;
-  competition_type: string;
   competition_name: string;
   organizer_id: string;
   teams: FaceitMatchTeams;
-  voting: FaceitMatchVotingAborted;
+  voting: FaceitVoting;
   calculate_elo: boolean;
+  scheduled_at?: number;
   configured_at: number;
   chat_room_id: string;
   best_of: number;
-  results: FaceitMatchResultsAbortedAndCancelled;
-  detailed_results: FaceitDetailedResultsAbortedAndCancelled[];
-  status: "ABORTED";
-  round?: number; // Optional since not always present
-  group?: number; // Optional since not always present
+  results?: FaceitMatchResultsAbortedAndCancelled;
+  detailed_results?: FaceitDetailedResultsAbortedAndCancelled[];
+  status: FaceitMatchStatus.ABORTED;
   faceit_url: string;
 }
 
-export const FaceitMatchDetailsAbortedSchema = BaseMatchDetailsSchema.extend({
+const MatchDetailsAbortedBaseSchema = z.object({
+  match_id: z.string(),
+  version: z.number(),
   game: FaceitGameSchema,
+  region: z.string(),
+  competition_id: z.string(),
+  competition_name: z.string(),
+  organizer_id: z.string(),
+  teams: FaceitMatchTeamsSchema,
   voting: FaceitVotingSchema,
+  calculate_elo: z.boolean(),
+  scheduled_at: z.number().optional(),
   configured_at: z.number(),
-  results: FaceitMatchResultsAbortedAndCancelledSchema,
-  detailed_results: z.array(FaceitDetailedResultsAbortedAndCancelledSchema),
+  chat_room_id: z.string(),
+  best_of: z.number(),
+  results: FaceitMatchResultsAbortedAndCancelledSchema.optional(),
+  detailed_results: z
+    .array(FaceitDetailedResultsAbortedAndCancelledSchema)
+    .optional(),
   status: z.literal(FaceitMatchStatus.ABORTED),
-  round: z.number().optional(),
-  group: z.number().optional()
+  faceit_url: z.string()
 });
 
-// Runtime validation function
-export function validateDetailsAborted(data: unknown): DetailsAborted {
-  return FaceitMatchDetailsAbortedSchema.parse(data);
+interface MatchmakingDetailsAborted extends DetailsAborted {
+  competition_type: "matchmaking";
+}
+
+export const MatchmakingMatchDetailsAbortedSchema =
+  MatchDetailsAbortedBaseSchema.extend({
+    competition_type: z.literal("matchmaking")
+  });
+
+export function validateMatchmakingDetailsAborted(
+  data: unknown
+): MatchmakingDetailsAborted {
+  return MatchmakingMatchDetailsAbortedSchema.parse(data);
+}
+
+interface ChampionshipDetailsAborted extends DetailsAborted {
+  competition_type: "championship";
+  round: number;
+  group: number;
+}
+
+export const ChampionshipMatchDetailsAbortedSchema =
+  MatchDetailsAbortedBaseSchema.extend({
+    competition_type: z.literal("championship"),
+    round: z.number(),
+    group: z.number()
+  });
+
+export function validateChampionshipDetailsAborted(
+  data: unknown
+): ChampionshipDetailsAborted {
+  return ChampionshipMatchDetailsAbortedSchema.parse(data);
 }

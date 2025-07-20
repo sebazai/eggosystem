@@ -4,9 +4,7 @@ import {
   FaceitMatchTeams,
   FaceitGameSchema,
   FaceitMatchStatus,
-  FaceitMatchTeamsSchema,
-  FaceitVoting,
-  FaceitVotingSchema
+  FaceitMatchTeamsSchema
 } from "./Details.interface";
 
 interface DetailsConfiguringBase {
@@ -17,7 +15,6 @@ interface DetailsConfiguringBase {
   competition_id: string;
   competition_name: string;
   organizer_id: string;
-  voting: FaceitVoting;
   teams: FaceitMatchTeams;
   calculate_elo: boolean;
   chat_room_id: string;
@@ -35,7 +32,6 @@ const DetailsConfiguringBaseSchema = z.object({
   competition_id: z.string(),
   competition_name: z.string(),
   organizer_id: z.string(),
-  voting: FaceitVotingSchema,
   teams: FaceitMatchTeamsSchema,
   calculate_elo: z.boolean(),
   chat_room_id: z.string(),
@@ -60,17 +56,27 @@ export function validateMatchmakingDetailsConfiguring(
   return MatchmakingDetailsConfiguringSchema.parse(data);
 }
 
-export interface ChampionshipDetailsConfiguring extends DetailsConfiguringBase {
+interface ChampionshipDetailsConfiguringBase extends DetailsConfiguringBase {
   competition_type: "championship";
   round: number;
   group: number;
 }
 
-const ChampionshipDetailsConfiguringSchema = z.object({
+export interface ChampionshipDetailsConfiguring
+  extends ChampionshipDetailsConfiguringBase {
+  status: FaceitMatchStatus.CONFIGURING;
+}
+
+const ChampionshipDetailsConfiguringBaseSchema = z.object({
   ...DetailsConfiguringBaseSchema.shape,
   competition_type: z.literal("championship"),
   round: z.number(),
   group: z.number()
+});
+
+const ChampionshipDetailsConfiguringSchema = z.object({
+  ...ChampionshipDetailsConfiguringBaseSchema.shape,
+  status: z.literal(FaceitMatchStatus.CONFIGURING)
 });
 
 export function validateChampionshipDetailsConfiguring(data: unknown) {

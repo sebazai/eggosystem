@@ -367,7 +367,7 @@ export const addMatchToDatabase = async (
       start_time,
       null,
       matchDetails.match_id,
-      MatchStatus.CREATED,
+      MatchStatus.SCHEDULED,
       matchDetails.round ?? null,
       matchDetails.group ?? null
     ];
