@@ -17,7 +17,6 @@ import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
 import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
-import { getActiveSignupOrActiveSeasonForAppId } from "../models/season.models";
 
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
@@ -92,17 +91,6 @@ const getRankFromDatabase = async (
   }
 
   return null;
-};
-
-// Helper function to check if a date is within the last 6 months
-const isWithinLastSixMonths = (dateString: string | null): boolean => {
-  if (!dateString) return false;
-
-  const date = new Date(dateString);
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  return date >= sixMonthsAgo;
 };
 
 /**
