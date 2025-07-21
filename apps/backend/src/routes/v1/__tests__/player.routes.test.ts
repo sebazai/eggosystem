@@ -1,3 +1,7 @@
+// Mock API key - set before importing app since middleware is created at require time
+const TEST_API_KEY = "test-api-key";
+process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
+
 import request from "supertest";
 import express from "express";
 import playerRouter from "../player.routes";
@@ -17,11 +21,10 @@ app.use("/api/v1/players", playerRouter);
 describe("Player Routes - set-kanaelo", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock environment variable for API key
-    process.env.BACKEND_SERVICE_API_KEY = "test-api-key";
   });
 
-  afterEach(() => {
+  afterAll(() => {
+    // Clean up environment variables
     delete process.env.BACKEND_SERVICE_API_KEY;
   });
 
@@ -60,7 +63,7 @@ describe("Player Routes - set-kanaelo", () => {
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", "test-api-key")
+        .set("X-API-KEY", TEST_API_KEY)
         .send(validRequest);
 
       expect(response.status).toBe(200);
@@ -88,7 +91,7 @@ describe("Player Routes - set-kanaelo", () => {
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", "test-api-key")
+        .set("X-API-KEY", TEST_API_KEY)
         .send(invalidRequest);
 
       expect(response.status).toBe(400);
@@ -105,7 +108,7 @@ describe("Player Routes - set-kanaelo", () => {
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", "test-api-key")
+        .set("X-API-KEY", TEST_API_KEY)
         .send(invalidRequest);
 
       expect(response.status).toBe(400);
@@ -122,7 +125,7 @@ describe("Player Routes - set-kanaelo", () => {
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", "test-api-key")
+        .set("X-API-KEY", TEST_API_KEY)
         .send(invalidRequest);
 
       expect(response.status).toBe(400);
@@ -140,7 +143,7 @@ describe("Player Routes - set-kanaelo", () => {
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", "test-api-key")
+        .set("X-API-KEY", TEST_API_KEY)
         .send(invalidRequest);
 
       expect(response.status).toBe(400);
@@ -154,7 +157,7 @@ describe("Player Routes - set-kanaelo", () => {
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", "test-api-key")
+        .set("X-API-KEY", TEST_API_KEY)
         .send(validRequest);
 
       expect(response.status).toBe(500);

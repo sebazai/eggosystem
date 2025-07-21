@@ -94,6 +94,17 @@ const getRankFromDatabase = async (
   return null;
 };
 
+// Helper function to check if a date is within the last 6 months
+const isWithinLastSixMonths = (dateString: string | null): boolean => {
+  if (!dateString) return false;
+
+  const date = new Date(dateString);
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+  return date >= sixMonthsAgo;
+};
+
 /**
  * Try to get rank from Redis cache
  */
@@ -191,10 +202,6 @@ export const getCSRank = async (
   season_id?: number
 ): Promise<CS2LeetifyAvgRank> => {
   try {
-    if (season_id === undefined) {
-      season_id = (await getActiveSignupOrActiveSeasonForAppId(730))?.season_id;
-    }
-
     // 1. Try database first if season_id is provided
     if (season_id) {
       const dbRank = await getRankFromDatabase(steam_id, season_id);

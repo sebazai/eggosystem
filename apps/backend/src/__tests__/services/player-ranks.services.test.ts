@@ -32,16 +32,17 @@ describe("Player Ranks Services", () => {
   });
 
   describe("getCSRank", () => {
+    const date_now = new Date().toISOString();
     const validRankResponse = {
       average_rank: 15000,
-      rank_updated_at: "2024-01-01T00:00:00Z"
+      rank_updated_at: date_now
     };
 
     describe("Database priority (with season_id)", () => {
       it("should return rank from database when season_id provided and rank exists", async () => {
         mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue({
           average_rank: 15000,
-          rank_updated_at: "2024-01-01T00:00:00Z"
+          rank_updated_at: date_now
         });
 
         const result = await getCSRank(testSteamId, testSeasonId);

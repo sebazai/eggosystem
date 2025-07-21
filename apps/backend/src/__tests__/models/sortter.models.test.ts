@@ -304,12 +304,11 @@ describe("Sortter Models", () => {
   });
 
   describe("checkPlayerAdditionEligibility", () => {
-    // Mock fetch for CSRankker API
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
+    beforeEach(() => {
+      // Mock fetch for CSRankker API
+      mockFetch.mockImplementation(() =>
+        Promise.resolve(
+          createMockResponse({
             status: "success",
             result: {
               steamId: "76561198028510846",
@@ -331,8 +330,9 @@ describe("Sortter Models", () => {
               timestamp: "2023-01-01T00:00:00Z"
             }
           })
-      })
-    ) as jest.Mock;
+        )
+      );
+    });
 
     it("should return eligibility analysis for a player with CSRankker data", async () => {
       // Mock league query result
@@ -437,9 +437,9 @@ describe("Sortter Models", () => {
 
     it("should handle CSRankker API errors gracefully", async () => {
       // Mock fetch to reject with an error
-      global.fetch = jest.fn(() =>
+      mockFetch.mockImplementationOnce(() =>
         Promise.reject(new Error("Network error"))
-      ) as jest.Mock;
+      );
 
       // Mock league query result
       mockRunQuery.mockResolvedValueOnce([
@@ -457,16 +457,14 @@ describe("Sortter Models", () => {
 
     it("should handle CSRankker API non-success status", async () => {
       // Mock fetch to return a non-success status
-      global.fetch = jest.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              status: "error",
-              message: "Player not found"
-            })
-        })
-      ) as jest.Mock;
+      mockFetch.mockImplementationOnce(() =>
+        Promise.resolve(
+          createMockResponse({
+            status: "error",
+            message: "Player not found"
+          })
+        )
+      );
 
       // Mock league query result
       mockRunQuery.mockResolvedValueOnce([
@@ -481,35 +479,33 @@ describe("Sortter Models", () => {
     });
 
     it("should return false for canAddPlayer when new average is higher than top team", async () => {
-      // Reset fetch mock to return successful response
-      global.fetch = jest.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              status: "success",
-              result: {
-                steamId: "76561198028510846",
-                seasonId: 14,
-                originalKanaelo: 2000,
-                stabilizedKanaelo: 2000,
-                stabilizationInfo: {
-                  confidence: 0.8,
-                  adjustmentFactor: 0.1,
-                  method: "bayesian"
-                },
-                components: {
-                  trueLevel: 1200,
-                  mm: 100,
-                  hour: 200,
-                  kana: 100
-                },
-                calculus: "formula",
-                timestamp: "2023-01-01T00:00:00Z"
-              }
-            })
-        })
-      ) as jest.Mock;
+      // Reset fetch mock to return successful response with high kana_elo
+      mockFetch.mockImplementationOnce(() =>
+        Promise.resolve(
+          createMockResponse({
+            status: "success",
+            result: {
+              steamId: "76561198028510846",
+              seasonId: 14,
+              originalKanaelo: 2000,
+              stabilizedKanaelo: 2000,
+              stabilizationInfo: {
+                confidence: 0.8,
+                adjustmentFactor: 0.1,
+                method: "bayesian"
+              },
+              components: {
+                trueLevel: 1200,
+                mm: 100,
+                hour: 200,
+                kana: 100
+              },
+              calculus: "formula",
+              timestamp: "2023-01-01T00:00:00Z"
+            }
+          })
+        )
+      );
 
       // Mock league query result
       mockRunQuery.mockResolvedValueOnce([

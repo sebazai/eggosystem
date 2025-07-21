@@ -75,7 +75,6 @@ export const getTeamValuesForSorter = async (
       top5_values
     FROM TeamValues
     ORDER BY avg4 DESC
-    ORDER BY avg4 DESC
   `;
 
   const rawResults = await runQuery<TeamSortterValuesRaw[]>(query, [seasonId]);
