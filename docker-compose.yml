@@ -63,9 +63,12 @@ services:
 
   eggo-redis:
     image: redis:8-alpine
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
     restart: always
     ports:
       - 6379:6379
+    volumes:
+      - redis-data:/data
 
   eggo-rabbitmq:
     image: rabbitmq:4.1-management
@@ -145,3 +148,7 @@ services:
     volumes:
       - ./apps/backend/src:/usr/src/app/apps/backend/src
     command: pnpm --filter=backend test
+
+volumes:
+  redis-data:
+    name: eggo_redis_data
