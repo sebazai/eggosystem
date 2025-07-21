@@ -76,6 +76,7 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}
+      NEXT_PUBLIC_API_KEY: ${PROD_SERVICE_API_KEY}
     networks:
       - web
     labels:
