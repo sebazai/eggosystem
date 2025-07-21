@@ -202,11 +202,6 @@ export const getCSRank = async (
   season_id?: number
 ): Promise<CS2LeetifyAvgRank> => {
   try {
-    // Skip season lookup in test environment to avoid breaking tests
-    if (season_id === undefined && process.env.NODE_ENV !== "test") {
-      season_id = (await getActiveSignupOrActiveSeasonForAppId(730))?.season_id;
-    }
-
     // 1. Try database first if season_id is provided
     if (season_id) {
       const dbRank = await getRankFromDatabase(steam_id, season_id);

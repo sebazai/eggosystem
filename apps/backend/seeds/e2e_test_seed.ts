@@ -598,4 +598,95 @@ export async function seed(knex: Knex): Promise<void> {
       ]
     );
   }
+
+  // Add SeasonTeamPlayers records for the sortter API
+  // This is needed because the sortter API queries SeasonTeamPlayers table
+  const seasonTeamPlayersForSortter = [
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999901", // Aabe
+      role: "primary",
+      is_captain: true,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999902", // heppajpg
+      role: "primary",
+      is_captain: false,
+      is_co_captain: true
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999903", // Quattra
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999905", // Hoolyz
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999906", // RealPlayer1
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999907", // RealPlayer2
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999908", // RealPlayer3
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    }
+  ];
+
+  for (const player of seasonTeamPlayersForSortter) {
+    await knex("SeasonTeamPlayers").insert(player);
+  }
+
+  // Add admin role for heppajpg (account_id 15004) for e2e tests
+  // This is needed because the sortter page requires admin role
+  await knex.raw(`
+    INSERT INTO AccountRoles (account_id, role_id, game_id) 
+    SELECT 15004, id, 1 FROM Roles WHERE role_name = 'admin'
+    ON DUPLICATE KEY UPDATE account_id = account_id
+  `);
+
+  // Add kana_elo values to SeasonPlayerRanks for the sortter API
+  // The sortter API needs kana_elo values to calculate team rankings
+  const kanaEloUpdates = [
+    { steam_id: "66561198999999901", kana_elo: 180 }, // Aabe
+    { steam_id: "66561198999999902", kana_elo: 175 }, // heppajpg
+    { steam_id: "66561198999999903", kana_elo: 170 }, // Quattra
+    { steam_id: "66561198999999905", kana_elo: 160 }, // Hoolyz
+    { steam_id: "66561198999999906", kana_elo: 160 }, // RealPlayer1
+    { steam_id: "66561198999999907", kana_elo: 150 }, // RealPlayer2
+    { steam_id: "66561198999999908", kana_elo: 150 } // RealPlayer3
+  ];
+
+  for (const update of kanaEloUpdates) {
+    await knex("SeasonPlayerRanks")
+      .where({ steam_id: update.steam_id, season_id: 16 })
+      .update({ kana_elo: update.kana_elo });
+  }
 }

@@ -38,9 +38,10 @@ export function generateTestJWTForUser(
       account_id: accountId,
       provider_id: steamId,
       permissions: [],
-      roles: [],
+      roles: ["admin"], // Add admin role for e2e tests
       nickname: nickname,
-      provider: "steam" as const
+      provider: "steam" as const,
+      game_id: 1 // CS2 game_id to ensure admin permissions work for the game
     };
 
     // Sign the token with the same algorithm the backend uses
