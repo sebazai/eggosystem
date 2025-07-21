@@ -231,7 +231,8 @@ test:backend:
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - export $(grep -v '^#' .env.development | xargs)
-    - pnpm --filter=backend seed
+    - pnpm seed
+    - pnpm migrate
   script:
     - npx turbo run test --filter=backend
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
