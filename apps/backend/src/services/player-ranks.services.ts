@@ -17,18 +17,6 @@ import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
 import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
-import { getActiveSignupOrActiveSeasonForAppId } from "../models/season.models";
-
-// Helper function to check if a date is within the last 6 months
-const isWithinLastSixMonths = (dateString: string | null): boolean => {
-  if (!dateString) return false;
-
-  const date = new Date(dateString);
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  return date >= sixMonthsAgo;
-};
 
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
@@ -205,20 +193,10 @@ export const getCSRank = async (
     // 1. Try database first if season_id is provided
     if (season_id) {
       const dbRank = await getRankFromDatabase(steam_id, season_id);
-      // Only use database rank if it's not older than 6 months (skip this check in tests)
-      if (
-        dbRank &&
-        (process.env.NODE_ENV === "test" ||
-          isWithinLastSixMonths(dbRank.rank_updated_at))
-      ) {
+      if (dbRank) {
         return dbRank;
-      } else if (dbRank) {
-        logger.info(
-          `[Rank] Found rank in database for steam_id: ${steam_id}, season_id: ${season_id} but it's older than 6 months (${dbRank.rank_updated_at})`
-        );
       }
     }
-
     // 2. Try Redis cache
     const cachedRank = await getRankFromCache(steam_id);
     if (cachedRank) {

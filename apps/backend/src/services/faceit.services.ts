@@ -17,7 +17,6 @@ import {
   FACEIT_DEFAULT_ELO,
   FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
-import { getActiveSignupOrActiveSeasonForAppId } from "../models/season.models";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
