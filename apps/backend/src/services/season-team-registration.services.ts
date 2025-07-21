@@ -281,14 +281,7 @@ export const handleSignupFormForSeasonUpdate = async (
     throw new Error("Could not determine new co-captain.");
   }
 
-  console.log(
-    "handleSignupFormForSeasonUpdate",
-    captainSteamId,
-    coCaptainSteamId
-  );
-
   // Old captain/co-captain information is no longer needed since database triggers handle permission management
-
   await handleUpdateSeasonTeamRegistration(
     seasonId,
     teamId,

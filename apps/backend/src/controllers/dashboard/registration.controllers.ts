@@ -15,6 +15,7 @@ import { BadRequestError } from "../../utils/errors";
 import { type RequestWithParams } from "@eggosystem/types";
 import { redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";
+import { getTeamsSignupApprovalState } from "../../services/dashboard/registration.services";
 
 export const addManuallyApprovedPlayersController = async (
   req: Request,
@@ -61,7 +62,19 @@ export const getRegisteredTeamsController = async (
     throw new BadRequestError("No signup for any season for app id 730");
   }
   const teams = await getRegisteredTeams(activeSeason.season_id);
-  res.status(200).json(teams);
+  const flaggedTeams = await getTeamsSignupApprovalState(teams);
+
+  if (teams.length !== flaggedTeams.length) {
+    throw new BadRequestError("Teams and flagged teams have different lengths");
+  }
+
+  const teamsWithApprovalState = teams.map((team, index) => ({
+    ...team,
+    is_valid: flaggedTeams[index].is_valid,
+    invalid_players: flaggedTeams[index].invalid_players
+  }));
+
+  res.status(200).json(teamsWithApprovalState);
 };
 
 export const getPlayerFullNameController = async (

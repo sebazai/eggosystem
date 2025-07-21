@@ -5,7 +5,8 @@ import {
   type ActiveSeasonSignupForAppId,
   type SeasonRegisteredTeamsWithPlayers,
   type SeasonTeamRegistration,
-  type PlayerFullName
+  type PlayerFullName,
+  type RegisteredTeamPlayer
 } from "@eggosystem/types";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
@@ -81,8 +82,10 @@ export const addSeasonRankForPlayer = async (
 
 interface RegisteredTeamQueryResult extends SeasonTeamRegistration {
   team_name: string;
+  team_id: number;
   players: string;
   season_platform: SeasonPlatform;
+  season_id: number;
   captain_nickname: string;
   co_captain_nickname: string;
 }
@@ -92,15 +95,18 @@ export const getRegisteredTeams = async (seasonId: number) => {
     SELECT 
       str.*,
       t.name as team_name,
+      t.id as team_id,
       s.platform as season_platform,
+      s.id as season_id,
       MAX(CASE WHEN stp.is_captain = 1 THEN sp.nickname END) as captain_nickname,
       MAX(CASE WHEN stp.is_co_captain = 1 THEN sp.nickname END) as co_captain_nickname,
-      GROUP_CONCAT(CONCAT(sp.steam_id, ':', sp.nickname) SEPARATOR ',') as players
+      GROUP_CONCAT(CONCAT(sp.steam_id, ':', sp.nickname, ':', a.work_email, ':', a.is_work_email_personal_email) SEPARATOR ',') as players
     FROM SeasonTeamRegistrations str 
       JOIN Teams t ON str.team_id = t.id 
       JOIN SeasonTeamRegistrationPlayers stp ON str.team_id = stp.team_id AND stp.season_id = str.season_id
       JOIN Seasons s ON str.season_id = s.id
       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
+      JOIN Accounts a ON sp.account_id = a.id
     WHERE str.season_id = ?
     GROUP BY str.team_id, t.name, str.season_id
   `;
@@ -112,8 +118,19 @@ export const getRegisteredTeams = async (seasonId: number) => {
         ...row,
         players: row.players
           ? row.players.split(",").map((p: string) => {
-              const [steam_id, nickname] = p.split(":");
-              return { steam_id, nickname };
+              const [
+                steam_id,
+                nickname,
+                work_email,
+                is_work_email_personal_email
+              ] = p.split(":");
+              return {
+                steam_id,
+                nickname,
+                work_email,
+                is_work_email_personal_email:
+                  is_work_email_personal_email === "1"
+              } satisfies RegisteredTeamPlayer;
             })
           : []
       }) satisfies SeasonRegisteredTeamsWithPlayers

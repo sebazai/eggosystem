@@ -9,7 +9,7 @@ import {
   flexRender,
   createColumnHelper
 } from "@tanstack/react-table";
-import type { SeasonRegisteredTeamsWithPlayers } from "@eggosystem/types";
+import type { SeasonRegisteredTeamsWithPlayersValidatedTeams } from "@eggosystem/types";
 import { useMemo } from "react";
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { envConfig } from "@/configs/env";
@@ -20,7 +20,8 @@ import Link from "next/link";
 export const ListRegisteredTeams = () => {
   const { registeredTeams, isLoading, error } = useRegisteredTeams();
 
-  const columnHelper = createColumnHelper<SeasonRegisteredTeamsWithPlayers>();
+  const columnHelper =
+    createColumnHelper<SeasonRegisteredTeamsWithPlayersValidatedTeams>();
 
   const columns = useMemo(
     () => [
@@ -50,6 +51,16 @@ export const ListRegisteredTeams = () => {
         ),
         meta: { className: "text-left" }
       }),
+      columnHelper.accessor("is_valid", {
+        header: () => "Valid",
+        cell: (info) =>
+          info.getValue() ? (
+            <span className="text-green-600 font-bold">Yes</span>
+          ) : (
+            <span className="text-red-500 font-bold">No</span>
+          ),
+        meta: { className: "text-center" }
+      }),
       columnHelper.accessor("approved", {
         header: () => "Approved",
         cell: (info) =>
@@ -73,7 +84,10 @@ export const ListRegisteredTeams = () => {
       columnHelper.accessor("external_platform_id", {
         header: () => "Platform ID",
         cell: (
-          info: CellContext<SeasonRegisteredTeamsWithPlayers, string | null>
+          info: CellContext<
+            SeasonRegisteredTeamsWithPlayersValidatedTeams,
+            string | null
+          >
         ) => {
           const row = info.row.original;
           const platform = row.season_platform;
@@ -115,26 +129,6 @@ export const ListRegisteredTeams = () => {
             return <span>{id}</span>;
           }
         },
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("captain_nickname", {
-        header: () => "Captain",
-        cell: (info) =>
-          info.getValue() ? (
-            <span>{info.getValue()}</span>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          ),
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("co_captain_nickname", {
-        header: () => "Co-Captain",
-        cell: (info) =>
-          info.getValue() ? (
-            <span>{info.getValue()}</span>
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          ),
         meta: { className: "text-center" }
       })
     ],
@@ -229,41 +223,87 @@ export const ListRegisteredTeams = () => {
                     colSpan={columns.length}
                     className="bg-kanaliiga-light-brown/10 px-3 py-4"
                   >
+                    {/* Team Leadership */}
+                    <div className="mb-4">
+                      <div className="font-semibold mb-2 text-kanaliiga-orange">
+                        Team Leadership
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        {row.original.captain_nickname && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Captain:</span>
+                            <span>{row.original.captain_nickname}</span>
+                          </div>
+                        )}
+                        {row.original.co_captain_nickname && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Co-Captain:</span>
+                            <span>{row.original.co_captain_nickname}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Players */}
                     <div className="font-semibold mb-2 text-kanaliiga-orange">
                       Players
                     </div>
                     <div className="flex flex-wrap gap-3 md:gap-4">
-                      {row.original.players.map((player) => (
-                        <div
-                          key={player.steam_id}
-                          className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm"
-                        >
-                          <span className="font-semibold text-foreground break-words">
-                            {player.nickname}
-                          </span>
-                          <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
-                            <a
-                              href={`https://steamcommunity.com/profiles/${player.steam_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline flex items-center gap-1"
-                            >
-                              Steam
-                              <ExternalLink className="inline w-3 h-3" />
-                            </a>
-                            <span>|</span>
-                            <a
-                              href={`${envConfig.BASE_URL}/players/${player.steam_id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline flex items-center gap-1"
-                            >
-                              Kanahub
-                              <ExternalLink className="inline w-3 h-3" />
-                            </a>
-                          </span>
-                        </div>
-                      ))}
+                      {row.original.players.map((player) => {
+                        const isInvalid = row.original.invalid_players.some(
+                          (invalidPlayer) =>
+                            invalidPlayer.steam_id === player.steam_id
+                        );
+
+                        return (
+                          <div
+                            key={player.steam_id}
+                            className={`flex flex-col gap-1 p-3 bg-background rounded border min-w-[200px] max-w-full md:max-w-xs shadow-sm ${
+                              isInvalid
+                                ? "border-red-500 bg-red-50/50"
+                                : "border-border"
+                            }`}
+                          >
+                            <span className="font-semibold text-foreground break-words">
+                              {player.nickname}
+                            </span>
+                            <span className="text-[0.65rem] text-muted-foreground break-words">
+                              {player.work_email}
+                              {player.is_work_email_personal_email && (
+                                <span className="text-orange-600 ml-1">
+                                  (Personal)
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
+                              <a
+                                href={`https://steamcommunity.com/profiles/${player.steam_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline flex items-center gap-1"
+                              >
+                                Steam
+                                <ExternalLink className="inline w-3 h-3" />
+                              </a>
+                              <span>|</span>
+                              <a
+                                href={`${envConfig.BASE_URL}/players/${player.steam_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline flex items-center gap-1"
+                              >
+                                Kanahub
+                                <ExternalLink className="inline w-3 h-3" />
+                              </a>
+                            </span>
+                            {isInvalid && (
+                              <span className="text-[0.65rem] text-red-600 font-medium">
+                                ⚠️ Needs approval
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </td>
                 </tr>
