@@ -69,7 +69,6 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUBSTAGE_PUBLIC_URL}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUBSTAGE_PUBLIC_URL}
       NEXT_PUBLIC_BASE_URL: https://${HUBSTAGE_PUBLIC_URL}
-      NEXT_PUBLIC_API_KEY: ${STAGE_SERVICE_API_KEY}
     networks:
       - web
     labels:

@@ -130,7 +130,7 @@ export const getTeamPlayerValuesForSortter = async (
       ROUND(AVG(ps.kana_rating), 6) AS kanarating,
       spr.faceit_kd AS fkd,
       spr.kana_elo,
-      NULL AS calculus
+      calculus
     FROM Teams t
     JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
     ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}

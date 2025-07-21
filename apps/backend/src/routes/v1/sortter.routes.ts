@@ -1,4 +1,9 @@
-import { Router } from "express";
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction
+} from "express";
 import {
   getTeamValuesController,
   getTeamValueByIdController,
@@ -18,7 +23,7 @@ import {
   authenticateJWT,
   checkJWTPermissions
 } from "../../middlewares/auth.middleware";
-import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
+import { logger } from "../../utils/app-logger";
 
 const router = Router();
 
@@ -57,12 +62,39 @@ router.get(
   checkPlayerAdditionEligibilityController
 );
 
+// Helper middleware to try API key first, fall back to JWT
+const tryApiKeyThenJWT = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  // Check for API key first
+  const apiKey = req.headers["x-api-key"];
+  if (apiKey && apiKey === process.env.BACKEND_SERVICE_API_KEY) {
+    logger.info("API key authentication successful");
+    return next(); // API key is valid, proceed
+  }
+
+  // If no valid API key, use JWT authentication
+  void authenticateJWT(req, res, (err) => {
+    if (err) {
+      return res.status(401).json({
+        error: {
+          message:
+            "Authentication required. Please provide a valid token or API key."
+        }
+      });
+    }
+
+    // Check JWT permissions
+    void checkJWTPermissions({ fallbackRoles: ["admin"] })(req, res, next);
+  });
+};
+
 // POST /api/v1/sortter/season/:season_id/populate-kanaelo-queue
 router.post(
   "/season/:season_id/populate-kanaelo-queue",
-  authenticateJWT,
-  checkJWTPermissions({ fallbackRoles: ["admin"] }),
-  createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY),
+  tryApiKeyThenJWT,
   validateNumericParams(["season_id"]),
   populateKanaeloQueueController
 );
