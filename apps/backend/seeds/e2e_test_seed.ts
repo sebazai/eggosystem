@@ -438,7 +438,7 @@ export async function seed(knex: Knex): Promise<void> {
   });
 
   // Add players to the team registration with captain status
-  // This will automatically trigger captain permission creation
+  // This will automatically create captain permissions via database triggers
   const teamPlayers = [
     {
       season_id: 16,
@@ -447,13 +447,8 @@ export async function seed(knex: Knex): Promise<void> {
       is_captain: true,
       is_co_captain: false
     },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: "66561198999999902", // account_id 15004 - heppajpg (co-captain)
-      is_captain: false,
-      is_co_captain: true
-    },
+    // Removed heppajpg (66561198999999902) from here to prevent /season/:season_id/my-registration
+    // from finding an existing registration for the authenticated user
     {
       season_id: 16,
       team_id: 999,
