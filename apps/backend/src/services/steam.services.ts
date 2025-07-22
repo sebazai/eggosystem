@@ -60,6 +60,7 @@ export const getSteamHoursForAppId = async (
     }
 
     const data: IPlayerServiceResponse = await fromSteam.json();
+    logger.info("Steam response:", JSON.stringify(data, null, 2));
     const games = data.response?.games;
     const requestedAppId = games?.find((game) => game.appid === app_id);
 
