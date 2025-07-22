@@ -31,7 +31,10 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
 
   const hoursInRedis = await redisClient.get(redisKey);
   if (hoursInRedis) {
-    return { hours: Number(hoursInRedis) };
+    const hoursNumber = Number(hoursInRedis);
+    if (hoursNumber > 0) {
+      return { hours: hoursNumber };
+    }
   }
 
   const steamHours = await getSteamHoursForAppId(steam_id, 730);
