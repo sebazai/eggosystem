@@ -14,6 +14,30 @@ import { insertTeam } from "../../models/team.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { BadRequestError } from "../../utils/errors";
 import { getSeasonPlayerApproval } from "../../models/season-player-approval.models";
+import { logger } from "../../utils/app-logger";
+
+// Helper function to check if email domain is a personal email provider
+const isPersonalEmailDomain = async (domain: string): Promise<boolean> => {
+  try {
+    const result = await runQuery<{ id: number }[]>(
+      "SELECT id FROM PublicEmailDomains WHERE domain = ? AND is_active = TRUE",
+      [domain.toLowerCase()]
+    );
+    return result.length > 0;
+  } catch (error) {
+    logger.warn(`Error checking personal email domain ${domain}:`, error);
+
+    // In development, return false to allow testing without the table
+    if (process.env.NODE_ENV !== "production") {
+      logger.info(
+        `Development mode: returning false for domain ${domain} (PublicEmailDomains table not available)`
+      );
+      return false;
+    }
+
+    throw error;
+  }
+};
 
 const addNewOrgPreApprovalRegistration = async (
   seasonId: number,
@@ -231,7 +255,7 @@ export const getTeamsSignupApprovalState = async (
       .filter((player) => !player.is_work_email_personal_email)
       .map((player) => player.work_email.split("@")[1]);
 
-    // If all players have personal emails, they all need approval
+    // If all players have personal emails (marked as personal), they all need approval
     if (workEmailEndings.length === 0) {
       const playersNeedingApproval = players;
 
@@ -272,6 +296,28 @@ export const getTeamsSignupApprovalState = async (
       // If counts are equal, prefer the first one for consistency
       return a;
     });
+
+    // Check if all players have the same email domain and all marked as non-personal
+    const allPlayersHaveSameDomain = players.every(
+      (player) => player.work_email.split("@")[1] === mostCommonEmailEnding
+    );
+    const allPlayersMarkedAsNonPersonal = players.every(
+      (player) => !player.is_work_email_personal_email
+    );
+
+    // If all players have the same domain and all marked as non-personal, check if it's a personal email domain
+    if (allPlayersHaveSameDomain && allPlayersMarkedAsNonPersonal) {
+      const isPersonalDomain = await isPersonalEmailDomain(
+        mostCommonEmailEnding
+      );
+
+      // If it's a personal email domain, immediately invalidate the entire team
+      if (isPersonalDomain) {
+        teamValidationResult.is_valid = false;
+        teamValidationResult.invalid_players = players; // All players are invalid
+        return teamValidationResult;
+      }
+    }
 
     // Find players that need approval checks
     const playersNeedingApproval = players.filter((player) => {
