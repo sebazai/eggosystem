@@ -105,7 +105,7 @@ router.get(
     }
     // Find if this steamId is a captain or co-captain for any team in this season
     const query = `
-      SELECT str.team_id,
+      SELECT str.team_id
       FROM SeasonTeamRegistrations str
         INNER JOIN SeasonTeamRegistrationPlayers stp ON stp.season_id = str.season_id AND stp.team_id = str.team_id
       WHERE str.season_id = ? AND stp.steam_id = ? AND (stp.is_captain = 1 OR stp.is_co_captain = 1)
