@@ -78,13 +78,21 @@ export default async function SignupPage({ params }: SignupPageProps) {
       }
     );
 
+    if (draftExists.ok) {
+      const draft = await draftExists.json();
+      return (
+        <SignupContainer>
+          <SignupForm
+            seasonId={season}
+            platform={data.platform}
+            draft={draft}
+          />
+        </SignupContainer>
+      );
+    }
     return (
       <SignupContainer>
-        <SignupForm
-          seasonId={season}
-          platform={data.platform}
-          draft={draftExists.ok ? await draftExists.json() : undefined}
-        />
+        <SignupForm seasonId={season} platform={data.platform} />
       </SignupContainer>
     );
   } catch (err) {
