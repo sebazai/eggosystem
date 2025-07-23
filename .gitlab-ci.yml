@@ -253,6 +253,7 @@ test:frontend:
   before_script:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
+    - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
   script:
