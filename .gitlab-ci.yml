@@ -250,8 +250,8 @@ test:backend:
 test:frontend:
   stage: test
   extends: [.prepare-pnpm, .mr-frontend]
-  dependencies:
-    - build:types
+  before_script:
+    - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=frontend test
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
