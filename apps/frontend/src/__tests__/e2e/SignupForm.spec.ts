@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
-  generateTestJWT,
+  generateTestJWTForUser,
   generateUniqueOrgCode,
   generateUniqueFaceitTeamId
 } from "./utils";
@@ -158,36 +158,65 @@ async function setupCompleteRegistrationForm(
 }
 
 // Helper function to fill 5 players with valid Steam IDs
-async function fillValidPlayers(page: Page) {
+async function fillValidPlayers(page: Page, authenticatedUserId?: string) {
   const validPlayers = [
     "66561198999999901", // account_id 15003 - Aabe (has E2E data)
-    "66561198999999902", // account_id 15004 - heppajpg (our auth user, has E2E data)
+    "66561198999999902", // account_id 15004 - heppajpg (has E2E data)
+    "66561198999999903", // account_id 15005 - Quattra (has E2E data)
     "66561198999999905", // account_id 15008 - Hoolyz (has E2E data)
-    "66561198999999906", // account_id 15009 - RealPlayer1 (has E2E data)
-    "66561198999999907" // account_id 15010 - RealPlayer2 (has E2E data)
+    "66561198999999906" // account_id 15009 - RealPlayer1 (has E2E data)
   ];
+
+  // If an authenticated user ID is provided, ensure they are in the list
+  let playersToUse = validPlayers;
+  if (authenticatedUserId && !validPlayers.includes(authenticatedUserId)) {
+    // Replace the last player with the authenticated user
+    playersToUse = [...validPlayers.slice(0, 4), authenticatedUserId];
+  }
 
   for (let i = 0; i < 5; i++) {
     const steamIdInput = page.locator(`[data-testid="steam-id-input-${i}"]`);
     await expect(steamIdInput).toBeVisible();
-    await steamIdInput.fill(validPlayers[i]!);
+    await steamIdInput.fill(playersToUse[i]!);
     await page.keyboard.press("Tab");
   }
 }
 
+// Helper function to set up authentication for a specific user
+async function setupAuthForUser(
+  page: Page,
+  accountId: number,
+  steamId: string,
+  nickname: string
+) {
+  const jwt = generateTestJWTForUser(accountId, steamId, nickname);
+
+  await page.context().addCookies([
+    {
+      name: "access_token",
+      value: jwt,
+      domain: "localhost",
+      path: "/",
+      httpOnly: true,
+      secure: false
+    }
+  ]);
+
+  // Intercept draft API requests specifically to add Bearer authorization header
+  await page.route("**/draft", async (route) => {
+    const headers = {
+      ...route.request().headers(),
+      Authorization: `Bearer ${jwt}`
+    };
+
+    await route.continue({ headers });
+  });
+}
+
 test.describe("Signup Form", () => {
   test.beforeEach(async ({ page }) => {
-    // Set up authentication cookie first (most important)
-    await page.context().addCookies([
-      {
-        name: "access_token",
-        value: generateTestJWT(),
-        domain: "localhost",
-        path: "/",
-        httpOnly: true,
-        secure: false
-      }
-    ]);
+    // Set up authentication cookie first (most important) - use heppajpg for most tests
+    await setupAuthForUser(page, 15004, "66561198999999902", "heppajpg");
 
     page.route("**/api/v1/faceit/teams/*", async (route) => {
       // Extract team ID from URL path
@@ -211,16 +240,6 @@ test.describe("Signup Form", () => {
           faceit_url: ""
         })
       });
-    });
-
-    // Intercept draft API requests specifically to add Bearer authorization header
-    await page.route("**/draft", async (route) => {
-      const headers = {
-        ...route.request().headers(),
-        Authorization: `Bearer ${generateTestJWT()}`
-      };
-
-      await route.continue({ headers });
     });
   });
 
@@ -556,6 +575,9 @@ test.describe("Signup Form", () => {
     test("should complete full registration flow and successfully submit", async ({
       page
     }) => {
+      // Use a different authenticated user for this test to avoid conflicts
+      await setupAuthForUser(page, 15005, "66561198999999903", "Quattra");
+
       // Set up complete registration form
       await setupCompleteRegistrationForm(
         page,
@@ -563,19 +585,28 @@ test.describe("Signup Form", () => {
         "Complete Flow Test Team"
       );
 
-      // Fill in 5 players with valid Steam IDs
-      await fillValidPlayers(page);
+      // Fill in 5 players with valid Steam IDs (include authenticated user)
+      await fillValidPlayers(page, "66561198999999903");
 
       // Check all visible nickname spans for the correct nicknames
       const nicknameSpans = page.locator("span.text-kanaliiga-orange");
       const nicknameCount = await nicknameSpans.count();
       expect(nicknameCount).toBeGreaterThan(0);
 
-      // Verify nicknames from E2E seed data
+      // Verify nicknames from E2E seed data (Quattra should be in the list)
       await expect(nicknameSpans.nth(0)).toBeVisible();
       await expect(nicknameSpans.nth(0)).toContainText(/aabe/i);
-      await expect(nicknameSpans.nth(1)).toBeVisible();
-      await expect(nicknameSpans.nth(1)).toContainText(/heppajpg/i);
+
+      // Find Quattra in the list (he should be there somewhere since he's the authenticated user)
+      let foundQuattra = false;
+      for (let i = 0; i < nicknameCount; i++) {
+        const nickname = await nicknameSpans.nth(i).textContent();
+        if (nickname && /quattra/i.test(nickname)) {
+          foundQuattra = true;
+          break;
+        }
+      }
+      expect(foundQuattra).toBe(true);
 
       // Assign captain and co-captain roles
       await assignCaptain(page);
@@ -631,6 +662,9 @@ test.describe("Signup Form", () => {
     test("should validate captain and co-captain assignment comprehensively", async ({
       page
     }) => {
+      // Use a different authenticated user for this test to avoid conflicts
+      await setupAuthForUser(page, 15008, "66561198999999905", "Hoolyz");
+
       // Set up complete registration form
       await setupCompleteRegistrationForm(
         page,
@@ -638,8 +672,8 @@ test.describe("Signup Form", () => {
         "Captain Test Team"
       );
 
-      // Fill in 5 players with valid Steam IDs
-      await fillValidPlayers(page);
+      // Fill in 5 players with valid Steam IDs (include authenticated user)
+      await fillValidPlayers(page, "66561198999999905");
 
       // Test 1: Check that all captain and co-captain checkboxes exist
       for (let i = 0; i < 5; i++) {
@@ -727,6 +761,9 @@ test.describe("Signup Form", () => {
     test("should not allow form submission with external rank error if other validations pass", async ({
       page
     }) => {
+      // Use a different authenticated user for this test to avoid conflicts
+      await setupAuthForUser(page, 15009, "66561198999999906", "RealPlayer1");
+
       // Set up complete registration form
       await setupCompleteRegistrationForm(
         page,
@@ -738,9 +775,9 @@ test.describe("Signup Form", () => {
       const validPlayers = [
         "66561198999999913", // NoFaceitRankPlayer (no FaceIT rank)
         "66561198999999901", // Aabe (has E2E data)
-        "66561198999999902", // heppajpg (our auth user, has E2E data)
         "66561198999999905", // Hoolyz (has E2E data)
-        "66561198999999906" // RealPlayer1 (has E2E data)
+        "66561198999999906", // RealPlayer1 (has E2E data) - authenticated user
+        "66561198999999907" // RealPlayer2 (has E2E data)
       ];
 
       for (let i = 0; i < 5; i++) {
