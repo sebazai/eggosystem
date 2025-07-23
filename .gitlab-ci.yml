@@ -250,6 +250,8 @@ test:backend:
 test:frontend:
   stage: test
   extends: [.prepare-pnpm, .mr-frontend]
+  dependencies:
+    - build:types
   script:
     - pnpm --filter=frontend test
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
