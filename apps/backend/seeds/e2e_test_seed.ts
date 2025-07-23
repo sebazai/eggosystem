@@ -447,12 +447,17 @@ export async function seed(knex: Knex): Promise<void> {
       is_captain: true,
       is_co_captain: false
     },
-    // Removed heppajpg (66561198999999902) from here to prevent /season/:season_id/my-registration
-    // from finding an existing registration for the authenticated user
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999903", // account_id 15005 - Quattra
+      steam_id: "66561198999999904", // account_id 15006 - Trev (co-captain)
+      is_captain: false,
+      is_co_captain: true
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999903", // account_id 15005 - Quattra (co-captain)
       is_captain: false,
       is_co_captain: false
     }
