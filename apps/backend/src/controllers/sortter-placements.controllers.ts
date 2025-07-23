@@ -12,7 +12,8 @@ import {
   deletePreliminaryPlacements,
   type TeamPlacement,
   setPlacementsFinalized,
-  isPlacementsFinalized
+  isPlacementsFinalized,
+  hasSeasonLeagueTeamsForSeason
 } from "../services/sortter-placements.services";
 import { runQuery } from "../db/mysqlRunQuery";
 
@@ -28,15 +29,7 @@ export const getPreliminaryPlacementsController = async (
   // Check if placements have been finalized
   const isFinalized = await isPlacementsFinalized(seasonId);
 
-  // First, check if we have historical data in SeasonLeagueTeams
-  const query = `
-      SELECT COUNT(*) as count
-      FROM SeasonLeagueTeams
-      WHERE season_id = ?
-    `;
-
-  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-  const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const hasHistoricalData = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   if (hasHistoricalData) {
     logger.info(

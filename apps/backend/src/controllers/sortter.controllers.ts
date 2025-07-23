@@ -6,7 +6,7 @@ import {
   checkPlayerAdditionEligibility
 } from "../models/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
-import { runQuery } from "../db/mysqlRunQuery";
+import { hasSeasonLeagueTeamsForSeason } from "../services/sortter-placements.services";
 
 /**
  * Controller to get team values for sorter functionality
@@ -23,15 +23,7 @@ export const getTeamValuesController = async (
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
 
-  // Check if we have historical data in SeasonLeagueTeams
-  const query = `
-    SELECT COUNT(*) as count
-    FROM SeasonLeagueTeams
-    WHERE season_id = ?
-  `;
-
-  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-  const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const hasHistoricalData = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   // Pass isHistorical=true if we have historical data
   const teamValues = await getTeamValuesForSorter(seasonId, {
@@ -51,15 +43,7 @@ export const getTeamValueByIdController = async (
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
 
-  // Check if we have historical data in SeasonLeagueTeams
-  const query = `
-    SELECT COUNT(*) as count
-    FROM SeasonLeagueTeams
-    WHERE season_id = ?
-  `;
-
-  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-  const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const hasHistoricalData = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   const teamValues = await getTeamValuesForSorter(seasonId, {
     isHistorical: hasHistoricalData
@@ -99,15 +83,7 @@ export const getTeamPlayerValuesController = async (
   const seasonId = Number(req.params.season);
   const teamId = Number(req.params.team);
 
-  // Check if we have historical data in SeasonLeagueTeams
-  const query = `
-    SELECT COUNT(*) as count
-    FROM SeasonLeagueTeams
-    WHERE season_id = ?
-  `;
-
-  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-  const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const hasHistoricalData = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   const playerValues = await getTeamPlayerValuesForSortter(seasonId, teamId, {
     isHistorical: hasHistoricalData
@@ -147,15 +123,7 @@ export const getTeamsForSeasonController = async (
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
 
-  // Check if we have historical data in SeasonLeagueTeams
-  const query = `
-    SELECT COUNT(*) as count
-    FROM SeasonLeagueTeams
-    WHERE season_id = ?
-  `;
-
-  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-  const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const hasHistoricalData = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   const teams = await getTeamsForSeason(seasonId, hasHistoricalData);
   res.json(teams);
@@ -177,22 +145,14 @@ export const checkPlayerAdditionEligibilityController = async (
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
 
-  // Check if we have historical data in SeasonLeagueTeams
-  const query = `
-    SELECT COUNT(*) as count
-    FROM SeasonLeagueTeams
-    WHERE season_id = ?
-  `;
-
-  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-  const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const hasHistoricalData = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   try {
     const eligibility = await checkPlayerAdditionEligibility(
       seasonId,
       teamId,
       steamId,
-      hasHistoricalData
+      { isHistorical: hasHistoricalData }
     );
     res.json(eligibility);
   } catch (error) {

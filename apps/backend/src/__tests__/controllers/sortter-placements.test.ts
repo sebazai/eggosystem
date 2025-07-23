@@ -256,7 +256,7 @@ describe("sortter-placements.controllers", () => {
             team_id: 1,
             team_name: "Test Team 1",
             division: 1,
-            comments: "",
+            comments: "Test comment",
             original_avg: 100,
             original_position: 0
           }

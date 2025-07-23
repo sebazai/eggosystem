@@ -262,6 +262,48 @@ const getStabilizedKanaElo = async (steamId: string): Promise<number> => {
   }
 };
 
+// Helper function to fetch CSRankker components with timeout
+async function fetchCSRankkerComponents(
+  steamId: string,
+  timeoutMs: number = 5000
+): Promise<
+  { trueLevel: number; mm: number; hour: number; kana: number } | undefined
+> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const csRankkerUrl =
+      process.env.CSRANKKER_BACKEND_API ||
+      "https://csrankker.kanaliiga.fi/api/v1/kanaelo";
+
+    const response = await fetch(`${csRankkerUrl}/${steamId}`, {
+      signal: controller.signal
+    });
+
+    if (response.ok) {
+      const data: CSRankkerResponse = await response.json();
+      if (data.status === "success") {
+        return data.result.components;
+      }
+    }
+  } catch (error) {
+    // Silently fail for components - we still have the kana_elo value
+    // Only log in non-test environments to avoid test pollution
+    if (process.env.NODE_ENV !== "test" && !controller.signal.aborted) {
+      console.warn("Failed to fetch CSRankker components:", error);
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  return undefined;
+}
+
+interface CheckPlayerAdditionEligibilityOptions {
+  isHistorical?: boolean;
+}
+
 /**
  * Checks if a player can be added to a team based on kana_elo balance
  * Returns analysis including:
@@ -278,7 +320,7 @@ export const checkPlayerAdditionEligibility = async (
   seasonId: number,
   teamId: number,
   newPlayerSteamId: string,
-  isHistorical: boolean = false
+  options?: CheckPlayerAdditionEligibilityOptions
 ): Promise<{
   selectedTeam: {
     team_id: number;
@@ -307,11 +349,11 @@ export const checkPlayerAdditionEligibility = async (
     SELECT COALESCE(l.name, 'Unassigned') AS league_name
     FROM Teams t
     JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
-    ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+    ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
     LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
     LEFT JOIN Leagues l ON l.id = slt.league_id
     WHERE stp.season_id = ? AND stp.team_id = ?
-      ${!isHistorical ? "AND str.approved = 1" : ""}
+      ${!options?.isHistorical ? "AND str.approved = 1" : ""}
     LIMIT 1
   `;
 
@@ -329,50 +371,8 @@ export const checkPlayerAdditionEligibility = async (
   // Get stabilized kana_elo from CSRankker service
   const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
 
-  // Get CSRankker components for display - ensure this is properly awaited
-  let csrankkerComponents:
-    | { trueLevel: number; mm: number; hour: number; kana: number }
-    | undefined;
-
-  // Use Promise.race to ensure this doesn't hang indefinitely
-  const componentsPromise = (async () => {
-    try {
-      const csRankkerUrl =
-        process.env.CSRANKKER_BACKEND_API ||
-        "https://csrankker.kanaliiga.fi/api/v1/kanaelo";
-      const response = await fetch(`${csRankkerUrl}/${newPlayerSteamId}`);
-      if (response.ok) {
-        const data: CSRankkerResponse = await response.json();
-        if (data.status === "success") {
-          return data.result.components;
-        }
-      }
-    } catch (error) {
-      // Silently fail for components - we still have the kana_elo value
-      // Only log in non-test environments to avoid test pollution
-      if (process.env.NODE_ENV !== "test") {
-        console.warn("Failed to fetch CSRankker components:", error);
-      }
-    }
-    return undefined;
-  })();
-
-  // Set a timeout for the components fetch to prevent hanging
-  const timeoutPromise = new Promise<undefined>((resolve) => {
-    setTimeout(() => resolve(undefined), 5000); // 5 second timeout
-  });
-
-  try {
-    csrankkerComponents = await Promise.race([
-      componentsPromise,
-      timeoutPromise
-    ]);
-  } catch (error) {
-    // Silently fail - we still have the kana_elo value
-    if (process.env.NODE_ENV !== "test") {
-      console.warn("Failed to fetch CSRankker components:", error);
-    }
-  }
+  // Get CSRankker components for display
+  const csrankkerComponents = await fetchCSRankkerComponents(newPlayerSteamId);
 
   // Get the selected team's current top 3 players + new player analysis
   const selectedTeamQuery = `
@@ -384,11 +384,11 @@ export const checkPlayerAdditionEligibility = async (
         ROW_NUMBER() OVER (ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
       JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = ?
-      ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+      ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = ?
       WHERE t.id = ?
         AND spr.kana_elo IS NOT NULL
-        ${!isHistorical ? "AND str.approved = 1" : ""}
+        ${!options?.isHistorical ? "AND str.approved = 1" : ""}
     )
     SELECT
       ttp.team_id,
@@ -429,12 +429,12 @@ export const checkPlayerAdditionEligibility = async (
       FROM Teams t
       JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
       JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = slt.season_id
-      ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+      ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id
       WHERE slt.season_id = ? AND l.name = ?
         AND spr.kana_elo IS NOT NULL
-        ${!isHistorical ? "AND str.approved = 1" : ""}
+        ${!options?.isHistorical ? "AND str.approved = 1" : ""}
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamAvg4 AS (

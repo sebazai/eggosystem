@@ -31,20 +31,17 @@ const getFinalizationStatusKey = (seasonId: number) =>
  * Check if there are teams in the database for this season
  * Used as an additional way to determine if placements are finalized
  */
-const checkTeamsInDatabase = async (seasonId: number): Promise<boolean> => {
-  try {
-    const query = `
-      SELECT COUNT(*) as count
-      FROM SeasonLeagueTeams
-      WHERE season_id = ?
-    `;
+export const hasSeasonLeagueTeamsForSeason = async (
+  seasonId: number
+): Promise<boolean> => {
+  const query = `
+    SELECT COUNT(*) as count
+    FROM SeasonLeagueTeams
+    WHERE season_id = ?
+  `;
 
-    const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-    return result.length > 0 && result[0].count > 0;
-  } catch (error) {
-    logger.error("Error checking database for finalized teams", error);
-    return false;
-  }
+  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
+  return result.length > 0 && result[0].count > 0;
 };
 
 /**
@@ -54,34 +51,24 @@ export const savePreliminaryPlacements = async (
   seasonId: number,
   placements: TeamPlacement[]
 ): Promise<boolean> => {
-  try {
-    const key = getTeamPlacementsKey(seasonId);
-    await redisClient.set(
-      key,
-      JSON.stringify(placements),
-      "EX",
-      expireIn30Days
-    );
-    logger.info(
-      `Saved preliminary placements for season ${seasonId} with ${placements.length} teams`
-    );
+  const key = getTeamPlacementsKey(seasonId);
+  await redisClient.set(key, JSON.stringify(placements), "EX", expireIn30Days);
+  logger.info(
+    `Saved preliminary placements for season ${seasonId} with ${placements.length} teams`
+  );
 
-    // Verify the data was saved
-    const savedData = await redisClient.get(key);
-    if (savedData) {
-      logger.info(
-        `Verified Redis save: found ${JSON.parse(savedData).length} teams for season ${seasonId}`
-      );
-    } else {
-      logger.warn(
-        `Failed to verify Redis save for season ${seasonId} - no data found after save`
-      );
-    }
-    return true;
-  } catch (error) {
-    logger.error("Error saving preliminary placements to Redis", error);
-    throw new Error("Failed to save preliminary placements");
+  // Verify the data was saved
+  const savedData = await redisClient.get(key);
+  if (savedData) {
+    logger.info(
+      `Verified Redis save: found ${JSON.parse(savedData).length} teams for season ${seasonId}`
+    );
+  } else {
+    logger.warn(
+      `Failed to verify Redis save for season ${seasonId} - no data found after save`
+    );
   }
+  return true;
 };
 
 /**
@@ -90,21 +77,16 @@ export const savePreliminaryPlacements = async (
 export const getPreliminaryPlacements = async (
   seasonId: number
 ): Promise<TeamPlacement[] | null> => {
-  try {
-    const key = getTeamPlacementsKey(seasonId);
-    const data = await redisClient.get(key);
+  const key = getTeamPlacementsKey(seasonId);
+  const data = await redisClient.get(key);
 
-    if (!data) {
-      logger.info(`No placements found in Redis for season ${seasonId}`);
-      return null;
-    }
-
-    logger.info(`Retrieved placements from Redis for season ${seasonId}`);
-    return JSON.parse(data) as TeamPlacement[];
-  } catch (error) {
-    logger.error("Error getting preliminary placements from Redis", error);
-    throw new Error("Failed to get preliminary placements");
+  if (!data) {
+    logger.info(`No placements found in Redis for season ${seasonId}`);
+    return null;
   }
+
+  logger.info(`Retrieved placements from Redis for season ${seasonId}`);
+  return JSON.parse(data) as TeamPlacement[];
 };
 
 /**
@@ -129,15 +111,10 @@ export const generateInitialPlacements = (
 export const deletePreliminaryPlacements = async (
   seasonId: number
 ): Promise<boolean> => {
-  try {
-    const key = getTeamPlacementsKey(seasonId);
-    await redisClient.del(key);
-    logger.info(`Deleted preliminary placements for season ${seasonId}`);
-    return true;
-  } catch (error) {
-    logger.error("Error deleting preliminary placements from Redis", error);
-    throw new Error("Failed to delete preliminary placements");
-  }
+  const key = getTeamPlacementsKey(seasonId);
+  await redisClient.del(key);
+  logger.info(`Deleted preliminary placements for season ${seasonId}`);
+  return true;
 };
 
 /**
@@ -147,22 +124,17 @@ export const setPlacementsFinalized = async (
   seasonId: number,
   isFinalized: boolean
 ): Promise<boolean> => {
-  try {
-    const key = getFinalizationStatusKey(seasonId);
-    await redisClient.set(
-      key,
-      isFinalized ? "1" : "0",
-      "EX",
-      expireIn30Days * 3 // Keep finalization status longer than placements
-    );
-    logger.info(
-      `Set finalization status for season ${seasonId} to ${isFinalized}`
-    );
-    return true;
-  } catch (error) {
-    logger.error("Error setting finalization status in Redis", error);
-    throw new Error("Failed to set finalization status");
-  }
+  const key = getFinalizationStatusKey(seasonId);
+  await redisClient.set(
+    key,
+    isFinalized ? "1" : "0",
+    "EX",
+    expireIn30Days * 3 // Keep finalization status longer than placements
+  );
+  logger.info(
+    `Set finalization status for season ${seasonId} to ${isFinalized}`
+  );
+  return true;
 };
 
 /**
@@ -171,28 +143,23 @@ export const setPlacementsFinalized = async (
 export const isPlacementsFinalized = async (
   seasonId: number
 ): Promise<boolean> => {
-  try {
-    const key = getFinalizationStatusKey(seasonId);
-    const data = await redisClient.get(key);
+  const key = getFinalizationStatusKey(seasonId);
+  const data = await redisClient.get(key);
 
-    // Check Redis first
-    if (data === "1") {
-      return true;
-    }
-
-    // If not in Redis, check if there are teams in the database
-    const hasTeamsInDatabase = await checkTeamsInDatabase(seasonId);
-
-    if (hasTeamsInDatabase) {
-      // If teams exist in the database, consider it finalized
-      // Also set the Redis key for future checks
-      await setPlacementsFinalized(seasonId, true);
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    logger.error("Error checking finalization status in Redis", error);
-    return false; // Default to not finalized in case of error
+  // Check Redis first
+  if (data === "1") {
+    return true;
   }
+
+  // If not in Redis, check if there are teams in the database
+  const hasTeamsInDatabase = await hasSeasonLeagueTeamsForSeason(seasonId);
+
+  if (hasTeamsInDatabase) {
+    // If teams exist in the database, consider it finalized
+    // Also set the Redis key for future checks
+    await setPlacementsFinalized(seasonId, true);
+    return true;
+  }
+
+  return false;
 };
