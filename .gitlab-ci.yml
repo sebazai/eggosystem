@@ -249,8 +249,11 @@ test:backend:
 
 test:frontend:
   stage: test
-  extends: [.prepare-pnpm, .mr-frontend]
+  extends: [.mr-frontend]
   before_script:
+    - corepack enable
+    - corepack prepare pnpm@10.8.1 --activate
+    - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
   script:
     - pnpm --filter=frontend test
