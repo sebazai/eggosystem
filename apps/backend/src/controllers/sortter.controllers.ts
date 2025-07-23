@@ -34,7 +34,9 @@ export const getTeamValuesController = async (
   const hasHistoricalData = result.length > 0 && result[0].count > 0;
 
   // Pass isHistorical=true if we have historical data
-  const teamValues = await getTeamValuesForSorter(seasonId, hasHistoricalData);
+  const teamValues = await getTeamValuesForSorter(seasonId, {
+    isHistorical: hasHistoricalData
+  });
   res.json(teamValues);
 };
 
@@ -59,7 +61,9 @@ export const getTeamValueByIdController = async (
   const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
   const hasHistoricalData = result.length > 0 && result[0].count > 0;
 
-  const teamValues = await getTeamValuesForSorter(seasonId, hasHistoricalData);
+  const teamValues = await getTeamValuesForSorter(seasonId, {
+    isHistorical: hasHistoricalData
+  });
   const team = teamValues.find(
     (team: TeamSortterValues) => team.team_id === teamId
   );
@@ -105,11 +109,9 @@ export const getTeamPlayerValuesController = async (
   const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
   const hasHistoricalData = result.length > 0 && result[0].count > 0;
 
-  const playerValues = await getTeamPlayerValuesForSortter(
-    seasonId,
-    teamId,
-    hasHistoricalData
-  );
+  const playerValues = await getTeamPlayerValuesForSortter(seasonId, teamId, {
+    isHistorical: hasHistoricalData
+  });
 
   if (playerValues.length === 0) {
     res.status(404).json({

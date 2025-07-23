@@ -23,139 +23,126 @@ export const getPreliminaryPlacementsController = async (
   req: RequestWithParams<{ season_id: string }>,
   res: Response
 ): Promise<void> => {
-  try {
-    const seasonId = Number(req.params.season_id);
+  const seasonId = Number(req.params.season_id);
 
-    // Check if placements have been finalized
-    const isFinalized = await isPlacementsFinalized(seasonId);
+  // Check if placements have been finalized
+  const isFinalized = await isPlacementsFinalized(seasonId);
 
-    // First, check if we have historical data in SeasonLeagueTeams
-    const query = `
+  // First, check if we have historical data in SeasonLeagueTeams
+  const query = `
       SELECT COUNT(*) as count
       FROM SeasonLeagueTeams
       WHERE season_id = ?
     `;
 
-    const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
-    const hasHistoricalData = result.length > 0 && result[0].count > 0;
+  const result = await runQuery<Array<{ count: number }>>(query, [seasonId]);
+  const hasHistoricalData = result.length > 0 && result[0].count > 0;
 
-    if (hasHistoricalData) {
-      logger.info(
-        `Found historical league data for season ${seasonId}, using that as source`
-      );
+  if (hasHistoricalData) {
+    logger.info(
+      `Found historical league data for season ${seasonId}, using that as source`
+    );
 
-      // Get teams with their league assignments from SeasonLeagueTeams
-      const teamsQuery = `
+    // Get teams with their league assignments from SeasonLeagueTeams
+    const teamsQuery = `
         SELECT 
           t.id AS team_id,
           t.name AS team_name,
           l.name AS league_name,
-          l.id AS league_id
+          l.id AS league_id,
+          slt.tier AS tier
         FROM Teams t
         JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
         JOIN Leagues l ON l.id = slt.league_id
         WHERE slt.season_id = ?
       `;
 
-      const teamsWithLeagues = await runQuery<
-        Array<{
-          team_id: number;
-          team_name: string;
-          league_name: string;
-          league_id: number;
-        }>
-      >(teamsQuery, [seasonId]);
+    const teamsWithLeagues = await runQuery<
+      Array<{
+        team_id: number;
+        team_name: string;
+        league_name: string;
+        league_id: number;
+        tier: number;
+      }>
+    >(teamsQuery, [seasonId]);
 
-      // Get team values for avg4/sum5 calculations
-      // For historical data, we don't need to filter by approved=true
-      const teams = await getTeamValuesForSorter(seasonId, true);
+    // Get team values for avg4/sum5 calculations
+    // For historical data, we don't need to filter by approved=true
+    const teams = await getTeamValuesForSorter(seasonId, {
+      isHistorical: true
+    });
 
-      // Merge the league data with the team values
-      const historicalPlacements = teamsWithLeagues.map((team) => {
-        // Find the corresponding team in the team values
-        const teamValues = teams.find((t) => t.team_id === team.team_id);
+    // Merge the league data with the team values
+    const historicalPlacements = teamsWithLeagues.map((team) => {
+      // Find the corresponding team in the team values
+      const teamValues = teams.find((t) => t.team_id === team.team_id);
 
-        // Determine division from league name
-        let division = 0;
-        if (team.league_name === "Masters") division = 1;
-        else if (team.league_name === "Challengers") division = 2;
-        else if (team.league_name === "Prospects") division = 3;
-        else if (team.league_name.startsWith("div")) {
-          const divNumber = parseInt(team.league_name.replace("div", ""), 10);
-          if (!isNaN(divNumber)) division = divNumber;
-        }
-
-        return {
-          team_id: team.team_id,
-          team_name: team.team_name,
-          division: division,
-          comments: "",
-          original_avg: teamValues?.avg4 || 0,
-          original_position: 0 // Not relevant for historical data
-        };
-      });
-
-      logger.info(
-        `Returning ${historicalPlacements.length} historical placements for season ${seasonId}`
-      );
-      res.json({
-        placements: historicalPlacements,
-        isFinalized: isFinalized || true // Historical data is always considered finalized
-      });
-      return;
-    }
-
-    // If no historical data, try to get existing placements from Redis
-    const existingPlacements = await getPreliminaryPlacements(seasonId);
-
-    if (existingPlacements) {
-      logger.info(
-        `Returning ${existingPlacements.length} existing placements from Redis for season ${seasonId}`
-      );
-      res.json({
-        placements: existingPlacements,
-        isFinalized
-      });
-      return;
-    }
+      return {
+        team_id: team.team_id,
+        team_name: team.team_name,
+        division: team.tier,
+        comments: "",
+        original_avg: teamValues?.avg4 || 0,
+        original_position: 0 // Not relevant for historical data
+      };
+    });
 
     logger.info(
-      `No existing placements found for season ${seasonId}, generating initial placements`
+      `Returning ${historicalPlacements.length} historical placements for season ${seasonId}`
     );
-
-    // If no placements exist, generate initial placements from team values
-    logger.info(
-      `Getting team values for season ${seasonId} to generate initial placements`
-    );
-    const teams = await getTeamValuesForSorter(seasonId, true); // Use historical=true to get all teams
-    logger.info(`Retrieved ${teams.length} teams for initial placements`);
-
-    if (teams.length === 0) {
-      logger.warn(
-        `No teams found for season ${seasonId} - cannot generate initial placements`
-      );
-      res.status(404).json({
-        error: { message: "No teams found for this season" }
-      });
-      return;
-    }
-
-    const initialPlacements = generateInitialPlacements(teams);
-    logger.info(`Generated ${initialPlacements.length} initial placements`);
-
-    // Save the initial placements to Redis
-    await savePreliminaryPlacements(seasonId, initialPlacements);
-
     res.json({
-      placements: initialPlacements,
-      isFinalized: false
+      placements: historicalPlacements,
+      isFinalized: isFinalized || true // Historical data is always considered finalized
     });
-  } catch (error) {
-    logger.error("Error getting preliminary placements", error);
-    res.status(500).json({
-      error: { message: "Failed to get preliminary placements" }
-    });
+    return;
   }
+
+  // If no historical data, try to get existing placements from Redis
+  const existingPlacements = await getPreliminaryPlacements(seasonId);
+
+  if (existingPlacements) {
+    logger.info(
+      `Returning ${existingPlacements.length} existing placements from Redis for season ${seasonId}`
+    );
+    res.json({
+      placements: existingPlacements,
+      isFinalized
+    });
+    return;
+  }
+
+  logger.info(
+    `No existing placements found for season ${seasonId}, generating initial placements`
+  );
+
+  // If no placements exist, generate initial placements from team values
+  logger.info(
+    `Getting team values for season ${seasonId} to generate initial placements`
+  );
+  const teams = await getTeamValuesForSorter(seasonId, { isHistorical: true }); // Use historical=true to get all teams
+  logger.info(`Retrieved ${teams.length} teams for initial placements`);
+
+  if (teams.length === 0) {
+    logger.warn(
+      `No teams found for season ${seasonId} - cannot generate initial placements`
+    );
+    res.status(404).json({
+      error: { message: "No teams found for this season" }
+    });
+    return;
+  }
+
+  const initialPlacements = generateInitialPlacements(teams);
+  logger.info(`Generated ${initialPlacements.length} initial placements`);
+
+  // Save the initial placements to Redis
+  await savePreliminaryPlacements(seasonId, initialPlacements);
+
+  res.json({
+    placements: initialPlacements,
+    isFinalized: false
+  });
 };
 
 /**

@@ -28,7 +28,7 @@ describe("Sortter Models - kana_elo filtering", () => {
         }
       ]);
 
-      await getTeamValuesForSorter(16, false);
+      await getTeamValuesForSorter(16, { isHistorical: false });
 
       // Verify that the query includes the kana_elo IS NOT NULL filter
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -40,7 +40,7 @@ describe("Sortter Models - kana_elo filtering", () => {
     it("should include kana_elo filter in historical mode", async () => {
       mockRunQuery.mockResolvedValueOnce([]);
 
-      await getTeamValuesForSorter(16, true);
+      await getTeamValuesForSorter(16, { isHistorical: true });
 
       // Verify that the query includes the kana_elo IS NOT NULL filter even in historical mode
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -67,7 +67,7 @@ describe("Sortter Models - kana_elo filtering", () => {
         }
       ]);
 
-      await getTeamPlayerValuesForSortter(16, 1, false);
+      await getTeamPlayerValuesForSortter(16, 1);
 
       // Verify that the query includes the kana_elo IS NOT NULL filter
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -79,7 +79,7 @@ describe("Sortter Models - kana_elo filtering", () => {
     it("should include kana_elo filter in historical mode", async () => {
       mockRunQuery.mockResolvedValueOnce([]);
 
-      await getTeamPlayerValuesForSortter(16, 1, true);
+      await getTeamPlayerValuesForSortter(16, 1, { isHistorical: true });
 
       // Verify that the query includes the kana_elo IS NOT NULL filter even in historical mode
       expect(mockRunQuery).toHaveBeenCalledWith(

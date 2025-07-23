@@ -252,7 +252,7 @@ test:frontend:
   stage: test
   extends: [.prepare-pnpm, .mr-frontend]
   script:
-    - pnpm --filter=frontend test:unit
+    - pnpm --filter=frontend test
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always

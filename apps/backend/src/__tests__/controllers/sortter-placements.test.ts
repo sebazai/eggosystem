@@ -238,7 +238,8 @@ describe("sortter-placements.controllers", () => {
             team_id: 1,
             team_name: "Test Team 1",
             league_name: "Masters",
-            league_id: 1
+            league_id: 1,
+            tier: 1
           }
         ]);
       mockedGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);

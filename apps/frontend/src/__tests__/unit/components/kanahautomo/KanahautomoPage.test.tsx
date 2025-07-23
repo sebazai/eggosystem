@@ -569,9 +569,7 @@ describe("KanahautomoPage", () => {
       // Should show error message - wait for the error to appear
       await waitFor(
         () => {
-          const errorText = screen.getByText((content) =>
-            content.includes("Registration failed")
-          );
+          const errorText = screen.getByText("Registration failed");
           expect(errorText).toBeInTheDocument();
           expect(errorText).toHaveClass("text-red-500", "text-sm");
         },

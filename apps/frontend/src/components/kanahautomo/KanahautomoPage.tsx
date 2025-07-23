@@ -251,33 +251,32 @@ export default function KanahautomoPage() {
     setIsSubmitting(true);
     setError(null);
 
-    try {
-      let requestBody: KanahautomoRegistration & {
-        gameTypes: KanahautomoFormData["gameTypes"];
-        acceptedTerms: boolean;
+    let requestBody: KanahautomoRegistration & {
+      gameTypes: KanahautomoFormData["gameTypes"];
+      acceptedTerms: boolean;
+    };
+
+    // If creating new organization
+    if (data.organizationId === -1 && data.newOrganization) {
+      requestBody = {
+        organizationId: -1,
+        newOrganization: {
+          name: data.newOrganization.name,
+          organization_code: data.newOrganization.organization_code,
+          website: data.newOrganization.website
+        },
+        gameTypes: data.gameTypes,
+        acceptedTerms: data.acceptedTerms
       };
+    } else {
+      requestBody = {
+        organizationId: data.organizationId,
+        gameTypes: data.gameTypes,
+        acceptedTerms: data.acceptedTerms
+      };
+    }
 
-      // If creating new organization
-      if (data.organizationId === -1 && data.newOrganization) {
-        requestBody = {
-          organizationId: -1,
-          newOrganization: {
-            name: data.newOrganization.name,
-            organization_code: data.newOrganization.organization_code,
-            website: data.newOrganization.website
-          },
-          gameTypes: data.gameTypes,
-          acceptedTerms: data.acceptedTerms
-        };
-      } else {
-        requestBody = {
-          organizationId: data.organizationId,
-          gameTypes: data.gameTypes,
-          acceptedTerms: data.acceptedTerms
-        };
-      }
-
-      // Register for Kanahautomo with organization handling
+    try {
       await clientApiFetch<{
         message: string;
         registration_id: number;
@@ -287,12 +286,16 @@ export default function KanahautomoPage() {
         body: JSON.stringify(requestBody)
       });
 
+      // Success case
       toast.success("Successfully registered for Kanahautomo!");
       form.reset();
       if (mutateOrgStatus) await mutateOrgStatus();
-    } catch (err) {
+    } catch (error) {
+      // Handle API errors at integration boundary
       const errorMessage =
-        err instanceof Error ? err.message : "An error occurred";
+        error instanceof Error
+          ? error.message
+          : "An error occurred during registration";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

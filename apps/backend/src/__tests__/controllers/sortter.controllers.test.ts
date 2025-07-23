@@ -1,4 +1,6 @@
 import { type Response } from "express";
+import request from "supertest";
+import { app } from "../../app";
 import {
   getTeamValuesController,
   getTeamValueByIdController,
@@ -10,10 +12,14 @@ import {
   type RequestWithParams
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { getTeamValuesForSorter } from "../../models/sortter.models";
 
+// Mock the model functions
 jest.mock("../../models/sortter.models");
 jest.mock("../../db/mysqlRunQuery");
 const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+const mockGetTeamValuesForSorter =
+  getTeamValuesForSorter as jest.MockedFunction<typeof getTeamValuesForSorter>;
 
 describe("Sortter Controllers", () => {
   let mockRequest: Partial<RequestWithParams<Record<string, string>>>;
@@ -28,168 +34,278 @@ describe("Sortter Controllers", () => {
       json: jest.fn(),
       status: jest.fn().mockReturnThis()
     };
-  });
-
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe("getTeamValuesController", () => {
-    it("should return team values for a season", async () => {
-      const mockTeamValues: TeamSortterValues[] = [
-        {
-          team_id: 1,
-          team_name: "Team 1",
-          team_logo: "logo1.png",
-          league_name: "League 1",
-          top5_sum: 100,
-          avg4: 25,
-          top5_values: [20, 20, 20, 20, 20]
-        }
-      ];
+  // Unit Tests
+  describe("Unit Tests", () => {
+    describe("getTeamValuesController", () => {
+      it("should return team values for a season", async () => {
+        const mockTeamValues: TeamSortterValues[] = [
+          {
+            team_id: 1,
+            team_name: "Team 1",
+            team_logo: "logo1.png",
+            league_name: "League 1",
+            top5_sum: 100,
+            avg4: 25,
+            top5_values: [20, 20, 20, 20, 20]
+          }
+        ];
 
-      mockRequest.params = { season_id: "1" };
-      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-      mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
-        mockTeamValues
-      );
+        mockRequest.params = { season_id: "1" };
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
+          mockTeamValues
+        );
 
-      await getTeamValuesController(
-        mockRequest as RequestWithParams<{ season_id: string }>,
-        mockResponse as Response
-      );
+        await getTeamValuesController(
+          mockRequest as RequestWithParams<{ season_id: string }>,
+          mockResponse as Response
+        );
 
-      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
-        1,
-        false
-      );
-      expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues);
-    });
-  });
-
-  describe("getTeamValueByIdController", () => {
-    it("should return team value for a specific team and season", async () => {
-      const mockTeamValues: TeamSortterValues[] = [
-        {
-          team_id: 1,
-          team_name: "Team 1",
-          team_logo: "logo1.png",
-          league_name: "League 1",
-          top5_sum: 100,
-          avg4: 25,
-          top5_values: [20, 20, 20, 20, 20]
-        }
-      ];
-
-      mockRequest.params = { season_id: "1", team_id: "1" };
-      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-      mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
-        mockTeamValues
-      );
-
-      await getTeamValueByIdController(
-        mockRequest as RequestWithParams<{
-          season_id: string;
-          team_id: string;
-        }>,
-        mockResponse as Response
-      );
-
-      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
-        1,
-        false
-      );
-      expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues[0]);
+        expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+          1,
+          {
+            isHistorical: false
+          }
+        );
+        expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues);
+      });
     });
 
-    it("should return 404 if team not found", async () => {
-      const mockTeamValues: TeamSortterValues[] = [
-        {
-          team_id: 1,
-          team_name: "Team 1",
-          team_logo: "logo1.png",
-          league_name: "League 1",
-          top5_sum: 100,
-          avg4: 25,
-          top5_values: [20, 20, 20, 20, 20]
-        }
-      ];
+    describe("getTeamValueByIdController", () => {
+      it("should return team value for a specific team and season", async () => {
+        const mockTeamValues: TeamSortterValues[] = [
+          {
+            team_id: 1,
+            team_name: "Team 1",
+            team_logo: "logo1.png",
+            league_name: "League 1",
+            top5_sum: 100,
+            avg4: 25,
+            top5_values: [20, 20, 20, 20, 20]
+          }
+        ];
 
-      mockRequest.params = { season_id: "1", team_id: "2" };
-      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-      mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
-        mockTeamValues
-      );
+        mockRequest.params = { season_id: "1", team_id: "1" };
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
+          mockTeamValues
+        );
 
-      await getTeamValueByIdController(
-        mockRequest as RequestWithParams<{
-          season_id: string;
-          team_id: string;
-        }>,
-        mockResponse as Response
-      );
+        await getTeamValueByIdController(
+          mockRequest as RequestWithParams<{
+            season_id: string;
+            team_id: string;
+          }>,
+          mockResponse as Response
+        );
 
-      expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
-        1,
-        false
-      );
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: "Team with ID 2 not found for season 1"
+        expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+          1,
+          {
+            isHistorical: false
+          }
+        );
+        expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues[0]);
+      });
+
+      it("should return 404 if team not found", async () => {
+        const mockTeamValues: TeamSortterValues[] = [
+          {
+            team_id: 1,
+            team_name: "Team 1",
+            team_logo: "logo1.png",
+            league_name: "League 1",
+            top5_sum: 100,
+            avg4: 25,
+            top5_values: [20, 20, 20, 20, 20]
+          }
+        ];
+
+        mockRequest.params = { season_id: "1", team_id: "2" };
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
+          mockTeamValues
+        );
+
+        await getTeamValueByIdController(
+          mockRequest as RequestWithParams<{
+            season_id: string;
+            team_id: string;
+          }>,
+          mockResponse as Response
+        );
+
+        expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+          1,
+          {
+            isHistorical: false
+          }
+        );
+        expect(mockResponse.status).toHaveBeenCalledWith(404);
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          message: "Team with ID 2 not found for season 1"
+        });
+      });
+    });
+
+    describe("getTeamPlayerValuesController", () => {
+      it("should return player values for a specific team and season", async () => {
+        const mockPlayerValues = [
+          {
+            name: "toNppa",
+            steamid: "76561197960383236",
+            cs2_rank: 17690,
+            faceit_level: 9,
+            faceit_elo: 1954,
+            hours: 3382,
+            kanarating: 1.296875,
+            fkd: 1.21,
+            kana_elo: 1200,
+            calculus: "A"
+          }
+        ];
+
+        mockRequest.params = { season: "14", team: "1" };
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue(
+          mockPlayerValues
+        );
+
+        await getTeamPlayerValuesController(
+          mockRequest as RequestWithParams<{ season: string; team: string }>,
+          mockResponse as Response
+        );
+
+        expect(
+          mockSortterModels.getTeamPlayerValuesForSortter
+        ).toHaveBeenCalledWith(14, 1, { isHistorical: false });
+        expect(mockResponse.json).toHaveBeenCalledWith(mockPlayerValues);
+      });
+
+      it("should return 404 if no players found", async () => {
+        mockRequest.params = { season: "14", team: "999" };
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue([]);
+
+        await getTeamPlayerValuesController(
+          mockRequest as RequestWithParams<{ season: string; team: string }>,
+          mockResponse as Response
+        );
+
+        expect(
+          mockSortterModels.getTeamPlayerValuesForSortter
+        ).toHaveBeenCalledWith(14, 999, { isHistorical: false });
+        expect(mockResponse.status).toHaveBeenCalledWith(404);
+        expect(mockResponse.json).toHaveBeenCalledWith({
+          message: "No players found for team 999 in season 14"
+        });
       });
     });
   });
 
-  describe("getTeamPlayerValuesController", () => {
-    it("should return player values for a specific team and season", async () => {
-      const mockPlayerValues = [
-        {
-          name: "toNppa",
-          steamid: "76561197960383236",
-          cs2_rank: 17690,
-          faceit_level: 9,
-          faceit_elo: 1954,
-          hours: 3382,
-          kanarating: 1.296875,
-          fkd: 1.21,
-          kana_elo: 1200,
-          calculus: "A"
-        }
-      ];
+  // Integration Tests
+  describe("Integration Tests", () => {
+    describe("GET /api/v1/sortter/season/:season", () => {
+      it("should return team values for a given season", async () => {
+        // Mock data setup
+        const mockTeamValues = [
+          {
+            team_id: 2053,
+            team_name: "CSKeisari",
+            team_logo: "logo_url_1",
+            league_name: "League 1",
+            top5_sum: 1418,
+            avg4: 288.75,
+            top5_values: [300, 295, 285, 275, 263]
+          }
+        ];
 
-      mockRequest.params = { season: "14", team: "1" };
-      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-      mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue(
-        mockPlayerValues
-      );
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
 
-      await getTeamPlayerValuesController(
-        mockRequest as RequestWithParams<{ season: string; team: string }>,
-        mockResponse as Response
-      );
+        // Make request to the endpoint
+        const response = await request(app).get("/api/v1/sortter/season/14");
 
-      expect(
-        mockSortterModels.getTeamPlayerValuesForSortter
-      ).toHaveBeenCalledWith(14, 1, false);
-      expect(mockResponse.json).toHaveBeenCalledWith(mockPlayerValues);
+        // Verify response
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(mockTeamValues);
+
+        // Verify model function was called with correct season ID
+        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14, {
+          isHistorical: false
+        });
+      });
+
+      it("should handle invalid season ID parameter", async () => {
+        // Make request with invalid season ID
+        const response = await request(app).get(
+          "/api/v1/sortter/season/invalid"
+        );
+
+        // Verify response indicates bad request
+        expect(response.status).toBe(400);
+      });
     });
 
-    it("should return 404 if no players found", async () => {
-      mockRequest.params = { season: "14", team: "999" };
-      mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-      mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue([]);
+    describe("GET /api/v1/sortter/season/:season/team/:team", () => {
+      it("should get a specific team by ID", async () => {
+        // Mock data setup
+        const mockTeamValues = [
+          {
+            team_id: 2053,
+            team_name: "CSKeisari",
+            team_logo: "logo_url_1",
+            league_name: "League 1",
+            top5_sum: 1418,
+            avg4: 288.75,
+            top5_values: [300, 295, 285, 275, 263]
+          },
+          {
+            team_id: 2054,
+            team_name: "TeamTwo",
+            team_logo: "logo_url_2",
+            league_name: "League 2",
+            top5_sum: 1000,
+            avg4: 200.0,
+            top5_values: [250, 250, 250, 250, 0]
+          }
+        ];
 
-      await getTeamPlayerValuesController(
-        mockRequest as RequestWithParams<{ season: string; team: string }>,
-        mockResponse as Response
-      );
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
 
-      expect(
-        mockSortterModels.getTeamPlayerValuesForSortter
-      ).toHaveBeenCalledWith(14, 999, false);
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: "No players found for team 999 in season 14"
+        // Make request to the endpoint
+        const response = await request(app).get(
+          "/api/v1/sortter/season/14/team/2053"
+        );
+
+        // Verify response
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(mockTeamValues[0]);
+
+        // Verify model function was called with correct season ID
+        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14, {
+          isHistorical: false
+        });
+      });
+
+      it("should handle team not found", async () => {
+        // Mock empty data
+        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
+        mockGetTeamValuesForSorter.mockResolvedValue([]);
+
+        // Make request with valid season but non-existent team
+        const response = await request(app).get(
+          "/api/v1/sortter/season/14/team/9999"
+        );
+
+        // Verify response indicates not found
+        expect(response.status).toBe(404);
+        expect(response.body).toHaveProperty("message");
+        expect(response.body.message).toContain("Team with ID 9999 not found");
       });
     });
   });

@@ -5,6 +5,10 @@ import {
   type PlayerSortterValues
 } from "@eggosystem/types";
 
+interface GetTeamValuesForSortterOptions {
+  isHistorical?: boolean;
+}
+
 /**
  * Gets team values for sorter functionality:
  * - Team name
@@ -14,12 +18,12 @@ import {
  * - Kanaelo values for top 5 players as an array
  *
  * @param seasonId The season ID to filter teams by
- * @param isHistorical If true, don't filter by approved=true (for historical data)
+ * @param
  * @returns Array of team values
  */
 export const getTeamValuesForSorter = async (
   seasonId: number,
-  isHistorical: boolean = false
+  options?: GetTeamValuesForSortterOptions
 ): Promise<TeamSortterValues[]> => {
   const query = `
     WITH TeamPlayersKanaElo AS (
@@ -34,12 +38,12 @@ export const getTeamValuesForSorter = async (
       FROM Teams t
       JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
       JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
-      ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+      ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
       LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
       LEFT JOIN Leagues l ON l.id = slt.league_id
       WHERE stp.season_id = ?
         AND spr.kana_elo IS NOT NULL
-        ${!isHistorical ? "AND str.approved = 1" : ""}
+        ${!options?.isHistorical ? "AND str.approved = 1" : ""}
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamTop5Players AS (
@@ -98,6 +102,10 @@ export const getTeamValuesForSorter = async (
   return results;
 };
 
+interface GetTeamPlayerValuesForSortterOptions {
+  isHistorical?: boolean;
+}
+
 /**
  * Gets player values for a specific team and season for sorter functionality:
  * - Player name
@@ -117,7 +125,7 @@ export const getTeamValuesForSorter = async (
 export const getTeamPlayerValuesForSortter = async (
   seasonId: number,
   teamId: number,
-  isHistorical: boolean = false
+  options?: GetTeamPlayerValuesForSortterOptions
 ): Promise<PlayerSortterValues[]> => {
   const query = `
     SELECT
@@ -133,7 +141,7 @@ export const getTeamPlayerValuesForSortter = async (
       calculus
     FROM Teams t
     JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
-    ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
+    ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
     JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
     JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
     LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
@@ -142,7 +150,7 @@ export const getTeamPlayerValuesForSortter = async (
     WHERE stp.season_id = ?
       AND stp.team_id = ?
       AND spr.kana_elo IS NOT NULL
-      ${!isHistorical ? "AND str.approved = 1" : ""}
+      ${!options?.isHistorical ? "AND str.approved = 1" : ""}
     GROUP BY
       sp.nickname,
       sp.steam_id,

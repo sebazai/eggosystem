@@ -205,16 +205,12 @@ describe("setPlayerKanaEloController", () => {
     // Arrange
     mockSetPlayerKanaElo.mockRejectedValueOnce(new Error("Database error"));
 
-    // Act
-    await setPlayerKanaEloController(
-      mockRequest as Request,
-      mockResponse as Response
-    );
-
-    // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(500);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "Internal server error"
-    });
+    // Act & Assert
+    await expect(
+      setPlayerKanaEloController(
+        mockRequest as Request,
+        mockResponse as Response
+      )
+    ).rejects.toThrow("Database error");
   });
 });
