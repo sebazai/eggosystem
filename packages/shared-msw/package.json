@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "clean": "rm -rf cache dist"
   },
   "dependencies": {
     "msw": "2.10.3",

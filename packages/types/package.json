@@ -6,7 +6,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "clean": "rm -rf cache dist"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
