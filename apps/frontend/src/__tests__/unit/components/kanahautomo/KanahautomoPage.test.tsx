@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import KanahautomoPage from "@/components/kanahautomo/KanahautomoPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -508,7 +508,9 @@ describe("KanahautomoPage", () => {
       (clientApiFetch as jest.Mock).mockReturnValue(apiPromise);
       // Submit form
       const submitButton = screen.getByTestId("kanahautomo-submit");
-      await user.click(submitButton);
+      await act(async () => {
+        await user.click(submitButton);
+      });
       // Button should be disabled and show loading text
       await waitFor(
         () => {
@@ -564,7 +566,9 @@ describe("KanahautomoPage", () => {
       const submitButton = screen.getByRole("button", {
         name: "Join Kanahautomo"
       });
-      await user.click(submitButton);
+      await act(async () => {
+        await user.click(submitButton);
+      });
 
       // Should show error message - wait for the error to appear
       await waitFor(
@@ -639,7 +643,9 @@ describe("KanahautomoPage", () => {
       const submitButton = screen.getByRole("button", {
         name: "Join Kanahautomo"
       });
-      await user.click(submitButton);
+      await act(async () => {
+        await user.click(submitButton);
+      });
 
       // Should show validation error
       await waitFor(() => {
@@ -665,7 +671,9 @@ describe("KanahautomoPage", () => {
       const submitButton = screen.getByRole("button", {
         name: "Join Kanahautomo"
       });
-      await user.click(submitButton);
+      await act(async () => {
+        await user.click(submitButton);
+      });
 
       // Should show validation error for game types - look specifically for the validation message
       await waitFor(() => {
@@ -694,7 +702,9 @@ describe("KanahautomoPage", () => {
       const submitButton = screen.getByRole("button", {
         name: "Join Kanahautomo"
       });
-      await user.click(submitButton);
+      await act(async () => {
+        await user.click(submitButton);
+      });
 
       // Should show validation error for terms - check for the actual message
       await waitFor(() => {

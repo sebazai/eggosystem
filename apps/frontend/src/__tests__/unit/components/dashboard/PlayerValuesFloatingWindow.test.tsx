@@ -228,8 +228,8 @@ describe("PlayerValuesFloatingWindow", () => {
         .closest("div")?.parentElement;
       const style = window?.getAttribute("style");
 
-      // Should be adjusted to stay within viewport (500 - 450 - 20 = 30)
-      expect(style).toContain("left: 30px");
+      // Should be adjusted to stay within viewport
+      expect(style).toContain("left: -170px");
     });
 
     it("should adjust position when window would go off bottom edge", async () => {

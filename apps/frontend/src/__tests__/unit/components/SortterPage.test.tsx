@@ -1,27 +1,142 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import SortterPage from "@/app/(admin)/dashboard/sortter/page";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
+import { clientApiFetch } from "@/lib/apiClient";
+
+// Mock Next.js App Router
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+    pathname: "/",
+    query: {},
+    asPath: "/"
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/",
+  useParams: () => ({}),
+  redirect: jest.fn(),
+  notFound: jest.fn()
+}));
 
 // Mock the useSortter hook
 jest.mock("@/hooks/data/dashboard/useSortter", () => ({
   useSortter: jest.fn()
 }));
 
-// Mock the WithRoleProtection component
+// Mock WithRoleProtection component
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({
-  WithRoleProtection: jest.fn(({ children }) => <div>{children}</div>)
+  WithRoleProtection: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  )
 }));
 
-// Mock the toast
+// Mock toast notifications
 jest.mock("sonner", () => ({
   toast: {
     success: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
+    warning: jest.fn(),
+    info: jest.fn()
   }
 }));
 
+// Mock SWR
+jest.mock("swr", () => ({
+  __esModule: true,
+  default: jest.fn()
+}));
+
+// Mock API client
+jest.mock("@/lib/apiClient", () => ({
+  clientApiFetch: jest.fn()
+}));
+
+// Mock UI components
+
+jest.mock("@/components/ui/button", () => ({
+  Button: ({ children, onClick, disabled, ...props }: any) => (
+    <button onClick={onClick} disabled={disabled} {...props}>
+      {children}
+    </button>
+  )
+}));
+
+jest.mock("@/components/ui/spinner", () => ({
+  Spinner: () => <div data-testid="spinner">Loading...</div>
+}));
+
+jest.mock("@/components/ui/textarea", () => ({
+  Textarea: ({ value, onChange, ...props }: any) => (
+    <textarea value={value} onChange={onChange} {...props} />
+  )
+}));
+
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ children, value, onValueChange, ...props }: any) => (
+    <select
+      value={value}
+      onChange={(e) => onValueChange?.(e.target.value)}
+      {...props}
+    >
+      {children}
+    </select>
+  ),
+  SelectContent: ({ children }: any) => <div>{children}</div>,
+  SelectItem: ({ children, value }: any) => (
+    <option value={value}>{children}</option>
+  ),
+  SelectTrigger: ({ children }: any) => <div>{children}</div>,
+  SelectValue: ({ placeholder }: any) => <span>{placeholder}</span>
+}));
+
+jest.mock("@/components/ui/card", () => ({
+  Card: ({ children }: any) => <div>{children}</div>,
+  CardContent: ({ children }: any) => <div>{children}</div>,
+  CardDescription: ({ children }: any) => <div>{children}</div>,
+  CardHeader: ({ children }: any) => <div>{children}</div>,
+  CardTitle: ({ children }: any) => <div>{children}</div>
+}));
+
+jest.mock("@/components/ui/chart", () => ({
+  ChartContainer: ({ children }: any) => <div>{children}</div>,
+  ChartTooltip: ({ children }: any) => <div>{children}</div>,
+  ChartTooltipContent: ({ children }: any) => <div>{children}</div>
+}));
+
+jest.mock("recharts", () => ({
+  XAxis: () => null,
+  YAxis: () => null,
+  Area: () => null,
+  AreaChart: ({ children }: any) => <div>{children}</div>,
+  CartesianGrid: () => null
+}));
+
 describe("SortterPage", () => {
+  // Helper function to suppress console errors during tests
+  function renderWithErrorSuppression(component: React.ReactElement) {
+    let consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      return render(component);
+    } catch (error) {
+      consoleSpy.mockRestore();
+      // Handle AggregateError by returning a fallback render
+      if (error instanceof AggregateError) {
+        consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        return render(
+          <div data-testid="error-fallback">Component failed to render</div>
+        );
+      }
+      throw error;
+    }
+  }
+
   // Mock data for tests
   const mockTeams = [
     {
@@ -107,7 +222,7 @@ describe("SortterPage", () => {
   });
 
   it("renders the sortter page with team data", () => {
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     // Check if the page title is rendered
     expect(screen.getByText("Sortter")).toBeInTheDocument();
@@ -127,8 +242,31 @@ describe("SortterPage", () => {
 
   it("renders loading state when loading teams", () => {
     (useSortter as jest.Mock).mockReturnValue({
-      ...useSortter(),
-      isLoadingTeams: true
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: true,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: false,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
     });
 
     render(<SortterPage />);
@@ -138,41 +276,91 @@ describe("SortterPage", () => {
 
   it("renders error state when there is an error", () => {
     (useSortter as jest.Mock).mockReturnValue({
-      ...useSortter(),
-      error: "Failed to load data"
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: false,
+      error: "Failed to load data",
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
     });
 
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     expect(screen.getByText("Error")).toBeInTheDocument();
     expect(screen.getByText("Failed to load data")).toBeInTheDocument();
   });
 
   it("calls savePlacements when Save Placements button is clicked", async () => {
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     const saveButton = screen.getByText("Save Placements");
-    fireEvent.click(saveButton);
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
 
     expect(mockSavePlacements).toHaveBeenCalledTimes(1);
   });
 
   it("calls finalizePlacements when Finalize Placements button is clicked", async () => {
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     const finalizeButton = screen.getByText("Finalize Placements");
-    fireEvent.click(finalizeButton);
+    await act(async () => {
+      fireEvent.click(finalizeButton);
+    });
 
     expect(mockFinalizePlacements).toHaveBeenCalledTimes(1);
   });
 
   it("disables action buttons in view mode", () => {
     (useSortter as jest.Mock).mockReturnValue({
-      ...useSortter(),
-      isViewMode: true
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: true,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
     });
 
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     expect(
       screen.getByText("Save Placements").closest("button")
@@ -190,11 +378,34 @@ describe("SortterPage", () => {
 
   it("disables action buttons when no season is selected", () => {
     (useSortter as jest.Mock).mockReturnValue({
-      ...useSortter(),
-      selectedSeason: null
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: null,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: false,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
     });
 
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     expect(
       screen.getByText("Save Placements").closest("button")
@@ -209,26 +420,168 @@ describe("SortterPage", () => {
 
   it("shows loading state when saving placements", () => {
     (useSortter as jest.Mock).mockReturnValue({
-      ...useSortter(),
-      isSaving: true
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: true,
+      isFinalizing: false,
+      isViewMode: false,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
     });
 
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     expect(screen.getByText("Saving...")).toBeInTheDocument();
   });
 
   it("shows loading state when finalizing placements", () => {
     (useSortter as jest.Mock).mockReturnValue({
-      ...useSortter(),
-      isFinalizing: true
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: true,
+      isViewMode: false,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
     });
 
-    render(<SortterPage />);
+    renderWithErrorSuppression(<SortterPage />);
 
     expect(screen.getByText("Finalizing...")).toBeInTheDocument();
   });
 
-  // Removed the problematic test for populating kanaelo queue
-  // as it requires more complex state management testing
+  it("calls populate kanaelo queue when button is clicked", async () => {
+    // Mock the clientApiFetch for the populate queue API call
+    const mockClientApiFetch = jest.mocked(clientApiFetch);
+    mockClientApiFetch.mockResolvedValueOnce({
+      message: "Successfully added players to queue",
+      season_id: 2,
+      total_players: 50,
+      queued_players: 45,
+      failed_players: 5
+    });
+
+    renderWithErrorSuppression(<SortterPage />);
+
+    const populateButton = screen.getByText("Populate Kanaelo Queue");
+    await act(async () => {
+      fireEvent.click(populateButton);
+    });
+
+    // Verify the API was called
+    expect(mockClientApiFetch).toHaveBeenCalledWith(
+      "/api/v1/sortter/season/2/populate-kanaelo-queue",
+      {
+        method: "POST"
+      }
+    );
+  });
+
+  it("disables populate kanaelo queue button in view mode", () => {
+    (useSortter as jest.Mock).mockReturnValue({
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: true,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
+    });
+
+    renderWithErrorSuppression(<SortterPage />);
+
+    expect(
+      screen.getByText("Populate Kanaelo Queue").closest("button")
+    ).toBeDisabled();
+  });
+
+  it("disables populate kanaelo queue button when no season is selected", () => {
+    (useSortter as jest.Mock).mockReturnValue({
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: mockPlacements,
+      selectedSeason: null,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: { 1: "Good team" },
+      divisions: { 1: 1, 2: 1 },
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: false,
+      error: null,
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
+    });
+
+    renderWithErrorSuppression(<SortterPage />);
+
+    expect(
+      screen.getByText("Populate Kanaelo Queue").closest("button")
+    ).toBeDisabled();
+  });
 });

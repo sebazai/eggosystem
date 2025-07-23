@@ -7,6 +7,9 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
   testEnvironment: "jsdom",
+  testEnvironmentOptions: {
+    customExportConditions: ["react-jsx"]
+  },
   testMatch: ["<rootDir>/src/__tests__/unit/**/*.(test|spec).(js|jsx|ts|tsx)"],
   collectCoverageFrom: [
     "src/**/*.{js,jsx,ts,tsx}",
