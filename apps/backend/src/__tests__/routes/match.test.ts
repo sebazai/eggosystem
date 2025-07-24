@@ -86,9 +86,11 @@ describe("Match Routes", () => {
       const response = await request(app)
         .get("/matches/99999/mapsplayed")
         .expect("Content-Type", /json/)
-        .expect(200);
+        .expect(404);
 
-      expect(response.body).toEqual([]);
+      expect(response.body).toEqual({
+        error: { message: "Could not find maps played for match" }
+      });
     });
   });
 });

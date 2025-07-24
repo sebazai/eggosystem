@@ -148,13 +148,24 @@ export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
   return result.length > 0 ? result[0] : undefined;
 };
 
-export const getMatchTopPlayers = async (match_id: number) => {
+export const getMatchTopPlayers = async (
+  match_id: number
+): Promise<MatchOrGameTopPlayerAwards | null> => {
   const queries = matchTopStats.map((stat) =>
     fetchPlayerStatsForMatchOrGame(match_id, "m.id = ?", stat, stat.sqlFunction)
   );
   const queryResults = await Promise.all(queries);
 
-  return Object.assign({}, ...queryResults) as MatchOrGameTopPlayerAwards;
+  if (
+    Object.entries(queryResults[0]).every(([_, value]) => value === undefined)
+  ) {
+    return null;
+  }
+
+  return Object.assign(
+    {},
+    ...queryResults
+  ) satisfies MatchOrGameTopPlayerAwards;
 };
 
 export const getMatchesByFilters = async ({

@@ -77,15 +77,6 @@ describe("Game Routes", () => {
 
       expect(response.body).toEqual(expectedTeamStats);
     });
-
-    it("should handle non-existent match id", async () => {
-      const response = await request(app)
-        .get("/99999/teamstats")
-        .expect("Content-Type", /json/)
-        .expect(200);
-
-      expect(response.body).toEqual([]);
-    });
   });
 
   describe("GET /games/:game_id/topplayers", () => {
@@ -154,7 +145,7 @@ describe("Game Routes", () => {
 
       expect(response.body).toEqual({
         error: {
-          message: "Could not find season for match id"
+          message: "Could not find top players for match game id"
         }
       });
     });

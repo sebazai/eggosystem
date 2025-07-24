@@ -56,13 +56,10 @@ export const getGameTopPlayersController = async (
 ) => {
   const game_id = parseInt(req.params.game_id, 10);
   const topplayers = await getGameTopPlayers(game_id);
-  const hasData = Object.values(topplayers).some(
-    (value) => value !== null && value !== undefined
-  );
-  if (!hasData) {
-    res
-      .status(404)
-      .json({ error: { message: "Could not find season for match id" } });
+  if (!topplayers) {
+    res.status(404).json({
+      error: { message: "Could not find top players for match game id" }
+    });
     return;
   }
   res.json(topplayers);

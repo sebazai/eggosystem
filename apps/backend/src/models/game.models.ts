@@ -125,6 +125,12 @@ export const getGameTopPlayers = async (game_id: number) => {
   );
   const queryResults = await Promise.all(queries);
 
+  if (
+    Object.entries(queryResults[0]).every(([_, value]) => value === undefined)
+  ) {
+    return null;
+  }
+
   return Object.assign({}, ...queryResults) as MatchOrGameTopPlayerAwards;
 };
 

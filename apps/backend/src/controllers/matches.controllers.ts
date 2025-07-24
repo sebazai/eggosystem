@@ -138,21 +138,12 @@ export const getMatchTopPlayersController = async (
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
 
-  // First check if the match exists
-  const [match] = await getMatch(match_id);
-  if (!match) {
-    res.status(404).json({ message: "Could not find season for match id" });
-    return;
-  }
-
   const topplayers = await getMatchTopPlayers(match_id);
 
-  // Check if any top player data was found
-  const hasData = Object.values(topplayers).some(
-    (value) => value !== null && value !== undefined
-  );
-  if (!hasData) {
-    res.status(404).json({ message: "Could not find season for match id" });
+  if (!topplayers) {
+    res
+      .status(404)
+      .json({ error: { message: "Could not find top players for match" } });
     return;
   }
 
@@ -185,6 +176,13 @@ export const getMatchGamesController = async (
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
   const mapsPlayed = await getMatchGames(match_id);
+
+  if (mapsPlayed.length === 0) {
+    res
+      .status(404)
+      .json({ error: { message: "Could not find maps played for match" } });
+    return;
+  }
 
   res.json(mapsPlayed);
 };
