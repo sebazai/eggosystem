@@ -35,3 +35,5 @@ export * from "./SeasonTeamRegistrationPlayer.interface";
 export * from "./SeasonLeagueExternalId.interface";
 export * from "./FaceitWebhook.interface";
 export * from "./Organizer.interface";
+export * from "./SteamPlayerKanaElo.interface";
+export * from "./KanahautomoRegistration.interface";

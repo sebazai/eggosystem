@@ -1,3 +1,3 @@
 export * from "./InsertOrganization.interface";
 export * from "./OrganizationTeamTrophies.interface";
-export * from "./KanahautomoRegistration.interface";
+export * from "./KanahautomoRegistrationRequest.interface";

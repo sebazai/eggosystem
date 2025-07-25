@@ -291,7 +291,11 @@ interface PlayerKanaRank {
 }
 
 export const getPlayerKanaRank = async (steam_id: string) => {
-  const { kana_elo } = await getPlayerKanaElo(steam_id);
+  const playerKanaElo = await getPlayerKanaElo(steam_id);
+  if (!playerKanaElo) {
+    return null;
+  }
+  const { kana_elo } = playerKanaElo;
 
   const topPlayers = await getTopXPlayersKanaElo(TOP_PLAYERS_COUNT);
 

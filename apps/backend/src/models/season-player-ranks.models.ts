@@ -2,11 +2,11 @@ import {
   type SeasonPlayerRank,
   type FaceITCSRank,
   type SeasonPlatform,
-  type SteamPlayer
+  type SteamPlayer,
+  type SteamPlayerKanaElo
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
-import { getActiveOrLatestSeasonForAppId } from "./season.models";
 
 export const getPlayerHoursForSeason = async (
   steam_id: string,
@@ -164,36 +164,29 @@ export const insertFaceITPlayerRankForSeason = async (
 };
 
 export const getPlayerKanaElo = async (steam_id: string) => {
-  const result = await runQuery<Array<{ kana_elo: number }>>(
+  const [result] = await runQuery<
+    Array<{ kana_elo: SteamPlayerKanaElo["kana_elo"] } | undefined>
+  >(
     `SELECT kana_elo 
-      FROM SeasonPlayerRanks 
-      WHERE steam_id = ? AND kana_elo IS NOT NULL
-      ORDER BY season_id DESC 
-      LIMIT 1`,
+      FROM SteamPlayerKanaElo 
+      WHERE steam_id = ?`,
     [steam_id]
   );
 
-  return result.length > 0 ? result[0] : { kana_elo: 0 };
+  return result;
 };
 
 export const getTopXPlayersKanaElo = async (x: number) => {
-  const activeSeason = (await getActiveOrLatestSeasonForAppId(730)) || {
-    season_id: 0
-  };
-
   return runQuery<
     Array<{
       steam_id: SteamPlayer["steam_id"];
-      kana_elo: SeasonPlayerRank["kana_elo"];
+      kana_elo: SteamPlayerKanaElo["kana_elo"];
     }>
   >(
     `SELECT steam_id, kana_elo 
-     FROM SeasonPlayerRanks 
-     WHERE kana_elo IS NOT NULL
-     AND season_id = ?
-     GROUP BY steam_id
+     FROM SteamPlayerKanaElo 
      ORDER BY kana_elo DESC
      LIMIT ?`,
-    [activeSeason.season_id, x]
+    [x]
   );
 };

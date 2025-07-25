@@ -34,7 +34,7 @@ import { NewOrganizationForm } from "@/components/organizations/NewOrganizationF
 import { toast } from "sonner";
 import { useKanahautomoOrganizationStatus } from "@/hooks/data/useKanahautomoOrganizationStatus";
 import {
-  type KanahautomoRegistration,
+  type KanahautomoRegistrationRequestBody,
   type KanahautomoFormData,
   kanahautomoSchema
 } from "@eggosystem/types";
@@ -251,7 +251,7 @@ export default function KanahautomoPage() {
     setIsSubmitting(true);
     setError(null);
 
-    let requestBody: KanahautomoRegistration & {
+    let requestBody: KanahautomoRegistrationRequestBody & {
       gameTypes: KanahautomoFormData["gameTypes"];
       acceptedTerms: boolean;
     };

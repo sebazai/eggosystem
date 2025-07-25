@@ -1,6 +1,6 @@
 import type { InsertOrganization } from "./InsertOrganization.interface";
 
-export interface KanahautomoRegistration {
+export interface KanahautomoRegistrationRequestBody {
   organizationId?: number; // If provided, use existing organization
   newOrganization?: InsertOrganization; // If provided, create new organization
   gameTypes: {
