@@ -93,12 +93,13 @@ export const getPreliminaryPlacements = async (
  * Generate initial placements from team values
  */
 export const generateInitialPlacements = (
-  teams: TeamSortterValues[]
+  teams: TeamSortterValues[],
+  teamsPerDivision: number
 ): TeamPlacement[] => {
   return teams.map((team, index) => ({
     team_id: team.team_id,
     team_name: team.team_name,
-    division: Math.floor(index / 12) + 1,
+    division: Math.floor(index / teamsPerDivision) + 1,
     comments: team.comments || "",
     original_avg: team.avg4,
     original_position: index
@@ -146,17 +147,13 @@ export const isPlacementsFinalized = async (
   const key = getFinalizationStatusKey(seasonId);
   const data = await redisClient.get(key);
 
-  // Check Redis first
   if (data === "1") {
     return true;
   }
 
-  // If not in Redis, check if there are teams in the database
   const hasTeamsInDatabase = await hasSeasonLeagueTeamsForSeason(seasonId);
 
   if (hasTeamsInDatabase) {
-    // If teams exist in the database, consider it finalized
-    // Also set the Redis key for future checks
     await setPlacementsFinalized(seasonId, true);
     return true;
   }

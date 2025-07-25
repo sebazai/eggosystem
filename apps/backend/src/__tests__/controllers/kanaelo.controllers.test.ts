@@ -34,14 +34,16 @@ describe("Kanaelo Controllers", () => {
   describe("populateKanaeloQueueController", () => {
     it("should return 404 if no players found for the season", async () => {
       mockRequest.params = { season_id: "1" };
-      mockKanaeloModels.getAllPlayersForSeason.mockResolvedValue([]);
+      mockKanaeloModels.getAllRegisteredPlayersForSeason.mockResolvedValue([]);
 
       await populateKanaeloQueueController(
         mockRequest as RequestWithParams<{ season_id: string }>,
         mockResponse as Response
       );
 
-      expect(mockKanaeloModels.getAllPlayersForSeason).toHaveBeenCalledWith(1);
+      expect(
+        mockKanaeloModels.getAllRegisteredPlayersForSeason
+      ).toHaveBeenCalledWith(1);
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: "No players found for season 1"
@@ -60,7 +62,9 @@ describe("Kanaelo Controllers", () => {
       };
 
       mockRequest.params = { season_id: "1" };
-      mockKanaeloModels.getAllPlayersForSeason.mockResolvedValue(mockPlayers);
+      mockKanaeloModels.getAllRegisteredPlayersForSeason.mockResolvedValue(
+        mockPlayers
+      );
       mockRabbitmqServices.bulkPublishKanaeloCalculationRequests.mockResolvedValue(
         mockResult
       );
@@ -70,7 +74,9 @@ describe("Kanaelo Controllers", () => {
         mockResponse as Response
       );
 
-      expect(mockKanaeloModels.getAllPlayersForSeason).toHaveBeenCalledWith(1);
+      expect(
+        mockKanaeloModels.getAllRegisteredPlayersForSeason
+      ).toHaveBeenCalledWith(1);
       expect(
         mockRabbitmqServices.bulkPublishKanaeloCalculationRequests
       ).toHaveBeenCalledWith(mockPlayers, 1);
@@ -94,7 +100,9 @@ describe("Kanaelo Controllers", () => {
         )
       ).rejects.toThrow(BadRequestError);
 
-      expect(mockKanaeloModels.getAllPlayersForSeason).not.toHaveBeenCalled();
+      expect(
+        mockKanaeloModels.getAllRegisteredPlayersForSeason
+      ).not.toHaveBeenCalled();
       expect(
         mockRabbitmqServices.bulkPublishKanaeloCalculationRequests
       ).not.toHaveBeenCalled();
@@ -113,7 +121,9 @@ describe("Kanaelo Controllers", () => {
       };
 
       mockRequest.params = { season_id: "1" };
-      mockKanaeloModels.getAllPlayersForSeason.mockResolvedValue(mockPlayers);
+      mockKanaeloModels.getAllRegisteredPlayersForSeason.mockResolvedValue(
+        mockPlayers
+      );
       mockRabbitmqServices.bulkPublishKanaeloCalculationRequests.mockResolvedValue(
         mockResult
       );
@@ -123,7 +133,9 @@ describe("Kanaelo Controllers", () => {
         mockResponse as Response
       );
 
-      expect(mockKanaeloModels.getAllPlayersForSeason).toHaveBeenCalledWith(1);
+      expect(
+        mockKanaeloModels.getAllRegisteredPlayersForSeason
+      ).toHaveBeenCalledWith(1);
       expect(
         mockRabbitmqServices.bulkPublishKanaeloCalculationRequests
       ).toHaveBeenCalledWith(mockPlayers, 1);

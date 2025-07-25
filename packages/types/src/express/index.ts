@@ -47,3 +47,9 @@ export type RequestWithParams<P> = Request<P>;
 export type RequestWithBody<B> = Request<unknown, unknown, B>;
 export type RequestWithParamsAndBody<P, B> = Request<P, unknown, B>;
 export type RequestWithParamsAndQuery<P, Q> = Request<P, unknown, unknown, Q>;
+export type RequestWithParamsAndQueryAndBody<P, Q, B> = Request<
+  P,
+  unknown,
+  B,
+  Q
+>;

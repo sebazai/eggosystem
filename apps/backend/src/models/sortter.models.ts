@@ -5,10 +5,6 @@ import {
   type PlayerSortterValues
 } from "@eggosystem/types";
 
-interface GetTeamValuesForSortterOptions {
-  isHistorical?: boolean;
-}
-
 /**
  * Gets team values for sorter functionality:
  * - Team name
@@ -22,8 +18,7 @@ interface GetTeamValuesForSortterOptions {
  * @returns Array of team values
  */
 export const getTeamValuesForSorter = async (
-  seasonId: number,
-  options?: GetTeamValuesForSortterOptions
+  seasonId: number
 ): Promise<TeamSortterValues[]> => {
   const query = `
     WITH TeamPlayersKanaElo AS (
@@ -36,14 +31,13 @@ export const getTeamValuesForSorter = async (
         spr.kana_elo,
         ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
-      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
-      JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
-      ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
-      LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+      JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id
+      JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
+      JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+      LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
       LEFT JOIN Leagues l ON l.id = slt.league_id
-      WHERE stp.season_id = ?
-        AND spr.kana_elo IS NOT NULL
-        ${!options?.isHistorical ? "AND str.approved = 1" : ""}
+      WHERE strp.season_id = ?
+        AND str.approved = 1
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamTop5Players AS (
@@ -102,10 +96,6 @@ export const getTeamValuesForSorter = async (
   return results;
 };
 
-interface GetTeamPlayerValuesForSortterOptions {
-  isHistorical?: boolean;
-}
-
 /**
  * Gets player values for a specific team and season for sorter functionality:
  * - Player name
@@ -124,8 +114,7 @@ interface GetTeamPlayerValuesForSortterOptions {
  */
 export const getTeamPlayerValuesForSortter = async (
   seasonId: number,
-  teamId: number,
-  options?: GetTeamPlayerValuesForSortterOptions
+  teamId: number
 ): Promise<PlayerSortterValues[]> => {
   const query = `
     SELECT
@@ -140,17 +129,16 @@ export const getTeamPlayerValuesForSortter = async (
       spr.kana_elo,
       calculus
     FROM Teams t
-    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
-    ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
-    JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
-    JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
+    JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id
+    JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+    JOIN SteamPlayers sp ON sp.steam_id = strp.steam_id
+    JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
     LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
     LEFT JOIN MatchGames mg ON mg.id = ps.game_id
-    LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = stp.season_id
-    WHERE stp.season_id = ?
-      AND stp.team_id = ?
-      AND spr.kana_elo IS NOT NULL
-      ${!options?.isHistorical ? "AND str.approved = 1" : ""}
+    LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = strp.season_id
+    WHERE strp.season_id = ?
+      AND strp.team_id = ?
+      AND str.approved = 1
     GROUP BY
       sp.nickname,
       sp.steam_id,
@@ -180,8 +168,7 @@ export const getTeamPlayerValuesForSortter = async (
  * @param isHistorical If true, don't filter by approved=true (for historical data)
  */
 export const getTeamsForSeason = async (
-  seasonId: number,
-  isHistorical: boolean = false
+  seasonId: number
 ): Promise<
   Array<{ team_id: number; team_name: string; league_name: string }>
 > => {
@@ -191,12 +178,12 @@ export const getTeamsForSeason = async (
       t.name AS team_name,
       COALESCE(l.name, 'Unassigned') AS league_name
     FROM Teams t
-    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
-    ${!isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
-    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+    JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id
+    JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
     LEFT JOIN Leagues l ON l.id = slt.league_id
-    WHERE stp.season_id = ?
-      ${!isHistorical ? "AND str.approved = 1" : ""}
+    WHERE strp.season_id = ?
+      AND str.approved = 1
     ORDER BY t.name ASC
   `;
 
@@ -300,10 +287,6 @@ async function fetchCSRankkerComponents(
   return undefined;
 }
 
-interface CheckPlayerAdditionEligibilityOptions {
-  isHistorical?: boolean;
-}
-
 /**
  * Checks if a player can be added to a team based on kana_elo balance
  * Returns analysis including:
@@ -319,8 +302,7 @@ interface CheckPlayerAdditionEligibilityOptions {
 export const checkPlayerAdditionEligibility = async (
   seasonId: number,
   teamId: number,
-  newPlayerSteamId: string,
-  options?: CheckPlayerAdditionEligibilityOptions
+  newPlayerSteamId: string
 ): Promise<{
   selectedTeam: {
     team_id: number;
@@ -348,12 +330,12 @@ export const checkPlayerAdditionEligibility = async (
   const leagueQuery = `
     SELECT COALESCE(l.name, 'Unassigned') AS league_name
     FROM Teams t
-    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
-    ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
-    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = stp.season_id
+    JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
+    JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
     LEFT JOIN Leagues l ON l.id = slt.league_id
-    WHERE stp.season_id = ? AND stp.team_id = ?
-      ${!options?.isHistorical ? "AND str.approved = 1" : ""}
+    WHERE strp.season_id = ? AND strp.team_id = ?
+      AND str.approved = 1
     LIMIT 1
   `;
 
@@ -383,12 +365,12 @@ export const checkPlayerAdditionEligibility = async (
         spr.kana_elo,
         ROW_NUMBER() OVER (ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
-      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = ?
-      ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
-      JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = ?
+      JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = ?
+      JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+      JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = ?
       WHERE t.id = ?
         AND spr.kana_elo IS NOT NULL
-        ${!options?.isHistorical ? "AND str.approved = 1" : ""}
+        AND str.approved = 1
     )
     SELECT
       ttp.team_id,
@@ -428,13 +410,13 @@ export const checkPlayerAdditionEligibility = async (
         ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
       JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
-      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = slt.season_id
-      ${!options?.isHistorical ? "JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = stp.season_id" : ""}
-      JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = slt.season_id
+      JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id AND strp.season_id = slt.season_id
+      JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+      JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id
       WHERE slt.season_id = ? AND l.name = ?
         AND spr.kana_elo IS NOT NULL
-        ${!options?.isHistorical ? "AND str.approved = 1" : ""}
+        AND str.approved = 1
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamAvg4 AS (

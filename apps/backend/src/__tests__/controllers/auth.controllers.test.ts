@@ -86,6 +86,11 @@ describe("AuthControllers", () => {
       });
 
       jest
+        .spyOn(authServices, "getPermissionsForAccountId")
+        .mockResolvedValue([]);
+      jest.spyOn(authServices, "getRolesForAccountId").mockResolvedValue([]);
+
+      jest
         .spyOn(uuid, "v4")
         .mockImplementation((() => "123123") as typeof uuid.v4);
       req = {

@@ -65,10 +65,7 @@ describe("Sortter Controllers", () => {
         );
 
         expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
-          1,
-          {
-            isHistorical: false
-          }
+          1
         );
         expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues);
       });
@@ -103,10 +100,7 @@ describe("Sortter Controllers", () => {
         );
 
         expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
-          1,
-          {
-            isHistorical: false
-          }
+          1
         );
         expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues[0]);
       });
@@ -139,10 +133,7 @@ describe("Sortter Controllers", () => {
         );
 
         expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
-          1,
-          {
-            isHistorical: false
-          }
+          1
         );
         expect(mockResponse.status).toHaveBeenCalledWith(404);
         expect(mockResponse.json).toHaveBeenCalledWith({
@@ -181,7 +172,7 @@ describe("Sortter Controllers", () => {
 
         expect(
           mockSortterModels.getTeamPlayerValuesForSortter
-        ).toHaveBeenCalledWith(14, 1, { isHistorical: false });
+        ).toHaveBeenCalledWith(14, 1);
         expect(mockResponse.json).toHaveBeenCalledWith(mockPlayerValues);
       });
 
@@ -197,7 +188,7 @@ describe("Sortter Controllers", () => {
 
         expect(
           mockSortterModels.getTeamPlayerValuesForSortter
-        ).toHaveBeenCalledWith(14, 999, { isHistorical: false });
+        ).toHaveBeenCalledWith(14, 999);
         expect(mockResponse.status).toHaveBeenCalledWith(404);
         expect(mockResponse.json).toHaveBeenCalledWith({
           message: "No players found for team 999 in season 14"
@@ -234,9 +225,7 @@ describe("Sortter Controllers", () => {
         expect(response.body).toEqual(mockTeamValues);
 
         // Verify model function was called with correct season ID
-        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14, {
-          isHistorical: false
-        });
+        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14);
       });
 
       it("should handle invalid season ID parameter", async () => {
@@ -287,9 +276,7 @@ describe("Sortter Controllers", () => {
         expect(response.body).toEqual(mockTeamValues[0]);
 
         // Verify model function was called with correct season ID
-        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14, {
-          isHistorical: false
-        });
+        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14);
       });
 
       it("should handle team not found", async () => {

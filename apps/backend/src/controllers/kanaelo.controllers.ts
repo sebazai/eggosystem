@@ -1,5 +1,5 @@
 import { type Response } from "express";
-import { getAllPlayersForSeason } from "../models/kanaelo.models";
+import { getAllRegisteredPlayersForSeason } from "../models/kanaelo.models";
 import { bulkPublishKanaeloCalculationRequests } from "../services/rabbitmq.services";
 import type { RequestWithParams } from "@eggosystem/types";
 import { BadRequestError } from "../utils/errors";
@@ -18,7 +18,7 @@ export const populateKanaeloQueueController = async (
     throw new BadRequestError("Invalid season ID");
   }
 
-  const players = await getAllPlayersForSeason(seasonId);
+  const players = await getAllRegisteredPlayersForSeason(seasonId);
 
   if (players.length === 0) {
     res.status(404).json({

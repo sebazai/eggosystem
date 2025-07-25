@@ -17,7 +17,7 @@ type PlacementsResponse = {
   isFinalized: boolean;
 };
 
-export function useSortter() {
+export function useSortter(placeTeamsInDivision: number) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -74,7 +74,7 @@ export function useSortter() {
     mutate: mutatePlacements
   } = useSWR<PlacementsResponse>(
     selectedSeason && seasons && seasons.length > 0
-      ? `/api/v1/sortter/season/${selectedSeason}/placements`
+      ? `/api/v1/sortter/season/${selectedSeason}/placements?teams_per_division=${placeTeamsInDivision}`
       : null,
     clientApiFetch,
     {
@@ -103,18 +103,23 @@ export function useSortter() {
     );
 
     // Sort teams by division first, then by avg4 within each division
-    return [...teams].sort((a, b) => {
-      const divA = divisionMap[a.team_id] || 999; // Default to a high division if not found
-      const divB = divisionMap[b.team_id] || 999;
+    return [...teams]
+      .sort((a, b) => {
+        const divA = divisionMap[a.team_id] || 999; // Default to a high division if not found
+        const divB = divisionMap[b.team_id] || 999;
 
-      // First sort by division
-      if (divA !== divB) {
-        return divA - divB;
-      }
+        // First sort by division
+        if (divA !== divB) {
+          return divA - divB;
+        }
 
-      // Then sort by avg4 (descending) within the same division
-      return b.avg4 - a.avg4;
-    });
+        // Then sort by avg4 (descending) within the same division
+        return b.avg4 - a.avg4;
+      })
+      .map((team) => ({
+        ...team,
+        division: divisionMap[team.team_id] || null
+      }));
   }, [teams, placements]);
 
   // Update view mode state when placements are loaded
@@ -226,11 +231,14 @@ export function useSortter() {
 
   // Handle division change for a team
   const handleDivisionChange = useCallback(
-    (teamId: number, division: number) => {
-      setDivisions((prev) => ({
-        ...prev,
-        [teamId]: division
-      }));
+    (teamId: number, division: number, teamDivision: number | null) => {
+      // Only allow division changes if the team doesn't have a division assigned
+      if (teamDivision === null) {
+        setDivisions((prev) => ({
+          ...prev,
+          [teamId]: division
+        }));
+      }
     },
     []
   );

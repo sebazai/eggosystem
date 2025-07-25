@@ -1,4 +1,4 @@
-import { getAllPlayersForSeason } from "../../models/kanaelo.models";
+import { getAllRegisteredPlayersForSeason } from "../../models/kanaelo.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 
 // Mock the database query function
@@ -21,7 +21,7 @@ describe("Kanaelo Models", () => {
 
       mockRunQuery.mockResolvedValue(mockPlayers);
 
-      const result = await getAllPlayersForSeason(1);
+      const result = await getAllRegisteredPlayersForSeason(1);
 
       expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [1]);
       expect(result).toEqual([
@@ -34,7 +34,7 @@ describe("Kanaelo Models", () => {
     it("should return an empty array if no players found", async () => {
       mockRunQuery.mockResolvedValue([]);
 
-      const result = await getAllPlayersForSeason(999);
+      const result = await getAllRegisteredPlayersForSeason(999);
 
       expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [999]);
       expect(result).toEqual([]);
@@ -44,7 +44,9 @@ describe("Kanaelo Models", () => {
       const dbError = new Error("Database connection failed");
       mockRunQuery.mockRejectedValue(dbError);
 
-      await expect(getAllPlayersForSeason(1)).rejects.toThrow(dbError);
+      await expect(getAllRegisteredPlayersForSeason(1)).rejects.toThrow(
+        dbError
+      );
       expect(mockRunQuery).toHaveBeenCalledWith(expect.any(String), [1]);
     });
   });

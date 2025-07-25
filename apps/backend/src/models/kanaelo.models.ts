@@ -7,13 +7,13 @@ import { runQuery } from "../db/mysqlRunQuery";
  * @param seasonId The season ID to filter players by
  * @returns Array of steam IDs
  */
-export const getAllPlayersForSeason = async (
+export const getAllRegisteredPlayersForSeason = async (
   seasonId: number
 ): Promise<string[]> => {
   const query = `
     SELECT DISTINCT
       stp.steam_id
-    FROM SeasonTeamPlayers stp
+    FROM SeasonTeamRegistrationPlayers stp
     JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
     JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
     WHERE stp.season_id = ?

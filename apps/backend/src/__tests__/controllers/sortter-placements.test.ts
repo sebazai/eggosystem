@@ -1,4 +1,4 @@
-import { type Request, type Response } from "express";
+import { type Response } from "express";
 import {
   savePreliminaryPlacementsController,
   getPreliminaryPlacementsController
@@ -7,8 +7,9 @@ import * as sortterPlacementsServices from "../../services/sortter-placements.se
 import { runQuery } from "../../db/mysqlRunQuery";
 import { getTeamValuesForSorter } from "../../models/sortter.models";
 import type {
-  RequestWithParams,
-  RequestWithParamsAndBody
+  RequestWithParamsAndBody,
+  RequestWithParamsAndQuery,
+  RequestWithParamsAndQueryAndBody
 } from "@eggosystem/types";
 
 // Mock the database module
@@ -40,7 +41,13 @@ type TestPlacement = {
 };
 
 describe("sortter-placements.controllers", () => {
-  let mockRequest: Partial<Request>;
+  let mockRequest: Partial<
+    RequestWithParamsAndQueryAndBody<
+      { season_id: string },
+      { teams_per_division: string },
+      { placements: TestPlacement[] }
+    >
+  >;
   let mockResponse: Partial<Response>;
 
   beforeEach(() => {
@@ -94,7 +101,7 @@ describe("sortter-placements.controllers", () => {
       expect(mockedIsPlacementsFinalized).toHaveBeenCalledWith(14);
       expect(mockedSavePreliminaryPlacements).toHaveBeenCalledWith(
         14,
-        mockRequest.body.placements
+        mockRequest.body?.placements
       );
 
       // Verify the response
@@ -129,7 +136,9 @@ describe("sortter-placements.controllers", () => {
     });
 
     it("should return 400 if placements is not an array", async () => {
-      mockRequest.body = { placements: "not an array" };
+      mockRequest.body = {
+        placements: "not an array" as unknown as TestPlacement[]
+      };
 
       await savePreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndBody<
@@ -173,6 +182,7 @@ describe("sortter-placements.controllers", () => {
     beforeEach(() => {
       mockRequest = {
         params: { season_id: "14" },
+        query: { teams_per_division: "12" },
         auth: {
           account_id: 1,
           provider_id: "test",
@@ -204,7 +214,12 @@ describe("sortter-placements.controllers", () => {
         .mockResolvedValue(mockPlacements);
 
       await getPreliminaryPlacementsController(
-        mockRequest as RequestWithParams<{ season_id: string }>,
+        mockRequest as RequestWithParamsAndQuery<
+          {
+            season_id: string;
+          },
+          { teams_per_division: string }
+        >,
         mockResponse as Response
       );
 
@@ -245,7 +260,12 @@ describe("sortter-placements.controllers", () => {
       mockedGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
 
       await getPreliminaryPlacementsController(
-        mockRequest as RequestWithParams<{ season_id: string }>,
+        mockRequest as RequestWithParamsAndQuery<
+          {
+            season_id: string;
+          },
+          { teams_per_division: string }
+        >,
         mockResponse as Response
       );
 

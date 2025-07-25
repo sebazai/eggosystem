@@ -188,10 +188,13 @@ const generateDivisionOptions = (count: number) => {
 };
 
 export default function SortterPage() {
+  // TODO: Could be moved into a state / dropdown
+  const teamsPerDivision = 12;
   const {
     teams,
     seasons,
     playerValues,
+    placements,
     selectedSeason,
     selectedTeamId,
     floatingPosition,
@@ -213,7 +216,7 @@ export default function SortterPage() {
     savePlacements,
     finalizePlacements,
     isViewMode
-  } = useSortter();
+  } = useSortter(teamsPerDivision);
 
   const [isPopulatingQueue, setIsPopulatingQueue] = useState(false);
 
@@ -237,8 +240,24 @@ export default function SortterPage() {
   // Find the selected team name
   const selectedTeam = teams.find((team) => team.team_id === selectedTeamId);
 
-  // Calculate max division number based on team count
-  const maxDivision = Math.ceil((teams.length || 0) / 12);
+  // Calculate max division number based on actual divisions or team count
+  const maxDivision = React.useMemo(() => {
+    if (!teams.length) return 0;
+
+    // Find the highest actual division number
+    const actualMaxDivision = Math.max(
+      ...teams.map(
+        (team) =>
+          team.division ??
+          divisions[team.team_id] ??
+          (placements && placements.length > 0
+            ? 1
+            : Math.floor(teams.indexOf(team) / teamsPerDivision) + 1)
+      )
+    );
+
+    return actualMaxDivision;
+  }, [teams, divisions, placements]);
   const divisionOptions = generateDivisionOptions(maxDivision);
 
   // Calculate division summary
@@ -250,11 +269,13 @@ export default function SortterPage() {
 
     // Count teams in each division
     teams.forEach((team, index) => {
-      // Default to position-based division if not explicitly set
+      // Use the same logic as the team rendering
       const divisionNumber =
-        divisions && team.team_id in divisions
-          ? Number(divisions[team.team_id])
-          : Math.floor(index / 12) + 1;
+        team.division ??
+        divisions[team.team_id] ??
+        (placements && placements.length > 0
+          ? 1
+          : Math.floor(index / teamsPerDivision) + 1);
 
       // Increment the count for this division
       divisionCounts.set(
@@ -276,7 +297,7 @@ export default function SortterPage() {
     }
 
     return summary;
-  }, [teams, divisions, maxDivision]);
+  }, [teams, divisions, maxDivision, placements]);
 
   // Handle populating kanaelo queue
   const handlePopulateKanaeloQueue = async () => {
@@ -484,14 +505,21 @@ export default function SortterPage() {
                       );
                       const avgValue = calculateAvg(team.top5_values);
                       const teamDivision =
-                        divisions[team.team_id] || Math.floor(index / 12) + 1;
+                        team.division ??
+                        divisions[team.team_id] ??
+                        (placements && placements.length > 0
+                          ? 1
+                          : Math.floor(index / teamsPerDivision) + 1);
                       const colorClass = getRowColorClass(teamDivision - 1);
 
                       // Check if this is the first team in a new division
                       const prevTeam = index > 0 ? teams[index - 1] : null;
                       const prevDivision = prevTeam
-                        ? divisions[prevTeam.team_id] ||
-                          Math.floor((index - 1) / 12) + 1
+                        ? (prevTeam.division ??
+                          divisions[prevTeam.team_id] ??
+                          (placements && placements.length > 0
+                            ? 1
+                            : Math.floor((index - 1) / teamsPerDivision) + 1))
                         : null;
                       const isFirstInDivision = prevDivision !== teamDivision;
 
@@ -526,7 +554,8 @@ export default function SortterPage() {
                                 onValueChange={(value) =>
                                   handleDivisionChange(
                                     team.team_id,
-                                    parseInt(value, 10)
+                                    parseInt(value, 10),
+                                    team.division
                                   )
                                 }
                                 disabled={isViewMode}

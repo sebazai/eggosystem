@@ -47,12 +47,14 @@ describe("useSortter", () => {
         team_id: 1,
         team_name: "Team 1",
         top5_values: [350, 345, 340, 335, 330],
+        division: 1,
         avg4: 342.5
       },
       {
         team_id: 2,
         team_name: "Team 2",
         top5_values: [340, 335, 330, 325, 320],
+        division: 1,
         avg4: 332.5
       }
     ];
@@ -86,7 +88,7 @@ describe("useSortter", () => {
       .mockResolvedValueOnce(mockPlacements); // Third call for placements
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {
@@ -113,7 +115,7 @@ describe("useSortter", () => {
     );
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {
@@ -152,7 +154,7 @@ describe("useSortter", () => {
     // Render the hook with act to properly handle async state updates
     const rendered = renderHook(() => {
       // Override the selectedSeason value for this test
-      const hook = useSortter();
+      const hook = useSortter(12);
       // Force selectedSeason to be null for this test
       return { ...hook, selectedSeason: null };
     });
@@ -202,7 +204,7 @@ describe("useSortter", () => {
       .mockResolvedValueOnce(mockPlacements);
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {
@@ -251,7 +253,7 @@ describe("useSortter", () => {
       .mockResolvedValueOnce(mockPlacements);
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {
@@ -261,7 +263,7 @@ describe("useSortter", () => {
 
     // Test handleDivisionChange
     await act(async () => {
-      result.current.handleDivisionChange(1, 2);
+      result.current.handleDivisionChange(1, 2, null);
     });
 
     // Verify division was updated
@@ -302,7 +304,7 @@ describe("useSortter", () => {
       .mockResolvedValueOnce(mockPlacements); // Revalidation fetch
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {
@@ -312,7 +314,7 @@ describe("useSortter", () => {
 
     // Update a division
     await act(async () => {
-      result.current.handleDivisionChange(1, 2);
+      result.current.handleDivisionChange(1, 2, null);
     });
 
     // Save placements
@@ -366,7 +368,7 @@ describe("useSortter", () => {
       .mockRejectedValueOnce(new Error("Failed to save placements")); // POST request fails
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {
@@ -417,7 +419,7 @@ describe("useSortter", () => {
       .mockResolvedValueOnce(mockPlacements);
 
     // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter());
+    const rendered = renderHook(() => useSortter(12));
     const result = rendered.result;
 
     await act(async () => {

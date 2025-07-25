@@ -1,7 +1,8 @@
 import { type Response } from "express";
 import type {
   RequestWithParams,
-  RequestWithParamsAndBody
+  RequestWithParamsAndBody,
+  RequestWithParamsAndQuery
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { getTeamValuesForSorter } from "../models/sortter.models";
@@ -16,15 +17,24 @@ import {
   hasSeasonLeagueTeamsForSeason
 } from "../services/sortter-placements.services";
 import { runQuery } from "../db/mysqlRunQuery";
+import { BadRequestError } from "../utils/errors";
 
 /**
  * Controller to get preliminary team placements
  */
 export const getPreliminaryPlacementsController = async (
-  req: RequestWithParams<{ season_id: string }>,
+  req: RequestWithParamsAndQuery<
+    { season_id: string },
+    { teams_per_division: string }
+  >,
   res: Response
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
+  const teamsPerDivisionQueryNumber = Number(req.query.teams_per_division);
+
+  if (isNaN(teamsPerDivisionQueryNumber)) {
+    throw new BadRequestError("Teams per division must be a number.");
+  }
 
   // Check if placements have been finalized
   const isFinalized = await isPlacementsFinalized(seasonId);
@@ -43,10 +53,11 @@ export const getPreliminaryPlacementsController = async (
           t.name AS team_name,
           l.name AS league_name,
           l.id AS league_id,
-          slt.tier AS tier
+          sl.tier AS tier
         FROM Teams t
         JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
-        JOIN Leagues l ON l.id = slt.league_id
+        JOIN SeasonLeagues sl ON sl.league_id = slt.league_id
+        JOIN Leagues l ON l.id = sl.league_id
         WHERE slt.season_id = ?
       `;
 
@@ -60,11 +71,7 @@ export const getPreliminaryPlacementsController = async (
       }>
     >(teamsQuery, [seasonId]);
 
-    // Get team values for avg4/sum5 calculations
-    // For historical data, we don't need to filter by approved=true
-    const teams = await getTeamValuesForSorter(seasonId, {
-      isHistorical: true
-    });
+    const teams = await getTeamValuesForSorter(seasonId);
 
     // Merge the league data with the team values
     const historicalPlacements = teamsWithLeagues.map((team) => {
@@ -113,7 +120,7 @@ export const getPreliminaryPlacementsController = async (
   logger.info(
     `Getting team values for season ${seasonId} to generate initial placements`
   );
-  const teams = await getTeamValuesForSorter(seasonId, { isHistorical: true }); // Use historical=true to get all teams
+  const teams = await getTeamValuesForSorter(seasonId); // Use historical=true to get all teams
   logger.info(`Retrieved ${teams.length} teams for initial placements`);
 
   if (teams.length === 0) {
@@ -126,7 +133,10 @@ export const getPreliminaryPlacementsController = async (
     return;
   }
 
-  const initialPlacements = generateInitialPlacements(teams);
+  const initialPlacements = generateInitialPlacements(
+    teams,
+    teamsPerDivisionQueryNumber
+  );
   logger.info(`Generated ${initialPlacements.length} initial placements`);
 
   // Save the initial placements to Redis
