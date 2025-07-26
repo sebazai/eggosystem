@@ -5,7 +5,10 @@ import {
   type GamePlayerStats,
   type MatchOrGameTopPlayerAwards,
   type GameClip,
-  type ChampionshipDetailsReady
+  type MatchDemoReadyWebhook,
+  type ChampionshipDetailsDemoReady,
+  type Match,
+  type MatchTeamMapVeto
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
@@ -14,11 +17,9 @@ import {
 } from "../shared/fetch-stat";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
-import { getMapIdByName } from "./map.models";
 import { getConnection } from "../db/mysqlConnection";
 import { type PoolConnection } from "mysql2/promise";
-import { addMatchTeamMapVeto } from "./match-team-map-veto.models";
-import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { parseDemoUrl } from "../utils/demo-url-parser";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -152,10 +153,18 @@ export const getGameClip = async (game_id: number) => {
 };
 
 export const addMatchGamesForMatch = async (
-  details: ChampionshipDetailsReady,
+  webhookData: MatchDemoReadyWebhook,
+  matchDetails: ChampionshipDetailsDemoReady,
   externalLeagueId: string
 ) => {
-  const { match_id } = details;
+  const { demo_url } = webhookData.payload;
+  const parsedDemoUrl = parseDemoUrl(demo_url);
+
+  if (!parsedDemoUrl) {
+    throw new Error(`Invalid demo url: ${demo_url}`);
+  }
+
+  const { match_id } = matchDetails;
   const matches = await getHubMatchesByExternalMatchRoomId(match_id);
 
   if (!matches || matches.length === 0) {
@@ -164,77 +173,71 @@ export const addMatchGamesForMatch = async (
     );
   }
 
-  const seasonLeauge =
+  const seasonLeague =
     await getSeasonLeagueExternalIdByExternalId(externalLeagueId);
 
-  if (!seasonLeauge) {
+  if (!seasonLeague) {
     throw new Error(
       `No SeasonLeagueExternalId entry found when adding match games for external_id: ${externalLeagueId}`
     );
   }
 
-  const { isBO2PlayedAs2xBO1 } = seasonLeauge;
-
-  const { voting } = details;
-  const { map } = voting;
-  const { pick } = map;
+  const { isBO2PlayedAs2xBO1 } = seasonLeague;
 
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
-    const teamOneExternalId = details.teams.faction1.faction_id;
-    const teamTwoExternalId = details.teams.faction2.faction_id;
-
-    const teamOne = await getSeasonLeagueTeamByExternalId(
-      teamOneExternalId,
+    const mapPlayedIn = parsedDemoUrl.mapNumber;
+    const matchMapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
+      `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND action = "pick" ORDER BY veto_order ASC;`,
+      [matches[0].id],
       connection
     );
-    const teamTwo = await getSeasonLeagueTeamByExternalId(
-      teamTwoExternalId,
-      connection
-    );
+    const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
+    if (
+      isBO2PlayedAs2xBO1 &&
+      matchDetails.best_of === 2 &&
+      matches.length === 2
+    ) {
+      // We should receive 2 picks, as both 2xBO1 matches have the same picks.
+      if (matchMapVetoes.length !== 2) {
+        throw new Error("Something is very wrong with this 2xBO1");
+      }
 
-    if (!teamOne || !teamTwo) {
-      throw new Error(
-        `No SeasonLeagueTeam entry in addMatchGamesForMatch found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
-      );
-    }
+      const matchObject = matches[mapPlayedIn - 1];
 
-    await addMatchTeamMapVeto(
-      match_id,
-      teamOne.team_id,
-      teamTwo.team_id,
-      connection
-    );
+      if (!matchObject) {
+        throw new Error("Could not find match object for 2xBO1 matches");
+      }
 
-    if (isBO2PlayedAs2xBO1 && details.best_of === 2) {
-      await Promise.all([
-        addMatchGameForMatch({
-          match_id: matches[0].id,
-          map: pick[0],
-          map_order: 1,
-          connection
-        }),
-        addMatchGameForMatch({
-          match_id: matches[1].id,
-          map: pick[1],
-          map_order: 2,
-          connection
-        })
-      ]);
+      const _insertedRow = await addMatchGameForMatch({
+        match_id: matchObject.id,
+        map_id: mapPlayedVoteObject.map_id,
+        map_order: mapPlayedIn,
+        connection
+      });
+      // Push into Parser and AllStart queue
+      await connection.commit();
     } else {
-      await Promise.all(
-        pick.map(async (map, index) => {
-          await addMatchGameForMatch({
-            match_id: matches[0].id,
-            map,
-            map_order: index + 1,
-            connection
-          });
-        })
+      const matchObject = await runQuery<Match>(
+        `SELECT * FROM Matches WHERE external_match_room_id = ?`,
+        [match_id],
+        connection
       );
+
+      if (!matchObject) {
+        throw new Error("Could not find match object for 2xBO1 matches");
+      }
+
+      const _insertedRow = await addMatchGameForMatch({
+        match_id: matchObject.id,
+        map_id: mapPlayedVoteObject.map_id,
+        map_order: mapPlayedIn,
+        connection
+      });
+      // Push into Parser and AllStart queue
+      await connection.commit();
     }
-    await connection.commit();
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -245,27 +248,24 @@ export const addMatchGamesForMatch = async (
 
 const addMatchGameForMatch = async ({
   match_id,
-  map,
+  map_id,
   map_order,
   regulation_rounds,
   connection
 }: {
   match_id: number;
-  map: string;
+  map_id: number;
   map_order: number;
   regulation_rounds?: number;
   connection?: PoolConnection;
 }) => {
   const query = `
-    INSERT INTO MatchGames (match_id, map, map_order, regulation_rounds) VALUES (?, ?, ?, ?)
+    INSERT INTO MatchGames (match_id, map_id, map_order, regulation_rounds) VALUES (?, ?, ?, ?)
   `;
-  const mapId = await getMapIdByName(map);
-  if (!mapId) {
-    throw new Error(`Map ${map} not found`);
-  }
+
   return runQuery<{ insertId: number }>(
     query,
-    [match_id, mapId, map_order, regulation_rounds ?? 24],
+    [match_id, map_id, map_order, regulation_rounds ?? 24],
     connection
   );
 };

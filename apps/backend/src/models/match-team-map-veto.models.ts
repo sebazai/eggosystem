@@ -1,6 +1,9 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { type ChampionshipDetailsReady } from "@eggosystem/types";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { getConnection } from "../db/mysqlConnection";
 
 // FACEIT Match History API Response Interfaces
 export interface FaceitMatchHistoryEntity {
@@ -49,28 +52,20 @@ const mapFaceitGuidToMapId = async (
   return mapId;
 };
 
-export const addMatchTeamMapVeto = async (
-  external_match_id: string,
+const addMatchTeamMapVeto = async (
+  matchId: number,
+  externalMatchId: string,
+  best_of: number,
   faction1_hub_team_id: number,
   faction2_hub_team_id: number,
   connection?: PoolConnection
 ) => {
-  const matchHistoryUrl = `https://www.faceit.com/api/democracy/v1/match/${external_match_id}/history`;
+  const matchHistoryUrl = `https://www.faceit.com/api/democracy/v1/match/${externalMatchId}/history`;
   const fetchMatchHistory = await fetch(matchHistoryUrl);
-  const internalMatch = await getHubMatchesByExternalMatchRoomId(
-    external_match_id,
-    connection
-  );
-
-  if (!internalMatch || internalMatch.length === 0) {
-    throw new Error(
-      `No match map vetoes found for external_match_id: ${external_match_id}`
-    );
-  }
 
   if (!fetchMatchHistory.ok) {
     throw new Error(
-      `Failed to fetch match history for match ${external_match_id}: ${fetchMatchHistory.status} ${fetchMatchHistory.statusText}`
+      `Failed to fetch match history for match ${externalMatchId}: ${fetchMatchHistory.status} ${fetchMatchHistory.statusText}`
     );
   }
 
@@ -83,28 +78,92 @@ export const addMatchTeamMapVeto = async (
   );
 
   if (!mapVetoTicket) {
-    throw new Error(`No map veto data found for match ${external_match_id}`);
+    throw new Error(`No map veto data found for match ${externalMatchId}`);
   }
 
-  // Process each map veto entity
-  for (const match of internalMatch) {
-    const vetoPromises = mapVetoTicket.entities.map(async (entity) => {
-      const teamId =
-        entity.selected_by === "faction1"
-          ? faction1_hub_team_id
-          : faction2_hub_team_id;
-      const action = entity.status;
-      const vetoOrder = entity.round;
+  const vetoPromises = mapVetoTicket.entities.map(async (entity, index) => {
+    const vetoAmount = index + 1;
+    const teamId =
+      entity.selected_by === "faction1"
+        ? faction1_hub_team_id
+        : faction2_hub_team_id;
 
-      const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
+    // If the veto is the last one and the round is the best of, set it to decider
+    const action =
+      entity.round === vetoAmount &&
+      (best_of % 3 === 0 || best_of % 5 === 0) &&
+      entity.status === "pick"
+        ? "decider"
+        : entity.status;
 
-      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
-      return runQuery<{ insertId: number }>(
-        query,
-        [match.id, teamId, mapId, action, vetoOrder],
-        connection
+    const vetoOrder = entity.round;
+
+    const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
+
+    const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
+    return runQuery<{ insertId: number }>(
+      query,
+      [matchId, teamId, mapId, action, vetoOrder],
+      connection
+    );
+  });
+  await Promise.all(vetoPromises);
+};
+
+export const addMatchTeamMapVetoes = async (
+  details: ChampionshipDetailsReady,
+  externalLeagueId: string
+) => {
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const { match_id, best_of } = details;
+    const matches = await getHubMatchesByExternalMatchRoomId(
+      match_id,
+      connection
+    );
+
+    if (!matches || matches.length === 0) {
+      throw new Error(
+        `No matches found when adding match games for external_id: ${externalLeagueId}`
       );
-    });
-    await Promise.all(vetoPromises);
+    }
+
+    const teamOneExternalId = details.teams.faction1.faction_id;
+    const teamTwoExternalId = details.teams.faction2.faction_id;
+
+    const teamOne = await getSeasonLeagueTeamByExternalId(
+      teamOneExternalId,
+      connection
+    );
+    const teamTwo = await getSeasonLeagueTeamByExternalId(
+      teamTwoExternalId,
+      connection
+    );
+
+    if (!teamOne || !teamTwo) {
+      throw new Error(
+        `No SeasonLeagueTeam entry in addMatchGamesForMatch found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
+      );
+    }
+
+    await Promise.all(
+      matches.map((match) =>
+        addMatchTeamMapVeto(
+          match.id,
+          match_id,
+          best_of,
+          teamOne.team_id,
+          teamTwo.team_id,
+          connection
+        )
+      )
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
 };

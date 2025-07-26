@@ -39,7 +39,12 @@ import {
   type ChampionshipDetailsReady,
   validateChampionshipDetailsReady,
   validateMatchmakingDetailsReady,
-  type MatchmakingDetailsReady
+  type MatchmakingDetailsReady,
+  validateMatchDemoReadyWebhook,
+  type MatchmakingDetailsDemoReady,
+  validateMatchmakingDetailsDemoReady,
+  validateChampionshipDetailsDemoReady,
+  type ChampionshipDetailsDemoReady
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -48,6 +53,7 @@ import {
 } from "../../models/match.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
+import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
 import { addMatchGamesForMatch } from "../../models/game.models";
 
 const router = Router();
@@ -259,7 +265,7 @@ router.post(
           webhookData.event
         );
         if (organizer) {
-          await addMatchGamesForMatch(
+          await addMatchTeamMapVetoes(
             validatedMatchDetails,
             validatedWebhook.payload.entity.id
           );
@@ -269,6 +275,7 @@ router.post(
       return;
     }
 
+    // This happens for our Matches table once, even if BO3
     if (webhookData.event === "match_status_finished") {
       if (validateMatchStatusFinishedWebhook(webhookData)) {
         const externalMatchRoomId = webhookData.payload.id;
@@ -303,18 +310,44 @@ router.post(
       return;
     }
 
+    // This is where we parse MatchGame
     if (webhookData.event === "match_demo_ready") {
-      // Validate players in both teams and push the demo url to parser
-      // Send demo_url to parser
-      const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
-      await saveWebhookData(
-        webhookData.payload.id,
-        webhookData.event,
-        webhookData,
-        matchDetails
-      );
-      res.status(200).send("Webhook received");
-      return;
+      if (webhookData.payload.entity.type === "matchmaking") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchDemoReadyWebhook,
+          getFaceITMatchDetails<MatchmakingDetailsDemoReady>,
+          validateMatchmakingDetailsDemoReady,
+          webhookData.event
+        );
+        res.status(200).send("Webhook received");
+        return;
+      }
+      if (webhookData.payload.entity.type === "championship") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchDemoReadyWebhook,
+          getFaceITMatchDetails<ChampionshipDetailsDemoReady>,
+          validateChampionshipDetailsDemoReady,
+          webhookData.event
+        );
+        // Validate players in both teams that all the steam_ids are in the SeasonTeamPlayers table
+        if (organizer) {
+          await addMatchGamesForMatch(
+            validatedWebhook,
+            validatedMatchDetails,
+            webhookData.payload.entity.id
+          );
+        }
+        res.status(200).send("Webhook received");
+        return;
+      }
     }
     if (webhookData.event === "match_status_aborted") {
       // Do we need this?

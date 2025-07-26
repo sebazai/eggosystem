@@ -28,12 +28,12 @@ export interface DetailsDemoReadBase {
   configured_at: number;
   started_at: number;
   finished_at: number;
-  demo_url: string[] | string;
+  demo_url: string[];
   chat_room_id: string;
   best_of: number;
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
-  status: FaceitMatchStatus.FINISHED;
+  status: FaceitMatchStatus;
   faceit_url: string;
 }
 
@@ -52,12 +52,12 @@ const DetailsDemoReadBaseSchema = z.object({
   configured_at: z.number(),
   started_at: z.number(),
   finished_at: z.number(),
-  demo_url: z.array(z.string().url()).or(z.string().url()),
+  demo_url: z.array(z.string().url()),
   chat_room_id: z.string(),
   best_of: z.number(),
   results: FaceitMatchResultsFinishedSchema,
   detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
-  status: z.literal(FaceitMatchStatus.FINISHED),
+  status: z.nativeEnum(FaceitMatchStatus),
   faceit_url: z.string()
 });
 

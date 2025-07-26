@@ -448,8 +448,8 @@ export const addMatchToDatabase = async (
 
     const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
 
-    // TODO: Default time next weeks wednesday at 19:00, figure out how to handle this, do we have scheduled_at?
     const matchScheduledAt = matchDetails.scheduled_at;
+    // Default time next weeks wednesday at 19:00 if no scheduled_at
     const now = new Date();
     const nextWednesday = new Date(now);
     nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
