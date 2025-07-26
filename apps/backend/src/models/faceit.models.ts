@@ -14,8 +14,8 @@ export const saveWebhookData = async (
     [
       externalPayloadId,
       event,
-      data as unknown as string,
-      details as unknown as string,
+      JSON.stringify(data),
+      details ? JSON.stringify(details) : null,
       errorType,
       errorDetails ? JSON.stringify(errorDetails) : null
     ]
