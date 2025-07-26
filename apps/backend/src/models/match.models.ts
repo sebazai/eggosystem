@@ -17,6 +17,8 @@ import {
   type MatchInfoQuery,
   type MatchesWithTeamDataQuery,
   type ChampionshipDetailsObjectCreated,
+  FaceitMatchStatus,
+  type ChampionshipDetailsObjectCreated,
   FaceitMatchStatus
 } from "@eggosystem/types";
 import {
