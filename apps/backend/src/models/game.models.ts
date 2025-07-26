@@ -4,13 +4,19 @@ import {
   type GameTeamRoundBreakdown,
   type GamePlayerStats,
   type MatchOrGameTopPlayerAwards,
-  type GameClip
+  type GameClip,
+  type ChampionshipDetailsReady
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
+import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getMapIdByName } from "./map.models";
+import { getConnection } from "../db/mysqlConnection";
+import { type PoolConnection } from "mysql2/promise";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -141,4 +147,93 @@ export const getGameClip = async (game_id: number) => {
       WHERE game_id = ?
   `;
   return runQuery<GameClip[]>(query, [game_id]);
+};
+
+export const addMatchGamesForMatch = async (
+  details: ChampionshipDetailsReady,
+  externalLeagueId: string
+) => {
+  const { match_id } = details;
+  const matches = await getHubMatchesByExternalMatchRoomId(match_id);
+
+  if (!matches || matches.length === 0) {
+    throw new Error(
+      `No matches found when adding match games for external_id: ${externalLeagueId}`
+    );
+  }
+
+  const seasonLeauge =
+    await getSeasonLeagueExternalIdByExternalId(externalLeagueId);
+
+  if (!seasonLeauge) {
+    throw new Error(
+      `No SeasonLeagueExternalId entry found when adding match games for external_id: ${externalLeagueId}`
+    );
+  }
+
+  const { isBO2PlayedAs2xBO1 } = seasonLeauge;
+
+  const { voting } = details;
+  const { map } = voting;
+  const { pick } = map;
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    if (isBO2PlayedAs2xBO1 && details.best_of === 2) {
+      await addMatchGameForMatch({
+        match_id: matches[0].id,
+        map: pick[0],
+        map_order: 1,
+        connection
+      });
+      await addMatchGameForMatch({
+        match_id: matches[1].id,
+        map: pick[1],
+        map_order: 2,
+        connection
+      });
+    } else {
+      for (const [index, map] of pick.entries()) {
+        await addMatchGameForMatch({
+          match_id: matches[0].id,
+          map,
+          map_order: index + 1,
+          connection
+        });
+      }
+    }
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const addMatchGameForMatch = async ({
+  match_id,
+  map,
+  map_order,
+  regulation_rounds,
+  connection
+}: {
+  match_id: number;
+  map: string;
+  map_order: number;
+  regulation_rounds?: number;
+  connection?: PoolConnection;
+}) => {
+  const query = `
+    INSERT INTO MatchGames (match_id, map, map_order, regulation_rounds) VALUES (?, ?, ?, ?)
+  `;
+  const mapId = await getMapIdByName(map);
+  if (!mapId) {
+    throw new Error(`Map ${map} not found`);
+  }
+  return runQuery<{ insertId: number }>(
+    query,
+    [match_id, mapId, map_order, regulation_rounds ?? 24],
+    connection
+  );
 };

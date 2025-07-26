@@ -11,8 +11,6 @@ import {
   type MatchTeamStats,
   type MatchMapVetoes,
   type Stage,
-  type SeasonLeagueExternalId,
-  type SeasonLeagueTeam,
   MatchStatus,
   type MatchInfoQuery,
   type MatchesWithTeamDataQuery,
@@ -29,6 +27,8 @@ import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
 import { convertISOToTime } from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
+import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
@@ -376,6 +376,19 @@ const addTeamToMatch = async (
   }
 };
 
+export const getHubMatchesByExternalMatchRoomId = async (
+  externalMatchRoomId: string
+) => {
+  const query = `SELECT id FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
+  const matches = await runQuery<Array<{ id: number }> | undefined>(query, [
+    externalMatchRoomId
+  ]);
+  if (!matches || matches.length === 0) {
+    return null;
+  }
+  return matches;
+};
+
 export const addMatchToDatabase = async (
   matchDetails: ChampionshipDetailsObjectCreated,
   externalLeagueId: string
@@ -388,13 +401,12 @@ export const addMatchToDatabase = async (
     return;
   }
 
-  const match = await runQuery<Array<{ id: number }>>(
-    "SELECT id FROM Matches WHERE external_match_room_id = ?",
-    [matchDetails.match_id]
+  const matches = await getHubMatchesByExternalMatchRoomId(
+    matchDetails.match_id
   );
-  if (match.length > 0) {
+  if (matches && matches.length > 0) {
     logger.info(
-      `Match ${matchDetails.match_id} already exists, skipping`,
+      `${matches.length} matches with external_match_room_id ${matchDetails.match_id} already exists, skipping`,
       matchDetails
     );
     return;
@@ -403,14 +415,8 @@ export const addMatchToDatabase = async (
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
-    const seasonLeagueExternalRoomResult = await runQuery<
-      Array<SeasonLeagueExternalId | undefined>
-    >(
-      "SELECT * FROM SeasonLeagueExternalIds WHERE external_id = ? LIMIT 1",
-      [externalLeagueId],
-      connection
-    );
-    const seasonLeagueExternalRoom = seasonLeagueExternalRoomResult[0];
+    const seasonLeagueExternalRoom =
+      await getSeasonLeagueExternalIdByExternalId(externalLeagueId, connection);
     if (!seasonLeagueExternalRoom) {
       throw new Error(
         `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
@@ -420,14 +426,12 @@ export const addMatchToDatabase = async (
     const teamOneExternalId = matchDetails.teams.faction1.faction_id;
     const teamTwoExternalId = matchDetails.teams.faction2.faction_id;
 
-    const [teamOne] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
-      `SELECT * FROM SeasonLeagueTeams WHERE stl.external_platform_id = ? LIMIT 1`,
-      [teamOneExternalId],
+    const teamOne = await getSeasonLeagueTeamByExternalId(
+      teamOneExternalId,
       connection
     );
-    const [teamTwo] = await runQuery<Array<SeasonLeagueTeam | undefined>>(
-      `SELECT * FROM SeasonLeagueTeams WHERE stl.external_platform_id = ? LIMIT 1`,
-      [teamOneExternalId],
+    const teamTwo = await getSeasonLeagueTeamByExternalId(
+      teamTwoExternalId,
       connection
     );
 

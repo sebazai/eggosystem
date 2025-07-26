@@ -48,6 +48,7 @@ import {
 } from "../../models/match.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
+import { addMatchGamesForMatch } from "../../models/game.models";
 
 const router = Router();
 
@@ -165,9 +166,8 @@ router.post(
       logger.error(
         `Organizer not found for faceit_id ${webhookData.payload.organizer_id} and app_id ${appId}`
       );
-      // TODO: Handle this when we go live
-      // res.status(404).send("Organizer not found");
-      // return;
+      res.status(404).send("Organizer not found");
+      return;
     }
 
     if (webhookData.event === "match_object_created") {
@@ -259,6 +259,12 @@ router.post(
           validateChampionshipDetailsReady,
           webhookData.event
         );
+        if (organizer) {
+          await addMatchGamesForMatch(
+            validatedMatchDetails,
+            validatedWebhook.payload.entity.id
+          );
+        }
       }
       res.status(200).send("Webhook received");
       return;
