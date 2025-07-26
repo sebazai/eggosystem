@@ -97,6 +97,7 @@ export interface ChampionshipDetailsObjectCreatedVoting
   extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
   status: FaceitMatchStatus.VOTING;
+  scheduled_at?: number;
 }
 
 interface ChampionshipDetailsObjectCreatedScheduled

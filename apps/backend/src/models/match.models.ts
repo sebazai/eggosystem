@@ -25,7 +25,7 @@ import {
 } from "../shared/fetch-stat";
 import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
-import { convertISOToTime } from "../utils/date-utils";
+import { convertISOToFinnishTime, convertISOToTime } from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
@@ -377,12 +377,15 @@ const addTeamToMatch = async (
 };
 
 export const getHubMatchesByExternalMatchRoomId = async (
-  externalMatchRoomId: string
+  externalMatchRoomId: string,
+  connection?: PoolConnection
 ) => {
   const query = `SELECT id FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
-  const matches = await runQuery<Array<{ id: number }> | undefined>(query, [
-    externalMatchRoomId
-  ]);
+  const matches = await runQuery<Array<{ id: number }> | undefined>(
+    query,
+    [externalMatchRoomId],
+    connection
+  );
   if (!matches || matches.length === 0) {
     return null;
   }
@@ -401,20 +404,21 @@ export const addMatchToDatabase = async (
     return;
   }
 
-  const matches = await getHubMatchesByExternalMatchRoomId(
-    matchDetails.match_id
-  );
-  if (matches && matches.length > 0) {
-    logger.info(
-      `${matches.length} matches with external_match_room_id ${matchDetails.match_id} already exists, skipping`,
-      matchDetails
-    );
-    return;
-  }
-
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
+    const matches = await getHubMatchesByExternalMatchRoomId(
+      matchDetails.match_id,
+      connection
+    );
+    if (matches && matches.length > 0) {
+      logger.info(
+        `${matches.length} matches with external_match_room_id ${matchDetails.match_id} already exists, skipping`,
+        matchDetails
+      );
+      return;
+    }
+
     const seasonLeagueExternalRoom =
       await getSeasonLeagueExternalIdByExternalId(externalLeagueId, connection);
     if (!seasonLeagueExternalRoom) {
@@ -445,6 +449,7 @@ export const addMatchToDatabase = async (
     const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
 
     // TODO: Default time next weeks wednesday at 19:00, figure out how to handle this, do we have scheduled_at?
+    const matchScheduledAt = matchDetails.scheduled_at;
     const now = new Date();
     const nextWednesday = new Date(now);
     nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
@@ -460,8 +465,12 @@ export const addMatchToDatabase = async (
       season_id,
       stage_id,
       matchDetails.best_of,
-      match_date,
-      start_time,
+      matchScheduledAt
+        ? new Date(matchScheduledAt * 1000).toISOString().slice(0, 10)
+        : match_date,
+      matchScheduledAt
+        ? new Date(matchScheduledAt * 1000).toISOString().slice(11, 19)
+        : start_time,
       null,
       matchDetails.match_id,
       matchDetails.status,
@@ -506,7 +515,7 @@ export const addMatchToDatabase = async (
 
       await connection.commit();
 
-      return { matchIds: [firstMatchId, secondMatchId] };
+      return { matchIds: [firstMatchId, secondMatchId], isBO2PlayedAs2xBO1 };
     } else {
       const match = await runQuery<Array<{ insertId: number }>>(
         matchQuery,
@@ -519,7 +528,7 @@ export const addMatchToDatabase = async (
       await addTeamToMatch(matchId, teamTwo.team_id, connection);
 
       await connection.commit();
-      return { matchIds: [matchId] };
+      return { matchIds: [matchId], isBO2PlayedAs2xBO1 };
     }
   } catch (error) {
     await connection.rollback();
@@ -550,8 +559,8 @@ export const updateMatchFinished = async (
     return;
   }
 
-  const startTime = convertISOToTime(startedAt);
-  const endTime = convertISOToTime(finishedAt);
+  const startTime = convertISOToTime(convertISOToFinnishTime(startedAt));
+  const endTime = convertISOToTime(convertISOToFinnishTime(finishedAt));
 
   await runQuery(
     "UPDATE Matches SET start_time = ?, end_time = ?, status = ? WHERE external_match_room_id = ?",
@@ -578,7 +587,7 @@ export const updateMatchEndTime = async (
     return;
   }
 
-  const endTime = convertISOToTime(finishedAt);
+  const endTime = convertISOToTime(convertISOToFinnishTime(finishedAt));
 
   await runQuery(
     "UPDATE Matches SET end_time = ? WHERE external_match_room_id = ?",

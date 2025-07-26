@@ -17,6 +17,8 @@ import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-
 import { getMapIdByName } from "./map.models";
 import { getConnection } from "../db/mysqlConnection";
 import { type PoolConnection } from "mysql2/promise";
+import { addMatchTeamMapVeto } from "./match-team-map-veto.models";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -176,31 +178,61 @@ export const addMatchGamesForMatch = async (
   const { voting } = details;
   const { map } = voting;
   const { pick } = map;
+
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
+    const teamOneExternalId = details.teams.faction1.faction_id;
+    const teamTwoExternalId = details.teams.faction2.faction_id;
+
+    const teamOne = await getSeasonLeagueTeamByExternalId(
+      teamOneExternalId,
+      connection
+    );
+    const teamTwo = await getSeasonLeagueTeamByExternalId(
+      teamTwoExternalId,
+      connection
+    );
+
+    if (!teamOne || !teamTwo) {
+      throw new Error(
+        `No SeasonLeagueTeam entry in addMatchGamesForMatch found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
+      );
+    }
+
+    await addMatchTeamMapVeto(
+      match_id,
+      teamOne.team_id,
+      teamTwo.team_id,
+      connection
+    );
+
     if (isBO2PlayedAs2xBO1 && details.best_of === 2) {
-      await addMatchGameForMatch({
-        match_id: matches[0].id,
-        map: pick[0],
-        map_order: 1,
-        connection
-      });
-      await addMatchGameForMatch({
-        match_id: matches[1].id,
-        map: pick[1],
-        map_order: 2,
-        connection
-      });
-    } else {
-      for (const [index, map] of pick.entries()) {
-        await addMatchGameForMatch({
+      await Promise.all([
+        addMatchGameForMatch({
           match_id: matches[0].id,
-          map,
-          map_order: index + 1,
+          map: pick[0],
+          map_order: 1,
           connection
-        });
-      }
+        }),
+        addMatchGameForMatch({
+          match_id: matches[1].id,
+          map: pick[1],
+          map_order: 2,
+          connection
+        })
+      ]);
+    } else {
+      await Promise.all(
+        pick.map(async (map, index) => {
+          await addMatchGameForMatch({
+            match_id: matches[0].id,
+            map,
+            map_order: index + 1,
+            connection
+          });
+        })
+      );
     }
     await connection.commit();
   } catch (error) {

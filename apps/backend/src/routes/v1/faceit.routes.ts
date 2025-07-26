@@ -206,7 +206,6 @@ router.post(
     }
 
     if (webhookData.event === "match_status_configuring") {
-      // Get map vetos and bans here
       if (webhookData.payload.entity.type === "matchmaking") {
         const {
           webhookData: validatedWebhook,
@@ -270,7 +269,6 @@ router.post(
       return;
     }
 
-    // This should be ok now, but ensure this happens for Match, not MatchGame.
     if (webhookData.event === "match_status_finished") {
       if (validateMatchStatusFinishedWebhook(webhookData)) {
         const externalMatchRoomId = webhookData.payload.id;
