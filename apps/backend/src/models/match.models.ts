@@ -15,7 +15,9 @@ import {
   type SeasonLeagueTeam,
   MatchStatus,
   type MatchInfoQuery,
-  type MatchesWithTeamDataQuery
+  type MatchesWithTeamDataQuery,
+  type ChampionshipDetailsObjectCreated,
+  FaceitMatchStatus
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -373,15 +375,34 @@ const addTeamToMatch = async (
 };
 
 export const addMatchToDatabase = async (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  matchDetails: any,
+  matchDetails: ChampionshipDetailsObjectCreated,
   externalLeagueId: string
 ) => {
+  if (matchDetails.status === FaceitMatchStatus.CHECK_IN) {
+    logger.info(
+      `Match ${matchDetails.match_id} is in check-in status, skipping`,
+      matchDetails
+    );
+    return;
+  }
+
+  const match = await runQuery<Array<{ id: number }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [matchDetails.match_id]
+  );
+  if (match.length > 0) {
+    logger.info(
+      `Match ${matchDetails.match_id} already exists, skipping`,
+      matchDetails
+    );
+    return;
+  }
+
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
     const seasonLeagueExternalRoomResult = await runQuery<
-      Array<SeasonLeagueExternalId>
+      Array<SeasonLeagueExternalId | undefined>
     >(
       "SELECT * FROM SeasonLeagueExternalIds WHERE external_id = ? LIMIT 1",
       [externalLeagueId],
@@ -437,9 +458,9 @@ export const addMatchToDatabase = async (
       start_time,
       null,
       matchDetails.match_id,
-      MatchStatus.SCHEDULED,
-      matchDetails.round ?? null,
-      matchDetails.group ?? null
+      matchDetails.status,
+      matchDetails.round,
+      matchDetails.group
     ];
 
     const matchQuery = `
@@ -459,18 +480,18 @@ export const addMatchToDatabase = async (
     `;
 
     if (isBO2PlayedAs2xBO1) {
-      const firstMatch = await runQuery<Array<{ insertId: number }>>(
+      const firstMatch = await runQuery<{ insertId: number }>(
         matchQuery,
         params,
         connection
       );
-      const firstMatchId = firstMatch[0].insertId;
-      const secondMatch = await runQuery<Array<{ insertId: number }>>(
+      const firstMatchId = firstMatch.insertId;
+      const secondMatch = await runQuery<{ insertId: number }>(
         matchQuery,
         params,
         connection
       );
-      const secondMatchId = secondMatch[0].insertId;
+      const secondMatchId = secondMatch.insertId;
 
       await addTeamToMatch(firstMatchId, teamOne.team_id, connection);
       await addTeamToMatch(firstMatchId, teamTwo.team_id, connection);

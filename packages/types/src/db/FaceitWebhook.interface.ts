@@ -1,7 +1,7 @@
 export interface FaceitWebhook {
   id: number;
   received_at: string;
-  external_match_room_id: string;
+  external_payload_id: string;
   event: string;
   data: string;
   details: string;

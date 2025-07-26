@@ -113,8 +113,8 @@ const processWebhookWithDetails = async <
     await saveWebhookData(
       externalMatchRoomId,
       eventType,
-      JSON.stringify(validatedWebhook),
-      JSON.stringify(validatedMatchDetails)
+      validatedWebhook,
+      validatedMatchDetails
     );
 
     return {
@@ -127,8 +127,8 @@ const processWebhookWithDetails = async <
       await saveWebhookData(
         externalMatchRoomId,
         String((webhookData as any).event),
-        JSON.stringify(webhookData),
-        JSON.stringify(matchDetails),
+        webhookData,
+        matchDetails,
         "ZOD_VALIDATION_ERROR",
         JSON.stringify(error)
       );
@@ -138,8 +138,8 @@ const processWebhookWithDetails = async <
     await saveWebhookData(
       externalMatchRoomId,
       String((webhookData as any).event),
-      JSON.stringify(webhookData),
-      JSON.stringify(matchDetails),
+      webhookData,
+      matchDetails,
       "UNKNOWN_ERROR",
       JSON.stringify(error)
     );
@@ -281,8 +281,8 @@ router.post(
           await saveWebhookData(
             externalMatchRoomId,
             webhookData.event,
-            JSON.stringify(webhookData),
-            JSON.stringify(matchDetails)
+            webhookData,
+            matchDetails
           );
         }
 
@@ -291,8 +291,8 @@ router.post(
         await saveWebhookData(
           externalMatchRoomId,
           webhookData.event,
-          JSON.stringify(webhookData),
-          JSON.stringify(matchDetails)
+          webhookData,
+          matchDetails
         );
       }
       res.status(200).send("Webhook received");
@@ -306,8 +306,8 @@ router.post(
       await saveWebhookData(
         webhookData.payload.id,
         webhookData.event,
-        JSON.stringify(webhookData),
-        JSON.stringify(matchDetails)
+        webhookData,
+        matchDetails
       );
       res.status(200).send("Webhook received");
       return;
@@ -318,8 +318,8 @@ router.post(
       await saveWebhookData(
         webhookData.payload.id,
         webhookData.event,
-        JSON.stringify(webhookData),
-        JSON.stringify(matchDetails)
+        webhookData,
+        matchDetails
       );
       res.status(200).send("Webhook received");
       return;
@@ -330,8 +330,8 @@ router.post(
       await saveWebhookData(
         webhookData.payload.id,
         webhookData.event,
-        JSON.stringify(webhookData),
-        JSON.stringify(matchDetails)
+        webhookData,
+        matchDetails
       );
       res.status(200).send("Webhook received");
       return;
@@ -344,8 +344,8 @@ router.post(
     await saveWebhookData(
       webhookData.payload.id,
       webhookData.event,
-      JSON.stringify(webhookData),
-      JSON.stringify(championshipDetails)
+      webhookData,
+      championshipDetails
     );
 
     res.status(200).send("Webhook received");

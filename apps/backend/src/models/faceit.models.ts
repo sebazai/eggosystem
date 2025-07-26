@@ -2,20 +2,20 @@ import { type FaceitValidationError } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const saveWebhookData = async (
-  externalMatchRoomId: string,
+  externalPayloadId: string,
   event: string,
-  data: string,
-  details: string | null,
+  data: object | unknown,
+  details: object | unknown | null,
   errorType: FaceitValidationError | null = null,
   errorDetails: string | null = null
 ) => {
   return runQuery<{ insertId: number }>(
-    "INSERT INTO FaceitWebhooks (external_match_room_id, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?)",
+    "INSERT INTO FaceitWebhooks (external_payload_id, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?)",
     [
-      externalMatchRoomId,
+      externalPayloadId,
       event,
-      JSON.stringify(data),
-      JSON.stringify(details),
+      data as unknown as string,
+      details as unknown as string,
       errorType,
       errorDetails ? JSON.stringify(errorDetails) : null
     ]
