@@ -20,7 +20,7 @@ export interface MatchInfo {
   season_name: Season["full_name"];
   season_platform: Season["platform"];
   stage: Match["stage"];
-  teams: Record<string | number, MatchTeamInfo>;
+  teams: Record<string, MatchTeamInfo>;
   game_id: Nullable<MatchGame["id"]>;
 }
 

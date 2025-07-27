@@ -80,7 +80,7 @@ export const getMatchInfoController = async (
 
   const matchInfo = {
     ...match,
-    teams: JSON.parse(match.teams) as Record<number, MatchTeamInfo>
+    teams: JSON.parse(match.teams) as Record<string, MatchTeamInfo>
   } satisfies MatchInfo;
 
   res.json(matchInfo);
