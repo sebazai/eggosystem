@@ -189,7 +189,7 @@ export const addMatchGamesForMatch = async (
     await connection.beginTransaction();
     const mapPlayedIn = parsedDemoUrl.mapNumber;
     const matchMapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
-      `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND action = "pick" ORDER BY veto_order ASC;`,
+      `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND (action = "pick" OR action = "decider") ORDER BY veto_order ASC;`,
       [matches[0].id],
       connection
     );

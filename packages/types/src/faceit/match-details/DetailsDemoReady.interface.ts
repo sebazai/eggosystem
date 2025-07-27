@@ -13,7 +13,7 @@ import {
   FaceitGameSchema
 } from "./Details.interface";
 
-export interface DetailsDemoReadBase {
+export interface DetailsDemoReadyBase {
   match_id: string;
   version: number;
   game: FaceitGame;
@@ -61,7 +61,7 @@ const DetailsDemoReadBaseSchema = z.object({
   faceit_url: z.string()
 });
 
-export interface MatchmakingDetailsDemoReady extends DetailsDemoReadBase {
+export interface MatchmakingDetailsDemoReady extends DetailsDemoReadyBase {
   competition_type: "matchmaking";
 }
 
@@ -75,7 +75,7 @@ export function validateMatchmakingDetailsDemoReady(
   return MatchmakingDetailsDemoReadySchema.parse(data);
 }
 
-export interface ChampionshipDetailsDemoReady extends DetailsDemoReadBase {
+export interface ChampionshipDetailsDemoReady extends DetailsDemoReadyBase {
   competition_type: "championship";
   round: number;
   group: number;

@@ -1,9 +1,18 @@
+import {
+  ChampionshipDetailsDemoReady,
+  ChampionshipDetailsFinished,
+  ChampionshipDetailsObjectCreated,
+  ChampionshipDetailsReady,
+  FaceitGame,
+  FaceitMatchStatus,
+  MatchStatus
+} from "@eggosystem/types";
 import { http, HttpResponse } from "msw";
 
 export const validMatchDetailsMatchDemoReady = {
   match_id: "1-ffb4225f-ff51-42ed-acb5-af6714175934",
   version: 2,
-  game: "cs2",
+  game: FaceitGame.CS2,
   region: "EU",
   competition_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
   competition_type: "championship",
@@ -350,17 +359,17 @@ export const validMatchDetailsMatchDemoReady = {
       factions: { faction1: { score: 1 }, faction2: { score: 0 } }
     }
   ],
-  status: "FINISHED",
+  status: FaceitMatchStatus.FINISHED,
   round: 1,
   group: 1,
   faceit_url:
     "https://www.faceit.com/{lang}/cs2/room/1-ffb4225f-ff51-42ed-acb5-af6714175934"
-};
+} satisfies ChampionshipDetailsDemoReady;
 
 export const validMatchDetailsMatchStatusFinished = {
   match_id: "1-dba8981d-5647-466a-be32-12a06fb8fc31",
   version: 2,
-  game: "cs2",
+  game: FaceitGame.CS2,
   region: "NA",
   competition_id: "ec39d65c-4069-4c0c-b2e1-5f957e7787f1",
   competition_type: "championship",
@@ -678,17 +687,17 @@ export const validMatchDetailsMatchStatusFinished = {
       factions: { faction1: { score: 1 }, faction2: { score: 0 } }
     }
   ],
-  status: "FINISHED",
+  status: MatchStatus.FINISHED,
   round: 1,
   group: 1,
   faceit_url:
     "https://www.faceit.com/{lang}/cs2/room/1-dba8981d-5647-466a-be32-12a06fb8fc31"
-};
+} satisfies ChampionshipDetailsFinished;
 
 export const validMatchDetailsMatchStatusReady = {
   match_id: "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
   version: 2,
-  game: "cs2",
+  game: FaceitGame.CS2,
   region: "NA",
   competition_id: "5227a49c-f172-485e-a19b-a666ddeb3140",
   competition_name: "ESEA S54 NA Elite 1 Group D - Group Stage",
@@ -975,17 +984,17 @@ export const validMatchDetailsMatchStatusReady = {
   calculate_elo: false,
   chat_room_id: "match-1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
   best_of: 3,
-  status: "READY",
+  status: FaceitMatchStatus.READY,
   faceit_url:
     "https://www.faceit.com/{lang}/cs2/room/1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
   configured_at: 1753581291,
   competition_type: "championship",
   round: 1,
   group: 1
-};
+} satisfies ChampionshipDetailsReady;
 
 export const validMatchDetailsMatchCreated = {
-  status: "SCHEDULED",
+  status: FaceitMatchStatus.SCHEDULED,
   teams: {
     faction1: {
       faction_id: "1c056a01-db80-4a06-a490-967a09db536f",
@@ -1122,7 +1131,7 @@ export const validMatchDetailsMatchCreated = {
   scheduled_at: 1753624800,
   match_id: "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
   version: 2,
-  game: "cs2",
+  game: FaceitGame.CS2,
   region: "EU",
   competition_id: "3eb11474-6211-4c99-b0f2-1f3e857ab6aa",
   competition_type: "championship",
@@ -1135,7 +1144,7 @@ export const validMatchDetailsMatchCreated = {
     "https://www.faceit.com/{lang}/cs2/room/1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
   round: 1,
   group: 2
-};
+} satisfies ChampionshipDetailsObjectCreated;
 
 export const faceitMatchDetailsHandlers = [
   // Valid championship match details for the test match ID

@@ -28,6 +28,8 @@ export interface FaceitMatchDetailsFinished {
   calculate_elo: boolean;
   configured_at: number;
   finished_at: number;
+  started_at: number;
+  demo_url: string[];
   chat_room_id: string;
   best_of: number;
   results: FaceitMatchResultsFinished;
@@ -52,6 +54,8 @@ const MatchFinishedBaseSchema = z.object({
   faceit_url: z.string(),
   voting: FaceitVotingSchema,
   scheduled_at: z.number().optional(),
+  started_at: z.number(),
+  demo_url: z.array(z.string()),
   configured_at: z.number(),
   finished_at: z.number(),
   results: FaceitMatchResultsFinishedSchema,

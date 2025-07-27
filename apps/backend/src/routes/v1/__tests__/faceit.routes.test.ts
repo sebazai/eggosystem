@@ -28,6 +28,13 @@ import {
   validMatchDetailsMatchCreated,
   validMatchDetailsMatchDemoReady
 } from "@eggosystem/shared-msw";
+import {
+  type MatchObjectCreatedWebhook,
+  type MatchDemoReadyWebhook,
+  type MatchStatusReadyWebhook,
+  type FaceitGame,
+  type MatchStatusFinishedWebhook
+} from "@eggosystem/types";
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
   getOrganizerByFaceitIdAndGameAppId as jest.MockedFunction<
@@ -58,7 +65,7 @@ app.use(express.json());
 app.use("/api/v1/faceit", faceitRouter);
 app.use(expressErrorHandler);
 
-const validWebhookMatchDemoReady = {
+export const validWebhookMatchDemoReady = {
   transaction_id: "f389a1a4-594a-4100-b83e-447c87a18f12",
   event: "match_demo_ready",
   event_id: "763f1bc5-b0c8-4ad1-a425-3d5d1bf28350",
@@ -221,9 +228,9 @@ const validWebhookMatchDemoReady = {
       }
     ]
   }
-};
+} satisfies MatchDemoReadyWebhook;
 
-const validWebhookPayloadMatchStatusFinished = {
+export const validWebhookPayloadMatchStatusFinished = {
   transaction_id: "d7da69a4-4622-4faf-8efc-40ec7153cf40",
   event: "match_status_finished",
   event_id: "a86b09ad-622f-45b6-a708-fcaf9088bb69",
@@ -408,9 +415,9 @@ const validWebhookPayloadMatchStatusFinished = {
     started_at: "2025-07-26T00:25:51Z",
     finished_at: "2025-07-26T01:05:18Z"
   }
-};
+} satisfies MatchStatusFinishedWebhook;
 
-const validWebhookPayloadMatchStatusReady = {
+export const validWebhookPayloadMatchStatusReady = {
   transaction_id: "cb893b14-5811-4f11-b309-e453cf9024fd",
   event_id: "340cc466-ff64-45bf-a7a3-dd69e5001123",
   third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
@@ -593,10 +600,9 @@ const validWebhookPayloadMatchStatusReady = {
     created_at: "2025-07-24T17:28:40Z",
     updated_at: "2025-07-27T01:54:51Z"
   }
-};
+} satisfies MatchStatusReadyWebhook;
 
-// Test data
-const validWebhookPayloadObjectCreated = {
+export const validWebhookPayloadObjectCreated = {
   transaction_id: "db01cc5e-79ac-41e8-8861-25bec38a51b0",
   event_id: "68cdcb5b-3a09-41a7-842b-73ba6e81d1b4",
   third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
@@ -609,7 +615,7 @@ const validWebhookPayloadObjectCreated = {
     id: "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
     organizer_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da",
     region: "EU",
-    game: "cs2",
+    game: "cs2" as FaceitGame,
     version: 1,
     entity: {
       id: "3eb11474-6211-4c99-b0f2-1f3e857ab6aa",
@@ -619,7 +625,7 @@ const validWebhookPayloadObjectCreated = {
     created_at: "2025-07-26T19:31:53Z",
     updated_at: "2025-07-26T19:31:53Z"
   }
-};
+} satisfies MatchObjectCreatedWebhook;
 
 const mockOrganizer = {
   id: 1,
@@ -1146,9 +1152,10 @@ describe("FaceIT Routes - Webhook", () => {
           mockOrganizer
         ]);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockAddMatchGamesForMatch.mockResolvedValue(undefined);
       });
 
-      it("should successfully process match_demo_ready webhook", async () => {
+      it("should successfully process championship match_demo_ready webhook", async () => {
         const response = await request(app)
           .post("/api/v1/faceit/webhook")
           .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
@@ -1162,9 +1169,10 @@ describe("FaceIT Routes - Webhook", () => {
           "1-ffb4225f-ff51-42ed-acb5-af6714175934",
           "match_demo_ready",
           validWebhookMatchDemoReady,
-          expect.any(Object)
+          validMatchDetailsMatchDemoReady
         );
 
+        // Verify match games were added for championship
         expect(mockAddMatchGamesForMatch).toHaveBeenCalledWith(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,

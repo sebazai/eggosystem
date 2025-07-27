@@ -1,121 +1,311 @@
-import type { GameTeamRoundBreakdown } from "@eggosystem/types";
-import { getGameTeamRoundBreakdown } from "../../models/game.models";
+import { addMatchGamesForMatch } from "../../models/game.models";
+import { validWebhookMatchDemoReady } from "../../routes/v1/__tests__/faceit.routes.test";
+import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 
-describe("getGameTeamRoundBreakdown", () => {
-  it("should return correct round breakdown for both teams in a 13-0 game", async () => {
-    const gameId = 104220;
-    const result = await getGameTeamRoundBreakdown(gameId);
+// Mock dependencies for addMatchGamesForMatch tests only
+jest.mock("../../models/match.models");
+jest.mock("../../models/season-league-external-id.models");
+jest.mock("../../db/mysqlConnection");
+jest.mock("../../db/mysqlRunQuery");
+import { getHubMatchesByExternalMatchRoomId } from "../../models/match.models";
+import { getSeasonLeagueExternalIdByExternalId } from "../../models/season-league-external-id.models";
+import { getConnection } from "../../db/mysqlConnection";
+import { runQuery } from "../../db/mysqlRunQuery";
 
-    expect(result).toHaveLength(2);
+const mockGetHubMatchesByExternalMatchRoomId =
+  getHubMatchesByExternalMatchRoomId as jest.MockedFunction<
+    typeof getHubMatchesByExternalMatchRoomId
+  >;
+const mockGetSeasonLeagueExternalIdByExternalId =
+  getSeasonLeagueExternalIdByExternalId as jest.MockedFunction<
+    typeof getSeasonLeagueExternalIdByExternalId
+  >;
+const mockGetConnection = getConnection as jest.MockedFunction<
+  typeof getConnection
+>;
+const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
-    // Find the winning team (13-0)
-    const winningTeam = result.find(
-      (team: GameTeamRoundBreakdown) => team.total_rounds_won === 13
-    );
-    expect(winningTeam).toBeDefined();
-    expect(winningTeam).toMatchObject({
-      team_id: 1304,
-      starting_side: "CT",
-      rounds_won_first_half: 12,
-      rounds_won_second_half: 1,
-      total_rounds_won: 13,
-      total_overtime_rounds_won: 0,
-      overtime_rounds_won_ct: 0,
-      overtime_rounds_won_t: 0
+describe("addMatchGamesForMatch", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe("Success Cases", () => {
+    beforeEach(() => {
+      // Mock successful database operations
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+        { id: 1 },
+        { id: 2 }
+      ]);
+
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
+        id: 1,
+        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
+        stage_id: 1,
+        season_id: 1,
+        league_id: 1,
+        type: "doubleElimination",
+        isBO2PlayedAs2xBO1: false
+      });
+
+      const mockConnection = {
+        beginTransaction: jest.fn().mockResolvedValue(undefined),
+        commit: jest.fn().mockResolvedValue(undefined),
+        rollback: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined)
+      };
+      mockGetConnection.mockResolvedValue(
+        mockConnection as unknown as ReturnType<typeof getConnection>
+      );
+
+      mockRunQuery.mockResolvedValue([
+        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
+        { id: 2, map_id: 2, veto_order: 2, action: "pick" },
+        { id: 3, map_id: 3, veto_order: 3, action: "decider" }
+        // 2 picks + 1 decider for BO3
+      ]);
     });
 
-    // Find the losing team (0-13)
-    const losingTeam = result.find(
-      (team: GameTeamRoundBreakdown) => team.total_rounds_won === 0
-    );
-    expect(losingTeam).toBeDefined();
-    expect(losingTeam).toMatchObject({
-      team_id: 13,
-      starting_side: "T",
-      rounds_won_first_half: 0,
-      rounds_won_second_half: 0,
-      total_rounds_won: 0,
-      total_overtime_rounds_won: 0,
-      overtime_rounds_won_ct: 0,
-      overtime_rounds_won_t: 0
+    it("should successfully add match games for BO3 championship match", async () => {
+      await addMatchGamesForMatch(
+        validWebhookMatchDemoReady,
+        validMatchDetailsMatchDemoReady,
+        "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+      );
+
+      // Verify matches were fetched
+      expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+        "1-ffb4225f-ff51-42ed-acb5-af6714175934"
+      );
+
+      // Verify season league was fetched
+      expect(mockGetSeasonLeagueExternalIdByExternalId).toHaveBeenCalledWith(
+        "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+      );
+
+      // Verify database transaction was started and committed
+      expect(mockGetConnection).toHaveBeenCalled();
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT * FROM MatchTeamMapVetoes"),
+        [1],
+        expect.any(Object)
+      );
+    });
+
+    it("should handle BO2 played as 2xBO1 matches", async () => {
+      // Mock BO2 configuration
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
+        id: 1,
+        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
+        stage_id: 1,
+        season_id: 1,
+        league_id: 1,
+        type: "doubleElimination",
+        isBO2PlayedAs2xBO1: true
+      });
+
+      // Create BO2 webhook with demo URL for map 1
+      const bo2Webhook = {
+        ...validWebhookMatchDemoReady,
+        payload: {
+          ...validWebhookMatchDemoReady.payload,
+          demo_url:
+            "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-1-1.dem.zst"
+        }
+      };
+
+      // Mock BO2 match details
+      const bo2MatchDetails = {
+        ...validMatchDetailsMatchDemoReady,
+        best_of: 2
+      };
+
+      // Mock only 2 map vetoes for BO2
+      mockRunQuery.mockResolvedValue([
+        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
+        { id: 2, map_id: 2, veto_order: 2, action: "pick" }
+      ]);
+
+      await addMatchGamesForMatch(
+        bo2Webhook,
+        bo2MatchDetails,
+        "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+      );
+
+      // Verify BO2 specific logic was used
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT * FROM MatchTeamMapVetoes"),
+        [1],
+        expect.any(Object)
+      );
     });
   });
 
-  it("should return correct round breakdown for both teams in another 13-0 game", async () => {
-    const gameId = 103586;
-    const result = await getGameTeamRoundBreakdown(gameId);
-
-    expect(result).toHaveLength(2);
-
-    // Find the winning team (13-0)
-    const winningTeam = result.find(
-      (team: GameTeamRoundBreakdown) => team.total_rounds_won === 13
-    );
-    expect(winningTeam).toBeDefined();
-    expect(winningTeam).toMatchObject({
-      team_id: 1254,
-      starting_side: "T",
-      rounds_won_first_half: 12,
-      rounds_won_second_half: 1,
-      total_rounds_won: 13,
-      total_overtime_rounds_won: 0,
-      overtime_rounds_won_ct: 0,
-      overtime_rounds_won_t: 0
+  describe("Error Cases", () => {
+    beforeEach(() => {
+      const mockConnection = {
+        beginTransaction: jest.fn().mockResolvedValue(undefined),
+        commit: jest.fn().mockResolvedValue(undefined),
+        rollback: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined)
+      };
+      mockGetConnection.mockResolvedValue(
+        mockConnection as unknown as ReturnType<typeof getConnection>
+      );
     });
 
-    // Find the losing team (0-13)
-    const losingTeam = result.find(
-      (team: GameTeamRoundBreakdown) => team.total_rounds_won === 0
-    );
-    expect(losingTeam).toBeDefined();
-    expect(losingTeam).toMatchObject({
-      team_id: 1306,
-      starting_side: "CT",
-      rounds_won_first_half: 0,
-      rounds_won_second_half: 0,
-      total_rounds_won: 0,
-      total_overtime_rounds_won: 0,
-      overtime_rounds_won_ct: 0,
-      overtime_rounds_won_t: 0
-    });
-  });
+    it("should throw error when no matches found", async () => {
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([]);
 
-  it("should return correct round breakdown for both teams in a 13-6 game", async () => {
-    const gameId = 104224;
-    const result = await getGameTeamRoundBreakdown(gameId);
-
-    expect(result).toHaveLength(2);
-
-    // Find the winning team (13-6)
-    const winningTeam = result.find(
-      (team: GameTeamRoundBreakdown) => team.total_rounds_won === 13
-    );
-    expect(winningTeam).toBeDefined();
-    expect(winningTeam).toMatchObject({
-      team_id: 1991,
-      starting_side: "CT",
-      rounds_won_first_half: 7,
-      rounds_won_second_half: 6,
-      total_rounds_won: 13,
-      total_overtime_rounds_won: 0,
-      overtime_rounds_won_ct: 0,
-      overtime_rounds_won_t: 0
+      await expect(
+        addMatchGamesForMatch(
+          validWebhookMatchDemoReady,
+          validMatchDetailsMatchDemoReady,
+          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        )
+      ).rejects.toThrow(
+        "No matches found when adding match games for external_id: 2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+      );
     });
 
-    // Find the losing team (6-13)
-    const losingTeam = result.find(
-      (team: GameTeamRoundBreakdown) => team.total_rounds_won === 6
-    );
-    expect(losingTeam).toBeDefined();
-    expect(losingTeam).toMatchObject({
-      team_id: 2115,
-      starting_side: "T",
-      rounds_won_first_half: 5,
-      rounds_won_second_half: 1,
-      total_rounds_won: 6,
-      total_overtime_rounds_won: 0,
-      overtime_rounds_won_ct: 0,
-      overtime_rounds_won_t: 0
+    it("should throw error when no season league found", async () => {
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([{ id: 1 }]);
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue(undefined);
+
+      await expect(
+        addMatchGamesForMatch(
+          validWebhookMatchDemoReady,
+          validMatchDetailsMatchDemoReady,
+          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        )
+      ).rejects.toThrow(
+        "No SeasonLeagueExternalId entry found when adding match games for external_id: 2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+      );
+    });
+
+    it("should throw error for invalid BO2 configuration", async () => {
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+        { id: 1 },
+        { id: 2 }
+      ]);
+
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
+        id: 1,
+        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
+        stage_id: 1,
+        season_id: 1,
+        league_id: 1,
+        type: "doubleElimination",
+        isBO2PlayedAs2xBO1: true
+      });
+
+      const bo2MatchDetails = {
+        ...validMatchDetailsMatchDemoReady,
+        best_of: 2
+      };
+
+      // Mock wrong number of map vetoes for BO2
+      mockRunQuery.mockResolvedValue([
+        { id: 1, map_id: 1, veto_order: 1, action: "pick" }
+        // Only 1 veto instead of 2 for BO2
+      ]);
+
+      await expect(
+        addMatchGamesForMatch(
+          validWebhookMatchDemoReady,
+          bo2MatchDetails,
+          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        )
+      ).rejects.toThrow("Something is very wrong with this 2xBO1");
+    });
+
+    it("should throw error when match object not found for BO2", async () => {
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+        { id: 1 },
+        { id: 2 }
+        // 2 matches for BO2, but map 2 won't find a match object
+      ]);
+
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
+        id: 1,
+        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
+        stage_id: 1,
+        season_id: 1,
+        league_id: 1,
+        type: "doubleElimination",
+        isBO2PlayedAs2xBO1: true
+      });
+
+      // Create webhook with demo URL for map 3 (which is out of range for BO2 with 2 matches)
+      const bo2Webhook = {
+        ...validWebhookMatchDemoReady,
+        payload: {
+          ...validWebhookMatchDemoReady.payload,
+          demo_url:
+            "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-3-1.dem.zst"
+        }
+      };
+
+      const bo2MatchDetails = {
+        ...validMatchDetailsMatchDemoReady,
+        best_of: 2
+      };
+
+      mockRunQuery.mockResolvedValue([
+        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
+        { id: 2, map_id: 2, veto_order: 2, action: "pick" }
+      ]);
+
+      await expect(
+        addMatchGamesForMatch(
+          bo2Webhook,
+          bo2MatchDetails,
+          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        )
+      ).rejects.toThrow("Could not find match object for 2xBO1 matches");
+    });
+
+    it("should handle database errors and rollback transaction", async () => {
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([{ id: 1 }]);
+
+      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue({
+        id: 1,
+        external_id: "2a40fbe5-f71b-471e-b25d-7837c1b441bc",
+        stage_id: 1,
+        season_id: 1,
+        league_id: 1,
+        type: "doubleElimination",
+        isBO2PlayedAs2xBO1: false
+      });
+
+      const mockConnection = {
+        beginTransaction: jest.fn().mockResolvedValue(undefined),
+        commit: jest.fn().mockRejectedValue(new Error("Database error")),
+        rollback: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined)
+      };
+      mockGetConnection.mockResolvedValue(
+        mockConnection as unknown as ReturnType<typeof getConnection>
+      );
+
+      mockRunQuery.mockResolvedValue([
+        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
+        { id: 2, map_id: 2, veto_order: 2, action: "pick" },
+        { id: 3, map_id: 3, veto_order: 3, action: "decider" }
+        // 2 picks + 1 decider for BO3
+      ]);
+
+      await expect(
+        addMatchGamesForMatch(
+          validWebhookMatchDemoReady,
+          validMatchDetailsMatchDemoReady,
+          "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
+        )
+      ).rejects.toThrow("Database error");
+
+      // Verify rollback was called
+      expect(mockConnection.rollback).toHaveBeenCalled();
+      expect(mockConnection.release).toHaveBeenCalled();
     });
   });
 });
