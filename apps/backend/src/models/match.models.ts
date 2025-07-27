@@ -511,6 +511,12 @@ export const addMatchToDatabase = async (
       await addTeamToMatch(secondMatchId, teamOne.team_id, connection);
       await addTeamToMatch(secondMatchId, teamTwo.team_id, connection);
 
+      await updateMatchStatus(
+        matchDetails.match_id,
+        MatchStatus.SCHEDULED,
+        connection
+      );
+
       await connection.commit();
 
       return { matchIds: [firstMatchId, secondMatchId], isBO2PlayedAs2xBO1 };
@@ -524,6 +530,12 @@ export const addMatchToDatabase = async (
 
       await addTeamToMatch(matchId, teamOne.team_id, connection);
       await addTeamToMatch(matchId, teamTwo.team_id, connection);
+
+      await updateMatchStatus(
+        matchDetails.match_id,
+        MatchStatus.SCHEDULED,
+        connection
+      );
 
       await connection.commit();
       return { matchIds: [matchId], isBO2PlayedAs2xBO1 };
@@ -594,5 +606,17 @@ export const updateMatchEndTime = async (
 
   logger.info(
     `Updated end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+  );
+};
+
+export const updateMatchStatus = async (
+  externalMatchRoomId: string,
+  status: MatchStatus,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET status = ? WHERE external_match_room_id = ?",
+    [status, externalMatchRoomId],
+    connection
   );
 };

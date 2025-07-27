@@ -44,12 +44,14 @@ import {
   type MatchmakingDetailsDemoReady,
   validateMatchmakingDetailsDemoReady,
   validateChampionshipDetailsDemoReady,
-  type ChampionshipDetailsDemoReady
+  type ChampionshipDetailsDemoReady,
+  MatchStatus
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
   updateMatchEndTime,
-  updateMatchFinished
+  updateMatchFinished,
+  updateMatchStatus
 } from "../../models/match.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
@@ -257,6 +259,10 @@ router.post(
           validateMatchmakingDetailsReady,
           webhookData.event
         );
+        await updateMatchStatus(
+          validatedWebhook.payload.id,
+          MatchStatus.ONGOING
+        );
         res.status(200).send("Webhook received");
         return;
       }
@@ -303,6 +309,10 @@ router.post(
             webhookData,
             matchDetails
           );
+          // TODO: Is MatchStatus.FINISHED the correct status?
+          await updateMatchStatus(externalMatchRoomId, MatchStatus.FINISHED);
+          res.status(200).send("Webhook received");
+          return;
         }
 
         const endTime = webhookData.payload.finished_at;
@@ -313,12 +323,13 @@ router.post(
           webhookData,
           matchDetails
         );
+        await updateMatchStatus(externalMatchRoomId, MatchStatus.FINISHED);
+        res.status(200).send("Webhook received");
+        return;
       }
-      res.status(200).send("Webhook received");
-      return;
     }
 
-    // This is where we parse MatchGame
+    // This is where we parse MatchGames
     if (webhookData.event === "match_demo_ready") {
       if (webhookData.payload.entity.type === "matchmaking") {
         const {
@@ -367,6 +378,7 @@ router.post(
         webhookData,
         matchDetails
       );
+      await updateMatchStatus(webhookData.payload.id, MatchStatus.ABORTED);
       res.status(200).send("Webhook received");
       return;
     }
@@ -379,6 +391,7 @@ router.post(
         webhookData,
         matchDetails
       );
+      await updateMatchStatus(webhookData.payload.id, MatchStatus.CANCELLED);
       res.status(200).send("Webhook received");
       return;
     }

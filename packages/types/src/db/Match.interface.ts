@@ -18,9 +18,9 @@ export interface Match {
 export enum MatchStatus {
   SCHEDULED = "SCHEDULED",
   CHECK_IN = "CHECK_IN",
-  VOTING = "VOTING",
-  CONFIGURING = "CONFIGURING",
-  READY = "READY",
+  VOTING = "VOTING", // TODO: When exactly? :)
+  CONFIGURING = "CONFIGURING", // These actually come 3 times if match is best_of 3, so more of MatchGame statuses
+  READY = "READY", // These actually come 3 times if match is best_of 3, so more of MatchGame statuses
   ONGOING = "ONGOING",
   FINISHED = "FINISHED",
   ABORTED = "ABORTED",

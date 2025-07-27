@@ -14,7 +14,10 @@ jest.mock("../../../models/match-team-map-veto.models");
 
 // Import mocked functions
 import { getOrganizerByFaceitIdAndGameAppId } from "../../../models/organizer.models";
-import { addMatchToDatabase } from "../../../models/match.models";
+import {
+  addMatchToDatabase,
+  updateMatchStatus
+} from "../../../models/match.models";
 import { saveWebhookData } from "../../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../../models/match-team-map-veto.models";
 import { expressErrorHandler } from "../../../middlewares/express-error-handler";
@@ -26,6 +29,9 @@ const mockGetOrganizerByFaceitIdAndGameAppId =
   >;
 const mockAddMatchToDatabase = addMatchToDatabase as jest.MockedFunction<
   typeof addMatchToDatabase
+>;
+const mockUpdateMatchStatus = updateMatchStatus as jest.MockedFunction<
+  typeof updateMatchStatus
 >;
 const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
   typeof saveWebhookData
@@ -735,6 +741,7 @@ describe("FaceIT Routes - Webhook", () => {
         ]);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
+        mockUpdateMatchStatus.mockResolvedValue(undefined);
       });
 
       it("should successfully process championship match_status_ready webhook", async () => {
@@ -753,6 +760,16 @@ describe("FaceIT Routes - Webhook", () => {
           validWebhookPayloadMatchStatusReady,
           expect.any(Object)
         );
+
+        // Verify match team map vetoes were added
+        expect(mockAddMatchTeamMapVetoes).toHaveBeenCalledWith(
+          expect.any(Object),
+          "5227a49c-f172-485e-a19b-a666ddeb3140"
+        );
+
+        // Note: updateMatchStatus is NOT called for championship match_status_ready
+        // Only addMatchTeamMapVetoes is called
+        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
       });
     });
   });

@@ -1,7 +1,10 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
-import { getHubMatchesByExternalMatchRoomId } from "./match.models";
-import { type ChampionshipDetailsReady } from "@eggosystem/types";
+import {
+  getHubMatchesByExternalMatchRoomId,
+  updateMatchStatus
+} from "./match.models";
+import { MatchStatus, type ChampionshipDetailsReady } from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
 
@@ -159,6 +162,7 @@ export const addMatchTeamMapVetoes = async (
         )
       )
     );
+    await updateMatchStatus(match_id, MatchStatus.ONGOING, connection);
     await connection.commit();
   } catch (error) {
     await connection.rollback();
