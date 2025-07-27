@@ -168,7 +168,7 @@ router.post(
       appId
     );
 
-    if (!organizer) {
+    if (!organizer || organizer.length === 0) {
       logger.error(
         `Organizer not found for faceit_id ${webhookData.payload.organizer_id} and app_id ${appId}`
       );
@@ -200,7 +200,7 @@ router.post(
           validateChampionshipDetailsObjectCreated,
           webhookData.event
         );
-        if (organizer) {
+        if (organizer && organizer.length > 0) {
           await addMatchToDatabase(
             validatedMatchDetails,
             validatedWebhook.payload.entity.id

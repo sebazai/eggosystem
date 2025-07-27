@@ -7,7 +7,6 @@ export enum FaceitGame {
 
 export enum FaceitMatchStatus {
   SCHEDULED = "SCHEDULED",
-  CREATED = "CREATED",
   CHECK_IN = "CHECK_IN",
   VOTING = "VOTING",
   CONFIGURING = "CONFIGURING",

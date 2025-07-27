@@ -23,6 +23,8 @@ import {
   faceitCs2EmptyMetadataSteamId
 } from "./faceit/test-ids";
 
+import { validMatchDetails } from "./faceit/MatchDetails-handlers";
+
 export const mswServer: SetupServerApi = setupServer(...handlers);
 export {
   leetifyValidSteamId,
@@ -45,5 +47,6 @@ export {
 };
 
 export { validSignupData, invalidSignupData } from "./fixtures";
+export { validMatchDetails };
 
 export { http, HttpResponse } from "msw";
