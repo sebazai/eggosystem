@@ -41,7 +41,7 @@ export interface TeamPlayer {
   game_name: string;
   game_skill_level: number;
   membership: string;
-  anticheat_required: boolean;
+  anticheat_required?: boolean;
 }
 
 // Shared Zod schemas for runtime validation
@@ -53,7 +53,7 @@ export const TeamPlayerSchema = z.object({
   game_name: z.string(),
   game_skill_level: z.number(),
   membership: z.string(),
-  anticheat_required: z.boolean()
+  anticheat_required: z.boolean().optional()
 });
 
 export const MatchTeamSchema = z.object({
