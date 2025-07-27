@@ -1,6 +1,305 @@
 import { http, HttpResponse } from "msw";
 
-export const validMatchDetails = {
+export const validMatchDetailsMatchStatusReady = {
+  match_id: "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
+  version: 2,
+  game: "cs2",
+  region: "NA",
+  competition_id: "5227a49c-f172-485e-a19b-a666ddeb3140",
+  competition_name: "ESEA S54 NA Elite 1 Group D - Group Stage",
+  organizer_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+  voting: {
+    map: {
+      pick: ["de_dust2", "de_ancient", "de_train"],
+      entities: [
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/adf58ac6-b0f3-40e9-87ef-0af23fc60918_1695819116078.jpeg",
+          name: "Dust2",
+          class_name: "de_dust2",
+          game_map_id: "de_dust2",
+          guid: "de_dust2",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/7c17caa9-64a6-4496-8a0b-885e0f038d79_1695819126962.jpeg"
+        },
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/796b5b23-41e4-4387-a4a9-0d28c1c57456_1695819136505.jpeg",
+          name: "Mirage",
+          class_name: "de_mirage",
+          game_map_id: "de_mirage",
+          guid: "de_mirage",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/7fb7d725-e44d-4e3c-b557-e1d19b260ab8_1695819144685.jpeg"
+        },
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/15ff938d-a70d-4d0b-9bf9-6be215cdb193_1695819151395.jpeg",
+          name: "Nuke",
+          class_name: "de_nuke",
+          game_map_id: "de_nuke",
+          guid: "de_nuke",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/7197a969-81e4-4fef-8764-55f46c7cec6e_1695819158849.jpeg"
+        },
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/6d7e8e7f-f136-49f3-a4ca-a9afffbe8022_1695819165013.jpeg",
+          name: "Overpass",
+          class_name: "de_overpass",
+          game_map_id: "de_overpass",
+          guid: "de_overpass",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/058c4eb3-dac4-441c-a810-70afa0f3022c_1695819170133.jpeg"
+        },
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/a7d193ca-9498-4546-bf7b-da33e3e429a5_1695819186093.jpeg",
+          name: "Ancient",
+          class_name: "de_ancient",
+          game_map_id: "de_ancient",
+          guid: "de_ancient",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/5b844241-5b15-45bf-a304-ad6df63b5ce5_1695819190976.jpeg"
+        },
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/3efe2d1d-da1b-4960-a439-daf216f77bb4_1731582328687.png",
+          name: "Train",
+          class_name: "de_train",
+          game_map_id: "de_train",
+          guid: "de_train",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/225a54ad-c66d-46ee-8ae1-2e4159691ee9_1731582334484.png"
+        },
+        {
+          image_sm:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/a2cb95be-1a3f-49f3-a5fa-a02503d02086_1695819214782.jpeg",
+          name: "Inferno",
+          class_name: "de_inferno",
+          game_map_id: "de_inferno",
+          guid: "de_inferno",
+          image_lg:
+            "https://assets.faceit-cdn.net/third_party/games/ce652bd4-0abb-4c90-9936-1133965ca38b/assets/votables/993380de-bb5b-4aa1-ada9-a0c1741dc475_1695819220797.jpeg"
+        }
+      ]
+    },
+    voted_entity_types: ["location", "map"],
+    location: {
+      pick: ["Chicago"],
+      entities: [
+        {
+          image_sm:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=110&height=55",
+          name: "Chicago",
+          class_name: "Chicago",
+          game_location_id: "Chicago",
+          guid: "Chicago",
+          image_lg:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=428&height=212"
+        },
+        {
+          image_sm:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=110&height=55",
+          name: "Denver",
+          class_name: "Denver",
+          game_location_id: "Denver",
+          guid: "Denver",
+          image_lg:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=428&height=212"
+        },
+        {
+          image_sm:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=110&height=55",
+          name: "Dallas",
+          class_name: "Dallas",
+          game_location_id: "Dallas",
+          guid: "Dallas",
+          image_lg:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=428&height=212"
+        },
+        {
+          image_sm:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=110&height=55",
+          name: "ESEA-NewYork",
+          class_name: "ESEA-NewYork",
+          game_location_id: "ESEA-NewYork",
+          guid: "ESEA-NewYork",
+          image_lg:
+            "https://distribution.faceit-cdn.net/images/flags/v1/us.jpg?width=428&height=212"
+        }
+      ]
+    }
+  },
+  teams: {
+    faction1: {
+      faction_id: "3523360c-7235-452a-b9d9-e587e97ba4b5",
+      leader: "6d10dac4-b0cf-473d-b5a8-a34c53aefade",
+      avatar:
+        "https://distribution.faceit-cdn.net/images/46f36e02-b08e-49be-b021-2ec50aebc8aa.jpg",
+      roster: [
+        {
+          player_id: "6d10dac4-b0cf-473d-b5a8-a34c53aefade",
+          nickname: "sasha",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/d593c4f7-efbf-42fd-b2dd-c8c8d5f4a7c8.jpg",
+          membership: "premium",
+          game_player_id: "76561198140847869",
+          game_player_name: "sasha",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "c7b709f5-281b-4133-859e-0d545c4c58d0",
+          nickname: "Halen",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/ed8de75a-007a-429a-99bc-13b450b2ba9b.jpg",
+          membership: "esea",
+          game_player_id: "76561198060497750",
+          game_player_name: "Halen",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "01950e33-89f8-40f1-8839-db3771ddd136",
+          nickname: "Zucar",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/5685fa36-559e-4c1a-ab8a-3ea2d4eddae8.jpg",
+          membership: "premium",
+          game_player_id: "76561198119331267",
+          game_player_name: "zucc",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "da7422ec-e62a-4df2-87fd-5f3c29f478b7",
+          nickname: "1dvrk",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/fa429887-8bb2-4ada-a876-1c5e46444b8f.jpeg",
+          membership: "premium",
+          game_player_id: "76561198358249075",
+          game_player_name: "Donnie Dvrko",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "f10486e8-6197-4bbc-928d-5060e7be9657",
+          nickname: "fuzenko",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/6c56bdb1-b04c-4d12-aece-9374539f6eca.jpg",
+          membership: "esea",
+          game_player_id: "76561198929253202",
+          game_player_name: ")",
+          game_skill_level: 10,
+          anticheat_required: true
+        }
+      ],
+      substituted: false,
+      name: "regain",
+      type: "premade"
+    },
+    faction2: {
+      faction_id: "ea5e1a5f-3d95-419e-b926-0c39e8c3d8dd",
+      leader: "dcea95af-d945-426c-9b22-3bb3b8fb5441",
+      avatar:
+        "https://distribution.faceit-cdn.net/images/f0a92fc2-c0ab-47a2-b7ff-ee855b0960b5.jpeg",
+      roster: [
+        {
+          player_id: "dcea95af-d945-426c-9b22-3bb3b8fb5441",
+          nickname: "ayaneuu",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/c6dbf67b-48aa-4239-bc6b-afa3d59ff112.jpg",
+          membership: "premium",
+          game_player_id: "76561198341370795",
+          game_player_name: "ayaneuu",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "2c8adfac-5565-49a2-b835-a336360cddab",
+          nickname: "Seb",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/21d7e215-9f0e-4764-a82d-41842f19fdaa.jpeg",
+          membership: "premium",
+          game_player_id: "76561198215815481",
+          game_player_name: "Seb",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "1c8f885a-3d9a-4d64-801f-68a336a745ea",
+          nickname: "Sanzh1k33",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/3ce7bb54-6e9a-4594-9eac-128a19f48fdc.jpg",
+          membership: "premium",
+          game_player_id: "76561199243647648",
+          game_player_name: "76561199243647648",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "7627713e-9dfe-40e7-9d9d-ae8244aeb150",
+          nickname: "asYLum",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/7b261219-a46a-42b1-a015-d05a3262b0ba.jpeg",
+          membership: "premium",
+          game_player_id: "76561198138820397",
+          game_player_name: "sk8er",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "b934fa1f-79ac-4410-84cd-06a6eca64423",
+          nickname: "aelor",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/d786937e-0934-4ac4-8445-e0486a9969be.jpeg",
+          membership: "premium",
+          game_player_id: "76561198231092204",
+          game_player_name: "aelor",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "bc7cd9c2-0b37-47c6-9b19-4ccd90c63f44",
+          nickname: "sathsea",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/06c6c62e-05ce-4bf2-8962-9a177e6b1755.jpg",
+          membership: "premium",
+          game_player_id: "76561198401647782",
+          game_player_name: "󠀡󠀡",
+          game_skill_level: 10,
+          anticheat_required: true
+        },
+        {
+          player_id: "04924ee1-65bf-4424-b4d2-f82657133f53",
+          nickname: "traekS",
+          avatar:
+            "https://distribution.faceit-cdn.net/images/b5b3d76f-d794-49db-8601-b0d7418e7b50.jpeg",
+          membership: "premium",
+          game_player_id: "76561198057008814",
+          game_player_name: "traekS",
+          game_skill_level: 10,
+          anticheat_required: true
+        }
+      ],
+      substituted: false,
+      name: "Zomblers",
+      type: "premade"
+    }
+  },
+  calculate_elo: false,
+  chat_room_id: "match-1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
+  best_of: 3,
+  status: "READY",
+  faceit_url:
+    "https://www.faceit.com/{lang}/cs2/room/1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
+  configured_at: 1753581291,
+  competition_type: "championship",
+  round: 1,
+  group: 1
+};
+
+export const validMatchDetailsMatchCreated = {
   status: "SCHEDULED",
   teams: {
     faction1: {
@@ -160,9 +459,13 @@ export const faceitMatchDetailsHandlers = [
     ({ params }) => {
       const { match_id } = params;
 
+      if (match_id === "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191") {
+        return HttpResponse.json(validMatchDetailsMatchStatusReady);
+      }
+
       // Return valid championship match details for the test match ID
       if (match_id === "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978") {
-        return HttpResponse.json(validMatchDetails);
+        return HttpResponse.json(validMatchDetailsMatchCreated);
       }
 
       // Invalid match details for testing validation errors
@@ -170,86 +473,6 @@ export const faceitMatchDetailsHandlers = [
         return HttpResponse.json({
           invalid: "data",
           missing_required_fields: true
-        });
-      }
-
-      // Finished match for testing
-      if (match_id === "finished-match-id") {
-        return HttpResponse.json({
-          status: "SCHEDULED",
-          teams: {
-            faction1: {
-              faction_id: "1c056a01-db80-4a06-a490-967a09db536f",
-              leader: "c41561a6-a5f4-459c-8a5c-bde5f8eac911",
-              avatar:
-                "https://distribution.faceit-cdn.net/images/default-avatar.jpg",
-              roster: [
-                {
-                  player_id: "c41561a6-a5f4-459c-8a5c-bde5f8eac911",
-                  nickname: "player1",
-                  avatar:
-                    "https://distribution.faceit-cdn.net/images/default-avatar.jpg",
-                  membership: "premium",
-                  game_player_id: "76561198012345678",
-                  game_player_name: "player1",
-                  game_skill_level: 10,
-                  anticheat_required: false
-                }
-              ],
-              substituted: false,
-              name: "Team A",
-              type: "premade"
-            },
-            faction2: {
-              faction_id: "2c056a01-db80-4a06-a490-967a09db536f",
-              leader: "d41561a6-a5f4-459c-8a5c-bde5f8eac911",
-              avatar:
-                "https://distribution.faceit-cdn.net/images/default-avatar.jpg",
-              roster: [
-                {
-                  player_id: "d41561a6-a5f4-459c-8a5c-bde5f8eac911",
-                  nickname: "player2",
-                  avatar:
-                    "https://distribution.faceit-cdn.net/images/default-avatar.jpg",
-                  membership: "premium",
-                  game_player_id: "76561198087654321",
-                  game_player_name: "player2",
-                  game_skill_level: 8,
-                  anticheat_required: false
-                }
-              ],
-              substituted: false,
-              name: "Team B",
-              type: "premade"
-            }
-          },
-          results: {
-            winner: "faction1",
-            score: {
-              faction1: 16,
-              faction2: 14
-            }
-          },
-          faceit_url: "https://www.faceit.com/en/cs2/room/finished-match-id",
-          game: "cs2",
-          region: "EU",
-          competition_id: "test-competition-id",
-          competition_type: "championship",
-          competition_name: "Test Championship",
-          organizer_id: "test-organizer-id",
-          game_mode: "5v5",
-          match_id: "finished-match-id",
-          started_at: 1703123456,
-          finished_at: 1703127000,
-          best_of: 1,
-          results_verified: true,
-          match_type: "championship",
-          version: 1,
-          calculate_elo: false,
-          chat_room_id: "match-finished-match-id",
-          round: 1,
-          group: 1,
-          scheduled_at: 1703123456
         });
       }
 

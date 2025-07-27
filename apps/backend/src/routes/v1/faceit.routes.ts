@@ -188,7 +188,10 @@ router.post(
           validateMatchmakingDetailsObjectCreated,
           webhookData.event
         );
+        res.status(200).send("Webhook received");
+        return;
       }
+
       if (webhookData.payload.entity.type === "championship") {
         const {
           webhookData: validatedWebhook,
@@ -200,15 +203,15 @@ router.post(
           validateChampionshipDetailsObjectCreated,
           webhookData.event
         );
-        if (organizer && organizer.length > 0) {
-          await addMatchToDatabase(
-            validatedMatchDetails,
-            validatedWebhook.payload.entity.id
-          );
-        }
+
+        await addMatchToDatabase(
+          validatedMatchDetails,
+          validatedWebhook.payload.entity.id
+        );
+
+        res.status(200).send("Webhook received");
+        return;
       }
-      res.status(200).send("Webhook received");
-      return;
     }
 
     if (webhookData.event === "match_status_configuring") {
@@ -223,6 +226,8 @@ router.post(
           validateMatchmakingDetailsConfiguring,
           webhookData.event
         );
+        res.status(200).send("Webhook received");
+        return;
       }
       if (webhookData.payload.entity.type === "championship") {
         const {
@@ -235,9 +240,9 @@ router.post(
           validateChampionshipDetailsConfiguring,
           webhookData.event
         );
+        res.status(200).send("Webhook received");
+        return;
       }
-      res.status(200).send("Webhook received");
-      return;
     }
 
     if (webhookData.event === "match_status_ready") {
@@ -252,7 +257,10 @@ router.post(
           validateMatchmakingDetailsReady,
           webhookData.event
         );
+        res.status(200).send("Webhook received");
+        return;
       }
+
       if (webhookData.payload.entity.type === "championship") {
         const {
           webhookData: validatedWebhook,
@@ -264,15 +272,15 @@ router.post(
           validateChampionshipDetailsReady,
           webhookData.event
         );
-        if (organizer) {
-          await addMatchTeamMapVetoes(
-            validatedMatchDetails,
-            validatedWebhook.payload.entity.id
-          );
-        }
+
+        await addMatchTeamMapVetoes(
+          validatedMatchDetails,
+          validatedWebhook.payload.entity.id
+        );
+
+        res.status(200).send("Webhook received");
+        return;
       }
-      res.status(200).send("Webhook received");
-      return;
     }
 
     // This happens for our Matches table once, even if BO3
@@ -326,6 +334,7 @@ router.post(
         res.status(200).send("Webhook received");
         return;
       }
+
       if (webhookData.payload.entity.type === "championship") {
         const {
           webhookData: validatedWebhook,
@@ -338,13 +347,13 @@ router.post(
           webhookData.event
         );
         // Validate players in both teams that all the steam_ids are in the SeasonTeamPlayers table
-        if (organizer) {
-          await addMatchGamesForMatch(
-            validatedWebhook,
-            validatedMatchDetails,
-            webhookData.payload.entity.id
-          );
-        }
+
+        await addMatchGamesForMatch(
+          validatedWebhook,
+          validatedMatchDetails,
+          webhookData.payload.entity.id
+        );
+
         res.status(200).send("Webhook received");
         return;
       }
