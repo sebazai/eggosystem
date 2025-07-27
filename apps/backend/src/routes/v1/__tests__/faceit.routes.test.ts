@@ -12,6 +12,7 @@ jest.mock("../../../models/match.models");
 jest.mock("../../../models/faceit.models");
 jest.mock("../../../models/match-team-map-veto.models");
 jest.mock("../../../models/game.models");
+jest.mock("../../../models/season-team-players.models");
 
 // Import mocked functions
 import { getOrganizerByFaceitIdAndGameAppId } from "../../../models/organizer.models";
@@ -23,6 +24,7 @@ import {
 import { saveWebhookData } from "../../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../../models/match-team-map-veto.models";
 import { addMatchGamesForMatch } from "../../../models/game.models";
+import { validatePlayersInTeams } from "../../../models/season-team-players.models";
 import { expressErrorHandler } from "../../../middlewares/express-error-handler";
 import {
   validMatchDetailsMatchCreated,
@@ -58,6 +60,8 @@ const mockAddMatchTeamMapVetoes = addMatchTeamMapVetoes as jest.MockedFunction<
 const mockAddMatchGamesForMatch = addMatchGamesForMatch as jest.MockedFunction<
   typeof addMatchGamesForMatch
 >;
+const mockValidatePlayersInTeams =
+  validatePlayersInTeams as jest.MockedFunction<typeof validatePlayersInTeams>;
 
 // Create test app
 const app = express();
@@ -1153,6 +1157,7 @@ describe("FaceIT Routes - Webhook", () => {
         ]);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchGamesForMatch.mockResolvedValue(undefined);
+        mockValidatePlayersInTeams.mockResolvedValue(undefined);
       });
 
       it("should successfully process championship match_demo_ready webhook", async () => {
@@ -1170,6 +1175,12 @@ describe("FaceIT Routes - Webhook", () => {
           "match_demo_ready",
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady
+        );
+
+        // Verify players were validated
+        expect(mockValidatePlayersInTeams).toHaveBeenCalledWith(
+          validMatchDetailsMatchDemoReady.teams,
+          validMatchDetailsMatchDemoReady.match_id
         );
 
         // Verify match games were added for championship

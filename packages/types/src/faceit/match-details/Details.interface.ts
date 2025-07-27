@@ -30,7 +30,7 @@ interface FaceitPlayerRoster {
 }
 
 // Team faction interface
-interface FaceitTeamFaction {
+export interface FaceitTeamFaction {
   faction_id: string;
   leader: string; // Faceit player id
   avatar: string;
