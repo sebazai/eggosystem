@@ -13,6 +13,7 @@ import {
   getMatchWithBreadcrumbInfo
 } from "../models/match.models";
 import type {
+  MatchGame,
   MatchInfo,
   MatchTeamInfo,
   RequestWithParams
@@ -80,6 +81,7 @@ export const getMatchInfoController = async (
 
   const matchInfo = {
     ...match,
+    game_ids: JSON.parse(match.game_ids) as MatchGame["id"] | MatchGame["id"][],
     teams: JSON.parse(match.teams) as Record<string, MatchTeamInfo>
   } satisfies MatchInfo;
 

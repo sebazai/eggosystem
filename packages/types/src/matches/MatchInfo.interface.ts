@@ -21,9 +21,10 @@ export interface MatchInfo {
   season_platform: Season["platform"];
   stage: Match["stage"];
   teams: Record<string, MatchTeamInfo>;
-  game_id: Nullable<MatchGame["id"]>;
+  game_ids: Nullable<MatchGame["id"] | MatchGame["id"][]>;
 }
 
-export interface MatchInfoQuery extends Omit<MatchInfo, "teams"> {
+export interface MatchInfoQuery extends Omit<MatchInfo, "teams" | "game_ids"> {
   teams: string; // JSON stringified array of MatchTeamInfo
+  game_ids: string; // JSON stringified array of MatchGame["id"] | MatchGame["id"][]
 }

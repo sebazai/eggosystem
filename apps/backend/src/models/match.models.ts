@@ -239,6 +239,25 @@ export const getMatchInfo = async (
               END AS game_id
           FROM MatchData
           GROUP BY match_id, team_id, team_name, team_logo, best_of
+      ),
+      GameIds AS (
+          SELECT
+              match_id,
+              CASE
+                  WHEN best_of = 1 THEN 
+                      CASE 
+                          WHEN COUNT(DISTINCT game_id) > 0 THEN MAX(game_id)
+                          ELSE NULL
+                      END
+                  ELSE 
+                      CASE 
+                          WHEN COUNT(DISTINCT game_id) > 0 THEN JSON_ARRAYAGG(DISTINCT game_id)
+                          ELSE NULL
+                      END
+              END AS game_ids
+          FROM MatchData
+          WHERE game_id IS NOT NULL
+          GROUP BY match_id, best_of
       )
       SELECT 
           a.match_id,
@@ -253,7 +272,7 @@ export const getMatchInfo = async (
           s.platform AS season_platform,
           m.best_of,
           m.stage,
-          a.game_id,
+          g.game_ids,
           JSON_OBJECTAGG(
               a.team_id, 
               JSON_OBJECT(
@@ -267,7 +286,8 @@ export const getMatchInfo = async (
       JOIN Matches m ON a.match_id = m.id
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
-      GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage;
+      LEFT JOIN GameIds g ON a.match_id = g.match_id
+      GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage, g.game_ids;
   `;
 
   const [match] = await runQuery<MatchInfoQuery[]>(query, [matchId]);
