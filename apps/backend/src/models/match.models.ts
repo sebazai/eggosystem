@@ -4,7 +4,6 @@ import {
   type Match,
   type MatchesByFilters,
   type ParsedParams,
-  type MatchInfo,
   type MatchMapsPlayed,
   type MatchOrGameTopPlayerAwards,
   type MatchGame,
@@ -14,7 +13,8 @@ import {
   type Stage,
   type SeasonLeagueExternalId,
   type SeasonLeagueTeam,
-  MatchStatus
+  MatchStatus,
+  type MatchInfoQuery
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -195,7 +195,7 @@ export const getMatchGames = async (match_id: number) => {
 
 export const getMatchInfo = async (
   matchId: number
-): Promise<MatchInfo | null> => {
+): Promise<MatchInfoQuery | null> => {
   const query = `
       WITH MatchData AS (
           SELECT 
@@ -270,7 +270,7 @@ export const getMatchInfo = async (
       GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage;
   `;
 
-  const [match] = await runQuery<MatchInfo[]>(query, [matchId]);
+  const [match] = await runQuery<MatchInfoQuery[]>(query, [matchId]);
 
   return match;
 };

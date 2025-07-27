@@ -153,7 +153,9 @@ describe("Game Routes", () => {
       const response = await request(app).get("/99999/topplayers").expect(404);
 
       expect(response.body).toEqual({
-        message: "Could not find season for match id"
+        error: {
+          message: "Could not find season for match id"
+        }
       });
     });
   });

@@ -12,7 +12,11 @@ import {
   getMatchMapVetoes,
   getMatchWithBreadcrumbInfo
 } from "../models/match.models";
-import type { RequestWithParams } from "@eggosystem/types";
+import type {
+  MatchInfo,
+  MatchTeamInfo,
+  RequestWithParams
+} from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
 
 export const getMatchesController = async (req: Request, res: Response) => {
@@ -74,7 +78,12 @@ export const getMatchInfoController = async (
     throw new NotFoundError("Match not found");
   }
 
-  res.json(match);
+  const matchInfo = {
+    ...match,
+    teams: JSON.parse(match.teams) as Record<number, MatchTeamInfo>
+  } satisfies MatchInfo;
+
+  res.json(matchInfo);
 };
 
 export const getFilteredMatchesController = async (
