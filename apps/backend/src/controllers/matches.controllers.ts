@@ -10,19 +10,53 @@ import {
   getMatch,
   getMatchGame,
   getMatchMapVetoes,
-  getMatchWithBreadcrumbInfo
+  getMatchWithBreadcrumbInfo,
+  getMatchesWithTeamDataBySeasonId
 } from "../models/match.models";
 import type {
   MatchGame,
   MatchInfo,
   MatchTeamInfo,
+  MatchesWithTeamData,
   RequestWithParams
 } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
+import { getActiveSeasonForAppId } from "../models/season.models";
 
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
   res.status(200).json({ matches });
+};
+
+// Used externally by grmrpr
+export const getMatchesBySeasonIdController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
+) => {
+  const seasonId =
+    req.params.season_id === "active"
+      ? (await getActiveSeasonForAppId(730))?.season_id
+      : Number(req.params.season_id);
+
+  if (!seasonId) {
+    if (req.params.season_id === "active") {
+      res.status(404).json({ error: "No current active season found" });
+      return;
+    }
+    res.status(404).json({ error: "Season not found" });
+    return;
+  }
+
+  const matches = await getMatchesWithTeamDataBySeasonId(seasonId);
+  res.status(200).json({
+    matches: matches.map(
+      (match) =>
+        ({
+          ...match,
+          teams: JSON.parse(match.teams) as Record<string, MatchTeamInfo>
+        }) satisfies MatchesWithTeamData
+    )
+  });
 };
 
 export const getMatchController = async (

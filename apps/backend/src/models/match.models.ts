@@ -14,7 +14,8 @@ import {
   type SeasonLeagueExternalId,
   type SeasonLeagueTeam,
   MatchStatus,
-  type MatchInfoQuery
+  type MatchInfoQuery,
+  type MatchesWithTeamDataQuery
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -27,6 +28,44 @@ import { type PoolConnection } from "mysql2/promise";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
+};
+
+export const getMatchesWithTeamDataBySeasonId = async (
+  seasonId: number
+): Promise<MatchesWithTeamDataQuery[]> => {
+  const query = `
+    SELECT 
+      m.id AS match_id,
+      m.match_date,
+      m.start_time,
+      m.end_time,
+      m.external_match_room_id,
+      m.league_id,
+      l.name AS league_name,
+      m.season_id,
+      s.full_name AS season_name,
+      s.platform AS season_platform,
+      m.best_of,
+      m.stage,
+      JSON_OBJECTAGG(
+        t.id, 
+        JSON_OBJECT(
+          'id', t.id,
+          'name', t.name,
+          'logo', t.team_logo
+        )
+      ) AS teams
+    FROM Matches m
+    JOIN MatchTeams mt ON m.id = mt.match_id
+    JOIN Teams t ON mt.team_id = t.id
+    JOIN Seasons s ON s.id = m.season_id
+    JOIN Leagues l ON l.id = m.league_id
+    WHERE m.season_id = ?
+    GROUP BY m.id, m.match_date, m.start_time, m.end_time, m.external_match_room_id, 
+             m.league_id, l.name, m.season_id, s.full_name, s.platform, m.best_of, m.stage
+    ORDER BY m.match_date DESC
+  `;
+  return runQuery<MatchesWithTeamDataQuery[]>(query, [seasonId]);
 };
 
 export const getMatch = (matchId: number) => {
