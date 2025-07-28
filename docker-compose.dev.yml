@@ -24,6 +24,9 @@ services:
       BACKEND_SERVICE_API_KEY: "development_api_key"
       JWT_SECRET: $JWT_SECRET
       FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
+      RABBITMQ_HOST: eggo-dev-rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEV_PASS}
     networks:
       - web
     volumes:
@@ -160,6 +163,32 @@ services:
     networks:
       - web
     restart: no
+
+  eggo-dev-rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: eggo-dev-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEV_PASS}
+    networks:
+      - web
+    ports:
+      - "5672:5672"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq-hubdev.entrypoints=http"
+      - "traefik.http.routers.rabbitmq-hubdev.rule=Host(`hubdev-mq.kanaliiga.fi`)"
+      - "traefik.http.middlewares.rabbitmq-hubdev-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.rabbitmq-hubdev.middlewares=rabbitmq-hubdev-https-redirect"
+      - "traefik.http.routers.rabbitmq-hubdev-secure.entrypoints=https"
+      - "traefik.http.routers.rabbitmq-hubdev-secure.rule=Host(`hubdev-mq.kanaliiga.fi`)"
+      - "traefik.http.routers.rabbitmq-hubdev-secure.tls=true"
+      - "traefik.http.routers.rabbitmq-hubdev-secure.tls.domains[0].main=hubdev-mq.kanaliiga.fi"
+      - "traefik.http.routers.rabbitmq-hubdev-secure.tls.certresolver=http"
+      - "traefik.http.routers.rabbitmq-hubdev-secure.service=rabbitmq-hubdev"
+      - "traefik.http.services.rabbitmq-hubdev.loadbalancer.server.port=15672"
+      - "traefik.docker.network=web"
 
 networks:
   web:
