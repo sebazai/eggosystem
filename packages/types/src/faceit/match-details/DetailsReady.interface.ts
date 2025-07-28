@@ -17,7 +17,7 @@ interface DetailsReadyBase {
   competition_id: string;
   competition_name: string;
   organizer_id: string;
-  voting: FaceitVoting;
+  voting?: FaceitVoting;
   teams: FaceitMatchTeams;
   calculate_elo: boolean;
   chat_room_id: string;
@@ -35,7 +35,7 @@ const DetailsReadyBaseSchema = z.object({
   competition_id: z.string(),
   competition_name: z.string(),
   organizer_id: z.string(),
-  voting: FaceitVotingSchema,
+  voting: FaceitVotingSchema.optional(),
   teams: FaceitMatchTeamsSchema,
   calculate_elo: z.boolean(),
   chat_room_id: z.string(),
