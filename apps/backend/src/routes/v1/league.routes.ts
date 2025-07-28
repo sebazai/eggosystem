@@ -9,8 +9,8 @@ const router = Router();
 
 router.get("/", getAllLeagues);
 router.get(
-  "/:seasonId",
-  validateNumericParams(["seasonId"]),
+  "/:season_id",
+  validateNumericParams(["season_id"]),
   getLeaguesBySeasonController
 );
 

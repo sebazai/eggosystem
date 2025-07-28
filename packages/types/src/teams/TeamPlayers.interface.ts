@@ -1,6 +1,8 @@
+import { SeasonTeamPlayer, SteamPlayer } from "../db";
+
 export interface TeamPlayers {
-  steam_id: string;
-  nickname: string;
-  is_captain: boolean;
-  is_co_captain: boolean;
+  steam_id: SteamPlayer["steam_id"];
+  nickname: SteamPlayer["nickname"];
+  is_captain: SeasonTeamPlayer["is_captain"];
+  is_co_captain: SeasonTeamPlayer["is_co_captain"];
 }

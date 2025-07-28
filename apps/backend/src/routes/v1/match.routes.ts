@@ -61,8 +61,8 @@ router.get(
 router.get("/", getMatchesController);
 router.get("/season/:season_id", getMatchesBySeasonIdController);
 router.get(
-  "/team/:teamId",
-  validateNumericParams(["teamId"]),
+  "/team/:team_id",
+  validateNumericParams(["team_id"]),
   getMatchesByTeamController
 );
 

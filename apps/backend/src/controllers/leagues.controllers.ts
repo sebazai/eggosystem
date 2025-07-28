@@ -8,10 +8,10 @@ export const getAllLeagues = async (req: Request, res: Response) => {
 };
 
 export const getLeaguesBySeasonController = async (
-  req: RequestWithParams<{ seasonId: string }>,
+  req: RequestWithParams<{ season_id: string }>,
   res: Response
 ) => {
-  const seasonIdNumber = Number(req.params.seasonId);
+  const seasonIdNumber = Number(req.params.season_id);
   const leagues = await getLeaguesBySeason(seasonIdNumber);
   res.json(leagues);
 };

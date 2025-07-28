@@ -198,10 +198,10 @@ export const getMatchMapVetoesController = async (
 };
 
 export const getMatchesByTeamController = async (
-  req: RequestWithParams<{ teamId: string }>,
+  req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
-  const teamIdNumber = Number(req.params.teamId);
+  const teamIdNumber = Number(req.params.team_id);
   const seasonId = req.query.season_id
     ? Number(req.query.season_id)
     : undefined;

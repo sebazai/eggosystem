@@ -10,7 +10,7 @@ const mockGetMatchesByTeam = getMatchesByTeam as jest.MockedFunction<
 >;
 
 describe("getMatchesByTeamController", () => {
-  let mockRequest: Partial<RequestWithParams<{ teamId: string }>>;
+  let mockRequest: Partial<RequestWithParams<{ team_id: string }>>;
   let mockResponse: Partial<Response>;
   let mockJson: jest.Mock;
   let mockStatus: jest.Mock;
@@ -20,7 +20,7 @@ describe("getMatchesByTeamController", () => {
     mockStatus = jest.fn().mockReturnValue({ json: mockJson });
 
     mockRequest = {
-      params: { teamId: "123" },
+      params: { team_id: "123" },
       query: { season_id: "15" }
     };
 
@@ -65,7 +65,7 @@ describe("getMatchesByTeamController", () => {
     mockGetMatchesByTeam.mockResolvedValue(mockMatches);
 
     await getMatchesByTeamController(
-      mockRequest as RequestWithParams<{ teamId: string }>,
+      mockRequest as RequestWithParams<{ team_id: string }>,
       mockResponse as Response
     );
 
@@ -80,7 +80,7 @@ describe("getMatchesByTeamController", () => {
     mockGetMatchesByTeam.mockResolvedValue(mockMatches);
 
     await getMatchesByTeamController(
-      mockRequest as RequestWithParams<{ teamId: string }>,
+      mockRequest as RequestWithParams<{ team_id: string }>,
       mockResponse as Response
     );
 
@@ -92,7 +92,7 @@ describe("getMatchesByTeamController", () => {
     mockGetMatchesByTeam.mockResolvedValue([]);
 
     await getMatchesByTeamController(
-      mockRequest as RequestWithParams<{ teamId: string }>,
+      mockRequest as RequestWithParams<{ team_id: string }>,
       mockResponse as Response
     );
 
@@ -106,7 +106,7 @@ describe("getMatchesByTeamController", () => {
 
     await expect(
       getMatchesByTeamController(
-        mockRequest as RequestWithParams<{ teamId: string }>,
+        mockRequest as RequestWithParams<{ team_id: string }>,
         mockResponse as Response
       )
     ).rejects.toThrow("Database connection failed");

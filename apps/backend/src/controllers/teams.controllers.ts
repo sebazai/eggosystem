@@ -21,10 +21,10 @@ export const getAllTeams = async (req: Request, res: Response) => {
 };
 
 export const getTeamByIdController = async (
-  req: RequestWithParams<{ teamId: string }>,
+  req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
-  const teamIdNumber = Number(req.params.teamId);
+  const teamIdNumber = Number(req.params.team_id);
   const [team] = await getTeamById(teamIdNumber);
   if (!team) {
     throw new NotFoundError("Team not found");
@@ -141,10 +141,10 @@ export const getTeamKeyPlayersController = async (
 };
 
 export const getTeamPlayersController = async (
-  req: RequestWithParams<{ teamId: string }>,
+  req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
-  const teamIdNumber = Number(req.params.teamId);
+  const teamIdNumber = Number(req.params.team_id);
   const seasonId = req.query.season_id
     ? Number(req.query.season_id)
     : undefined;
@@ -153,10 +153,10 @@ export const getTeamPlayersController = async (
 };
 
 export const getTeamsByLeagueController = async (
-  req: RequestWithParams<{ leagueId: string }>,
+  req: RequestWithParams<{ league_id: string }>,
   res: Response
 ) => {
-  const leagueIdNumber = Number(req.params.leagueId);
+  const leagueIdNumber = Number(req.params.league_id);
   const seasonId = req.query.season_id
     ? Number(req.query.season_id)
     : undefined;
