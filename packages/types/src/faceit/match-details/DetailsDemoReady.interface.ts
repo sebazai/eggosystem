@@ -22,7 +22,7 @@ export interface DetailsDemoReadyBase {
   competition_name: string;
   organizer_id: string;
   teams: FaceitMatchTeams;
-  voting: FaceitVoting;
+  voting?: FaceitVoting;
   calculate_elo: boolean;
   scheduled_at?: number;
   configured_at: number;
@@ -46,7 +46,7 @@ const DetailsDemoReadBaseSchema = z.object({
   competition_name: z.string(),
   organizer_id: z.string(),
   teams: FaceitMatchTeamsSchema,
-  voting: FaceitVotingSchema,
+  voting: FaceitVotingSchema.optional(),
   calculate_elo: z.boolean(),
   scheduled_at: z.number().optional(),
   configured_at: z.number(),
