@@ -16,6 +16,7 @@ export * from "./faceit/index";
 export * from "./topteams/index";
 export * from "./auth/index";
 export * from "./leaderboards/index";
+export * from "./leagues/index";
 export * from "./teams/index";
 export * from "./games/index";
 export * from "./ranks/index";

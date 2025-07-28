@@ -1,8 +1,17 @@
 import { Router } from "express";
-import { getAllLeagues } from "../../controllers/leagues.controllers";
+import {
+  getAllLeagues,
+  getLeaguesBySeasonController
+} from "../../controllers/leagues.controllers";
+import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
 const router = Router();
 
 router.get("/", getAllLeagues);
+router.get(
+  "/:seasonId",
+  validateNumericParams(["seasonId"]),
+  getLeaguesBySeasonController
+);
 
 export default router;

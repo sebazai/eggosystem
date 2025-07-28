@@ -5,7 +5,10 @@ import {
   type TopTeamsByFiltersRaw,
   type ParsedParams,
   type TeamMapStats,
-  type TeamHeaderDetails
+  type TeamHeaderDetails,
+  type TeamKeyPlayers,
+  type TeamPlayers,
+  type TeamsByLeague
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
@@ -472,4 +475,138 @@ export const getTeamWithIdWithoutOrg = (
     [teamId],
     connection
   );
+};
+
+export const getTeamKeyPlayers = async (
+  teamId: number,
+  seasonId?: number
+): Promise<TeamKeyPlayers[]> => {
+  let targetSeasonId = seasonId;
+
+  // If no season provided, get the latest season for the team
+  if (!targetSeasonId) {
+    const seasonQuery = `
+      SELECT DISTINCT m.season_id 
+      FROM Matches m
+      JOIN MatchTeams mt ON m.id = mt.match_id
+      WHERE mt.team_id = ?
+      ORDER BY m.season_id DESC
+      LIMIT 1
+    `;
+
+    const [seasonResult] = await runQuery<{ season_id: number }[]>(
+      seasonQuery,
+      [teamId]
+    );
+
+    if (!seasonResult) {
+      return [];
+    }
+
+    targetSeasonId = seasonResult.season_id;
+  }
+
+  // Get key players with aggregated stats
+  const keyPlayersQuery = `
+    SELECT 
+      sp.steam_id,
+      sp.nickname,
+      COUNT(ps.id) as games_played,
+      ROUND(SUM(ps.kills)/SUM(ps.deaths), 2) as kdr,
+      SUM(ps.kills) - SUM(ps.deaths) as kdiff,
+      ROUND(AVG(ps.adr), 1) as adr,
+      ROUND(AVG(ps.kana_rating), 2) as kana_rating
+    FROM SteamPlayers sp
+    JOIN SeasonTeamPlayers stp ON sp.steam_id = stp.steam_id
+    JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
+    JOIN MatchGames mg ON ps.game_id = mg.id
+    JOIN Matches m ON mg.match_id = m.id
+    WHERE stp.team_id = ? 
+      AND stp.season_id = ?
+      AND m.season_id = ?
+    GROUP BY sp.steam_id, sp.nickname
+    ORDER BY games_played DESC, kana_rating DESC
+    LIMIT 5
+  `;
+
+  return runQuery<TeamKeyPlayers[]>(keyPlayersQuery, [
+    teamId,
+    targetSeasonId,
+    targetSeasonId
+  ]);
+};
+
+export const getTeamPlayers = async (
+  teamId: number,
+  seasonId?: number
+): Promise<TeamPlayers[]> => {
+  let targetSeasonId = seasonId;
+
+  // If no season provided, get the latest season for the team
+  if (!targetSeasonId) {
+    const seasonQuery = `
+      SELECT DISTINCT m.season_id 
+      FROM Matches m
+      JOIN MatchTeams mt ON m.id = mt.match_id
+      WHERE mt.team_id = ?
+      ORDER BY m.season_id DESC
+      LIMIT 1
+    `;
+
+    const [seasonResult] = await runQuery<{ season_id: number }[]>(
+      seasonQuery,
+      [teamId]
+    );
+
+    if (!seasonResult) {
+      return [];
+    }
+
+    targetSeasonId = seasonResult.season_id;
+  }
+
+  // Get all players for the team in the specified season
+  const playersQuery = `
+    SELECT 
+      sp.steam_id,
+      sp.nickname,
+      stp.is_captain,
+      stp.is_co_captain
+    FROM SteamPlayers sp
+    JOIN SeasonTeamPlayers stp ON sp.steam_id = stp.steam_id
+    WHERE stp.team_id = ? 
+      AND stp.season_id = ?
+    ORDER BY stp.is_captain DESC, stp.is_co_captain DESC, sp.nickname ASC
+  `;
+
+  return runQuery<TeamPlayers[]>(playersQuery, [teamId, targetSeasonId]);
+};
+
+export const getTeamsByLeague = async (
+  leagueId: number,
+  seasonId?: number
+): Promise<TeamsByLeague[]> => {
+  let seasonFilter = "";
+  const queryParams: number[] = [leagueId];
+
+  if (seasonId) {
+    seasonFilter = "AND slt.season_id = ?";
+    queryParams.push(seasonId);
+  }
+
+  const teamsQuery = `
+    SELECT 
+      t.id,
+      t.name,
+      slt.league_id,
+      slt.season_id,
+      t.team_logo
+    FROM Teams t
+    JOIN SeasonLeagueTeams slt ON t.id = slt.team_id
+    WHERE slt.league_id = ?
+    ${seasonFilter}
+    ORDER BY t.name ASC
+  `;
+
+  return runQuery<TeamsByLeague[]>(teamsQuery, queryParams);
 };

@@ -5,3 +5,6 @@ export * from "./TeamHeaderDetails.interface";
 export * from "./TeamPistolWinStat.interface";
 export * from "./TeamPlantStat.interface";
 export * from "./TeamRetakeStats.interface";
+export * from "./TeamKeyPlayers.interface";
+export * from "./TeamPlayers.interface";
+export * from "./TeamsByLeague.interface";

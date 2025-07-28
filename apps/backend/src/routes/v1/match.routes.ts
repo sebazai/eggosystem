@@ -10,7 +10,8 @@ import {
   getMatchGameController,
   getMatchMapVetoesController,
   getMatchBreadcrumbController,
-  getMatchesBySeasonIdController
+  getMatchesBySeasonIdController,
+  getMatchesByTeamController
 } from "../../controllers/matches.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -59,5 +60,10 @@ router.get(
 
 router.get("/", getMatchesController);
 router.get("/season/:season_id", getMatchesBySeasonIdController);
+router.get(
+  "/team/:teamId",
+  validateNumericParams(["teamId"]),
+  getMatchesByTeamController
+);
 
 export default router;

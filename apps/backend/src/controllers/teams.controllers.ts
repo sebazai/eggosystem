@@ -7,7 +7,10 @@ import {
   getFilteredTopTeams,
   getTeamById,
   getTeamsWithoutOrgs,
-  getOneTeamByFilters
+  getOneTeamByFilters,
+  getTeamKeyPlayers,
+  getTeamPlayers,
+  getTeamsByLeague
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
@@ -122,5 +125,41 @@ export const getTeamsWithoutOrgController = async (
   res: Response
 ) => {
   const teams = await getTeamsWithoutOrgs();
+  res.json(teams);
+};
+
+export const getTeamKeyPlayersController = async (
+  req: RequestWithParams<{ teamId: string }>,
+  res: Response
+) => {
+  const teamIdNumber = Number(req.params.teamId);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const keyPlayers = await getTeamKeyPlayers(teamIdNumber, seasonId);
+  res.json(keyPlayers);
+};
+
+export const getTeamPlayersController = async (
+  req: RequestWithParams<{ teamId: string }>,
+  res: Response
+) => {
+  const teamIdNumber = Number(req.params.teamId);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const players = await getTeamPlayers(teamIdNumber, seasonId);
+  res.json(players);
+};
+
+export const getTeamsByLeagueController = async (
+  req: RequestWithParams<{ leagueId: string }>,
+  res: Response
+) => {
+  const leagueIdNumber = Number(req.params.leagueId);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const teams = await getTeamsByLeague(leagueIdNumber, seasonId);
   res.json(teams);
 };
