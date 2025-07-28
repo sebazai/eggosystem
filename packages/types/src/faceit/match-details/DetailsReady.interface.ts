@@ -22,7 +22,7 @@ interface DetailsReadyBase {
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status: FaceitMatchStatus.READY;
+  status: FaceitMatchStatus.READY | FaceitMatchStatus.ONGOING;
   faceit_url: string;
   configured_at: number;
 }
@@ -40,7 +40,9 @@ const DetailsReadyBaseSchema = z.object({
   calculate_elo: z.boolean(),
   chat_room_id: z.string(),
   best_of: z.number(),
-  status: z.literal(FaceitMatchStatus.READY),
+  status: z
+    .literal(FaceitMatchStatus.READY)
+    .or(z.literal(FaceitMatchStatus.ONGOING)),
   faceit_url: z.string(),
   configured_at: z.number()
 });
