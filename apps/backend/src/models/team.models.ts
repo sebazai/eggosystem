@@ -477,33 +477,32 @@ export const getTeamWithIdWithoutOrg = (
   );
 };
 
+const getTeamLatestSeason = async (teamId: number) => {
+  const seasonQuery = `
+    SELECT DISTINCT m.season_id 
+    FROM Matches m
+    JOIN MatchTeams mt ON m.id = mt.match_id
+    WHERE mt.team_id = ?
+    ORDER BY m.season_id DESC
+    LIMIT 1
+  `;
+  const [seasonResult] = await runQuery<{ season_id: number }[]>(seasonQuery, [
+    teamId
+  ]);
+  if (!seasonResult) {
+    return undefined;
+  }
+  return seasonResult.season_id;
+};
+
 export const getTeamKeyPlayers = async (
   teamId: number,
   seasonId?: number
 ): Promise<TeamKeyPlayers[]> => {
-  let targetSeasonId = seasonId;
+  const targetSeasonId = seasonId ?? (await getTeamLatestSeason(teamId));
 
-  // If no season provided, get the latest season for the team
   if (!targetSeasonId) {
-    const seasonQuery = `
-      SELECT DISTINCT m.season_id 
-      FROM Matches m
-      JOIN MatchTeams mt ON m.id = mt.match_id
-      WHERE mt.team_id = ?
-      ORDER BY m.season_id DESC
-      LIMIT 1
-    `;
-
-    const [seasonResult] = await runQuery<{ season_id: number }[]>(
-      seasonQuery,
-      [teamId]
-    );
-
-    if (!seasonResult) {
-      return [];
-    }
-
-    targetSeasonId = seasonResult.season_id;
+    return [];
   }
 
   // Get key players with aggregated stats
@@ -540,29 +539,10 @@ export const getTeamPlayers = async (
   teamId: number,
   seasonId?: number
 ): Promise<TeamPlayers[]> => {
-  let targetSeasonId = seasonId;
+  const targetSeasonId = seasonId ?? (await getTeamLatestSeason(teamId));
 
-  // If no season provided, get the latest season for the team
   if (!targetSeasonId) {
-    const seasonQuery = `
-      SELECT DISTINCT m.season_id 
-      FROM Matches m
-      JOIN MatchTeams mt ON m.id = mt.match_id
-      WHERE mt.team_id = ?
-      ORDER BY m.season_id DESC
-      LIMIT 1
-    `;
-
-    const [seasonResult] = await runQuery<{ season_id: number }[]>(
-      seasonQuery,
-      [teamId]
-    );
-
-    if (!seasonResult) {
-      return [];
-    }
-
-    targetSeasonId = seasonResult.season_id;
+    return [];
   }
 
   // Get all players for the team in the specified season
@@ -586,13 +566,10 @@ export const getTeamsByLeague = async (
   leagueId: number,
   seasonId?: number
 ): Promise<TeamsByLeague[]> => {
-  let seasonFilter = "";
-  const queryParams: number[] = [leagueId];
-
-  if (seasonId) {
-    seasonFilter = "AND slt.season_id = ?";
-    queryParams.push(seasonId);
-  }
+  const { query, queryParams } = generateQueryWithFilters([
+    { column: "slt.season_id", value: seasonId ? [seasonId] : undefined },
+    { column: "slt.league_id", value: [leagueId] }
+  ]);
 
   const teamsQuery = `
     SELECT 
@@ -603,8 +580,7 @@ export const getTeamsByLeague = async (
       t.team_logo
     FROM Teams t
     JOIN SeasonLeagueTeams slt ON t.id = slt.team_id
-    WHERE slt.league_id = ?
-    ${seasonFilter}
+    WHERE ${query}
     ORDER BY t.name ASC
   `;
 

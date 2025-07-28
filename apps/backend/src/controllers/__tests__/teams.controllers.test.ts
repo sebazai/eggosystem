@@ -29,7 +29,7 @@ const mockGetTeamsByLeague = getTeamsByLeague as jest.MockedFunction<
 >;
 
 describe("getTeamKeyPlayersController", () => {
-  let mockRequest: Partial<RequestWithParams<{ teamId: string }>>;
+  let mockRequest: Partial<RequestWithParams<{ team_id: string }>>;
   let mockResponse: Partial<Response>;
   let mockJson: jest.Mock;
   let mockStatus: jest.Mock;
@@ -39,7 +39,7 @@ describe("getTeamKeyPlayersController", () => {
     mockStatus = jest.fn().mockReturnValue({ json: mockJson });
 
     mockRequest = {
-      params: { teamId: "123" },
+      params: { team_id: "123" },
       query: { season_id: "15" }
     };
 
@@ -78,7 +78,7 @@ describe("getTeamKeyPlayersController", () => {
     mockGetTeamKeyPlayers.mockResolvedValue(mockKeyPlayers);
 
     await getTeamKeyPlayersController(
-      mockRequest as RequestWithParams<{ teamId: string }>,
+      mockRequest as RequestWithParams<{ team_id: string }>,
       mockResponse as Response
     );
 
@@ -86,14 +86,74 @@ describe("getTeamKeyPlayersController", () => {
     expect(mockJson).toHaveBeenCalledWith(mockKeyPlayers);
   });
 
-  it("should use latest season when no season_id provided", async () => {
+  it("should return key players when no season_id provided", async () => {
     mockRequest.query = {};
-    const mockKeyPlayers: TeamKeyPlayers[] = [];
+    const mockKeyPlayers: TeamKeyPlayers[] = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Player1",
+        games_played: 5,
+        kdr: 1.2,
+        kdiff: 10,
+        adr: 80.0,
+        kana_rating: 1.1
+      }
+    ];
 
     mockGetTeamKeyPlayers.mockResolvedValue(mockKeyPlayers);
 
     await getTeamKeyPlayersController(
-      mockRequest as RequestWithParams<{ teamId: string }>,
+      mockRequest as RequestWithParams<{ team_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamKeyPlayers).toHaveBeenCalledWith(123, undefined);
+    expect(mockJson).toHaveBeenCalledWith(mockKeyPlayers);
+  });
+
+  it("should handle season_id as undefined explicitly", async () => {
+    mockRequest.query = { season_id: undefined };
+    const mockKeyPlayers: TeamKeyPlayers[] = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Player1",
+        games_played: 5,
+        kdr: 1.2,
+        kdiff: 10,
+        adr: 80.0,
+        kana_rating: 1.1
+      }
+    ];
+
+    mockGetTeamKeyPlayers.mockResolvedValue(mockKeyPlayers);
+
+    await getTeamKeyPlayersController(
+      mockRequest as RequestWithParams<{ team_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamKeyPlayers).toHaveBeenCalledWith(123, undefined);
+    expect(mockJson).toHaveBeenCalledWith(mockKeyPlayers);
+  });
+
+  it("should handle season_id as empty string", async () => {
+    mockRequest.query = { season_id: "" };
+    const mockKeyPlayers: TeamKeyPlayers[] = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Player1",
+        games_played: 5,
+        kdr: 1.2,
+        kdiff: 10,
+        adr: 80.0,
+        kana_rating: 1.1
+      }
+    ];
+
+    mockGetTeamKeyPlayers.mockResolvedValue(mockKeyPlayers);
+
+    await getTeamKeyPlayersController(
+      mockRequest as RequestWithParams<{ team_id: string }>,
       mockResponse as Response
     );
 
@@ -105,7 +165,7 @@ describe("getTeamKeyPlayersController", () => {
     mockGetTeamKeyPlayers.mockResolvedValue([]);
 
     await getTeamKeyPlayersController(
-      mockRequest as RequestWithParams<{ teamId: string }>,
+      mockRequest as RequestWithParams<{ team_id: string }>,
       mockResponse as Response
     );
 
@@ -119,12 +179,38 @@ describe("getTeamKeyPlayersController", () => {
 
     await expect(
       getTeamKeyPlayersController(
-        mockRequest as RequestWithParams<{ teamId: string }>,
+        mockRequest as RequestWithParams<{ team_id: string }>,
         mockResponse as Response
       )
     ).rejects.toThrow("Database connection failed");
 
     expect(mockGetTeamKeyPlayers).toHaveBeenCalledWith(123, 15);
+  });
+
+  it("should handle invalid team ID parameter", async () => {
+    mockRequest.params = { team_id: "invalid" };
+
+    await expect(
+      getTeamKeyPlayersController(
+        mockRequest as RequestWithParams<{ team_id: string }>,
+        mockResponse as Response
+      )
+    ).rejects.toThrow();
+
+    expect(mockGetTeamKeyPlayers).toHaveBeenCalledWith(NaN, 15);
+  });
+
+  it("should handle invalid season_id parameter", async () => {
+    mockRequest.query = { season_id: "invalid" };
+
+    await expect(
+      getTeamKeyPlayersController(
+        mockRequest as RequestWithParams<{ team_id: string }>,
+        mockResponse as Response
+      )
+    ).rejects.toThrow();
+
+    expect(mockGetTeamKeyPlayers).toHaveBeenCalledWith(123, NaN);
   });
 });
 
@@ -186,9 +272,66 @@ describe("getTeamPlayersController", () => {
     expect(mockJson).toHaveBeenCalledWith(mockPlayers);
   });
 
-  it("should use latest season when no season_id provided", async () => {
+  it("should return players when no season_id provided", async () => {
     mockRequest.query = {};
-    const mockPlayers: TeamPlayers[] = [];
+    const mockPlayers: TeamPlayers[] = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Player1",
+        is_captain: true,
+        is_co_captain: false
+      },
+      {
+        steam_id: "76561198087654321",
+        nickname: "Player2",
+        is_captain: false,
+        is_co_captain: false
+      }
+    ];
+
+    mockGetTeamPlayers.mockResolvedValue(mockPlayers);
+
+    await getTeamPlayersController(
+      mockRequest as RequestWithParams<{ team_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamPlayers).toHaveBeenCalledWith(456, undefined);
+    expect(mockJson).toHaveBeenCalledWith(mockPlayers);
+  });
+
+  it("should handle season_id as undefined explicitly", async () => {
+    mockRequest.query = { season_id: undefined };
+    const mockPlayers: TeamPlayers[] = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Player1",
+        is_captain: true,
+        is_co_captain: false
+      }
+    ];
+
+    mockGetTeamPlayers.mockResolvedValue(mockPlayers);
+
+    await getTeamPlayersController(
+      mockRequest as RequestWithParams<{ team_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamPlayers).toHaveBeenCalledWith(456, undefined);
+    expect(mockJson).toHaveBeenCalledWith(mockPlayers);
+  });
+
+  it("should handle season_id as empty string", async () => {
+    mockRequest.query = { season_id: "" };
+    const mockPlayers: TeamPlayers[] = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Player1",
+        is_captain: true,
+        is_co_captain: false
+      }
+    ];
 
     mockGetTeamPlayers.mockResolvedValue(mockPlayers);
 
@@ -225,6 +368,53 @@ describe("getTeamPlayersController", () => {
     ).rejects.toThrow("Database connection failed");
 
     expect(mockGetTeamPlayers).toHaveBeenCalledWith(456, 15);
+  });
+
+  it("should handle invalid team_id parameter", async () => {
+    mockRequest.params = { team_id: "invalid" };
+
+    await expect(
+      getTeamPlayersController(
+        mockRequest as RequestWithParams<{ team_id: string }>,
+        mockResponse as Response
+      )
+    ).rejects.toThrow();
+
+    expect(mockGetTeamPlayers).toHaveBeenCalledWith(NaN, 15);
+  });
+
+  it("should handle invalid season_id parameter", async () => {
+    mockRequest.query = { season_id: "invalid" };
+
+    await expect(
+      getTeamPlayersController(
+        mockRequest as RequestWithParams<{ team_id: string }>,
+        mockResponse as Response
+      )
+    ).rejects.toThrow();
+
+    expect(mockGetTeamPlayers).toHaveBeenCalledWith(456, NaN);
+  });
+
+  it("should handle team with only captain", async () => {
+    const mockPlayers = [
+      {
+        steam_id: "76561198012345678",
+        nickname: "Captain",
+        is_captain: true,
+        is_co_captain: false
+      }
+    ];
+
+    mockGetTeamPlayers.mockResolvedValue(mockPlayers);
+
+    await getTeamPlayersController(
+      mockRequest as RequestWithParams<{ team_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamPlayers).toHaveBeenCalledWith(456, 15);
+    expect(mockJson).toHaveBeenCalledWith(mockPlayers);
   });
 });
 
@@ -282,9 +472,70 @@ describe("getTeamsByLeagueController", () => {
     expect(mockJson).toHaveBeenCalledWith(mockTeams);
   });
 
-  it("should return teams for all seasons when no season_id provided", async () => {
+  it("should return teams when no season_id provided", async () => {
     mockRequest.query = {};
-    const mockTeams: TeamsByLeague[] = [];
+    const mockTeams: TeamsByLeague[] = [
+      {
+        id: 123,
+        name: "Team Alpha",
+        league_id: 10,
+        season_id: 14,
+        team_logo: "alpha.png"
+      },
+      {
+        id: 456,
+        name: "Team Beta",
+        league_id: 10,
+        season_id: 15,
+        team_logo: "beta.png"
+      }
+    ];
+
+    mockGetTeamsByLeague.mockResolvedValue(mockTeams);
+
+    await getTeamsByLeagueController(
+      mockRequest as RequestWithParams<{ league_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamsByLeague).toHaveBeenCalledWith(10, undefined);
+    expect(mockJson).toHaveBeenCalledWith(mockTeams);
+  });
+
+  it("should handle season_id as undefined explicitly", async () => {
+    mockRequest.query = { season_id: undefined };
+    const mockTeams: TeamsByLeague[] = [
+      {
+        id: 123,
+        name: "Team Alpha",
+        league_id: 10,
+        season_id: 14,
+        team_logo: "alpha.png"
+      }
+    ];
+
+    mockGetTeamsByLeague.mockResolvedValue(mockTeams);
+
+    await getTeamsByLeagueController(
+      mockRequest as RequestWithParams<{ league_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamsByLeague).toHaveBeenCalledWith(10, undefined);
+    expect(mockJson).toHaveBeenCalledWith(mockTeams);
+  });
+
+  it("should handle season_id as empty string", async () => {
+    mockRequest.query = { season_id: "" };
+    const mockTeams: TeamsByLeague[] = [
+      {
+        id: 123,
+        name: "Team Alpha",
+        league_id: 10,
+        season_id: 14,
+        team_logo: "alpha.png"
+      }
+    ];
 
     mockGetTeamsByLeague.mockResolvedValue(mockTeams);
 
@@ -321,5 +572,75 @@ describe("getTeamsByLeagueController", () => {
     ).rejects.toThrow("Database connection failed");
 
     expect(mockGetTeamsByLeague).toHaveBeenCalledWith(10, 15);
+  });
+
+  it("should handle invalid league_id parameter", async () => {
+    mockRequest.params = { league_id: "invalid" };
+
+    await expect(
+      getTeamsByLeagueController(
+        mockRequest as RequestWithParams<{ league_id: string }>,
+        mockResponse as Response
+      )
+    ).rejects.toThrow();
+
+    expect(mockGetTeamsByLeague).toHaveBeenCalledWith(NaN, 15);
+  });
+
+  it("should handle invalid season_id parameter", async () => {
+    mockRequest.query = { season_id: "invalid" };
+
+    await expect(
+      getTeamsByLeagueController(
+        mockRequest as RequestWithParams<{ league_id: string }>,
+        mockResponse as Response
+      )
+    ).rejects.toThrow();
+
+    expect(mockGetTeamsByLeague).toHaveBeenCalledWith(10, NaN);
+  });
+
+  it("should handle league with single team", async () => {
+    const mockTeams: TeamsByLeague[] = [
+      {
+        id: 123,
+        name: "Lone Team",
+        league_id: 10,
+        season_id: 15,
+        team_logo: "lone.png"
+      }
+    ];
+
+    mockGetTeamsByLeague.mockResolvedValue(mockTeams);
+
+    await getTeamsByLeagueController(
+      mockRequest as RequestWithParams<{ league_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamsByLeague).toHaveBeenCalledWith(10, 15);
+    expect(mockJson).toHaveBeenCalledWith(mockTeams);
+  });
+
+  it("should handle teams without logos", async () => {
+    const mockTeams: TeamsByLeague[] = [
+      {
+        id: 123,
+        name: "Team No Logo",
+        league_id: 10,
+        season_id: 15,
+        team_logo: ""
+      }
+    ];
+
+    mockGetTeamsByLeague.mockResolvedValue(mockTeams);
+
+    await getTeamsByLeagueController(
+      mockRequest as RequestWithParams<{ league_id: string }>,
+      mockResponse as Response
+    );
+
+    expect(mockGetTeamsByLeague).toHaveBeenCalledWith(10, 15);
+    expect(mockJson).toHaveBeenCalledWith(mockTeams);
   });
 });

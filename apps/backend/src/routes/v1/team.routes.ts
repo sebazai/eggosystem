@@ -14,23 +14,23 @@ const router = Router();
 router.get("/", getAllTeams);
 router.get("/org-missing", getTeamsWithoutOrgController);
 router.get(
-  "/league/:leagueId",
-  validateNumericParams(["leagueId"]),
+  "/league/:league_id",
+  validateNumericParams(["league_id"]),
   getTeamsByLeagueController
 );
 router.get(
-  "/:teamId",
-  validateNumericParams(["teamId"]),
+  "/:team_id",
+  validateNumericParams(["team_id"]),
   getTeamByIdController
 );
 router.get(
-  "/:teamId/keyplayers",
-  validateNumericParams(["teamId"]),
+  "/:team_id/keyplayers",
+  validateNumericParams(["team_id"]),
   getTeamKeyPlayersController
 );
 router.get(
-  "/:teamId/players",
-  validateNumericParams(["teamId"]),
+  "/:team_id/players",
+  validateNumericParams(["team_id"]),
   getTeamPlayersController
 );
 
