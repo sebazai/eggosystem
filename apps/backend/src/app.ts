@@ -41,11 +41,12 @@ import {
   initializeDiscordClient,
   setupDiscordEventHandlers
 } from "./services/discord.services";
+import cors from "cors";
 
 const app = express();
 
 app.use(cookieParser());
-
+app.use(cors());
 app.use(express.json());
 
 app.use(helmet());
