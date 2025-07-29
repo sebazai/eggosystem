@@ -23,12 +23,20 @@ export const sendDemoForAllStarPOTGClip = async (
 ): Promise<AllStarClipResponse> => {
   const apiKey = process.env.ALLSTAR_API_KEY;
   if (!apiKey) {
-    throw new Error("ALLSTAR_API_KEY is not set");
+    logger.error("ALLSTAR_API_KEY is not set");
+    return {
+      success: false,
+      error: "ALLSTAR_API_KEY is not set"
+    };
   }
 
   const backendUrl = process.env.BACKEND_URL;
   if (!backendUrl) {
-    throw new Error("BACKEND_URL is not set");
+    logger.error("BACKEND_URL is not set");
+    return {
+      success: false,
+      error: "BACKEND_URL is not set"
+    };
   }
 
   const webhookUrl = `${backendUrl}/api/v1/allstar/webhook`;
@@ -86,7 +94,14 @@ export const sendDemoForAllStarPOTGClip = async (
     });
 
     // Insert processing record
-    await insertClipProcessing(gameId, "potg");
+    try {
+      await insertClipProcessing(gameId, "potg");
+    } catch (dbError) {
+      logger.error("Failed to insert clip processing record", {
+        gameId,
+        error: dbError instanceof Error ? dbError.message : String(dbError)
+      });
+    }
 
     return {
       success: true,
