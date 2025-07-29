@@ -23,7 +23,7 @@ import {
 } from "../../../models/match.models";
 import { saveWebhookData } from "../../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../../models/match-team-map-veto.models";
-import { addMatchGamesForMatch } from "../../../models/game.models";
+import { addMatchGameToDatabaseAndProcessDemo } from "../../../models/game.models";
 import { validatePlayersInTeams } from "../../../models/season-team-players.models";
 import { expressErrorHandler } from "../../../middlewares/express-error-handler";
 import {
@@ -57,9 +57,10 @@ const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
 const mockAddMatchTeamMapVetoes = addMatchTeamMapVetoes as jest.MockedFunction<
   typeof addMatchTeamMapVetoes
 >;
-const mockAddMatchGamesForMatch = addMatchGamesForMatch as jest.MockedFunction<
-  typeof addMatchGamesForMatch
->;
+const mockAddMatchGamesForMatch =
+  addMatchGameToDatabaseAndProcessDemo as jest.MockedFunction<
+    typeof addMatchGameToDatabaseAndProcessDemo
+  >;
 const mockValidatePlayersInTeams =
   validatePlayersInTeams as jest.MockedFunction<typeof validatePlayersInTeams>;
 

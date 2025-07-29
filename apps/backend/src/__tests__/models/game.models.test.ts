@@ -1,4 +1,4 @@
-import { addMatchGamesForMatch } from "../../models/game.models";
+import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
 import { validWebhookMatchDemoReady } from "../../routes/v1/__tests__/faceit.routes.test";
 import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 
@@ -67,7 +67,7 @@ describe("addMatchGamesForMatch", () => {
     });
 
     it("should successfully add match games for BO3 championship match", async () => {
-      await addMatchGamesForMatch(
+      await addMatchGameToDatabaseAndProcessDemo(
         validWebhookMatchDemoReady,
         validMatchDetailsMatchDemoReady,
         "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
@@ -126,7 +126,7 @@ describe("addMatchGamesForMatch", () => {
         { id: 2, map_id: 2, veto_order: 2, action: "pick" }
       ]);
 
-      await addMatchGamesForMatch(
+      await addMatchGameToDatabaseAndProcessDemo(
         bo2Webhook,
         bo2MatchDetails,
         "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
@@ -158,7 +158,7 @@ describe("addMatchGamesForMatch", () => {
       mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([]);
 
       await expect(
-        addMatchGamesForMatch(
+        addMatchGameToDatabaseAndProcessDemo(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
@@ -173,7 +173,7 @@ describe("addMatchGamesForMatch", () => {
       mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValue(undefined);
 
       await expect(
-        addMatchGamesForMatch(
+        addMatchGameToDatabaseAndProcessDemo(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
@@ -211,7 +211,7 @@ describe("addMatchGamesForMatch", () => {
       ]);
 
       await expect(
-        addMatchGamesForMatch(
+        addMatchGameToDatabaseAndProcessDemo(
           validWebhookMatchDemoReady,
           bo2MatchDetails,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
@@ -257,7 +257,7 @@ describe("addMatchGamesForMatch", () => {
       ]);
 
       await expect(
-        addMatchGamesForMatch(
+        addMatchGameToDatabaseAndProcessDemo(
           bo2Webhook,
           bo2MatchDetails,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
@@ -296,7 +296,7 @@ describe("addMatchGamesForMatch", () => {
       ]);
 
       await expect(
-        addMatchGamesForMatch(
+        addMatchGameToDatabaseAndProcessDemo(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"

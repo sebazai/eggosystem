@@ -20,6 +20,7 @@ import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-
 import { getConnection } from "../db/mysqlConnection";
 import { type PoolConnection } from "mysql2/promise";
 import { parseDemoUrl } from "../utils/demo-url-parser";
+import { sendDemoForAllStarPOTGClip } from "../services/allstar.services";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -152,7 +153,7 @@ export const getGameClip = async (game_id: number) => {
   return runQuery<GameClip[]>(query, [game_id]);
 };
 
-export const addMatchGamesForMatch = async (
+export const addMatchGameToDatabaseAndProcessDemo = async (
   webhookData: MatchDemoReadyWebhook,
   matchDetails: ChampionshipDetailsDemoReady,
   externalLeagueId: string
@@ -216,7 +217,9 @@ export const addMatchGamesForMatch = async (
         map_order: mapPlayedIn,
         connection
       });
-      // Push into Parser and AllStart queue
+      await Promise.all([
+        sendDemoForAllStarPOTGClip(demo_url, _insertedRow.insertId)
+      ]);
       await connection.commit();
     } else {
       const matchObject = await runQuery<Match>(
@@ -235,7 +238,9 @@ export const addMatchGamesForMatch = async (
         map_order: mapPlayedIn,
         connection
       });
-      // Push into Parser and AllStart queue
+      await Promise.all([
+        sendDemoForAllStarPOTGClip(demo_url, _insertedRow.insertId)
+      ]);
       await connection.commit();
     }
   } catch (error) {

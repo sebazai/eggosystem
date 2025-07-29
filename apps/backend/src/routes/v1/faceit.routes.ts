@@ -56,7 +56,7 @@ import {
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
-import { addMatchGamesForMatch } from "../../models/game.models";
+import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 
 const router = Router();
@@ -363,7 +363,7 @@ router.post(
           validatedMatchDetails.teams,
           validatedMatchDetails.match_id
         );
-        await addMatchGamesForMatch(
+        await addMatchGameToDatabaseAndProcessDemo(
           validatedWebhook,
           validatedMatchDetails,
           webhookData.payload.entity.id
