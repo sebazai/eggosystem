@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateJWT } from "../middlewares/auth.middleware";
+import { corsMiddleware } from "../middlewares/cors.middleware";
 import dashboardRouter from "./v1/dashboard/index";
 import authRouter from "./v1/auth.routes";
 import playerRouter from "./v1/player.routes";
@@ -29,12 +30,18 @@ import stageRouter from "./v1/stage.routes";
 // Create a new Router instance
 const v1Router = Router();
 
-// Dashboard
-v1Router.use("/dashboard", authenticateJWT, dashboardRouter);
-v1Router.use("/kanahautomo", kanahautomoRouter);
+// Dashboard - Apply CORS
+v1Router.use("/auth", corsMiddleware, authRouter);
+v1Router.use("/accounts", corsMiddleware, authenticateJWT, accountRouter);
+v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
+v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);
+v1Router.use("/sortter", corsMiddleware, sortterRouter);
+v1Router.use("/discord", corsMiddleware, discordRouter);
+v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
+v1Router.use("/registrations", corsMiddleware, registrationsRouter);
 
 // Mount the routers
-v1Router.use("/auth", authRouter);
+
 v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/games", gameRouter);
@@ -50,23 +57,17 @@ v1Router.use(
 v1Router.use("/maps", mapsRouter);
 v1Router.use("/teams", teamsRouter);
 v1Router.use("/seasons", seasonsRouter);
-v1Router.use("/registrations", registrationsRouter);
 v1Router.use("/leagues", leaguesRouter);
 v1Router.use("/now", nowRouter);
-v1Router.use("/sortter", sortterRouter);
-v1Router.use("/accounts", authenticateJWT, accountRouter);
 v1Router.use("/faceit", faceitRouter);
 v1Router.use("/allstar", allstarRouter);
-v1Router.use("/discord", discordRouter);
 v1Router.use("/stages", stageRouter);
 v1Router.use("/elo", eloRouter);
-
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
   res.setHeader("Cache-Control", "public, max-age=86400");
   res.status(200).json(stats);
 });
-v1Router.post("/verify-email", verifyEmailController);
 
 v1Router.use("/", async (req, res) => {
   res.status(200).json({ message: "API is running" });

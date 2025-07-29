@@ -30,7 +30,6 @@ if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
 }
 
 import express from "express";
-import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import passport from "./configs/passport";
@@ -46,32 +45,6 @@ import {
 const app = express();
 
 app.use(cookieParser());
-
-const frontendUrlEnv = process.env.FRONTEND_URL;
-
-if (!frontendUrlEnv) {
-  throw new Error("FRONTEND_URL is not defined");
-}
-
-const frontendUrl = new URL(frontendUrlEnv);
-const frontendUrlOrigin = `${frontendUrl.protocol}//${frontendUrl.host}`;
-const allowList = [frontendUrlOrigin];
-
-const corsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) => {
-    if (!origin || allowList.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
-} satisfies cors.CorsOptions;
-
-app.use(cors(corsOptions));
 
 app.use(express.json());
 

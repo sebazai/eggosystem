@@ -49,6 +49,13 @@ export const expressErrorHandler = (
 
   if (err instanceof Error) {
     logger.error("Express Error Handler", err);
+
+    // CORS errors should return 500 as they represent server policy rejection
+    if (err.message.includes("Not allowed by CORS")) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
     res.status(400).json({ error: err.message });
     return;
   }
