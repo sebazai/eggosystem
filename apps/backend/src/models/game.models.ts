@@ -7,7 +7,6 @@ import {
   type GameClip,
   type MatchDemoReadyWebhook,
   type ChampionshipDetailsDemoReady,
-  type Match,
   type MatchTeamMapVeto
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -21,6 +20,11 @@ import { getConnection } from "../db/mysqlConnection";
 import { type PoolConnection } from "mysql2/promise";
 import { parseDemoUrl } from "../utils/demo-url-parser";
 import { sendDemoForAllStarPOTGClip } from "../services/allstar.services";
+import {
+  publishToParseQueue,
+  createDemoProcessingRequest
+} from "../services/parse-queue.services";
+import { logger } from "../utils/app-logger";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -153,6 +157,40 @@ export const getGameClip = async (game_id: number) => {
   return runQuery<GameClip[]>(query, [game_id]);
 };
 
+/**
+ * Publish demo processing request to parse_queue
+ */
+const publishDemoProcessingRequest = async (
+  gameId: number,
+  demoUrl: string
+): Promise<void> => {
+  try {
+    const demoProcessingRequest = createDemoProcessingRequest(
+      gameId,
+      demoUrl,
+      5, // Medium priority for demo processing
+      "game-processor"
+    );
+
+    await publishToParseQueue(demoProcessingRequest);
+
+    logger.info("Demo processing request published to parse_queue", {
+      gameId,
+      demoUrl,
+      queue: "parse_queue",
+      request: demoProcessingRequest
+    });
+  } catch (error) {
+    logger.error("Failed to publish demo processing request to parse_queue", {
+      gameId,
+      demoUrl,
+      queue: "parse_queue",
+      error
+    });
+    // Don't throw - this is a non-critical operation
+  }
+};
+
 export const addMatchGameToDatabaseAndProcessDemo = async (
   webhookData: MatchDemoReadyWebhook,
   matchDetails: ChampionshipDetailsDemoReady,
@@ -211,37 +249,48 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         throw new Error("Could not find match object for 2xBO1 matches");
       }
 
-      const _insertedRow = await addMatchGameForMatch({
+      const insertedRow = await addMatchGameForMatch({
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
         connection
       });
-      await Promise.all([
-        sendDemoForAllStarPOTGClip(demo_url, _insertedRow.insertId)
-      ]);
       await connection.commit();
+
+      await Promise.all([
+        sendDemoForAllStarPOTGClip(demo_url, insertedRow.insertId),
+        publishDemoProcessingRequest(insertedRow.insertId, demo_url)
+      ]);
+
+      // Publish demo processing request after successful commit
     } else {
-      const matchObject = await runQuery<Match>(
-        `SELECT * FROM Matches WHERE external_match_room_id = ?`,
+      const matchObjects = await runQuery<
+        Array<{ id: number; season_id: number }>
+      >(
+        `SELECT id, season_id FROM Matches WHERE external_match_room_id = ?`,
         [match_id],
         connection
       );
 
-      if (!matchObject) {
+      if (!matchObjects || matchObjects.length === 0) {
         throw new Error("Could not find match object for 2xBO1 matches");
       }
 
-      const _insertedRow = await addMatchGameForMatch({
+      const matchObject = matchObjects[0];
+
+      const insertedRow = await addMatchGameForMatch({
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
         connection
       });
-      await Promise.all([
-        sendDemoForAllStarPOTGClip(demo_url, _insertedRow.insertId)
-      ]);
+
       await connection.commit();
+
+      await Promise.all([
+        sendDemoForAllStarPOTGClip(demo_url, insertedRow.insertId),
+        publishDemoProcessingRequest(insertedRow.insertId, demo_url)
+      ]);
     }
   } catch (error) {
     await connection.rollback();
