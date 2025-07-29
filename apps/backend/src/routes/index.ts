@@ -39,6 +39,7 @@ v1Router.use("/sortter", corsMiddleware, sortterRouter);
 v1Router.use("/discord", corsMiddleware, discordRouter);
 v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
 v1Router.use("/registrations", corsMiddleware, registrationsRouter);
+v1Router.use("/faceit", corsMiddleware, faceitRouter);
 
 // Mount the routers
 
@@ -59,7 +60,7 @@ v1Router.use("/teams", teamsRouter);
 v1Router.use("/seasons", seasonsRouter);
 v1Router.use("/leagues", leaguesRouter);
 v1Router.use("/now", nowRouter);
-v1Router.use("/faceit", faceitRouter);
+
 v1Router.use("/allstar", allstarRouter);
 v1Router.use("/stages", stageRouter);
 v1Router.use("/elo", eloRouter);
