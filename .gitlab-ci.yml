@@ -316,6 +316,7 @@ test-e2e:frontend:
     MARIADB_MAX_ALLOWED_PACKET: 128M
     MARIADB_INNODB_LOG_FILE_SIZE: 64M
     PRIVACY_POLICY_VERSION: "1"
+    FRONTEND_URL: "http://localhost:3000"
   before_script:
     - apt-get update && apt-get install -y openssl
     - | # Generate private and public access tokens
