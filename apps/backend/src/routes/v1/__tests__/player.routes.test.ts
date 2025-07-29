@@ -1,6 +1,7 @@
 // Mock API key - set before importing app since middleware is created at require time
 const TEST_API_KEY = "test-api-key";
 process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
+process.env.FRONTEND_URL = "http://localhost:3000";
 
 import request from "supertest";
 import express from "express";

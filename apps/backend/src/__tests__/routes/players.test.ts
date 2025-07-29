@@ -1,3 +1,7 @@
+// Set environment variables before any imports
+process.env.FRONTEND_URL = "http://localhost:3000";
+process.env.PRIVACY_POLICY_VERSION = "1";
+
 import request from "supertest";
 import express from "express";
 import playerRouter from "../../routes/v1/player.routes";
@@ -7,10 +11,6 @@ describe("GET /players", () => {
   const app = express();
   app.use(express.json());
   app.use(playerRouter);
-
-  beforeEach(() => {
-    process.env.PRIVACY_POLICY_VERSION = "1";
-  });
 
   it("/:steam_id/details", async () => {
     const response = await request(app).get("/76561198049745649/details");
@@ -29,5 +29,6 @@ describe("GET /players", () => {
   it("should return 404 when steam_id not found", async () => {
     const response = await request(app).get(`/123123123/details`);
     expect(response.status).toBe(404);
+    expect(response.body).toStrictEqual({ message: "User not found" });
   });
 });

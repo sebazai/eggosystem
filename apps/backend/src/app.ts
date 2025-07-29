@@ -29,6 +29,10 @@ if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
   }
 }
 
+if (!process.env.FRONTEND_URL) {
+  throw new Error("FRONTEND_URL is not defined");
+}
+
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -46,7 +50,12 @@ import cors from "cors";
 const app = express();
 
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    credentials: true
+  })
+);
 app.use(express.json());
 
 app.use(helmet());

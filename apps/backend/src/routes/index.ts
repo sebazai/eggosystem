@@ -40,10 +40,9 @@ v1Router.use("/discord", corsMiddleware, discordRouter);
 v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
 v1Router.use("/registrations", corsMiddleware, registrationsRouter);
 v1Router.use("/faceit", corsMiddleware, faceitRouter);
+v1Router.use("/players", playerRouter);
 
 // Mount the routers
-
-v1Router.use("/players", playerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/games", gameRouter);
 v1Router.use("/organizations", organizationRouter);
