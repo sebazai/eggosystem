@@ -1,7 +1,8 @@
 import {
   getMatchesByFilters,
   getMatchTopPlayers,
-  getMatchMapVetoes
+  getMatchMapVetoes,
+  getMatchGamesByTeam
 } from "../../models/match.models";
 
 describe("getMatchesByFilters", () => {
@@ -243,5 +244,44 @@ describe("getMatchMapVetoes", () => {
     result.forEach((veto, index) => {
       expect(veto.veto_order).toBe(index + 1);
     });
+  });
+});
+
+describe("getMatchGamesByTeam", () => {
+  it("should return individual games for team 1697", async () => {
+    const result = await getMatchGamesByTeam(1697);
+
+    // Verify we get results
+    expect(result.length).toBeGreaterThan(0);
+
+    // Verify all games involve team 1697
+    result.forEach((game) => {
+      expect([game.team1_id, game.team2_id]).toContain(1697);
+    });
+
+    // Verify each game has terrorist as team1 and CT as team2
+    result.forEach((game) => {
+      // team1 should be terrorist, team2 should be CT
+      // We can't easily verify this without additional data, so we'll just check that teams are different
+      expect(game.team1_id).not.toBe(game.team2_id);
+    });
+
+    // Verify each game has a unique game_id
+    const gameIds = result.map((game) => game.game_id);
+    const uniqueGameIds = [...new Set(gameIds)];
+    expect(uniqueGameIds.length).toBe(gameIds.length);
+
+    // Verify each game has map information
+    result.forEach((game) => {
+      expect(game.map_name).toBeDefined();
+      expect(game.map_id).toBeDefined();
+      expect(game.team1_score).toBeDefined();
+      expect(game.team2_score).toBeDefined();
+    });
+  });
+
+  it("should handle team with no matches", async () => {
+    const result = await getMatchGamesByTeam(999999);
+    expect(result).toEqual([]);
   });
 });

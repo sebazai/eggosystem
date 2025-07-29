@@ -16,7 +16,7 @@ import {
   type MatchesWithTeamDataQuery,
   type ChampionshipDetailsObjectCreated,
   FaceitMatchStatus,
-  type MatchesByTeam
+  type MatchGamesByTeam
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -361,10 +361,10 @@ export const getMatchMapVetoes = async (match_id: number) => {
   return runQuery<MatchMapVetoes[]>(query, [match_id]);
 };
 
-export const getMatchesByTeam = async (
+export const getMatchGamesByTeam = async (
   teamId: number,
   seasonId?: number
-): Promise<MatchesByTeam[]> => {
+): Promise<MatchGamesByTeam[]> => {
   let seasonFilter = "";
   const queryParams: (number | string)[] = [teamId, teamId];
 
@@ -373,33 +373,37 @@ export const getMatchesByTeam = async (
     queryParams.push(seasonId);
   }
 
-  const matchesQuery = `
-    SELECT 
-      m.id,
-      mt1.team_id as team1_id,
-      mt2.team_id as team2_id,
-      t1.name as team1_name,
-      t2.name as team2_name,
-      COALESCE(SUM(CASE WHEN tgs1.team_id = mt1.team_id THEN tgs1.score END), 0) as team1_score,
-      COALESCE(SUM(CASE WHEN tgs2.team_id = mt2.team_id THEN tgs2.score END), 0) as team2_score,
+  const matchGamesQuery = `
+    SELECT DISTINCT
+      m.id as match_id,
+      tgs_t.team_id as team1_id,
+      tgs_ct.team_id as team2_id,
+      t_t.name as team1_name,
+      t_ct.name as team2_name,
       DATE_FORMAT(m.match_date, '%Y-%m-%d') as match_date,
       m.league_id,
-      m.season_id
+      m.season_id,
+      mg.id as game_id,
+      map.name as map_name,
+      map.id as map_id,
+      mg.map_order,
+      COALESCE(tgs_t.score, 0) as team1_score,
+      COALESCE(tgs_ct.score, 0) as team2_score
     FROM Matches m
     JOIN MatchTeams mt1 ON m.id = mt1.match_id
     JOIN MatchTeams mt2 ON m.id = mt2.match_id AND mt2.team_id != mt1.team_id
-    JOIN Teams t1 ON mt1.team_id = t1.id
-    JOIN Teams t2 ON mt2.team_id = t2.id
-    LEFT JOIN MatchGames mg ON m.id = mg.match_id
-    LEFT JOIN TeamGameScores tgs1 ON mg.id = tgs1.game_id AND tgs1.team_id = mt1.team_id
-    LEFT JOIN TeamGameScores tgs2 ON mg.id = tgs2.game_id AND tgs2.team_id = mt2.team_id
+    JOIN MatchGames mg ON m.id = mg.match_id
+    JOIN Maps map ON map.id = mg.map_id
+    JOIN TeamGameScores tgs_t ON mg.id = tgs_t.game_id AND tgs_t.starting_side = 'T'
+    JOIN TeamGameScores tgs_ct ON mg.id = tgs_ct.game_id AND tgs_ct.starting_side = 'CT'
+    JOIN Teams t_t ON tgs_t.team_id = t_t.id
+    JOIN Teams t_ct ON tgs_ct.team_id = t_ct.id
     WHERE (mt1.team_id = ? OR mt2.team_id = ?)
     ${seasonFilter}
-    GROUP BY m.id, mt1.team_id, mt2.team_id, t1.name, t2.name, m.match_date, m.league_id, m.season_id
-    ORDER BY m.match_date DESC, m.id DESC
+    ORDER BY m.match_date DESC, m.id DESC, mg.map_order ASC
   `;
 
-  return runQuery<MatchesByTeam[]>(matchesQuery, queryParams);
+  return runQuery<MatchGamesByTeam[]>(matchGamesQuery, queryParams);
 };
 
 const addTeamToMatch = async (
