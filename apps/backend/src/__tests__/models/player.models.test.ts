@@ -632,7 +632,7 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 0,
       multikill_4k: 0,
       multikill_5k: 0,
-      rounds_played: 24
+      rounds_played: 551
     });
   });
   it("should return team specific stats when player has played in two teams during one season", async () => {
@@ -675,7 +675,7 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 0,
       multikill_4k: 0,
       multikill_5k: 0,
-      rounds_played: 19
+      rounds_played: 446
     });
   });
   it("player with two different teams in two different season using double season filter aggregates scores", async () => {
@@ -718,7 +718,7 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 0,
       multikill_4k: 0,
       multikill_5k: 0,
-      rounds_played: 41
+      rounds_played: 978
     });
   });
   it("should match when season 11,14 and league 7 vs only league 7", async () => {
@@ -788,7 +788,7 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 0,
       multikill_4k: 0,
       multikill_5k: 0,
-      rounds_played: 24
+      rounds_played: 645
     });
   });
   it("with season, stage and mapid filters", async () => {
@@ -831,7 +831,7 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 0,
       multikill_4k: 0,
       multikill_5k: 0,
-      rounds_played: 2
+      rounds_played: 35
     });
   });
   it("with wrong team filter", async () => {

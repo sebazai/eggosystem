@@ -403,48 +403,66 @@ export const getPlayerStatsWithFilters = async (
 
   const teamIdsJoin = team_ids && team_ids.length > 0;
 
-  // Get player's aggregate statistics
   const statsQuery = `
+    WITH player_games AS (
+      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id
+      FROM SteamPlayers p
+      INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
+      WHERE ${query}
+    ),
+    player_stats AS (
+      SELECT 
+        pg.steam_id,
+        pg.nickname,
+        COUNT(DISTINCT pg.game_id) as maps_played,
+        SUM(ps.kills) as kills,
+        SUM(ps.assists) as assists,
+        SUM(ps.deaths) as deaths,
+        SUM(ps.flash_assists) as flash_assists,
+        SUM(ps.awp_kills) as awp_kills,
+        SUM(ps.utility_damage) as utility_damage,
+        SUM(ps.headshots) as headshots,
+        SUM(ps.first_kills) as first_kills,
+        SUM(ps.first_deaths) as first_deaths,
+        AVG(ps.adr) as adr,
+        AVG(ps.kana_rating) as kana_rating,
+        AVG(ps.hs_percent) as hs_percent,
+        SUM(ps.clutches_won) as clutches_won,
+        SUM(ps.clutches) - SUM(ps.clutches_won) as clutches_lost,
+        AVG(ps.kast) as kast,
+        SUM(ps.enemies_flashed) as enemies_flashed,
+        SUM(ps.mates_flashed) as mates_flashed,
+        SUM(ps.self_flashes) as self_flashes,
+        SUM(ps.total_damage) as total_damage,
+        SUM(ps.flashes_thrown) as flashes_thrown,
+        SUM(ps.total_ef_duration) as total_ef_duration,
+        ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
+        SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
+        SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
+        SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
+        SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
+        SUM(ps.kills_t) as kills_t,
+        SUM(ps.kills_ct) as kills_ct
+      FROM player_games pg
+      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
+      GROUP BY pg.steam_id, pg.nickname
+    ),
+    player_rounds AS (
+      SELECT 
+        pg.steam_id,
+        COUNT(DISTINCT mrs.id) as rounds_played
+      FROM player_games pg
+      INNER JOIN MapRoundStats mrs ON mrs.game_id = pg.game_id
+      GROUP BY pg.steam_id
+    )
     SELECT 
-      p.steam_id,
-      p.nickname,
-      COUNT(DISTINCT mg.id) as maps_played,
-      SUM(ps.kills) as kills,
-      SUM(ps.assists) as assists,
-      SUM(ps.deaths) as deaths,
-      SUM(ps.flash_assists) as flash_assists,
-      SUM(ps.awp_kills) as awp_kills,
-      SUM(ps.utility_damage) as utility_damage,
-      SUM(ps.headshots) as headshots,
-      SUM(ps.first_kills) as first_kills,
-      SUM(ps.first_deaths) as first_deaths,
-      AVG(ps.adr) as adr,
-      AVG(ps.kana_rating) as kana_rating,
-      AVG(ps.hs_percent) as hs_percent,
-      SUM(ps.clutches_won) as clutches_won,
-      SUM(ps.clutches) - SUM(ps.clutches_won) as clutches_lost,
-      AVG(ps.kast) as kast,
-      SUM(ps.enemies_flashed) as enemies_flashed,
-      SUM(ps.mates_flashed) as mates_flashed,
-      SUM(ps.self_flashes) as self_flashes,
-      SUM(ps.total_damage) as total_damage,
-      SUM(ps.flashes_thrown) as flashes_thrown,
-      SUM(ps.total_ef_duration) as total_ef_duration,
-      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
-      SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
-      SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
-      SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
-      SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
-      COUNT(DISTINCT ps.id) as rounds_played,
-      SUM(ps.kills_t) as kills_t,
-      SUM(ps.kills_ct) as kills_ct
-    FROM SteamPlayers p
-    INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
-    WHERE ${query}
-    GROUP BY p.steam_id, p.nickname
+      ps.*,
+      pr.rounds_played
+    FROM player_stats ps
+    INNER JOIN player_rounds pr ON pr.steam_id = ps.steam_id
   `;
 
   const [playerStats] = await runQuery<Array<PlayerStatsResult | undefined>>(
