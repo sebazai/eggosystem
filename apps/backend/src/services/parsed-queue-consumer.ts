@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import * as amqp from "amqplib";
 import { logger } from "../utils/app-logger";
 import type {
@@ -341,7 +340,7 @@ export class ParsedQueueConsumer {
         errors
       });
 
-      // Send error to error queue
+      // Send error to error queue with original message
       try {
         this.publishError(message, errors, {
           processingTime,
@@ -354,13 +353,17 @@ export class ParsedQueueConsumer {
                 }
               : String(error)
         });
+
+        // Acknowledge the original message since we've handled it by sending to error queue
+        this.channel.ack(msg);
+        this.errorCount++;
       } catch (publishError) {
         logger.error("Failed to publish error to error queue", publishError);
-      }
 
-      // Reject message and requeue for retry
-      this.channel.nack(msg, false, true);
-      this.errorCount++;
+        // If we can't publish to error queue, reject and requeue for retry
+        this.channel.nack(msg, false, true);
+        this.errorCount++;
+      }
     }
   }
 
@@ -372,44 +375,19 @@ export class ParsedQueueConsumer {
   ): Promise<void> {
     const { game_id, parsed_payload, processing_duration } = message;
 
-    console.log("message", message);
     if (!parsed_payload) {
       throw new Error("Missing parsed payload");
     }
 
-    const {
-      Score,
-      Players,
-      RoundInfo,
-      Trades,
-      Clutches,
-      NewRoundInfo,
-      RoundImpacts
-    } = parsed_payload;
-
-    console.log("Score", JSON.stringify(Score, null, 2));
-    console.log("Players", JSON.stringify(Players, null, 2));
-    console.log("RoundInfo", JSON.stringify(RoundInfo, null, 2));
-    console.log("Trades", JSON.stringify(Trades, null, 2));
-    console.log("Clutches", JSON.stringify(Clutches, null, 2));
-    console.log("NewRoundInfo", JSON.stringify(NewRoundInfo, null, 2));
-    console.log("RoundImpacts", JSON.stringify(RoundImpacts, null, 2));
-
     try {
       await saveParsedDemoDataForGame(game_id, parsed_payload);
     } catch (error) {
-      logger.info("Processing parsed demo data for game", {
+      logger.info("Failed to save parsed demo data for game", {
         gameId: game_id,
         parsedPayloadKeys: Object.keys(parsed_payload),
-        processingDuration: processing_duration
+        processingDuration: processing_duration,
+        error: error instanceof Error ? error.message : String(error)
       });
-      this.publishError(
-        message,
-        ["Failed to insert game with parsed data", JSON.stringify(error)],
-        {
-          processingTime: processing_duration
-        }
-      );
       throw error;
     }
   }
@@ -431,6 +409,7 @@ export class ParsedQueueConsumer {
       timestamp: new Date().toISOString(),
       errors,
       details,
+      originalMessage,
       source: "parsed-queue-consumer",
       metadata: {
         processor: "parsed-queue-consumer",
