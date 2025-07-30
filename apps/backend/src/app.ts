@@ -45,6 +45,7 @@ import {
   initializeDiscordClient,
   setupDiscordEventHandlers
 } from "./services/discord.services";
+import { queueConsumerManager } from "./services/queue-consumer-manager";
 import cors from "cors";
 
 const app = express();
@@ -91,6 +92,26 @@ if (
 } else {
   logger.info(
     "Discord environment variables not found, skipping Discord initialization"
+  );
+}
+
+// Initialize queue consumers if not in test mode
+if (
+  process.env.NODE_ENV !== "test" &&
+  process.env.NODE_ENV !== "e2e" &&
+  process.env.TEST_TYPE !== "e2e"
+) {
+  queueConsumerManager
+    .startAllConsumers()
+    .then(() => {
+      logger.info("Queue consumers initialized successfully");
+    })
+    .catch((error) => {
+      logger.error("Failed to initialize queue consumers:", error);
+    });
+} else {
+  logger.info(
+    "Test environment detected, skipping queue consumer initialization"
   );
 }
 

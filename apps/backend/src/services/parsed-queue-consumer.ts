@@ -113,7 +113,7 @@ const DEFAULT_PARSE_QUEUE_CONFIG: ParseQueueConfig = {
   username: process.env.RABBITMQ_USER || "test",
   password: process.env.RABBITMQ_PASSWORD || "test",
   parsedQueueName: "parsed_queue",
-  errorQueueName: "parse_error_queue",
+  errorQueueName: "parsed_save_failed",
   prefetchCount: parseInt(process.env.PARSE_PREFETCH_COUNT || "5"),
   retryAttempts: parseInt(process.env.PARSE_RETRY_ATTEMPTS || "3"),
   retryDelay: parseInt(process.env.PARSE_RETRY_DELAY || "5000")
@@ -131,6 +131,7 @@ export class ParsedQueueConsumer {
   private processedCount = 0;
   private errorCount = 0;
   private isConnected = false;
+  private consumerTag: string | null = null;
 
   constructor(config: Partial<ParseQueueConfig> = {}) {
     this.config = { ...DEFAULT_PARSE_QUEUE_CONFIG, ...config };
@@ -159,18 +160,37 @@ export class ParsedQueueConsumer {
         // Set prefetch to control concurrent processing
         await this.channel.prefetch(this.config.prefetchCount);
 
-        // Ensure queues exist
-        await this.channel.assertQueue(this.config.parsedQueueName, {
-          durable: true,
-          arguments: {
-            "x-message-ttl": 3600000, // 1 hour TTL
-            "x-dead-letter-exchange": "dlx", // Dead letter exchange
-            "x-dead-letter-routing-key": "failed"
-          }
-        });
-        await this.channel.assertQueue(this.config.errorQueueName, {
-          durable: true
-        });
+        // Ensure queues exist - use checkQueue first to see if they exist
+        try {
+          await this.channel.checkQueue(this.config.parsedQueueName);
+          logger.info(
+            "Parsed queue already exists, using existing configuration"
+          );
+        } catch (_error) {
+          // Queue doesn't exist, create it with our preferred settings
+          await this.channel.assertQueue(this.config.parsedQueueName, {
+            durable: true,
+            arguments: {
+              "x-message-ttl": 3600000, // 1 hour TTL
+              "x-dead-letter-exchange": "dlx", // Dead letter exchange
+              "x-dead-letter-routing-key": "failed"
+            }
+          });
+          logger.info("Created parsed queue with durable settings");
+        }
+
+        try {
+          await this.channel.checkQueue(this.config.errorQueueName);
+          logger.info(
+            "Error queue already exists, using existing configuration"
+          );
+        } catch (_error) {
+          // Queue doesn't exist, create it with our preferred settings
+          await this.channel.assertQueue(this.config.errorQueueName, {
+            durable: true
+          });
+          logger.info("Created error queue with durable settings");
+        }
 
         logger.info(
           "Successfully connected to RabbitMQ for parsed queue consumer",
@@ -225,7 +245,7 @@ export class ParsedQueueConsumer {
       prefetchCount: this.config.prefetchCount
     });
 
-    await this.channel.consume(
+    const consumeResult = await this.channel.consume(
       this.config.parsedQueueName,
       async (msg: amqp.ConsumeMessage | null) => {
         if (msg) {
@@ -234,6 +254,8 @@ export class ParsedQueueConsumer {
       },
       { noAck: false }
     );
+
+    this.consumerTag = consumeResult.consumerTag;
 
     logger.info("Parsed queue consumer started successfully");
   }
@@ -248,8 +270,9 @@ export class ParsedQueueConsumer {
 
     this.isProcessing = false;
 
-    if (this.channel) {
-      await this.channel.cancel("parsed-consumer");
+    if (this.channel && this.consumerTag) {
+      await this.channel.cancel(this.consumerTag);
+      this.consumerTag = null;
     }
 
     logger.info("Parsed queue consumer stopped");
@@ -346,6 +369,7 @@ export class ParsedQueueConsumer {
   ): Promise<void> {
     const { game_id, result } = message;
 
+    console.log("message", message);
     if (!result || !result.parsed_data) {
       throw new Error("Missing parsed data");
     }
