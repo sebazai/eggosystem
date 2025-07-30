@@ -21,23 +21,22 @@ export type ParsingStatus = "success" | "partial_success" | "failed";
  */
 export interface ParseResultMessage {
   game_id: string;
+  demo_file: string;
+  json_file: string;
+  processed_at: string;
+  processing_duration: number;
+  worker_id: string;
   status: ParsingStatus;
-  timestamp?: string;
-  result?: {
-    parsed_data: Record<string, unknown>;
-    processing_time: number;
-    errors?: string[];
-  };
-  details: {
-    processingTime: number;
-    timestamp: string;
-    errors?: string[];
-  };
-  metadata: {
-    processor: string;
-    version: string;
-    requestId?: string;
-  };
+  parsed_payload: ParsedPayload; // You'll implement this type
+}
+
+/**
+ * Parsed payload type - to be implemented by you
+ */
+export interface ParsedPayload {
+  // TODO: Implement the parsed payload structure
+  // This will contain the actual parsed demo data
+  [key: string]: unknown;
 }
 
 /**

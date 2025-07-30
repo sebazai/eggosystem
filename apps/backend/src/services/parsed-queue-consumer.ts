@@ -298,13 +298,14 @@ export class ParsedQueueConsumer {
       logger.info("Processing parsed demo data", {
         gameId: message.game_id,
         status: message.status,
-        timestamp: message.timestamp,
-        metadata: message.metadata
+        processedAt: message.processed_at,
+        workerId: message.worker_id,
+        processingDuration: message.processing_duration
       });
 
       // Step 1: Validate the parsed data
-      if (!message.result || !message.result.parsed_data) {
-        errors.push("Missing parsed data in message");
+      if (!message.parsed_payload) {
+        errors.push("Missing parsed payload in message");
         throw new Error("Invalid parsed data structure");
       }
 
@@ -367,30 +368,30 @@ export class ParsedQueueConsumer {
   private async processParsedDemoData(
     message: ParseResultMessage
   ): Promise<void> {
-    const { game_id, result } = message;
+    const { game_id, parsed_payload, processing_duration } = message;
 
     console.log("message", message);
-    if (!result || !result.parsed_data) {
-      throw new Error("Missing parsed data");
+    if (!parsed_payload) {
+      throw new Error("Missing parsed payload");
     }
 
     // TODO: Implement your demo data processing logic here
     // This is where you would:
-    // 1. Extract relevant data from result.parsed_data
+    // 1. Extract relevant data from parsed_payload
     // 2. Update database with parsed information
     // 3. Trigger any follow-up processes
     // 4. Send notifications if needed
 
     logger.info("Processing parsed demo data for game", {
       gameId: game_id,
-      parsedDataKeys: Object.keys(result.parsed_data),
-      processingTime: result.processing_time
+      parsedPayloadKeys: Object.keys(parsed_payload),
+      processingDuration: processing_duration
     });
 
     // Example processing steps:
-    // await updateGameWithParsedData(game_id, result.parsed_data);
+    // await updateGameWithParsedData(game_id, parsed_payload);
     // await triggerFollowUpProcesses(game_id);
-    // await sendNotifications(game_id, result.parsed_data);
+    // await sendNotifications(game_id, parsed_payload);
   }
 
   /**

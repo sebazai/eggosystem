@@ -18,6 +18,21 @@ The `QueueConsumerManager` class is responsible for:
 ### Current Consumers
 
 1. **ParsedQueueConsumer**: Processes parsed demo data from the `parsed_queue`
+   - **Message Format**:
+     ```json
+     {
+       "game_id": "123123",
+       "demo_file": "/app/demos/parsed/1-94cbcea0-8389-4713-ac9d-e53d04514b29-1-1.dem.zip",
+       "json_file": "/app/json/1-94cbcea0-8389-4713-ac9d-e53d04514b29-1-1.json",
+       "processed_at": "2025-07-30T06:43:53Z",
+       "processing_duration": 103,
+       "worker_id": "worker_1753857705",
+       "status": "completed",
+       "parsed_payload": {
+         /* parsed demo data */
+       }
+     }
+     ```
 
 ## Startup Process
 
