@@ -7,6 +7,8 @@ export const getMaps = async () => {
 
 export const getMapIdByName = async (name: string) => {
   const query = `SELECT id FROM Maps WHERE name = ?`;
-  const [map] = await runQuery<Array<{ id: number }>>(query, [name]);
+  const [map] = await runQuery<Array<{ id: number }>>(query, [
+    name.toLowerCase()
+  ]);
   return map?.id;
 };

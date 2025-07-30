@@ -25,6 +25,9 @@ import {
   createDemoProcessingRequest
 } from "../services/parse-queue.services";
 import { logger } from "../utils/app-logger";
+import { type ParsedPayload } from "../types/parse-queue.types";
+import { generateQueryWithFilters } from "../utils/queryFilter";
+import { insertTeamGameScore } from "./team-game-score.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -300,6 +303,18 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   }
 };
 
+const getMatchIdByGameId = async (
+  gameId: number,
+  connection?: PoolConnection
+) => {
+  const query = `SELECT match_id FROM MatchGames WHERE id = ?`;
+  return runQuery<{ match_id: number } | undefined>(
+    query,
+    [gameId],
+    connection
+  );
+};
+
 const addMatchGameForMatch = async ({
   match_id,
   map_id,
@@ -322,4 +337,106 @@ const addMatchGameForMatch = async ({
     [match_id, map_id, map_order, regulation_rounds ?? 24],
     connection
   );
+};
+
+const getTeamIdByPlayerSteamIdsAndGameId = async (
+  playerSteamIds: string[],
+  gameId: number,
+  connection?: PoolConnection
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "mg.id",
+      value: [gameId]
+    },
+    {
+      column: "stp.steam_id",
+      value: playerSteamIds
+    }
+  ]);
+  const baseQuery = `SELECT DISTINCT mt.team_id FROM MatchGames mg 
+      JOIN Matches m ON mg.match_id = m.id 
+      JOIN MatchTeams mt ON m.id = mt.match_id 
+      JOIN SeasonTeamPlayers stp ON mt.team_id = stp.team_id AND mt.season_id = stp.season_id 
+      WHERE ${query}`;
+  return runQuery<{ team_id: number }>(baseQuery, queryParams, connection);
+};
+
+export const saveParsedDemoDataForGame = async (
+  game_id: string,
+  parsed_payload: ParsedPayload
+) => {
+  const {
+    Score,
+    Players,
+    RoundInfo: _RoundInfo,
+    Trades: _Trades,
+    Clutches: _Clutches,
+    NewRoundInfo: _NewRoundInfo,
+    RoundImpacts: _RoundImpacts
+  } = parsed_payload;
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const gameId = Number(game_id);
+    const match = await getMatchIdByGameId(gameId, connection);
+    if (!match) {
+      throw new Error(`Could not find parent match for game ${gameId}`);
+    }
+
+    const team1PlayerSteamIds = Object.values(Players)
+      .filter((player) => player.Team === 1)
+      .map((player) => String(player.SteamID));
+    const team2PlayerSteamIds = Object.values(Players)
+      .filter((player) => player.Team === 2)
+      .map((player) => String(player.SteamID));
+    const terroristTeam = await getTeamIdByPlayerSteamIdsAndGameId(
+      team1PlayerSteamIds,
+      gameId,
+      connection
+    );
+    const counterTerroristTeam = await getTeamIdByPlayerSteamIdsAndGameId(
+      team2PlayerSteamIds,
+      gameId,
+      connection
+    );
+
+    if (!terroristTeam || !counterTerroristTeam) {
+      throw new Error(
+        `Could not find team for game ${gameId} with player steam ids for team 1: ${team1PlayerSteamIds} and team 2: ${team2PlayerSteamIds}`
+      );
+    }
+
+    await Promise.all([
+      insertTeamGameScore({
+        match_id: match.match_id,
+        team_id: terroristTeam.team_id,
+        game_id: gameId,
+        starting_side: "T",
+        score: Score.Team1Score,
+        halftime_score: Score.Team1Score,
+        overtime_score: Score.Team1Score,
+        connection
+      }),
+      insertTeamGameScore({
+        match_id: match.match_id,
+        team_id: counterTerroristTeam.team_id,
+        game_id: gameId,
+        starting_side: "CT",
+        score: Score.Team2Score,
+        halftime_score: Score.Team2Score,
+        overtime_score: Score.Team2Score,
+        connection
+      })
+    ]);
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };

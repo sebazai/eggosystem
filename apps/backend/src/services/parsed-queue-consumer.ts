@@ -1,9 +1,11 @@
+/* eslint-disable no-console */
 import * as amqp from "amqplib";
 import { logger } from "../utils/app-logger";
 import type {
   ParseResultMessage,
   ParsingStatus
 } from "../types/parse-queue.types";
+import { saveParsedDemoDataForGame } from "../models/game.models";
 
 // Define custom types for amqplib to avoid type errors
 interface AmqpConnection {
@@ -341,7 +343,7 @@ export class ParsedQueueConsumer {
 
       // Send error to error queue
       try {
-        await this.publishError(message, errors, {
+        this.publishError(message, errors, {
           processingTime,
           errorDetails:
             error instanceof Error
@@ -375,33 +377,51 @@ export class ParsedQueueConsumer {
       throw new Error("Missing parsed payload");
     }
 
-    // TODO: Implement your demo data processing logic here
-    // This is where you would:
-    // 1. Extract relevant data from parsed_payload
-    // 2. Update database with parsed information
-    // 3. Trigger any follow-up processes
-    // 4. Send notifications if needed
+    const {
+      Score,
+      Players,
+      RoundInfo,
+      Trades,
+      Clutches,
+      NewRoundInfo,
+      RoundImpacts
+    } = parsed_payload;
 
-    logger.info("Processing parsed demo data for game", {
-      gameId: game_id,
-      parsedPayloadKeys: Object.keys(parsed_payload),
-      processingDuration: processing_duration
-    });
+    console.log("Score", JSON.stringify(Score, null, 2));
+    console.log("Players", JSON.stringify(Players, null, 2));
+    console.log("RoundInfo", JSON.stringify(RoundInfo, null, 2));
+    console.log("Trades", JSON.stringify(Trades, null, 2));
+    console.log("Clutches", JSON.stringify(Clutches, null, 2));
+    console.log("NewRoundInfo", JSON.stringify(NewRoundInfo, null, 2));
+    console.log("RoundImpacts", JSON.stringify(RoundImpacts, null, 2));
 
-    // Example processing steps:
-    // await updateGameWithParsedData(game_id, parsed_payload);
-    // await triggerFollowUpProcesses(game_id);
-    // await sendNotifications(game_id, parsed_payload);
+    try {
+      await saveParsedDemoDataForGame(game_id, parsed_payload);
+    } catch (error) {
+      logger.info("Processing parsed demo data for game", {
+        gameId: game_id,
+        parsedPayloadKeys: Object.keys(parsed_payload),
+        processingDuration: processing_duration
+      });
+      this.publishError(
+        message,
+        ["Failed to insert game with parsed data", JSON.stringify(error)],
+        {
+          processingTime: processing_duration
+        }
+      );
+      throw error;
+    }
   }
 
   /**
    * Publish error to error queue
    */
-  private async publishError(
+  private publishError(
     originalMessage: ParseResultMessage | undefined,
     errors: string[],
     details?: Record<string, unknown>
-  ): Promise<void> {
+  ) {
     if (!this.channel) {
       throw new Error("No channel available");
     }
@@ -420,7 +440,7 @@ export class ParsedQueueConsumer {
 
     const messageBuffer = Buffer.from(JSON.stringify(errorMessage));
 
-    await this.channel.sendToQueue(this.config.errorQueueName, messageBuffer, {
+    this.channel.sendToQueue(this.config.errorQueueName, messageBuffer, {
       persistent: true
     });
 
