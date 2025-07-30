@@ -55,7 +55,7 @@ interface DemoScore {
   Map: string;
 }
 
-interface DemoPlayer {
+export interface DemoPlayer {
   Name: string;
   Kills: number;
   Kills_T: number;

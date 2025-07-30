@@ -28,6 +28,7 @@ import { logger } from "../utils/app-logger";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { insertTeamGameScore } from "./team-game-score.models";
+import { insertPlayerStatsForGame } from "./player-stats.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -429,7 +430,14 @@ export const saveParsedDemoDataForGame = async (
         halftime_score: Score.Team2Score,
         overtime_score: Score.Team2Score,
         connection
-      })
+      }),
+      ...Object.values(Players).map((player) =>
+        insertPlayerStatsForGame({
+          gameId,
+          playerStats: player,
+          connection
+        })
+      )
     ]);
 
     await connection.commit();
