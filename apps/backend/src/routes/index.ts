@@ -26,6 +26,7 @@ import parseQueryFilterParams from "../middlewares/parse-query-filter-params.mid
 import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
 import kanahautomoRouter from "./v1/kanahautomo.routes";
 import stageRouter from "./v1/stage.routes";
+import standingsRouter from "./v1/standings.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -63,6 +64,7 @@ v1Router.use("/now", nowRouter);
 v1Router.use("/allstar", allstarRouter);
 v1Router.use("/stages", stageRouter);
 v1Router.use("/elo", eloRouter);
+v1Router.use("/standings", standingsRouter);
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
   res.setHeader("Cache-Control", "public, max-age=86400");

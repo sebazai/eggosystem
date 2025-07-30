@@ -100,6 +100,11 @@ const defaultProps: NavbarProps = {
       hasFilters: true
     },
     {
+      title: "Standings",
+      url: "/standings",
+      hasFilters: false
+    },
+    {
       title: "Kanahautomo",
       url: "/kanahautomo",
       hasFilters: false
