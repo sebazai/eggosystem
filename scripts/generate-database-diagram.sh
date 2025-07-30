@@ -12,24 +12,38 @@ tbls out -c ../.tbls.yml -t mermaid -o schema.mmd
 echo "Adding mermaid styling configuration..."
 MERMAID_CONFIG=$(cat <<'EOF'
 ---
-config:
-  layout: elk # %% dagre, elk
-  look: classic # %% handDrawn, classic
-  theme: forest # %% default, neutral, dark, forest, base
-  elk: # %% for layout: elk
-    mergeEdges: false # %% true, false
-    nodePlacementStrategy: NETWORK_SIMPLEX
-      # %% SIMPLE, NETWORK_SIMPLEX, LINEAR_SEGMENTS, BRANDES_KOEPF
-  themeCSS:
-    - ".relationshipLine[id*=entity-Accounts] { stroke: #7dd3fc; }"
-    - ".relationshipLine[id*=entity-SteamPlayers] { stroke: #fbbf24; }"
-    - ".relationshipLine[id*=entity-Seasons] { stroke: #a78bfa; }"
-    - ".relationshipLine[id*=entity-Teams] { stroke: #f472b6; }"
-    - ".relationshipLine[id*=entity-MatchGames] { stroke: #34d399; }"
-    - ".relationshipLine[id*=entity-Matches] { stroke: #f87171; }"
+config: # https://mermaid.js.org/schemas/config.schema.json
+  layout: elk
+    # dagre, elk, elk.force, elk.stress, elk.mrtree, elk.sporeOverlap
+    # def:dagre
+  look: classic # handDrawn, classic
+  theme: dark # default, neutral, dark, forest, base
+  elk:
+    mergeEdges: false # true, false
+    nodePlacementStrategy: SIMPLE # def:BRANDES_KOEPF
+      # SIMPLE, NETWORK_SIMPLEX, LINEAR_SEGMENTS, BRANDES_KOEPF
+    cycleBreakingStrategy: GREEDY_MODEL_ORDER # def:GREEDY_MODEL_ORDER 
+      # GREEDY, DEPTH_FIRST, INTERACTIVE, MODEL_ORDER, GREEDY_MODEL_ORDER
+      # (no effect - something overrides?)
+  themeVariables:
+    lineColor: "#F0F0F0"
+  er:
+    useWidth: 0 #px
+    useMaxWidth: false # def:true
+    titleTopMargin: 0 #px def:25
+    diagramPadding: 15 #px def:20 (applies to table nodes)
+    layoutDirection: BT #TB,BT,LR,RL def:TB (no effect - something overrides?)
+    minEntityWidth: 10 #px def:100
+    minEntityHeight: 10 #px def:75
+    entityPadding: 0 #px def:15 (applies to table entities)
+    nodeSpacing: 140 #px def:140 (no effect - something overrides?)
+    rankSpacing: 80 #px def:80 (no effect - something overrides?)
+    stroke: gray # def:gray (no effect - something overrides?)
+    fill: honeydew # def:honeydew (no effect - something overrides?)
+    fontSize: 12 #px def:12 (no effect - something overrides?)
 ---
 erDiagram
-  direction TB # %% TB, BT, LR, RL
+  direction BT # TB, BT, LR, RL
 
 EOF
 )
