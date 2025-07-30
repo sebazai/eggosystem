@@ -102,7 +102,6 @@ interface ParseQueueConfig {
   errorQueueName: string;
   prefetchCount: number;
   retryAttempts: number;
-  retryDelay: number;
 }
 
 /**
@@ -115,9 +114,8 @@ const DEFAULT_PARSE_QUEUE_CONFIG: ParseQueueConfig = {
   password: process.env.RABBITMQ_PASSWORD || "test",
   parsedQueueName: "parsed_queue",
   errorQueueName: "parsed_save_failed",
-  prefetchCount: parseInt(process.env.PARSE_PREFETCH_COUNT || "5"),
-  retryAttempts: parseInt(process.env.PARSE_RETRY_ATTEMPTS || "3"),
-  retryDelay: parseInt(process.env.PARSE_RETRY_DELAY || "5000")
+  prefetchCount: 5,
+  retryAttempts: 3
 };
 
 /**
@@ -133,9 +131,12 @@ export class ParsedQueueConsumer {
   private errorCount = 0;
   private isConnected = false;
   private consumerTag: string | null = null;
+  private maxRetryAttempts: number;
+  private retryCounts = new Map<string, number>(); // Track retries by game_id
 
   constructor(config: Partial<ParseQueueConfig> = {}) {
     this.config = { ...DEFAULT_PARSE_QUEUE_CONFIG, ...config };
+    this.maxRetryAttempts = this.config.retryAttempts;
   }
 
   /**
@@ -292,6 +293,10 @@ export class ParsedQueueConsumer {
     const errors: string[] = [];
     let message: ParseResultMessage | undefined;
 
+    // Get retry count for this game_id
+    const gameId = message?.game_id || "unknown";
+    const retryCount = this.retryCounts.get(gameId) || 0;
+
     try {
       // Parse message
       message = JSON.parse(msg.content.toString()) as ParseResultMessage;
@@ -310,6 +315,11 @@ export class ParsedQueueConsumer {
         throw new Error("Invalid parsed data structure");
       }
 
+      if (!message.game_id) {
+        errors.push("Missing game_id in message");
+        throw new Error("Invalid game_id");
+      }
+
       // Step 2: Process the parsed demo data
       await this.processParsedDemoData(message);
 
@@ -323,9 +333,12 @@ export class ParsedQueueConsumer {
         totalProcessed: this.processedCount
       });
 
-      // Acknowledge message
+      // Acknowledge message and clear retry count for this game
       this.channel.ack(msg);
       this.processedCount++;
+      if (message?.game_id) {
+        this.retryCounts.delete(message.game_id);
+      }
     } catch (error) {
       const processingTime = Date.now() - startTime;
       const errorMessage =
@@ -340,29 +353,87 @@ export class ParsedQueueConsumer {
         errors
       });
 
-      // Send error to error queue with original message
-      try {
-        this.publishError(message, errors, {
-          processingTime,
-          errorDetails:
-            error instanceof Error
-              ? {
-                  name: error.name,
-                  message: error.message,
-                  stack: error.stack
-                }
-              : String(error)
-        });
+      if (retryCount >= this.maxRetryAttempts) {
+        logger.error(
+          "Message exceeded max retry attempts, sending to error queue",
+          {
+            gameId: message?.game_id,
+            retryCount,
+            maxRetryAttempts: this.maxRetryAttempts,
+            error: error instanceof Error ? error.message : String(error)
+          }
+        );
 
-        // Acknowledge the original message since we've handled it by sending to error queue
-        this.channel.ack(msg);
-        this.errorCount++;
-      } catch (publishError) {
-        logger.error("Failed to publish error to error queue", publishError);
+        // Send to error queue with retry exhaustion info
+        try {
+          this.publishError(message, errors, {
+            processingTime,
+            retryCount,
+            maxRetryAttempts: this.maxRetryAttempts,
+            errorDetails:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                  }
+                : String(error)
+          });
 
-        // If we can't publish to error queue, reject and requeue for retry
-        this.channel.nack(msg, false, true);
-        this.errorCount++;
+          // Acknowledge the message since we've exhausted retries
+          this.channel.ack(msg);
+          this.errorCount++;
+        } catch (publishError) {
+          logger.error(
+            "Failed to publish exhausted retry message to error queue",
+            publishError
+          );
+          // If we can't even publish to error queue, just acknowledge to prevent infinite loop
+          this.channel.ack(msg);
+          this.errorCount++;
+        }
+      } else {
+        // Send error to error queue with original message
+        try {
+          this.publishError(message, errors, {
+            processingTime,
+            retryCount,
+            errorDetails:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                  }
+                : String(error)
+          });
+
+          // Acknowledge the original message since we've handled it by sending to error queue
+          this.channel.ack(msg);
+          this.errorCount++;
+        } catch (publishError) {
+          logger.error("Failed to publish error to error queue, will retry", {
+            publishError:
+              publishError instanceof Error
+                ? publishError.message
+                : String(publishError),
+            retryCount,
+            maxRetryAttempts: this.maxRetryAttempts
+          });
+
+          // Increment retry count and requeue at the back of the queue
+          const newRetryCount = retryCount + 1;
+          this.retryCounts.set(gameId, newRetryCount);
+
+          this.channel.nack(msg, false, true);
+          this.errorCount++;
+
+          logger.info("Message requeued at back of queue", {
+            gameId: message?.game_id,
+            retryCount: newRetryCount,
+            maxRetryAttempts: this.maxRetryAttempts
+          });
+        }
       }
     }
   }

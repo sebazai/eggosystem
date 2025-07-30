@@ -371,10 +371,9 @@ export const saveParsedDemoDataForGame = async (
   const {
     Score,
     Players,
-    RoundInfo: _RoundInfo,
+    NewRoundInfo: _RoundInfo,
     Trades,
     Clutches: _Clutches,
-    NewRoundInfo: _NewRoundInfo,
     RoundImpacts: _RoundImpacts
   } = parsed_payload;
 

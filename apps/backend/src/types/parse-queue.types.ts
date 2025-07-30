@@ -237,7 +237,7 @@ interface DemoRoundInfo {
   TBuyStrategy: string;
 }
 
-interface DemoNewRoundInfo {
+interface DemoRoundInfo {
   Rounds: DemoRoundInfo[];
 }
 
@@ -267,10 +267,9 @@ interface DemoRoundImpacts {
 export interface ParsedPayload {
   Score: DemoScore;
   Players: DemoPlayers;
-  RoundInfo: number[];
   Trades: DemoTrades;
   Clutches: DemoClutches;
-  NewRoundInfo: DemoNewRoundInfo;
+  NewRoundInfo: DemoRoundInfo;
   RoundImpacts: DemoRoundImpacts[];
 }
 
