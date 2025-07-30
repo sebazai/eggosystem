@@ -182,7 +182,7 @@ interface DemoTradeRoundInfo {
   DeathTime: number;
 }
 
-interface DemoTrades {
+export interface DemoTrades {
   [steam_id: string]: Record<number, DemoTradeRoundInfo[]>;
 }
 

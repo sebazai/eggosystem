@@ -29,6 +29,7 @@ import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { insertTeamGameScore } from "./team-game-score.models";
 import { insertPlayerStatsForGame } from "./player-stats.models";
+import { insertPlayerTradesForGame } from "./player-trades.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -371,7 +372,7 @@ export const saveParsedDemoDataForGame = async (
     Score,
     Players,
     RoundInfo: _RoundInfo,
-    Trades: _Trades,
+    Trades,
     Clutches: _Clutches,
     NewRoundInfo: _NewRoundInfo,
     RoundImpacts: _RoundImpacts
@@ -437,7 +438,12 @@ export const saveParsedDemoDataForGame = async (
           playerStats: player,
           connection
         })
-      )
+      ),
+      insertPlayerTradesForGame({
+        gameId,
+        playerTrades: Trades,
+        connection
+      })
     ]);
 
     await connection.commit();
