@@ -6,7 +6,7 @@ const RABBITMQ_HOST = process.env.RABBITMQ_HOST || "eggo-rabbitmq";
 const RABBITMQ_PORT = process.env.RABBITMQ_PORT || "5672";
 const RABBITMQ_USER = process.env.RABBITMQ_USER || "test";
 const RABBITMQ_PASSWORD = process.env.RABBITMQ_PASSWORD || "test";
-const RABBITMQ_VHOST = process.env.RABBITMQ_VHOST || "%2F";
+const RABBITMQ_VHOST = process.env.RABBITMQ_VHOST || "/";
 
 // Queue names
 const PARSE_QUEUE = "parse_queue";
