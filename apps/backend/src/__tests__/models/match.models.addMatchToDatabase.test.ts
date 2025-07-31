@@ -208,7 +208,7 @@ describe("addMatchToDatabase", () => {
         });
 
       // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 100 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
@@ -346,7 +346,7 @@ describe("addMatchToDatabase", () => {
         });
 
       // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 100 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
@@ -419,7 +419,7 @@ describe("addMatchToDatabase", () => {
         });
 
       // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 100 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
@@ -547,7 +547,7 @@ describe("addMatchToDatabase", () => {
         });
 
       // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 1000 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 1000 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
@@ -605,7 +605,7 @@ describe("addMatchToDatabase", () => {
         });
 
       // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 100 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
@@ -661,7 +661,7 @@ describe("addMatchToDatabase", () => {
         });
 
       // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce([{ insertId: 100 }]);
+      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);

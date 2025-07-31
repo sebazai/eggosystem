@@ -567,12 +567,12 @@ export const addMatchToDatabase = async (
 
       return { matchIds: [firstMatchId, secondMatchId], isBO2PlayedAs2xBO1 };
     } else {
-      const match = await runQuery<Array<{ insertId: number }>>(
+      const match = await runQuery<{ insertId: number }>(
         matchQuery,
         params,
         connection
       );
-      const matchId = match[0].insertId;
+      const matchId = match.insertId;
 
       await addTeamToMatch(matchId, teamOne.team_id, connection);
       await addTeamToMatch(matchId, teamTwo.team_id, connection);
