@@ -30,6 +30,7 @@ import { generateQueryWithFilters } from "../utils/queryFilter";
 import { insertTeamGameScore } from "./team-game-score.models";
 import { insertPlayerStatsForGame } from "./player-stats.models";
 import { insertPlayerTradesForGame } from "./player-trades.models";
+import { insertMapRoundStats } from "./map-round-stat.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -371,7 +372,7 @@ export const saveParsedDemoDataForGame = async (
   const {
     Score,
     Players,
-    NewRoundInfo: _RoundInfo,
+    NewRoundInfo: RoundInfo,
     Trades,
     Clutches: _Clutches,
     RoundImpacts: _RoundImpacts
@@ -441,6 +442,13 @@ export const saveParsedDemoDataForGame = async (
       insertPlayerTradesForGame({
         gameId,
         playerTrades: Trades,
+        connection
+      }),
+      insertMapRoundStats({
+        gameId,
+        tTeamId: terroristTeam.team_id,
+        ctTeamId: counterTerroristTeam.team_id,
+        mapRoundStats: RoundInfo.Rounds,
         connection
       })
     ]);

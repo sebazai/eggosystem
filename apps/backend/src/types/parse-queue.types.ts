@@ -153,6 +153,11 @@ export interface DemoPlayer {
   FlashesThrown: number;
   FlashesThrown_CT: number;
   FlashesThrown_T: number;
+  TTF: number;
+  OneVOneLost_CT: number;
+  OneVOneWon_CT: number;
+  OneVOneLost_T: number;
+  OneVOneWon_T: number;
   TTD: number;
   CrosshairPlacement: number;
   RWS: number;
