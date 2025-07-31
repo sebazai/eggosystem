@@ -553,40 +553,41 @@ export const addMatchToDatabase = async (
       );
       const secondMatchId = secondMatch.insertId;
 
-      await addTeamToMatch(
-        firstMatchId,
-        season_id,
-        league_id,
-        teamOne.team_id,
-        connection
-      );
-      await addTeamToMatch(
-        firstMatchId,
-        season_id,
-        league_id,
-        teamTwo.team_id,
-        connection
-      );
-      await addTeamToMatch(
-        secondMatchId,
-        season_id,
-        league_id,
-        teamOne.team_id,
-        connection
-      );
-      await addTeamToMatch(
-        secondMatchId,
-        season_id,
-        league_id,
-        teamTwo.team_id,
-        connection
-      );
-
-      await updateMatchStatus(
-        matchDetails.match_id,
-        MatchStatus.SCHEDULED,
-        connection
-      );
+      await Promise.all([
+        addTeamToMatch(
+          firstMatchId,
+          season_id,
+          league_id,
+          teamOne.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          firstMatchId,
+          season_id,
+          league_id,
+          teamTwo.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          secondMatchId,
+          season_id,
+          league_id,
+          teamOne.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          secondMatchId,
+          season_id,
+          league_id,
+          teamTwo.team_id,
+          connection
+        ),
+        updateMatchStatus(
+          matchDetails.match_id,
+          MatchStatus.SCHEDULED,
+          connection
+        )
+      ]);
 
       await connection.commit();
 
@@ -599,26 +600,27 @@ export const addMatchToDatabase = async (
       );
       const matchId = match.insertId;
 
-      await addTeamToMatch(
-        matchId,
-        season_id,
-        league_id,
-        teamOne.team_id,
-        connection
-      );
-      await addTeamToMatch(
-        matchId,
-        season_id,
-        league_id,
-        teamTwo.team_id,
-        connection
-      );
-
-      await updateMatchStatus(
-        matchDetails.match_id,
-        MatchStatus.SCHEDULED,
-        connection
-      );
+      await Promise.all([
+        addTeamToMatch(
+          matchId,
+          season_id,
+          league_id,
+          teamOne.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          matchId,
+          season_id,
+          league_id,
+          teamTwo.team_id,
+          connection
+        ),
+        updateMatchStatus(
+          matchDetails.match_id,
+          MatchStatus.SCHEDULED,
+          connection
+        )
+      ]);
 
       await connection.commit();
       return { matchIds: [matchId], isBO2PlayedAs2xBO1 };
