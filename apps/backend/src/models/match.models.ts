@@ -413,13 +413,12 @@ const addTeamToMatch = async (
   teamId: number,
   connection?: PoolConnection
 ): Promise<void> => {
-  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, team_id) VALUES (?, ?)`;
-
-  if (connection) {
-    await runQuery(addMatchTeamsQuery, [matchId, teamId], connection);
-  } else {
-    await runQuery(addMatchTeamsQuery, [matchId, teamId]);
-  }
+  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, season_id, league_id, team_id) VALUES (?, ?, ?, ?)`;
+  await runQuery(
+    addMatchTeamsQuery,
+    [matchId, seasonId, leagueId, teamId],
+    connection
+  );
 };
 
 export const getHubMatchesByExternalMatchRoomId = async (
