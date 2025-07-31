@@ -534,8 +534,8 @@ export const addMatchToDatabase = async (
         external_match_room_id,
         status,
         round,
-        group
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        \`group\`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
     if (isBO2PlayedAs2xBO1) {
