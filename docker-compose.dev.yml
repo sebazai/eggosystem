@@ -28,6 +28,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEV_PASS}
       ALLSTAR_API_KEY: $ALLSTAR_API_KEY
+      ALLSTAR_WEBHOOK_TOKEN: $ALLSTAR_WEBHOOK_TOKEN
     networks:
       - web
     volumes:

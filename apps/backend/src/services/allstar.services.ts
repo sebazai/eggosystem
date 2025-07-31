@@ -55,11 +55,9 @@ export const sendDemoForAllStarPOTGClip = async (
   ];
 
   try {
-    logger.info("Sending clip request to AllStar.gg", {
-      demoUrl,
-      webhookUrl,
-      gameId
-    });
+    logger.info(
+      `Sending clip request to AllStar.gg for gameId ${gameId} with demoUrl ${demoUrl} and webhookUrl ${webhookUrl}`
+    );
 
     const response = await fetch("https://prt.allstar.gg/cs/clip/potg", {
       method: "POST",
@@ -88,19 +86,20 @@ export const sendDemoForAllStarPOTGClip = async (
 
     const responseData = await response.json();
 
-    logger.info("AllStar clip request successful", {
-      gameId,
-      responseData
-    });
+    logger.info(
+      `AllStar clip request successful for game ${gameId} with response: ${JSON.stringify(
+        responseData
+      )}`
+    );
 
     // Insert processing record
     try {
       await insertClipProcessing(gameId, "potg");
     } catch (dbError) {
-      logger.error("Failed to insert clip processing record", {
-        gameId,
-        error: dbError instanceof Error ? dbError.message : String(dbError)
-      });
+      logger.error(
+        `Failed to insert clip processing record for game ${gameId}`,
+        dbError
+      );
     }
 
     return {

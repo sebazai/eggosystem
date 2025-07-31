@@ -14,12 +14,19 @@ router.post("/webhook", async (req: Request, res: Response) => {
     // Check header Authorization that it is "token <uuid>", uuid is my env
     const authorization = req.headers.authorization;
     if (!authorization) {
+      logger.error("Unauthorized request to Allstar webhook");
       res.status(401).send("Unauthorized");
       return;
     }
 
     const [, token] = authorization.split(" ");
     if (token !== process.env.ALLSTAR_WEBHOOK_TOKEN) {
+      logger.error(
+        `Unauthorized request to Allstar webhook with token ${token.slice(
+          0,
+          5
+        )}...`
+      );
       res.status(401).send("Unauthorized");
       return;
     }
