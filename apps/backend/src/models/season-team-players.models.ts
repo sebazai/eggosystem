@@ -48,9 +48,10 @@ export const isPlayerApprovedForSeasonManually = async (
 };
 
 export const getSeasonTeamPlayersBySteamIds = async (steamIds: string[]) => {
+  const questionMarks = steamIds.map(() => "?").join(",");
   const result = await runQuery<Array<SeasonTeamPlayer>>(
-    `SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)`,
-    [steamIds]
+    `SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (${questionMarks})`,
+    steamIds
   );
   return result;
 };
