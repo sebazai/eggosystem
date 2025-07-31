@@ -13,6 +13,9 @@ const PARSE_QUEUE = "parse_queue";
 
 // Connection URI
 const getConnectionUri = () => {
+  if (RABBITMQ_VHOST === "/") {
+    return `amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}`;
+  }
   return `amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}/${RABBITMQ_VHOST}`;
 };
 
