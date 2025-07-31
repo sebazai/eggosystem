@@ -114,12 +114,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
 
       expect(mockInsertClipProcessing).toHaveBeenCalledWith(123, "potg");
       expect(mockLogger.info).toHaveBeenCalledWith(
-        "Sending clip request to AllStar.gg",
-        {
-          demoUrl: "https://demo.url",
-          webhookUrl: "https://test-backend.com/api/v1/allstar/webhook",
-          gameId: 123
-        }
+        "Sending clip request to AllStar.gg for gameId 123 with demoUrl https://demo.url and webhookUrl https://test-backend.com/api/v1/allstar/webhook"
       );
     });
 
@@ -198,11 +193,8 @@ describe("sendDemoForAllStarPOTGClip", () => {
       });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to insert clip processing record",
-        {
-          gameId: 123,
-          error: "Database connection failed"
-        }
+        "Failed to insert clip processing record for game 123",
+        new Error("Database connection failed")
       );
     });
   });
