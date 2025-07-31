@@ -210,6 +210,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   }
 
   const { match_id } = matchDetails;
+  // We can have multiple matches for the same external match room id, so we need to get all of them
   const matches = await getHubMatchesByExternalMatchRoomId(match_id);
 
   if (!matches || matches.length === 0) {
@@ -235,13 +236,19 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
     const mapPlayedIn = parsedDemoUrl.mapNumber;
     const matchMapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
       `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND (action = "pick" OR action = "decider") ORDER BY veto_order ASC;`,
+      // If it's a 2xBO1, we should have 2 matches with same map vetoes and picks, so we can use the first one
       [matches[0].id],
       connection
     );
     const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
-    logger.info(
-      `matchMapVetoes: ${JSON.stringify(matchMapVetoes)} and mapPlayedVoteObject: ${JSON.stringify(mapPlayedVoteObject)} and mapPlayedIn: ${mapPlayedIn}`
-    );
+
+    if (!mapPlayedVoteObject) {
+      logger.error(
+        `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
+      );
+      throw new Error("Could not find map played vote object");
+    }
+
     if (
       isBO2PlayedAs2xBO1 &&
       matchDetails.best_of === 2 &&
@@ -274,30 +281,16 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
 
       // Publish demo processing request after successful commit
     } else {
-      const [matchObject] = await runQuery<Array<{ id: number } | undefined>>(
-        `SELECT id FROM Matches WHERE external_match_room_id = ?`,
-        [match_id],
-        connection
-      );
+      const match = matches[0];
 
-      if (!matchObject) {
-        throw new Error("Could not find match object for 2xBO1 matches");
-      }
-
-      if (!mapPlayedVoteObject) {
-        logger.error(
-          `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`,
-          {
-            match_id,
-            mapPlayedIn,
-            matchMapVetoes
-          }
+      if (!match) {
+        throw new Error(
+          `Could not find match object for external match room id: ${match_id}`
         );
-        throw new Error("Could not find map played vote object");
       }
 
       const insertedRow = await addMatchGameForMatch({
-        match_id: matchObject.id,
+        match_id: match.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
         demo_file: demo_url,
