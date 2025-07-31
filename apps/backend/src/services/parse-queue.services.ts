@@ -27,15 +27,22 @@ const createChannel = async () => {
     const connection = await amqp.connect(getConnectionUri());
     const channel = await connection.createChannel();
 
-    // Make sure the parse queue exists
-    await channel.assertQueue(PARSE_QUEUE, {
-      durable: true,
-      arguments: {
-        "x-message-ttl": 3600000, // 1 hour TTL
-        "x-dead-letter-exchange": "dlx", // Dead letter exchange
-        "x-dead-letter-routing-key": "failed"
-      }
-    });
+    // Check if queue exists first to handle existing queues gracefully
+    try {
+      await channel.checkQueue(PARSE_QUEUE);
+      logger.info("Parse queue already exists, using existing configuration");
+    } catch (_error) {
+      // Queue doesn't exist, create it with our preferred settings
+      await channel.assertQueue(PARSE_QUEUE, {
+        durable: true,
+        arguments: {
+          "x-message-ttl": 3600000, // 1 hour TTL
+          "x-dead-letter-exchange": "dlx", // Dead letter exchange
+          "x-dead-letter-routing-key": "failed"
+        }
+      });
+      logger.info("Created parse queue with durable settings");
+    }
 
     return { connection, channel };
   } catch (error) {

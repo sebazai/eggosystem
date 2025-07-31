@@ -27,6 +27,7 @@ services:
       RABBITMQ_HOST: eggo-dev-rabbitmq
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_DEV_PASS}
+      ALLSTAR_API_KEY: $ALLSTAR_API_KEY
     networks:
       - web
     volumes:
