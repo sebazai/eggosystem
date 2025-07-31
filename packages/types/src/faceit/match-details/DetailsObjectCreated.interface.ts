@@ -107,10 +107,26 @@ interface ChampionshipDetailsObjectCreatedScheduled
   scheduled_at: number;
 }
 
+interface ChampionshipDetailsObjectCreatedOnGoing
+  extends ChampionshipDetailsObjectCreatedBase {
+  teams: FaceitMatchTeams;
+  status: FaceitMatchStatus.ONGOING;
+  scheduled_at?: number;
+}
+
+interface ChampionshipDetailsObjectCreatedFinished
+  extends ChampionshipDetailsObjectCreatedBase {
+  teams: FaceitMatchTeams;
+  status: FaceitMatchStatus.FINISHED;
+  scheduled_at?: number;
+}
+
 export type ChampionshipDetailsObjectCreated =
   | ChampionshipDetailsObjectCreatedCheckIn
   | ChampionshipDetailsObjectCreatedVoting
-  | ChampionshipDetailsObjectCreatedScheduled;
+  | ChampionshipDetailsObjectCreatedScheduled
+  | ChampionshipDetailsObjectCreatedOnGoing
+  | ChampionshipDetailsObjectCreatedFinished;
 
 const ChampionshipDetailsObjectCreatedBaseSchema = z.object({
   ...MatchmakingDetailsObjectCreatedBaseSchema.shape,
@@ -139,10 +155,24 @@ const ChampionshipDetailsObjectCreatedScheduledSchema = z.object({
   ...ChampionshipDetailsObjectCreatedBaseSchema.shape
 });
 
+const ChampionshipDetailsObjectCreatedOnGoingSchema = z.object({
+  status: z.literal(FaceitMatchStatus.ONGOING),
+  teams: FaceitMatchTeamsSchema,
+  ...ChampionshipDetailsObjectCreatedBaseSchema.shape
+});
+
+const ChampionshipDetailsObjectCreatedFinishedSchema = z.object({
+  status: z.literal(FaceitMatchStatus.FINISHED),
+  teams: FaceitMatchTeamsSchema,
+  ...ChampionshipDetailsObjectCreatedBaseSchema.shape
+});
+
 const ChampionshipDetailsObjectCreatedSchema = z.discriminatedUnion("status", [
   ChampionshipDetailsObjectCreatedCheckInSchema,
   ChampionshipDetailsObjectCreatedVotingSchema,
-  ChampionshipDetailsObjectCreatedScheduledSchema
+  ChampionshipDetailsObjectCreatedScheduledSchema,
+  ChampionshipDetailsObjectCreatedFinishedSchema,
+  ChampionshipDetailsObjectCreatedOnGoingSchema
 ]);
 
 export function validateChampionshipDetailsObjectCreated(
