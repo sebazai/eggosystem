@@ -6,8 +6,7 @@ import {
   type MatchOrGameTopPlayerAwards,
   type GameClip,
   type MatchDemoReadyWebhook,
-  type ChampionshipDetailsDemoReady,
-  type MatchTeamMapVeto
+  type ChampionshipDetailsDemoReady
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
@@ -31,6 +30,7 @@ import { insertTeamGameScore } from "./team-game-score.models";
 import { insertPlayerStatsForGame } from "./player-stats.models";
 import { insertPlayerTradesForGame } from "./player-trades.models";
 import { insertMapRoundStats } from "./map-round-stat.models";
+import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -234,20 +234,11 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   try {
     await connection.beginTransaction();
     const mapPlayedIn = parsedDemoUrl.mapNumber;
-    const matchMapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
-      `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND (action = "pick" OR action = "decider") ORDER BY veto_order ASC;`,
-      // If it's a 2xBO1, we should have 2 matches with same map vetoes and picks, so we can use the first one
-      [matches[0].id],
+    const matchMapVetoes = await getMatchTeamMapVetoPicksAndDeciders(
+      matches[0].id,
       connection
     );
     const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
-
-    if (!mapPlayedVoteObject) {
-      logger.error(
-        `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
-      );
-      throw new Error("Could not find map played vote object");
-    }
 
     if (
       isBO2PlayedAs2xBO1 &&
@@ -286,6 +277,15 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
       if (!match) {
         throw new Error(
           `Could not find match object for external match room id: ${match_id}`
+        );
+      }
+
+      if (!mapPlayedVoteObject) {
+        logger.error(
+          `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
+        );
+        throw new Error(
+          `Could not find map played vote object for match_id: ${match_id}`
         );
       }
 

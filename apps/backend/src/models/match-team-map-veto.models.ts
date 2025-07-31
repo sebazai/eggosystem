@@ -4,7 +4,11 @@ import {
   getHubMatchesByExternalMatchRoomId,
   updateMatchStatus
 } from "./match.models";
-import { MatchStatus, type ChampionshipDetailsReady } from "@eggosystem/types";
+import {
+  MatchStatus,
+  type ChampionshipDetailsReady,
+  type MatchTeamMapVeto
+} from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
 
@@ -182,4 +186,15 @@ export const addMatchTeamMapVetoes = async (
   } finally {
     connection.release();
   }
+};
+
+export const getMatchTeamMapVetoPicksAndDeciders = async (
+  matchId: number,
+  connection?: PoolConnection
+) => {
+  return runQuery<Array<MatchTeamMapVeto>>(
+    `SELECT * FROM MatchTeamMapVetoes WHERE match_id = ? AND (action = "pick" OR action = "decider") ORDER BY veto_order ASC;`,
+    [matchId],
+    connection
+  );
 };

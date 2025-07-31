@@ -5,9 +5,11 @@ import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 // Mock dependencies for addMatchGamesForMatch tests only
 jest.mock("../../models/match.models");
 jest.mock("../../models/season-league-external-id.models");
+jest.mock("../../models/match-team-map-veto.models");
 jest.mock("../../db/mysqlConnection");
 jest.mock("../../db/mysqlRunQuery");
 import { getHubMatchesByExternalMatchRoomId } from "../../models/match.models";
+import { getMatchTeamMapVetoPicksAndDeciders } from "../../models/match-team-map-veto.models";
 import { getSeasonLeagueExternalIdByExternalId } from "../../models/season-league-external-id.models";
 import { getConnection } from "../../db/mysqlConnection";
 import { runQuery } from "../../db/mysqlRunQuery";
@@ -16,6 +18,13 @@ const mockGetHubMatchesByExternalMatchRoomId =
   getHubMatchesByExternalMatchRoomId as jest.MockedFunction<
     typeof getHubMatchesByExternalMatchRoomId
   >;
+
+const mockGetMatchTeamMapVetoPicksAndDeciders =
+  getMatchTeamMapVetoPicksAndDeciders as jest.MockedFunction<
+    typeof getMatchTeamMapVetoPicksAndDeciders
+  >;
+
+const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetSeasonLeagueExternalIdByExternalId =
   getSeasonLeagueExternalIdByExternalId as jest.MockedFunction<
     typeof getSeasonLeagueExternalIdByExternalId
@@ -23,7 +32,6 @@ const mockGetSeasonLeagueExternalIdByExternalId =
 const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
 >;
-const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 describe("addMatchGamesForMatch", () => {
   beforeEach(() => {
@@ -58,12 +66,36 @@ describe("addMatchGamesForMatch", () => {
         mockConnection as unknown as ReturnType<typeof getConnection>
       );
 
-      mockRunQuery.mockResolvedValue([
-        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
-        { id: 2, map_id: 2, veto_order: 2, action: "pick" },
-        { id: 3, map_id: 3, veto_order: 3, action: "decider" }
+      mockGetMatchTeamMapVetoPicksAndDeciders.mockResolvedValue([
+        {
+          id: 1,
+          match_id: 1,
+          team_id: 1,
+          map_id: 1,
+          veto_order: 1,
+          action: "pick"
+        },
+        {
+          id: 2,
+          match_id: 1,
+          team_id: 1,
+          map_id: 2,
+          veto_order: 2,
+          action: "pick"
+        },
+        {
+          id: 3,
+          match_id: 1,
+          team_id: 1,
+          map_id: 3,
+          veto_order: 3,
+          action: "decider"
+        }
         // 2 picks + 1 decider for BO3
       ]);
+
+      // Mock the addMatchGameForMatch function (which calls runQuery)
+      mockRunQuery.mockResolvedValue([{ insertId: 123 }]);
     });
 
     it("should successfully add match games for BO3 championship match", async () => {
@@ -85,9 +117,8 @@ describe("addMatchGamesForMatch", () => {
 
       // Verify database transaction was started and committed
       expect(mockGetConnection).toHaveBeenCalled();
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("SELECT * FROM MatchTeamMapVetoes"),
-        [1],
+      expect(mockGetMatchTeamMapVetoPicksAndDeciders).toHaveBeenCalledWith(
+        1,
         expect.any(Object)
       );
     });
@@ -121,9 +152,23 @@ describe("addMatchGamesForMatch", () => {
       };
 
       // Mock only 2 map vetoes for BO2
-      mockRunQuery.mockResolvedValue([
-        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
-        { id: 2, map_id: 2, veto_order: 2, action: "pick" }
+      mockGetMatchTeamMapVetoPicksAndDeciders.mockResolvedValue([
+        {
+          id: 1,
+          match_id: 1,
+          team_id: 1,
+          map_id: 1,
+          veto_order: 1,
+          action: "pick"
+        },
+        {
+          id: 2,
+          match_id: 1,
+          team_id: 1,
+          map_id: 2,
+          veto_order: 2,
+          action: "pick"
+        }
       ]);
 
       await addMatchGameToDatabaseAndProcessDemo(
@@ -133,9 +178,8 @@ describe("addMatchGamesForMatch", () => {
       );
 
       // Verify BO2 specific logic was used
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("SELECT * FROM MatchTeamMapVetoes"),
-        [1],
+      expect(mockGetMatchTeamMapVetoPicksAndDeciders).toHaveBeenCalledWith(
+        1,
         expect.any(Object)
       );
     });
@@ -143,6 +187,7 @@ describe("addMatchGamesForMatch", () => {
 
   describe("Error Cases", () => {
     beforeEach(() => {
+      jest.clearAllMocks();
       const mockConnection = {
         beginTransaction: jest.fn().mockResolvedValue(undefined),
         commit: jest.fn().mockResolvedValue(undefined),
@@ -205,14 +250,31 @@ describe("addMatchGamesForMatch", () => {
       };
 
       // Mock wrong number of map vetoes for BO2
-      mockRunQuery.mockResolvedValue([
-        { id: 1, map_id: 1, veto_order: 1, action: "pick" }
+      mockGetMatchTeamMapVetoPicksAndDeciders.mockResolvedValue([
+        {
+          id: 1,
+          match_id: 1,
+          team_id: 1,
+          map_id: 1,
+          veto_order: 1,
+          action: "pick"
+        }
         // Only 1 veto instead of 2 for BO2
       ]);
 
+      // Create webhook with demo URL for map 1
+      const bo2Webhook = {
+        ...validWebhookMatchDemoReady,
+        payload: {
+          ...validWebhookMatchDemoReady.payload,
+          demo_url:
+            "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-1-1.dem.zst"
+        }
+      };
+
       await expect(
         addMatchGameToDatabaseAndProcessDemo(
-          validWebhookMatchDemoReady,
+          bo2Webhook,
           bo2MatchDetails,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
         )
@@ -251,9 +313,23 @@ describe("addMatchGamesForMatch", () => {
         best_of: 2
       };
 
-      mockRunQuery.mockResolvedValue([
-        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
-        { id: 2, map_id: 2, veto_order: 2, action: "pick" }
+      mockGetMatchTeamMapVetoPicksAndDeciders.mockResolvedValue([
+        {
+          id: 1,
+          match_id: 1,
+          team_id: 1,
+          map_id: 1,
+          veto_order: 1,
+          action: "pick"
+        },
+        {
+          id: 2,
+          match_id: 1,
+          team_id: 1,
+          map_id: 2,
+          veto_order: 2,
+          action: "pick"
+        }
       ]);
 
       await expect(
@@ -288,16 +364,47 @@ describe("addMatchGamesForMatch", () => {
         mockConnection as unknown as ReturnType<typeof getConnection>
       );
 
-      mockRunQuery.mockResolvedValue([
-        { id: 1, map_id: 1, veto_order: 1, action: "pick" },
-        { id: 2, map_id: 2, veto_order: 2, action: "pick" },
-        { id: 3, map_id: 3, veto_order: 3, action: "decider" }
+      mockGetMatchTeamMapVetoPicksAndDeciders.mockResolvedValue([
+        {
+          id: 1,
+          match_id: 1,
+          team_id: 1,
+          map_id: 1,
+          veto_order: 1,
+          action: "pick"
+        },
+        {
+          id: 2,
+          match_id: 1,
+          team_id: 1,
+          map_id: 2,
+          veto_order: 2,
+          action: "pick"
+        },
+        {
+          id: 3,
+          match_id: 1,
+          team_id: 1,
+          map_id: 3,
+          veto_order: 3,
+          action: "decider"
+        }
         // 2 picks + 1 decider for BO3
       ]);
 
+      // Create webhook with demo URL for map 1
+      const bo3Webhook = {
+        ...validWebhookMatchDemoReady,
+        payload: {
+          ...validWebhookMatchDemoReady.payload,
+          demo_url:
+            "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-1-1.dem.zst"
+        }
+      };
+
       await expect(
         addMatchGameToDatabaseAndProcessDemo(
-          validWebhookMatchDemoReady,
+          bo3Webhook,
           validMatchDetailsMatchDemoReady,
           "2a40fbe5-f71b-471e-b25d-7837c1b441bc"
         )
