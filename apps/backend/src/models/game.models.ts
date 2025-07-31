@@ -239,6 +239,9 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
       connection
     );
     const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
+    logger.info(
+      `matchMapVetoes: ${JSON.stringify(matchMapVetoes)} and mapPlayedVoteObject: ${JSON.stringify(mapPlayedVoteObject)} and mapPlayedIn: ${mapPlayedIn}`
+    );
     if (
       isBO2PlayedAs2xBO1 &&
       matchDetails.best_of === 2 &&
@@ -271,19 +274,27 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
 
       // Publish demo processing request after successful commit
     } else {
-      const matchObjects = await runQuery<
-        Array<{ id: number; season_id: number }>
-      >(
-        `SELECT id, season_id FROM Matches WHERE external_match_room_id = ?`,
+      const [matchObject] = await runQuery<Array<{ id: number } | undefined>>(
+        `SELECT id FROM Matches WHERE external_match_room_id = ?`,
         [match_id],
         connection
       );
 
-      if (!matchObjects || matchObjects.length === 0) {
+      if (!matchObject) {
         throw new Error("Could not find match object for 2xBO1 matches");
       }
 
-      const matchObject = matchObjects[0];
+      if (!mapPlayedVoteObject) {
+        logger.error(
+          `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`,
+          {
+            match_id,
+            mapPlayedIn,
+            matchMapVetoes
+          }
+        );
+        throw new Error("Could not find map played vote object");
+      }
 
       const insertedRow = await addMatchGameForMatch({
         match_id: matchObject.id,
