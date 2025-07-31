@@ -559,12 +559,12 @@ describe("addMatchToDatabase", () => {
       // Verify team associations
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
-        [1000, 100], // match_id, team_id
+        [1000, 1, 1, 100], // match_id, season_id, league_id, team_id
         mockConnection
       );
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
-        [1000, 200], // match_id, team_id
+        [1000, 1, 1, 200], // match_id, season_id, league_id, team_id
         mockConnection
       );
     });
