@@ -408,6 +408,8 @@ export const getMatchGamesByTeam = async (
 
 const addTeamToMatch = async (
   matchId: number,
+  seasonId: number,
+  leagueId: number,
   teamId: number,
   connection?: PoolConnection
 ): Promise<void> => {
@@ -552,10 +554,34 @@ export const addMatchToDatabase = async (
       );
       const secondMatchId = secondMatch.insertId;
 
-      await addTeamToMatch(firstMatchId, teamOne.team_id, connection);
-      await addTeamToMatch(firstMatchId, teamTwo.team_id, connection);
-      await addTeamToMatch(secondMatchId, teamOne.team_id, connection);
-      await addTeamToMatch(secondMatchId, teamTwo.team_id, connection);
+      await addTeamToMatch(
+        firstMatchId,
+        season_id,
+        league_id,
+        teamOne.team_id,
+        connection
+      );
+      await addTeamToMatch(
+        firstMatchId,
+        season_id,
+        league_id,
+        teamTwo.team_id,
+        connection
+      );
+      await addTeamToMatch(
+        secondMatchId,
+        season_id,
+        league_id,
+        teamOne.team_id,
+        connection
+      );
+      await addTeamToMatch(
+        secondMatchId,
+        season_id,
+        league_id,
+        teamTwo.team_id,
+        connection
+      );
 
       await updateMatchStatus(
         matchDetails.match_id,
@@ -574,8 +600,20 @@ export const addMatchToDatabase = async (
       );
       const matchId = match.insertId;
 
-      await addTeamToMatch(matchId, teamOne.team_id, connection);
-      await addTeamToMatch(matchId, teamTwo.team_id, connection);
+      await addTeamToMatch(
+        matchId,
+        season_id,
+        league_id,
+        teamOne.team_id,
+        connection
+      );
+      await addTeamToMatch(
+        matchId,
+        season_id,
+        league_id,
+        teamTwo.team_id,
+        connection
+      );
 
       await updateMatchStatus(
         matchDetails.match_id,
