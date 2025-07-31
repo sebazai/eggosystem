@@ -98,6 +98,7 @@ erDiagram
 "SeasonTeamRegistrationPlayers" }o--|| "SteamPlayers" : ""
 "SeasonTeamRegistrations" }o--|| "Seasons" : ""
 "SeasonTeamRegistrations" }o--|| "Teams" : ""
+"SteamPlayerKanaElo" |o--|| "SteamPlayers" : ""
 "SteamPlayers" }o--o| "Accounts" : ""
 "TeamGameScores" }o--|| "MatchGames" : ""
 "TeamGameScores" }o--|| "MatchTeams" : ""
@@ -281,6 +282,10 @@ erDiagram
 }
 "Stages" {
   int_10__unsigned id PK
+}
+"SteamPlayerKanaElo" {
+  int_10__unsigned id PK
+  bigint_20_ steam_id FK
 }
 "SteamPlayers" {
   bigint_20_ steam_id PK

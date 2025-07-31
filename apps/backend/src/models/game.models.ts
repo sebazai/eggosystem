@@ -259,6 +259,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
+        demo_file: demo_url,
         connection
       });
       await connection.commit();
@@ -288,6 +289,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
+        demo_file: demo_url,
         connection
       });
 
@@ -322,22 +324,24 @@ const addMatchGameForMatch = async ({
   match_id,
   map_id,
   map_order,
+  demo_file,
   regulation_rounds,
   connection
 }: {
   match_id: number;
   map_id: number;
   map_order: number;
+  demo_file: string;
   regulation_rounds?: number;
   connection?: PoolConnection;
 }) => {
   const query = `
-    INSERT INTO MatchGames (match_id, map_id, map_order, regulation_rounds) VALUES (?, ?, ?, ?)
+    INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) VALUES (?, ?, ?, ?, ?)
   `;
 
   return runQuery<{ insertId: number }>(
     query,
-    [match_id, map_id, map_order, regulation_rounds ?? 24],
+    [match_id, map_id, map_order, demo_file, regulation_rounds ?? 24],
     connection
   );
 };

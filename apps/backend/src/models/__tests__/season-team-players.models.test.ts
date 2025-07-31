@@ -154,12 +154,12 @@ describe("season-team-players.models", () => {
 
         expect(mockRunQuery).toHaveBeenCalledTimes(2);
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-          [["steam123", "steam456"]]
+          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?,?)",
+          ["steam123", "steam456"]
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
           "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-          [["steam789"]]
+          ["steam789"]
         );
 
         // Should not call Redis set since all players are valid
@@ -366,8 +366,8 @@ describe("season-team-players.models", () => {
 
         // Assert
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-          [[]]
+          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN ()",
+          []
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled(); // No invalid players to flag
       });
@@ -420,7 +420,7 @@ describe("season-team-players.models", () => {
         // Assert
         expect(mockRunQuery).toHaveBeenCalledWith(
           "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-          [["steam123"]]
+          ["steam123"]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled();
       });
@@ -458,8 +458,8 @@ describe("season-team-players.models", () => {
 
       // Assert
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-        [steamIds]
+        "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?,?,?)",
+        steamIds
       );
       expect(result).toEqual(mockSeasonTeamPlayers);
     });
