@@ -1,10 +1,10 @@
 import * as amqp from "amqplib";
+import JSONBig from "json-bigint";
 import { logger } from "../utils/app-logger";
-import type {
-  ParseResultMessage,
-  ParsingStatus
-} from "../types/parse-queue.types";
+import type { ParseResultMessage } from "../types/parse-queue.types";
 import { saveParsedDemoDataForGame } from "../models/game.models";
+// import * as fs from "fs";
+// import * as path from "path";
 
 // Define custom types for amqplib to avoid type errors
 interface AmqpConnection {
@@ -289,7 +289,7 @@ export class ParsedQueueConsumer {
     }
 
     const startTime = Date.now();
-    let status: ParsingStatus = "failed";
+    let status = "failed";
     const errors: string[] = [];
     let message: ParseResultMessage | undefined;
 
@@ -299,7 +299,9 @@ export class ParsedQueueConsumer {
 
     try {
       // Parse message
-      message = JSON.parse(msg.content.toString()) as ParseResultMessage;
+      message = JSONBig({ storeAsString: true }).parse(
+        msg.content.toString()
+      ) as ParseResultMessage;
 
       logger.info("Processing parsed demo data", {
         gameId: message.game_id,
@@ -445,6 +447,27 @@ export class ParsedQueueConsumer {
     message: ParseResultMessage
   ): Promise<void> {
     const { game_id, parsed_payload, processing_duration } = message;
+
+    // // Write the complete message as JSON to debug log file
+    // const debugLogDir = path.join(process.cwd(), "debug-logs");
+    // const debugLogFile = path.join(
+    //   debugLogDir,
+    //   `parsed-demo-${game_id}-${Date.now()}.json`
+    // );
+
+    // // Ensure debug logs directory exists
+    // if (!fs.existsSync(debugLogDir)) {
+    //   fs.mkdirSync(debugLogDir, { recursive: true });
+    // }
+
+    // // Write message to file
+    // fs.writeFileSync(debugLogFile, JSONBig.stringify(message, null, 2));
+
+    // logger.debug("Processing parsed demo data message", {
+    //   debugLogFile,
+    //   gameId: game_id,
+    //   processingDuration: processing_duration
+    // });
 
     if (!parsed_payload) {
       throw new Error("Missing parsed payload");

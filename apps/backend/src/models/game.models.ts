@@ -311,7 +311,7 @@ const getMatchIdByGameId = async (
   connection?: PoolConnection
 ) => {
   const query = `SELECT match_id FROM MatchGames WHERE id = ?`;
-  return runQuery<{ match_id: number } | undefined>(
+  return runQuery<Array<{ match_id: number } | undefined>>(
     query,
     [gameId],
     connection
@@ -362,7 +362,11 @@ const getTeamIdByPlayerSteamIdsAndGameId = async (
       JOIN MatchTeams mt ON m.id = mt.match_id 
       JOIN SeasonTeamPlayers stp ON mt.team_id = stp.team_id AND mt.season_id = stp.season_id 
       WHERE ${query}`;
-  return runQuery<{ team_id: number }>(baseQuery, queryParams, connection);
+  return runQuery<Array<{ team_id: number } | undefined>>(
+    baseQuery,
+    queryParams,
+    connection
+  );
 };
 
 export const saveParsedDemoDataForGame = async (
@@ -383,27 +387,32 @@ export const saveParsedDemoDataForGame = async (
     await connection.beginTransaction();
 
     const gameId = Number(game_id);
-    const match = await getMatchIdByGameId(gameId, connection);
+    const [match] = await getMatchIdByGameId(gameId, connection);
     if (!match) {
       throw new Error(`Could not find parent match for game ${gameId}`);
     }
 
     const team1PlayerSteamIds = Object.values(Players)
       .filter((player) => player.Team === 1)
-      .map((player) => String(player.SteamID));
+      .map((player) => player.SteamID);
+
     const team2PlayerSteamIds = Object.values(Players)
       .filter((player) => player.Team === 2)
-      .map((player) => String(player.SteamID));
-    const terroristTeam = await getTeamIdByPlayerSteamIdsAndGameId(
+      .map((player) => player.SteamID);
+
+    const terroristTeamResult = await getTeamIdByPlayerSteamIdsAndGameId(
       team1PlayerSteamIds,
       gameId,
       connection
     );
-    const counterTerroristTeam = await getTeamIdByPlayerSteamIdsAndGameId(
+    const counterTerroristTeamResult = await getTeamIdByPlayerSteamIdsAndGameId(
       team2PlayerSteamIds,
       gameId,
       connection
     );
+
+    const terroristTeam = terroristTeamResult[0];
+    const counterTerroristTeam = counterTerroristTeamResult[0];
 
     if (!terroristTeam || !counterTerroristTeam) {
       throw new Error(
@@ -418,8 +427,8 @@ export const saveParsedDemoDataForGame = async (
         game_id: gameId,
         starting_side: "T",
         score: Score.Team1Score,
-        halftime_score: Score.Team1Score,
-        overtime_score: Score.Team1Score,
+        halftime_score: Score.Team1HTScore,
+        overtime_score: Score.Team1OTScore,
         connection
       }),
       insertTeamGameScore({
@@ -428,8 +437,8 @@ export const saveParsedDemoDataForGame = async (
         game_id: gameId,
         starting_side: "CT",
         score: Score.Team2Score,
-        halftime_score: Score.Team2Score,
-        overtime_score: Score.Team2Score,
+        halftime_score: Score.Team2HTScore,
+        overtime_score: Score.Team2OTScore,
         connection
       }),
       ...Object.values(Players).map((player) =>
@@ -446,8 +455,8 @@ export const saveParsedDemoDataForGame = async (
       }),
       insertMapRoundStats({
         gameId,
-        tTeamId: terroristTeam.team_id,
-        ctTeamId: counterTerroristTeam.team_id,
+        tTeamIdTeam1: terroristTeam.team_id,
+        ctTeamIdTeam2: counterTerroristTeam.team_id,
         mapRoundStats: RoundInfo.Rounds,
         connection
       })

@@ -23,10 +23,18 @@ const createDemoPlayerToPlayerStatQueryMapper = (
     trades_ct: playerStats.Trades_CT,
     traded_t: playerStats.Traded_T,
     traded_ct: playerStats.Traded_CT,
-    total_mf_duration_t: playerStats.TotalMFDuration_T,
-    total_mf_duration_ct: playerStats.TotalMFDuration_CT,
-    total_ef_duration_t: playerStats.TotalEFDuration_T,
-    total_ef_duration_ct: playerStats.TotalEFDuration_CT,
+    total_mf_duration_t: playerStats.TotalMFDuration_T
+      ? Number(playerStats.TotalMFDuration_T)
+      : null,
+    total_mf_duration_ct: playerStats.TotalMFDuration_CT
+      ? Number(playerStats.TotalMFDuration_CT)
+      : null,
+    total_ef_duration_t: playerStats.TotalEFDuration_T
+      ? Number(playerStats.TotalEFDuration_T)
+      : null,
+    total_ef_duration_ct: playerStats.TotalEFDuration_CT
+      ? Number(playerStats.TotalEFDuration_CT)
+      : null,
     mvps: playerStats.MVPs,
     total_damage: playerStats.TotalDamage,
     total_damage_ct: playerStats.TotalDamage_CT,
@@ -35,9 +43,9 @@ const createDemoPlayerToPlayerStatQueryMapper = (
     flash_assists: playerStats.FlashAssists,
     flash_assists_ct: playerStats.FlashAssists_CT,
     flash_assists_t: playerStats.FlashAssists_T,
-    adr: playerStats.ADR,
-    adr_t: playerStats.ADR_T,
-    adr_ct: playerStats.ADR_CT,
+    adr: Number(playerStats.ADR),
+    adr_t: Number(playerStats.ADR_T),
+    adr_ct: Number(playerStats.ADR_CT),
     hs_percent: playerStats.HsPercent,
     plants: playerStats.Plants,
     explodes: playerStats.Explodes,
@@ -88,8 +96,8 @@ const createDemoPlayerToPlayerStatQueryMapper = (
     mates_flashed: playerStats.MatesFlashed,
     self_flashes: playerStats.SelfFlashes,
     first_deaths: playerStats.FirstDeaths,
-    total_mf_duration: playerStats.TotalMFDuration,
-    total_ef_duration: playerStats.TotalEFDuration,
+    total_mf_duration: Number(playerStats.TotalMFDuration),
+    total_ef_duration: Number(playerStats.TotalEFDuration),
     one_v_one_won: playerStats.OneVOneWon,
     one_v_one_lost: playerStats.OneVOneLost,
     one_v_one_won_ct: playerStats.OneVOneWon_CT,
@@ -97,7 +105,7 @@ const createDemoPlayerToPlayerStatQueryMapper = (
     one_v_one_won_t: playerStats.OneVOneWon_T,
     one_v_one_lost_t: playerStats.OneVOneLost_T,
     kast: playerStats.KAST,
-    kana_rating: playerStats.KanaRating,
+    kana_rating: Number(playerStats.KanaRating),
     first_kills_t: playerStats.FirstKills_T,
     first_kills_ct: playerStats.FirstKills_CT,
     first_deaths_t: playerStats.FirstDeaths_T,
@@ -132,15 +140,11 @@ export const insertPlayerStatsForGame = async ({
     gameId,
     playerStats
   );
-  // Last key should not have a comma
-  const insertIntoKeysString = Object.keys(playerStat)
-    .map((key) => `\`${key}\``)
-    .join(", ")
-    .slice(0, -1);
-  const insertIntoValuesQuestionMarks = Object.keys(playerStat)
-    .map(() => "?")
-    .join(", ")
-    .slice(0, -1);
+  // Build the keys and values strings properly
+  const keys = Object.keys(playerStat);
+  const insertIntoKeysString = keys.map((key) => `${key}`).join(", ");
+
+  const insertIntoValuesQuestionMarks = keys.map(() => "?").join(", ");
 
   const query = `INSERT INTO PlayerStats (${insertIntoKeysString}) VALUES (${insertIntoValuesQuestionMarks})`;
   return runQuery(query, Object.values(playerStat), connection);

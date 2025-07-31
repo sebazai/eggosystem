@@ -4,16 +4,16 @@ import { runQuery } from "../db/mysqlRunQuery";
 
 interface MapRoundStatsParams {
   gameId: number;
-  tTeamId: number;
-  ctTeamId: number;
+  tTeamIdTeam1: number;
+  ctTeamIdTeam2: number;
   mapRoundStats: ParsedPayload["NewRoundInfo"]["Rounds"];
   connection?: PoolConnection;
 }
 
 export const insertMapRoundStats = async ({
   gameId,
-  tTeamId,
-  ctTeamId,
+  tTeamIdTeam1,
+  ctTeamIdTeam2,
   mapRoundStats,
   connection
 }: MapRoundStatsParams) => {
@@ -22,13 +22,13 @@ export const insertMapRoundStats = async ({
     mapRoundStats.map(async (round) => {
       const values = [
         gameId,
-        ctTeamId,
-        tTeamId,
+        round.CT_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2, // First half CT_Team is 2, second half is 1
+        round.T_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2, // First half T_Team is 1, second half is 2
         round.RoundNumber,
         round.RoundEndInfo,
         JSON.stringify(round.Bombplant.Alive),
         round.FirstKill,
-        round.Bombplant.Site
+        round.Bombplant.Site || null
       ];
       await runQuery(query, values, connection);
     })

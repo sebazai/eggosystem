@@ -12,11 +12,6 @@ export interface ParseQueueMessage {
 }
 
 /**
- * Status types for parsing results
- */
-export type ParsingStatus = "success" | "partial_success" | "failed";
-
-/**
  * Message format for parse result queue (Demo Parser → HUB)
  */
 export interface ParseResultMessage {
@@ -26,13 +21,13 @@ export interface ParseResultMessage {
   processed_at: string;
   processing_duration: number;
   worker_id: string;
-  status: ParsingStatus;
-  parsed_payload: ParsedPayload; // You'll implement this type
+  status: string;
+  parsed_payload: ParsedPayload;
 }
 
 interface SpottedAccuracyPerEnemy {
-  player_steam_id: number;
-  victim_steam_id: number;
+  player_steam_id: string;
+  victim_steam_id: string;
   shots_fired: number;
   shots_hit: number;
 }
@@ -78,10 +73,10 @@ export interface DemoPlayer {
   FirstKillFlashAssists: number;
   FirstKillFlashAssists_CT: number;
   FirstKillFlashAssists_T: number;
-  ADR: number;
-  ADR_T: number;
-  ADR_CT: number;
-  SteamID: number;
+  ADR: string | number;
+  ADR_T: string | number;
+  ADR_CT: string | number;
+  SteamID: string;
   Team: number;
   FirstKills: number;
   FirstKills_CT: number;
@@ -140,12 +135,12 @@ export interface DemoPlayer {
   FirstDeath_Traded: number;
   FirstDeath_Traded_CT: number;
   FirstDeath_Traded_T: number;
-  TotalEFDuration: number;
-  TotalEFDuration_CT: number;
-  TotalEFDuration_T: number;
-  TotalMFDuration: number;
-  TotalMFDuration_CT: number;
-  TotalMFDuration_T: number;
+  TotalEFDuration: string | number;
+  TotalEFDuration_CT: string | number;
+  TotalEFDuration_T: string | number;
+  TotalMFDuration: string | number;
+  TotalMFDuration_CT: string | number;
+  TotalMFDuration_T: string | number;
   OneVOneLost: number;
   OneVOneWon: number;
   KAST: number;
@@ -166,7 +161,7 @@ export interface DemoPlayer {
   Shots: number;
   ShotsHit: number;
   SpottedAccuracy: SpottedAccuracy;
-  KanaRating: number;
+  KanaRating: string | number;
   WeaponClassStats: unknown;
 }
 
@@ -178,9 +173,9 @@ interface DemoTradeRoundInfo {
   Traded: boolean;
   RoundNumber: number;
   FirstDeath: boolean;
-  Victim: number; // steam_id
-  Trader: number; // steam_id
-  Killer: number; // steam_id
+  Victim: string; // steam_id
+  Trader: string; // steam_id
+  Killer: string; // steam_id
   Attempted: boolean;
   Time: number;
   TradeTime: number;
@@ -196,7 +191,7 @@ interface DemoClutchRoundInfo {
   PlayerTeam: string; // T or CT
   Won: boolean;
   ClutchStartEnemies: number;
-  SteamID: number;
+  SteamID: string;
   Kills: number;
   EndInfo: string; // Won or Lost
 }
@@ -206,49 +201,49 @@ interface DemoClutches {
 }
 
 interface DemoBombplant {
-  Site: string; // A or B
+  Site: string; // A or B or ""
   Alive: {
-    T: number[] | null; // Array of steam_ids
-    CT: number[] | null; // Array of steam_ids
+    T: string[] | null; // Array of steam_ids
+    CT: string[] | null; // Array of steam_ids
   };
 }
 interface DemoRoundInfo {
-  RoundNumber: number;
-  CT_Team: number;
-  T_Team: number;
-  Winner: string;
-  RoundEndInfo: number;
-  FirstKill: string; // CT or T
   Bombplant: DemoBombplant;
-  CTBuyType: string;
-  TBuyType: string;
-  RoundType: string;
-  CTEquipmentValue: number;
-  TEquipmentValue: number;
   CTAvgBank: number;
-  TAvgBank: number;
-  CTTotalBank: number;
-  TTotalBank: number;
-  Importance: number;
-  CTPreBuyBank: number;
-  TPreBuyBank: number;
-  CTPreBuyEqValue: number;
-  TPreBuyEqValue: number;
-  CTEndBank: number;
-  TEndBank: number;
-  CTEndEqValue: number;
-  TEndEqValue: number;
   CTBuyStrategy: string;
+  CTBuyType: string;
+  CTEndBank: number;
+  CTEndEqValue: number;
+  CTEquipmentValue: number;
+  CTPreBuyBank: number;
+  CTPreBuyEqValue: number;
+  CTTotalBank: number;
+  CT_Team: number;
+  FirstKill: string; // CT or T
+  Importance: number;
+  RoundEndInfo: number;
+  RoundNumber: number;
+  RoundType: string;
+  TAvgBank: number;
   TBuyStrategy: string;
+  TBuyType: string;
+  TEndBank: number;
+  TEndEqValue: number;
+  TEquipmentValue: number;
+  TPreBuyBank: number;
+  TPreBuyEqValue: number;
+  TTotalBank: number;
+  T_Team: number;
+  Winner: string; // CT or T
 }
 
-interface DemoRoundInfo {
+interface DemoNewRoundInfo {
   Rounds: DemoRoundInfo[];
 }
 
 interface DemoRoundImpacts {
   RoundNumber: number;
-  SteamID: number;
+  SteamID: string;
   Kills: number;
   Assists: number;
   FirstKill: boolean;
@@ -256,25 +251,23 @@ interface DemoRoundImpacts {
   ADR: number;
   FlashAssists: number;
   FirstKillFlashAssists: number;
-  ImpactScore: number;
+  ImpactScore: string | number;
   EntryKill: boolean;
   ExitKill: boolean;
   BombPlanted: boolean;
   BombDefused: boolean;
   BombExploded: boolean;
-  KillOpponentValue: number;
-  WinProbImpact: number;
+  KillOpponentValue: string | number;
+  WinProbImpact: string | number;
 }
 
-/**
- * Parsed payload type - to be implemented by you
- */
 export interface ParsedPayload {
   Score: DemoScore;
   Players: DemoPlayers;
   Trades: DemoTrades;
   Clutches: DemoClutches;
-  NewRoundInfo: DemoRoundInfo;
+  RoundInfo: number[];
+  NewRoundInfo: DemoNewRoundInfo;
   RoundImpacts: DemoRoundImpacts[];
 }
 

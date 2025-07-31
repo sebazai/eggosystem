@@ -34,19 +34,17 @@ export const insertPlayerTradesForGame = async ({
       return runQuery(
         query,
         [
-          [
-            gameId,
-            trade.Trader,
-            trade.Killer,
-            trade.Victim,
-            trade.RoundNumber,
-            trade.FirstDeath,
-            trade.Traded,
-            trade.Attempted,
-            trade.Time,
-            trade.TradeTime,
-            trade.DeathTime
-          ]
+          gameId,
+          trade.Trader,
+          trade.Killer,
+          trade.Victim,
+          trade.RoundNumber,
+          trade.FirstDeath,
+          trade.Traded,
+          trade.Attempted,
+          trade.Time,
+          trade.TradeTime,
+          trade.DeathTime
         ],
         connection
       );
