@@ -10,7 +10,7 @@ export const insertClipProcessing = async (
   clipType: "potg"
 ) => {
   await runQuery(
-    "INSERT INTO MatchGameClips (game_id, clip_stats, clip_type) VALUES (?, ?, ?)",
+    "INSERT INTO MatchGameClips (game_id, clip_status, clip_type) VALUES (?, ?, ?)",
     [gameId, "Processing", clipType]
   );
 };
