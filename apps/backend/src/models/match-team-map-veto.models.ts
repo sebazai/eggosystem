@@ -32,14 +32,26 @@ export interface FaceitMatchHistoryResponse {
   payload: FaceitMatchHistoryPayload;
 }
 
+const getMapIdByGuid = (guid: string) => {
+  switch (guid) {
+    case "3414036782":
+      return "Dogtown";
+    case "3070290240":
+      return "Brewery";
+    default:
+      return guid;
+  }
+};
+
 const mapFaceitGuidToMapId = async (
   guid: string,
   connection?: PoolConnection
 ): Promise<number> => {
+  const getMapName = getMapIdByGuid(guid);
   const query = `SELECT id FROM Maps WHERE name = ?`;
   const mapMappings = await runQuery<Array<{ id: number }> | undefined>(
     query,
-    [guid],
+    [getMapName],
     connection
   );
 
