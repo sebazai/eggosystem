@@ -227,11 +227,6 @@ async function processKanaeloResult(result) {
 
     // Update player statistics
     await updatePlayerStats(steam_id, season_id, result.calculation_details);
-
-    // Log successful calculation
-    console.log(
-      `Kanaelo updated for ${steam_id}: ${calculation_result.kanaelo}`
-    );
   } else {
     // Handle partial success or failure
     console.error(`Calculation failed for ${steam_id}:`, result.errors);

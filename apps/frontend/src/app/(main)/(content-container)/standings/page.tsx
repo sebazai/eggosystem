@@ -1,29 +1,47 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { LeagueSelector } from "@/components/standings/LeagueSelector";
 import { StandingsTable } from "@/components/standings/StandingsTable";
 import { useStandings } from "@/hooks/data/useStandings";
-import { LEAGUES } from "@/types/standings";
+import { useStandingLeagues } from "@/hooks/data/useStandingLeagues";
 
 export default function StandingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
+  const {
+    standingsLeagues,
+    isLoading: isLoadingLeagues,
+    isError: isErrorLeagues
+  } = useStandingLeagues();
+
   // Get league from URL params or default to Masters A
-  const initialLeague =
-    searchParams.get("league") || "fe4cb0c3-9934-484c-84d1-662acdb025d4";
-  const [selectedLeague, setSelectedLeague] = useState(initialLeague);
+  const initialLeague = searchParams.get("league");
+
+  // Determine the selected league: URL param first, then default to tier 1 league
+  const selectedLeague =
+    initialLeague ||
+    (standingsLeagues.length > 0
+      ? standingsLeagues.find((league) => league.tier === 1)?.external_id
+      : null);
 
   // Fetch standings data
-  const { standings, isLoading, isError } = useStandings(selectedLeague);
+  const { standings, isLoading, isError } = useStandings(
+    selectedLeague || undefined
+  );
 
   // Update URL when league changes
   const handleLeagueChange = (leagueId: string) => {
-    setSelectedLeague(leagueId);
+    const league = standingsLeagues.find(
+      (league) => league.external_id === leagueId
+    );
+
+    if (!league) {
+      return;
+    }
 
     // Update URL with new league parameter
     const newParams = new URLSearchParams(searchParams.toString());
@@ -31,18 +49,14 @@ export default function StandingsPage() {
     router.push(`${pathname}?${newParams.toString()}`);
   };
 
-  // Update selected league when URL changes
-  useEffect(() => {
-    const urlLeague = searchParams.get("league");
-    if (urlLeague && urlLeague !== selectedLeague) {
-      setSelectedLeague(urlLeague);
-    }
-  }, [searchParams, selectedLeague]);
-
   // Get the current league name for display
-  const currentLeagueName =
-    LEAGUES.find((league) => league.id === selectedLeague)?.name ||
-    "Unknown League";
+  const currentLeague = standingsLeagues.find(
+    (league) => league.external_id === selectedLeague
+  );
+
+  if (isErrorLeagues) {
+    return <div>Error loading leagues list</div>;
+  }
 
   if (isError) {
     return (
@@ -58,8 +72,9 @@ export default function StandingsPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <LeagueSelector
-              selectedLeague={selectedLeague}
+              selectedLeague={currentLeague || null}
               onLeagueChange={handleLeagueChange}
+              allLeagues={standingsLeagues}
             />
           </div>
 
@@ -78,6 +93,22 @@ export default function StandingsPage() {
     );
   }
 
+  if (isLoadingLeagues || isLoading) {
+    return (
+      <div>
+        <AutoBreadcrumbs />
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">League Standings</h1>
+            <p className="text-muted-foreground mt-2">
+              Loading league standings...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <AutoBreadcrumbs />
@@ -86,7 +117,7 @@ export default function StandingsPage() {
           <h1 className="text-3xl font-bold">League Standings</h1>
           <p className="text-muted-foreground mt-2">
             View current league standings and team performance for{" "}
-            {currentLeagueName}
+            {currentLeague?.league_name}
           </p>
         </div>
 
@@ -94,8 +125,9 @@ export default function StandingsPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">League:</span>
             <LeagueSelector
-              selectedLeague={selectedLeague}
+              selectedLeague={currentLeague || null}
               onLeagueChange={handleLeagueChange}
+              allLeagues={standingsLeagues}
             />
           </div>
         </div>

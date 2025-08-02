@@ -54,8 +54,6 @@ export default async function SignupPage({ params }: SignupPageProps) {
     if (myRegRes.ok) {
       const myReg = await myRegRes.json();
       if (myReg.teamId) {
-        // Redirect to edit form
-        console.log("redirecting to edit form");
         redirect(
           `/seasons/${season}/signup/team/${myReg.teamId}/edit`,
           RedirectType.replace

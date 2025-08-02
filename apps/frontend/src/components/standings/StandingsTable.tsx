@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { TeamStanding } from "@/types/standings";
 import { useMemo } from "react";
 import {
   useReactTable,
@@ -14,9 +13,10 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import type { StandingsFaceitTeamStats } from "@eggosystem/types";
 
 interface StandingsTableProps {
-  data: TeamStanding[];
+  data: StandingsFaceitTeamStats[];
   isLoading?: boolean;
 }
 
@@ -26,7 +26,7 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
     { id: "rounds_diff", desc: true }
   ]);
 
-  const columnHelper = createColumnHelper<TeamStanding>();
+  const columnHelper = createColumnHelper<StandingsFaceitTeamStats>();
 
   const columns = useMemo(
     () => [
@@ -101,7 +101,7 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
         meta: { className: "text-center" }
       })
     ],
-    []
+    [columnHelper]
   );
 
   const table = useReactTable({

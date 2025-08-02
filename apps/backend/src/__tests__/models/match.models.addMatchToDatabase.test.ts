@@ -120,7 +120,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock team one not found
       mockGetSeasonLeagueTeamByExternalId.mockResolvedValueOnce(undefined);
@@ -149,7 +150,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock team one found, team two not found
       mockGetSeasonLeagueTeamByExternalId
@@ -188,7 +190,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -262,7 +265,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: true,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -326,7 +330,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -399,7 +404,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -464,7 +470,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -527,7 +534,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -585,7 +593,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId
@@ -641,7 +650,8 @@ describe("addMatchToDatabase", () => {
         season_id: 1,
         stage_id: 1,
         isBO2PlayedAs2xBO1: false,
-        type: "roundRobin"
+        type: "roundRobin",
+        external_league_name: "Test League"
       });
       // Mock teams found
       mockGetSeasonLeagueTeamByExternalId

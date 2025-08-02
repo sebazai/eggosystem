@@ -5,43 +5,8 @@ import { generateTestJWT } from "./utils";
 test.skip("Sortter Page", () => {
   // Before each test, navigate to the sortter page and log in
   test.beforeEach(async ({ page }) => {
-    // Enable more detailed request/response logging
-    page.on("request", (request) => {
-      console.log(`>> ${request.method()} ${request.url()}`);
-
-      // Log request headers for debugging
-      if (request.url().includes("/api/v1/")) {
-        console.log("Request headers:", request.headers());
-      }
-    });
-
-    page.on("response", async (response) => {
-      console.log(`<< ${response.status()} ${response.url()}`);
-
-      // Log response body for debugging if it's an error
-      if (response.status() >= 400 && response.url().includes("/api/v1/")) {
-        try {
-          const body = await response.json();
-          console.log("Response error:", body);
-        } catch (_e) {
-          console.log("Could not parse response body");
-        }
-      }
-    });
-
     // Generate JWT token with admin role
     const jwtToken = generateTestJWT();
-    const tokenParts = jwtToken.split(".");
-    if (tokenParts.length >= 2 && tokenParts[1]) {
-      try {
-        const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString()
-        );
-        console.log("Using JWT token with payload:", payload);
-      } catch (_e) {
-        console.log("Could not parse JWT payload");
-      }
-    }
 
     // Set up authentication cookie first
     await page.context().addCookies([

@@ -53,10 +53,6 @@ export async function up(knex: Knex): Promise<void> {
             steam_id: reg.captain_steam_id
           })
           .update({ is_captain: true });
-      } else {
-        console.error(
-          `No existing SeasonTeamPlayers row for captain ${reg.captain_steam_id} in season ${reg.season_id}, team ${reg.team_id}`
-        );
       }
     }
 
@@ -77,10 +73,6 @@ export async function up(knex: Knex): Promise<void> {
             steam_id: reg.co_captain_steam_id
           })
           .update({ is_co_captain: true });
-      } else {
-        console.error(
-          `No existing SeasonTeamPlayers row for co-captain ${reg.co_captain_steam_id} in season ${reg.season_id}, team ${reg.team_id}`
-        );
       }
     }
   }

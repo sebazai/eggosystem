@@ -95,11 +95,15 @@ if (
   );
 }
 
-// Initialize queue consumers if not in test mode
+// Initialize queue consumers if not in test mode and RabbitMQ environment variables are available
 if (
   process.env.NODE_ENV !== "test" &&
   process.env.NODE_ENV !== "e2e" &&
-  process.env.TEST_TYPE !== "e2e"
+  process.env.TEST_TYPE !== "e2e" &&
+  process.env.RABBITMQ_HOST &&
+  process.env.RABBITMQ_PORT &&
+  process.env.RABBITMQ_USER &&
+  process.env.RABBITMQ_PASSWORD
 ) {
   queueConsumerManager
     .startAllConsumers()
@@ -109,9 +113,17 @@ if (
     .catch((error) => {
       logger.error("Failed to initialize queue consumers:", error);
     });
-} else {
+} else if (
+  process.env.NODE_ENV === "test" ||
+  process.env.NODE_ENV === "e2e" ||
+  process.env.TEST_TYPE === "e2e"
+) {
   logger.info(
     "Test environment detected, skipping queue consumer initialization"
+  );
+} else {
+  logger.info(
+    "RabbitMQ environment variables not found, skipping queue consumer initialization"
   );
 }
 

@@ -1,45 +1,52 @@
 import { type Request, type Response } from "express";
-import { getDivStandings } from "../services/standings.services";
+import {
+  getDivStandings,
+  getStandingsLeagues
+} from "../services/standings.services";
 import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
+import { getActiveSeasonForAppId } from "../models/season.models";
 
 interface StandingsParams {
-  league_id: string;
+  faceit_league_id: string;
 }
 
 export const getStandingsController = async (
   req: Request<StandingsParams>,
   res: Response
 ): Promise<void> => {
-  try {
-    const { league_id } = req.params;
+  const { faceit_league_id } = req.params;
 
-    if (!league_id) {
-      throw new BadRequestError("League ID is required");
-    }
-
-    logger.info(`Fetching standings for league: ${league_id}`);
-
-    const standings = await getDivStandings(league_id);
-
-    res.json({
-      data: standings,
-      status: 200
-    });
-  } catch (error) {
-    logger.error("Error in getStandingsController:", error);
-
-    if (error instanceof BadRequestError) {
-      res.status(400).json({
-        error: error.message,
-        status: 400
-      });
-      return;
-    }
-
-    res.status(500).json({
-      error: "Internal server error",
-      status: 500
-    });
+  if (!faceit_league_id) {
+    throw new BadRequestError("Faceit League ID is required");
   }
+
+  logger.info(`Fetching standings for league: ${faceit_league_id}`);
+
+  const standings = await getDivStandings(faceit_league_id);
+
+  res.json({
+    standings
+  });
+};
+
+export const getFaceitLeaguesController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const activeSeason = (await getActiveSeasonForAppId(730)) || {
+    season_id: 16
+  };
+  if (!activeSeason) {
+    res.json({
+      standingsLeagues: []
+    });
+    return;
+  }
+
+  const standingsLeagues = await getStandingsLeagues(activeSeason.season_id);
+
+  res.json({
+    standingsLeagues
+  });
 };

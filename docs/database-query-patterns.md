@@ -38,8 +38,8 @@ query = query.join(
 All database queries should include logging for debugging:
 
 ```typescript
-console.log("Query:", query.toString());
-console.log("Parameters:", params);
+logger.log("Query:", query.toString());
+logger.log("Parameters:", params);
 ```
 
 ## SQL Aggregation Patterns for Team Value Calculations

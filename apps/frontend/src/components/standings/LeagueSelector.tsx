@@ -7,32 +7,34 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { LEAGUES, type League } from "@/types/standings";
+import type { StandingsLeagues } from "@eggosystem/types";
 
 interface LeagueSelectorProps {
-  selectedLeague: string;
+  selectedLeague: StandingsLeagues | null;
+  allLeagues: StandingsLeagues[];
   onLeagueChange: (leagueId: string) => void;
 }
 
 export const LeagueSelector = ({
   selectedLeague,
-  onLeagueChange
+  onLeagueChange,
+  allLeagues
 }: LeagueSelectorProps) => {
-  const selectedLeagueName =
-    LEAGUES.find((league) => league.id === selectedLeague)?.name ||
-    "Select League";
+  if (!selectedLeague) {
+    return null;
+  }
 
   return (
-    <Select value={selectedLeague} onValueChange={onLeagueChange}>
+    <Select value={selectedLeague.external_id} onValueChange={onLeagueChange}>
       <SelectTrigger className="w-[200px]">
         <SelectValue placeholder="Select League">
-          {selectedLeagueName}
+          {selectedLeague.league_name}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {LEAGUES.map((league: League) => (
-          <SelectItem key={league.id} value={league.id}>
-            {league.name}
+        {allLeagues.map((league) => (
+          <SelectItem key={league.external_id} value={league.external_id}>
+            {league.league_name}
           </SelectItem>
         ))}
       </SelectContent>

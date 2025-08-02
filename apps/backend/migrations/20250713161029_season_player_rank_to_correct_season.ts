@@ -66,11 +66,8 @@ export async function up(knex: Knex): Promise<void> {
     // Check if the old table exists
     const tableExists = await knex.schema.hasTable(tableName);
     if (!tableExists) {
-      console.log(`Table ${tableName} does not exist, skipping...`);
       continue;
     }
-
-    console.log(`Processing ${tableName} for season ${seasonId}...`);
 
     // Get all players who participated in this season
     const seasonPlayers = await knex("SeasonTeamPlayers")
@@ -81,16 +78,11 @@ export async function up(knex: Knex): Promise<void> {
     const seasonPlayerSteamIds = seasonPlayers.map((p) => p.steam_id);
 
     if (seasonPlayerSteamIds.length === 0) {
-      console.log(`No players found for season ${seasonId}, skipping...`);
       continue;
     }
 
     // Get all ranks from the old table
     const oldRanks = await knex(tableName).select("*");
-
-    let importedCount = 0;
-    let skippedCount = 0;
-    let invalidSteamIdCount = 0;
 
     for (const oldRank of oldRanks) {
       // Validate and convert steamID
@@ -100,25 +92,16 @@ export async function up(knex: Knex): Promise<void> {
         const cleanSteamId = oldRank.steamID.toString().replace(/[^0-9]/g, "");
 
         if (!cleanSteamId || cleanSteamId.length === 0) {
-          console.log(
-            `Invalid steamID format: ${oldRank.steamID}, skipping...`
-          );
-          invalidSteamIdCount++;
           continue;
         }
 
         steamId = BigInt(cleanSteamId);
       } catch (_error) {
-        console.log(
-          `Cannot convert steamID to BigInt: ${oldRank.steamID}, skipping...`
-        );
-        invalidSteamIdCount++;
         continue;
       }
 
       // Only process if player participated in this season
       if (!seasonPlayerSteamIds.includes(steamId.toString())) {
-        skippedCount++;
         continue;
       }
 
@@ -126,7 +109,6 @@ export async function up(knex: Knex): Promise<void> {
       const sanitizedRank = sanitizeRankData(oldRank);
 
       if (!sanitizedRank) {
-        skippedCount++;
         continue;
       }
 
@@ -148,13 +130,7 @@ export async function up(knex: Knex): Promise<void> {
           ...sanitizedRank
         });
       }
-
-      importedCount++;
     }
-
-    console.log(
-      `Season ${seasonId}: Imported ${importedCount} ranks, skipped ${skippedCount} records, invalid steamIDs: ${invalidSteamIdCount}`
-    );
   }
 }
 

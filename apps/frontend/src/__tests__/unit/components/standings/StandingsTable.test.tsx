@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { StandingsTable } from "@/components/standings/StandingsTable";
-import type { TeamStanding } from "@/types/standings";
+import type { StandingsFaceitTeamStats } from "@eggosystem/types";
 
-const mockStandingsData: TeamStanding[] = [
+const mockStandingsData: StandingsFaceitTeamStats[] = [
   {
     team_name: "Frendy Fire",
     games_played: 10,
@@ -148,7 +148,7 @@ describe("StandingsTable", () => {
   });
 
   it("handles empty team name gracefully", () => {
-    const dataWithEmptyName: TeamStanding[] = [
+    const dataWithEmptyName: StandingsFaceitTeamStats[] = [
       {
         team_name: "",
         games_played: 5,
@@ -171,7 +171,7 @@ describe("StandingsTable", () => {
   });
 
   it("handles zero round difference correctly", () => {
-    const dataWithZeroRoundDiff: TeamStanding[] = [
+    const dataWithZeroRoundDiff: StandingsFaceitTeamStats[] = [
       {
         team_name: "Even Team",
         games_played: 5,

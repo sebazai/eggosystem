@@ -2,30 +2,28 @@
 
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
-import type { StandingsResponse } from "@/types/standings";
+import type { StandingsFaceitTeamStats } from "@eggosystem/types";
 
-export const useStandings = (
-  leagueId: string
-): {
-  standings: StandingsResponse["data"];
-  isLoading: boolean;
-  isError: Error | undefined;
-  isValidating: boolean;
-  mutate: () => void;
-} => {
-  const apiUrl = `/api/v1/standings/${leagueId}`;
+interface StandingsResponse {
+  standings: StandingsFaceitTeamStats[];
+}
 
-  const { data, error, isValidating, isLoading, mutate } =
-    useSWR<StandingsResponse>(apiUrl, expressFetcher, {
+export const useStandings = (leagueId?: string) => {
+  const apiUrl = leagueId ? `/api/v1/standings/${leagueId}` : null;
+
+  const { data, error, isValidating, isLoading } = useSWR<StandingsResponse>(
+    apiUrl,
+    expressFetcher,
+    {
       revalidateOnFocus: false,
       refreshInterval: 30000 // Refresh every 30 seconds
-    });
+    }
+  );
 
   return {
-    standings: data?.data || [],
+    standings: data?.standings || [],
     isLoading,
     isError: error,
-    isValidating,
-    mutate
+    isValidating
   };
 };

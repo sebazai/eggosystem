@@ -53,7 +53,8 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: false
+        isBO2PlayedAs2xBO1: false,
+        external_league_name: "Test League"
       });
 
       const mockConnection = {
@@ -132,7 +133,8 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: true
+        isBO2PlayedAs2xBO1: true,
+        external_league_name: "Test League"
       });
 
       // Create BO2 webhook with demo URL for map 1
@@ -241,7 +243,8 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: true
+        isBO2PlayedAs2xBO1: true,
+        external_league_name: "Test League"
       });
 
       const bo2MatchDetails = {
@@ -295,7 +298,8 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: true
+        isBO2PlayedAs2xBO1: true,
+        external_league_name: "Test League"
       });
 
       // Create webhook with demo URL for map 3 (which is out of range for BO2 with 2 matches)
@@ -351,7 +355,8 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: false
+        isBO2PlayedAs2xBO1: false,
+        external_league_name: "Test League"
       });
 
       const mockConnection = {

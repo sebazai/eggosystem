@@ -322,7 +322,6 @@ export default function SortterPage() {
         `Successfully added ${response.queued_players} players to the kanaelo calculation queue`
       );
     } catch (error) {
-      console.error("Failed to populate kanaelo queue", error);
       toast.error("Failed to populate kanaelo queue");
     } finally {
       setIsPopulatingQueue(false);

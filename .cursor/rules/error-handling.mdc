@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
+
 # Error Handling Patterns
 
 This document defines rules and best practices for error handling in the codebase, with emphasis on avoiding unnecessary try/catch blocks and using proper Jest testing patterns.
@@ -16,6 +17,7 @@ This document defines rules and best practices for error handling in the codebas
 **Why**: Try/catch blocks can mask errors, make code harder to read, and often indicate improper error handling architecture.
 
 **Instead of try/catch, prefer**:
+
 - Let errors bubble up naturally to be handled at appropriate boundaries
 - Use proper error handling middleware in Express applications
 - Use built-in error handling mechanisms of frameworks and libraries
@@ -25,6 +27,7 @@ This document defines rules and best practices for error handling in the codebas
 ### When Try/Catch Is Acceptable
 
 Use try/catch blocks only when:
+
 - **Integration boundaries**: Calling external APIs, databases, or third-party libraries that throw unpredictable errors
 - **Resource cleanup**: Need to ensure cleanup of resources (files, connections) regardless of success/failure
 - **Graceful degradation**: Non-critical operations that should not break the main flow
@@ -79,7 +82,9 @@ it("should fail with invalid data", async () => {
 // ✅ Good - test specific error types
 it("should throw BadRequestError with specific message", async () => {
   await expect(serviceFunction(invalidData)).rejects.toThrow(BadRequestError);
-  await expect(serviceFunction(invalidData)).rejects.toThrow("Data validation failed");
+  await expect(serviceFunction(invalidData)).rejects.toThrow(
+    "Data validation failed"
+  );
 });
 ```
 
@@ -107,16 +112,23 @@ Prefer structured error handling over generic try/catch:
 ```typescript
 // ✅ Good - structured error types
 class ValidationError extends Error {
-  constructor(public field: string, message: string) {
+  constructor(
+    public field: string,
+    message: string
+  ) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
 class ServiceError extends Error {
-  constructor(public service: string, public statusCode: number, message: string) {
+  constructor(
+    public service: string,
+    public statusCode: number,
+    message: string
+  ) {
     super(message);
-    this.name = 'ServiceError';
+    this.name = "ServiceError";
   }
 }
 
@@ -144,7 +156,7 @@ async function processUser(userData: any) {
     await sendWelcomeEmail(user);
     return user;
   } catch (error) {
-    console.log("Something went wrong");
+    logger.error("Something went wrong");
     return null; // Swallows error, caller doesn't know what happened
   }
 }
@@ -152,7 +164,7 @@ async function processUser(userData: any) {
 // ✅ Good - let errors bubble up with context
 async function processUser(userData: UserData): Promise<User> {
   const user = await createUser(userData); // Let validation errors bubble up
-  
+
   // Only catch non-critical operations
   try {
     await sendWelcomeEmail(user);
@@ -160,7 +172,7 @@ async function processUser(userData: UserData): Promise<User> {
     logger.warn("Welcome email failed for user", user.id, error);
     // Don't throw - email failure shouldn't break user creation
   }
-  
+
   return user;
 }
 ```

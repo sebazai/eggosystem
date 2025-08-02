@@ -28,3 +28,4 @@ export * from "./sortter/index";
 export * from "./kanahautomo/index";
 export * from "./dashboard/registration";
 export * from "./registration";
+export * from "./standings";
