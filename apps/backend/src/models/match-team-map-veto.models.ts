@@ -100,32 +100,34 @@ const addMatchTeamMapVeto = async (
     throw new Error(`No map veto data found for match ${externalMatchId}`);
   }
 
-  const vetoPromises = mapVetoTicket.entities.map(async (entity, index) => {
-    const vetoAmount = index + 1;
-    const teamId =
-      entity.selected_by === "faction1"
-        ? faction1_hub_team_id
-        : faction2_hub_team_id;
+  const vetoAmount = mapVetoTicket.entities.length;
+  const vetoPromises = mapVetoTicket.entities
+    .sort((a, b) => a.round - b.round)
+    .map(async (entity) => {
+      const teamId =
+        entity.selected_by === "faction1"
+          ? faction1_hub_team_id
+          : faction2_hub_team_id;
 
-    // If the veto is the last one and the round is the best of, set it to decider
-    const action =
-      entity.round === vetoAmount &&
-      (best_of % 3 === 0 || best_of % 5 === 0) &&
-      entity.status === "pick"
-        ? "decider"
-        : entity.status;
+      // If the veto is the last one and the round is the best of, set it to decider
+      const action =
+        entity.round === vetoAmount &&
+        (best_of % 3 === 0 || best_of % 5 === 0) &&
+        entity.status === "pick"
+          ? "decider"
+          : entity.status;
 
-    const vetoOrder = entity.round;
+      const vetoOrder = entity.round;
 
-    const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
+      const mapId = await mapFaceitGuidToMapId(entity.guid, connection);
 
-    const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
-    return runQuery<{ insertId: number }>(
-      query,
-      [matchId, teamId, mapId, action, vetoOrder],
-      connection
-    );
-  });
+      const query = `INSERT INTO MatchTeamMapVetoes (match_id, team_id, map_id, action, veto_order) VALUES (?, ?, ?, ?, ?)`;
+      return runQuery<{ insertId: number }>(
+        query,
+        [matchId, teamId, mapId, action, vetoOrder],
+        connection
+      );
+    });
   await Promise.all(vetoPromises);
 };
 
