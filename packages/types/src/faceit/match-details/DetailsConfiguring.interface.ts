@@ -19,7 +19,7 @@ interface DetailsConfiguringBase {
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status: FaceitMatchStatus.CONFIGURING;
+  status: FaceitMatchStatus.CONFIGURING | FaceitMatchStatus.READY;
   faceit_url: string;
   configured_at: number;
 }
@@ -36,7 +36,9 @@ const DetailsConfiguringBaseSchema = z.object({
   calculate_elo: z.boolean(),
   chat_room_id: z.string(),
   best_of: z.number(),
-  status: z.literal(FaceitMatchStatus.CONFIGURING),
+  status: z
+    .literal(FaceitMatchStatus.CONFIGURING)
+    .or(z.literal(FaceitMatchStatus.READY)),
   faceit_url: z.string(),
   configured_at: z.number()
 });

@@ -27,7 +27,7 @@ export interface DetailsDemoReadyBase {
   scheduled_at?: number;
   configured_at: number;
   started_at: number;
-  finished_at: number;
+  finished_at?: number;
   demo_url: string[];
   chat_room_id: string;
   best_of: number;
@@ -51,7 +51,7 @@ const DetailsDemoReadBaseSchema = z.object({
   scheduled_at: z.number().optional(),
   configured_at: z.number(),
   started_at: z.number(),
-  finished_at: z.number(),
+  finished_at: z.number().optional(),
   demo_url: z.array(z.string().url()),
   chat_room_id: z.string(),
   best_of: z.number(),
