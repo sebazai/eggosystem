@@ -1,5 +1,6 @@
 import { insertClipProcessing } from "../models/allstar.models";
 import { logger } from "../utils/app-logger";
+import { getMatchGameClipForGameId } from "../models/match-game-clip.models";
 
 interface AllStarClipRequest {
   demoUrl: string;
@@ -20,7 +21,14 @@ interface AllStarClipResponse {
 export const sendDemoForAllStarPOTGClip = async (
   demoUrl: string,
   gameId: number
-): Promise<AllStarClipResponse> => {
+): Promise<AllStarClipResponse | undefined> => {
+  const isAllStarDemoRequested = await getMatchGameClipForGameId(gameId);
+  if (isAllStarDemoRequested.length > 0) {
+    logger.info(
+      `Demo processing request already exists for game ${gameId} with demo url ${demoUrl}`
+    );
+    return undefined;
+  }
   const apiKey = process.env.ALLSTAR_API_KEY;
   if (!apiKey) {
     logger.error("ALLSTAR_API_KEY is not set");
