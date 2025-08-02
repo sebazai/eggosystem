@@ -31,6 +31,7 @@ import { insertPlayerStatsForGame } from "./player-stats.models";
 import { insertPlayerTradesForGame } from "./player-trades.models";
 import { insertMapRoundStats } from "./map-round-stat.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
+import { hasDemoProcessingRequest } from "./match-game-clip.models";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -171,6 +172,13 @@ const publishDemoProcessingRequest = async (
   demoUrl: string
 ): Promise<void> => {
   try {
+    const isDemoProcessingRequest = await hasDemoProcessingRequest(gameId);
+    if (isDemoProcessingRequest) {
+      logger.info(
+        `Demo processing request already exists for game ${gameId} with demo url ${demoUrl}`
+      );
+      return;
+    }
     const demoProcessingRequest = createDemoProcessingRequest(
       gameId,
       demoUrl,
