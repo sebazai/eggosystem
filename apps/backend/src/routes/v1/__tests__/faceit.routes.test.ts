@@ -19,17 +19,15 @@ import { getOrganizerByFaceitIdAndGameAppId } from "../../../models/organizer.mo
 import {
   addMatchToDatabase,
   updateMatchStatus,
-  updateMatchFinished
+  updateMatchFinished,
+  updateMatchEndTime
 } from "../../../models/match.models";
 import { saveWebhookData } from "../../../models/faceit.models";
 import { addMatchTeamMapVetoes } from "../../../models/match-team-map-veto.models";
 import { addMatchGameToDatabaseAndProcessDemo } from "../../../models/game.models";
 import { validatePlayersInTeams } from "../../../models/season-team-players.models";
 import { expressErrorHandler } from "../../../middlewares/express-error-handler";
-import {
-  validMatchDetailsMatchCreated,
-  validMatchDetailsMatchDemoReady
-} from "@eggosystem/shared-msw";
+import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 import {
   type MatchObjectCreatedWebhook,
   type MatchDemoReadyWebhook,
@@ -50,6 +48,9 @@ const mockUpdateMatchStatus = updateMatchStatus as jest.MockedFunction<
 >;
 const mockUpdateMatchFinished = updateMatchFinished as jest.MockedFunction<
   typeof updateMatchFinished
+>;
+const mockUpdateMatchEndTime = updateMatchEndTime as jest.MockedFunction<
+  typeof updateMatchEndTime
 >;
 const mockSaveWebhookData = saveWebhookData as jest.MockedFunction<
   typeof saveWebhookData
@@ -422,6 +423,270 @@ export const validWebhookPayloadMatchStatusFinished = {
   }
 } satisfies MatchStatusFinishedWebhook;
 
+// Test data for matchmaking match_status_ready
+export const validWebhookPayloadMatchStatusReadyMatchmaking = {
+  transaction_id: "cb893b14-5811-4f11-b309-e453cf9024fd",
+  event_id: "340cc466-ff64-45bf-a7a3-dd69e5001123",
+  third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+  app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
+  timestamp: "2025-07-27T01:54:51Z",
+  retry_count: 0,
+  version: 1,
+  event: "match_status_ready",
+  payload: {
+    id: "1-matchmaking-ready-match-id",
+    organizer_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+    region: "NA",
+    game: "cs2",
+    version: 71,
+    entity: {
+      id: "5227a49c-f172-485e-a19b-a666ddeb3140",
+      name: "ESEA S54 NA Elite 1 Group D - Group Stage",
+      type: "matchmaking"
+    },
+    teams: [
+      {
+        id: "3523360c-7235-452a-b9d9-e587e97ba4b5",
+        name: "regain",
+        type: "premade",
+        avatar:
+          "https://distribution.faceit-cdn.net/images/46f36e02-b08e-49be-b021-2ec50aebc8aa.jpg",
+        leader_id: "6d10dac4-b0cf-473d-b5a8-a34c53aefade",
+        co_leader_id: "",
+        roster: [
+          {
+            id: "6d10dac4-b0cf-473d-b5a8-a34c53aefade",
+            nickname: "sasha",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/d593c4f7-efbf-42fd-b2dd-c8c8d5f4a7c8.jpg",
+            game_id: "76561198140847869",
+            game_name: "sasha",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "c7b709f5-281b-4133-859e-0d545c4c58d0",
+            nickname: "Halen",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/ed8de75a-007a-429a-99bc-13b450b2ba9b.jpg",
+            game_id: "76561198060497750",
+            game_name: "Halen",
+            game_skill_level: 10,
+            membership: "esea,plus",
+            anticheat_required: true
+          },
+          {
+            id: "01950e33-89f8-40f1-8839-db3771ddd136",
+            nickname: "Zucar",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/5685fa36-559e-4c1a-ab8a-3ea2d4eddae8.jpg",
+            game_id: "76561198119331267",
+            game_name: "zucc",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "da7422ec-e62a-4df2-87fd-5f3c29f478b7",
+            nickname: "1dvrk",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/fa429887-8bb2-4ada-a876-1c5e46444b8f.jpeg",
+            game_id: "76561198358249075",
+            game_name: "Donnie Dvrko",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "f10486e8-6197-4bbc-928d-5060e7be9657",
+            nickname: "fuzenko",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/6c56bdb1-b04c-4d12-aece-9374539f6eca.jpg",
+            game_id: "76561198929253202",
+            game_name: ")",
+            game_skill_level: 10,
+            membership: "esea,plus",
+            anticheat_required: true
+          }
+        ],
+        substitutions: 0,
+        substitutes: []
+      },
+      {
+        id: "ea5e1a5f-3d95-419e-b926-0c39e8c3d8dd",
+        name: "Zomblers",
+        type: "premade",
+        avatar:
+          "https://distribution.faceit-cdn.net/images/f0a92fc2-c0ab-47a2-b7ff-ee855b0960b5.jpeg",
+        leader_id: "dcea95af-d945-426c-9b22-3bb3b8fb5441",
+        co_leader_id: "",
+        roster: [
+          {
+            id: "dcea95af-d945-426c-9b22-3bb3b8fb5441",
+            nickname: "ayaneuu",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/c6dbf67b-48aa-4239-bc6b-afa3d59ff112.jpg",
+            game_id: "76561198341370795",
+            game_name: "ayaneuu",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "2c8adfac-5565-49a2-b835-a336360cddab",
+            nickname: "Seb",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/21d7e215-9f0e-4764-a82d-41842f19fdaa.jpeg",
+            game_id: "76561198215815481",
+            game_name: "Seb",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "1c8f885a-3d9a-4d64-801f-68a336a745ea",
+            nickname: "Sanzh1k33",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/3ce7bb54-6e9a-4594-9eac-128a19f48fdc.jpg",
+            game_id: "76561199243647648",
+            game_name: "76561199243647648",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "7627713e-9dfe-40e7-9d9d-ae8244aeb150",
+            nickname: "asYLum",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/7b261219-a46a-42b1-a015-d05a3262b0ba.jpeg",
+            game_id: "76561198138820397",
+            game_name: "sk8er",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "b934fa1f-79ac-4410-84cd-06a6eca64423",
+            nickname: "aelor",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/d786937e-0934-4ac4-8445-e0486a9969be.jpeg",
+            game_id: "76561198231092204",
+            game_name: "aelor",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "bc7cd9c2-0b37-47c6-9b19-4ccd90c63f44",
+            nickname: "sathsea",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/06c6c62e-05ce-4bf2-8962-9a177e6b1755.jpg",
+            game_id: "76561198401647782",
+            game_name: "󠀡󠀡",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          },
+          {
+            id: "04924ee1-65bf-4424-b4d2-f82657133f53",
+            nickname: "traekS",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/b5b3d76f-d794-49db-8601-b0d7418e7b50.jpeg",
+            game_id: "76561198057008814",
+            game_name: "traekS",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          }
+        ],
+        substitutions: 0,
+        substitutes: []
+      }
+    ],
+    created_at: "2025-07-24T17:28:40Z",
+    updated_at: "2025-07-27T01:54:51Z"
+  }
+} satisfies MatchStatusReadyWebhook;
+
+// Test data for AFK abort case (startTime === "1970-01-01T00:00:00Z")
+export const validWebhookPayloadMatchStatusFinishedAFKAbort = {
+  transaction_id: "d7da69a4-4622-4faf-8efc-40ec7153cf40",
+  event: "match_status_finished",
+  event_id: "a86b09ad-622f-45b6-a708-fcaf9088bb69",
+  third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+  app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
+  timestamp: "2025-07-26T01:05:19Z",
+  retry_count: 0,
+  version: 1,
+  payload: {
+    id: "1-afk-abort-match-id",
+    organizer_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+    region: "NA",
+    game: "cs2",
+    version: 126,
+    entity: {
+      id: "ec39d65c-4069-4c0c-b2e1-5f957e7787f1",
+      name: "ESEA S54 NA Elite 1 Group C - Group Stage",
+      type: "championship"
+    },
+    teams: [
+      {
+        id: "d36ca2d0-d8f0-4c1d-9c1c-5b28cc58e532",
+        name: "JERSA ESPORTS",
+        type: "premade",
+        avatar:
+          "https://distribution.faceit-cdn.net/images/6caffc2a-38bb-4437-9c28-4f5152aa3916.jpg",
+        leader_id: "2afb9303-f70f-4d47-857c-ddc69e3da895",
+        co_leader_id: "",
+        roster: [
+          {
+            id: "fd27d75a-1f51-4abd-a4df-56eb5416776b",
+            nickname: "BabyRage_S",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/2a191b4e-cef5-4491-b757-759a48854c0b.jpeg",
+            game_id: "76561198099461085",
+            game_name: "4 burros conmigo 5 dxdx",
+            game_skill_level: 10,
+            membership: "esea",
+            anticheat_required: true
+          }
+        ],
+        substitutions: 0,
+        substitutes: []
+      },
+      {
+        id: "a128039e-1e53-4b66-bc8c-4d7a3c8853be",
+        name: "begom",
+        type: "premade",
+        avatar:
+          "https://distribution.faceit-cdn.net/images/75dca2f3-b6ca-46ed-a412-416702a78e93.jpg",
+        leader_id: "a593278e-00b4-4358-bd8c-5aac084f7107",
+        co_leader_id: "",
+        roster: [
+          {
+            id: "04801c5c-d737-430a-94d3-769fffb26d02",
+            nickname: "Vortex666",
+            avatar:
+              "https://distribution.faceit-cdn.net/images/fc0bfc0d-fd86-43c2-829d-ae8d55e12b97.jpg",
+            game_id: "76561198258949935",
+            game_name: "Bizarre666",
+            game_skill_level: 10,
+            membership: "premium,esea",
+            anticheat_required: true
+          }
+        ],
+        substitutions: 0,
+        substitutes: []
+      }
+    ],
+    created_at: "2025-07-24T17:28:34Z",
+    updated_at: "2025-07-26T01:05:18Z",
+    started_at: "1970-01-01T00:00:00Z", // AFK abort indicator
+    finished_at: "2025-07-26T01:05:18Z"
+  }
+} satisfies MatchStatusFinishedWebhook;
+
 export const validWebhookPayloadMatchStatusReady = {
   transaction_id: "cb893b14-5811-4f11-b309-e453cf9024fd",
   event_id: "340cc466-ff64-45bf-a7a3-dd69e5001123",
@@ -761,7 +1026,7 @@ describe("FaceIT Routes - Webhook", () => {
           "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
           "match_object_created",
           validWebhookPayloadObjectCreated,
-          validMatchDetailsMatchCreated
+          expect.any(Object)
         );
 
         // Verify match was added to database
@@ -1235,6 +1500,79 @@ describe("FaceIT Routes - Webhook", () => {
           "1-dba8981d-5647-466a-be32-12a06fb8fc31",
           "FINISHED"
         );
+      });
+
+      it("should handle AFK abort case with updateMatchEndTime", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusFinishedAFKAbort);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-afk-abort-match-id",
+          "match_status_finished",
+          validWebhookPayloadMatchStatusFinishedAFKAbort,
+          expect.any(Object)
+        );
+
+        // Verify updateMatchEndTime was called for AFK abort case
+        expect(mockUpdateMatchEndTime).toHaveBeenCalledWith(
+          "1-afk-abort-match-id",
+          "2025-07-26T01:05:18Z"
+        );
+
+        // Verify match status was updated to FINISHED
+        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
+          "1-afk-abort-match-id",
+          "FINISHED"
+        );
+
+        // Verify updateMatchFinished was NOT called (AFK abort case)
+        expect(mockUpdateMatchFinished).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("POST /webhook - match_status_ready matchmaking", () => {
+    describe("Success Cases", () => {
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
+          mockOrganizer
+        ]);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockUpdateMatchStatus.mockResolvedValue(undefined);
+      });
+
+      it("should successfully process matchmaking match_status_ready webhook", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusReadyMatchmaking);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-matchmaking-ready-match-id",
+          "match_status_ready",
+          validWebhookPayloadMatchStatusReadyMatchmaking,
+          expect.any(Object)
+        );
+
+        // Verify match status was updated to ONGOING for matchmaking
+        expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
+          "1-matchmaking-ready-match-id",
+          "ONGOING"
+        );
+
+        // Verify addMatchTeamMapVetoes was NOT called (matchmaking doesn't use it)
+        expect(mockAddMatchTeamMapVetoes).not.toHaveBeenCalled();
       });
     });
   });

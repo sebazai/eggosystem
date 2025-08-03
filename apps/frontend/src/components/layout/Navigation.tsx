@@ -100,11 +100,6 @@ const defaultProps: NavbarProps = {
       hasFilters: true
     },
     {
-      title: "Standings",
-      url: "/standings",
-      hasFilters: false
-    },
-    {
       title: "Kanahautomo",
       url: "/kanahautomo",
       hasFilters: false
@@ -227,7 +222,14 @@ export const Navigation = (props: NavbarProps) => {
                       seasonWithSignupOpen.full_name
                     )}`,
                     url: `/seasons/${seasonWithSignupOpen.season_id}/signup`,
-                    hasFilters: false
+                    hasFilters: false,
+                    items: [
+                      {
+                        title: "Standings",
+                        url: "/standings",
+                        hasFilters: false
+                      }
+                    ]
                   },
                   params
                 )}

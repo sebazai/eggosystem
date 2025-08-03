@@ -48,7 +48,7 @@ export { validSignupData, invalidSignupData } from "./fixtures";
 export {
   validMatchDetailsMatchCreated,
   validMatchDetailsMatchDemoReady,
-  validMatchDetailsMatchStatusReady,
+  validMatchDetailsMatchStatusReadyMatchmaking,
   validMatchDetailsMatchStatusFinished
 } from "./faceit/MatchDetails-handlers";
 
