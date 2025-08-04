@@ -8,11 +8,13 @@ jest.mock("../../models/season-league-external-id.models");
 jest.mock("../../models/match-team-map-veto.models");
 jest.mock("../../db/mysqlConnection");
 jest.mock("../../db/mysqlRunQuery");
+jest.mock("../../services/faceit.services");
 import { getHubMatchesByExternalMatchRoomId } from "../../models/match.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "../../models/match-team-map-veto.models";
 import { getSeasonLeagueExternalIdByExternalId } from "../../models/season-league-external-id.models";
 import { getConnection } from "../../db/mysqlConnection";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { getDemoDownloadUrl } from "../../services/faceit.services";
 
 const mockGetHubMatchesByExternalMatchRoomId =
   getHubMatchesByExternalMatchRoomId as jest.MockedFunction<
@@ -31,6 +33,9 @@ const mockGetSeasonLeagueExternalIdByExternalId =
   >;
 const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
+>;
+const mockGetDemoDownloadUrl = getDemoDownloadUrl as jest.MockedFunction<
+  typeof getDemoDownloadUrl
 >;
 
 describe("addMatchGamesForMatch", () => {
@@ -97,6 +102,11 @@ describe("addMatchGamesForMatch", () => {
 
       // Mock the addMatchGameForMatch function (which calls runQuery)
       mockRunQuery.mockResolvedValue([{ insertId: 123 }]);
+
+      // Mock getDemoDownloadUrl to return a valid download URL
+      mockGetDemoDownloadUrl.mockResolvedValue(
+        "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-1-1.dem.zst"
+      );
     });
 
     it("should successfully add match games for BO3 championship match", async () => {
@@ -198,6 +208,11 @@ describe("addMatchGamesForMatch", () => {
       };
       mockGetConnection.mockResolvedValue(
         mockConnection as unknown as ReturnType<typeof getConnection>
+      );
+
+      // Mock getDemoDownloadUrl to return a valid download URL
+      mockGetDemoDownloadUrl.mockResolvedValue(
+        "https://demos-europe-central.backblaze.faceit-cdn.net/cs2/1-ffb4225f-ff51-42ed-acb5-af6714175934-1-1.dem.zst"
       );
     });
 

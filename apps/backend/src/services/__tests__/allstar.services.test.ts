@@ -50,7 +50,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
     it("should return error when ALLSTAR_API_KEY is not set", async () => {
       delete process.env.ALLSTAR_API_KEY;
 
-      const result = await sendDemoForAllStarPOTGClip("https://demo.url", 123);
+      const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
         success: false,
@@ -64,7 +64,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
     it("should return error when BACKEND_URL is not set", async () => {
       delete process.env.BACKEND_URL;
 
-      const result = await sendDemoForAllStarPOTGClip("https://demo.url", 123);
+      const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
         success: false,
@@ -83,7 +83,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
       mockFetch.mockResolvedValue(mockResponse);
       mockInsertClipProcessing.mockResolvedValue(undefined);
 
-      const result = await sendDemoForAllStarPOTGClip("https://demo.url", 123);
+      const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
         success: true,
@@ -127,7 +127,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
       });
       mockFetch.mockResolvedValue(mockResponse);
 
-      const result = await sendDemoForAllStarPOTGClip("https://demo.url", 123);
+      const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
         success: false,
@@ -152,7 +152,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
     it("should return error when fetch throws an exception", async () => {
       mockFetch.mockRejectedValue(new Error("Network error"));
 
-      const result = await sendDemoForAllStarPOTGClip("https://demo.url", 123);
+      const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
         success: false,
@@ -184,7 +184,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
         new Error("Database connection failed")
       );
 
-      const result = await sendDemoForAllStarPOTGClip("https://demo.url", 123);
+      const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
         success: true,
@@ -260,7 +260,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
 
         // Verify no exceptions are thrown
         await expect(
-          sendDemoForAllStarPOTGClip("https://demo.url", 123)
+          sendDemoForAllStarPOTGClip(123, "https://demo.url")
         ).resolves.toBeDefined();
       }
     });
@@ -284,7 +284,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
       try {
         // Simulate the actual usage pattern from game.models.ts
         await Promise.all([
-          sendDemoForAllStarPOTGClip("https://demo.url", 123)
+          sendDemoForAllStarPOTGClip(123, "https://demo.url")
         ]);
         await transaction.commit();
       } catch (error) {
@@ -308,7 +308,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
       try {
         // Simulate the actual usage pattern from game.models.ts
         await Promise.all([
-          sendDemoForAllStarPOTGClip("https://demo.url", 123)
+          sendDemoForAllStarPOTGClip(123, "https://demo.url")
         ]);
         await transaction.commit();
       } catch (error) {
@@ -337,7 +337,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
       try {
         // Simulate the actual usage pattern from game.models.ts
         await Promise.all([
-          sendDemoForAllStarPOTGClip("https://demo.url", 123)
+          sendDemoForAllStarPOTGClip(123, "https://demo.url")
         ]);
         await transaction.commit();
       } catch (error) {

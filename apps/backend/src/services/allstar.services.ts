@@ -19,8 +19,8 @@ interface AllStarClipResponse {
 }
 
 export const sendDemoForAllStarPOTGClip = async (
-  demoUrl: string,
-  gameId: number
+  gameId: number,
+  demoUrl: string
 ): Promise<AllStarClipResponse | undefined> => {
   const isAllStarDemoRequested = await getMatchGameClipForGameId(gameId);
   if (isAllStarDemoRequested.length > 0) {

@@ -397,3 +397,28 @@ export const getFaceITChampionshipDetails = async <T>(
   const response = await fetch(webURL, { headers });
   return response.json() as Promise<T>;
 };
+
+export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
+  const demoAPI = "https://open.faceit.com/download/v2/demos/download";
+  const demoHeaders = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+
+  const response = await fetch(demoAPI, {
+    method: "POST",
+    headers: demoHeaders,
+    body: JSON.stringify({
+      resource_url: matchGameDemoUrl
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to get demo download URL: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.payload.download_url; // Return download URL from response
+};
