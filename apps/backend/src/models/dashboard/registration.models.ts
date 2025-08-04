@@ -5,9 +5,9 @@ import {
   type ActiveSeasonSignupForAppId,
   type SeasonRegisteredTeamsWithPlayers,
   type SeasonTeamRegistration,
-  type PlayerFullName,
-  type RegisteredTeamPlayer
+  type PlayerFullName
 } from "@eggosystem/types";
+import JSONBig from "json-bigint";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
 import { getActiveSignupSeasonForAppId } from "../season.models";
@@ -100,7 +100,14 @@ export const getRegisteredTeams = async (seasonId: number) => {
       s.id as season_id,
       MAX(CASE WHEN stp.is_captain = 1 THEN sp.nickname END) as captain_nickname,
       MAX(CASE WHEN stp.is_co_captain = 1 THEN sp.nickname END) as co_captain_nickname,
-      GROUP_CONCAT(CONCAT(sp.steam_id, ':', sp.nickname, ':', a.work_email, ':', a.is_work_email_personal_email) SEPARATOR ',') as players
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'steam_id', sp.steam_id,
+          'nickname', sp.nickname,
+          'work_email', a.work_email,
+          'is_work_email_personal_email', a.is_work_email_personal_email
+        )
+      ) as players
     FROM SeasonTeamRegistrations str 
       JOIN Teams t ON str.team_id = t.id 
       JOIN SeasonTeamRegistrationPlayers stp ON str.team_id = stp.team_id AND stp.season_id = str.season_id
@@ -111,27 +118,13 @@ export const getRegisteredTeams = async (seasonId: number) => {
     GROUP BY str.team_id, t.name, str.season_id
   `;
   const rows = await runQuery<RegisteredTeamQueryResult[]>(query, [seasonId]);
-  // Parse players string into array of objects
+  // Parse players JSON array into array of objects
   return rows.map(
     (row) =>
       ({
         ...row,
         players: row.players
-          ? row.players.split(",").map((p: string) => {
-              const [
-                steam_id,
-                nickname,
-                work_email,
-                is_work_email_personal_email
-              ] = p.split(":");
-              return {
-                steam_id,
-                nickname,
-                work_email,
-                is_work_email_personal_email:
-                  is_work_email_personal_email === "1"
-              } satisfies RegisteredTeamPlayer;
-            })
+          ? JSONBig({ storeAsString: true }).parse(row.players)
           : []
       }) satisfies SeasonRegisteredTeamsWithPlayers
   );

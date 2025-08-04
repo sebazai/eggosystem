@@ -311,7 +311,7 @@ router.post(
             matchDetails
           );
           // TODO: Is MatchStatus.FINISHED the correct status?
-          await updateMatchStatus(externalMatchRoomId, MatchStatus.FINISHED);
+          await updateMatchStatus(externalMatchRoomId, MatchStatus.ABORTED);
           res.status(200).send("Webhook received");
           return;
         }
