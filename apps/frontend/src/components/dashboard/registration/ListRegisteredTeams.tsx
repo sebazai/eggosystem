@@ -170,6 +170,9 @@ export const ListRegisteredTeams = () => {
 
   return (
     <div className="bg-card rounded-md overflow-hidden">
+      <div className="text-sm text-muted-foreground p-2">
+        Total teams: {registeredTeams.length}
+      </div>
       <div className="overflow-x-auto">
         <table className="text-xs w-full">
           <thead>
