@@ -178,15 +178,16 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["gameTypes"],
-            message: "Required"
+            message: "Invalid input: expected object, received undefined"
           }),
           expect.objectContaining({
             path: ["acceptedTerms"],
-            message: "Required"
+            message: "Invalid input: expected boolean, received undefined"
           })
         ])
       );
@@ -227,7 +228,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["gameTypes"],
@@ -356,11 +358,12 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["acceptedTerms"],
-            message: "Required"
+            message: "Invalid input: expected boolean, received undefined"
           })
         ])
       );
@@ -399,7 +402,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["newOrganization", "name"],
@@ -540,7 +544,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["acceptedTerms"],
@@ -578,7 +583,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["organizationId"],
@@ -622,7 +628,8 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     } catch (error) {
       expect(error).toBeInstanceOf(ZodError);
       const zodError = error as ZodError;
-      expect(zodError.errors).toEqual(
+      const errors = JSON.parse(zodError.message);
+      expect(errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
             path: ["newOrganization", "name"],

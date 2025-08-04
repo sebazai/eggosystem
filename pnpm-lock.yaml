@@ -148,8 +148,8 @@ importers:
         specifier: 4.9.0
         version: 4.9.0
       zod:
-        specifier: 3.25.74
-        version: 3.25.74
+        specifier: 4.0.14
+        version: 4.0.14
     devDependencies:
       '@babel/core':
         specifier: 7.28.0
@@ -263,8 +263,8 @@ importers:
         specifier: 2.0.1
         version: 2.0.1(react-dom@19.1.1(react@19.1.1))(react-hook-form@7.62.0(react@19.1.1))(react@19.1.1)
       '@hookform/resolvers':
-        specifier: 5.0.1
-        version: 5.0.1(react-hook-form@7.62.0(react@19.1.1))
+        specifier: 5.2.1
+        version: 5.2.1(react-hook-form@7.62.0(react@19.1.1))
       '@radix-ui/react-accordion':
         specifier: 1.2.4
         version: 1.2.4(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -359,8 +359,8 @@ importers:
         specifier: 3.3.1
         version: 3.3.1
       zod:
-        specifier: 3.25.74
-        version: 3.25.74
+        specifier: 4.0.14
+        version: 4.0.14
     devDependencies:
       '@eggosystem/eslint':
         specifier: workspace:*
@@ -492,8 +492,8 @@ importers:
   packages/types:
     dependencies:
       zod:
-        specifier: 3.25.74
-        version: 3.25.74
+        specifier: 4.0.14
+        version: 4.0.14
     devDependencies:
       '@eggosystem/eslint':
         specifier: workspace:*
@@ -1284,8 +1284,8 @@ packages:
       react-dom: '>=16.8.0'
       react-hook-form: ^7.0.0
 
-  '@hookform/resolvers@5.0.1':
-    resolution: {integrity: sha512-u/+Jp83luQNx9AdyW2fIPGY6Y7NG68eN2ZW8FOJYL+M0i4s49+refdJdOp/A9n9HFQtQs3HIDHQvX3ZET2o7YA==}
+  '@hookform/resolvers@5.2.1':
+    resolution: {integrity: sha512-u0+6X58gkjMcxur1wRWokA7XsiiBJ6aK17aPZxhkoYiK5J+HcTx0Vhu9ovXe6H+dVpO6cjrn2FkJTryXEMlryQ==}
     peerDependencies:
       react-hook-form: ^7.55.0
 
@@ -7107,6 +7107,9 @@ packages:
   zod@3.25.74:
     resolution: {integrity: sha512-J8poo92VuhKjNknViHRAIuuN6li/EwFbAC8OedzI8uxpEPGiXHGQu9wemIAioIpqgfB4SySaJhdk0mH5Y4ICBg==}
 
+  zod@4.0.14:
+    resolution: {integrity: sha512-nGFJTnJN6cM2v9kXL+SOBq3AtjQby3Mv5ySGFof5UGRHrRioSJ5iG680cYNjE/yWk671nROcpPj4hAS8nyLhSw==}
+
 snapshots:
 
   '@adobe/css-tools@4.4.3': {}
@@ -8089,7 +8092,7 @@ snapshots:
       react-dom: 19.1.1(react@19.1.1)
       react-hook-form: 7.62.0(react@19.1.1)
 
-  '@hookform/resolvers@5.0.1(react-hook-form@7.62.0(react@19.1.1))':
+  '@hookform/resolvers@5.2.1(react-hook-form@7.62.0(react@19.1.1))':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.62.0(react@19.1.1)
@@ -14719,3 +14722,5 @@ snapshots:
       zod: 3.25.74
 
   zod@3.25.74: {}
+
+  zod@4.0.14: {}

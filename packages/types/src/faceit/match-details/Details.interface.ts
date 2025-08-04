@@ -150,7 +150,7 @@ interface FaceitLocationEntity {
   image_lg: string;
 }
 
-export const FaceitGameSchema = z.nativeEnum(FaceitGame);
+export const FaceitGameSchema = z.enum(FaceitGame);
 
 const FaceitPlayerRosterSchema = z.object({
   player_id: z.string(),
@@ -206,5 +206,5 @@ export const FaceitMatchResultsFinishedSchema = z.object({
 export const FaceitDetailedResultsFinishedSchema = z.object({
   asc_score: z.boolean(),
   winner: z.string(),
-  factions: z.record(FaceitFactionScoreSchema)
+  factions: z.record(z.string(), FaceitFactionScoreSchema)
 });

@@ -77,7 +77,9 @@ describe("POST /:id/signup", () => {
       const invalidData = { ...validSignupData, players: [] }; // Invalid: not enough players
       const res = await agent.post("/season/123/signup").send(invalidData);
       expect(res.status).toBe(400);
-      expect(res.text).toContain("Array must contain at least 5 element(s)");
+      expect(JSON.parse(res.text).error).toContain(
+        "Too small: expected array to have >=5 items"
+      );
     });
   });
 

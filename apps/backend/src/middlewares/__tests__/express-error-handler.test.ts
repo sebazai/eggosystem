@@ -81,7 +81,7 @@ describe("Express Error Handler", () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalled();
       const jsonArg = (res.json as jest.Mock).mock.calls[0][0];
-      expect(jsonArg.error).toContain("Expected string");
+      expect(jsonArg.error).toContain("expected string, received number");
     }
   });
 

@@ -139,7 +139,7 @@ function SteamIdInputWithName({
 }
 
 export function ManualPlayerApprovalForm() {
-  const methods = useForm<ManualPlayerApprovalFormSchemaType>({
+  const methods = useForm({
     resolver: zodResolver(manualPlayerApprovalFormSchema),
     defaultValues: {
       acceptedPlayerSteamIds: [],
@@ -160,11 +160,10 @@ export function ManualPlayerApprovalForm() {
   const { organizations } = useSelectableOrgs(selectedTeamId);
   const { teams } = useSelectableTeams(selectedOrgId);
 
-  const { fields, append, remove } =
-    useFieldArray<ManualPlayerApprovalFormSchemaType>({
-      control: methods.control,
-      name: "acceptedPlayerSteamIds"
-    });
+  const { fields, append, remove } = useFieldArray({
+    control: methods.control,
+    name: "acceptedPlayerSteamIds"
+  });
 
   const onSubmit = async (data: ManualPlayerApprovalFormSchemaType) => {
     setErrorMessage(null);

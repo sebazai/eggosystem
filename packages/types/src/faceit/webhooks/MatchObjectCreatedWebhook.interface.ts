@@ -42,7 +42,7 @@ const MatchObjectCreatedPayloadSchema = z.object({
   id: z.string(),
   organizer_id: z.string(),
   region: z.string(),
-  game: z.nativeEnum(FaceitGame),
+  game: z.enum(FaceitGame),
   version: z.number(),
   entity: MatchObjectCreatedEntitySchema,
   created_at: z.string(),

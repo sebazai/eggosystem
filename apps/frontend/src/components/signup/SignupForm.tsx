@@ -92,7 +92,7 @@ export const SignupForm = ({
   );
   const { user, loading: loadingUser } = useAuth();
   const schema = signupFormSchema({ platform });
-  const baseSchema = baseSignupFormSchema({ platform })._def.schema;
+  const baseSchema = baseSignupFormSchema({ platform });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

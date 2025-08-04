@@ -243,9 +243,9 @@ describe("ProfileForm", () => {
     await waitFor(() => {
       expect(screen.getByText("Nickname is required")).toBeInTheDocument();
       expect(
-        screen.getByText("String must contain at least 2 character(s)")
+        screen.getByText("Too small: expected string to have >=2 characters")
       ).toBeInTheDocument();
-      expect(screen.getByText("Invalid email")).toBeInTheDocument();
+      expect(screen.getByText("Invalid email address")).toBeInTheDocument();
       expect(
         screen.getByText("You must accept the privacy policy")
       ).toBeInTheDocument();

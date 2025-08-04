@@ -57,7 +57,7 @@ const DetailsDemoReadBaseSchema = z.object({
   best_of: z.number(),
   results: FaceitMatchResultsFinishedSchema,
   detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
-  status: z.nativeEnum(FaceitMatchStatus),
+  status: z.enum(FaceitMatchStatus),
   faceit_url: z.string()
 });
 

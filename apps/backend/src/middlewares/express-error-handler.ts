@@ -36,9 +36,15 @@ export const expressErrorHandler = (
   }
 
   if (err instanceof ZodError) {
-    const errors = err.errors;
-    const errorMessages = errors.map((error) => error.message);
-    res.status(400).json({ error: errorMessages.join(", ") });
+    logger.error("ZodError", err);
+    try {
+      const errors = JSON.parse(err.message) as Array<{ message: string }>;
+      const errorMessages = errors.map((error) => error.message).join(", ");
+      res.status(400).json({ error: errorMessages });
+    } catch (_parseError) {
+      // Fallback if parsing fails
+      res.status(400).json({ error: err.message });
+    }
     return;
   }
 
