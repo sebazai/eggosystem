@@ -38,9 +38,7 @@ const createChannel = async () => {
       await channel.assertQueue(PARSE_QUEUE, {
         durable: true,
         arguments: {
-          "x-message-ttl": 3600000, // 1 hour TTL
-          "x-dead-letter-exchange": "dlx", // Dead letter exchange
-          "x-dead-letter-routing-key": "failed"
+          "x-message-ttl": 3600000 // 1 hour TTL
         }
       });
       logger.info("Created parse queue with durable settings");
