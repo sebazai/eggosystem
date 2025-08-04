@@ -4,6 +4,8 @@ import {
   MOCK_GAME_ID
 } from "../../__mocks__/demo-parsed-json/mock-parsed-demo";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { upsertMatchGameForMatch } from "../game.models";
+import { getConnection } from "../../db/mysqlConnection";
 
 // TypeScript interfaces for database query results
 interface TeamGameScore {
@@ -573,6 +575,278 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
         [123123]
       );
       expect(roundStatsCount[0].count).toBe(22);
+    });
+  });
+
+  describe("upsertMatchGameForMatch Integration Tests", () => {
+    const testMatchId = 5; // Using the existing test match
+    const testMapId = 3;
+    const testMapOrder = 1;
+    const testDemoFile = "test-upsert-demo.dem";
+    const testRegulationRounds = 24;
+
+    beforeEach(async () => {
+      // Clean up any existing test data
+      await runQuery("DELETE FROM MatchGames WHERE demofile = ?", [
+        testDemoFile
+      ]);
+    });
+
+    afterEach(async () => {
+      // Clean up test data
+      await runQuery("DELETE FROM MatchGames WHERE demofile = ?", [
+        testDemoFile
+      ]);
+    });
+
+    it("should INSERT and return insertId when demofile doesn't exist", async () => {
+      // Act
+
+      const result = await upsertMatchGameForMatch({
+        match_id: testMatchId,
+        map_id: testMapId,
+        map_order: testMapOrder,
+        demo_file: testDemoFile,
+        regulation_rounds: testRegulationRounds
+      });
+
+      // Check if the record was actually inserted
+      const dbRecord = await runQuery<
+        Array<{
+          id: number;
+          match_id: number;
+          map_id: number;
+          map_order: number;
+          demofile: string;
+          regulation_rounds: number;
+        }>
+      >("SELECT * FROM MatchGames WHERE demofile = ?", [testDemoFile]);
+
+      // Check if the existing record was updated
+      const updatedExistingRecord = await runQuery<
+        Array<{
+          id: number;
+          match_id: number;
+          map_id: number;
+          map_order: number;
+          demofile: string;
+          regulation_rounds: number;
+        }>
+      >(
+        "SELECT * FROM MatchGames WHERE match_id = ? AND map_id = ? AND map_order = ?",
+        [testMatchId, testMapId, testMapOrder]
+      );
+
+      // Assert
+      expect(result.insertId).toBeDefined();
+      expect(typeof result.insertId).toBe("number");
+      // For UPSERT, insertId might be 0 if it was an UPDATE, so let's check the actual record
+      if (result.insertId === 0) {
+        // This was an UPDATE, so check the existing record was updated
+        expect(updatedExistingRecord).toHaveLength(1);
+        expect(updatedExistingRecord[0].id).toBeGreaterThan(0);
+        expect(updatedExistingRecord[0].demofile).toBe(testDemoFile); // Should be updated
+      } else {
+        expect(result.insertId).toBeGreaterThan(0);
+      }
+
+      // Verify the record was actually inserted
+      expect(dbRecord).toHaveLength(1);
+      expect(dbRecord[0].id).toBeGreaterThan(0);
+      expect(dbRecord[0].match_id).toBe(testMatchId);
+      expect(dbRecord[0].map_id).toBe(testMapId);
+      expect(dbRecord[0].map_order).toBe(testMapOrder);
+      expect(dbRecord[0].demofile).toBe(testDemoFile);
+      expect(dbRecord[0].regulation_rounds).toBe(testRegulationRounds);
+    });
+
+    it("should UPDATE and return existing insertId when demofile already exists", async () => {
+      // Arrange - Insert a record first
+      const initialInsert = await runQuery<{ insertId: number }>(
+        "INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) VALUES (?, ?, ?, ?, ?)",
+        [
+          testMatchId,
+          testMapId,
+          testMapOrder,
+          testDemoFile,
+          testRegulationRounds
+        ]
+      );
+
+      const existingId = initialInsert.insertId;
+
+      // Act - Try to upsert with the same demofile but different data
+      const result = await upsertMatchGameForMatch({
+        match_id: testMatchId, // Keep same match_id to avoid unique constraint
+        map_id: testMapId, // Keep same map_id to avoid unique constraint
+        map_order: testMapOrder, // Keep same map_order to avoid unique constraint
+        demo_file: testDemoFile, // Same demofile (should trigger UPDATE)
+        regulation_rounds: testRegulationRounds + 6 // Different regulation_rounds
+      });
+
+      // Assert
+      expect(result.insertId).toBeDefined();
+      expect(typeof result.insertId).toBe("number");
+      expect(result.insertId).toBe(existingId); // Should return the existing ID
+
+      // Verify the record was updated, not inserted
+      const updatedRecord = await runQuery<
+        Array<{
+          id: number;
+          match_id: number;
+          map_id: number;
+          map_order: number;
+          demofile: string;
+          regulation_rounds: number;
+        }>
+      >("SELECT * FROM MatchGames WHERE demofile = ?", [testDemoFile]);
+
+      expect(updatedRecord).toHaveLength(1);
+      expect(updatedRecord[0].id).toBe(existingId); // Same ID
+      expect(updatedRecord[0].match_id).toBe(testMatchId); // Same (not updated due to unique constraint)
+      expect(updatedRecord[0].map_id).toBe(testMapId); // Same (not updated due to unique constraint)
+      expect(updatedRecord[0].map_order).toBe(testMapOrder); // Same (not updated due to unique constraint)
+      expect(updatedRecord[0].demofile).toBe(testDemoFile); // Same
+      expect(updatedRecord[0].regulation_rounds).toBe(testRegulationRounds + 6); // Updated
+    });
+
+    it("should handle multiple upserts with the same demofile correctly", async () => {
+      // Act - First upsert (INSERT)
+      const firstResult = await upsertMatchGameForMatch({
+        match_id: testMatchId,
+        map_id: testMapId,
+        map_order: testMapOrder,
+        demo_file: testDemoFile,
+        regulation_rounds: testRegulationRounds
+      });
+
+      const firstId = firstResult.insertId;
+
+      // Second upsert (UPDATE)
+      const secondResult = await upsertMatchGameForMatch({
+        match_id: testMatchId, // Keep same to avoid unique constraint
+        map_id: testMapId, // Keep same to avoid unique constraint
+        map_order: testMapOrder, // Keep same to avoid unique constraint
+        demo_file: testDemoFile, // Same demofile
+        regulation_rounds: testRegulationRounds + 6
+      });
+
+      // Third upsert (UPDATE)
+      const thirdResult = await upsertMatchGameForMatch({
+        match_id: testMatchId, // Keep same to avoid unique constraint
+        map_id: testMapId, // Keep same to avoid unique constraint
+        map_order: testMapOrder, // Keep same to avoid unique constraint
+        demo_file: testDemoFile, // Same demofile
+        regulation_rounds: testRegulationRounds + 12
+      });
+
+      // Assert
+      expect(firstResult.insertId).toBeGreaterThan(0);
+      expect(secondResult.insertId).toBe(firstId); // Should return same ID
+      expect(thirdResult.insertId).toBe(firstId); // Should return same ID
+
+      // Verify only one record exists
+      const records = await runQuery<
+        Array<{
+          id: number;
+          match_id: number;
+          map_id: number;
+          map_order: number;
+          demofile: string;
+          regulation_rounds: number;
+        }>
+      >("SELECT * FROM MatchGames WHERE demofile = ?", [testDemoFile]);
+
+      expect(records).toHaveLength(1);
+      expect(records[0].id).toBe(firstId);
+      expect(records[0].match_id).toBe(testMatchId); // Same (not updated due to unique constraint)
+      expect(records[0].map_id).toBe(testMapId); // Same (not updated due to unique constraint)
+      expect(records[0].map_order).toBe(testMapOrder); // Same (not updated due to unique constraint)
+      expect(records[0].regulation_rounds).toBe(testRegulationRounds + 12); // Last update
+    });
+
+    it("should work with database transactions", async () => {
+      // Arrange
+      const connection = await getConnection();
+
+      try {
+        await connection.beginTransaction();
+
+        // Act - Upsert within transaction
+        const result = await upsertMatchGameForMatch({
+          match_id: testMatchId,
+          map_id: testMapId,
+          map_order: testMapOrder,
+          demo_file: testDemoFile,
+          regulation_rounds: testRegulationRounds,
+          connection
+        });
+
+        // Assert
+        expect(result.insertId).toBeDefined();
+        expect(result.insertId).toBeGreaterThan(0);
+
+        // Verify record exists within transaction
+        const recordInTransaction = await runQuery<
+          Array<{
+            id: number;
+            demofile: string;
+          }>
+        >(
+          "SELECT id, demofile FROM MatchGames WHERE demofile = ?",
+          [testDemoFile],
+          connection
+        );
+
+        expect(recordInTransaction).toHaveLength(1);
+        expect(recordInTransaction[0].id).toBe(result.insertId);
+
+        await connection.commit();
+
+        // Verify record persists after commit
+        const recordAfterCommit = await runQuery<
+          Array<{
+            id: number;
+            demofile: string;
+          }>
+        >("SELECT id, demofile FROM MatchGames WHERE demofile = ?", [
+          testDemoFile
+        ]);
+
+        expect(recordAfterCommit).toHaveLength(1);
+        expect(recordAfterCommit[0].id).toBe(result.insertId);
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    });
+
+    it("should handle default regulation_rounds value correctly", async () => {
+      // Act - Upsert without regulation_rounds parameter
+      const result = await upsertMatchGameForMatch({
+        match_id: testMatchId,
+        map_id: testMapId,
+        map_order: testMapOrder,
+        demo_file: testDemoFile
+        // regulation_rounds not specified, should default to 24
+      });
+
+      // Assert
+      expect(result.insertId).toBeDefined();
+
+      // Verify default value was used
+      const record = await runQuery<
+        Array<{
+          regulation_rounds: number;
+        }>
+      >("SELECT regulation_rounds FROM MatchGames WHERE demofile = ?", [
+        testDemoFile
+      ]);
+
+      expect(record).toHaveLength(1);
+      expect(record[0].regulation_rounds).toBe(24); // Default value
     });
   });
 });

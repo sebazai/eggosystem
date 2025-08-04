@@ -2,7 +2,7 @@ import { type PoolConnection } from "mysql2/promise";
 import { type DemoTrades } from "../types/parse-queue.types";
 import { runQuery } from "../db/mysqlRunQuery";
 
-export const insertPlayerTradesForGame = async ({
+export const upsertPlayerTradesForGame = async ({
   gameId,
   playerTrades,
   connection
@@ -27,7 +27,17 @@ export const insertPlayerTradesForGame = async ({
     time, 
     trade_time, 
     death_time) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      trader_steam_id = VALUES(trader_steam_id),
+      killer_steam_id = VALUES(killer_steam_id),
+      victim_steam_id = VALUES(victim_steam_id),
+      first_death = VALUES(first_death),
+      traded = VALUES(traded),
+      attempted = VALUES(attempted),
+      time = VALUES(time),
+      trade_time = VALUES(trade_time),
+      death_time = VALUES(death_time)`;
 
   await Promise.all(
     tradesToBeAdded.map((trade) => {

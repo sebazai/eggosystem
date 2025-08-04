@@ -17,24 +17,24 @@ jest.mock("../player-trades.models");
 jest.mock("../map-round-stat.models");
 
 // Import the mocked functions
-import { insertTeamGameScore } from "../team-game-score.models";
-import { insertPlayerStatsForGame } from "../player-stats.models";
-import { insertPlayerTradesForGame } from "../player-trades.models";
-import { insertMapRoundStats } from "../map-round-stat.models";
+import { upsertTeamGameScore } from "../team-game-score.models";
+import { upsertPlayerStatsForGame } from "../player-stats.models";
+import { upsertPlayerTradesForGame } from "../player-trades.models";
+import { upsertMapRoundStats } from "../map-round-stat.models";
 
-const mockInsertTeamGameScore = insertTeamGameScore as jest.MockedFunction<
-  typeof insertTeamGameScore
+const mockUpsertTeamGameScore = upsertTeamGameScore as jest.MockedFunction<
+  typeof upsertTeamGameScore
 >;
-const mockInsertPlayerStatsForGame =
-  insertPlayerStatsForGame as jest.MockedFunction<
-    typeof insertPlayerStatsForGame
+const mockUpsertPlayerStatsForGame =
+  upsertPlayerStatsForGame as jest.MockedFunction<
+    typeof upsertPlayerStatsForGame
   >;
-const mockInsertPlayerTradesForGame =
-  insertPlayerTradesForGame as jest.MockedFunction<
-    typeof insertPlayerTradesForGame
+const mockUpsertPlayerTradesForGame =
+  upsertPlayerTradesForGame as jest.MockedFunction<
+    typeof upsertPlayerTradesForGame
   >;
-const mockInsertMapRoundStats = insertMapRoundStats as jest.MockedFunction<
-  typeof insertMapRoundStats
+const mockUpsertMapRoundStats = upsertMapRoundStats as jest.MockedFunction<
+  typeof upsertMapRoundStats
 >;
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
@@ -82,11 +82,11 @@ describe("saveParsedDemoDataForGame", () => {
 
     mockGetConnection.mockResolvedValue(mockConnection as PoolConnection);
 
-    // Setup default mocks for the insert functions
-    mockInsertTeamGameScore.mockResolvedValue(undefined);
-    mockInsertPlayerStatsForGame.mockResolvedValue(undefined);
-    mockInsertPlayerTradesForGame.mockResolvedValue(undefined);
-    mockInsertMapRoundStats.mockResolvedValue(undefined);
+    // Setup default mocks for the upsert functions
+    mockUpsertTeamGameScore.mockResolvedValue({ insertId: 1 });
+    mockUpsertPlayerStatsForGame.mockResolvedValue(undefined);
+    mockUpsertPlayerTradesForGame.mockResolvedValue(undefined);
+    mockUpsertMapRoundStats.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -214,13 +214,13 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
-      // Make the insert function fail
-      mockInsertTeamGameScore.mockRejectedValueOnce(new Error("Insert failed"));
+      // Make the upsert function fail
+      mockUpsertTeamGameScore.mockRejectedValueOnce(new Error("Upsert failed"));
 
       // Act & Assert
       await expect(
         saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
-      ).rejects.toThrow("Insert failed");
+      ).rejects.toThrow("Upsert failed");
 
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
       expect(mockConnection.commit).not.toHaveBeenCalled();
@@ -312,13 +312,13 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 1 }]) // Team 1 found
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
-      // Make the insert function fail
-      mockInsertTeamGameScore.mockRejectedValueOnce(new Error("Insert failed"));
+      // Make the upsert function fail
+      mockUpsertTeamGameScore.mockRejectedValueOnce(new Error("Upsert failed"));
 
       // Act & Assert
       await expect(
         saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
-      ).rejects.toThrow("Insert failed");
+      ).rejects.toThrow("Upsert failed");
 
       expect(mockConnection.beginTransaction).toHaveBeenCalledTimes(1);
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
@@ -356,7 +356,7 @@ describe("saveParsedDemoDataForGame", () => {
       // Assert
       // Verify that the function completed successfully
       expect(mockConnection.commit).toHaveBeenCalledTimes(1);
-      expect(mockInsertPlayerTradesForGame).toHaveBeenCalled();
+      expect(mockUpsertPlayerTradesForGame).toHaveBeenCalled();
     });
 
     it("should handle round stats data correctly", async () => {

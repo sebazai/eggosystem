@@ -127,7 +127,7 @@ const createDemoPlayerToPlayerStatQueryMapper = (
   } satisfies Omit<PlayerStats, "id">;
 };
 
-export const insertPlayerStatsForGame = async ({
+export const upsertPlayerStatsForGame = async ({
   gameId,
   playerStats,
   connection
@@ -146,6 +146,13 @@ export const insertPlayerStatsForGame = async ({
 
   const insertIntoValuesQuestionMarks = keys.map(() => "?").join(", ");
 
-  const query = `INSERT INTO PlayerStats (${insertIntoKeysString}) VALUES (${insertIntoValuesQuestionMarks})`;
+  // Build the ON DUPLICATE KEY UPDATE clause
+  const updateClause = keys
+    .filter((key) => !["id", "steam_id", "game_id"].includes(key))
+    .map((key) => `${key} = VALUES(${key})`)
+    .join(", ");
+
+  const query = `INSERT INTO PlayerStats (${insertIntoKeysString}) VALUES (${insertIntoValuesQuestionMarks})
+    ON DUPLICATE KEY UPDATE ${updateClause}`;
   return runQuery(query, Object.values(playerStat), connection);
 };

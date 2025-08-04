@@ -2,7 +2,7 @@ import { type TeamGameScore } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 
-export const insertTeamGameScore = async ({
+export const upsertTeamGameScore = async ({
   match_id,
   team_id,
   game_id,
@@ -20,7 +20,14 @@ export const insertTeamGameScore = async ({
     score,
     halftime_score,
     overtime_score
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+      game_id = VALUES(game_id),
+      starting_side = VALUES(starting_side),
+      score = VALUES(score),
+      halftime_score = VALUES(halftime_score),
+      overtime_score = VALUES(overtime_score)`;
+
   const queryParams = [
     match_id,
     team_id,
@@ -31,5 +38,8 @@ export const insertTeamGameScore = async ({
     overtime_score
   ];
 
-  return runQuery(query, queryParams, connection);
+  return runQuery<{
+    insertId: number;
+    affectedRows?: number;
+  }>(query, queryParams, connection);
 };

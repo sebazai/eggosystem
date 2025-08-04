@@ -102,71 +102,6 @@ export const publishToParseQueue = async (
 };
 
 /**
- * Publish multiple demo processing requests to the parse_queue
- * @param requests Array of demo processing requests
- * @returns A Promise resolving to the number of messages published
- */
-export const bulkPublishToParseQueue = async (
-  requests: ParseQueueMessage[]
-): Promise<number> => {
-  let connection;
-  let channel;
-  let publishedCount = 0;
-
-  try {
-    // Create connection and channel
-    const resources = await createChannel();
-    connection = resources.connection;
-    channel = resources.channel;
-
-    // Publish each request
-    for (const request of requests) {
-      try {
-        const message = Buffer.from(JSON.stringify(request));
-        const published = channel.sendToQueue(PARSE_QUEUE, message, {
-          persistent: true,
-          contentType: "application/json",
-          priority: request.priority,
-          messageId: `parse-${request.game_id}-${Date.now()}`,
-          timestamp: Date.now()
-        });
-
-        if (published) {
-          publishedCount++;
-          logger.debug(
-            `Published demo processing request to parse_queue for game_id: ${request.game_id}`
-          );
-        } else {
-          logger.error(
-            `Failed to publish demo processing request for game_id: ${request.game_id}`
-          );
-        }
-      } catch (error) {
-        logger.error(`Error publishing individual demo processing request`, {
-          gameId: request.game_id,
-          downloadUrl: request.download_url,
-          error
-        });
-        // Continue with other requests even if one fails
-      }
-    }
-
-    logger.info(
-      `Published ${publishedCount}/${requests.length} demo processing requests to parse_queue`
-    );
-
-    return publishedCount;
-  } catch (error) {
-    logger.error("Error in bulk publishing to parse_queue", error);
-    throw error;
-  } finally {
-    // Close channel and connection
-    if (channel) await channel.close();
-    if (connection) await connection.close();
-  }
-};
-
-/**
  * Create a demo processing request object
  * @param gameId The game ID
  * @param downloadUrl The demo download URL
@@ -189,22 +124,4 @@ export const createDemoProcessingRequest = (
     source,
     reparse
   };
-};
-
-/**
- * Validate a demo processing request
- * @param request The request to validate
- * @returns True if valid, false otherwise
- */
-export const validateDemoProcessingRequest = (
-  request: ParseQueueMessage
-): boolean => {
-  return !!(
-    request.game_id &&
-    request.download_url &&
-    request.priority >= 1 &&
-    request.priority <= 10 &&
-    request.created_at &&
-    request.source
-  );
 };

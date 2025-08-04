@@ -10,14 +10,21 @@ interface MapRoundStatsParams {
   connection?: PoolConnection;
 }
 
-export const insertMapRoundStats = async ({
+export const upsertMapRoundStats = async ({
   gameId,
   tTeamIdTeam1,
   ctTeamIdTeam2,
   mapRoundStats,
   connection
 }: MapRoundStatsParams) => {
-  const query = `INSERT INTO MapRoundStats (game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+  const query = `INSERT INTO MapRoundStats (game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      ct_team_id = VALUES(ct_team_id),
+      t_team_id = VALUES(t_team_id),
+      round_end_reason_info = VALUES(round_end_reason_info),
+      ct_t = VALUES(ct_t),
+      first_kill = VALUES(first_kill),
+      plant_site = VALUES(plant_site)`;
   await Promise.all(
     mapRoundStats.map(async (round) => {
       const values = [

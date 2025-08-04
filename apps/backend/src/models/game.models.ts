@@ -27,10 +27,10 @@ import {
 import { logger } from "../utils/app-logger";
 import { type ParsedPayload } from "../types/parse-queue.types";
 import { generateQueryWithFilters } from "../utils/queryFilter";
-import { insertTeamGameScore } from "./team-game-score.models";
-import { insertPlayerStatsForGame } from "./player-stats.models";
-import { insertPlayerTradesForGame } from "./player-trades.models";
-import { insertMapRoundStats } from "./map-round-stat.models";
+import { upsertTeamGameScore } from "./team-game-score.models";
+import { upsertPlayerStatsForGame } from "./player-stats.models";
+import { upsertPlayerTradesForGame } from "./player-trades.models";
+import { upsertMapRoundStats } from "./map-round-stat.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
 import { getDemoDownloadUrl } from "../services/faceit.services";
 
@@ -345,12 +345,7 @@ const getMatchIdByGameId = async (
   );
 };
 
-/**
- * UPSERT function for MatchGames table
- * Uses demofile as the unique key for upsert operations
- * Will INSERT if demofile doesn't exist, UPDATE if it does
- */
-const upsertMatchGameForMatch = async ({
+export const upsertMatchGameForMatch = async ({
   match_id,
   map_id,
   map_order,
@@ -369,13 +364,11 @@ const upsertMatchGameForMatch = async ({
     INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) 
     VALUES (?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
-      match_id = VALUES(match_id),
-      map_id = VALUES(map_id),
-      map_order = VALUES(map_order),
+      demofile = VALUES(demofile),
       regulation_rounds = VALUES(regulation_rounds)
   `;
 
-  return runQuery<{ insertId: number }>(
+  return await runQuery<{ insertId: number }>(
     query,
     [match_id, map_id, map_order, demo_file, regulation_rounds ?? 24],
     connection
@@ -461,7 +454,7 @@ export const saveParsedDemoDataForGame = async (
     }
 
     await Promise.all([
-      insertTeamGameScore({
+      upsertTeamGameScore({
         match_id: match.match_id,
         team_id: terroristTeam.team_id,
         game_id: gameId,
@@ -471,7 +464,7 @@ export const saveParsedDemoDataForGame = async (
         overtime_score: Score.Team1OTScore,
         connection
       }),
-      insertTeamGameScore({
+      upsertTeamGameScore({
         match_id: match.match_id,
         team_id: counterTerroristTeam.team_id,
         game_id: gameId,
@@ -482,18 +475,18 @@ export const saveParsedDemoDataForGame = async (
         connection
       }),
       ...Object.values(Players).map((player) =>
-        insertPlayerStatsForGame({
+        upsertPlayerStatsForGame({
           gameId,
           playerStats: player,
           connection
         })
       ),
-      insertPlayerTradesForGame({
+      upsertPlayerTradesForGame({
         gameId,
         playerTrades: Trades,
         connection
       }),
-      insertMapRoundStats({
+      upsertMapRoundStats({
         gameId,
         tTeamIdTeam1: terroristTeam.team_id,
         ctTeamIdTeam2: counterTerroristTeam.team_id,
