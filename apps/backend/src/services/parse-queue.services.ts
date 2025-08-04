@@ -178,14 +178,16 @@ export const createDemoProcessingRequest = (
   gameId: number,
   downloadUrl: string,
   priority: number = 5,
-  source: string = "game-processor"
+  source: string = "game-processor",
+  reparse: boolean = false
 ): ParseQueueMessage => {
   return {
     game_id: gameId.toString(),
     download_url: downloadUrl,
     priority,
     created_at: new Date().toISOString(),
-    source
+    source,
+    reparse
   };
 };
 

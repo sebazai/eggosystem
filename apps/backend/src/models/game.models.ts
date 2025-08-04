@@ -6,7 +6,8 @@ import {
   type MatchOrGameTopPlayerAwards,
   type GameClip,
   type MatchDemoReadyWebhook,
-  type ChampionshipDetailsDemoReady
+  type ChampionshipDetailsDemoReady,
+  type MatchGame
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
@@ -169,14 +170,16 @@ export const getGameClip = async (game_id: number) => {
  */
 const publishDemoProcessingRequest = async (
   gameId: number,
-  demoUrl: string
+  demoUrl: string,
+  reparse: boolean = false
 ): Promise<void> => {
   try {
     const demoProcessingRequest = createDemoProcessingRequest(
       gameId,
       demoUrl,
       5, // Medium priority for demo processing
-      "game-processor"
+      "game-processor",
+      reparse
     );
 
     await publishToParseQueue(demoProcessingRequest);
@@ -198,14 +201,22 @@ const publishDemoProcessingRequest = async (
   }
 };
 
+const getMatchGameByDemoUrl = async (demoUrl: string) => {
+  const query = `SELECT * FROM MatchGames WHERE demofile = ?`;
+  const [game] = await runQuery<Array<MatchGame | undefined>>(query, [demoUrl]);
+  return game;
+};
+
 export const addMatchGameToDatabaseAndProcessDemo = async (
   webhookData: MatchDemoReadyWebhook,
   matchDetails: ChampionshipDetailsDemoReady,
   externalLeagueId: string
 ) => {
   const { demo_url } = webhookData.payload;
-  const parsedDemoUrl = parseDemoUrl(demo_url);
 
+  const gameWithDemo = await getMatchGameByDemoUrl(demo_url);
+
+  const parsedDemoUrl = parseDemoUrl(demo_url);
   if (!parsedDemoUrl) {
     throw new Error(`Invalid demo url: ${demo_url}`);
   }
@@ -213,6 +224,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   const demoDownloadUrl = await getDemoDownloadUrl(demo_url);
 
   const { match_id } = matchDetails;
+
   // We can have multiple matches for the same external match room id, so we need to get all of them
   const matches = await getHubMatchesByExternalMatchRoomId(match_id);
 
@@ -259,7 +271,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         throw new Error("Could not find match object for 2xBO1 matches");
       }
 
-      const insertedRow = await addMatchGameForMatch({
+      const insertedRow = await upsertMatchGameForMatch({
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
@@ -270,10 +282,12 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
 
       await Promise.all([
         sendDemoForAllStarPOTGClip(insertedRow.insertId, demo_url),
-        publishDemoProcessingRequest(insertedRow.insertId, demoDownloadUrl)
+        publishDemoProcessingRequest(
+          insertedRow.insertId,
+          demoDownloadUrl,
+          !gameWithDemo
+        )
       ]);
-
-      // Publish demo processing request after successful commit
     } else {
       const match = matches[0];
 
@@ -292,7 +306,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         );
       }
 
-      const insertedRow = await addMatchGameForMatch({
+      const insertedRow = await upsertMatchGameForMatch({
         match_id: match.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
@@ -304,7 +318,11 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
 
       await Promise.all([
         sendDemoForAllStarPOTGClip(insertedRow.insertId, demo_url),
-        publishDemoProcessingRequest(insertedRow.insertId, demoDownloadUrl)
+        publishDemoProcessingRequest(
+          insertedRow.insertId,
+          demoDownloadUrl,
+          !gameWithDemo
+        )
       ]);
     }
   } catch (error) {
@@ -327,7 +345,12 @@ const getMatchIdByGameId = async (
   );
 };
 
-const addMatchGameForMatch = async ({
+/**
+ * UPSERT function for MatchGames table
+ * Uses demofile as the unique key for upsert operations
+ * Will INSERT if demofile doesn't exist, UPDATE if it does
+ */
+const upsertMatchGameForMatch = async ({
   match_id,
   map_id,
   map_order,
@@ -343,7 +366,13 @@ const addMatchGameForMatch = async ({
   connection?: PoolConnection;
 }) => {
   const query = `
-    INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) VALUES (?, ?, ?, ?, ?)
+    INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) 
+    VALUES (?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+      match_id = VALUES(match_id),
+      map_id = VALUES(map_id),
+      map_order = VALUES(map_order),
+      regulation_rounds = VALUES(regulation_rounds)
   `;
 
   return runQuery<{ insertId: number }>(

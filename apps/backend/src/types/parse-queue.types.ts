@@ -9,6 +9,7 @@ export interface ParseQueueMessage {
   priority: number;
   created_at: string;
   source: string;
+  reparse: boolean;
 }
 
 /**
