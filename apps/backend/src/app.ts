@@ -101,7 +101,6 @@ if (
   process.env.NODE_ENV !== "e2e" &&
   process.env.TEST_TYPE !== "e2e" &&
   process.env.RABBITMQ_HOST &&
-  process.env.RABBITMQ_PORT &&
   process.env.RABBITMQ_USER &&
   process.env.RABBITMQ_PASSWORD
 ) {
