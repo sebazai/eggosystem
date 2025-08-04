@@ -263,7 +263,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         match_id: matchObject.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
-        demo_file: demoDownloadUrl,
+        demo_file: demo_url,
         connection
       });
       await connection.commit();
@@ -296,7 +296,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         match_id: match.id,
         map_id: mapPlayedVoteObject.map_id,
         map_order: mapPlayedIn,
-        demo_file: demoDownloadUrl,
+        demo_file: demo_url,
         connection
       });
 

@@ -1,5 +1,5 @@
 import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
-import { validWebhookMatchDemoReady } from "../../routes/v1/__tests__/faceit.routes.test";
+import { validWebhookMatchDemoReady } from "../utils/test-data";
 import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 
 // Mock dependencies for addMatchGamesForMatch tests only
