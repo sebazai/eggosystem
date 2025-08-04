@@ -31,6 +31,7 @@ import { insertPlayerStatsForGame } from "./player-stats.models";
 import { insertPlayerTradesForGame } from "./player-trades.models";
 import { insertMapRoundStats } from "./map-round-stat.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
+import { getDemoDownloadUrl } from "../services/faceit.services";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -209,6 +210,8 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
     throw new Error(`Invalid demo url: ${demo_url}`);
   }
 
+  const demoDownloadUrl = await getDemoDownloadUrl(demo_url);
+
   const { match_id } = matchDetails;
   // We can have multiple matches for the same external match room id, so we need to get all of them
   const matches = await getHubMatchesByExternalMatchRoomId(match_id);
@@ -267,7 +270,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
 
       await Promise.all([
         sendDemoForAllStarPOTGClip(insertedRow.insertId, demo_url),
-        publishDemoProcessingRequest(insertedRow.insertId, demo_url)
+        publishDemoProcessingRequest(insertedRow.insertId, demoDownloadUrl)
       ]);
 
       // Publish demo processing request after successful commit
@@ -301,7 +304,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
 
       await Promise.all([
         sendDemoForAllStarPOTGClip(insertedRow.insertId, demo_url),
-        publishDemoProcessingRequest(insertedRow.insertId, demo_url)
+        publishDemoProcessingRequest(insertedRow.insertId, demoDownloadUrl)
       ]);
     }
   } catch (error) {
