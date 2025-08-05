@@ -420,6 +420,74 @@ export const finalizeTeamPlacementsController = async (
 
     const results = await Promise.all(insertPromises);
 
+    // Copy approved team players from SeasonTeamRegistrationPlayers to SeasonTeamPlayers
+    logger.info(
+      `Copying players from SeasonTeamRegistrationPlayers to SeasonTeamPlayers for season ${seasonId}`
+    );
+
+    // Get all approved teams for this season
+    const approvedTeamsQuery = `
+      SELECT team_id 
+      FROM SeasonTeamRegistrations 
+      WHERE season_id = ? AND approved = 1
+    `;
+    const approvedTeams = await runQuery<Array<{ team_id: number }>>(
+      approvedTeamsQuery,
+      [seasonId]
+    );
+
+    const approvedTeamIds = approvedTeams.map((team) => team.team_id);
+
+    if (approvedTeamIds.length > 0) {
+      // Check if any players already exist in SeasonTeamPlayers for this season
+      const existingPlayersQuery = `
+        SELECT DISTINCT team_id 
+        FROM SeasonTeamPlayers 
+        WHERE season_id = ? AND team_id IN (${approvedTeamIds.map(() => "?").join(", ")})
+      `;
+      const existingPlayersResult = await runQuery<Array<{ team_id: number }>>(
+        existingPlayersQuery,
+        [seasonId, ...approvedTeamIds]
+      );
+
+      if (existingPlayersResult.length > 0) {
+        const existingTeamIds = existingPlayersResult.map(
+          (team) => team.team_id
+        );
+        logger.warn(
+          `Some teams already have players in SeasonTeamPlayers: ${existingTeamIds.join(", ")}`
+        );
+        throw new Error(
+          `Cannot finalize placements: Some teams already have players in SeasonTeamPlayers. ` +
+            `Teams with IDs ${existingTeamIds.join(", ")} already exist in SeasonTeamPlayers for this season. ` +
+            `Finalization is only allowed for new insertions.`
+        );
+      }
+
+      // Copy all players from approved teams
+      const copyPlayersQuery = `
+        INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role, is_captain, is_co_captain)
+        SELECT 
+          strp.season_id,
+          strp.team_id,
+          strp.steam_id,
+          'primary' as role,
+          strp.is_captain,
+          strp.is_co_captain
+        FROM SeasonTeamRegistrationPlayers strp
+        INNER JOIN SeasonTeamRegistrations str ON str.season_id = strp.season_id AND str.team_id = strp.team_id
+        WHERE strp.season_id = ? AND str.approved = 1
+      `;
+
+      const playersCopyResult = await runQuery<{ affectedRows?: number }>(
+        copyPlayersQuery,
+        [seasonId]
+      );
+      logger.info(
+        `Copied ${playersCopyResult.affectedRows || 0} players to SeasonTeamPlayers for season ${seasonId}`
+      );
+    }
+
     logger.info(
       `Finalized ${results.length} team placements for season ${seasonId}`
     );
@@ -430,10 +498,31 @@ export const finalizeTeamPlacementsController = async (
     // Delete the preliminary placements from Redis - we keep the finalized flag
     await deletePreliminaryPlacements(seasonId);
 
+    // Count total players copied
+    let totalPlayersCopied = 0;
+    if (approvedTeamIds.length > 0) {
+      const playersCountQuery = `
+        SELECT COUNT(*) as count 
+        FROM SeasonTeamPlayers 
+        WHERE season_id = ? AND team_id IN (${approvedTeamIds.map(() => "?").join(", ")})
+      `;
+      const playersCountResult = await runQuery<Array<{ count: number }>>(
+        playersCountQuery,
+        [seasonId, ...approvedTeamIds]
+      );
+      totalPlayersCopied = playersCountResult[0]?.count || 0;
+    }
+
     res.json({
-      message: "Team placements finalized successfully",
+      message: "Team placements and players finalized successfully",
       season_id: seasonId,
-      teams_updated: placements.length
+      teams_updated: placements.length,
+      players_copied: totalPlayersCopied,
+      details: {
+        season_leagues_created: requiredLeagues.size,
+        season_league_teams_created: results.length,
+        season_team_players_created: totalPlayersCopied
+      }
     });
   } catch (error) {
     logger.error("Error finalizing team placements", error);
