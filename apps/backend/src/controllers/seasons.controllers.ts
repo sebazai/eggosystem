@@ -82,7 +82,7 @@ export const getActiveSignupSeasonForApp = async (
   res.json(activeSignupSeason);
 };
 
-export const GetActiveSignupOrActiveSeasonForAppId = async (
+export const getActiveSignupOrActiveSeasonForAppController = async (
   req: RequestWithParams<{ app_id: string }>,
   res: Response
 ) => {

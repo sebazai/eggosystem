@@ -1,7 +1,8 @@
 import type {
   SeasonDetails,
   Season,
-  ActiveSeasonSignupForAppId
+  ActiveSeasonSignupForAppId,
+  ActiveSignupOrSeasonForAppId
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
@@ -84,7 +85,7 @@ export const getActiveSignupSeasonForAppId = async (app_id: number) => {
 
 export const getActiveSignupOrActiveSeasonForAppId = async (app_id: number) => {
   const [activeSignupOrActiveSeason] = await runQuery<
-    Array<{ season_id: number } | undefined>
+    Array<ActiveSignupOrSeasonForAppId | undefined>
   >(
     `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
      FROM Seasons s

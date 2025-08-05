@@ -5,7 +5,7 @@ import {
   getSeasonDetailsByIdController,
   getActiveSeasonForApp,
   getActiveSignupSeasonForApp,
-  GetActiveSignupOrActiveSeasonForAppId
+  getActiveSignupOrActiveSeasonForAppController
 } from "../seasons.controllers";
 import {
   getSeasons,
@@ -16,7 +16,10 @@ import {
   getActiveSignupOrActiveSeasonForAppId
 } from "../../models/season.models";
 import { redisClient } from "../../utils/redisClient";
-import type { RequestWithParams } from "@eggosystem/types";
+import type {
+  ActiveSignupOrSeasonForAppId,
+  RequestWithParams
+} from "@eggosystem/types";
 import type { Season, SeasonDetails } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 
@@ -72,8 +75,11 @@ const mockSeasonDetails = {
 } satisfies SeasonDetails;
 
 const mockActiveSeason = {
-  season_id: 456
-} satisfies { season_id: number };
+  season_id: 456,
+  platform: SeasonPlatform.FACEIT,
+  signup_end_date: "2024-12-31",
+  full_name: "Test Season Full Name"
+} satisfies ActiveSignupOrSeasonForAppId;
 
 const mockSeasons = [mockSeason] satisfies Season[];
 
@@ -353,7 +359,7 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { app_id: "730" };
       mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(undefined);
 
-      await GetActiveSignupOrActiveSeasonForAppId(
+      await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
         mockResponse as Response
       );
@@ -367,7 +373,7 @@ describe("Seasons Controllers", () => {
         mockActiveSeason
       );
 
-      await GetActiveSignupOrActiveSeasonForAppId(
+      await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
         mockResponse as Response
       );
@@ -381,7 +387,7 @@ describe("Seasons Controllers", () => {
     it("should handle invalid app ID", async () => {
       mockRequest.params = { app_id: "invalid" };
 
-      await GetActiveSignupOrActiveSeasonForAppId(
+      await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
         mockResponse as Response
       );
@@ -394,7 +400,7 @@ describe("Seasons Controllers", () => {
     it("should handle negative app ID", async () => {
       mockRequest.params = { app_id: "-730" };
 
-      await GetActiveSignupOrActiveSeasonForAppId(
+      await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
         mockResponse as Response
       );

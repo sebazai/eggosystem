@@ -38,7 +38,8 @@ import {
 } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
-import { useSignupOpenForAppId } from "@/hooks/data/useSignupOpenSeason";
+import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 
 interface MenuItemLink {
   title: string;
@@ -63,61 +64,99 @@ interface NavbarProps {
   }[];
 }
 
-const defaultProps: NavbarProps = {
-  logo: {
-    url: "/",
-    src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
-    alt: "Kanaliiga logo"
-  },
-  menu: [
+const getSeasonMenuItems = (
+  signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
+) => {
+  console.log("signupOrActiveSeason", signupOrActiveSeason);
+  if (!signupOrActiveSeason || !signupOrActiveSeason.full_name) {
+    return [];
+  }
+
+  return [
     {
-      title: "Organizations",
-      url: "/organizations",
-      hasFilters: false
-    },
-    {
-      title: "Teams",
-      url: "/teams",
-      hasFilters: true,
+      title: `${convertSeasonToS(signupOrActiveSeason.full_name)}`,
+      url: "#",
+      hasFilters: false,
       items: [
-        { title: "Browse Teams", url: "/teams", hasFilters: true },
-        { title: "Top Teams", url: "/topteams", hasFilters: true }
+        ...(signupOrActiveSeason.signup_end_date &&
+        new Date(signupOrActiveSeason.signup_end_date) >= new Date()
+          ? [
+              {
+                title: "Register",
+                url: `/seasons/${signupOrActiveSeason.season_id}/signup`,
+                hasFilters: false
+              }
+            ]
+          : []),
+        {
+          title: "Standings",
+          url: "/standings",
+          hasFilters: false
+        }
       ]
-    },
-    {
-      title: "Players",
-      url: "/players",
-      hasFilters: true
-    },
-    {
-      title: "Matches",
-      url: "/matches",
-      hasFilters: true
-    },
-    {
-      title: "Leaderboards",
-      url: "/leaderboards",
-      hasFilters: true
-    },
-    {
-      title: "Kanahautomo",
-      url: "/kanahautomo",
-      hasFilters: false
     }
-  ]
-  // mobileExtraLinks: [
-  //   { name: "Press", url: "#" },
-  //   { name: "Contact", url: "#" },
-  //   { name: "Imprint", url: "#" },
-  //   { name: "Sitemap", url: "#" }
-  // ]
+  ];
+};
+
+const getDefaultMenuItems = (
+  signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
+) => {
+  const seasonMenuItems = getSeasonMenuItems(signupOrActiveSeason);
+  const defaultProps: NavbarProps = {
+    logo: {
+      url: "/",
+      src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
+      alt: "Kanaliiga logo"
+    },
+    menu: [
+      {
+        title: "Organizations",
+        url: "/organizations",
+        hasFilters: false
+      },
+      {
+        title: "Teams",
+        url: "#",
+        hasFilters: false,
+        items: [
+          { title: "Browse Teams", url: "/teams", hasFilters: true },
+          { title: "Top Teams", url: "/topteams", hasFilters: true }
+        ]
+      },
+      {
+        title: "Players",
+        url: "/players",
+        hasFilters: true
+      },
+      {
+        title: "Matches",
+        url: "/matches",
+        hasFilters: true
+      },
+      {
+        title: "Leaderboards",
+        url: "/leaderboards",
+        hasFilters: true
+      },
+      {
+        title: "Kanahautomo",
+        url: "/kanahautomo",
+        hasFilters: false
+      },
+      ...seasonMenuItems
+    ],
+    mobileExtraLinks: [{ name: "Kanaliiga", url: "https://kanaliiga.com" }]
+  };
+  return defaultProps;
 };
 
 export const Navigation = (props: NavbarProps) => {
   const pathname = usePathname();
-  const { seasonWithSignupOpen } = useSignupOpenForAppId(730);
+  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const navigationProps =
-    Object.keys(props).length === 0 ? defaultProps : props;
+    Object.keys(props).length === 0
+      ? getDefaultMenuItems(signupOrActiveSeason)
+      : props;
   const { logo, menu, mobileExtraLinks } = navigationProps;
 
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
@@ -215,24 +254,6 @@ export const Navigation = (props: NavbarProps) => {
           <NavigationMenu delayDuration={0} viewport={false}>
             <NavigationMenuList>
               {menu?.map((m) => renderMenuItem(m, params))}
-              {seasonWithSignupOpen &&
-                renderMenuItem(
-                  {
-                    title: `Register ${convertSeasonToS(
-                      seasonWithSignupOpen.full_name
-                    )}`,
-                    url: `/seasons/${seasonWithSignupOpen.season_id}/signup`,
-                    hasFilters: false,
-                    items: [
-                      {
-                        title: "Standings",
-                        url: "/standings",
-                        hasFilters: false
-                      }
-                    ]
-                  },
-                  params
-                )}
             </NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto space-x-4">
@@ -291,16 +312,6 @@ export const Navigation = (props: NavbarProps) => {
                         () => setIsSheetOpen(false),
                         params
                       )
-                    )}
-                    {seasonWithSignupOpen && (
-                      <Link
-                        href={`/seasons/${seasonWithSignupOpen.season_id}/signup`}
-                        onClick={() => setIsSheetOpen(false)}
-                        className="font-semibold font-headings text-kanaliiga-orange"
-                      >
-                        Register{" "}
-                        {convertSeasonToS(seasonWithSignupOpen.full_name)}
-                      </Link>
                     )}
                   </Accordion>
                   {mobileExtraLinks && (
