@@ -1,4 +1,4 @@
-import { parseDemoUrl } from "../demo-url-parser";
+import { parseDemoUrl } from "./demo-url-parser";
 
 describe("parseDemoUrl", () => {
   describe("valid demo URLs", () => {
