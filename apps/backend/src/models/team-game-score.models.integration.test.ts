@@ -1,5 +1,5 @@
-import { runQuery } from "../../db/mysqlRunQuery";
-import { upsertTeamGameScore } from "../team-game-score.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { upsertTeamGameScore } from "./team-game-score.models";
 
 describe("upsertTeamGameScore Integration Tests", () => {
   const testMatchId = 7390; // Using existing match from database

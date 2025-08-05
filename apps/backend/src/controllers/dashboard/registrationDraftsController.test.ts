@@ -1,8 +1,8 @@
-import { getAllRegistrationDraftsController } from "../registration.controllers";
-import { redisClient } from "../../../utils/redisClient";
+import { getAllRegistrationDraftsController } from "./registration.controllers";
+import { redisClient } from "../../utils/redisClient";
 import type { Request, Response } from "express";
 
-jest.mock("../../../utils/redisClient");
+jest.mock("../../utils/redisClient");
 
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 

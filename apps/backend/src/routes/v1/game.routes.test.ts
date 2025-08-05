@@ -1,6 +1,6 @@
 import request from "supertest";
 import express from "express";
-import gameRouter from "../../routes/v1/game.routes";
+import gameRouter from "./game.routes";
 import {
   type MatchOrGameTopPlayerAwards,
   type GameTeamStats,

@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 import { type TeamRetakeStats } from "@eggosystem/types";
 
 describe("Retake Stats Integration Tests", () => {

@@ -1,10 +1,10 @@
-import { getTeamPlantStats } from "../../models/plant-stats.models";
-import { getTeamPlantStatsController } from "../../controllers/plant-stats.controllers";
+import { getTeamPlantStats } from "../models/plant-stats.models";
+import { getTeamPlantStatsController } from "./plant-stats.controllers";
 import { type Response } from "express";
 import { type RequestWithParams, type ParsedParams } from "@eggosystem/types";
 
 // Mock the model
-jest.mock("../../models/plant-stats.models", () => ({
+jest.mock("../models/plant-stats.models", () => ({
   getTeamPlantStats: jest.fn()
 }));
 

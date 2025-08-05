@@ -1,10 +1,10 @@
-import { getTeamRetakeStats } from "../../models/retake-stats.models";
-import { getTeamRetakeStatsController } from "../../controllers/retake-stats.controllers";
+import { getTeamRetakeStats } from "../models/retake-stats.models";
+import { getTeamRetakeStatsController } from "./retake-stats.controllers";
 import { type Response } from "express";
 import { type RequestWithParams, type ParsedParams } from "@eggosystem/types";
 
 // Mock the model
-jest.mock("../../models/retake-stats.models", () => ({
+jest.mock("../models/retake-stats.models", () => ({
   getTeamRetakeStats: jest.fn()
 }));
 

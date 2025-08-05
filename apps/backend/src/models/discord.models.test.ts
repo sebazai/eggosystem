@@ -1,12 +1,12 @@
-import { runQuery } from "../../db/mysqlRunQuery";
+import { runQuery } from "../db/mysqlRunQuery";
 import {
   updateUserDiscordId,
   linkDiscordAccount,
   getDiscordIdByAccountId
-} from "../../models/discord.models";
+} from "./discord.models";
 
 // Mock the database connection
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 
 describe("Discord Models", () => {
   const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;

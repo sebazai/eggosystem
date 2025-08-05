@@ -1,7 +1,7 @@
-import { getOrganizationDiscordInviteLink } from "../../models/organization.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { getOrganizationDiscordInviteLink } from "./organization.models";
+import { runQuery } from "../db/mysqlRunQuery";
 
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 
 const mockRunQuery = runQuery as jest.Mock;
 

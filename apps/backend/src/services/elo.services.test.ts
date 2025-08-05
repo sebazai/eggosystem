@@ -1,8 +1,8 @@
-import { stabilizePlayerElo } from "../../services/elo.services";
-import { redisClient } from "../../utils/redisClient";
+import { stabilizePlayerElo } from "./elo.services";
+import { redisClient } from "../utils/redisClient";
 
 // Mock Redis client
-jest.mock("../../utils/redisClient", () => ({
+jest.mock("../utils/redisClient", () => ({
   redisClient: {
     set: jest.fn().mockResolvedValue(true),
     get: jest.fn().mockResolvedValue(null),

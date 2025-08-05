@@ -12,12 +12,8 @@ const customJestConfig = {
   testEnvironmentOptions: {
     customExportConditions: ["react-jsx"]
   },
-  testMatch: ["<rootDir>/src/__tests__/unit/**/*.(test|spec).(js|jsx|ts|tsx)"],
-  collectCoverageFrom: [
-    "src/**/*.{js,jsx,ts,tsx}",
-    "!src/**/*.d.ts",
-    "!src/__tests__/**/*"
-  ],
+  testMatch: ["<rootDir>/src/**/*.(test).(js|jsx|ts|tsx)"],
+  collectCoverageFrom: ["src/**/*.{js,jsx,ts,tsx}", "!src/**/*.d.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1"
   },

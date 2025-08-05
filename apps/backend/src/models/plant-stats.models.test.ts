@@ -1,8 +1,8 @@
-import { getTeamPlantStats } from "../../models/plant-stats.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { getTeamPlantStats } from "./plant-stats.models";
+import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock the runQuery module
-jest.mock("../../db/mysqlRunQuery", () => ({
+jest.mock("../db/mysqlRunQuery", () => ({
   runQuery: jest.fn()
 }));
 

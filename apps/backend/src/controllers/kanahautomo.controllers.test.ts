@@ -1,21 +1,21 @@
 import { type Request, type Response } from "express";
-import { registerForKanahautomoWithOrganization } from "../../controllers/kanahautomo.controllers";
-import * as kanahautomoModels from "../../models/kanahautomo.models";
-import * as organizationModels from "../../models/organization.models";
-import * as dbConnection from "../../db/mysqlConnection";
-import * as mysqlRunQuery from "../../db/mysqlRunQuery";
+import { registerForKanahautomoWithOrganization } from "./kanahautomo.controllers";
+import * as kanahautomoModels from "../models/kanahautomo.models";
+import * as organizationModels from "../models/organization.models";
+import * as dbConnection from "../db/mysqlConnection";
+import * as mysqlRunQuery from "../db/mysqlRunQuery";
 import type { JwtPayload } from "jsonwebtoken";
 import type { Organizations } from "@eggosystem/types";
 import { ZodError } from "zod";
 
 // Mock the models
-jest.mock("../../models/kanahautomo.models");
-jest.mock("../../models/organization.models");
-jest.mock("../../db/mysqlConnection");
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../models/kanahautomo.models");
+jest.mock("../models/organization.models");
+jest.mock("../db/mysqlConnection");
+jest.mock("../db/mysqlRunQuery");
 
 // Mock discord services
-jest.mock("../../services/discord.services", () => ({
+jest.mock("../services/discord.services", () => ({
   createOrGetOrganizationRole: jest.fn().mockResolvedValue("mock-role-id"),
   createInviteLink: jest
     .fn()
@@ -36,7 +36,7 @@ jest.mock("../../services/discord.services", () => ({
 }));
 
 // Mock email services
-jest.mock("../../services/email.services", () => ({
+jest.mock("../services/email.services", () => ({
   sendDiscordInviteEmail: jest.fn().mockResolvedValue(undefined)
 }));
 
@@ -651,14 +651,14 @@ describe("Kanahautomo Controller Transactional Logic", () => {
 
 import request from "supertest";
 import express from "express";
-import kanahautomoRoutes from "../../routes/v1/kanahautomo.routes";
-import { expressErrorHandler } from "../../middlewares/express-error-handler";
+import kanahautomoRoutes from "../routes/v1/kanahautomo.routes";
+import { expressErrorHandler } from "../middlewares/express-error-handler";
 
 // Mock the database query function
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 
 // Mock the models
-jest.mock("../../models/kanahautomo.models");
+jest.mock("../models/kanahautomo.models");
 
 describe("Kanahautomo Organization Status Integration Tests", () => {
   let app: express.Application;

@@ -1,4 +1,4 @@
-import { getTeamValuesForSorter } from "../../models/sortter.models";
+import { getTeamValuesForSorter } from "./sortter.models";
 
 // This is an integration test that actually connects to the database
 describe("Sortter Model Integration Tests", () => {

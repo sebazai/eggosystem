@@ -1,9 +1,9 @@
 import {
   validatePlayersInTeams,
   getSeasonTeamPlayersBySteamIds
-} from "../season-team-players.models";
-import { getSeasonLeagueTeamByExternalId } from "../season-league-team.models";
-import { redisClient } from "../../utils/redisClient";
+} from "./season-team-players.models";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { redisClient } from "../utils/redisClient";
 import type {
   FaceitMatchTeams,
   SeasonTeamPlayer,
@@ -11,9 +11,9 @@ import type {
 } from "@eggosystem/types";
 
 // Mock dependencies
-jest.mock("../season-league-team.models");
-jest.mock("../../utils/redisClient");
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("./season-league-team.models");
+jest.mock("../utils/redisClient");
+jest.mock("../db/mysqlRunQuery");
 
 const mockGetSeasonLeagueTeamByExternalId =
   getSeasonLeagueTeamByExternalId as jest.MockedFunction<
@@ -124,9 +124,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
         // Mock the internal getSeasonTeamPlayersBySteamIds calls
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce(mockSeasonTeamPlayers) // Team 1 players
           .mockResolvedValueOnce([
@@ -192,9 +190,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(undefined);
 
         // Mock the internal getSeasonTeamPlayersBySteamIds call for first team
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery.mockResolvedValueOnce([mockSeasonTeamPlayers]);
 
         // Act & Assert
@@ -222,9 +218,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
         // Mock that only one player from team 1 is registered, but team 1 has 2 players
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
             {
@@ -269,9 +263,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
         // Mock that both teams have unregistered players
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([]) // No players found for team 1
           .mockResolvedValueOnce([]); // No players found for team 2
@@ -312,9 +304,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
         // Mock that all players are registered
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce(mockSeasonTeamPlayers) // All team 1 players found
           .mockResolvedValueOnce([
@@ -354,9 +344,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(mockSeasonLeagueTeam1)
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([]) // Empty roster returns empty array
           .mockResolvedValueOnce([]); // Empty roster returns empty array
@@ -389,9 +377,7 @@ describe("season-team-players.models", () => {
           .mockResolvedValueOnce(mockSeasonLeagueTeam1)
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
-        const mockRunQuery = jest.requireMock(
-          "../../db/mysqlRunQuery"
-        ).runQuery;
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
           .mockResolvedValueOnce([
             {
@@ -450,7 +436,7 @@ describe("season-team-players.models", () => {
         }
       ];
 
-      const mockRunQuery = jest.requireMock("../../db/mysqlRunQuery").runQuery;
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
       mockRunQuery.mockResolvedValue(mockSeasonTeamPlayers);
 
       // Act
@@ -467,7 +453,7 @@ describe("season-team-players.models", () => {
     it("should return empty array when no players found", async () => {
       // Arrange
       const steamIds = ["steam123"];
-      const mockRunQuery = jest.requireMock("../../db/mysqlRunQuery").runQuery;
+      const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
       mockRunQuery.mockResolvedValue([]);
 
       // Act

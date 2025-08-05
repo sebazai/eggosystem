@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
-import { expressErrorHandler } from "../express-error-handler";
-import { BaseError } from "../../utils/errors";
+import { expressErrorHandler } from "./express-error-handler";
+import { BaseError } from "../utils/errors";
 import { type ZodError } from "zod";
 import { z } from "zod";
 

@@ -5,14 +5,14 @@ import {
   getOrganizationApprovedTeamsController,
   getOrgTeamTrophiesController,
   getOrgDiscordInviteLinkController
-} from "../organizations.controllers";
+} from "./organizations.controllers";
 import {
   getOrganizations,
   getOrganizationById,
   getOrganizationApprovedTeams,
   getOrganizationTeamTrophies,
   getOrganizationDiscordInviteLink
-} from "../../models/organization.models";
+} from "../models/organization.models";
 import {
   type RequestWithParams,
   type Organizations,
@@ -21,7 +21,7 @@ import {
 } from "@eggosystem/types";
 
 // Mock the models
-jest.mock("../../models/organization.models");
+jest.mock("../models/organization.models");
 
 const mockGetOrganizations = getOrganizations as jest.MockedFunction<
   typeof getOrganizations

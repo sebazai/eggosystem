@@ -1,13 +1,13 @@
 import { type Response } from "express";
-import { populateKanaeloQueueController } from "../../controllers/kanaelo.controllers";
-import * as kanaeloModels from "../../models/kanaelo.models";
-import * as rabbitmqServices from "../../services/rabbitmq.services";
+import { populateKanaeloQueueController } from "./kanaelo.controllers";
+import * as kanaeloModels from "../models/kanaelo.models";
+import * as rabbitmqServices from "../services/rabbitmq.services";
 import type { RequestWithParams } from "@eggosystem/types";
-import { BadRequestError } from "../../utils/errors";
+import { BadRequestError } from "../utils/errors";
 
 // Mock the models and services
-jest.mock("../../models/kanaelo.models");
-jest.mock("../../services/rabbitmq.services");
+jest.mock("../models/kanaelo.models");
+jest.mock("../services/rabbitmq.services");
 
 describe("Kanaelo Controllers", () => {
   let mockRequest: Partial<RequestWithParams<Record<string, string>>>;

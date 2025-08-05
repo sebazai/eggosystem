@@ -1,7 +1,7 @@
-import { runQuery } from "../../db/mysqlRunQuery";
-import { getConnection } from "../../db/mysqlConnection";
-import { upsertSeasonTeamRegistrationPlayer } from "../../models/season-team-registration-player.models";
-import { updatePlayersForSeasonTeamRegistration } from "../../models/season-team-registration.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { getConnection } from "../db/mysqlConnection";
+import { upsertSeasonTeamRegistrationPlayer } from "./season-team-registration-player.models";
+import { updatePlayersForSeasonTeamRegistration } from "./season-team-registration.models";
 import type {
   SeasonTeamRegistrationPlayer,
   UpdateSeasonTeamRegistrationPlayer

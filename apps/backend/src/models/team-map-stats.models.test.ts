@@ -1,9 +1,9 @@
-import { getTeamEnhancedMapStats } from "../../models/team-map-stats.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { getTeamEnhancedMapStats } from "./team-map-stats.models";
+import { runQuery } from "../db/mysqlRunQuery";
 import { type ParsedParams } from "@eggosystem/types";
 
 // Mock the database query function
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 
 describe("Team Map Stats Models", () => {
   const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;

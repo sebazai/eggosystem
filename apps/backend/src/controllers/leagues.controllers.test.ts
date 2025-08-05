@@ -1,10 +1,10 @@
 import { type Response } from "express";
-import { getLeaguesBySeasonController } from "../leagues.controllers";
-import { getLeaguesBySeason } from "../../models/league.models";
+import { getLeaguesBySeasonController } from "./leagues.controllers";
+import { getLeaguesBySeason } from "../models/league.models";
 import type { RequestWithParams } from "@eggosystem/types";
 
 // Mock the model
-jest.mock("../../models/league.models");
+jest.mock("../models/league.models");
 const mockGetLeaguesBySeason = getLeaguesBySeason as jest.MockedFunction<
   typeof getLeaguesBySeason
 >;

@@ -1,7 +1,7 @@
 import request from "supertest";
 import express from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
-import discordRouter from "../../routes/v1/discord.routes";
+import discordRouter from "./discord.routes";
 import { getUserDiscordStatus } from "../../controllers/discord.controllers";
 import type { Request, Response, NextFunction } from "express";
 import type { UserPayload } from "@eggosystem/types";

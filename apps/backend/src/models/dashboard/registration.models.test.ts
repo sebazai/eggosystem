@@ -1,8 +1,8 @@
-import * as registrationModels from "../../../models/dashboard/registration.models";
-import { runQuery } from "../../../db/mysqlRunQuery";
+import * as registrationModels from "./registration.models";
+import { runQuery } from "../../db/mysqlRunQuery";
 import type { PlayerFullName } from "@eggosystem/types";
 
-jest.mock("../../../db/mysqlRunQuery");
+jest.mock("../../db/mysqlRunQuery");
 
 describe("Dashboard Registration Models", () => {
   describe("getPlayerFullName", () => {

@@ -1,4 +1,4 @@
-import { generateQueryWithFilters } from "../../utils/queryFilter";
+import { generateQueryWithFilters } from "../utils/queryFilter";
 
 describe("generateQueryWithFilters", () => {
   describe("Basic functionality", () => {

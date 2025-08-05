@@ -1,7 +1,4 @@
-import {
-  convertISOToFinnishTime,
-  convertISOToTime
-} from "../../utils/date-utils";
+import { convertISOToFinnishTime, convertISOToTime } from "./date-utils";
 
 describe("convertISOToFinnishTime", () => {
   it("should convert ISO string to Finnish timezone correctly", () => {

@@ -1,6 +1,6 @@
 import request from "supertest";
 import express from "express";
-import matchRouter from "../../routes/v1/match.routes";
+import matchRouter from "./match.routes";
 
 import type { MatchMapsPlayed, MatchTeamStats } from "@eggosystem/types";
 

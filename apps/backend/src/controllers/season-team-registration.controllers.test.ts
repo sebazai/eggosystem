@@ -1,15 +1,15 @@
-import * as seasonModels from "../../models/season.models";
-import { addSignupForSeasonController } from "../../controllers/season-team-registration.controllers";
-import * as db from "../../db/mysqlConnection";
-import * as registrationModels from "../../models/season-team-registration.models";
+import * as seasonModels from "../models/season.models";
+import { addSignupForSeasonController } from "./season-team-registration.controllers";
+import * as db from "../db/mysqlConnection";
+import * as registrationModels from "../models/season-team-registration.models";
 // TODO: See todo below
 // import * as rankModels from "../../models/season-player-ranks.models";
-import * as teamServices from "../../services/team.services";
-import * as teamModels from "../../models/team.models";
-import * as organizationModels from "../../models/organization.models";
-import * as seasonTeamRegistrationModels from "../../models/season-team-registration.models";
-import * as seasonTeamRegistrationServices from "../../services/season-team-registration.services";
-import * as seasonTeamRegistrationPlayerModels from "../../models/season-team-registration-player.models";
+import * as teamServices from "../services/team.services";
+import * as teamModels from "../models/team.models";
+import * as organizationModels from "../models/organization.models";
+import * as seasonTeamRegistrationModels from "../models/season-team-registration.models";
+import * as seasonTeamRegistrationServices from "../services/season-team-registration.services";
+import * as seasonTeamRegistrationPlayerModels from "../models/season-team-registration-player.models";
 import type { Response } from "express";
 import {
   type SignupFormValues,
@@ -20,7 +20,7 @@ import {
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
 import { validSignupData } from "@eggosystem/shared-msw";
-import { type BadRequestError } from "../../utils/errors";
+import { type BadRequestError } from "../utils/errors";
 
 describe("addSignupForSeason - database transaction testing", () => {
   let req: RequestWithParamsAndBody<{ season_id: string }, SignupFormValues>;

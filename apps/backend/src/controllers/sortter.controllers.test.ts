@@ -1,22 +1,22 @@
 import { type Response } from "express";
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 import {
   getTeamValuesController,
   getTeamValueByIdController,
   getTeamPlayerValuesController
-} from "../../controllers/sortter.controllers";
-import * as sortterModels from "../../models/sortter.models";
+} from "./sortter.controllers";
+import * as sortterModels from "../models/sortter.models";
 import {
   type TeamSortterValues,
   type RequestWithParams
 } from "@eggosystem/types";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { getTeamValuesForSorter } from "../../models/sortter.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { getTeamValuesForSorter } from "../models/sortter.models";
 
 // Mock the model functions
-jest.mock("../../models/sortter.models");
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../models/sortter.models");
+jest.mock("../db/mysqlRunQuery");
 const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetTeamValuesForSorter =
   getTeamValuesForSorter as jest.MockedFunction<typeof getTeamValuesForSorter>;

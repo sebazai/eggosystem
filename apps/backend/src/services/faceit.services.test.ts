@@ -1,7 +1,4 @@
-import {
-  getFaceITGameRank,
-  getFaceITCS2Rank
-} from "../../services/faceit.services";
+import { getFaceITGameRank, getFaceITCS2Rank } from "./faceit.services";
 import {
   faceitValidSteamId,
   faceitValidSteamIdDecayed,

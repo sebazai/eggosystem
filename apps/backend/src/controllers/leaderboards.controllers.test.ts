@@ -1,10 +1,10 @@
-import { getLeaderboard } from "../../models/leaderboards.models";
-import { getSingleLeaderboardController } from "../../controllers/leaderboards.controllers";
+import { getLeaderboard } from "../models/leaderboards.models";
+import { getSingleLeaderboardController } from "./leaderboards.controllers";
 import { type Request, type Response } from "express";
 import { type ParsedParams } from "@eggosystem/types";
 
 // Mock the implementation, not just the type
-jest.mock("../../models/leaderboards.models", () => ({
+jest.mock("../models/leaderboards.models", () => ({
   getLeaderboard: jest.fn()
 }));
 

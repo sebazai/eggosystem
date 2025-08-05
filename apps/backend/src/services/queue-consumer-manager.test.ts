@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { QueueConsumerManager } from "../../services/queue-consumer-manager";
-import { ParsedQueueConsumer } from "../../services/parsed-queue-consumer";
+import { QueueConsumerManager } from "./queue-consumer-manager";
+import { ParsedQueueConsumer } from "./parsed-queue-consumer";
 
 // Mock the ParsedQueueConsumer
-jest.mock("../../services/parsed-queue-consumer");
+jest.mock("./parsed-queue-consumer");
 
 const mockParsedQueueConsumer = ParsedQueueConsumer as jest.MockedClass<
   typeof ParsedQueueConsumer

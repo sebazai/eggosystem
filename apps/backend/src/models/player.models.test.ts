@@ -6,7 +6,7 @@ import {
   getPlayerTeamDetailsWithFilters,
   getPlayerStatsForLatestSeason,
   getPlayerMapStatsWithFilters
-} from "../../models/player.models";
+} from "./player.models";
 
 describe("getMultiplePlayerStatsByFilters", () => {
   it("same data with all seasons (11,14) and without for team 1650", async () => {

@@ -1,7 +1,7 @@
 import request from "supertest";
 import express from "express";
 import cookieParser from "cookie-parser";
-import authRouter from "../../routes/v1/auth.routes";
+import authRouter from "./auth.routes";
 import * as authServices from "../../services/auth.services";
 import * as authModels from "../../models/auth.models";
 import * as accountModels from "../../models/account.models";

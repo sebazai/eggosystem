@@ -5,11 +5,11 @@ process.env.FRONTEND_URL = "http://localhost:3000";
 
 import request from "supertest";
 import express from "express";
-import playerRouter from "../player.routes";
-import { setPlayerKanaElo } from "../../../models/player.models";
+import playerRouter from "./player.routes";
+import { setPlayerKanaElo } from "../../models/player.models";
 
 // Mock the model module
-jest.mock("../../../models/player.models");
+jest.mock("../../models/player.models");
 const mockSetPlayerKanaElo = setPlayerKanaElo as jest.MockedFunction<
   typeof setPlayerKanaElo
 >;

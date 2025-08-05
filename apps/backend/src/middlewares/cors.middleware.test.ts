@@ -1,8 +1,8 @@
 import request from "supertest";
 import express from "express";
 import type { RequestHandler } from "express";
-import { expressErrorHandler } from "../express-error-handler";
-import { logger } from "../../utils/app-logger";
+import { expressErrorHandler } from "./express-error-handler";
+import { logger } from "../utils/app-logger";
 import cors from "cors";
 
 describe("CORS Middleware", () => {
@@ -20,7 +20,7 @@ describe("CORS Middleware", () => {
     const {
       corsMiddleware: importedCorsMiddleware
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-    } = require("../cors.middleware");
+    } = require("./cors.middleware");
     corsMiddleware = importedCorsMiddleware;
 
     app = express();
@@ -78,7 +78,7 @@ describe("CORS Middleware", () => {
   it("should reject malicious CORS origins", async () => {
     // Create CORS middleware with current environment settings
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCorsOptions } = require("../cors.middleware");
+    const { getCorsOptions } = require("./cors.middleware");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const corsMiddleware = require("cors")(getCorsOptions());
 
@@ -136,7 +136,7 @@ describe("CORS Middleware", () => {
   it("should reject malicious preflight requests", async () => {
     // Create CORS middleware with current environment settings
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCorsOptions } = require("../cors.middleware");
+    const { getCorsOptions } = require("./cors.middleware");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const corsMiddleware = require("cors")(getCorsOptions());
 
@@ -205,7 +205,7 @@ describe("CORS Middleware", () => {
 
     // Create CORS middleware with current environment settings
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getCorsOptions } = require("../cors.middleware");
+    const { getCorsOptions } = require("./cors.middleware");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const corsMiddleware = require("cors")(getCorsOptions());
 

@@ -4,7 +4,7 @@ import {
   getTeamMapStats,
   getTeamMatchesByFilters,
   getTeamsByFilters
-} from "../../models/team.models";
+} from "./team.models";
 
 describe("getFilteredTopTeams", () => {
   it("season 14, league masters", async () => {

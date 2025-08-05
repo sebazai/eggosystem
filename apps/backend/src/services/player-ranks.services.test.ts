@@ -2,19 +2,19 @@ import {
   getCSRank,
   getPlayerAppIdRank,
   getPlayerHoursForSteamAppId
-} from "../../services/player-ranks.services";
-import * as leetifyService from "../../services/leetify.services";
-import * as seasonPlayerRanksModels from "../../models/season-player-ranks.models";
-import { redisClient } from "../../utils/redisClient";
-import { runQuery } from "../../db/mysqlRunQuery";
+} from "./player-ranks.services";
+import * as leetifyService from "./leetify.services";
+import * as seasonPlayerRanksModels from "../models/season-player-ranks.models";
+import { redisClient } from "../utils/redisClient";
+import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock all external dependencies
-jest.mock("../../services/leetify.services");
-jest.mock("../../services/faceit.services");
-jest.mock("../../services/steam.services");
-jest.mock("../../models/season-player-ranks.models");
-jest.mock("../../utils/redisClient");
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("./leetify.services");
+jest.mock("./faceit.services");
+jest.mock("./steam.services");
+jest.mock("../models/season-player-ranks.models");
+jest.mock("../utils/redisClient");
+jest.mock("../db/mysqlRunQuery");
 
 const mockLeetifyService = leetifyService as jest.Mocked<typeof leetifyService>;
 const mockSeasonPlayerRanksModels = seasonPlayerRanksModels as jest.Mocked<

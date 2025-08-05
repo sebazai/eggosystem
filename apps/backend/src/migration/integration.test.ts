@@ -1,4 +1,4 @@
-import { runQuery } from "../../db/mysqlRunQuery";
+import { runQuery } from "../db/mysqlRunQuery";
 
 describe("Migration tests", () => {
   it("Find enzoj maps played on season 11", async () => {

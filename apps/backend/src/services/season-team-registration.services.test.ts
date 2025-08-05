@@ -29,17 +29,17 @@ import {
   setSeasonTeamPlayers,
   setSeasonTeamRegistration,
   unsetSeasonTeamRegistration
-} from "../../__utils__/seed-database";
-import * as registrationServices from "../../services/season-team-registration.services";
-import * as organizationModels from "../../models/organization.models";
-import * as registrationModels from "../../models/season-team-registration.models";
-import * as teamModels from "../../models/team.models";
+} from "../__utils__/seed-database";
+import * as registrationServices from "./season-team-registration.services";
+import * as organizationModels from "../models/organization.models";
+import * as registrationModels from "../models/season-team-registration.models";
+import * as teamModels from "../models/team.models";
 import _ from "lodash";
 import { validSignupData } from "@eggosystem/shared-msw";
-import { type BadRequestError } from "../../utils/errors";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { redisClient } from "../../utils/redisClient";
-import { faceitEloToLevel } from "../../utils/faceit-utils";
+import { type BadRequestError } from "../utils/errors";
+import { runQuery } from "../db/mysqlRunQuery";
+import { redisClient } from "../utils/redisClient";
+import { faceitEloToLevel } from "../utils/faceit-utils";
 
 describe("Season team registration services", () => {
   process.env.PRIVACY_POLICY_VERSION = "1";

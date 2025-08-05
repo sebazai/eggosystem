@@ -2,8 +2,8 @@ import {
   isValidSteamId,
   validateSteamId,
   normalizeSteamId
-} from "../steam-id-validator";
-import { BadRequestError } from "../errors";
+} from "./steam-id-validator";
+import { BadRequestError } from "./errors";
 
 describe("Steam ID Validator", () => {
   describe("isValidSteamId", () => {

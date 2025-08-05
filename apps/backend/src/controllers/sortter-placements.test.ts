@@ -2,10 +2,10 @@ import { type Response } from "express";
 import {
   savePreliminaryPlacementsController,
   getPreliminaryPlacementsController
-} from "../../controllers/sortter-placements.controllers";
-import * as sortterPlacementsServices from "../../services/sortter-placements.services";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { getTeamValuesForSorter } from "../../models/sortter.models";
+} from "./sortter-placements.controllers";
+import * as sortterPlacementsServices from "../services/sortter-placements.services";
+import { runQuery } from "../db/mysqlRunQuery";
+import { getTeamValuesForSorter } from "../models/sortter.models";
 import type {
   RequestWithParamsAndBody,
   RequestWithParamsAndQuery,
@@ -13,12 +13,12 @@ import type {
 } from "@eggosystem/types";
 
 // Mock the database module
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 // Mock the services
-jest.mock("../../services/sortter-placements.services");
-jest.mock("../../models/sortter.models");
+jest.mock("../services/sortter-placements.services");
+jest.mock("../models/sortter.models");
 const mockedSavePreliminaryPlacements =
   sortterPlacementsServices.savePreliminaryPlacements as jest.MockedFunction<
     typeof sortterPlacementsServices.savePreliminaryPlacements

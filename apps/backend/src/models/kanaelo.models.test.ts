@@ -1,8 +1,8 @@
-import { getAllRegisteredPlayersForSeason } from "../../models/kanaelo.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { getAllRegisteredPlayersForSeason } from "./kanaelo.models";
+import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock the database query function
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 
 describe("Kanaelo Models", () => {
   const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;

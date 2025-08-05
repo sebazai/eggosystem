@@ -1,8 +1,8 @@
-import { addMatchToDatabase } from "../../models/match.models";
-import { getSeasonLeagueExternalIdByExternalId } from "../../models/season-league-external-id.models";
-import { getSeasonLeagueTeamByExternalId } from "../../models/season-league-team.models";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { getConnection } from "../../db/mysqlConnection";
+import { addMatchToDatabase } from "./match.models";
+import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { getConnection } from "../db/mysqlConnection";
 import { validMatchDetailsMatchCreated } from "@eggosystem/shared-msw";
 import {
   type ChampionshipDetailsObjectCreated,
@@ -12,10 +12,10 @@ import {
 import type { PoolConnection } from "mysql2/promise";
 
 // Mock all dependencies
-jest.mock("../../models/season-league-external-id.models");
-jest.mock("../../models/season-league-team.models");
-jest.mock("../../db/mysqlRunQuery");
-jest.mock("../../db/mysqlConnection");
+jest.mock("../models/season-league-external-id.models");
+jest.mock("../models/season-league-team.models");
+jest.mock("../db/mysqlRunQuery");
+jest.mock("../db/mysqlConnection");
 
 const mockGetSeasonLeagueExternalIdByExternalId =
   getSeasonLeagueExternalIdByExternalId as jest.MockedFunction<

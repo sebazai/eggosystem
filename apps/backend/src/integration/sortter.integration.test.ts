@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 
 // Define a type that matches our expected player data
 interface PlayerValues {

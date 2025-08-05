@@ -2,7 +2,7 @@ import {
   registerPlayerForKanahautomo,
   insertKanahautomoGameTypes,
   getKanahautomoOrganizationStatus
-} from "../../models/kanahautomo.models";
+} from "./kanahautomo.models";
 import {
   insertTestKanahautomoRegistration,
   clearTestKanahautomoRegistrations,
@@ -12,8 +12,8 @@ import {
   cleanUpTestUser,
   insertTestOrganization,
   clearTestOrganization
-} from "../../__utils__/seed-database";
-import { runQuery } from "../../db/mysqlRunQuery";
+} from "../__utils__/seed-database";
+import { runQuery } from "../db/mysqlRunQuery";
 import type { InsertSeason } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 

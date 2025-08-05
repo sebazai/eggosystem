@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 
 describe("GET /api/v1/players/:steam_id/latest-season-stats", () => {
   it("should return player stats from latest season", async () => {

@@ -3,12 +3,12 @@ import {
   getTeamKeyPlayersController,
   getTeamPlayersController,
   getTeamsByLeagueController
-} from "../teams.controllers";
+} from "./teams.controllers";
 import {
   getTeamKeyPlayers,
   getTeamPlayers,
   getTeamsByLeague
-} from "../../models/team.models";
+} from "../models/team.models";
 import type {
   RequestWithParams,
   TeamKeyPlayers,
@@ -17,7 +17,7 @@ import type {
 } from "@eggosystem/types";
 
 // Mock the model
-jest.mock("../../models/team.models");
+jest.mock("../models/team.models");
 const mockGetTeamKeyPlayers = getTeamKeyPlayers as jest.MockedFunction<
   typeof getTeamKeyPlayers
 >;

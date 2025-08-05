@@ -1,10 +1,10 @@
-import { sendDemoForAllStarPOTGClip } from "../allstar.services";
-import { insertClipProcessing } from "../../models/allstar.models";
-import { logger } from "../../utils/app-logger";
+import { sendDemoForAllStarPOTGClip } from "./allstar.services";
+import { insertClipProcessing } from "../models/allstar.models";
+import { logger } from "../utils/app-logger";
 
 // Mock dependencies
-jest.mock("../../models/allstar.models");
-jest.mock("../../utils/app-logger");
+jest.mock("../models/allstar.models");
+jest.mock("../utils/app-logger");
 
 const mockInsertClipProcessing = insertClipProcessing as jest.MockedFunction<
   typeof insertClipProcessing

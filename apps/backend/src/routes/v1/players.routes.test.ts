@@ -4,7 +4,7 @@ process.env.PRIVACY_POLICY_VERSION = "1";
 
 import request from "supertest";
 import express from "express";
-import playerRouter from "../../routes/v1/player.routes";
+import playerRouter from "./player.routes";
 import _ from "lodash";
 
 describe("GET /players", () => {

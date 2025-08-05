@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 import { type TeamMapStats } from "@eggosystem/types";
 
 describe("Team Map Stats Integration Tests", () => {

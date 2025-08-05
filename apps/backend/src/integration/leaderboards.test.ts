@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 
 describe("Leaderboards Integration Tests", () => {
   // Test for multiple leaderboards endpoint (returns all stats)

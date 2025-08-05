@@ -1,5 +1,5 @@
-import { getTeamsSignupApprovalState } from "../../services/dashboard/registration.services";
-import { getSeasonPlayerApproval } from "../../models/season-player-approval.models";
+import { getTeamsSignupApprovalState } from "./dashboard/registration.services";
+import { getSeasonPlayerApproval } from "../models/season-player-approval.models";
 import type {
   SeasonRegisteredTeamsWithPlayers,
   RegisteredTeamPlayer,
@@ -8,7 +8,7 @@ import type {
 import { SeasonPlatform } from "@eggosystem/types";
 
 // Mock the getSeasonPlayerApproval function
-jest.mock("../../models/season-player-approval.models");
+jest.mock("../models/season-player-approval.models");
 const mockGetSeasonPlayerApproval =
   getSeasonPlayerApproval as jest.MockedFunction<
     typeof getSeasonPlayerApproval

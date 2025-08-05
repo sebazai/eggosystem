@@ -3,20 +3,20 @@ const TEST_API_KEY = "test-api-key-for-unit-tests";
 process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
 
 import request from "supertest";
-import { app } from "../../../app";
-import { runQuery } from "../../../db/mysqlRunQuery";
-import { redisClient } from "../../../utils/redisClient";
+import { app } from "../../app";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { redisClient } from "../../utils/redisClient";
 
 // Mock the database
-jest.mock("../../../db/mysqlRunQuery");
+jest.mock("../../db/mysqlRunQuery");
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 // Mock Redis
-jest.mock("../../../utils/redisClient");
+jest.mock("../../utils/redisClient");
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
 // Mock the logger
-jest.mock("../../../utils/app-logger");
+jest.mock("../../utils/app-logger");
 
 describe("POST /api/v1/elo/stabilize", () => {
   beforeEach(() => {

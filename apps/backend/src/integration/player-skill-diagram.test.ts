@@ -1,9 +1,9 @@
 import request from "supertest";
-import { app } from "../../app";
-import { getPlayerSkillDiagram } from "../../models/player-skills.models";
+import { app } from "../app";
+import { getPlayerSkillDiagram } from "../models/player-skills.models";
 
 // Mock the player-skills.models module
-jest.mock("../../models/player-skills.models");
+jest.mock("../models/player-skills.models");
 
 describe("Player Skill Diagram API", () => {
   const mockSteamId = "76561198049745649";

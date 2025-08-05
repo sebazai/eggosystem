@@ -1,13 +1,13 @@
 import request from "supertest";
 import express from "express";
-import { verifyEmailController } from "../../controllers/account.controllers";
-import { redisClient } from "../../utils/redisClient";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { verifyEmailController } from "./account.controllers";
+import { redisClient } from "../utils/redisClient";
+import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock dependencies
-jest.mock("../../utils/redisClient");
-jest.mock("../../db/mysqlRunQuery");
-jest.mock("../../utils/app-logger");
+jest.mock("../utils/redisClient");
+jest.mock("../db/mysqlRunQuery");
+jest.mock("../utils/app-logger");
 
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;

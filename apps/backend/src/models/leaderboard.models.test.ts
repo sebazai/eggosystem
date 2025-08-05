@@ -1,4 +1,4 @@
-import { getLeaderboard } from "../../models/leaderboards.models";
+import { getLeaderboard } from "./leaderboards.models";
 
 describe("getLeaderboard", () => {
   it("kanarating for team 1650", async () => {

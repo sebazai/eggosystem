@@ -1,5 +1,5 @@
-import * as registrationControllers from "../../../controllers/dashboard/registration.controllers";
-import * as registrationModels from "../../../models/dashboard/registration.models";
+import * as registrationControllers from "./registration.controllers";
+import * as registrationModels from "../../models/dashboard/registration.models";
 import type { PlayerFullName, RequestWithParams } from "@eggosystem/types";
 import type { Response } from "express";
 

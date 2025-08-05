@@ -3,11 +3,11 @@ import {
   getTeamPlayerValuesForSortter,
   getTeamsForSeason,
   checkPlayerAdditionEligibility
-} from "../../models/sortter.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+} from "./sortter.models";
+import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock the runQuery function
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 // Mock fetch for CSRankker API calls

@@ -4,7 +4,7 @@ import type TestAgent from "supertest/lib/agent";
 import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
 import _ from "lodash";
 import express from "express";
-import seasonTeamRegRoute from "../../routes/v1/season-team-registration.routes";
+import seasonTeamRegRoute from "./season-team-registration.routes";
 import { validSignupData, invalidSignupData } from "@eggosystem/shared-msw";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 

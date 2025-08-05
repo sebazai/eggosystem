@@ -2,10 +2,10 @@
 import jwt from "jsonwebtoken";
 import * as uuid from "uuid";
 
-import { redisClient } from "../../utils/redisClient";
+import { redisClient } from "../utils/redisClient";
 
-import * as authControllers from "../../controllers/auth.controllers";
-import * as authServices from "../../services/auth.services";
+import * as authControllers from "../controllers/auth.controllers";
+import * as authServices from "../services/auth.services";
 import type { UserPayload } from "@eggosystem/types";
 
 describe("AuthControllers utils", () => {

@@ -1,14 +1,14 @@
 import { type Request, type Response } from "express";
-import { getUserDiscordStatus } from "../../controllers/discord.controllers";
-import { getAccountById } from "../../models/account.models";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { logger } from "../../utils/app-logger";
+import { getUserDiscordStatus } from "./discord.controllers";
+import { getAccountById } from "../models/account.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { logger } from "../utils/app-logger";
 import type { Account, UserPayload } from "@eggosystem/types";
 
 // Mock dependencies
-jest.mock("../../models/account.models");
-jest.mock("../../db/mysqlRunQuery");
-jest.mock("../../utils/app-logger");
+jest.mock("../models/account.models");
+jest.mock("../db/mysqlRunQuery");
+jest.mock("../utils/app-logger");
 
 const mockGetAccountById = getAccountById as jest.MockedFunction<
   typeof getAccountById

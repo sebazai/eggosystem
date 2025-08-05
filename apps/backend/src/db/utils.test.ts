@@ -1,4 +1,4 @@
-import { buildInsertQueryParts } from "../../db/utils";
+import { buildInsertQueryParts } from "./utils";
 
 describe("buildInsertQueryParts", () => {
   it("should generate correct columns, placeholders, and values for a full object", () => {

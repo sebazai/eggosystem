@@ -2,13 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import {
   getPermissionsForAccountId,
   getRolesForAccountId
-} from "../../services/auth.services";
-import {
-  checkPermissions,
-  checkJWTPermissions
-} from "../../middlewares/auth.middleware";
+} from "../services/auth.services";
+import { checkPermissions, checkJWTPermissions } from "./auth.middleware";
 
-jest.mock("../../services/auth.services", () => ({
+jest.mock("../services/auth.services", () => ({
   getPermissionsForAccountId: jest.fn(),
   getRolesForAccountId: jest.fn()
 }));

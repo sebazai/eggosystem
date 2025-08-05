@@ -1,11 +1,8 @@
-import {
-  getLeaderboard,
-  leaderboardExpressions
-} from "../../models/leaderboards.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { getLeaderboard, leaderboardExpressions } from "./leaderboards.models";
+import { runQuery } from "../db/mysqlRunQuery";
 import { type LeaderboardResponse } from "@eggosystem/types";
 
-jest.mock("../../db/mysqlRunQuery");
+jest.mock("../db/mysqlRunQuery");
 
 describe("leaderboards.models", () => {
   beforeEach(() => {

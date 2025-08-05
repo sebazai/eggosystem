@@ -6,7 +6,7 @@ import {
   getActiveSeasonForApp,
   getActiveSignupSeasonForApp,
   getActiveSignupOrActiveSeasonForAppController
-} from "../seasons.controllers";
+} from "./seasons.controllers";
 import {
   getSeasons,
   getSeasonById,
@@ -14,8 +14,8 @@ import {
   getActiveOrLatestSeasonForAppId,
   getActiveSignupSeasonForAppId,
   getActiveSignupOrActiveSeasonForAppId
-} from "../../models/season.models";
-import { redisClient } from "../../utils/redisClient";
+} from "../models/season.models";
+import { redisClient } from "../utils/redisClient";
 import type {
   ActiveSignupOrSeasonForAppId,
   RequestWithParams
@@ -24,8 +24,8 @@ import type { Season, SeasonDetails } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 
 // Mock the models and Redis
-jest.mock("../../models/season.models");
-jest.mock("../../utils/redisClient");
+jest.mock("../models/season.models");
+jest.mock("../utils/redisClient");
 
 const mockGetSeasons = getSeasons as jest.MockedFunction<typeof getSeasons>;
 const mockGetSeasonById = getSeasonById as jest.MockedFunction<

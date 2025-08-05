@@ -76,13 +76,13 @@ import {
   findOrCreateOrganizationGameChannel,
   findOrCreateOrganizationGeneralChannel,
   getUserOrganizationData
-} from "../../services/discord.services";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { logger } from "../../utils/app-logger";
+} from "../services/discord.services";
+import { runQuery } from "../db/mysqlRunQuery";
+import { logger } from "../utils/app-logger";
 import { type Guild } from "discord.js";
 
-jest.mock("../../db/mysqlRunQuery");
-jest.mock("../../utils/app-logger");
+jest.mock("../db/mysqlRunQuery");
+jest.mock("../utils/app-logger");
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockLogger = logger as jest.Mocked<typeof logger>;

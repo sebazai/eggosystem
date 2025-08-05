@@ -1,4 +1,4 @@
-import { sendDiscordInviteEmail } from "../../services/email.services";
+import { sendDiscordInviteEmail } from "./email.services";
 
 // Shared mock transporter and sendMail
 const mockSendMail = jest.fn();
@@ -9,7 +9,7 @@ jest.mock("nodemailer", () => ({
 }));
 
 // Mock dependencies
-jest.mock("../../utils/app-logger");
+jest.mock("../utils/app-logger");
 
 beforeAll(() => {
   process.env.NODE_ENV = "development";

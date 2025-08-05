@@ -2,7 +2,7 @@ import {
   type AccountPermissionScopes,
   type AccountRole
 } from "@eggosystem/types";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { runQuery } from "../db/mysqlRunQuery";
 
 describe("Captain Permission Triggers", () => {
   beforeEach(async () => {

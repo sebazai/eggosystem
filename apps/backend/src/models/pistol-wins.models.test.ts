@@ -1,15 +1,15 @@
 import type { TeamPistolWinStat } from "@eggosystem/types";
-import { getTeamPistolWins } from "../../models/pistol-wins.models";
-import { runQuery } from "../../db/mysqlRunQuery";
-import { generateQueryWithFilters, type Filter } from "../../utils/queryFilter";
+import { getTeamPistolWins } from "./pistol-wins.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { generateQueryWithFilters, type Filter } from "../utils/queryFilter";
 
 // Mock the database query function
-jest.mock("../../db/mysqlRunQuery", () => ({
+jest.mock("../db/mysqlRunQuery", () => ({
   runQuery: jest.fn()
 }));
 
 // Mock the query filter generator
-jest.mock("../../utils/queryFilter", () => ({
+jest.mock("../utils/queryFilter", () => ({
   generateQueryWithFilters: jest.fn()
 }));
 

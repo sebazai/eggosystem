@@ -1,5 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
-import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
+import parseQueryFilterParams from "./parse-query-filter-params.middleware";
 
 describe("parseFilterParams Middleware", () => {
   let req: Partial<Request>;

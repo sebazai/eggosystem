@@ -4,29 +4,29 @@ process.env.FACEIT_WEBHOOK_API_KEY = TEST_WEBHOOK_API_KEY;
 
 import request from "supertest";
 import express from "express";
-import faceitRouter from "../faceit.routes";
+import faceitRouter from "./faceit.routes";
 
 // Mock the model modules
-jest.mock("../../../models/organizer.models");
-jest.mock("../../../models/match.models");
-jest.mock("../../../models/faceit.models");
-jest.mock("../../../models/match-team-map-veto.models");
-jest.mock("../../../models/game.models");
-jest.mock("../../../models/season-team-players.models");
+jest.mock("../../models/organizer.models");
+jest.mock("../../models/match.models");
+jest.mock("../../models/faceit.models");
+jest.mock("../../models/match-team-map-veto.models");
+jest.mock("../../models/game.models");
+jest.mock("../../models/season-team-players.models");
 
 // Import mocked functions
-import { getOrganizerByFaceitIdAndGameAppId } from "../../../models/organizer.models";
+import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
 import {
   addMatchToDatabase,
   updateMatchStatus,
   updateMatchFinished,
   updateMatchEndTime
-} from "../../../models/match.models";
-import { saveWebhookData } from "../../../models/faceit.models";
-import { addMatchTeamMapVetoes } from "../../../models/match-team-map-veto.models";
-import { addMatchGameToDatabaseAndProcessDemo } from "../../../models/game.models";
-import { validatePlayersInTeams } from "../../../models/season-team-players.models";
-import { expressErrorHandler } from "../../../middlewares/express-error-handler";
+} from "../../models/match.models";
+import { saveWebhookData } from "../../models/faceit.models";
+import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
+import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
+import { validatePlayersInTeams } from "../../models/season-team-players.models";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 import {
   type MatchObjectCreatedWebhook,

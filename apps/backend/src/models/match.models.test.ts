@@ -3,7 +3,7 @@ import {
   getMatchTopPlayers,
   getMatchMapVetoes,
   getMatchGamesByTeam
-} from "../../models/match.models";
+} from "./match.models";
 
 describe("getMatchesByFilters", () => {
   it("returns scores for bo3 type of matches when a map filter is selected", async () => {

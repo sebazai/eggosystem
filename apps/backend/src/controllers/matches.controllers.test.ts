@@ -13,7 +13,7 @@ import {
   getMatchGamesController,
   getMatchMapVetoesController,
   getMatchGamesByTeamController
-} from "../matches.controllers";
+} from "./matches.controllers";
 import {
   getMatches,
   getMatch,
@@ -28,7 +28,7 @@ import {
   getMatchMapVetoes,
   getMatchGamesByTeam,
   getMatchesWithTeamDataBySeasonId
-} from "../../models/match.models";
+} from "../models/match.models";
 import {
   type RequestWithParams,
   type MatchGamesByTeam,
@@ -48,8 +48,8 @@ import {
 } from "@eggosystem/types";
 
 // Mock the models
-jest.mock("../../models/match.models");
-jest.mock("../../models/season.models");
+jest.mock("../models/match.models");
+jest.mock("../models/season.models");
 
 const mockGetMatches = getMatches as jest.MockedFunction<typeof getMatches>;
 const mockGetMatch = getMatch as jest.MockedFunction<typeof getMatch>;

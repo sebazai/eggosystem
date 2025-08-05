@@ -1,8 +1,8 @@
-import { getTeamRetakeStats } from "../../models/retake-stats.models";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { getTeamRetakeStats } from "./retake-stats.models";
+import { runQuery } from "../db/mysqlRunQuery";
 
 // Mock the runQuery module
-jest.mock("../../db/mysqlRunQuery", () => ({
+jest.mock("../db/mysqlRunQuery", () => ({
   runQuery: jest.fn()
 }));
 

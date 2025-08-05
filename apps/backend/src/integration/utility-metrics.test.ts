@@ -1,5 +1,5 @@
 import request from "supertest";
-import { app } from "../../app";
+import { app } from "../app";
 
 describe("Utility Metrics Tests", () => {
   it("should calculate correct utility metrics for player with good utility usage", async () => {

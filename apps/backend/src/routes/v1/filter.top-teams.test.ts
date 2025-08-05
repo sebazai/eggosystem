@@ -1,12 +1,12 @@
 import request from "supertest";
 
 import express from "express";
-import filtered from "../../../routes/v1/filter.routes";
+import filtered from "./filter.routes";
 import {
   type TopTeamsByFilters,
   type TopTeamsByFiltersRaw
 } from "@eggosystem/types";
-import parseQueryFilterParams from "../../../middlewares/parse-query-filter-params.middleware";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 
 describe("GET /api/v1/filters/teams/topteams", () => {
   const app = express();

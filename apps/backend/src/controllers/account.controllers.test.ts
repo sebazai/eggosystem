@@ -1,11 +1,11 @@
 import { type UserPolicyAcceptance, type Account } from "@eggosystem/types";
-import { updateAccountProfileController } from "../../controllers/account.controllers";
-import { getConnection } from "../../db/mysqlConnection";
-import * as accountModels from "../../models/account.models";
+import { updateAccountProfileController } from "./account.controllers";
+import { getConnection } from "../db/mysqlConnection";
+import * as accountModels from "../models/account.models";
 import type { Request, Response } from "express";
 import _ from "lodash";
 
-jest.mock("../../db/mysqlConnection", () => ({
+jest.mock("../db/mysqlConnection", () => ({
   getConnection: jest.fn()
 }));
 

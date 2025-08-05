@@ -1,4 +1,4 @@
-import { getCS2RankFromLeetify } from "../../services/leetify.services";
+import { getCS2RankFromLeetify } from "./leetify.services";
 import {
   leetifyValidSteamId,
   leetifyNotFoundSteamId,

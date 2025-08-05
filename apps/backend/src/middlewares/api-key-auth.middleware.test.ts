@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { createApiKeyValidator } from "../api-key-auth.middleware";
+import { createApiKeyValidator } from "./api-key-auth.middleware";
 
 describe("API Key Authentication Middleware", () => {
   // Mock objects
