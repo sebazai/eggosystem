@@ -29,20 +29,14 @@ const createChannel = async () => {
     const connection = await amqp.connect(getConnectionUri());
     const channel = await connection.createChannel();
 
-    // Check if queue exists first to handle existing queues gracefully
-    try {
-      await channel.checkQueue(PARSE_QUEUE);
-      logger.info("Parse queue already exists, using existing configuration");
-    } catch (_error) {
-      // Queue doesn't exist, create it with our preferred settings
-      await channel.assertQueue(PARSE_QUEUE, {
-        durable: true,
-        arguments: {
-          "x-message-ttl": 3600000 // 1 hour TTL
-        }
-      });
-      logger.info("Created parse queue with durable settings");
-    }
+    // Ensure queue exists - assertQueue will create it if it doesn't exist
+    await channel.assertQueue(PARSE_QUEUE, {
+      durable: true,
+      arguments: {
+        "x-message-ttl": 3600000 // 1 hour TTL
+      }
+    });
+    logger.info("Ensured parse queue exists with durable settings");
 
     return { connection, channel };
   } catch (error) {

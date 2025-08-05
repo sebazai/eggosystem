@@ -74,14 +74,37 @@ WEBHOOK_URL="$BASE_URL/api/v1/faceit/webhook"
 
 print_status "Webhook URL: $WEBHOOK_URL"
 
-# Prompt for JSON input
+# Prompt for JSON input method
 echo
-print_status "Enter the JSON data for the webhook:"
-print_warning "Paste your JSON data and press Enter when done:"
-print_status "Example: {\"event\": \"match_created\", \"data\": {...}}"
+print_status "Choose how to provide JSON data:"
+print_status "1. Paste JSON directly (recommended for small data)"
+print_status "2. Provide path to JSON file"
+read -p "Choose option (1 or 2): " JSON_INPUT_METHOD
 
-# Read JSON input
-read -p "JSON: " JSON_DATA
+if [[ "$JSON_INPUT_METHOD" == "2" ]]; then
+    # Read from file
+    read -p "Enter path to JSON file: " JSON_FILE_PATH
+    
+    if [[ ! -f "$JSON_FILE_PATH" ]]; then
+        print_error "File not found: $JSON_FILE_PATH"
+        exit 1
+    fi
+    
+    JSON_DATA=$(cat "$JSON_FILE_PATH")
+    print_success "Read JSON from file: $JSON_FILE_PATH"
+else
+    # Read multi-line JSON input
+    print_status "Paste your JSON data below (press Ctrl+D when done, or type 'END' on a new line):"
+    print_warning "Example: {\"event\": \"match_created\", \"data\": {...}}"
+    
+    JSON_DATA=""
+    while IFS= read -r line; do
+        if [[ "$line" == "END" ]]; then
+            break
+        fi
+        JSON_DATA="$JSON_DATA$line"
+    done
+fi
 
 if [[ -z "$JSON_DATA" ]]; then
     print_error "No JSON data provided"

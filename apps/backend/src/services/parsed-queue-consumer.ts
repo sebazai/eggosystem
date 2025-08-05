@@ -36,7 +36,7 @@ interface AmqpChannel {
     content: Buffer,
     options?: MessageOptions
   ): boolean;
-  checkQueue(queue: string): Promise<QueueAssertResult>;
+
   close(): Promise<void>;
 }
 
@@ -162,35 +162,19 @@ export class ParsedQueueConsumer {
         // Set prefetch to control concurrent processing
         await this.channel.prefetch(this.config.prefetchCount);
 
-        // Ensure queues exist - use checkQueue first to see if they exist
-        try {
-          await this.channel.checkQueue(this.config.parsedQueueName);
-          logger.info(
-            "Parsed queue already exists, using existing configuration"
-          );
-        } catch (_error) {
-          // Queue doesn't exist, create it with our preferred settings
-          await this.channel.assertQueue(this.config.parsedQueueName, {
-            durable: true,
-            arguments: {
-              "x-message-ttl": 3600000 // 1 hour TTL
-            }
-          });
-          logger.info("Created parsed queue with durable settings");
-        }
+        // Ensure queues exist - assertQueue will create them if they don't exist
+        await this.channel.assertQueue(this.config.parsedQueueName, {
+          durable: true,
+          arguments: {
+            "x-message-ttl": 3600000 // 1 hour TTL
+          }
+        });
+        logger.info("Ensured parsed queue exists with durable settings");
 
-        try {
-          await this.channel.checkQueue(this.config.errorQueueName);
-          logger.info(
-            "Error queue already exists, using existing configuration"
-          );
-        } catch (_error) {
-          // Queue doesn't exist, create it with our preferred settings
-          await this.channel.assertQueue(this.config.errorQueueName, {
-            durable: true
-          });
-          logger.info("Created error queue with durable settings");
-        }
+        await this.channel.assertQueue(this.config.errorQueueName, {
+          durable: true
+        });
+        logger.info("Ensured error queue exists with durable settings");
 
         logger.info(
           "Successfully connected to RabbitMQ for parsed queue consumer",
@@ -548,8 +532,13 @@ export class ParsedQueueConsumer {
         return false;
       }
 
-      // Check if channel is still open
-      await this.channel.checkQueue(this.config.parsedQueueName);
+      // Check if channel is still open by asserting the queue
+      await this.channel.assertQueue(this.config.parsedQueueName, {
+        durable: true,
+        arguments: {
+          "x-message-ttl": 3600000 // 1 hour TTL
+        }
+      });
       return true;
     } catch (error) {
       logger.error("Health check failed for parsed queue consumer", error);
