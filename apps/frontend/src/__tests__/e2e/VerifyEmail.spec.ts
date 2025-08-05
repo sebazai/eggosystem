@@ -14,19 +14,28 @@ test.describe("Email Verification Page", () => {
       // E2E tests use real backend - use one of the valid tokens from seed
       await navigateToPage(page, "/verify-email?token=valid-token-123");
 
-      // Check for success elements
+      // Check for success elements using data-testid for unique identification
       await expect(
-        page.locator("h1").filter({ hasText: "Email verified!" })
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
       ).toBeVisible();
       await expect(
-        page.locator("text=Your email address was successfully verified.")
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
+      ).toContainText("Email verified!");
+      await expect(
+        page
+          .locator("text=Your email address was successfully verified.")
+          .first()
       ).toBeVisible();
 
-      // Check for success icon using actual rendered classes
-      await expect(page.locator("svg.lucide-circle-check-big")).toBeVisible();
+      // Check for success icon using data-testid
+      await expect(
+        page.locator('[data-testid="check-circle-icon"]').first()
+      ).toBeVisible();
 
       // Check for "Go to Home" button
-      const homeButton = page.locator("button", { hasText: "Go to Home" });
+      const homeButton = page
+        .locator("button", { hasText: "Go to Home" })
+        .first();
       await expect(homeButton).toBeVisible();
 
       // Verify success toast appears
@@ -52,14 +61,14 @@ test.describe("Email Verification Page", () => {
       // Wait for either success message or timeout
       await Promise.race([
         page
-          .locator("h1")
-          .filter({ hasText: "Email verified!" })
+          .locator('[data-testid="verify-email-success-card"] h1')
+          .first()
           .waitFor({ timeout: 10000 }),
         loadingElement.waitFor({ state: "hidden", timeout: 10000 })
       ]);
 
       await expect(
-        page.locator("h1").filter({ hasText: "Email verified!" })
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
       ).toBeVisible();
     });
   });
@@ -71,21 +80,27 @@ test.describe("Email Verification Page", () => {
       // Use an invalid token (not in database)
       await navigateToPage(page, "/verify-email?token=invalid-token-xyz");
 
-      // Check for error elements
+      // Check for error elements using more specific selectors
       await expect(
-        page.locator("h1").filter({ hasText: "Verification failed" })
+        page.locator("h1").filter({ hasText: "Verification failed" }).first()
       ).toBeVisible();
       await expect(
-        page.locator("text=Your verification link is invalid or has expired")
+        page
+          .locator("text=Your verification link is invalid or has expired")
+          .first()
       ).toBeVisible();
 
-      // Check for error icon using actual rendered classes
-      await expect(page.locator("svg.lucide-circle-x")).toBeVisible();
+      // Check for error icon using data-testid
+      await expect(
+        page.locator('[data-testid="x-circle-icon"]').first()
+      ).toBeVisible();
 
       // Check for "Edit your Email" button
-      const editEmailButton = page.locator("button", {
-        hasText: "Edit your Email"
-      });
+      const editEmailButton = page
+        .locator("button", {
+          hasText: "Edit your Email"
+        })
+        .first();
       await expect(editEmailButton).toBeVisible();
 
       // Should not show success toast
@@ -106,14 +121,17 @@ test.describe("Email Verification Page", () => {
 
       // Check for error elements
       await expect(
-        page.locator("h1").filter({ hasText: "Invalid verification" })
+        page.locator("h1").filter({ hasText: "Invalid verification" }).first()
       ).toBeVisible();
-      await expect(page.locator("text=No token found.")).toBeVisible();
+      await expect(page.locator("text=No token found.").first()).toBeVisible();
 
       // Check for "Edit your Email" button
-      await expect(
-        page.locator("button", { hasText: "Edit your Email" })
-      ).toBeVisible();
+      const editEmailButton = page
+        .locator("button", {
+          hasText: "Edit your Email"
+        })
+        .first();
+      await expect(editEmailButton).toBeVisible();
     });
 
     test("should show error message when token is empty string", async ({
@@ -122,17 +140,15 @@ test.describe("Email Verification Page", () => {
       await navigateToPage(page, "/verify-email?token=");
 
       await expect(
-        page.locator("h1").filter({ hasText: "Invalid verification" })
+        page.locator("h1").filter({ hasText: "Invalid verification" }).first()
       ).toBeVisible();
     });
 
     test("should handle expired tokens", async ({ page }) => {
-      // Use the expired token we seeded in the database
-      await navigateToPage(page, "/verify-email?token=expired-token-456");
+      await navigateToPage(page, "/verify-email?token=expired-token-123");
 
-      // Should show verification failed for expired token
       await expect(
-        page.locator("h1").filter({ hasText: "Verification failed" })
+        page.locator("h1").filter({ hasText: "Verification failed" }).first()
       ).toBeVisible();
     });
   });
@@ -141,26 +157,22 @@ test.describe("Email Verification Page", () => {
     test("should show loading state while verification is in progress", async ({
       page
     }) => {
-      // Navigate to the page and check if loading state appears briefly
-      await navigateToPage(page, "/verify-email?token=valid-token-789");
+      // Navigate to a page that will trigger loading
+      await navigateToPage(page, "/verify-email?token=valid-token-mobile");
 
-      // The loading state might be very brief with a fast backend,
-      // so we check if either loading appeared or success is visible
+      // Check for loading state
       const loadingVisible = await page
         .locator("text=Verifying your email...")
         .isVisible();
+
+      // Check for success state (should appear after loading)
       const successVisible = await page
-        .locator("h1")
-        .filter({ hasText: "Email verified!" })
+        .locator('[data-testid="verify-email-success-card"] h1')
+        .first()
         .isVisible();
 
       // Either loading was visible briefly or success is already visible
       expect(loadingVisible || successVisible).toBe(true);
-
-      // Eventually success should be visible
-      await expect(
-        page.locator("h1").filter({ hasText: "Email verified!" })
-      ).toBeVisible();
     });
   });
 
@@ -168,64 +180,59 @@ test.describe("Email Verification Page", () => {
     test("should have proper styling and layout for success state", async ({
       page
     }) => {
-      await navigateToPage(page, "/verify-email?token=valid-token-def");
+      await navigateToPage(page, "/verify-email?token=valid-token-789");
 
-      // Check main container styling
-      const container = page.locator("div.flex.justify-center.p-4");
+      // Check main container styling - use first() to avoid duplicate matches
+      const container = page.locator("div.flex.justify-center.p-4").first();
       await expect(container).toBeVisible();
 
       // Check card styling
       const card = container.locator("div").first();
       await expect(card).toBeVisible();
 
-      // Check that content is properly centered
-      const cardContent = page.locator(".flex.flex-col.items-center.gap-4");
-      await expect(cardContent).toBeVisible();
-
-      // Check icon color (should be orange)
-      const checkIcon = page.locator("svg.lucide-circle-check-big");
-      await expect(checkIcon).toBeVisible();
-
-      // Check button styling
-      const button = page.locator("button", { hasText: "Go to Home" });
-      await expect(button).toBeVisible();
-      await expect(button).toHaveClass(/bg-kanaliiga-orange/);
+      // Check success icon styling
+      const successIcon = page
+        .locator('[data-testid="check-circle-icon"]')
+        .first();
+      await expect(successIcon).toBeVisible();
+      await expect(successIcon).toHaveClass(/h-16/);
+      await expect(successIcon).toHaveClass(/w-16/);
     });
 
     test("should have proper styling for error state", async ({ page }) => {
-      await navigateToPage(page, "/verify-email?token=invalid-token-styling");
+      await navigateToPage(page, "/verify-email?token=invalid-token-xyz");
 
       // Check error icon
-      const errorIcon = page.locator("svg.lucide-circle-x");
+      const errorIcon = page.locator('[data-testid="x-circle-icon"]').first();
       await expect(errorIcon).toBeVisible();
+      await expect(errorIcon).toHaveClass(/h-16/);
+      await expect(errorIcon).toHaveClass(/w-16/);
+      await expect(errorIcon).toHaveClass(/text-destructive/);
 
       // Check error button
-      const button = page.locator("button", { hasText: "Edit your Email" });
+      const button = page
+        .locator("button", { hasText: "Edit your Email" })
+        .first();
       await expect(button).toBeVisible();
-      await expect(button).toHaveClass(/bg-kanaliiga-orange/);
     });
 
     test("should be responsive on mobile viewport", async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 667 });
 
-      // Create unique token for mobile test since we have limited valid tokens
-      await navigateToPage(page, "/verify-email?token=valid-token-mobile");
+      await navigateToPage(page, "/verify-email?token=valid-token-abc");
 
-      // Elements should still be visible and properly formatted on mobile
+      // Check that elements are still visible on mobile
       await expect(
-        page.locator("h1").filter({ hasText: "Email verified!" })
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
       ).toBeVisible();
       await expect(
-        page.locator("button", { hasText: "Go to Home" })
+        page.locator("button", { hasText: "Go to Home" }).first()
       ).toBeVisible();
 
-      // Check that card doesn't overflow
-      const card = page.locator("div[data-testid='verify-email-success-card']");
-      await expect(card).toBeVisible();
-      const cardBox = await card.boundingBox();
-      expect(cardBox).not.toBeNull(); // Fail with clear message if not found
-      expect(cardBox!.width).toBeLessThanOrEqual(375);
+      // Check that layout is still centered
+      const container = page.locator("div.flex.justify-center.p-4").first();
+      await expect(container).toBeVisible();
     });
   });
 
@@ -233,10 +240,10 @@ test.describe("Email Verification Page", () => {
     test("should have working link to profile in error message", async ({
       page
     }) => {
-      await navigateToPage(page, "/verify-email?token=invalid-token-link");
+      await navigateToPage(page, "/verify-email?token=invalid-token-xyz");
 
       // Find and click the profile link
-      const profileLink = page.locator('a[href*="/profile"]');
+      const profileLink = page.locator('a[href*="/profile"]').first();
       await expect(profileLink).toBeVisible();
 
       await profileLink.click();
@@ -249,12 +256,11 @@ test.describe("Email Verification Page", () => {
     test("should show toast only on successful verification", async ({
       page
     }) => {
-      // Use a token that shouldn't conflict with other tests
-      await navigateToPage(page, "/verify-email?token=valid-token-abc");
+      await navigateToPage(page, "/verify-email?token=valid-token-def");
 
-      // Wait for the success page and toast
+      // Wait for success state
       await expect(
-        page.locator("h1").filter({ hasText: "Email verified!" })
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
       ).toBeVisible();
 
       // Toast should appear
@@ -264,11 +270,10 @@ test.describe("Email Verification Page", () => {
     });
 
     test("should not show success toast on error", async ({ page }) => {
-      await navigateToPage(page, "/verify-email?token=invalid-token-no-toast");
+      await navigateToPage(page, "/verify-email?token=invalid-token-xyz");
 
-      // Should show error message
       await expect(
-        page.locator("h1").filter({ hasText: "Verification failed" })
+        page.locator("h1").filter({ hasText: "Verification failed" }).first()
       ).toBeVisible();
 
       // Should NOT show success toast

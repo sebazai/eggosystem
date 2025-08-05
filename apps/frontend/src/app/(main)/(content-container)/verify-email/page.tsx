@@ -16,7 +16,13 @@ interface VerifyEmailPageProps {
   }>;
 }
 
-async function VerifyEmailContent({ token }: { token: string }) {
+async function VerifyEmailContent({
+  token,
+  success
+}: {
+  token: string;
+  success: boolean;
+}) {
   if (!token) {
     return (
       <Card className="w-full max-w-md">
@@ -31,21 +37,6 @@ async function VerifyEmailContent({ token }: { token: string }) {
         </CardContent>
       </Card>
     );
-  }
-
-  let success = false;
-
-  const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ token }),
-    cache: "no-store" // don't cache
-  });
-
-  if (res.ok) {
-    success = true;
   }
 
   if (success) {
@@ -89,6 +80,15 @@ export default async function VerifyEmailPage({
 }: VerifyEmailPageProps) {
   const { token } = await searchParams;
 
+  const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ token }),
+    cache: "no-store" // don't cache
+  });
+
   return (
     <div className="flex justify-center p-4">
       <Suspense
@@ -104,7 +104,7 @@ export default async function VerifyEmailPage({
           </Card>
         }
       >
-        <VerifyEmailContent token={token} />
+        <VerifyEmailContent token={token} success={res.ok} />
       </Suspense>
     </div>
   );

@@ -48,9 +48,14 @@ async function assignCaptain(page: Page) {
     }
   }
 
-  await expect(
-    page.getByText("There must be exactly one captain and one co-captain")
-  ).not.toBeVisible();
+  // Wait for validation error to clear (it might take a moment)
+  await page.waitForTimeout(1000);
+
+  // Check that validation error is not visible
+  const validationError = page.getByText(
+    "There must be exactly one captain and one co-captain"
+  );
+  await expect(validationError).not.toBeVisible({ timeout: 5000 });
 }
 
 // Helper function to set up the form to the team FACEIT ID input stage
@@ -588,12 +593,15 @@ test.describe("Signup Form", () => {
       // Fill in 5 players with valid Steam IDs (include authenticated user)
       await fillValidPlayers(page, "66561198999999903");
 
+      // Wait for nicknames to load after Steam IDs are entered
+      await page.waitForTimeout(2000); // Give time for async data loading
+
       // Check all visible nickname spans for the correct nicknames
-      const nicknameSpans = page.locator("span.text-kanaliiga-orange");
+      const nicknameSpans = page.locator('[data-testid^="player-nickname-"]');
       const nicknameCount = await nicknameSpans.count();
       expect(nicknameCount).toBeGreaterThan(0);
 
-      // Verify nicknames from E2E seed data (Quattra should be in the list)
+      // Verify nicknames from E2E seed data (Aabe should be in the list)
       await expect(nicknameSpans.nth(0)).toBeVisible();
       await expect(nicknameSpans.nth(0)).toContainText(/aabe/i);
 
