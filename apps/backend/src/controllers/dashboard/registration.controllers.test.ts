@@ -55,7 +55,7 @@ describe("Registration Controllers", () => {
         signup_end_date: "2024-12-31",
         full_name: "Test Season"
       };
-      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(
+      mockSeasonModels.getActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
         mockActiveSeason
       );
 
@@ -118,7 +118,7 @@ describe("Registration Controllers", () => {
     });
 
     it("should throw error when no active season", async () => {
-      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(
+      mockSeasonModels.getActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
         undefined
       );
 
