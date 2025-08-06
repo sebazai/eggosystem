@@ -90,7 +90,7 @@ export const getActiveSignupOrActiveSeasonForAppId = async (app_id: number) => {
     `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
-     WHERE g.app_id = ? AND s.end_date >= NOW() OR  s.signup_end_date >= NOW()
+     WHERE g.app_id = ? AND s.end_date >= NOW() OR s.end_date IS NULL OR s.signup_end_date >= NOW()
      ORDER BY s.id DESC
      LIMIT 1;`,
     [app_id]

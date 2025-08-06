@@ -10,7 +10,7 @@ import {
 import JSONBig from "json-bigint";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
-import { getActiveSignupSeasonForAppId } from "../season.models";
+import { getActiveSignupOrActiveSeasonForAppId } from "../season.models";
 import { BadRequestError } from "../../utils/errors";
 import {
   insertCSPlayerRankForSeason,
@@ -25,7 +25,7 @@ export const addManuallyApprovedPartialSignupForSeason = async (
 ) => {
   const connection = await getConnection();
 
-  const activeSeason = await getActiveSignupSeasonForAppId(730);
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
 
   if (!activeSeason) {
     throw new BadRequestError("No active registration ongoing for CS");
@@ -144,4 +144,81 @@ export const getPlayerFullName = async (
 
   const results = await runQuery<PlayerFullName[]>(query, [steamId]);
   return results.length > 0 ? results[0] : undefined;
+};
+
+export const bulkApproveTeamRegistrations = async (
+  seasonId: number,
+  teamIds: number[],
+  approvedByAccountId: number
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // Update the approved status for all specified teams
+    const updateQuery = `
+      UPDATE SeasonTeamRegistrations 
+      SET approved = true, approved_by = ?
+      WHERE season_id = ? AND team_id IN (${teamIds.map(() => "?").join(",")})
+    `;
+
+    const result = await runQuery<{ affectedRows: number }>(
+      updateQuery,
+      [approvedByAccountId, seasonId, ...teamIds],
+      connection
+    );
+
+    // Get the updated teams using the existing function
+    const updatedTeams = await getRegisteredTeams(seasonId);
+
+    await connection.commit();
+
+    return {
+      success: true,
+      updatedCount: result.affectedRows,
+      teams: updatedTeams
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+export const manualValidityCheck = async (
+  seasonId: number,
+  teamIds: number[],
+  checkedByAccountId: number
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const updateQuery = `
+      UPDATE SeasonTeamRegistrations 
+      SET manual_validity_check_override = true, manual_validity_check_by = ?
+      WHERE season_id = ? AND team_id IN (${teamIds.map(() => "?").join(",")})
+    `;
+
+    const result = await runQuery<{ affectedRows: number }>(
+      updateQuery,
+      [checkedByAccountId, seasonId, ...teamIds],
+      connection
+    );
+
+    await connection.commit();
+
+    return {
+      success: true,
+      updatedCount: result.affectedRows
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };

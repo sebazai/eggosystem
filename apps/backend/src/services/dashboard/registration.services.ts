@@ -233,6 +233,20 @@ interface TeamValidationResult {
   invalid_players: RegisteredTeamPlayer[];
 }
 
+const getSeasonTeamRegistrationValidOverride = async (
+  seasonId: number,
+  teamId: number
+): Promise<boolean> => {
+  const result = await runQuery<{ manual_validity_check_override: boolean }[]>(
+    `SELECT manual_validity_check_override 
+     FROM SeasonTeamRegistrations 
+     WHERE season_id = ? AND team_id = ?`,
+    [seasonId, teamId]
+  );
+
+  return result.length > 0 && Boolean(result[0].manual_validity_check_override);
+};
+
 export const getTeamsSignupApprovalState = async (
   teams: SeasonRegisteredTeamsWithPlayers[]
 ): Promise<TeamValidationResult[]> => {
@@ -244,6 +258,17 @@ export const getTeamsSignupApprovalState = async (
       is_valid: true,
       invalid_players: []
     };
+
+    // Check for manual validity override first
+    const hasManualOverride = await getSeasonTeamRegistrationValidOverride(
+      team.season_id,
+      team.team_id
+    );
+
+    // If manual override is true, team is valid regardless of other checks
+    if (hasManualOverride) {
+      return teamValidationResult;
+    }
 
     // If no players, return valid team
     if (players.length === 0) {

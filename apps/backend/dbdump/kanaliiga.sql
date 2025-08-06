@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Jul 20, 2025 at 05:13 PM
+-- Generation Time: Aug 06, 2025 at 04:14 PM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -200,10 +200,10 @@ CREATE TABLE `AuditLog` (
 CREATE TABLE `FaceitWebhooks` (
   `id` int(10) UNSIGNED NOT NULL,
   `received_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `external_match_room_id` varchar(255) NOT NULL,
+  `external_payload_id` varchar(255) NOT NULL,
   `event` varchar(255) NOT NULL,
-  `data` text NOT NULL,
-  `details` text NOT NULL,
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
+  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
   `error_type` varchar(255) DEFAULT NULL,
   `error_details` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -351,7 +351,7 @@ CREATE TABLE `Matches` (
   `best_of` tinyint(3) UNSIGNED NOT NULL,
   `match_date` date NOT NULL,
   `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
+  `end_time` time DEFAULT NULL,
   `external_match_room_id` varchar(255) DEFAULT NULL,
   `group` tinyint(4) DEFAULT NULL,
   `round` tinyint(4) DEFAULT NULL,
@@ -669,6 +669,7 @@ CREATE TABLE `SeasonLeagueExternalIds` (
   `league_id` int(10) UNSIGNED NOT NULL,
   `stage_id` int(10) UNSIGNED NOT NULL,
   `external_id` varchar(255) NOT NULL,
+  `external_league_name` varchar(255) DEFAULT NULL,
   `type` varchar(255) NOT NULL,
   `isBO2PlayedAs2xBO1` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -766,7 +767,8 @@ CREATE TABLE `SeasonPlayerRanks` (
   `esportal_rank` int(11) DEFAULT NULL,
   `hours_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
   `manual_external_rank` tinyint(1) NOT NULL DEFAULT 0,
-  `manual_steam_rank` tinyint(1) NOT NULL DEFAULT 0
+  `manual_steam_rank` tinyint(1) NOT NULL DEFAULT 0,
+  `calculus` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1072,7 +1074,10 @@ CREATE TABLE `SeasonTeamRegistrations` (
   `team_id` int(10) UNSIGNED NOT NULL,
   `approved` tinyint(1) NOT NULL DEFAULT 0,
   `external_platform_id` varchar(255) DEFAULT NULL,
-  `terms_and_conditions_approved` tinyint(1) NOT NULL
+  `terms_and_conditions_approved` tinyint(1) NOT NULL,
+  `approved_by` int(10) UNSIGNED DEFAULT NULL,
+  `manual_validity_check_by` int(10) UNSIGNED DEFAULT NULL,
+  `manual_validity_check_override` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1223,6 +1228,18 @@ DELIMITER ;
 CREATE TABLE `Stages` (
   `id` int(10) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SteamPlayerKanaElo`
+--
+
+CREATE TABLE `SteamPlayerKanaElo` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `kana_elo` int(11) NOT NULL,
+  `steam_id` bigint(20) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
@@ -1439,6 +1456,8 @@ ALTER TABLE `MatchGameClips`
 --
 ALTER TABLE `MatchGames`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `matchgames_demofile_unique` (`demofile`),
+  ADD UNIQUE KEY `matchgames_match_id_map_id_map_order_unique` (`match_id`,`map_id`,`map_order`),
   ADD KEY `matchgames_match_id_foreign` (`match_id`),
   ADD KEY `matchgames_map_id_foreign` (`map_id`);
 
@@ -1492,6 +1511,7 @@ ALTER TABLE `Permissions`
 --
 ALTER TABLE `PlayerStats`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `playerstats_game_id_steam_id_unique` (`game_id`,`steam_id`),
   ADD KEY `playerstats_steam_id_foreign` (`steam_id`),
   ADD KEY `playerstats_game_id_foreign` (`game_id`);
 
@@ -1500,6 +1520,7 @@ ALTER TABLE `PlayerStats`
 --
 ALTER TABLE `PlayerTrades`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `playertrades_unique` (`game_id`,`trader_steam_id`,`killer_steam_id`,`victim_steam_id`,`round_number`),
   ADD KEY `playertrades_trader_steam_id_foreign` (`trader_steam_id`),
   ADD KEY `playertrades_killer_steam_id_foreign` (`killer_steam_id`),
   ADD KEY `playertrades_victim_steam_id_foreign` (`victim_steam_id`),
@@ -1597,13 +1618,22 @@ ALTER TABLE `SeasonTeamRegistrationPlayers`
 ALTER TABLE `SeasonTeamRegistrations`
   ADD PRIMARY KEY (`season_id`,`team_id`),
   ADD UNIQUE KEY `unique_season_external_platform_id` (`season_id`,`external_platform_id`),
-  ADD KEY `seasonteamregistrations_team_id_foreign` (`team_id`);
+  ADD KEY `seasonteamregistrations_team_id_foreign` (`team_id`),
+  ADD KEY `seasonteamregistrations_approved_by_foreign` (`approved_by`),
+  ADD KEY `seasonteamregistrations_manual_validity_check_by_foreign` (`manual_validity_check_by`);
 
 --
 -- Indexes for table `Stages`
 --
 ALTER TABLE `Stages`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `SteamPlayerKanaElo`
+--
+ALTER TABLE `SteamPlayerKanaElo`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `steamplayerkanaelo_steam_id_unique` (`steam_id`);
 
 --
 -- Indexes for table `SteamPlayers`
@@ -1617,6 +1647,7 @@ ALTER TABLE `SteamPlayers`
 --
 ALTER TABLE `TeamGameScores`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `teamgamescores_game_id_team_id_unique` (`game_id`,`team_id`),
   ADD KEY `teamgamescores_match_id_team_id_foreign` (`match_id`,`team_id`),
   ADD KEY `teamgamescores_game_id_foreign` (`game_id`);
 
@@ -1819,6 +1850,12 @@ ALTER TABLE `Seasons`
 -- AUTO_INCREMENT for table `Stages`
 --
 ALTER TABLE `Stages`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `SteamPlayerKanaElo`
+--
+ALTER TABLE `SteamPlayerKanaElo`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -2038,8 +2075,16 @@ ALTER TABLE `SeasonTeamRegistrationPlayers`
 -- Constraints for table `SeasonTeamRegistrations`
 --
 ALTER TABLE `SeasonTeamRegistrations`
+  ADD CONSTRAINT `seasonteamregistrations_approved_by_foreign` FOREIGN KEY (`approved_by`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `seasonteamregistrations_manual_validity_check_by_foreign` FOREIGN KEY (`manual_validity_check_by`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `seasonteamregistrations_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `seasonteamregistrations_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SteamPlayerKanaElo`
+--
+ALTER TABLE `SteamPlayerKanaElo`
+  ADD CONSTRAINT `steamplayerkanaelo_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`);
 
 --
 -- Constraints for table `SteamPlayers`

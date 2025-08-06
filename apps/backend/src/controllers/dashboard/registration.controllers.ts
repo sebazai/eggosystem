@@ -8,9 +8,11 @@ import {
   addManuallyApprovedPartialSignupForSeason,
   addSeasonRankForPlayer,
   getRegisteredTeams,
-  getPlayerFullName
+  getPlayerFullName,
+  bulkApproveTeamRegistrations,
+  manualValidityCheck
 } from "../../models/dashboard/registration.models";
-import { getActiveSignupSeasonForAppId } from "../../models/season.models";
+import { getActiveSignupOrActiveSeasonForAppId } from "../../models/season.models";
 import { BadRequestError } from "../../utils/errors";
 import { type RequestWithParams } from "@eggosystem/types";
 import { redisClient } from "../../utils/redisClient";
@@ -42,7 +44,7 @@ export const addManualRankForPlayerController = async (
   req: Request,
   res: Response
 ) => {
-  const activeSeason = await getActiveSignupSeasonForAppId(730);
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }
@@ -57,7 +59,7 @@ export const getRegisteredTeamsController = async (
   req: Request,
   res: Response
 ) => {
-  const activeSeason = await getActiveSignupSeasonForAppId(730);
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }
@@ -114,4 +116,68 @@ export const getAllRegistrationDraftsController = async (
     })
     .filter(isNonNullable);
   res.status(200).json(drafts);
+};
+
+export const bulkApproveTeamRegistrationsController = async (
+  req: Request,
+  res: Response
+) => {
+  const authedUser = req.auth;
+  if (!authedUser) {
+    res.sendStatus(401);
+    return;
+  }
+
+  const { teamIds } = req.body;
+
+  if (!Array.isArray(teamIds) || teamIds.length === 0) {
+    res
+      .status(400)
+      .json({ message: "teamIds array is required and must not be empty" });
+    return;
+  }
+
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  if (!activeSeason) {
+    throw new BadRequestError("No signup for any season for app id 730");
+  }
+
+  const result = await bulkApproveTeamRegistrations(
+    activeSeason.season_id,
+    teamIds,
+    authedUser.account_id
+  );
+
+  res.status(200).json(result);
+};
+
+export const manualValidityCheckController = async (
+  req: Request,
+  res: Response
+) => {
+  const { teamIds } = req.body;
+  const authedUser = req.auth;
+  if (!authedUser) {
+    res.sendStatus(401);
+    return;
+  }
+
+  if (!Array.isArray(teamIds) || teamIds.length === 0) {
+    res
+      .status(400)
+      .json({ message: "teamIds array is required and must not be empty" });
+    return;
+  }
+
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  if (!activeSeason) {
+    throw new BadRequestError("No signup for any season for app id 730");
+  }
+
+  const result = await manualValidityCheck(
+    activeSeason.season_id,
+    teamIds,
+    authedUser.account_id
+  );
+  res.status(200).json(result);
 };

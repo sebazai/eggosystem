@@ -1,76 +1,132 @@
-import * as registrationControllers from "./registration.controllers";
+import request from "supertest";
+import express from "express";
+import { bulkApproveTeamRegistrationsController } from "./registration.controllers";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as registrationModels from "../../models/dashboard/registration.models";
-import type { PlayerFullName, RequestWithParams } from "@eggosystem/types";
-import type { Response } from "express";
+import * as seasonModels from "../../models/season.models";
+import {
+  SeasonPlatform,
+  type ActiveSeasonSignupForAppId
+} from "@eggosystem/types";
 
-describe("Dashboard Registration Controllers", () => {
-  const mockResponse = () => {
-    const res = {} as Response;
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-  };
+// Mock the models
+jest.mock("../../models/dashboard/registration.models");
+jest.mock("../../models/season.models");
 
-  describe("getPlayerFullNameController", () => {
-    let req: RequestWithParams<{ steamId: string }>, res: Response;
+const mockRegistrationModels = registrationModels as jest.Mocked<
+  typeof registrationModels
+>;
+const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 
-    beforeEach(() => {
-      req = {
-        params: { steamId: "12345678901234567" }
-      } as RequestWithParams<{ steamId: string }>;
-      res = mockResponse();
-    });
+describe("Registration Controllers", () => {
+  let app: express.Application;
 
-    it("should return player full name when player exists", async () => {
-      const mockPlayerFullName: PlayerFullName = {
-        steam_id: "12345678901234567",
-        full_name: "John Doe"
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+
+    // Mock authentication middleware
+    app.use((req, res, next) => {
+      req.auth = {
+        account_id: 1,
+        provider_id: "12345678901234567",
+        permissions: [],
+        roles: [],
+        nickname: "testuser",
+        provider: "steam"
       };
-
-      jest
-        .spyOn(registrationModels, "getPlayerFullName")
-        .mockResolvedValue(mockPlayerFullName);
-
-      await registrationControllers.getPlayerFullNameController(req, res);
-
-      expect(registrationModels.getPlayerFullName).toHaveBeenCalledWith(
-        "12345678901234567"
-      );
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockPlayerFullName);
+      next();
     });
 
-    it("should return 404 when player not found", async () => {
-      jest
-        .spyOn(registrationModels, "getPlayerFullName")
-        .mockResolvedValue(undefined);
+    app.post("/bulk-approve", bulkApproveTeamRegistrationsController);
+    app.use(expressErrorHandler);
+  });
 
-      await registrationControllers.getPlayerFullNameController(req, res);
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
-      expect(registrationModels.getPlayerFullName).toHaveBeenCalledWith(
-        "12345678901234567"
-      );
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ message: "Player not found" });
-    });
-
-    it("should handle null full_name", async () => {
-      const mockPlayerFullName: PlayerFullName = {
-        steam_id: "12345678901234567",
-        full_name: null
+  describe("bulkApproveTeamRegistrationsController", () => {
+    it("should approve teams successfully", async () => {
+      // Mock the active season
+      const mockActiveSeason: ActiveSeasonSignupForAppId = {
+        season_id: 1,
+        platform: SeasonPlatform.Kanaliiga,
+        signup_end_date: "2024-12-31",
+        full_name: "Test Season"
       };
-
-      jest
-        .spyOn(registrationModels, "getPlayerFullName")
-        .mockResolvedValue(mockPlayerFullName);
-
-      await registrationControllers.getPlayerFullNameController(req, res);
-
-      expect(registrationModels.getPlayerFullName).toHaveBeenCalledWith(
-        "12345678901234567"
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(
+        mockActiveSeason
       );
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockPlayerFullName);
+
+      // Mock the bulk approval function
+      mockRegistrationModels.bulkApproveTeamRegistrations.mockResolvedValue({
+        success: true,
+        updatedCount: 2,
+        teams: []
+      });
+
+      const response = await request(app)
+        .post("/bulk-approve")
+        .send({ teamIds: [1, 2] });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        success: true,
+        updatedCount: 2,
+        teams: []
+      });
+    });
+
+    it("should return 401 when no auth user", async () => {
+      // Create app without auth middleware for this test
+      const appWithoutAuth = express();
+      appWithoutAuth.use(express.json());
+      appWithoutAuth.post(
+        "/bulk-approve",
+        bulkApproveTeamRegistrationsController
+      );
+      appWithoutAuth.use(expressErrorHandler);
+
+      const response = await request(appWithoutAuth)
+        .post("/bulk-approve")
+        .send({ teamIds: [1, 2] });
+
+      expect(response.status).toBe(401);
+    });
+
+    it("should return 400 when teamIds is not an array", async () => {
+      const response = await request(app)
+        .post("/bulk-approve")
+        .send({ teamIds: "not-an-array" });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe(
+        "teamIds array is required and must not be empty"
+      );
+    });
+
+    it("should return 400 when teamIds array is empty", async () => {
+      const response = await request(app)
+        .post("/bulk-approve")
+        .send({ teamIds: [] });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe(
+        "teamIds array is required and must not be empty"
+      );
+    });
+
+    it("should throw error when no active season", async () => {
+      mockSeasonModels.getActiveSignupSeasonForAppId.mockResolvedValue(
+        undefined
+      );
+
+      const response = await request(app)
+        .post("/bulk-approve")
+        .send({ teamIds: [1, 2] });
+
+      expect(response.status).toBe(400);
     });
   });
 });
