@@ -281,9 +281,12 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
       await connection.commit();
 
       await Promise.all([
-        sendDemoForAllStarPOTGClip(insertedRow.insertId, demo_url),
+        sendDemoForAllStarPOTGClip(
+          gameWithDemo?.id ?? insertedRow.insertId,
+          demo_url
+        ),
         publishDemoProcessingRequest(
-          insertedRow.insertId,
+          gameWithDemo?.id ?? insertedRow.insertId,
           demoDownloadUrl,
           !gameWithDemo
         )
@@ -317,9 +320,12 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
       await connection.commit();
 
       await Promise.all([
-        sendDemoForAllStarPOTGClip(insertedRow.insertId, demo_url),
+        sendDemoForAllStarPOTGClip(
+          gameWithDemo?.id ?? insertedRow.insertId,
+          demo_url
+        ),
         publishDemoProcessingRequest(
-          insertedRow.insertId,
+          gameWithDemo?.id ?? insertedRow.insertId,
           demoDownloadUrl,
           !gameWithDemo
         )
