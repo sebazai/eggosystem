@@ -164,10 +164,7 @@ export class ParsedQueueConsumer {
 
         // Ensure queues exist - assertQueue will create them if they don't exist
         await this.channel.assertQueue(this.config.parsedQueueName, {
-          durable: true,
-          arguments: {
-            "x-message-ttl": 3600000 // 1 hour TTL
-          }
+          durable: true
         });
         logger.info("Ensured parsed queue exists with durable settings");
 
@@ -534,10 +531,7 @@ export class ParsedQueueConsumer {
 
       // Check if channel is still open by asserting the queue
       await this.channel.assertQueue(this.config.parsedQueueName, {
-        durable: true,
-        arguments: {
-          "x-message-ttl": 3600000 // 1 hour TTL
-        }
+        durable: true
       });
       return true;
     } catch (error) {

@@ -31,10 +31,7 @@ const createChannel = async () => {
 
     // Ensure queue exists - assertQueue will create it if it doesn't exist
     await channel.assertQueue(PARSE_QUEUE, {
-      durable: true,
-      arguments: {
-        "x-message-ttl": 3600000 // 1 hour TTL
-      }
+      durable: true
     });
     logger.info("Ensured parse queue exists with durable settings");
 

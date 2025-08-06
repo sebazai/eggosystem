@@ -35,12 +35,7 @@ Both queues should be declared with the following settings:
 const queueConfig = {
   durable: true, // Survive server restarts
   exclusive: false, // Allow multiple consumers
-  autoDelete: false, // Don't delete when unused
-  arguments: {
-    "x-message-ttl": 3600000, // 1 hour TTL
-    "x-dead-letter-exchange": "dlx", // Dead letter exchange
-    "x-dead-letter-routing-key": "failed"
-  }
+  autoDelete: false // Don't delete when unused
 };
 ```
 
