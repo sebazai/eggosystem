@@ -43,7 +43,10 @@ describe("getTeamsSignupApprovalState", () => {
     co_captain_nickname: "Co-Captain",
     season_platform: SeasonPlatform.Kanaliiga,
     approved: false,
-    terms_and_conditions_approved: true
+    terms_and_conditions_approved: true,
+    approved_by: null,
+    manual_validity_check_override: false,
+    manual_validity_check_by: null
   });
 
   describe("when all players have the same email ending", () => {
