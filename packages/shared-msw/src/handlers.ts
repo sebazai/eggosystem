@@ -6,6 +6,7 @@ import { faceitMetadataHandlers } from "./faceit/Metadata-handlers";
 import { faceitTeamHandlers } from "./faceit/Teams-handlers";
 import { faceitMatchDetailsHandlers } from "./faceit/MatchDetails-handlers";
 import { faceitDemoHandlers } from "./faceit/Demo-handlers";
+import { faceitChampionshipHandlers } from "./faceit/ChampionshipDetails-handlers";
 
 const handlers = [
   ...getPlayerSummariesHandlers,
@@ -15,7 +16,8 @@ const handlers = [
   ...faceitPlayerGameRankHandlers,
   ...faceitTeamHandlers,
   ...faceitMatchDetailsHandlers,
-  ...faceitDemoHandlers
+  ...faceitDemoHandlers,
+  ...faceitChampionshipHandlers
 ];
 
 export { handlers };
