@@ -41,3 +41,11 @@ export const insertSeasonLeagueExternalId = async (
   );
   return seasonLeagueExternaMatchRoomResult;
 };
+
+export const removeSeasonLeagueExternalId = async (
+  externalId: string,
+  connection?: PoolConnection
+) => {
+  const query = `DELETE FROM SeasonLeagueExternalIds WHERE external_id = ?`;
+  await runQuery(query, [externalId], connection);
+};
