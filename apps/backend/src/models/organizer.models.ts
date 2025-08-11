@@ -1,4 +1,4 @@
-import { type Season, type Organizer } from "@eggosystem/types";
+import { type Season, type Organizer, SeasonPlatform } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const getOrganizerByFaceitIdAndGameAppId = async (
@@ -24,10 +24,11 @@ export const getOrganizerFaceitActiveSeasonForApp = async (
     JOIN OrganizerGames og ON g.id = og.game_id
     JOIN Organizers o ON og.organizer_id = o.id
     JOIN Seasons s ON o.id = s.organizer_id
-    WHERE o.faceit_id = ? AND g.app_id = ? AND s.end_date IS NULL`;
+    WHERE o.faceit_id = ? AND g.app_id = ? AND s.end_date IS NULL AND s.platform = ?`;
   const [season] = await runQuery<Array<Season | undefined>>(query, [
     faceitOrganizerId,
-    appId
+    appId,
+    SeasonPlatform.FACEIT
   ]);
   return season;
 };
