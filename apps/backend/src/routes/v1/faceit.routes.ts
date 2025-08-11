@@ -45,7 +45,11 @@ import {
   validateMatchmakingDetailsDemoReady,
   validateChampionshipDetailsDemoReady,
   type ChampionshipDetailsDemoReady,
-  MatchStatus
+  MatchStatus,
+  validateChampionshipCreatedWebhook,
+  validateChampionshipFinishedWebhook,
+  validateChampionshipStartedWebhook,
+  validateChampionshipCancelledWebhook
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -58,6 +62,7 @@ import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.model
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
 import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
+import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
 
 const router = Router();
 
@@ -400,15 +405,72 @@ router.post(
       return;
     }
 
-    const championshipDetails = await getFaceITChampionshipDetails(
-      webhookData.payload.id
-    );
+    if (webhookData.event === "championship_created") {
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateChampionshipCreatedWebhook,
+        getFaceITChampionshipDetails<unknown>,
+        (data) => data,
+        webhookData.event
+      );
+      await addChampionshipToDatabase(validatedWebhook);
+      res.status(200).send("Webhook received");
+      return;
+    }
+
+    if (webhookData.event === "championship_started") {
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateChampionshipStartedWebhook,
+        getFaceITChampionshipDetails<unknown>,
+        (data) => data,
+        webhookData.event
+      );
+      res.status(200).send("Webhook received");
+      return;
+    }
+
+    if (webhookData.event === "championship_finished") {
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateChampionshipFinishedWebhook,
+        getFaceITChampionshipDetails<unknown>,
+        (data) => data,
+        webhookData.event
+      );
+      res.status(200).send("Webhook received");
+      return;
+    }
+
+    if (webhookData.event === "championship_cancelled") {
+      const {
+        webhookData: validatedWebhook,
+        matchDetails: validatedMatchDetails
+      } = await processWebhookWithDetails(
+        webhookData,
+        validateChampionshipCancelledWebhook,
+        getFaceITChampionshipDetails<unknown>,
+        (data) => data,
+        webhookData.event
+      );
+      res.status(200).send("Webhook received");
+      return;
+    }
 
     await saveWebhookData(
       webhookData.payload.id,
       webhookData.event,
       webhookData,
-      championshipDetails
+      null
     );
 
     res.status(200).send("Webhook received");

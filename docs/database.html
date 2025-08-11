@@ -96,6 +96,8 @@ erDiagram
 "SeasonTeamPlayers" }o--|| "SteamPlayers" : ""
 "SeasonTeamRegistrationPlayers" }o--|| "SeasonTeamRegistrations" : ""
 "SeasonTeamRegistrationPlayers" }o--|| "SteamPlayers" : ""
+"SeasonTeamRegistrations" }o--o| "Accounts" : ""
+"SeasonTeamRegistrations" }o--o| "Accounts" : ""
 "SeasonTeamRegistrations" }o--|| "Seasons" : ""
 "SeasonTeamRegistrations" }o--|| "Teams" : ""
 "SteamPlayerKanaElo" |o--|| "SteamPlayers" : ""
@@ -222,9 +224,6 @@ erDiagram
   bigint_20_ killer_steam_id FK
   bigint_20_ victim_steam_id FK
 }
-"PublicEmailDomains" {
-  int_10__unsigned id PK
-}
 "Reservations" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
@@ -282,6 +281,8 @@ erDiagram
 "SeasonTeamRegistrations" {
   int_10__unsigned season_id PK
   int_10__unsigned team_id PK
+  int_10__unsigned approved_by FK
+  int_10__unsigned manual_validity_check_by FK
 }
 "Stages" {
   int_10__unsigned id PK

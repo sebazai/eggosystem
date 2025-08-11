@@ -11,8 +11,6 @@ export interface ChampionshipCreatedWebhook {
   retry_count: number;
   version: number;
   payload: ChampionshipCreatedPayload;
-  created_at: string;
-  updated_at: string;
 }
 
 interface ChampionshipCreatedPayload {
@@ -38,13 +36,13 @@ interface ChampionshipCreatedPayload {
   check_in_start: string;
   subscription_end: string;
   subscription_start: string;
-  assets: {
+  assets?: {
     avatar: string;
     background: string;
     cover: string;
     featured: string;
   };
-  roles: Array<{
+  roles?: Array<{
     id: string;
     name: string;
     permissions: string[];
@@ -96,15 +94,13 @@ const ChampionshipCreatedPayloadSchema = z.object({
   check_in_start: z.string(),
   subscription_end: z.string(),
   subscription_start: z.string(),
-  assets: ChampionshipAssetsSchema,
-  roles: z.array(ChampionshipRoleSchema)
+  assets: ChampionshipAssetsSchema.optional(),
+  roles: z.array(ChampionshipRoleSchema).optional()
 });
 
 export const ChampionshipCreatedWebhookSchema = BaseWebhookSchema.extend({
   event: z.literal("championship_created"),
-  payload: ChampionshipCreatedPayloadSchema,
-  created_at: z.string(),
-  updated_at: z.string()
+  payload: ChampionshipCreatedPayloadSchema
 });
 
 // Runtime validation function
