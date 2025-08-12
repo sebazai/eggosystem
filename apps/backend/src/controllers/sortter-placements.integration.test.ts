@@ -1,6 +1,6 @@
 import request from "supertest";
-import { app } from "../../app";
-import { runQuery } from "../../db/mysqlRunQuery";
+import { app } from "../app";
+import { runQuery } from "../db/mysqlRunQuery";
 import { generateTestJWT } from "../utils/auth-test-utils";
 
 // Mock JWT configuration for tests
@@ -347,16 +347,16 @@ describe("Enhanced Finalize Team Placements", () => {
     expect(seasonLeagueTeams.length).toBe(2);
 
     // Verify SeasonTeamPlayers were created with correct data
-    const seasonTeamPlayers = await runQuery<
-      Array<{
-        season_id: number;
-        team_id: number;
-        steam_id: string;
-        role: string;
-        is_captain: number;
-        is_co_captain: number;
-      }>
-    >(
+    type SeasonTeamPlayer = {
+      season_id: number;
+      team_id: number;
+      steam_id: string;
+      role: string;
+      is_captain: number;
+      is_co_captain: number;
+    };
+
+    const seasonTeamPlayers = await runQuery<SeasonTeamPlayer[]>(
       "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? ORDER BY team_id, steam_id",
       [testSeasonId]
     );
@@ -365,17 +365,21 @@ describe("Enhanced Finalize Team Placements", () => {
 
     // Check Team 1 players
     const team1Players = seasonTeamPlayers.filter(
-      (p) => p.team_id === testTeamId1
+      (p: SeasonTeamPlayer) => p.team_id === testTeamId1
     );
     expect(team1Players.length).toBe(2);
 
-    const player1 = team1Players.find((p) => p.steam_id === testSteamId1);
+    const player1 = team1Players.find(
+      (p: SeasonTeamPlayer) => p.steam_id === testSteamId1
+    );
     expect(player1).toBeTruthy();
     expect(player1!.role).toBe("primary");
     expect(player1!.is_captain).toBeFalsy();
     expect(player1!.is_co_captain).toBeFalsy();
 
-    const player2 = team1Players.find((p) => p.steam_id === testSteamId2);
+    const player2 = team1Players.find(
+      (p: SeasonTeamPlayer) => p.steam_id === testSteamId2
+    );
     expect(player2).toBeTruthy();
     expect(player2!.role).toBe("primary");
     expect(player2!.is_captain).toBeFalsy();
@@ -383,17 +387,21 @@ describe("Enhanced Finalize Team Placements", () => {
 
     // Check Team 2 players
     const team2Players = seasonTeamPlayers.filter(
-      (p) => p.team_id === testTeamId2
+      (p: SeasonTeamPlayer) => p.team_id === testTeamId2
     );
     expect(team2Players.length).toBe(2);
 
-    const player3 = team2Players.find((p) => p.steam_id === testSteamId3);
+    const player3 = team2Players.find(
+      (p: SeasonTeamPlayer) => p.steam_id === testSteamId3
+    );
     expect(player3).toBeTruthy();
     expect(player3!.role).toBe("primary");
     expect(player3!.is_captain).toBeFalsy();
     expect(player3!.is_co_captain).toBeFalsy();
 
-    const player4 = team2Players.find((p) => p.steam_id === testSteamId4);
+    const player4 = team2Players.find(
+      (p: SeasonTeamPlayer) => p.steam_id === testSteamId4
+    );
     expect(player4).toBeTruthy();
     expect(player4!.role).toBe("primary");
     expect(player4!.is_captain).toBeFalsy();

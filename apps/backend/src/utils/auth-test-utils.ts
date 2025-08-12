@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { getJWTValues } from "../../configs/jwt-keys";
+import { getJWTValues } from "../configs/jwt-keys";
 
 export function generateTestJWT(): string {
   return generateTestJWTForUser(15004, "66561198999999902", "heppajpg");
