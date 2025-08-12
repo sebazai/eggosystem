@@ -206,6 +206,9 @@ export const ListRegistrationDrafts = () => {
                             >
                               Steam
                             </a>
+                            <span className="font-mono text-xs select-all break-all">
+                              {player.steamId}
+                            </span>
                           </span>
                         </div>
                       ))}
