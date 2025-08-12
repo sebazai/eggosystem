@@ -133,6 +133,11 @@ const getDefaultMenuItems = (
         url: "/matches",
         hasFilters: true
       },
+      // {
+      //   title: "Calendar",
+      //   url: "/calendar",
+      //   hasFilters: false
+      // },
       {
         title: "Leaderboards",
         url: "/leaderboards",
