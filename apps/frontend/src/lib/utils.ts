@@ -76,6 +76,9 @@ export const expressFetcher = async <T>(
 
   // Prepend NEXT_PUBLIC_BASE_PATH if defined
   const basePath = envConfig.API_URL;
+  const isInternalApi =
+    typeof url === "string" && basePath && url.startsWith("/api/");
+
   if (typeof url === "string" && basePath) {
     url = `${basePath}${url}`;
   }
@@ -85,9 +88,29 @@ export const expressFetcher = async <T>(
 
     if (!res.ok) {
       let errorMessage = `API request failed with status ${res.status}`;
+
       try {
         const resultJson = await res.json();
-        errorMessage = resultJson.message || errorMessage;
+
+        // For internal APIs, try to use RFC 7807 error format
+        if (isInternalApi && resultJson) {
+          // Check if it's an RFC 7807 error response
+          if (resultJson.detail && resultJson.status && resultJson.type) {
+            errorMessage = resultJson.detail;
+          }
+          // Check for legacy error format
+          else if (resultJson.error) {
+            errorMessage = resultJson.error;
+          }
+          // Check for generic message field
+          else if (resultJson.message) {
+            errorMessage = resultJson.message;
+          }
+        }
+        // For external APIs, just try to get a message
+        else if (resultJson?.message) {
+          errorMessage = resultJson.message;
+        }
       } catch (parseError) {
         // If parsing fails, use the default error message
         console.error("Failed to parse error response:", parseError);

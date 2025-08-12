@@ -247,14 +247,21 @@ describe("setPlayerKanaEloController", () => {
     // Arrange
     mockSetPlayerKanaElo.mockRejectedValueOnce(new Error("Database error"));
     const mockNext = jest.fn();
-    // Act & Assert
-    await expect(
-      setPlayerKanaEloController(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext
-      )
-    ).rejects.toThrow("Database error");
+
+    // Act
+    await setPlayerKanaEloController(
+      mockRequest as Request,
+      mockResponse as Response,
+      mockNext
+    );
+
+    // Assert
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Failed to update Kana ELO",
+        status: 500
+      })
+    );
   });
 });
 

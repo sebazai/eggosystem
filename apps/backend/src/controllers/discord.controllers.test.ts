@@ -49,13 +49,19 @@ describe("Discord Controllers", () => {
     it("should return 401 when user is not authenticated", async () => {
       mockRequest.auth = undefined;
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(401);
-      expect(mockJson).toHaveBeenCalledWith({ error: "Unauthorized" });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Unauthorized",
+          status: 401
+        })
+      );
     });
 
     it("should return user Discord status with Discord username", async () => {
@@ -85,9 +91,11 @@ describe("Discord Controllers", () => {
       mockGetAccountById.mockResolvedValue(mockAccount);
       mockRunQuery.mockResolvedValue(mockRegistrations);
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockJson).toHaveBeenCalledWith({
@@ -124,9 +132,11 @@ describe("Discord Controllers", () => {
       mockGetAccountById.mockResolvedValue(mockAccount);
       mockRunQuery.mockResolvedValue(mockRegistrations);
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockJson).toHaveBeenCalledWith({
@@ -155,9 +165,11 @@ describe("Discord Controllers", () => {
       mockGetAccountById.mockResolvedValue(mockAccount);
       mockRunQuery.mockResolvedValue([]);
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockJson).toHaveBeenCalledWith({
@@ -186,33 +198,45 @@ describe("Discord Controllers", () => {
       mockGetAccountById.mockResolvedValue(mockAccount);
       mockRunQuery.mockRejectedValue(new Error("Database error"));
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Error getting user Discord status:",
         expect.any(Error)
       );
-      expect(mockStatus).toHaveBeenCalledWith(500);
-      expect(mockJson).toHaveBeenCalledWith({ error: "Internal server error" });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Internal server error",
+          status: 500
+        })
+      );
     });
 
     it("should handle account retrieval errors gracefully", async () => {
       mockGetAccountById.mockRejectedValue(new Error("Account not found"));
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         "Error getting user Discord status:",
         expect.any(Error)
       );
-      expect(mockStatus).toHaveBeenCalledWith(500);
-      expect(mockJson).toHaveBeenCalledWith({ error: "Internal server error" });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Internal server error",
+          status: 500
+        })
+      );
     });
 
     it("should query Kanahautomo registrations with correct steam ID", async () => {
@@ -234,9 +258,11 @@ describe("Discord Controllers", () => {
       mockGetAccountById.mockResolvedValue(mockAccount);
       mockRunQuery.mockResolvedValue([]);
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -277,9 +303,11 @@ describe("Discord Controllers", () => {
       mockGetAccountById.mockResolvedValue(mockAccount);
       mockRunQuery.mockResolvedValue(mockRegistrations);
 
+      const mockNext = jest.fn();
       await getUserDiscordStatus(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockJson).toHaveBeenCalledWith({

@@ -212,10 +212,14 @@ export const TabPlayers = ({
         } else {
           if (playerData.reason instanceof ApiError) {
             if (playerData.reason.status === 404) {
+              // Player not found - this is a new player that needs to sign up
               setLoadingStates((prev) => ({ ...prev, [index]: false }));
               setNewPlayers((prev) => [...prev, steamId]);
             } else {
-              errorReasonsMessage.push(playerData.reason.message);
+              // Use the detailed error message from RFC 7807 or fallback to generic message
+              const errorMessage =
+                playerData.reason.detail || playerData.reason.message;
+              errorReasonsMessage.push(errorMessage);
             }
           } else {
             errorReasonsMessage.push("Unknown error fetching player data");
@@ -235,7 +239,9 @@ export const TabPlayers = ({
         setPromiseErrors((prev) => ({
           ...prev,
           [steam_id]:
-            error instanceof ApiError ? [error.message] : ["Unknown error"]
+            error instanceof ApiError
+              ? [error.detail || error.message]
+              : ["Unknown error"]
         }));
         setLoadingStates((prev) => ({ ...prev, [index]: false }));
       }
@@ -337,12 +343,12 @@ export const TabPlayers = ({
     if (watchPlayers.length >= 5) {
       const validRanks = watchPlayers
         .map((player) => player.rank)
-        .filter((rank) => typeof rank === "number")
+        .filter((rank): rank is number => typeof rank === "number")
         .filter((rank) => rank > 0);
 
       const validExternalRanks = watchPlayers
         .map((player) => player.externalRank)
-        .filter((rank) => typeof rank === "number")
+        .filter((rank): rank is number => typeof rank === "number")
         .filter((rank) => rank > 0);
 
       const sum = validRanks.reduce((acc, rank) => acc + rank, 0);

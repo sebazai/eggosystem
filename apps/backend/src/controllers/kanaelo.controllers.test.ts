@@ -36,18 +36,22 @@ describe("Kanaelo Controllers", () => {
       mockRequest.params = { season_id: "1" };
       mockKanaeloModels.getAllRegisteredPlayersForSeason.mockResolvedValue([]);
 
+      const mockNext = jest.fn();
       await populateKanaeloQueueController(
         mockRequest as RequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(
         mockKanaeloModels.getAllRegisteredPlayersForSeason
       ).toHaveBeenCalledWith(1);
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: "No players found for season 1"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "No players found for season 1",
+          status: 404
+        })
+      );
       expect(
         mockRabbitmqServices.bulkPublishKanaeloCalculationRequests
       ).not.toHaveBeenCalled();
@@ -69,9 +73,11 @@ describe("Kanaelo Controllers", () => {
         mockResult
       );
 
+      const mockNext = jest.fn();
       await populateKanaeloQueueController(
         mockRequest as RequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(
@@ -93,10 +99,12 @@ describe("Kanaelo Controllers", () => {
     it("should throw BadRequestError for invalid season ID", async () => {
       mockRequest.params = { season_id: "invalid" };
 
+      const mockNext = jest.fn();
       await expect(
         populateKanaeloQueueController(
           mockRequest as RequestWithParams<{ season_id: string }>,
-          mockResponse as Response
+          mockResponse as Response,
+          mockNext
         )
       ).rejects.toThrow(BadRequestError);
 
@@ -128,9 +136,11 @@ describe("Kanaelo Controllers", () => {
         mockResult
       );
 
+      const mockNext = jest.fn();
       await populateKanaeloQueueController(
         mockRequest as RequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(

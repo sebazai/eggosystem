@@ -3,7 +3,7 @@ import {
   postTeamManualPlayerApprovalSchema,
   seasonPlayerRankFormSchema
 } from "@eggosystem/types";
-import { type Request, type Response } from "express";
+import { type NextFunction, type Request, type Response } from "express";
 import {
   addManuallyApprovedPartialSignupForSeason,
   addSeasonRankForPlayer,
@@ -13,7 +13,7 @@ import {
   manualValidityCheck
 } from "../../models/dashboard/registration.models";
 import { getActiveSignupOrActiveSeasonForAppId } from "../../models/season.models";
-import { BadRequestError } from "../../utils/errors";
+import { BadRequestError, NotFoundError } from "../../utils/errors";
 import { type RequestWithParams } from "@eggosystem/types";
 import { redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";
@@ -81,7 +81,8 @@ export const getRegisteredTeamsController = async (
 
 export const getPlayerFullNameController = async (
   req: RequestWithParams<{ steamId: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const steamId = req.params.steamId;
   const playerFullName = await getPlayerFullName(steamId);

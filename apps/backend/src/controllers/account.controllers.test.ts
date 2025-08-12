@@ -81,17 +81,33 @@ describe("updateProfile Controller", () => {
 
   it("should return 401 if user is not authenticated", async () => {
     req.auth = undefined;
-    await updateAccountProfileController(req as Request, res as Response);
-    expect(statusMock).toHaveBeenCalledWith(401);
-    expect(jsonMock).toHaveBeenCalledWith({ message: "Unauthorized" });
+    const mockNext = jest.fn();
+    await updateAccountProfileController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unauthorized",
+        status: 401
+      })
+    );
   });
 
   it("should return 400 if validation fails", async () => {
     req.body = { invalidField: "invalid" };
-    await updateAccountProfileController(req as Request, res as Response);
-    expect(statusMock).toHaveBeenCalledWith(400);
-    expect(jsonMock).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Invalid profile data" })
+    const mockNext = jest.fn();
+    await updateAccountProfileController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Invalid profile data",
+        status: 400
+      })
     );
   });
 
@@ -111,7 +127,13 @@ describe("updateProfile Controller", () => {
     const updatedPolicySpy = jest
       .spyOn(accountModels, "updateUserPolicyAcceptance")
       .mockResolvedValue(undefined);
-    await updateAccountProfileController(req as Request, res as Response);
+
+    const mockNext = jest.fn();
+    await updateAccountProfileController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
     expect(connection.beginTransaction).toHaveBeenCalled();
     expect(updatedAccountSpy).toHaveBeenCalledWith(
       1,
@@ -142,7 +164,13 @@ describe("updateProfile Controller", () => {
     const insertSpy = jest
       .spyOn(accountModels, "insertUserPolicyAcceptance")
       .mockResolvedValue();
-    await updateAccountProfileController(req as Request, res as Response);
+
+    const mockNext = jest.fn();
+    await updateAccountProfileController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
     expect(insertSpy).toHaveBeenCalledWith(1, expect.any(Object), connection);
     expect(connection.commit).toHaveBeenCalled();
     expect(statusMock).toHaveBeenCalledWith(200);
@@ -155,8 +183,9 @@ describe("updateProfile Controller", () => {
     jest
       .spyOn(accountModels, "updateAccountData")
       .mockRejectedValue(new Error("DB Error"));
+    const mockNext = jest.fn();
     await expect(
-      updateAccountProfileController(req as Request, res as Response)
+      updateAccountProfileController(req as Request, res as Response, mockNext)
     ).rejects.toThrow("DB Error");
     expect(connection.rollback).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();

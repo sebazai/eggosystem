@@ -52,9 +52,11 @@ describe("Leaderboards Controllers", () => {
       (getLeaderboard as jest.Mock).mockResolvedValueOnce(mockLeaderboardData);
 
       // Act
+      const mockNext = jest.fn();
       await getSingleLeaderboardController(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Assert
@@ -70,16 +72,20 @@ describe("Leaderboards Controllers", () => {
       mockRequest.query = {};
 
       // Act
+      const mockNext = jest.fn();
       await getSingleLeaderboardController(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Assert
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: "Leaderboards type is required"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Leaderboards type is required",
+          status: 400
+        })
+      );
     });
   });
 });

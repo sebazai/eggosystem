@@ -208,10 +208,15 @@ describe("AuthControllers", () => {
     it("should return 401 if no refresh token is provided", async () => {
       req.cookies.refresh_token = undefined;
 
-      await authControllers.refreshToken(req, res);
+      const mockNext = jest.fn();
+      await authControllers.refreshToken(req, res, mockNext);
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.json).toHaveBeenCalledWith({ message: "No refresh token" });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "No refresh token",
+          status: 401
+        })
+      );
     });
 
     it("should return 403 if refresh token is invalid", async () => {
@@ -219,7 +224,8 @@ describe("AuthControllers", () => {
         throw new Error("Invalid token");
       });
 
-      await authControllers.refreshToken(req, res);
+      const mockNext = jest.fn();
+      await authControllers.refreshToken(req, res, mockNext);
 
       expect(res.clearCookie).toHaveBeenCalledWith("access_token", {
         path: "/"
@@ -230,10 +236,12 @@ describe("AuthControllers", () => {
       expect(res.clearCookie).toHaveBeenCalledWith("refresh_token", {
         path: "/api/v1/auth/logout"
       });
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Error while updating refresh token"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Error while updating refresh token",
+          status: 403
+        })
+      );
     });
 
     it("should return 403 if stored token does not match", async () => {
@@ -241,15 +249,18 @@ describe("AuthControllers", () => {
         return { steamId: "12345", jti: "123124" };
       });
 
-      await authControllers.refreshToken(req, res);
+      const mockNext = jest.fn();
+      await authControllers.refreshToken(req, res, mockNext);
 
       expect(res.clearCookie).toHaveBeenCalledWith("access_token", {
         path: "/"
       });
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({
-        message: "Invalid refresh token"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid refresh token",
+          status: 403
+        })
+      );
     });
 
     it("should refresh token and set new cookies if valid token is provided", async () => {
@@ -261,7 +272,8 @@ describe("AuthControllers", () => {
         .spyOn(authServices, "getPermissionsForAccountId")
         .mockResolvedValue([]);
 
-      await authControllers.refreshToken(req, res);
+      const mockNext = jest.fn();
+      await authControllers.refreshToken(req, res, mockNext);
 
       expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
@@ -329,7 +341,9 @@ describe("AuthControllers", () => {
       (jest.spyOn(jwt, "verify") as jest.Mock).mockImplementation(() => {
         return { steamId: "12345", jti: "123123" };
       });
-      await authControllers.refreshToken(req, res);
+
+      const mockNext = jest.fn();
+      await authControllers.refreshToken(req, res, mockNext);
       expect(authServices.generateTokens).toHaveBeenCalledWith({
         steamId: "12345",
         jti: "123123",

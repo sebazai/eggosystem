@@ -135,9 +135,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     });
     mockKanahautomoModels.insertKanahautomoGameTypes.mockResolvedValue();
 
+    const mockNext = jest.fn();
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     expect(connection.beginTransaction).toHaveBeenCalled();
@@ -170,9 +172,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     mockRequest = { auth: mockAuth, body: { organizationId: 1 } };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {
@@ -220,9 +224,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {
@@ -272,9 +278,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     });
     mockKanahautomoModels.insertKanahautomoGameTypes.mockResolvedValue();
 
+    const mockNext = jest.fn();
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     expect(mockOrganizationModels.insertOrganization).toHaveBeenCalledWith(
@@ -317,10 +325,12 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       new Error("Game types insertion failed")
     );
 
+    const mockNext = jest.fn();
     await expect(
       registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       )
     ).rejects.toThrow("Game types insertion failed");
 
@@ -330,12 +340,18 @@ describe("Kanahautomo Controller Transactional Logic", () => {
 
   it("returns 401 if no auth", async () => {
     mockRequest = { body: { organizationId: 1, gameTypes: mockGameTypes } };
+    const mockNext = jest.fn();
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
-    expect(mockStatus).toHaveBeenCalledWith(401);
-    expect(mockJson).toHaveBeenCalledWith({ error: "Unauthorized" });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Unauthorized",
+        status: 401
+      })
+    );
   });
 
   it("throws if missing org/new_org", async () => {
@@ -350,9 +366,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     mockRequest = { auth: mockAuth, body: { gameTypes: mockGameTypes } };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {
@@ -394,9 +412,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {
@@ -445,14 +465,18 @@ describe("Kanahautomo Controller Transactional Logic", () => {
       new Error("Duplicate entry")
     );
 
+    const mockNext = jest.fn();
     await registerForKanahautomoWithOrganization(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
-    expect(mockStatus).toHaveBeenCalledWith(400);
-    expect(mockJson).toHaveBeenCalledWith({
-      error: expect.stringContaining("already registered")
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("already registered"),
+        status: 400
+      })
+    );
     expect(connection.beginTransaction).toHaveBeenCalled();
   });
 
@@ -475,10 +499,12 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
     mockOrganizationModels.getOrganizationById.mockResolvedValue([]);
 
+    const mockNext = jest.fn();
     await expect(
       registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       )
     ).rejects.toThrow("Organization not found");
     expect(connection.rollback).toHaveBeenCalled();
@@ -506,10 +532,12 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     mockKanahautomoModels.registerPlayerForKanahautomo.mockRejectedValue(
       new Error("fail")
     );
+    const mockNext = jest.fn();
     await expect(
       registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       )
     ).rejects.toThrow("fail");
     expect(connection.rollback).toHaveBeenCalled();
@@ -536,9 +564,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {
@@ -575,9 +605,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {
@@ -620,9 +652,11 @@ describe("Kanahautomo Controller Transactional Logic", () => {
     };
 
     try {
+      const mockNext = jest.fn();
       await registerForKanahautomoWithOrganization(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
       fail("Expected ZodError to be thrown");
     } catch (error) {

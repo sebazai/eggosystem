@@ -25,7 +25,12 @@ import {
   getPlayerSkillDiagram,
   getMultiplePlayersSkillDiagrams
 } from "../models/player-skills.models";
-import { BadRequestError, NotFoundError } from "../utils/errors";
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError
+} from "../utils/errors";
+import { logger } from "../utils/app-logger";
 
 export const getPlayerBySteamIdController = async (
   req: RequestWithParams<{ steam_id: string }>,
@@ -351,23 +356,30 @@ export const setPlayerKanaEloController = async (
     return next(new BadRequestError("kana_elo must be between 0 and 400"));
   }
 
-  // Update the kana_elo using the model function
-  const success = await setPlayerKanaElo(
-    steam_id,
-    kana_elo,
-    calculus,
-    season_id
-  );
+  try {
+    // Update the kana_elo using the model function
+    const success = await setPlayerKanaElo(
+      steam_id,
+      kana_elo,
+      calculus,
+      season_id
+    );
 
-  if (!success) {
-    return next(new NotFoundError("Player not found for the specified season"));
+    if (!success) {
+      return next(
+        new NotFoundError("Player not found for the specified season")
+      );
+    }
+
+    res.status(200).json({
+      message: "Kana ELO updated successfully",
+      steam_id,
+      kana_elo,
+      calculus,
+      season_id
+    });
+  } catch (error) {
+    logger.error("Update Kana ELO error", error);
+    return next(new InternalServerError("Failed to update Kana ELO"));
   }
-
-  res.status(200).json({
-    message: "Kana ELO updated successfully",
-    steam_id,
-    kana_elo,
-    calculus,
-    season_id
-  });
 };

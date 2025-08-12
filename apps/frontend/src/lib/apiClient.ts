@@ -12,13 +12,93 @@ const addRefreshSubscriber = (callback: () => void) => {
   refreshSubscribers.push(callback);
 };
 
-export class ApiError extends Error {
-  status?: number;
+/**
+ * RFC 7807 Problem Details for HTTP APIs
+ * @see https://datatracker.ietf.org/doc/html/rfc7807
+ */
+interface RFC7807Error {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance: string;
+  issues?: Array<{
+    path: (string | number)[];
+    message: string;
+  }>;
+}
 
-  constructor(message: string, status?: number) {
+/**
+ * Runtime type guard to check if an error response is RFC 7807 compliant
+ */
+function isRFC7807Error(error: unknown): error is RFC7807Error {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (error as any).type === "string" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (error as any).title === "string" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (error as any).status === "number" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (error as any).detail === "string" &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (error as any).instance === "string"
+  );
+}
+
+/**
+ * Legacy error format for backward compatibility
+ */
+interface LegacyError {
+  error: string;
+}
+
+function isLegacyError(error: unknown): error is LegacyError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    typeof (error as any).error === "string"
+  );
+}
+
+export class ApiError extends Error {
+  status: number;
+  type?: string;
+  title?: string;
+  detail?: string;
+  instance?: string;
+  issues?: Array<{
+    path: (string | number)[];
+    message: string;
+  }>;
+
+  constructor(
+    message: string,
+    status: number,
+    rfc7807Data?: Partial<RFC7807Error>
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+
+    if (rfc7807Data) {
+      this.type = rfc7807Data.type;
+      this.title = rfc7807Data.title;
+      this.detail = rfc7807Data.detail;
+      this.instance = rfc7807Data.instance;
+      this.issues = rfc7807Data.issues;
+    }
+  }
+
+  static fromRFC7807(errorData: RFC7807Error): ApiError {
+    return new ApiError(errorData.detail, errorData.status, errorData);
+  }
+
+  static fromLegacy(errorData: LegacyError, status: number): ApiError {
+    return new ApiError(errorData.error, status);
   }
 }
 
@@ -79,12 +159,19 @@ export async function clientApiFetch<T>(
 
     if (response.status === 401) {
       const errData = await response.json().catch(() => ({}));
-      const message =
-        typeof errData?.error === "string" ? errData.error : "Unauthorized";
+
+      let apiError: ApiError;
+      if (isRFC7807Error(errData)) {
+        apiError = ApiError.fromRFC7807(errData);
+      } else if (isLegacyError(errData)) {
+        apiError = ApiError.fromLegacy(errData, 401);
+      } else {
+        apiError = new ApiError("Unauthorized", 401);
+      }
 
       if (retryAttempted) {
         // Prevent infinite retry loop, but include error message if available
-        throw new ApiError(message, 401);
+        throw apiError;
       }
 
       return new Promise((resolve, reject) => {
@@ -106,13 +193,23 @@ export async function clientApiFetch<T>(
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
       console.error("API Client Error", errData);
-      if (typeof errData?.error === "string" || typeof errData === "string") {
-        throw new ApiError(
-          errData?.error ?? errData ?? "Unknown API error",
-          response.status
-        );
+
+      if (isRFC7807Error(errData)) {
+        throw ApiError.fromRFC7807(errData);
       }
-      throw new Error(`Request failed with status ${response.status}`);
+
+      if (isLegacyError(errData)) {
+        throw ApiError.fromLegacy(errData, response.status);
+      }
+
+      if (typeof errData === "string") {
+        throw new ApiError(errData, response.status);
+      }
+
+      throw new ApiError(
+        `Request failed with status ${response.status}`,
+        response.status
+      );
     }
 
     return response.json().catch(() => ({}));

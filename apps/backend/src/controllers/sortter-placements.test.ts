@@ -89,12 +89,14 @@ describe("sortter-placements.controllers", () => {
       mockedIsPlacementsFinalized.mockResolvedValue(false);
       mockedSavePreliminaryPlacements.mockResolvedValue(true);
 
+      const mockNext = jest.fn();
       await savePreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndBody<
           { season_id: string },
           { placements: TestPlacement[] }
         >,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Verify the service was called
@@ -115,24 +117,26 @@ describe("sortter-placements.controllers", () => {
       // Mock the services
       mockedIsPlacementsFinalized.mockResolvedValue(true);
 
+      const mockNext = jest.fn();
       await savePreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndBody<
           { season_id: string },
           { placements: TestPlacement[] }
         >,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Verify the service was called
       expect(mockedIsPlacementsFinalized).toHaveBeenCalledWith(14);
 
       // Verify the response
-      expect(mockResponse.status).toHaveBeenCalledWith(403);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: {
-          message: "Placements have been finalized and cannot be modified"
-        }
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Placements have been finalized and cannot be modified",
+          status: 403
+        })
+      );
     });
 
     it("should return 400 if placements is not an array", async () => {
@@ -140,19 +144,23 @@ describe("sortter-placements.controllers", () => {
         placements: "not an array" as unknown as TestPlacement[]
       };
 
+      const mockNext = jest.fn();
       await savePreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndBody<
           { season_id: string },
           { placements: TestPlacement[] }
         >,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Verify the response
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: { message: "Placements must be an array" }
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Placements must be an array",
+          status: 400
+        })
+      );
     });
 
     it("should handle service errors", async () => {
@@ -162,19 +170,23 @@ describe("sortter-placements.controllers", () => {
         new Error("Database error")
       );
 
+      const mockNext = jest.fn();
       await savePreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndBody<
           { season_id: string },
           { placements: TestPlacement[] }
         >,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Verify the response
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: { message: "Failed to save preliminary placements" }
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Failed to save preliminary placements",
+          status: 500
+        })
+      );
     });
   });
 
@@ -213,6 +225,7 @@ describe("sortter-placements.controllers", () => {
         .spyOn(sortterPlacementsServices, "getPreliminaryPlacements")
         .mockResolvedValue(mockPlacements);
 
+      const mockNext = jest.fn();
       await getPreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndQuery<
           {
@@ -220,7 +233,8 @@ describe("sortter-placements.controllers", () => {
           },
           { teams_per_division: string }
         >,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Verify the response
@@ -259,6 +273,7 @@ describe("sortter-placements.controllers", () => {
         ]);
       mockedGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
 
+      const mockNext = jest.fn();
       await getPreliminaryPlacementsController(
         mockRequest as RequestWithParamsAndQuery<
           {
@@ -266,7 +281,8 @@ describe("sortter-placements.controllers", () => {
           },
           { teams_per_division: string }
         >,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Verify the response

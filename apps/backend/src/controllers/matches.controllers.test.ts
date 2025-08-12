@@ -229,9 +229,11 @@ describe("Matches Controllers", () => {
         mockMatchesWithTeamData
       );
 
+      const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
         mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(123);
@@ -246,13 +248,19 @@ describe("Matches Controllers", () => {
     it("should handle invalid season ID", async () => {
       mockRequest.params = { season_id: "invalid" };
 
+      const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
         mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({ error: "Season not found" });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle negative season ID", async () => {
@@ -261,9 +269,11 @@ describe("Matches Controllers", () => {
         mockMatchesWithTeamData
       );
 
+      const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
         mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(-123);
@@ -281,15 +291,21 @@ describe("Matches Controllers", () => {
         mockMatchesWithTeamData
       );
 
+      const mockNext = jest.fn();
       await getMatchesBySeasonIdController(
         mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       // Check if the controller returned early (which it might for zero season IDs)
       if (mockGetMatchesWithTeamDataBySeasonId.mock.calls.length === 0) {
-        expect(mockStatus).toHaveBeenCalledWith(404);
-        expect(mockJson).toHaveBeenCalledWith({ error: "Season not found" });
+        expect(mockNext).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: "Season not found",
+            status: 404
+          })
+        );
       } else {
         expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(0);
         expect(mockJson).toHaveBeenCalledWith({
@@ -307,9 +323,11 @@ describe("Matches Controllers", () => {
       mockRequest.params = { match_id: "123" };
       mockGetMatch.mockResolvedValue([mockMatch]);
 
+      const mockNext = jest.fn();
       await getMatchController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatch).toHaveBeenCalledWith(123);
@@ -320,23 +338,29 @@ describe("Matches Controllers", () => {
       mockRequest.params = { match_id: "123" };
       mockGetMatch.mockResolvedValue([]);
 
+      const mockNext = jest.fn();
       await getMatchController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Match not found"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Match not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle invalid match ID", async () => {
       mockRequest.params = { match_id: "invalid" };
 
+      const mockNext = jest.fn();
       await getMatchController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatch).toHaveBeenCalledWith(NaN);
@@ -345,9 +369,11 @@ describe("Matches Controllers", () => {
     it("should handle negative match ID", async () => {
       mockRequest.params = { match_id: "-123" };
 
+      const mockNext = jest.fn();
       await getMatchController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatch).toHaveBeenCalledWith(-123);
@@ -356,9 +382,11 @@ describe("Matches Controllers", () => {
     it("should handle zero match ID", async () => {
       mockRequest.params = { match_id: "0" };
 
+      const mockNext = jest.fn();
       await getMatchController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatch).toHaveBeenCalledWith(0);
@@ -372,9 +400,11 @@ describe("Matches Controllers", () => {
         mockMatchWithBreadcrumb
       ]);
 
+      const mockNext = jest.fn();
       await getMatchBreadcrumbController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatchWithBreadcrumbInfo).toHaveBeenCalledWith(123);
@@ -385,23 +415,29 @@ describe("Matches Controllers", () => {
       mockRequest.params = { match_id: "123" };
       mockGetMatchWithBreadcrumbInfo.mockResolvedValue([]);
 
+      const mockNext = jest.fn();
       await getMatchBreadcrumbController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({
-        error: "Match data not found"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Match data not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle invalid match breadcrumb ID", async () => {
       mockRequest.params = { match_id: "invalid" };
 
+      const mockNext = jest.fn();
       await getMatchBreadcrumbController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatchWithBreadcrumbInfo).toHaveBeenCalledWith(NaN);

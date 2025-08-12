@@ -146,9 +146,11 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { id: "123" };
       mockGetSeasonById.mockResolvedValue(mockSeason);
 
+      const mockNext = jest.fn();
       await getSeasonByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonById).toHaveBeenCalledWith(123);
@@ -240,9 +242,11 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { id: "123" };
       mockGetSeasonDetailsById.mockResolvedValue(mockSeasonDetails);
 
+      const mockNext = jest.fn();
       await getSeasonDetailsByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonDetailsById).toHaveBeenCalledWith(123);
@@ -314,9 +318,11 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { app_id: "730" };
       mockRedisClient.get.mockResolvedValue("456");
 
+      const mockNext = jest.fn();
       await getActiveSeasonForApp(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockRedisClient.get).toHaveBeenCalledWith("730-active-season");
@@ -332,9 +338,11 @@ describe("Seasons Controllers", () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(mockActiveSeason);
 
+      const mockNext = jest.fn();
       await getActiveSeasonForApp(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(730);
