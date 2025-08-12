@@ -97,8 +97,13 @@ describe("CORS Middleware", () => {
 
     // CORS rejection returns 500 when the origin is not allowed (handled by error handler)
     expect(maliciousResponse.status).toBe(500);
-    expect(maliciousResponse.body).toHaveProperty("error");
-    expect(maliciousResponse.body.error).toContain("Not allowed by CORS");
+    expect(maliciousResponse.body).toEqual({
+      type: "about:blank",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Not allowed by CORS",
+      instance: "/test"
+    });
 
     // Test with allowed origin (should work)
     const allowedResponse = await request(testApp)
@@ -128,8 +133,13 @@ describe("CORS Middleware", () => {
 
       // CORS rejection returns 500 when the origin is not allowed (handled by error handler)
       expect(response.status).toBe(500);
-      expect(response.body).toHaveProperty("error");
-      expect(response.body.error).toContain("Not allowed by CORS");
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "Not allowed by CORS",
+        instance: "/test"
+      });
     }
   });
 
@@ -194,8 +204,13 @@ describe("CORS Middleware", () => {
       .set("Origin", "https://malicious-site.com");
 
     expect(maliciousActualResponse.status).toBe(500);
-    expect(maliciousActualResponse.body).toHaveProperty("error");
-    expect(maliciousActualResponse.body.error).toContain("Not allowed by CORS");
+    expect(maliciousActualResponse.body).toEqual({
+      type: "about:blank",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Not allowed by CORS",
+      instance: "/protected/test"
+    });
   });
 
   it("should log warning when rejecting malicious origins", async () => {
@@ -231,8 +246,13 @@ describe("CORS Middleware", () => {
 
     // Verify the request was rejected
     expect(maliciousResponse.status).toBe(500);
-    expect(maliciousResponse.body).toHaveProperty("error");
-    expect(maliciousResponse.body.error).toContain("Not allowed by CORS");
+    expect(maliciousResponse.body).toEqual({
+      type: "about:blank",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Not allowed by CORS",
+      instance: "/test"
+    });
 
     // Restore the original logger
     jest.restoreAllMocks();

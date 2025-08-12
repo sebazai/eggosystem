@@ -87,8 +87,7 @@ export const getPlayerFullNameController = async (
   const playerFullName = await getPlayerFullName(steamId);
 
   if (!playerFullName) {
-    res.status(404).json({ message: "Player not found" });
-    return;
+    return next(new NotFoundError("Player not found"));
   }
 
   res.status(200).json(playerFullName);

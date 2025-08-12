@@ -1,4 +1,4 @@
-import { type Response } from "express";
+import { type Response, type NextFunction } from "express";
 import type {
   RequestWithParams,
   RequestWithParamsAndBody,
@@ -17,7 +17,12 @@ import {
   hasSeasonLeagueTeamsForSeason
 } from "../services/sortter-placements.services";
 import { runQuery } from "../db/mysqlRunQuery";
-import { BadRequestError } from "../utils/errors";
+import {
+  BadRequestError,
+  NotFoundError,
+  ForbiddenError,
+  InternalServerError
+} from "../utils/errors";
 
 /**
  * Controller to get preliminary team placements
@@ -27,7 +32,8 @@ export const getPreliminaryPlacementsController = async (
     { season_id: string },
     { teams_per_division: string }
   >,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
   const teamsPerDivisionQueryNumber = Number(req.query.teams_per_division);
@@ -127,10 +133,7 @@ export const getPreliminaryPlacementsController = async (
     logger.warn(
       `No teams found for season ${seasonId} - cannot generate initial placements`
     );
-    res.status(404).json({
-      error: { message: "No teams found for this season" }
-    });
-    return;
+    return next(new NotFoundError("No teams found for this season"));
   }
 
   const initialPlacements = generateInitialPlacements(
@@ -156,7 +159,8 @@ export const savePreliminaryPlacementsController = async (
     { season_id: string },
     { placements: TeamPlacement[] }
   >,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     // Add debugging information
@@ -177,22 +181,18 @@ export const savePreliminaryPlacementsController = async (
 
     if (!Array.isArray(placements)) {
       logger.warn("Invalid placements data - not an array", { placements });
-      res.status(400).json({
-        error: { message: "Placements must be an array" }
-      });
-      return;
+      return next(new BadRequestError("Placements must be an array"));
     }
 
     // Check if placements have been finalized
     const isFinalized = await isPlacementsFinalized(seasonId);
     if (isFinalized) {
       logger.warn("Attempted to save finalized placements", { seasonId });
-      res.status(403).json({
-        error: {
-          message: "Placements have been finalized and cannot be modified"
-        }
-      });
-      return;
+      return next(
+        new ForbiddenError(
+          "Placements have been finalized and cannot be modified"
+        )
+      );
     }
 
     logger.info("Saving preliminary placements", {
@@ -210,9 +210,9 @@ export const savePreliminaryPlacementsController = async (
     });
   } catch (error) {
     logger.error("Error saving preliminary placements", error);
-    res.status(500).json({
-      error: { message: "Failed to save preliminary placements" }
-    });
+    return next(
+      new InternalServerError("Failed to save preliminary placements")
+    );
   }
 };
 
@@ -237,7 +237,8 @@ const getDivisionName = (division: number): string => {
  */
 export const finalizeTeamPlacementsController = async (
   req: RequestWithParams<{ season_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const seasonId = Number(req.params.season_id);
@@ -245,20 +246,16 @@ export const finalizeTeamPlacementsController = async (
     // Check if placements have already been finalized
     const isFinalized = await isPlacementsFinalized(seasonId);
     if (isFinalized) {
-      res.status(403).json({
-        error: { message: "Placements have already been finalized" }
-      });
-      return;
+      return next(new ForbiddenError("Placements have already been finalized"));
     }
 
     // Get placements from Redis
     const placements = await getPreliminaryPlacements(seasonId);
 
     if (!placements || placements.length === 0) {
-      res.status(404).json({
-        error: { message: "No preliminary placements found for this season" }
-      });
-      return;
+      return next(
+        new NotFoundError("No preliminary placements found for this season")
+      );
     }
 
     // Check if any teams already exist in SeasonLeagueTeams - if so, we don't allow updates
@@ -274,14 +271,11 @@ export const finalizeTeamPlacementsController = async (
 
     if (existingTeamsResult.length > 0) {
       const existingTeamIds = existingTeamsResult.map((team) => team.team_id);
-      res.status(403).json({
-        error: {
-          message:
-            "Cannot finalize placements: Some teams already exist in SeasonLeagueTeams",
-          details: `Teams with IDs ${existingTeamIds.join(", ")} already exist in SeasonLeagueTeams for this season. Finalization is only allowed for new insertions.`
-        }
-      });
-      return;
+      return next(
+        new ForbiddenError(
+          `Cannot finalize placements: Some teams already exist in SeasonLeagueTeams. Teams with IDs ${existingTeamIds.join(", ")} already exist in SeasonLeagueTeams for this season. Finalization is only allowed for new insertions.`
+        )
+      );
     }
 
     // First, ensure all required SeasonLeagues entries exist
@@ -443,9 +437,7 @@ export const finalizeTeamPlacementsController = async (
     });
   } catch (error) {
     logger.error("Error finalizing team placements", error);
-    res.status(500).json({
-      error: { message: "Failed to finalize team placements" }
-    });
+    return next(new InternalServerError("Failed to finalize team placements"));
   }
 };
 
@@ -454,7 +446,8 @@ export const finalizeTeamPlacementsController = async (
  */
 export const getPlacementsFinalizationStatusController = async (
   req: RequestWithParams<{ season_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const seasonId = Number(req.params.season_id);
@@ -463,8 +456,6 @@ export const getPlacementsFinalizationStatusController = async (
     res.json({ isFinalized });
   } catch (error) {
     logger.error("Error checking finalization status", error);
-    res.status(500).json({
-      error: { message: "Failed to check finalization status" }
-    });
+    return next(new InternalServerError("Failed to check finalization status"));
   }
 };

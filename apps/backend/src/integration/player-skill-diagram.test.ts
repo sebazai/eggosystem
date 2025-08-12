@@ -335,7 +335,13 @@ describe("Player Skill Diagram API", () => {
 
       // Assertions
       expect(response.status).toBe(404);
-      expect(response.body).toEqual({ message: "Player skill data not found" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Not Found",
+        status: 404,
+        detail: "Player skill data not found",
+        instance: `/api/v1/filters/players/${mockSteamId}/skill-diagram`
+      });
       expect(getPlayerSkillDiagram).toHaveBeenCalledWith(
         mockSteamId,
         expect.any(Object)

@@ -3,6 +3,7 @@ import express from "express";
 import { verifyEmailController } from "./account.controllers";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
+import { expressErrorHandler } from "../middlewares/express-error-handler";
 
 // Mock dependencies
 jest.mock("../utils/redisClient");
@@ -16,6 +17,7 @@ describe("POST /verify-email", () => {
   const app = express();
   app.use(express.json());
   app.post("/verify-email", verifyEmailController);
+  app.use(expressErrorHandler);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -90,7 +92,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({});
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "No token provided" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "No token provided",
+        instance: "/verify-email"
+      });
 
       // Should not call Redis or database
       expect(mockRedisClient.get).not.toHaveBeenCalled();
@@ -103,7 +111,13 @@ describe("POST /verify-email", () => {
         .send({ token: "" });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "No token provided" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "No token provided",
+        instance: "/verify-email"
+      });
     });
 
     it("should return 400 when token is null", async () => {
@@ -112,7 +126,13 @@ describe("POST /verify-email", () => {
         .send({ token: null });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "No token provided" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "No token provided",
+        instance: "/verify-email"
+      });
     });
   });
 
@@ -130,7 +150,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "Invalid or expired token." });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid or expired token.",
+        instance: "/verify-email"
+      });
 
       // Should not update database or delete from Redis
       expect(mockRunQuery).not.toHaveBeenCalled();
@@ -150,7 +176,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "Invalid or expired token." });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid or expired token.",
+        instance: "/verify-email"
+      });
 
       // Verify the database query includes expiration check
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -213,7 +245,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "Invalid or expired token." });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid or expired token.",
+        instance: "/verify-email"
+      });
     });
 
     it("should return 400 when token exists in database but account not found", async () => {
@@ -225,7 +263,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "Invalid or expired token." });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid or expired token.",
+        instance: "/verify-email"
+      });
     });
   });
 
@@ -239,7 +283,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(500);
-      expect(response.body).toEqual({ message: "Internal server error" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "Internal server error",
+        instance: "/verify-email"
+      });
     });
   });
 
@@ -251,7 +301,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(500);
-      expect(response.body).toEqual({ message: "Internal server error" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "Internal server error",
+        instance: "/verify-email"
+      });
     });
 
     it("should handle Redis data with missing fields", async () => {
@@ -263,7 +319,13 @@ describe("POST /verify-email", () => {
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(500);
-      expect(response.body).toEqual({ message: "Internal server error" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "Internal server error",
+        instance: "/verify-email"
+      });
     });
 
     it("should handle very long token strings", async () => {
@@ -276,7 +338,13 @@ describe("POST /verify-email", () => {
         .send({ token: longToken });
 
       expect(response.status).toBe(400);
-      expect(response.body).toEqual({ message: "Invalid or expired token." });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid or expired token.",
+        instance: "/verify-email"
+      });
     });
   });
 

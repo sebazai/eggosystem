@@ -1,17 +1,18 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { logger } from "../utils/app-logger";
 import { getAccountById } from "../models/account.models";
 import { runQuery } from "../db/mysqlRunQuery";
+import { UnauthorizedError, InternalServerError } from "../utils/errors";
 
 // Get user's Discord registration status
 export const getUserDiscordStatus = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     if (!req.auth) {
-      res.status(401).json({ error: "Unauthorized" });
-      return;
+      return next(new UnauthorizedError("Unauthorized"));
     }
 
     const accountId = req.auth.account_id;
@@ -48,6 +49,6 @@ export const getUserDiscordStatus = async (
     });
   } catch (error) {
     logger.error("Error getting user Discord status:", error);
-    res.status(500).json({ error: "Internal server error" });
+    return next(new InternalServerError("Internal server error"));
   }
 };

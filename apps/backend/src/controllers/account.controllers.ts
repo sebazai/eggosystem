@@ -6,8 +6,14 @@ import {
   accountSchema
 } from "@eggosystem/types";
 import * as uuid from "uuid";
-import type { Response } from "express";
+import type { Response, NextFunction } from "express";
 import z from "zod";
+import {
+  UnauthorizedError,
+  NotFoundError,
+  BadRequestError,
+  InternalServerError
+} from "../utils/errors";
 import { getAccountById, updateAccount } from "../models/account.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -17,13 +23,13 @@ import { logger } from "../utils/app-logger";
 
 export const sendVerificationEmails = async (
   req: RequestWithParams<{ id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const accountId = Number(req.params.id);
   const user = req.auth;
   if (!user || user.account_id !== accountId) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return next(new UnauthorizedError("Unauthorized"));
   }
 
   const account = await getAccountById(accountId);
@@ -55,13 +61,13 @@ export const sendVerificationEmails = async (
 
 export const emailsVerifiedController = async (
   req: RequestWithParams<{ id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const accountId = Number(req.params.id);
   const user = req.auth;
   if (!user || user.account_id !== accountId) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return next(new UnauthorizedError("Unauthorized"));
   }
 
   const [data] = await runQuery<
@@ -75,20 +81,19 @@ export const emailsVerifiedController = async (
     [accountId]
   );
   if (!data) {
-    res.status(404).json({ message: "User not found" });
-    return;
+    return next(new NotFoundError("User not found"));
   }
   res.json(data);
 };
 
 export const updateAccountProfileController = async (
   req: RequestWithBody<AccountUpdateValues>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const user = req.auth;
   if (!user) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
+    return next(new UnauthorizedError("Unauthorized"));
   }
   const accountId = user.account_id;
   const formData = req.body;
@@ -102,11 +107,7 @@ export const updateAccountProfileController = async (
     accountSchema.parse(formData);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({
-        message: "Invalid profile data",
-        errors: error.flatten()
-      });
-      return;
+      return next(new BadRequestError("Invalid profile data"));
     }
     throw error;
   }
@@ -123,12 +124,12 @@ interface RedisWorkEmailVerificationToken {
 
 export const verifyEmailController = async (
   req: RequestWithBody<{ token: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const { token } = req.body;
   if (!token) {
-    res.status(400).json({ message: "No token provided" });
-    return;
+    return next(new BadRequestError("No token provided"));
   }
 
   const redisWorkEmailKey = `verify:work-email:${token}`;
@@ -144,13 +145,11 @@ export const verifyEmailController = async (
       // Validate Redis data structure
       if (!parsedData.accountId || !parsedData.expirationTime) {
         logger.error("Invalid Redis data structure", { parsedData });
-        res.status(500).json({ message: "Internal server error" });
-        return;
+        return next(new InternalServerError("Internal server error"));
       }
 
       if (new Date() > new Date(parsedData.expirationTime)) {
-        res.status(400).json({ message: "Invalid or expired token." });
-        return;
+        return next(new BadRequestError("Invalid or expired token."));
       }
 
       await runQuery(
@@ -190,9 +189,9 @@ export const verifyEmailController = async (
       return;
     }
 
-    res.status(400).json({ message: "Invalid or expired token." });
+    return next(new BadRequestError("Invalid or expired token."));
   } catch (error) {
     logger.error("Error verifying email", error);
-    res.status(500).json({ message: "Internal server error" });
+    return next(new InternalServerError("Internal server error"));
   }
 };

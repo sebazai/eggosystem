@@ -91,12 +91,15 @@ describe("Sortter Controllers", () => {
           mockTeamValues
         );
 
+        const mockNext = jest.fn();
+
         await getTeamValueByIdController(
           mockRequest as RequestWithParams<{
             season_id: string;
             team_id: string;
           }>,
-          mockResponse as Response
+          mockResponse as Response,
+          mockNext
         );
 
         expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
@@ -124,21 +127,26 @@ describe("Sortter Controllers", () => {
           mockTeamValues
         );
 
+        const mockNext = jest.fn();
+
         await getTeamValueByIdController(
           mockRequest as RequestWithParams<{
             season_id: string;
             team_id: string;
           }>,
-          mockResponse as Response
+          mockResponse as Response,
+          mockNext
         );
 
         expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
           1
         );
-        expect(mockResponse.status).toHaveBeenCalledWith(404);
-        expect(mockResponse.json).toHaveBeenCalledWith({
-          message: "Team with ID 2 not found for season 1"
-        });
+        expect(mockNext).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: "Team with ID 2 not found for season 1",
+            status: 404
+          })
+        );
       });
     });
 
@@ -165,9 +173,12 @@ describe("Sortter Controllers", () => {
           mockPlayerValues
         );
 
+        const mockNext = jest.fn();
+
         await getTeamPlayerValuesController(
           mockRequest as RequestWithParams<{ season: string; team: string }>,
-          mockResponse as Response
+          mockResponse as Response,
+          mockNext
         );
 
         expect(
@@ -181,18 +192,23 @@ describe("Sortter Controllers", () => {
         mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
         mockSortterModels.getTeamPlayerValuesForSortter.mockResolvedValue([]);
 
+        const mockNext = jest.fn();
+
         await getTeamPlayerValuesController(
           mockRequest as RequestWithParams<{ season: string; team: string }>,
-          mockResponse as Response
+          mockResponse as Response,
+          mockNext
         );
 
         expect(
           mockSortterModels.getTeamPlayerValuesForSortter
         ).toHaveBeenCalledWith(14, 999);
-        expect(mockResponse.status).toHaveBeenCalledWith(404);
-        expect(mockResponse.json).toHaveBeenCalledWith({
-          message: "No players found for team 999 in season 14"
-        });
+        expect(mockNext).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: "No players found for team 999 in season 14",
+            status: 404
+          })
+        );
       });
     });
   });
@@ -291,8 +307,13 @@ describe("Sortter Controllers", () => {
 
         // Verify response indicates not found
         expect(response.status).toBe(404);
-        expect(response.body).toHaveProperty("message");
-        expect(response.body.message).toContain("Team with ID 9999 not found");
+        expect(response.body).toEqual({
+          type: "about:blank",
+          title: "Not Found",
+          status: 404,
+          detail: "Team with ID 9999 not found for season 14",
+          instance: "/api/v1/sortter/season/14/team/9999"
+        });
       });
     });
   });

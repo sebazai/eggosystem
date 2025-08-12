@@ -38,10 +38,13 @@ describe("setPlayerKanaEloController", () => {
     // Arrange
     mockSetPlayerKanaElo.mockResolvedValueOnce(true);
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
@@ -68,17 +71,22 @@ describe("setPlayerKanaEloController", () => {
       season_id: 16
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "kana_elo is required"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "kana_elo is required",
+        status: 400
+      })
+    );
   });
 
   it("should return 400 when calculus is missing", async () => {
@@ -88,17 +96,22 @@ describe("setPlayerKanaEloController", () => {
       season_id: 16
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "calculus is required"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "calculus is required",
+        status: 400
+      })
+    );
   });
 
   it("should return 400 when season_id is missing", async () => {
@@ -108,17 +121,22 @@ describe("setPlayerKanaEloController", () => {
       calculus: "test-calculus"
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "season_id is required"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "season_id is required",
+        status: 400
+      })
+    );
   });
 
   it("should return 400 when kana_elo is not a number", async () => {
@@ -129,17 +147,22 @@ describe("setPlayerKanaEloController", () => {
       season_id: 16
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "kana_elo must be a number"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "kana_elo must be a number",
+        status: 400
+      })
+    );
   });
 
   it("should return 400 when season_id is not a number", async () => {
@@ -150,17 +173,22 @@ describe("setPlayerKanaEloController", () => {
       season_id: "not-a-number"
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "season_id must be a number"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "season_id must be a number",
+        status: 400
+      })
+    );
   });
 
   it("should return 400 when kana_elo is negative", async () => {
@@ -171,17 +199,22 @@ describe("setPlayerKanaEloController", () => {
       season_id: 16
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "kana_elo must be between 0 and 400"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "kana_elo must be between 0 and 400",
+        status: 400
+      })
+    );
   });
 
   it("should return 400 when kana_elo is greater than 400", async () => {
@@ -192,28 +225,34 @@ describe("setPlayerKanaEloController", () => {
       season_id: 16
     };
 
+    const mockNext = jest.fn();
+
     // Act
     await setPlayerKanaEloController(
       mockRequest as Request,
-      mockResponse as Response
+      mockResponse as Response,
+      mockNext
     );
 
     // Assert
-    expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      error: "kana_elo must be between 0 and 400"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "kana_elo must be between 0 and 400",
+        status: 400
+      })
+    );
   });
 
   it("should handle database errors gracefully", async () => {
     // Arrange
     mockSetPlayerKanaElo.mockRejectedValueOnce(new Error("Database error"));
-
+    const mockNext = jest.fn();
     // Act & Assert
     await expect(
       setPlayerKanaEloController(
         mockRequest as Request,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       )
     ).rejects.toThrow("Database error");
   });
@@ -255,7 +294,12 @@ describe("getPlayerOldKanaEloController", () => {
       .mockResolvedValue(expectedOldKanaElo);
 
     // Act
-    await getPlayerOldKanaEloController(req as Request, res as Response);
+    const mockNext = jest.fn();
+    await getPlayerOldKanaEloController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
     // Assert
     expect(mockedPlayerModels.getPlayerOldKanaElo).toHaveBeenCalledWith(
@@ -269,17 +313,24 @@ describe("getPlayerOldKanaEloController", () => {
     // Arrange
     mockedPlayerModels.getPlayerOldKanaElo = jest.fn().mockResolvedValue(null);
 
+    const mockNext = jest.fn();
     // Act
-    await getPlayerOldKanaEloController(req as Request, res as Response);
+    await getPlayerOldKanaEloController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
     // Assert
     expect(mockedPlayerModels.getPlayerOldKanaElo).toHaveBeenCalledWith(
       "76561198012345678"
     );
-    expect(mockStatus).toHaveBeenCalledWith(404);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "No previous season data found"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "No previous season data found",
+        status: 404
+      })
+    );
   });
 
   it("should return 0 kana_elo when player exists but has no kana_elo data", async () => {
@@ -294,8 +345,13 @@ describe("getPlayerOldKanaEloController", () => {
       .fn()
       .mockResolvedValue(expectedResult);
 
+    const mockNext = jest.fn();
     // Act
-    await getPlayerOldKanaEloController(req as Request, res as Response);
+    await getPlayerOldKanaEloController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
     // Assert
     expect(mockedPlayerModels.getPlayerOldKanaElo).toHaveBeenCalledWith(
@@ -311,15 +367,22 @@ describe("getPlayerOldKanaEloController", () => {
     mockedPlayerModels.getPlayerOldKanaElo = jest.fn().mockResolvedValue(null);
 
     // Act
-    await getPlayerOldKanaEloController(req as Request, res as Response);
+    const mockNext = jest.fn();
+    await getPlayerOldKanaEloController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
 
     // Assert
     expect(mockedPlayerModels.getPlayerOldKanaElo).toHaveBeenCalledWith(
       undefined
     );
-    expect(mockStatus).toHaveBeenCalledWith(404);
-    expect(mockJson).toHaveBeenCalledWith({
-      message: "No previous season data found"
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "No previous season data found",
+        status: 404
+      })
+    );
   });
 });

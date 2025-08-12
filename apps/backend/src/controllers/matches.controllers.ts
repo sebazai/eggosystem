@@ -1,4 +1,4 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import {
   getMatches,
   getMatchPlayerStats,
@@ -32,7 +32,8 @@ export const getMatchesController = async (req: Request, res: Response) => {
 // Used externally by grmrpr
 export const getMatchesBySeasonIdController = async (
   req: RequestWithParams<{ season_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const seasonId =
     req.params.season_id === "active"
@@ -41,11 +42,9 @@ export const getMatchesBySeasonIdController = async (
 
   if (!seasonId) {
     if (req.params.season_id === "active") {
-      res.status(404).json({ error: "No current active season found" });
-      return;
+      return next(new NotFoundError("No current active season found"));
     }
-    res.status(404).json({ error: "Season not found" });
-    return;
+    return next(new NotFoundError("Season not found"));
   }
 
   const matches = await getMatchesWithTeamDataBySeasonId(seasonId);
@@ -62,14 +61,14 @@ export const getMatchesBySeasonIdController = async (
 
 export const getMatchController = async (
   req: RequestWithParams<{ match_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const matchId = parseInt(req.params.match_id, 10);
   const [match] = await getMatch(matchId);
 
   if (!match) {
-    res.status(404).json({ error: "Match not found" });
-    return;
+    return next(new NotFoundError("Match not found"));
   }
 
   res.json(match);
@@ -77,13 +76,13 @@ export const getMatchController = async (
 
 export const getMatchBreadcrumbController = async (
   req: RequestWithParams<{ match_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const matchId = parseInt(req.params.match_id, 10);
   const [match] = await getMatchWithBreadcrumbInfo(matchId);
   if (!match) {
-    res.status(404).json({ error: "Match data not found" });
-    return;
+    return next(new NotFoundError("Match data not found"));
   }
   res.json(match);
 };

@@ -1,4 +1,5 @@
 import { type RequestHandler } from "express";
+import { BadRequestError } from "../utils/errors";
 
 /**
  * Middleware to validate that req.params (all or selected) are valid integers.
@@ -13,8 +14,7 @@ export function validateNumericParams(keys?: string[]): RequestHandler {
       const parsed = parseInt(value, 10);
 
       if (isNaN(parsed)) {
-        res.status(400).json({ error: `Invalid numeric param: ${key}` });
-        return;
+        return next(new BadRequestError(`Invalid numeric param: ${key}`));
       }
     }
 

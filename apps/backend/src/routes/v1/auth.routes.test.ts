@@ -6,6 +6,8 @@ import * as authServices from "../../services/auth.services";
 import * as authModels from "../../models/auth.models";
 import * as accountModels from "../../models/account.models";
 import jwt from "jsonwebtoken";
+import { UnauthorizedError } from "../../utils/errors";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 jest.mock("jsonwebtoken", () => ({
   sign: jest.fn((payload, secret, _options) => {
@@ -29,8 +31,7 @@ jest.mock("express-jwt", () => ({
         const authHeader = req.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
-          res.status(401).json({ message: "Unauthorized" });
-          return;
+          return next(new UnauthorizedError("Unauthorized"));
         }
 
         const token = authHeader.split(" ")[1];
@@ -47,7 +48,7 @@ jest.mock("express-jwt", () => ({
           };
           next();
         } else {
-          res.status(401).json({ message: "Unauthorized" });
+          return next(new UnauthorizedError("Unauthorized"));
         }
       }
   )
@@ -57,6 +58,7 @@ describe("GET /me", () => {
   const app = express();
   app.use(express.json());
   app.use(authRouter);
+  app.use(expressErrorHandler);
 
   beforeEach(() => {
     process.env.PRIVACY_POLICY_VERSION = "1";
@@ -118,14 +120,26 @@ describe("GET /me", () => {
       .set("Authorization", "Bearer invalid_token");
 
     expect(response.status).toBe(401);
-    expect(response.body).toEqual({ message: "Unauthorized" });
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Unauthorized",
+      status: 401,
+      detail: "Unauthorized",
+      instance: "/me"
+    });
   });
 
   it("should return 401 Unauthorized when no token is provided", async () => {
     const response = await request(app).get("/me");
 
     expect(response.status).toBe(401);
-    expect(response.body).toEqual({ message: "Unauthorized" });
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Unauthorized",
+      status: 401,
+      detail: "Unauthorized",
+      instance: "/me"
+    });
   });
 });
 

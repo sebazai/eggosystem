@@ -159,48 +159,79 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { id: "123" };
       mockGetSeasonById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({
-        message: "Season not found"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle invalid season ID", async () => {
       mockRequest.params = { id: "invalid" };
+      mockGetSeasonById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonById).toHaveBeenCalledWith(NaN);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle negative season ID", async () => {
       mockRequest.params = { id: "-123" };
+      mockGetSeasonById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonById).toHaveBeenCalledWith(-123);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle zero season ID", async () => {
       mockRequest.params = { id: "0" };
+      mockGetSeasonById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonById).toHaveBeenCalledWith(0);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
   });
 
@@ -222,37 +253,59 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { id: "123" };
       mockGetSeasonDetailsById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonDetailsByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({
-        message: "Season not found"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle invalid season details ID", async () => {
       mockRequest.params = { id: "invalid" };
+      mockGetSeasonDetailsById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonDetailsByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonDetailsById).toHaveBeenCalledWith(NaN);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
 
     it("should handle negative season details ID", async () => {
       mockRequest.params = { id: "-123" };
+      mockGetSeasonDetailsById.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getSeasonDetailsByIdController(
         mockRequest as TestRequestWithParams<{ id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetSeasonDetailsById).toHaveBeenCalledWith(-123);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Season not found",
+          status: 404
+        })
+      );
     });
   });
 
@@ -303,26 +356,39 @@ describe("Seasons Controllers", () => {
       mockRedisClient.get.mockResolvedValue(null);
       mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getActiveSeasonForApp(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({
-        message: "No active season found for app"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "No active season found for app",
+          status: 404
+        })
+      );
     });
 
     it("should handle invalid app ID", async () => {
       mockRequest.params = { app_id: "invalid" };
+      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getActiveSeasonForApp(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(NaN);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "No active season found for app",
+          status: 404
+        })
+      );
     });
   });
 
@@ -331,26 +397,39 @@ describe("Seasons Controllers", () => {
       mockRequest.params = { app_id: "730" };
       mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getActiveSignupSeasonForApp(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockStatus).toHaveBeenCalledWith(404);
-      expect(mockJson).toHaveBeenCalledWith({
-        message: "No active signup season found for app"
-      });
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "No active signup season found for app",
+          status: 404
+        })
+      );
     });
 
     it("should handle invalid app ID", async () => {
       mockRequest.params = { app_id: "invalid" };
+      mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
 
+      const mockNext = jest.fn();
       await getActiveSignupSeasonForApp(
         mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetActiveSignupSeasonForAppId).toHaveBeenCalledWith(NaN);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "No active signup season found for app",
+          status: 404
+        })
+      );
     });
   });
 

@@ -14,6 +14,12 @@ import {
 import { expireIn30Days, redisClient } from "../../utils/redisClient";
 import { isRegistrationDraftRaw } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
+import {
+  BadRequestError,
+  InternalServerError,
+  UnauthorizedError,
+  NotFoundError
+} from "../../utils/errors";
 
 const router = Router();
 router.get(
@@ -44,12 +50,11 @@ router.post(
   "/season/:season_id/draft",
   validateNumericParams(),
   authenticateJWT,
-  async (req, res) => {
+  async (req, res, next) => {
     const steamId = req.auth?.provider_id;
     const redisKey = `signup-${steamId}`;
     if (!isRegistrationDraftRaw(req.body)) {
-      res.status(400).json({ error: "Invalid draft structure" });
-      return;
+      return next(new BadRequestError("Invalid draft structure"));
     }
     await redisClient.set(
       redisKey,
@@ -64,20 +69,19 @@ router.get(
   "/season/:season_id/draft",
   validateNumericParams(),
   authenticateJWT,
-  async (req, res) => {
+  async (req, res, next) => {
     const steamId = req.auth?.provider_id;
     const redisKey = `signup-${steamId}`;
     const data = await redisClient.get(redisKey);
     if (data) {
       const parsed = JSON.parse(data);
       if (!isRegistrationDraftRaw(parsed)) {
-        res.status(500).json({ error: "Corrupted draft data in Redis" });
-        return;
+        return next(new InternalServerError("Corrupted draft data in Redis"));
       }
       res.json(parsed);
       return;
     }
-    res.sendStatus(404);
+    return next(new NotFoundError("Draft not found"));
   }
 );
 router.put(
@@ -96,12 +100,11 @@ router.get(
   "/season/:season_id/my-registration",
   validateNumericParams(["season_id"]),
   authenticateJWT,
-  async (req, res) => {
+  async (req, res, next) => {
     const seasonId = Number(req.params.season_id);
     const steamId = req.auth?.provider_id;
     if (!steamId) {
-      res.status(401).json({ error: "Not authenticated" });
-      return;
+      return next(new UnauthorizedError("Not authenticated"));
     }
     // Find if this steamId is a captain or co-captain for any team in this season
     const query = `
@@ -119,8 +122,7 @@ router.get(
       steamId
     ]);
     if (result.length === 0) {
-      res.status(404).json({ found: false });
-      return;
+      return next(new NotFoundError("Registration not found"));
     }
     res.json({
       teamId: result[0].team_id

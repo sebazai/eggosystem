@@ -5,6 +5,8 @@ import discordRouter from "./discord.routes";
 import { getUserDiscordStatus } from "../../controllers/discord.controllers";
 import type { Request, Response, NextFunction } from "express";
 import type { UserPayload } from "@eggosystem/types";
+import { UnauthorizedError } from "../../utils/errors";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 // Mock dependencies
 jest.mock("../../middlewares/auth.middleware");
@@ -26,13 +28,14 @@ describe("Discord Routes", () => {
     app = express();
     app.use(express.json());
     app.use("/api/v1/discord", discordRouter);
+    app.use(expressErrorHandler);
   });
 
   describe("GET /api/v1/discord/user/status", () => {
     it("should require authentication", async () => {
       mockAuthenticateJWT.mockImplementation(
-        async (req: Request, res: Response, _next: NextFunction) => {
-          res.status(401).json({ error: "Unauthorized" });
+        async (req: Request, res: Response, next: NextFunction) => {
+          return next(new UnauthorizedError("Unauthorized"));
         }
       );
 
@@ -40,7 +43,13 @@ describe("Discord Routes", () => {
         .get("/api/v1/discord/user/status")
         .expect(401);
 
-      expect(response.body).toEqual({ error: "Unauthorized" });
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Unauthorized",
+        instance: "/api/v1/discord/user/status"
+      });
       expect(mockAuthenticateJWT).toHaveBeenCalled();
     });
 

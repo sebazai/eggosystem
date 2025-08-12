@@ -6,11 +6,13 @@ import request from "supertest";
 import express from "express";
 import playerRouter from "./player.routes";
 import _ from "lodash";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 describe("GET /players", () => {
   const app = express();
   app.use(express.json());
   app.use(playerRouter);
+  app.use(expressErrorHandler);
 
   it("/:steam_id/details", async () => {
     const response = await request(app).get("/76561198049745649/details");
@@ -29,6 +31,12 @@ describe("GET /players", () => {
   it("should return 404 when steam_id not found", async () => {
     const response = await request(app).get(`/123123123/details`);
     expect(response.status).toBe(404);
-    expect(response.body).toStrictEqual({ message: "User not found" });
+    expect(response.body).toStrictEqual({
+      type: "about:blank",
+      title: "Not Found",
+      status: 404,
+      detail: "User not found",
+      instance: "/123123123/details"
+    });
   });
 });

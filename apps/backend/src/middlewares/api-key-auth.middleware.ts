@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { logger } from "../utils/app-logger";
+import { UnauthorizedError } from "../utils/errors";
 
 /**
  * Creates an API key authentication middleware with the provided API key
@@ -12,25 +13,16 @@ export function createApiKeyValidator(expectedApiKey: string | undefined) {
 
     if (!providedKey) {
       logger.warn("API key missing from request");
-      res.status(401).json({
-        error: { message: "API key required" }
-      });
-      return;
+      return next(new UnauthorizedError("API key required"));
     }
 
     if (Array.isArray(providedKey)) {
-      res.status(401).json({
-        error: { message: "API key must be a string" }
-      });
-      return;
+      return next(new UnauthorizedError("API key must be a string"));
     }
 
     if (!expectedApiKey || providedKey !== expectedApiKey) {
       logger.warn(`Invalid API key provided: ${providedKey.slice(0, 5)}...`);
-      res.status(401).json({
-        error: { message: "Invalid API key" }
-      });
-      return;
+      return next(new UnauthorizedError("Invalid API key"));
     }
 
     logger.info("API key validated successfully");

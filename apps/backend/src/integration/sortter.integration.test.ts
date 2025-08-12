@@ -51,7 +51,11 @@ describe("Sortter API Integration Tests", () => {
         .expect(404);
 
       expect(response.body).toEqual({
-        message: "No players found for team 99999 in season 14"
+        type: "about:blank",
+        title: "Not Found",
+        status: 404,
+        detail: "No players found for team 99999 in season 14",
+        instance: "/api/v1/sortter/season/14/team/99999/playervalues"
       });
     });
 
@@ -60,7 +64,13 @@ describe("Sortter API Integration Tests", () => {
         .get("/api/v1/sortter/season/invalid/team/2021/playervalues")
         .expect(400);
 
-      expect(response.body).toHaveProperty("error");
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid numeric param: season",
+        instance: "/api/v1/sortter/season/invalid/team/2021/playervalues"
+      });
     });
   });
 });

@@ -7,6 +7,7 @@ import request from "supertest";
 import express from "express";
 import playerRouter from "./player.routes";
 import { setPlayerKanaElo } from "../../models/player.models";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 // Mock the model module
 jest.mock("../../models/player.models");
@@ -18,6 +19,7 @@ const mockSetPlayerKanaElo = setPlayerKanaElo as jest.MockedFunction<
 const app = express();
 app.use(express.json());
 app.use("/api/v1/players", playerRouter);
+app.use(expressErrorHandler);
 
 describe("Player Routes - set-kanaelo", () => {
   beforeEach(() => {
@@ -43,7 +45,11 @@ describe("Player Routes - set-kanaelo", () => {
 
       expect(response.status).toBe(401);
       expect(response.body).toEqual({
-        error: { message: "API key required" }
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "API key required",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
     });
 
@@ -55,7 +61,11 @@ describe("Player Routes - set-kanaelo", () => {
 
       expect(response.status).toBe(401);
       expect(response.body).toEqual({
-        error: { message: "Invalid API key" }
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Invalid API key",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
     });
 
@@ -97,7 +107,11 @@ describe("Player Routes - set-kanaelo", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: "kana_elo is required"
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "kana_elo is required",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
     });
 
@@ -114,7 +128,11 @@ describe("Player Routes - set-kanaelo", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: "calculus is required"
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "calculus is required",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
     });
 
@@ -131,7 +149,11 @@ describe("Player Routes - set-kanaelo", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: "season_id is required"
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "season_id is required",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
     });
 
@@ -149,7 +171,11 @@ describe("Player Routes - set-kanaelo", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: "kana_elo must be between 0 and 400"
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "kana_elo must be between 0 and 400",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
     });
 

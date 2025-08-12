@@ -161,8 +161,3 @@ it("should return 404 for missing user", async () => {
 - **Try/Catch**: Only for database transactions with cleanup
 - **RFC 7807**: All errors automatically formatted as Problem Details
 - **Testing**: Use `await expect().rejects.toThrow()` for error scenarios
-
-- **Testing**: Use `await expect().rejects.toThrow()` for expected failures
-- **Integration**: Use try/catch for external dependencies and resource cleanup
-- **Architecture**: Implement structured error handling at application boundaries
-- **Never**: Swallow errors silently or use try/catch for simple validation

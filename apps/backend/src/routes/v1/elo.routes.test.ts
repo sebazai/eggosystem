@@ -191,8 +191,13 @@ describe("POST /api/v1/elo/stabilize", () => {
       })
       .expect(400);
 
-    expect(response.body).toHaveProperty("error");
-    expect(response.body.error).toContain("currentValue");
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Bad Request",
+      status: 400,
+      detail: "currentValue is required",
+      instance: "/api/v1/elo/stabilize"
+    });
   });
 
   it("should validate playerId format", async () => {
@@ -206,8 +211,13 @@ describe("POST /api/v1/elo/stabilize", () => {
       })
       .expect(400);
 
-    expect(response.body).toHaveProperty("error");
-    expect(response.body.error).toContain("playerId");
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Bad Request",
+      status: 400,
+      detail: "playerId must be a valid 17-digit Steam ID",
+      instance: "/api/v1/elo/stabilize"
+    });
   });
 
   it("should validate currentValue range", async () => {
@@ -221,10 +231,13 @@ describe("POST /api/v1/elo/stabilize", () => {
       })
       .expect(400);
 
-    expect(response.body).toHaveProperty("error");
-    expect(response.body.error).toContain(
-      "currentValue must be a number between 0 and 400"
-    );
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Bad Request",
+      status: 400,
+      detail: "currentValue must be a number between 0 and 400",
+      instance: "/api/v1/elo/stabilize"
+    });
   });
 
   it("should reject requests with invalid API key", async () => {
@@ -238,7 +251,13 @@ describe("POST /api/v1/elo/stabilize", () => {
       })
       .expect(401);
 
-    expect(response.body.error).toHaveProperty("message", "Invalid API key");
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Unauthorized",
+      status: 401,
+      detail: "Invalid API key",
+      instance: "/api/v1/elo/stabilize"
+    });
   });
 
   it("should reject requests with missing API key", async () => {
@@ -251,6 +270,12 @@ describe("POST /api/v1/elo/stabilize", () => {
       })
       .expect(401);
 
-    expect(response.body.error).toHaveProperty("message", "API key required");
+    expect(response.body).toEqual({
+      type: "about:blank",
+      title: "Unauthorized",
+      status: 401,
+      detail: "API key required",
+      instance: "/api/v1/elo/stabilize"
+    });
   });
 });

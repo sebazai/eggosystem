@@ -6,6 +6,7 @@ import {
   type GameTeamStats,
   type MatchTeamStats
 } from "@eggosystem/types";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 describe("Game Routes", () => {
   let app: express.Application;
@@ -14,6 +15,7 @@ describe("Game Routes", () => {
     app = express();
     app.use(express.json());
     app.use(gameRouter);
+    app.use(expressErrorHandler);
   });
 
   afterEach(async () => {
@@ -144,9 +146,11 @@ describe("Game Routes", () => {
       const response = await request(app).get("/99999/topplayers").expect(404);
 
       expect(response.body).toEqual({
-        error: {
-          message: "Could not find top players for match game id"
-        }
+        type: "about:blank",
+        title: "Not Found",
+        status: 404,
+        detail: "Could not find top players for match game id",
+        instance: "/99999/topplayers"
       });
     });
   });

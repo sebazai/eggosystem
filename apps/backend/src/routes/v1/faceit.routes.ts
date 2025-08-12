@@ -7,7 +7,7 @@ import {
   getFaceITChampionshipDetails,
   convertFaceitGameToAppId
 } from "../../services/faceit.services";
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
 import { saveWebhookData } from "../../models/faceit.models";
 import { logger } from "../../utils/app-logger";
@@ -59,6 +59,7 @@ import {
 } from "../../models/match.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
+import { NotFoundError } from "../../utils/errors";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
 import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
@@ -70,13 +71,14 @@ const router = Router();
 router.get(
   "/teams/:faceit_team_id",
   authenticateJWT,
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const data = await getFaceITTeamDetails(req.params.faceit_team_id);
     if (!data) {
-      res.status(404).json({
-        message: `FaceIT team not found with id ${req.params.faceit_team_id}`
-      });
-      return;
+      return next(
+        new NotFoundError(
+          `FaceIT team not found with id ${req.params.faceit_team_id}`
+        )
+      );
     }
     res.json(data);
   }
@@ -168,7 +170,8 @@ router.post(
   createApiKeyValidator(process.env.FACEIT_WEBHOOK_API_KEY),
   async (
     req: RequestWithBody<FaceITWebhookData>,
-    res: Response
+    res: Response,
+    next: NextFunction
   ): Promise<void> => {
     const webhookData = req.body;
     const appId = convertFaceitGameToAppId(webhookData.app_id);
@@ -181,8 +184,7 @@ router.post(
       logger.error(
         `Organizer not found for faceit_id ${webhookData.payload.organizer_id} and app_id ${appId}`
       );
-      res.status(404).send("Organizer not found");
-      return;
+      return next(new NotFoundError("Organizer not found"));
     }
 
     if (webhookData.event === "match_object_created") {

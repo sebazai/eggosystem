@@ -1,6 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
+import { ForbiddenError, UnauthorizedError } from "../../utils/errors";
 
 import {
   login,
@@ -96,12 +97,11 @@ router.get(
 router.post("/refresh", refreshToken);
 router.get("/logout", logout);
 
-router.get("/me", authenticateJWT, async (req, res) => {
+router.get("/me", authenticateJWT, async (req, res, next) => {
   if (req.auth && req.auth.provider === "steam") {
     const userInDb = await getAuthUserBySteamId(req.auth.provider_id);
     if (!userInDb) {
-      res.status(403).json({ message: "Bad request" });
-      return;
+      return next(new ForbiddenError("Bad request"));
     }
 
     const userPolicy = await getUserProfileAcceptanceForVersion(
@@ -137,14 +137,13 @@ router.get("/me", authenticateJWT, async (req, res) => {
     res.json({ user: userPayload });
     return;
   }
-  res.status(401).json({ message: "Unauthorized" });
+  return next(new UnauthorizedError("Unauthorized"));
 });
 
 // Discord OAuth endpoints
-router.get("/discord/login", authenticateJWT, (req, res) => {
+router.get("/discord/login", authenticateJWT, (req, res, next) => {
   if (!req.auth) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+    return next(new UnauthorizedError("Unauthorized"));
   }
 
   logger.info(

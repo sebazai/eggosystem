@@ -1010,7 +1010,11 @@ describe("FaceIT Routes - Webhook", () => {
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
-        error: "No active organizer season found"
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "No active organizer season found",
+        instance: "/api/v1/faceit/webhook"
       });
 
       // Saved with event and payload
@@ -1120,7 +1124,11 @@ describe("FaceIT Routes - Webhook", () => {
 
         expect(response.status).toBe(401);
         expect(response.body).toEqual({
-          error: { message: "API key required" }
+          type: "about:blank",
+          title: "Unauthorized",
+          status: 401,
+          detail: "API key required",
+          instance: "/api/v1/faceit/webhook"
         });
       });
 
@@ -1132,7 +1140,11 @@ describe("FaceIT Routes - Webhook", () => {
 
         expect(response.status).toBe(401);
         expect(response.body).toEqual({
-          error: { message: "Invalid API key" }
+          type: "about:blank",
+          title: "Unauthorized",
+          status: 401,
+          detail: "Invalid API key",
+          instance: "/api/v1/faceit/webhook"
         });
       });
 
@@ -1166,7 +1178,13 @@ describe("FaceIT Routes - Webhook", () => {
           .send(validWebhookPayloadObjectCreated);
 
         expect(response.status).toBe(404);
-        expect(response.text).toBe("Organizer not found");
+        expect(response.body).toEqual({
+          type: "about:blank",
+          title: "Not Found",
+          status: 404,
+          detail: "Organizer not found",
+          instance: "/api/v1/faceit/webhook"
+        });
       });
 
       it("should proceed when organizer is found", async () => {

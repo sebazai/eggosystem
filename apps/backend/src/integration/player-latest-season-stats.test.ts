@@ -24,7 +24,11 @@ describe("GET /api/v1/players/:steam_id/latest-season-stats", () => {
       .expect(404);
 
     expect(response.body).toEqual({
-      message: "Player stats not found for latest season"
+      type: "about:blank",
+      title: "Not Found",
+      status: 404,
+      detail: "Player stats not found for latest season",
+      instance: "/api/v1/players/12345678901234567/latest-season-stats"
     });
   });
 });

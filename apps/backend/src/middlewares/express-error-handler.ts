@@ -9,6 +9,40 @@ interface UnauthorizedErrorLike {
   message: string;
 }
 
+function statusToTitle(status: number): string {
+  const map: Record<number, string> = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    405: "Method Not Allowed",
+    409: "Conflict",
+    422: "Unprocessable Entity",
+    429: "Too Many Requests",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable"
+  };
+  return map[status] ?? "Error";
+}
+
+function buildProblem(
+  status: number,
+  detail: string,
+  instance: string,
+  titleOverride?: string,
+  extensions?: Record<string, unknown>
+) {
+  return {
+    type: "about:blank",
+    title: titleOverride ?? statusToTitle(status),
+    status,
+    detail,
+    instance,
+    ...(extensions ?? {})
+  };
+}
+
 /**
  * Type guard to check if an error is an UnauthorizedError or similar
  */
@@ -31,25 +65,32 @@ export const expressErrorHandler = (
 ) => {
   // Handle UnauthorizedError (primarily from express-jwt)
   if (isUnauthorizedError(err)) {
-    res.status(err.status || 401).json({ error: err.message });
+    const status = err.status || 401;
+    const problem = buildProblem(status, err.message, req.originalUrl);
+    res.status(status).type("application/problem+json").json(problem);
     return;
   }
 
   if (err instanceof ZodError) {
     logger.error("ZodError", err);
-    try {
-      const errors = JSON.parse(err.message) as Array<{ message: string }>;
-      const errorMessages = errors.map((error) => error.message).join(", ");
-      res.status(400).json({ error: errorMessages });
-    } catch (_parseError) {
-      // Fallback if parsing fails
-      res.status(400).json({ error: err.message });
-    }
+    const status = 400;
+    const detail = err.issues?.map((i) => i.message).join(", ") || err.message;
+    const problem = buildProblem(status, detail, req.originalUrl, undefined, {
+      issues: err.issues ?? []
+    });
+    res.status(status).type("application/problem+json").json(problem);
     return;
   }
 
   if (err instanceof BaseError) {
-    res.status(err.status).json({ error: err.message });
+    const status = err.status;
+    const problem = buildProblem(
+      status,
+      err.message,
+      req.originalUrl,
+      err.title
+    );
+    res.status(status).type("application/problem+json").json(problem);
     return;
   }
 
@@ -58,14 +99,17 @@ export const expressErrorHandler = (
 
     // CORS errors should return 500 as they represent server policy rejection
     if (err.message.includes("Not allowed by CORS")) {
-      res.status(500).json({ error: err.message });
+      const problem = buildProblem(500, err.message, req.originalUrl);
+      res.status(500).type("application/problem+json").json(problem);
       return;
     }
 
-    res.status(400).json({ error: err.message });
+    const problem = buildProblem(400, err.message, req.originalUrl);
+    res.status(400).type("application/problem+json").json(problem);
     return;
   }
 
   logger.error(JSON.stringify(err));
-  res.status(500).json({ error: "Something went wrong" });
+  const problem = buildProblem(500, "Something went wrong", req.originalUrl);
+  res.status(500).type("application/problem+json").json(problem);
 };

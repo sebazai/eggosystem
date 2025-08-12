@@ -1,6 +1,7 @@
-import { type Response } from "express";
+import { type Response, type NextFunction } from "express";
 import { type RequestWithParams } from "@eggosystem/types";
 import { getTeamEnhancedMapStats } from "../models/team-map-stats.models";
+import { NotFoundError } from "../utils/errors";
 
 /**
  * Controller to get enhanced map statistics for a team
@@ -8,7 +9,8 @@ import { getTeamEnhancedMapStats } from "../models/team-map-stats.models";
  */
 export const getTeamEnhancedMapStatsController = async (
   req: RequestWithParams<{ team_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const teamId = Number(req.params.team_id);
 
@@ -17,10 +19,11 @@ export const getTeamEnhancedMapStatsController = async (
   const mapStats = await getTeamEnhancedMapStats(teamId, filters);
 
   if (mapStats.length === 0) {
-    res.status(404).json({
-      message: `No map statistics found for team ${teamId} with the provided filters`
-    });
-    return;
+    return next(
+      new NotFoundError(
+        `No map statistics found for team ${teamId} with the provided filters`
+      )
+    );
   }
 
   res.json(mapStats);

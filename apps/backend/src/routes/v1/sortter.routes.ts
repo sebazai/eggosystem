@@ -24,6 +24,7 @@ import {
   checkJWTPermissions
 } from "../../middlewares/auth.middleware";
 import { logger } from "../../utils/app-logger";
+import { UnauthorizedError } from "../../utils/errors";
 
 const router = Router();
 
@@ -78,12 +79,11 @@ const tryApiKeyThenJWT = (
   // If no valid API key, use JWT authentication
   void authenticateJWT(req, res, (err) => {
     if (err) {
-      return res.status(401).json({
-        error: {
-          message:
-            "Authentication required. Please provide a valid token or API key."
-        }
-      });
+      return next(
+        new UnauthorizedError(
+          "Authentication required. Please provide a valid token or API key."
+        )
+      );
     }
 
     // Check JWT permissions

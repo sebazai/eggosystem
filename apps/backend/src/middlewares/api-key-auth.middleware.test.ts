@@ -65,11 +65,14 @@ describe("API Key Authentication Middleware", () => {
     );
 
     // Assert
-    expect(mockNext).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "API key required" }
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "API key required",
+        status: 401
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should return 401 when invalid API key is provided", () => {
@@ -86,10 +89,13 @@ describe("API Key Authentication Middleware", () => {
     );
 
     // Assert
-    expect(mockNext).not.toHaveBeenCalled();
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Invalid API key" }
-    });
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Invalid API key",
+        status: 401
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 });

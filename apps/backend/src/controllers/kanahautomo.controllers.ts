@@ -1,4 +1,4 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import {
   registerPlayerForKanahautomo,
   insertKanahautomoGameTypes,
@@ -9,7 +9,7 @@ import {
   insertOrganization
 } from "../models/organization.models";
 import { logger } from "../utils/app-logger";
-import { BadRequestError } from "../utils/errors";
+import { BadRequestError, UnauthorizedError } from "../utils/errors";
 import type { KanahautomoRegistrationResponse } from "@eggosystem/types";
 import { kanahautomoSchema } from "@eggosystem/types";
 import { getConnection } from "../db/mysqlConnection";
@@ -58,11 +58,11 @@ const GAME_TYPE_NAMES = {
 
 export const registerForKanahautomoWithOrganization = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   if (!req.auth) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+    return next(new UnauthorizedError("Unauthorized"));
   }
 
   const steamId = req.auth.provider_id;
@@ -193,10 +193,11 @@ export const registerForKanahautomoWithOrganization = async (
 
     // Handle duplicate entry error gracefully
     if (error instanceof Error && error.message.includes("Duplicate entry")) {
-      res.status(400).json({
-        error: "Player is already registered for this organization"
-      });
-      return;
+      return next(
+        new BadRequestError(
+          "Player is already registered for this organization"
+        )
+      );
     }
 
     throw error;

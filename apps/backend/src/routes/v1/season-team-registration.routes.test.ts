@@ -77,9 +77,21 @@ describe("POST /:id/signup", () => {
       const invalidData = { ...validSignupData, players: [] }; // Invalid: not enough players
       const res = await agent.post("/season/123/signup").send(invalidData);
       expect(res.status).toBe(400);
-      expect(JSON.parse(res.text).error).toContain(
-        "Too small: expected array to have >=5 items"
-      );
+      expect(res.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: expect.stringContaining(
+          "Too small: expected array to have >=5 items"
+        ),
+        instance: "/season/123/signup",
+        issues: expect.arrayContaining([
+          expect.objectContaining({
+            code: "too_small",
+            message: "Too small: expected array to have >=5 items"
+          })
+        ])
+      });
     });
   });
 
@@ -92,9 +104,22 @@ describe("POST /:id/signup", () => {
         .send(invalidSignupData);
       expect(res.status).toBe(400);
 
-      expect(res.body.error).toContain(
-        "New organization details are required when 'Add new...' is selected."
-      );
+      expect(res.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: expect.stringContaining(
+          "New organization details are required when 'Add new...' is selected."
+        ),
+        instance: "/season/123/signup",
+        issues: expect.arrayContaining([
+          expect.objectContaining({
+            code: "custom",
+            message:
+              "New organization details are required when 'Add new...' is selected."
+          })
+        ])
+      });
     });
 
     it("should return 400 if teamId -1 and missing newTeam", async () => {
@@ -104,9 +129,22 @@ describe("POST /:id/signup", () => {
         .post("/season/123/signup")
         .send(invalidSignupData);
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain(
-        "New team details are required when 'Add new...' is selected."
-      );
+      expect(res.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: expect.stringContaining(
+          "New team details are required when 'Add new...' is selected."
+        ),
+        instance: "/season/123/signup",
+        issues: expect.arrayContaining([
+          expect.objectContaining({
+            code: "custom",
+            message:
+              "New team details are required when 'Add new...' is selected."
+          })
+        ])
+      });
     });
 
     it("should return 400 if missing discord for captain", async () => {
@@ -116,9 +154,21 @@ describe("POST /:id/signup", () => {
         .post("/season/123/signup")
         .send(invalidSignupData);
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain(
-        "Captains and co-captains must provide a Discord username."
-      );
+      expect(res.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: expect.stringContaining(
+          "Captains and co-captains must provide a Discord username."
+        ),
+        instance: "/season/123/signup",
+        issues: expect.arrayContaining([
+          expect.objectContaining({
+            code: "custom",
+            message: "Captains and co-captains must provide a Discord username."
+          })
+        ])
+      });
     });
 
     it("should return 400 if duplicate steamId", async () => {
@@ -139,9 +189,21 @@ describe("POST /:id/signup", () => {
         .post("/season/123/signup")
         .send(dataWithDuplicateSteamId);
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain(
-        "Each player must have a unique Steam ID."
-      );
+      expect(res.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: expect.stringContaining(
+          "Each player must have a unique Steam ID."
+        ),
+        instance: "/season/123/signup",
+        issues: expect.arrayContaining([
+          expect.objectContaining({
+            code: "custom",
+            message: "Each player must have a unique Steam ID."
+          })
+        ])
+      });
     });
   });
 });

@@ -11,6 +11,7 @@ import {
   auditReadEntity,
   auditUpdateEntity
 } from "../../middlewares/audit-log.middleware";
+import { ForbiddenError, UnauthorizedError } from "../../utils/errors";
 
 const router = Router();
 
@@ -19,12 +20,11 @@ router.post(
   auditUpdateEntity("Accounts"),
   updateAccountProfileController
 );
-router.get("/profile", auditReadEntity("Accounts"), async (req, res) => {
+router.get("/profile", auditReadEntity("Accounts"), async (req, res, next) => {
   if (req.auth && req.auth.provider === "steam") {
     const userInDb = await getAuthUserBySteamId(req.auth.provider_id);
     if (!userInDb) {
-      res.status(403).json({ message: "Bad request" });
-      return;
+      return next(new ForbiddenError("Bad request"));
     }
 
     const userPayload = {
@@ -35,7 +35,7 @@ router.get("/profile", auditReadEntity("Accounts"), async (req, res) => {
     res.json({ details: userPayload });
     return;
   }
-  res.status(401).json({ message: "Unauthorized" });
+  return next(new UnauthorizedError("Unauthorized"));
 });
 
 router.get(
