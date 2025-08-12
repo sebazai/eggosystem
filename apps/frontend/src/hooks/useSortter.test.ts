@@ -309,8 +309,11 @@ describe("useSortter", () => {
 
     await act(async () => {
       // Wait for all promises to resolve
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     });
+
+    // Verify that placements are loaded
+    expect(result.current.placements).toHaveLength(1);
 
     // Update a division
     await act(async () => {
@@ -322,12 +325,12 @@ describe("useSortter", () => {
       await result.current.savePlacements();
     });
 
-    // Verify clientApiFetch was called with the right parameters
+    // Verify clientApiFetch was called with the right parameters for the POST request
     expect(clientApiFetch).toHaveBeenCalledWith(
       "/api/v1/sortter/season/2/placements",
       {
         method: "POST",
-        body: expect.stringContaining("division") // Just check that we're sending a body with division
+        body: expect.stringContaining('"team_id":1') // Check that we're sending placements data
       }
     );
 

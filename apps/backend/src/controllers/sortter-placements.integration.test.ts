@@ -431,8 +431,6 @@ describe("Enhanced Finalize Team Placements", () => {
       .set("Authorization", `Bearer ${adminJWT}`)
       .expect(403);
 
-    expect(response.body.error?.message || response.body.message).toBe(
-      "Placements have already been finalized"
-    );
+    expect(response.body.detail).toBe("Placements have already been finalized");
   });
 });
