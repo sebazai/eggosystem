@@ -1,7 +1,9 @@
 import request from "supertest";
+import type { Request, Response, NextFunction } from "express";
 import { app } from "../app";
 import { runQuery } from "../db/mysqlRunQuery";
 import { generateTestJWT } from "../utils/auth-test-utils";
+import IORedis from "ioredis";
 
 // Mock JWT configuration for tests
 jest.mock("../../configs/jwt-keys", () => ({
@@ -27,91 +29,101 @@ jest.mock("jsonwebtoken", () => ({
 
 // Mock express-jwt middleware to recognize our test token
 jest.mock("express-jwt", () => ({
-  expressjwt: jest.fn(() => (req: any, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
+  expressjwt: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => {
+      const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      // Recognize our mock-access-token as valid
+      if (token === "mock-access-token") {
+        req.auth = {
+          account_id: 15004,
+          provider_id: "66561198999999902",
+          provider: "steam",
+          permissions: ["admin:all"],
+          roles: ["admin"],
+          nickname: "heppajpg"
+        };
+        next();
+      } else {
+        res.status(401).json({ message: "Unauthorized" });
+      }
     }
-
-    const token = authHeader.split(" ")[1];
-
-    // Recognize our mock-access-token as valid
-    if (token === "mock-access-token") {
-      req.auth = {
-        account_id: 15004,
-        provider_id: "66561198999999902",
-        provider: "steam",
-        permissions: ["admin:all"],
-        roles: ["admin"],
-        nickname: "heppajpg"
-      };
-      next();
-    } else {
-      res.status(401).json({ message: "Unauthorized" });
-    }
-  })
+  )
 }));
 
 // Mock auth middleware
 jest.mock("../../middlewares/auth.middleware", () => ({
-  authenticateJWT: jest.fn((req: any, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
+  authenticateJWT: jest.fn(
+    (req: Request, res: Response, next: NextFunction) => {
+      const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
-    }
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ message: "Unauthorized" });
+        return;
+      }
 
-    const token = authHeader.split(" ")[1];
-    if (token === "mock-access-token") {
-      req.auth = {
-        account_id: 15004,
-        provider_id: "66561198999999902",
-        provider: "steam",
-        permissions: ["admin:all"],
-        roles: ["admin"],
-        nickname: "heppajpg"
-      };
-      next();
-    } else {
-      res.status(401).json({ message: "Unauthorized" });
+      const token = authHeader.split(" ")[1];
+      if (token === "mock-access-token") {
+        req.auth = {
+          account_id: 15004,
+          provider_id: "66561198999999902",
+          provider: "steam",
+          permissions: ["admin:all"],
+          roles: ["admin"],
+          nickname: "heppajpg"
+        };
+        next();
+      } else {
+        res.status(401).json({ message: "Unauthorized" });
+      }
     }
-  }),
-  checkJWTPermissions: jest.fn(() => (req: any, res: any, next: any) => {
-    // Allow admin role through
-    if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-      next();
-    } else {
-      res
-        .status(403)
-        .json({ error: { message: "Forbidden: Insufficient permissions" } });
+  ),
+  checkJWTPermissions: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => {
+      // Allow admin role through
+      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
+        next();
+      } else {
+        res
+          .status(403)
+          .json({ error: { message: "Forbidden: Insufficient permissions" } });
+      }
     }
-  }),
-  checkPermissions: jest.fn(() => (req: any, res: any, next: any) => {
-    // Allow admin role through
-    if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-      next();
-    } else {
-      res
-        .status(403)
-        .json({ error: { message: "Forbidden: Insufficient permissions" } });
+  ),
+  checkPermissions: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => {
+      // Allow admin role through
+      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
+        next();
+      } else {
+        res
+          .status(403)
+          .json({ error: { message: "Forbidden: Insufficient permissions" } });
+      }
     }
-  })
+  )
 }));
 
 // Mock validate numeric params middleware
 jest.mock("../../middlewares/validate-numeric-params", () => ({
-  validateNumericParams: jest.fn(() => (req: any, res: any, next: any) => {
-    // Just pass through for tests
-    next();
-  })
+  validateNumericParams: jest.fn(
+    () => (req: Request, res: Response, next: NextFunction) => {
+      // Just pass through for tests
+      next();
+    }
+  )
 }));
 
 // Mock CORS middleware
 jest.mock("../../middlewares/cors.middleware", () => ({
-  corsMiddleware: jest.fn((req: any, res: any, next: any) => {
+  corsMiddleware: jest.fn((req: Request, res: Response, next: NextFunction) => {
     // Just pass through for tests
     next();
   })
@@ -244,9 +256,11 @@ describe("Enhanced Finalize Team Placements", () => {
 
   beforeEach(async () => {
     // Clear Redis mock storage between tests
-    const IORedis = require("ioredis");
-    if (IORedis.clearMockStorage) {
-      IORedis.clearMockStorage();
+    const ioRedisWithMock = IORedis as typeof IORedis & {
+      clearMockStorage?: () => void;
+    };
+    if (ioRedisWithMock.clearMockStorage) {
+      ioRedisWithMock.clearMockStorage();
     }
   });
 
