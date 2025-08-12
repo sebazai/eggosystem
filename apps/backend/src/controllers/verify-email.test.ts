@@ -398,4 +398,38 @@ describe("POST /verify-email", () => {
       expect(updateCall![1]).toEqual([999]);
     });
   });
+
+  describe("Interface Correction Verification", () => {
+    it("should verify email successfully with corrected Redis interface", async () => {
+      const token = "redis-interface-corrected-test";
+
+      // This simulates the actual data stored by handleEmailVerification service
+      const actualRedisData = {
+        accountId: 456, // Number type, as stored
+        email: "test@test.com", // Email field, not work_email
+        expirationTime: new Date(Date.now() + 86400000).toISOString()
+      };
+
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(actualRedisData));
+      mockRedisClient.del.mockResolvedValue(1);
+      mockRunQuery.mockResolvedValue([]);
+
+      const response = await request(app).post("/verify-email").send({ token });
+
+      // Should succeed with corrected interface
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: "Email verified successfully" });
+
+      // Verify database update was called with correct accountId
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE Accounts"),
+        [456]
+      );
+
+      // Verify Redis cleanup
+      expect(mockRedisClient.del).toHaveBeenCalledWith(
+        `verify:work-email:${token}`
+      );
+    });
+  });
 });

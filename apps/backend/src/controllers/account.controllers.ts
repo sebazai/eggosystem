@@ -117,8 +117,8 @@ export const updateAccountProfileController = async (
 };
 
 interface RedisWorkEmailVerificationToken {
-  accountId: string;
-  work_email: string;
+  accountId: number;
+  email: string;
   expirationTime: string;
 }
 

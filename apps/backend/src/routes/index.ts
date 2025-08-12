@@ -65,6 +65,7 @@ v1Router.use("/allstar", allstarRouter);
 v1Router.use("/stages", stageRouter);
 v1Router.use("/elo", eloRouter);
 v1Router.use("/standings", standingsRouter);
+
 v1Router.get("/stats", async (req, res) => {
   const stats = await landingPageStatistics();
   res.setHeader("Cache-Control", "public, max-age=86400");
