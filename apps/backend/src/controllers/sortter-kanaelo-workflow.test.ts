@@ -4,6 +4,34 @@ import { app } from "../app";
 import { runQuery } from "../db/mysqlRunQuery";
 import { generateTestJWT } from "../utils/auth-test-utils";
 
+// Type definitions for database query results
+interface RankData {
+  steam_id: string;
+  kana_elo: number | null;
+  cs2_rank: number | null;
+  faceit_level: number | null;
+}
+
+interface UpdatedRank {
+  steam_id: string;
+  kana_elo: number | null;
+}
+
+interface SeasonLeague {
+  id: number;
+  season_id: number;
+  name: string;
+  division: number;
+}
+
+interface Placement {
+  team_id: number;
+  team_name: string;
+  original_avg: number | null;
+  division: number;
+  comments: string;
+}
+
 // Mock JWT configuration for tests
 jest.mock("../configs/jwt-keys", () => ({
   getJWTValues: jest.fn(() => ({
@@ -434,11 +462,11 @@ describe("Sortter Kanaelo Workflow Issue", () => {
     const ranksData = (await runQuery(
       "SELECT steam_id, kana_elo, cs2_rank, faceit_level FROM SeasonPlayerRanks WHERE season_id = ?",
       [testSeasonId]
-    )) as any[];
+    )) as RankData[];
     expect(ranksData).toHaveLength(8); // Entries exist
 
     // All kana_elo values should be NULL
-    ranksData.forEach((rank: any) => {
+    ranksData.forEach((rank: RankData) => {
       expect(rank.kana_elo).toBeNull(); // This is the key - kana_elo is NULL
       expect(rank.cs2_rank).not.toBeNull(); // But other rank data exists
     });
@@ -495,9 +523,9 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       const updatedRanks = (await runQuery(
         "SELECT steam_id, kana_elo FROM SeasonPlayerRanks WHERE season_id = ? ORDER BY steam_id",
         [testSeasonId]
-      )) as any[];
+      )) as UpdatedRank[];
       expect(updatedRanks).toHaveLength(8);
-      updatedRanks.forEach((rank: any) => {
+      updatedRanks.forEach((rank: UpdatedRank) => {
         expect(rank.kana_elo).not.toBeNull();
         expect(typeof rank.kana_elo).toBe("number");
       });
@@ -515,7 +543,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       expect(placementsResponse.body.isFinalized).toBe(false);
 
       // Verify placements have valid avg4 values (not null)
-      placementsResponse.body.placements.forEach((placement: any) => {
+      placementsResponse.body.placements.forEach((placement: Placement) => {
         expect(placement.original_avg).not.toBeNull();
         expect(typeof placement.original_avg).toBe("number");
         expect(placement.team_id).toBeGreaterThan(0);
@@ -523,7 +551,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
 
       // STEP 3: Add comments and save preliminary placements
       const modifiedPlacements = placementsResponse.body.placements.map(
-        (p: any, index: number) => ({
+        (p: Placement, index: number) => ({
           ...p,
           comments: `Test comment for team ${p.team_name} - placement ${index + 1}`,
           division: index === 0 ? 1 : 2 // Put teams in different divisions
@@ -549,10 +577,12 @@ describe("Sortter Kanaelo Workflow Issue", () => {
         .expect(200);
 
       expect(savedPlacementsResponse.body.placements).toHaveLength(2);
-      savedPlacementsResponse.body.placements.forEach((placement: any) => {
-        expect(placement.comments).toContain("Test comment");
-        expect(placement.division).toBeGreaterThan(0);
-      });
+      savedPlacementsResponse.body.placements.forEach(
+        (placement: Placement) => {
+          expect(placement.comments).toContain("Test comment");
+          expect(placement.division).toBeGreaterThan(0);
+        }
+      );
 
       // STEP 5: Finalize placements
       const finalizeResponse = await request(app)
@@ -573,7 +603,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       const seasonLeagues = (await runQuery(
         "SELECT * FROM SeasonLeagues WHERE season_id = ?",
         [testSeasonId]
-      )) as any[];
+      )) as SeasonLeague[];
       expect(seasonLeagues.length).toBeGreaterThan(0);
 
       // Check SeasonLeagueTeams

@@ -188,7 +188,7 @@ const generateDivisionOptions = (count: number) => {
 };
 
 // Check if error is specifically about missing kanaelo data
-const isKanaeloMissingError = (error: any): boolean => {
+const isKanaeloMissingError = (error: unknown): boolean => {
   if (!error) return false;
   const errorString = error.toString().toLowerCase();
   return (
@@ -445,8 +445,8 @@ export default function SortterPage() {
             </h5>
             <div className="text-sm text-amber-700 dark:text-amber-400">
               Team placements cannot be generated because kana_elo data has not
-              been calculated yet. Please click "Populate Kanaelo Queue" to
-              start the calculation process.
+              been calculated yet. Please click &quot;Populate Kanaelo
+              Queue&quot; to start the calculation process.
             </div>
           </div>
         )}
