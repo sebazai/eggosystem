@@ -126,7 +126,7 @@ export const getPreliminaryPlacementsController = async (
   logger.info(
     `Getting team values for season ${seasonId} to generate initial placements`
   );
-  const teams = await getTeamValuesForSorter(seasonId); // Use historical=true to get all teams
+  const teams = await getTeamValuesForSorter(seasonId);
   logger.info(`Retrieved ${teams.length} teams for initial placements`);
 
   if (teams.length === 0) {
@@ -135,6 +135,37 @@ export const getPreliminaryPlacementsController = async (
     );
     return next(new NotFoundError("No teams found for this season"));
   }
+
+  // CRITICAL FIX: Check if teams have valid kana_elo data before generating placements
+  const teamsWithValidKanaElo = teams.filter(
+    (team) => team.avg4 !== null && team.avg4 !== undefined && !isNaN(team.avg4)
+  );
+
+  if (teamsWithValidKanaElo.length === 0) {
+    logger.warn(
+      `Teams found for season ${seasonId} but no valid kana_elo data available - kanaelo calculation may not be complete`
+    );
+    return next(
+      new BadRequestError(
+        "Cannot generate placements: kana_elo data has not been calculated yet. Please complete the kanaelo calculation process first."
+      )
+    );
+  }
+
+  if (teamsWithValidKanaElo.length < teams.length) {
+    logger.warn(
+      `Some teams for season ${seasonId} have invalid kana_elo data. Valid teams: ${teamsWithValidKanaElo.length}, Total teams: ${teams.length}`
+    );
+    return next(
+      new BadRequestError(
+        "Cannot generate placements: some teams are missing kana_elo data. Please ensure all players have completed kanaelo calculation."
+      )
+    );
+  }
+
+  logger.info(
+    `All ${teams.length} teams have valid kana_elo data, proceeding with placement generation`
+  );
 
   const initialPlacements = generateInitialPlacements(
     teams,

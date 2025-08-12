@@ -231,16 +231,66 @@ export function useSortter(placeTeamsInDivision: number) {
 
   // Handle division change for a team
   const handleDivisionChange = useCallback(
-    (teamId: number, division: number, teamDivision: number | null) => {
-      // Only allow division changes if the team doesn't have a division assigned
-      if (teamDivision === null) {
-        setDivisions((prev) => ({
-          ...prev,
-          [teamId]: division
+    async (teamId: number, division: number, teamDivision: number | null) => {
+      // Update local state first
+      setDivisions((prev) => ({
+        ...prev,
+        [teamId]: division
+      }));
+
+      // Auto-save the division change
+      if (!selectedSeason || !placements || isViewMode) {
+        return;
+      }
+
+      try {
+        // Create updated placements with the new division
+        const updatedPlacements = placements.map((placement) => ({
+          ...placement,
+          division:
+            placement.team_id === teamId
+              ? division
+              : divisions[placement.team_id] || placement.division,
+          comments: comments[placement.team_id] || placement.comments
         }));
+
+        // Send the request to the server
+        await clientApiFetch(
+          `/api/v1/sortter/season/${selectedSeason}/placements`,
+          {
+            method: "POST",
+            body: JSON.stringify({ placements: updatedPlacements })
+          }
+        );
+
+        // Force a complete revalidation
+        await mutatePlacements();
+
+        toast.success(`Team moved to division ${division}`);
+      } catch (error) {
+        console.error("Error auto-saving division change:", error);
+        toast.error("Failed to save division change");
+
+        // Revert the local state change on error
+        setDivisions((prev) => {
+          const reverted = { ...prev };
+          if (teamDivision !== null) {
+            reverted[teamId] = teamDivision;
+          } else {
+            delete reverted[teamId];
+          }
+          return reverted;
+        });
       }
     },
-    []
+    [
+      isViewMode,
+      divisions,
+      selectedSeason,
+      placements,
+      comments,
+      mutatePlacements
+    ]
   );
 
   // Save preliminary placements
