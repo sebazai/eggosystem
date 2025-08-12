@@ -10,8 +10,8 @@ test.describe("Email Verification Bug Verification", () => {
     test("should verify email successfully using Redis token (validates interface fix)", async ({
       page
     }) => {
-      // Use existing seeded token that works with Redis
-      await navigateToPage(page, "/verify-email?token=valid-token-123");
+      // Use dedicated bug test token to avoid conflicts with original tests
+      await navigateToPage(page, "/verify-email?token=bug-test-redis-token");
 
       // Should show success message (not "verification failed")
       await expect(
@@ -40,8 +40,8 @@ test.describe("Email Verification Bug Verification", () => {
     test("should verify email successfully using database fallback", async ({
       page
     }) => {
-      // Use a different token to test database fallback
-      await navigateToPage(page, "/verify-email?token=valid-token-456");
+      // Use dedicated token for database fallback testing
+      await navigateToPage(page, "/verify-email?token=bug-test-db-token");
 
       // Should show success message (validates database fallback doesn't throw error)
       await expect(
@@ -110,7 +110,7 @@ test.describe("Email Verification Bug Verification", () => {
     test("should have working navigation from success state", async ({
       page
     }) => {
-      await navigateToPage(page, "/verify-email?token=valid-token-789");
+      await navigateToPage(page, "/verify-email?token=bug-test-navigation");
 
       // Wait for success state
       await expect(
@@ -159,9 +159,9 @@ test.describe("Email Verification Bug Verification", () => {
       page
     }) => {
       const tokens = [
-        "valid-token-abc",
-        "valid-token-def",
-        "valid-token-mobile"
+        "bug-test-multiple-1",
+        "bug-test-multiple-2",
+        "bug-test-multiple-3"
       ];
 
       for (const token of tokens) {

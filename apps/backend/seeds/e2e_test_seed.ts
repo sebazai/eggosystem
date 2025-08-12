@@ -196,7 +196,15 @@ export async function seed(knex: Knex): Promise<void> {
     { id: 103, token: "valid-token-789", email: "emailtest3@kanaliiga.fi" },
     { id: 104, token: "valid-token-abc", email: "emailtest4@kanaliiga.fi" },
     { id: 105, token: "valid-token-def", email: "emailtest5@kanaliiga.fi" },
-    { id: 106, token: "valid-token-mobile", email: "emailtest6@kanaliiga.fi" }
+    { id: 106, token: "valid-token-mobile", email: "emailtest6@kanaliiga.fi" },
+    // Additional tokens for bug verification tests to prevent conflicts
+    { id: 107, token: "bug-test-redis-token", email: "bugtest1@kanaliiga.fi" },
+    { id: 108, token: "bug-test-db-token", email: "bugtest2@kanaliiga.fi" },
+    { id: 109, token: "bug-test-multiple-1", email: "bugtest3@kanaliiga.fi" },
+    { id: 110, token: "bug-test-multiple-2", email: "bugtest4@kanaliiga.fi" },
+    { id: 111, token: "bug-test-multiple-3", email: "bugtest5@kanaliiga.fi" },
+    { id: 112, token: "bug-test-navigation", email: "bugtest6@kanaliiga.fi" },
+    { id: 113, token: "bug-test-loading", email: "bugtest7@kanaliiga.fi" }
   ];
 
   for (const account of validTokenAccounts) {
