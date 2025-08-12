@@ -42,7 +42,6 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
     return { hours: -1 };
   }
 
-  logger.info(`steamHours ${steam_id}`, steamHours.playtime_forever);
   const hoursFromSteam = Math.round(steamHours.playtime_forever / 60);
   await redisClient.set(redisKey, hoursFromSteam, "EX", expireIn30Days);
 

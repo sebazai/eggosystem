@@ -20,7 +20,7 @@ export class QueueConsumerManager {
    */
   async startAllConsumers(): Promise<void> {
     try {
-      logger.info("Starting queue consumers...");
+      logger.info("[QueueConsumerManager] Starting queue consumers...");
 
       // Initialize parsed queue consumer
       const parsedConsumer = new ParsedQueueConsumer();
@@ -28,9 +28,12 @@ export class QueueConsumerManager {
       await parsedConsumer.startConsumer();
       this.consumers.push(parsedConsumer);
 
-      logger.info("All queue consumers started successfully", {
-        consumerCount: this.consumers.length
-      });
+      logger.info(
+        "[QueueConsumerManager] All queue consumers started successfully",
+        {
+          consumerCount: this.consumers.length
+        }
+      );
     } catch (error) {
       logger.error("Failed to start queue consumers", error);
       throw error;
@@ -46,28 +49,35 @@ export class QueueConsumerManager {
     }
 
     this.isShuttingDown = true;
-    logger.info("Stopping all queue consumers...");
+    logger.info("[QueueConsumerManager] Stopping all queue consumers...");
 
     const stopPromises = this.consumers.map(async (consumer) => {
       try {
         await consumer.stopConsumer();
-        logger.info("Queue consumer stopped successfully");
+        logger.info(
+          "[QueueConsumerManager] Queue consumer stopped successfully"
+        );
       } catch (error) {
-        logger.error("Error stopping queue consumer", error);
+        logger.error(
+          "[QueueConsumerManager] Error stopping queue consumer",
+          error
+        );
       }
     });
 
     await Promise.all(stopPromises);
     this.consumers = [];
 
-    logger.info("All queue consumers stopped");
+    logger.info("[QueueConsumerManager] All queue consumers stopped");
   }
 
   /**
    * Graceful shutdown handler
    */
   private async gracefulShutdown(): Promise<void> {
-    logger.info("Received shutdown signal, stopping queue consumers...");
+    logger.info(
+      "[QueueConsumerManager] Received shutdown signal, stopping queue consumers..."
+    );
     await this.stopAllConsumers();
     process.exit(0);
   }

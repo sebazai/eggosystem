@@ -607,7 +607,6 @@ export const findOrCreateOrganizationGeneralChannel = async (
 ): Promise<TextChannel> => {
   // If in e2e test environment, return mock channel
   if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
-    logger.info(`Mock: Creating general channel for ${organizationName}`);
     return {
       id: "mock-general-channel-id",
       name: "mock-general-channel"

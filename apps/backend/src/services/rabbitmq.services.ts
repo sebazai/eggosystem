@@ -80,7 +80,7 @@ export const publishKanaeloCalculationRequest = async (
     }
 
     logger.info(
-      `Published kanaelo calculation request for steam_id: ${request.steam_id}`
+      `[RabbitMQ] Published kanaelo calculation request for steam_id: ${request.steam_id}`
     );
 
     return { success: true, request_id: request.request_id };
@@ -151,12 +151,15 @@ export const bulkPublishKanaeloCalculationRequests = async (
     }
 
     logger.info(
-      `Published ${publishCount}/${steamIds.length} kanaelo calculation requests for season ${seasonId}`
+      `[RabbitMQ] Published ${publishCount}/${steamIds.length} kanaelo calculation requests for season ${seasonId}`
     );
 
     return { success: true, published: publishCount, total: steamIds.length };
   } catch (error) {
-    logger.error("Error bulk publishing kanaelo calculation requests", error);
+    logger.error(
+      "[RabbitMQ] Error bulk publishing kanaelo calculation requests",
+      error
+    );
     throw error;
   } finally {
     // Close channel and connection

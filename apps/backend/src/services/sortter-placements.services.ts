@@ -54,18 +54,18 @@ export const savePreliminaryPlacements = async (
   const key = getTeamPlacementsKey(seasonId);
   await redisClient.set(key, JSON.stringify(placements), "EX", expireIn30Days);
   logger.info(
-    `Saved preliminary placements for season ${seasonId} with ${placements.length} teams`
+    `[SortterPlacements] Saved preliminary placements for season ${seasonId} with ${placements.length} teams`
   );
 
   // Verify the data was saved
   const savedData = await redisClient.get(key);
   if (savedData) {
     logger.info(
-      `Verified Redis save: found ${JSON.parse(savedData).length} teams for season ${seasonId}`
+      `[SortterPlacements] Verified Redis save: found ${JSON.parse(savedData).length} teams for season ${seasonId}`
     );
   } else {
     logger.warn(
-      `Failed to verify Redis save for season ${seasonId} - no data found after save`
+      `[SortterPlacements] Failed to verify Redis save for season ${seasonId} - no data found after save`
     );
   }
   return true;
@@ -81,11 +81,15 @@ export const getPreliminaryPlacements = async (
   const data = await redisClient.get(key);
 
   if (!data) {
-    logger.info(`No placements found in Redis for season ${seasonId}`);
+    logger.info(
+      `[SortterPlacements] No placements found in Redis for season ${seasonId}`
+    );
     return null;
   }
 
-  logger.info(`Retrieved placements from Redis for season ${seasonId}`);
+  logger.info(
+    `[SortterPlacements] Retrieved placements from Redis for season ${seasonId}`
+  );
   return JSON.parse(data) as TeamPlacement[];
 };
 
@@ -114,7 +118,9 @@ export const deletePreliminaryPlacements = async (
 ): Promise<boolean> => {
   const key = getTeamPlacementsKey(seasonId);
   await redisClient.del(key);
-  logger.info(`Deleted preliminary placements for season ${seasonId}`);
+  logger.info(
+    `[SortterPlacements] Deleted preliminary placements for season ${seasonId}`
+  );
   return true;
 };
 
@@ -133,7 +139,7 @@ export const setPlacementsFinalized = async (
     expireIn30Days * 3 // Keep finalization status longer than placements
   );
   logger.info(
-    `Set finalization status for season ${seasonId} to ${isFinalized}`
+    `[SortterPlacements] Set finalization status for season ${seasonId} to ${isFinalized}`
   );
   return true;
 };

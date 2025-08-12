@@ -54,7 +54,7 @@ const getFaceitMatchesForFaceitLeague = async (
     "User-Agent": "Kanaliiga-Eggosystem/1.0"
   };
 
-  logger.info(`Querying matches for league ${leagueId}`);
+  logger.info(`[Standings] Querying matches for league ${leagueId}`);
 
   try {
     // Manual URL construction with params since fetch doesn't support params directly
@@ -104,13 +104,13 @@ const getFaceitMatchInfo = async (
     "User-Agent": "Kanaliiga-Eggosystem/1.0"
   };
 
-  logger.info(`Querying match info for match ${faceitMatchId}`);
+  logger.info(`[Standings] Querying match info for match ${faceitMatchId}`);
 
   // Check Redis cache first
   const redisKey = `match:${faceitMatchId}`;
   const cached = await redisClient.get(redisKey);
   if (cached) {
-    logger.info(`Returning cached match data for ${faceitMatchId}`);
+    logger.info(`[Standings] Returning cached match data for ${faceitMatchId}`);
     return JSON.parse(cached);
   }
 

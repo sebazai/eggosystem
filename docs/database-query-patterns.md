@@ -20,7 +20,7 @@ const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
 
 ## Dynamic JOIN Strategy
 
-```typescript
+````typescript
 // Pattern for conditional JOINs based on filters
 const teamJoinType = team_ids && team_ids.length ? "INNER" : "LEFT";
 query = query.join(
@@ -29,18 +29,6 @@ query = query.join(
   "stp.player_id",
   "sp.id"
 );
-
-// Prevents data exclusion when filters aren't applied
-```
-
-## Query Debugging Pattern
-
-All database queries should include logging for debugging:
-
-```typescript
-logger.log("Query:", query.toString());
-logger.log("Parameters:", params);
-```
 
 ## SQL Aggregation Patterns for Team Value Calculations
 
@@ -53,7 +41,7 @@ export async function getTeamValuesForSorter(
 ): Promise<TeamValueSorterResults[]> {
   const query = `
     WITH player_values AS (
-      SELECT 
+      SELECT
         pt.team_id,
         pk.player_id,
         pk.kanaelo_value,
@@ -63,19 +51,19 @@ export async function getTeamValuesForSorter(
       WHERE pt.season_id = $1 AND pk.season_id = $1
     ),
     team_stats AS (
-      SELECT 
+      SELECT
         t.id as team_id,
         t.name as team_name,
         COALESCE(sl.name, 'Unknown') as league_name,
         COALESCE(
-          (SELECT SUM(pv.kanaelo_value) 
-           FROM player_values pv 
+          (SELECT SUM(pv.kanaelo_value)
+           FROM player_values pv
            WHERE pv.team_id = t.id AND pv.value_rank <= 5),
           0
         ) as top5_sum,
         COALESCE(
           (SELECT ROUND(AVG(pv.kanaelo_value), 3)
-           FROM player_values pv 
+           FROM player_values pv
            WHERE pv.team_id = t.id AND pv.value_rank <= 4),
           0
         ) as avg4
@@ -84,7 +72,7 @@ export async function getTeamValuesForSorter(
       LEFT JOIN season_leagues sl ON st.league_id = sl.id AND sl.season_id = $1
       WHERE EXISTS (SELECT 1 FROM season_team_players stp WHERE stp.team_id = t.id AND stp.season_id = $1)
     )
-    SELECT 
+    SELECT
       ts.*,
       json_agg(
         json_build_object(
@@ -102,7 +90,7 @@ export async function getTeamValuesForSorter(
   const result = await db.query<TeamValueSorterResults>(query, [season_id]);
   return result.rows;
 }
-```
+````
 
 Key patterns demonstrated:
 

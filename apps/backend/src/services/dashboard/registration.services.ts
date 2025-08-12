@@ -30,7 +30,7 @@ const isPersonalEmailDomain = async (domain: string): Promise<boolean> => {
     // In development, return false to allow testing without the table
     if (process.env.NODE_ENV !== "production") {
       logger.info(
-        `Development mode: returning false for domain ${domain} (PublicEmailDomains table not available)`
+        `[Registration] Development mode: returning false for domain ${domain} (PublicEmailDomains table not available)`
       );
       return false;
     }
