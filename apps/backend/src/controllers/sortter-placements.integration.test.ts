@@ -6,7 +6,7 @@ import { generateTestJWT } from "../utils/auth-test-utils";
 import IORedis from "ioredis";
 
 // Mock JWT configuration for tests
-jest.mock("../../configs/jwt-keys", () => ({
+jest.mock("../configs/jwt-keys", () => ({
   getJWTValues: jest.fn(() => ({
     JWT_PRIVATE_KEY: "mock-private-key",
     JWT_PUBLIC_KEY: "mock-public-key",
