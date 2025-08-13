@@ -23,7 +23,7 @@ export const updateAccount = async (
 
   const workEmailVerificationToken = uuid.v4();
 
-  const oneDayLater = getSevenDaysLaterInMillis();
+  const sevenDaysLaterInMillis = getSevenDaysLaterInMillis();
 
   const hasWorkEmailChanged =
     formData.work_email && formData.work_email !== existingAccount.work_email;
@@ -34,7 +34,7 @@ export const updateAccount = async (
     work_email: formData.work_email ? formData.work_email : null,
     work_email_token: hasWorkEmailChanged ? workEmailVerificationToken : null,
     work_email_token_expires_at: hasWorkEmailChanged
-      ? new Date(oneDayLater)
+      ? new Date(sevenDaysLaterInMillis)
       : null,
     work_email_verified:
       hasWorkEmailChanged || !formData.work_email
@@ -85,7 +85,7 @@ export const updateAccount = async (
         formData.work_email,
         "verify:work-email",
         workEmailVerificationToken,
-        oneDayLater
+        sevenDaysLaterInMillis
       ).catch((err) => {
         logger.error("Failed to send verification email:", err);
       });

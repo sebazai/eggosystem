@@ -134,64 +134,50 @@ export const verifyEmailController = async (
 
   const redisWorkEmailKey = `verify:work-email:${token}`;
 
-  try {
-    // JSON parsing and database operations can throw - legitimate error boundary
-    const workEmailData = await redisClient.get(redisWorkEmailKey);
-    if (workEmailData) {
-      // JSON parsing - can throw for malformed data
-      const parsedData: RedisWorkEmailVerificationToken =
-        JSON.parse(workEmailData);
+  const workEmailData = await redisClient.get(redisWorkEmailKey);
+  if (workEmailData) {
+    await redisClient.del(redisWorkEmailKey);
+    const parsedData: RedisWorkEmailVerificationToken =
+      JSON.parse(workEmailData);
 
-      // Validate Redis data structure
-      if (!parsedData.accountId || !parsedData.expirationTime) {
-        logger.error("Invalid Redis data structure", { parsedData });
-        return next(new InternalServerError("Internal server error"));
-      }
+    if (!parsedData.accountId || !parsedData.expirationTime) {
+      logger.error("Invalid Redis data structure", { parsedData });
+      return next(new InternalServerError("Internal server error"));
+    }
 
-      if (new Date() > new Date(parsedData.expirationTime)) {
-        return next(new BadRequestError("Invalid or expired token."));
-      }
+    if (new Date() > new Date(parsedData.expirationTime)) {
+      return next(new BadRequestError("Invalid or expired token."));
+    }
 
-      await runQuery(
-        `UPDATE Accounts
+    await runQuery(
+      `UPDATE Accounts
       SET work_email_verified = true,
           work_email_token = NULL,
           work_email_token_expires_at = NULL
       WHERE id = ?`,
-        [parsedData.accountId]
-      );
-      await redisClient.del(redisWorkEmailKey);
-      res.status(200).json({ message: "Email verified successfully" });
-      return;
-    }
-
-    // Database fallback
-    const [workAccount] = await runQuery<Array<{ id: number } | undefined>>(
-      `SELECT id FROM Accounts 
-       WHERE work_email_token = ? 
-       AND work_email_token_expires_at > NOW() 
-       LIMIT 1`,
-      [token]
+      [parsedData.accountId]
     );
-
-    if (workAccount) {
-      await runQuery(
-        `
-        UPDATE Accounts
-        SET work_email_verified = true,
-            work_email_token = NULL,
-            work_email_token_expires_at = NULL
-        WHERE id = ?
-      `,
-        [workAccount.id]
-      );
-      res.status(200).json({ message: "Email verified successfully" });
-      return;
-    }
-
-    return next(new BadRequestError("Invalid or expired token."));
-  } catch (error) {
-    logger.error("Error verifying email", error);
-    return next(new InternalServerError("Internal server error"));
+    res.status(200).json({ message: "Email verified successfully" });
+    return;
   }
+
+  const result = await runQuery<{ affectedRows: number }>(
+    `UPDATE Accounts
+       SET work_email_verified = true,
+           work_email_token = NULL,
+           work_email_token_expires_at = NULL
+       WHERE work_email_token = ?
+         AND work_email_token_expires_at > NOW()`,
+    [token]
+  );
+
+  if (result.affectedRows === 1) {
+    res.status(200).json({ message: "Email verified successfully" });
+    return;
+  }
+
+  logger.error("Invalid or expired token.", { token });
+  await redisClient.del(redisWorkEmailKey);
+
+  return next(new BadRequestError("Invalid or expired token."));
 };
