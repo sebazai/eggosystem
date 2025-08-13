@@ -188,7 +188,10 @@ export const verifyEmailController = async (
     }
 
     const updateResult = await runQuery<{ affectedRows: number }>(
-      `UPDATE Accounts SET work_email_verified = true, work_email_token_expires_at = NULL WHERE id = ?`,
+      `UPDATE Accounts
+        SET work_email_verified = true,
+        work_email_token_expires_at = NULL
+      WHERE id = ? AND work_email_token_expires_at > NOW()`,
       [row.id]
     );
 

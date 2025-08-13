@@ -76,16 +76,21 @@ describe("POST /verify-email", () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: "Email verified successfully" });
 
+      // Assert SELECT was called with token
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("SELECT id, work_email_verified FROM Accounts"),
         [token]
       );
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "UPDATE Accounts SET work_email_verified = true"
-        ),
-        [101]
+      // Find UPDATE call and assert essentials without brittle whitespace
+      const updateCall = mockRunQuery.mock.calls.find(
+        (call) =>
+          typeof call[0] === "string" && call[0].includes("UPDATE Accounts")
       );
+      expect(updateCall).toBeDefined();
+      expect(updateCall![0]).toContain("work_email_verified = true");
+      expect(updateCall![0]).toContain("work_email_token_expires_at = NULL");
+      expect(updateCall![0]).toContain("WHERE id = ?");
+      expect(updateCall![1]).toEqual([101]);
     });
   });
 
