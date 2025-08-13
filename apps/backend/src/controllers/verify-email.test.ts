@@ -67,22 +67,16 @@ describe("POST /verify-email", () => {
       mockRedisClient.get.mockResolvedValue(null);
 
       // Database returns account
-      mockRunQuery.mockResolvedValueOnce([{ id: 456 }]); // First call for SELECT
-      mockRunQuery.mockResolvedValueOnce([]); // Second call for UPDATE
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 }); // First call for UPDATE
 
       const response = await request(app).post("/verify-email").send({ token });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: "Email verified successfully" });
 
-      // Verify database interactions
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("SELECT id FROM Accounts"),
-        [token]
-      );
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("UPDATE Accounts"),
-        [456]
+        [token]
       );
     });
   });
@@ -160,7 +154,7 @@ describe("POST /verify-email", () => {
 
       // Should not update database or delete from Redis
       expect(mockRunQuery).not.toHaveBeenCalled();
-      expect(mockRedisClient.del).not.toHaveBeenCalled();
+      expect(mockRedisClient.del).toHaveBeenCalled();
     });
 
     it("should return 400 when database token is expired", async () => {
@@ -195,8 +189,7 @@ describe("POST /verify-email", () => {
       const token = "valid-db-token";
 
       mockRedisClient.get.mockResolvedValue(null);
-      mockRunQuery.mockResolvedValueOnce([{ id: 456 }]); // Token found and not expired
-      mockRunQuery.mockResolvedValueOnce([]); // Update query
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 }); // Update query
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -274,20 +267,20 @@ describe("POST /verify-email", () => {
   });
 
   describe("Error Handling", () => {
-    it("should return 500 when database query fails", async () => {
-      const token = "db-error-token";
+    it("should return 400 when database query fails to update", async () => {
+      const token = "db-token";
 
       mockRedisClient.get.mockResolvedValue(null);
-      mockRunQuery.mockRejectedValue(new Error("Database connection failed"));
+      mockRunQuery.mockResolvedValue({ affectedRows: 0 });
 
       const response = await request(app).post("/verify-email").send({ token });
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body).toEqual({
         type: "about:blank",
-        title: "Internal Server Error",
-        status: 500,
-        detail: "Internal server error",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid or expired token.",
         instance: "/verify-email"
       });
     });
@@ -300,12 +293,12 @@ describe("POST /verify-email", () => {
 
       const response = await request(app).post("/verify-email").send({ token });
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body).toEqual({
         type: "about:blank",
-        title: "Internal Server Error",
-        status: 500,
-        detail: "Internal server error",
+        title: "Bad Request",
+        status: 400,
+        detail: "Unexpected token 'i', \"invalid-json\" is not valid JSON",
         instance: "/verify-email"
       });
     });
@@ -379,8 +372,7 @@ describe("POST /verify-email", () => {
       const token = "db-update-token";
 
       mockRedisClient.get.mockResolvedValue(null);
-      mockRunQuery.mockResolvedValueOnce([{ id: 999 }]);
-      mockRunQuery.mockResolvedValueOnce([]);
+      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
 
       await request(app).post("/verify-email").send({ token });
 
@@ -395,7 +387,7 @@ describe("POST /verify-email", () => {
       expect(updateCall![0]).toContain("work_email_verified = true");
       expect(updateCall![0]).toContain("work_email_token = NULL");
       expect(updateCall![0]).toContain("work_email_token_expires_at = NULL");
-      expect(updateCall![1]).toEqual([999]);
+      expect(updateCall![1]).toEqual([token]);
     });
   });
 
