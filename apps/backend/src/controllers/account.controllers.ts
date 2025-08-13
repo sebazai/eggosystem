@@ -163,9 +163,8 @@ export const verifyEmailController = async (
 
     await runQuery(
       `UPDATE Accounts
-      SET work_email_verified = true,
-          work_email_token = NULL,
-          work_email_token_expires_at = NULL
+        SET work_email_verified = true,
+        work_email_token_expires_at = NULL
       WHERE id = ?`,
       [parsedData.accountId]
     );
@@ -173,19 +172,29 @@ export const verifyEmailController = async (
     return;
   }
 
-  const result = await runQuery<{ affectedRows: number }>(
-    `UPDATE Accounts
-       SET work_email_verified = true,
-           work_email_token = NULL,
-           work_email_token_expires_at = NULL
-       WHERE work_email_token = ?
-         AND work_email_token_expires_at > NOW()`,
+  const [row] = await runQuery<
+    Array<{ id: number; work_email_verified: boolean } | undefined>
+  >(
+    `SELECT id, work_email_verified FROM Accounts 
+      WHERE work_email_token = ?`,
     [token]
   );
 
-  if (result.affectedRows === 1) {
-    res.status(200).json({ message: "Email verified successfully" });
-    return;
+  if (row) {
+    if (row.work_email_verified) {
+      res.status(200).json({ message: "Email verified successfully" });
+      return;
+    }
+
+    const updateResult = await runQuery<{ affectedRows: number }>(
+      `UPDATE Accounts SET work_email_verified = true, work_email_token_expires_at = NULL WHERE id = ?`,
+      [row.id]
+    );
+
+    if (updateResult.affectedRows === 1) {
+      res.status(200).json({ message: "Email verified successfully" });
+      return;
+    }
   }
 
   logger.error("Invalid or expired token.", { token });

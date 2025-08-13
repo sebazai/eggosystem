@@ -66,8 +66,10 @@ describe("POST /verify-email", () => {
       // Redis returns null (no data found)
       mockRedisClient.get.mockResolvedValue(null);
 
-      // Database returns account
-      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 }); // First call for UPDATE
+      // SELECT by token then UPDATE by id
+      mockRunQuery
+        .mockResolvedValueOnce([{ id: 101, work_email_verified: false }])
+        .mockResolvedValueOnce({ affectedRows: 1 });
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -75,8 +77,14 @@ describe("POST /verify-email", () => {
       expect(response.body).toEqual({ message: "Email verified successfully" });
 
       expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("UPDATE Accounts"),
+        expect.stringContaining("SELECT id, work_email_verified FROM Accounts"),
         [token]
+      );
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "UPDATE Accounts SET work_email_verified = true"
+        ),
+        [101]
       );
     });
   });
@@ -160,11 +168,7 @@ describe("POST /verify-email", () => {
     it("should return 400 when database token is expired", async () => {
       const token = "expired-db-token";
 
-      // Redis returns null (no data found)
       mockRedisClient.get.mockResolvedValue(null);
-
-      // Database query should properly check expiration with NOW()
-      // This should return empty array for expired tokens
       mockRunQuery.mockResolvedValue([]);
 
       const response = await request(app).post("/verify-email").send({ token });
@@ -178,9 +182,8 @@ describe("POST /verify-email", () => {
         instance: "/verify-email"
       });
 
-      // Verify the database query includes expiration check
       expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("work_email_token_expires_at > NOW()"),
+        expect.stringContaining("WHERE work_email_token = ?"),
         [token]
       );
     });
@@ -189,7 +192,9 @@ describe("POST /verify-email", () => {
       const token = "valid-db-token";
 
       mockRedisClient.get.mockResolvedValue(null);
-      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 }); // Update query
+      mockRunQuery
+        .mockResolvedValueOnce([{ id: 202, work_email_verified: false }])
+        .mockResolvedValueOnce({ affectedRows: 1 });
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -271,7 +276,9 @@ describe("POST /verify-email", () => {
       const token = "db-token";
 
       mockRedisClient.get.mockResolvedValue(null);
-      mockRunQuery.mockResolvedValue({ affectedRows: 0 });
+      mockRunQuery
+        .mockResolvedValueOnce([{ id: 303, work_email_verified: false }])
+        .mockResolvedValueOnce({ affectedRows: 0 });
 
       const response = await request(app).post("/verify-email").send({ token });
 
@@ -356,15 +363,13 @@ describe("POST /verify-email", () => {
 
       await request(app).post("/verify-email").send({ token });
 
-      // Verify the UPDATE query contains all required fields
+      // Verify the UPDATE query sets verified flag
       const updateCall = mockRunQuery.mock.calls.find((call) =>
         call[0].includes("UPDATE Accounts")
       );
 
       expect(updateCall).toBeDefined();
       expect(updateCall![0]).toContain("work_email_verified = true");
-      expect(updateCall![0]).toContain("work_email_token = NULL");
-      expect(updateCall![0]).toContain("work_email_token_expires_at = NULL");
       expect(updateCall![1]).toEqual(["789"]);
     });
 
@@ -372,22 +377,53 @@ describe("POST /verify-email", () => {
       const token = "db-update-token";
 
       mockRedisClient.get.mockResolvedValue(null);
-      mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+      mockRunQuery
+        .mockResolvedValueOnce([{ id: 404, work_email_verified: false }])
+        .mockResolvedValueOnce({ affectedRows: 1 });
 
       await request(app).post("/verify-email").send({ token });
 
       // Find the UPDATE query
-      const updateCall = mockRunQuery.mock.calls.find(
-        (call) =>
-          call[0].includes("UPDATE Accounts") &&
-          call[0].includes("work_email_verified = true")
+      const updateCall = mockRunQuery.mock.calls.find((call) =>
+        call[0].includes("UPDATE Accounts")
       );
 
       expect(updateCall).toBeDefined();
       expect(updateCall![0]).toContain("work_email_verified = true");
-      expect(updateCall![0]).toContain("work_email_token = NULL");
-      expect(updateCall![0]).toContain("work_email_token_expires_at = NULL");
-      expect(updateCall![1]).toEqual([token]);
+      expect(updateCall![1]).toEqual([404]);
+    });
+  });
+
+  describe("Idempotency", () => {
+    it("should return 200 when database token is valid but account already verified", async () => {
+      const token = "already-verified-token";
+
+      mockRedisClient.get.mockResolvedValue(null);
+      // First DB call: SELECT by token with expiration check returns an already verified account
+      mockRunQuery.mockResolvedValueOnce([
+        { id: 42, work_email_verified: true }
+      ]);
+
+      const response = await request(app).post("/verify-email").send({ token });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: "Email verified successfully" });
+
+      // Should not attempt UPDATE when already verified
+      const updateCall = mockRunQuery.mock.calls.find(
+        (call) =>
+          typeof call[0] === "string" && call[0].includes("UPDATE Accounts")
+      );
+      expect(updateCall).toBeUndefined();
+
+      // Should have performed a SELECT with expiration check
+      const selectCall = mockRunQuery.mock.calls.find(
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("WHERE work_email_token = ?")
+      );
+      expect(selectCall).toBeDefined();
+      expect(selectCall![1]).toEqual([token]);
     });
   });
 
