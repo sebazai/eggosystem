@@ -2,7 +2,6 @@ import { renderHook, act } from "@testing-library/react";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
-import { mutate } from "swr";
 
 // Mock the clientApiFetch
 jest.mock("@/lib/apiClient", () => ({
