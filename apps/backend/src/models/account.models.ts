@@ -83,7 +83,6 @@ export const updateAccount = async (
       handleEmailVerification(
         accountId,
         formData.work_email,
-        "verify:work-email",
         workEmailVerificationToken,
         sevenDaysLaterInMillis
       ).catch((err) => {
@@ -246,10 +245,14 @@ export const getAccountIdBySteamId = async (
  * @param accountId
  * @returns
  */
-export const getAccountById = async (accountId: number) => {
+export const getAccountById = async (
+  accountId: number,
+  connection?: PoolConnection
+) => {
   const [account] = await runQuery<Array<Account | undefined>>(
     "SELECT * FROM Accounts WHERE id = ?",
-    [accountId]
+    [accountId],
+    connection
   );
   if (!account) {
     throw new NotFoundError("Account not found");

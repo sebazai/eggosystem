@@ -20,6 +20,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { handleEmailVerification } from "../services/account.services";
 import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 import { logger } from "../utils/app-logger";
+import { getConnection } from "../db/mysqlConnection";
 
 export const sendVerificationEmails = async (
   req: RequestWithParams<{ id: string }>,
@@ -32,28 +33,39 @@ export const sendVerificationEmails = async (
     return next(new UnauthorizedError("Unauthorized"));
   }
 
-  const account = await getAccountById(accountId);
-  const sevenDaysInMillis = getSevenDaysLaterInMillis();
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const account = await getAccountById(accountId, connection);
+    const sevenDaysInMillis = getSevenDaysLaterInMillis();
+    if (account.work_email_verified) {
+      throw new BadRequestError("Account already verified");
+    }
 
-  if (
-    !account.work_email_verified &&
-    account.work_email &&
-    account.work_email_token &&
-    account.work_email_token_expires_at
-  ) {
+    if (!account.work_email) {
+      throw new BadRequestError("Work email not found");
+    }
+
     await redisClient.del(`verify:work-email:${account.work_email_token}`);
     const token = uuid.v4();
+    await runQuery(
+      "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
+      [token, new Date(sevenDaysInMillis), account.id],
+      connection
+    );
+
     await handleEmailVerification(
       accountId,
       account.work_email,
-      "verify:work-email",
       token,
       sevenDaysInMillis
     );
-    await runQuery(
-      "UPDATE Accounts SET work_email_token = ?, work_email_token_expires_at = ? WHERE id = ?",
-      [token, new Date(sevenDaysInMillis), account.id]
-    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
 
   res.json({ message: "New verification links sent" });
