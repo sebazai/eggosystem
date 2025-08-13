@@ -148,6 +148,7 @@ export const verifyEmailController = async (
 
   const workEmailData = await redisClient.get(redisWorkEmailKey);
   if (workEmailData) {
+    // Consume the token from Redis even if it fails to verify
     await redisClient.del(redisWorkEmailKey);
     const parsedData: RedisWorkEmailVerificationToken =
       JSON.parse(workEmailData);
@@ -198,7 +199,6 @@ export const verifyEmailController = async (
   }
 
   logger.error("Invalid or expired token.", { token });
-  await redisClient.del(redisWorkEmailKey);
 
   return next(new BadRequestError("Invalid or expired token."));
 };
