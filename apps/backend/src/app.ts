@@ -67,7 +67,7 @@ app.use(helmet());
 app.use(
   morgan("dev", {
     skip: (req, _res) => {
-      return req.url === "/api/v1/health";
+      return req.baseUrl === "/api/v1/health";
     }
   })
 );
