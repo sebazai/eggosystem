@@ -67,7 +67,6 @@ interface NavbarProps {
 const getSeasonMenuItems = (
   signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
 ) => {
-  console.log("signupOrActiveSeason", signupOrActiveSeason);
   if (!signupOrActiveSeason || !signupOrActiveSeason.full_name) {
     return [];
   }
