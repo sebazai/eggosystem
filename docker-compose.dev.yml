@@ -20,11 +20,6 @@ services:
       FACEIT_API_KEY: $FACEIT_API_KEY
       OTEL_SERVICE_NAME: eggosystem-dev-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=dev,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
-      PYROSCOPE_SERVER_ADDRESS: http://172.17.0.1:4040
-      PYROSCOPE_AUTH_TOKEN: $PYROSCOPE_AUTH_TOKEN
-      PYROSCOPE_APPLICATION_NAME: kanaliiga-backend-staging
-      REGION: staging
-      VERSION: 1.0.0
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
       BACKEND_SERVICE_API_KEY: "development_api_key"
       JWT_SECRET: $JWT_SECRET
