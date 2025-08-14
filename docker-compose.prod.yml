@@ -28,7 +28,6 @@ services:
       OTEL_EXPORTER_OTLP_METRICS_PROTOCOL: "grpc"
       OTEL_EXPORTER_OTLP_LOGS_PROTOCOL: "http/json"
       PYROSCOPE_SERVER_ADDRESS: http://alloy:4040
-      PYROSCOPE_AUTH_TOKEN: $PYROSCOPE_AUTH_TOKEN
       PYROSCOPE_APPLICATION_NAME: kanaliiga-backend-prod
       REGION: production
       VERSION: 1.0.0
