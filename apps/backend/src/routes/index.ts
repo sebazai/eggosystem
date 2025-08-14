@@ -72,7 +72,7 @@ v1Router.get("/stats", async (req, res) => {
   res.status(200).json(stats);
 });
 
-v1Router.use("/", async (req, res) => {
+v1Router.use("/health", async (req, res) => {
   res.status(200).json({ message: "API is running" });
 });
 export default v1Router;
