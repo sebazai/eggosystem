@@ -16,7 +16,7 @@ out/
 **/.env*.local
 
 # IDE and editor files
-.vscode/
+.vscode/settings.json
 .idea/
 
 
@@ -65,3 +65,9 @@ packages/*/dist.turbo
 .pnpm-store/
 
 .cursor/settings.json
+
+# Datbase
+dbdoc/
+
+# standings ui
+standings-ui/

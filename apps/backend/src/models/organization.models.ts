@@ -70,3 +70,14 @@ export const getOrganizationTeamTrophies = async (organizationId: number) => {
   `;
   return runQuery<Array<OrganizationTeamTrophies>>(query, [organizationId]);
 };
+
+export const getOrganizationDiscordInviteLink = async (
+  id: number
+): Promise<string | null> => {
+  const result = await runQuery<{ discord_invite_link: string | null }[]>(
+    "SELECT discord_invite_link FROM Organizations WHERE id = ?",
+    [id]
+  );
+  if (result.length === 0) return null;
+  return result[0].discord_invite_link;
+};

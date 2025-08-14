@@ -1,54 +1,75 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
+
 # Testing Strategy Rule
 
 **Type:** Strict rule
 
 ## Rule Description
 
-This rule enforces the testing strategy for the Kanaliiga Eggosystem project, ensuring that `pnpm test` maintains fast execution for development feedback while providing comprehensive testing options when needed.
+This rule enforces the testing strategy for the Kanaliiga Eggosystem project, defining the available test commands and their appropriate usage for different testing scenarios.
 
 ## Testing Command Hierarchy
 
 ### Primary Commands
 
-**`pnpm test`** - Fast Jest-based tests only
+**`pnpm test`** - Fast Jest-based tests for both frontend and backend
+
 - **Purpose**: Quick feedback during development
-- **Scope**: Unit tests only (Jest + React Testing Library)
+- **Scope**: Unit tests (Jest + React Testing Library)
 - **Speed**: Fast execution (< 30 seconds)
 - **Database**: No database setup required
-- **Backend**: Backend unit tests (Jest with coverage)
-- **Frontend**: Frontend unit tests (Jest + React Testing Library)
+- **Backend**: Run from `apps/backend/` - Backend unit tests (Jest with coverage)
+- **Frontend**: Run from `apps/frontend/` - Frontend unit tests (Jest + React Testing Library)
+- **Root**: Run from project root - Runs tests across all workspaces
 
 **`pnpm test:e2e`** - E2E tests only
+
 - **Purpose**: Test complete user workflows
 - **Scope**: Playwright e2e tests with real backend
 - **Speed**: Slower execution (requires database setup)
 - **Database**: Full reseed, seed, seed:e2e setup
 - **Backend**: Real backend with external API stubbing
+- **Run from**: `apps/frontend/` directory
 
 **`pnpm test:all`** - Comprehensive testing
+
 - **Purpose**: Complete testing suite
 - **Scope**: Both unit tests AND e2e tests
 - **Speed**: Slowest execution (runs everything)
 - **Database**: Full database setup for e2e tests
+- **Run from**: Project root - Runs all tests across workspaces
 
 **`pnpm test:watch`** - TDD Watch mode
+
 - **Purpose**: Automatic test execution on file changes
 - **Scope**: Unit tests only (Jest-based)
 - **Speed**: Fast execution with watch mode
 - **Database**: No database setup required
 - **Workflow**: Perfect for TDD development
+- **Run from**: `apps/backend/` or `apps/frontend/` for targeted watching
 
-**`pnpm test:tdd`** - TDD Parallel mode
-- **Purpose**: Fastest feedback for TDD workflow
-- **Scope**: Unit tests only (Jest-based)
-- **Speed**: Parallel execution for maximum speed
-- **Database**: No database setup required
-- **Workflow**: Optimal for rapid TDD cycles
+## Test Setup Requirements
+
+### Controller Tests
+
+Controller tests MUST follow these patterns:
+
+- **Provide `next` function**: Always include `const mockNext = jest.fn()` and pass as third parameter
+- **Error assertions**: Use `expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({message: "...", status: 404}))`
+- **Success assertions**: Test `res.status()` and `res.json()` calls for successful responses
+
+### Route Tests
+
+Route tests MUST include proper error handling setup:
+
+- **Add error handler**: Include `app.use(expressErrorHandler)` after mounting routes
+- **Import error handler**: `import { expressErrorHandler } from "../../middlewares/express-error-handler"`
+- **RFC 7807 responses**: Expect error responses with `type`, `title`, `status`, `detail`, `instance` fields
+- **Validation errors**: Use `toMatchObject()` for ZodError responses that include `issues` array
 
 ## Required Behavior
 
@@ -62,16 +83,19 @@ This rule enforces the testing strategy for the Kanaliiga Eggosystem project, en
 4. **Document the preference**: This separation provides better developer experience
 
 **Response template:**
+
 > "I've added `pnpm test:all` that runs both unit tests and e2e tests. This keeps `pnpm test` fast for development while providing a comprehensive testing option when needed. The separation gives us better developer experience - fast feedback for unit tests and comprehensive testing when you need it."
 
 ### Implementation Requirements
 
 **NEVER modify `pnpm test` to include e2e tests**
+
 - Keep it focused on Jest-based unit tests only
 - Maintain fast execution for development feedback
 - Preserve the separation of concerns
 
 **ALWAYS offer `pnpm test:all` as the comprehensive alternative**
+
 - This provides the "run all tests" functionality
 - Maintains the fast development workflow
 - Gives flexibility for different testing needs
@@ -123,7 +147,5 @@ pnpm test:all
 - **`pnpm test:e2e`**: E2E tests with database setup
 - **`pnpm test:all`**: Comprehensive testing suite
 - **`pnpm test:watch`**: TDD Watch mode
-- **`pnpm test:tdd`**: TDD Parallel mode
 - **Maintain separation**: Keep fast feedback for development
 - **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
-

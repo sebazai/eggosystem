@@ -10,10 +10,7 @@ export const transformIgnorePatterns = [
   "node_modules/(?!(@eggosystem/shared-msw)/)"
 ];
 export const openHandlesTimeout = 2 * 1000;
-export const testMatch = [
-  "**/__tests__/**/*.ts?(x)",
-  "**/?(*.)+(spec|test).ts?(x)"
-];
+export const testMatch = ["**/?(*.)+(spec|test).ts?(x)"];
 export const reporters = [
   "default",
   [

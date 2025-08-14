@@ -1,5 +1,6 @@
 import type { UserPayload } from "@eggosystem/types";
 import type { Request, Response, NextFunction } from "express";
+import { UnauthorizedError } from "../utils/errors";
 
 type ExpressJwtMiddleware = (
   req: Request,
@@ -20,7 +21,7 @@ export const expressjwt = jest.fn((): ExpressJwtMiddleware => {
       } satisfies UserPayload; // Simulated authenticated user
       next();
     } else {
-      res.status(401).json({ message: "Unauthorized" });
+      return next(new UnauthorizedError("Unauthorized"));
     }
   };
 });

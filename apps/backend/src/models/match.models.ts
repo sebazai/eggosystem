@@ -4,26 +4,83 @@ import {
   type Match,
   type MatchesByFilters,
   type ParsedParams,
-  type MatchInfo,
   type MatchMapsPlayed,
   type MatchOrGameTopPlayerAwards,
   type MatchGame,
   type MatchPlayerStats,
   type MatchTeamStats,
-  type MatchMapVetoes
+  type MatchMapVetoes,
+  type Stage,
+  MatchStatus,
+  type MatchInfoQuery,
+  type MatchesWithTeamDataQuery,
+  type ChampionshipDetailsObjectCreated,
+  FaceitMatchStatus,
+  type MatchGamesByTeam
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
+import { getConnection } from "../db/mysqlConnection";
+import { logger } from "../utils/app-logger";
+import { convertISOToFinnishTime, convertISOToTime } from "../utils/date-utils";
+import { type PoolConnection } from "mysql2/promise";
+import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 
 export const getMatches = (): Promise<Match[]> => {
   return runQuery("SELECT * FROM Matches");
 };
 
+export const getMatchesWithTeamDataBySeasonId = async (
+  seasonId: number
+): Promise<MatchesWithTeamDataQuery[]> => {
+  const query = `
+    SELECT 
+      m.id AS match_id,
+      m.match_date,
+      m.start_time,
+      m.end_time,
+      m.external_match_room_id,
+      m.league_id,
+      l.name AS league_name,
+      m.season_id,
+      s.full_name AS season_name,
+      s.platform AS season_platform,
+      m.best_of,
+      m.stage,
+      JSON_OBJECTAGG(
+        t.id, 
+        JSON_OBJECT(
+          'id', t.id,
+          'name', t.name,
+          'logo', t.team_logo
+        )
+      ) AS teams
+    FROM Matches m
+    JOIN MatchTeams mt ON m.id = mt.match_id
+    JOIN Teams t ON mt.team_id = t.id
+    JOIN Seasons s ON s.id = m.season_id
+    JOIN Leagues l ON l.id = m.league_id
+    WHERE m.season_id = ?
+    GROUP BY m.id, m.match_date, m.start_time, m.end_time, m.external_match_room_id, 
+             m.league_id, l.name, m.season_id, s.full_name, s.platform, m.best_of, m.stage
+    ORDER BY m.match_date DESC
+  `;
+  return runQuery<MatchesWithTeamDataQuery[]>(query, [seasonId]);
+};
+
 export const getMatch = (matchId: number) => {
   return runQuery<Array<Match | undefined>>(
     "SELECT * FROM Matches WHERE id = ?",
+    [matchId]
+  );
+};
+
+export const getMatchWithBreadcrumbInfo = (matchId: number) => {
+  return runQuery<Array<(Match & Stage) | undefined>>(
+    "SELECT * FROM Matches m JOIN Stages s ON m.stage = s.id WHERE m.id = ?",
     [matchId]
   );
 };
@@ -94,13 +151,24 @@ export const getRoundInfo = async (id: number): Promise<Match | undefined> => {
   return result.length > 0 ? result[0] : undefined;
 };
 
-export const getMatchTopPlayers = async (match_id: number) => {
+export const getMatchTopPlayers = async (
+  match_id: number
+): Promise<MatchOrGameTopPlayerAwards | null> => {
   const queries = matchTopStats.map((stat) =>
     fetchPlayerStatsForMatchOrGame(match_id, "m.id = ?", stat, stat.sqlFunction)
   );
   const queryResults = await Promise.all(queries);
 
-  return Object.assign({}, ...queryResults) as MatchOrGameTopPlayerAwards;
+  if (
+    Object.entries(queryResults[0]).every(([_, value]) => value === undefined)
+  ) {
+    return null;
+  }
+
+  return Object.assign(
+    {},
+    ...queryResults
+  ) satisfies MatchOrGameTopPlayerAwards;
 };
 
 export const getMatchesByFilters = async ({
@@ -180,7 +248,7 @@ export const getMatchGames = async (match_id: number) => {
 
 export const getMatchInfo = async (
   matchId: number
-): Promise<MatchInfo | null> => {
+): Promise<MatchInfoQuery | null> => {
   const query = `
       WITH MatchData AS (
           SELECT 
@@ -224,6 +292,25 @@ export const getMatchInfo = async (
               END AS game_id
           FROM MatchData
           GROUP BY match_id, team_id, team_name, team_logo, best_of
+      ),
+      GameIds AS (
+          SELECT
+              match_id,
+              CASE
+                  WHEN best_of = 1 THEN 
+                      CASE 
+                          WHEN COUNT(DISTINCT game_id) > 0 THEN MAX(game_id)
+                          ELSE NULL
+                      END
+                  ELSE 
+                      CASE 
+                          WHEN COUNT(DISTINCT game_id) > 0 THEN JSON_ARRAYAGG(DISTINCT game_id)
+                          ELSE NULL
+                      END
+              END AS game_ids
+          FROM MatchData
+          WHERE game_id IS NOT NULL
+          GROUP BY match_id, best_of
       )
       SELECT 
           a.match_id,
@@ -238,7 +325,7 @@ export const getMatchInfo = async (
           s.platform AS season_platform,
           m.best_of,
           m.stage,
-          a.game_id,
+          g.game_ids,
           JSON_OBJECTAGG(
               a.team_id, 
               JSON_OBJECT(
@@ -252,10 +339,11 @@ export const getMatchInfo = async (
       JOIN Matches m ON a.match_id = m.id
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
-      GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage;
+      LEFT JOIN GameIds g ON a.match_id = g.match_id
+      GROUP BY a.match_id, m.match_date, m.league_id, m.season_id, m.stage, g.game_ids;
   `;
 
-  const [match] = await runQuery<MatchInfo[]>(query, [matchId]);
+  const [match] = await runQuery<MatchInfoQuery[]>(query, [matchId]);
 
   return match;
 };
@@ -271,4 +359,349 @@ export const getMatchMapVetoes = async (match_id: number) => {
     ORDER BY v.veto_order ASC
   `;
   return runQuery<MatchMapVetoes[]>(query, [match_id]);
+};
+
+export const getMatchGamesByTeam = async (
+  teamId: number,
+  seasonId?: number
+): Promise<MatchGamesByTeam[]> => {
+  let seasonFilter = "";
+  const queryParams: (number | string)[] = [teamId, teamId];
+
+  if (seasonId) {
+    seasonFilter = "AND m.season_id = ?";
+    queryParams.push(seasonId);
+  }
+
+  const matchGamesQuery = `
+    SELECT DISTINCT
+      m.id as match_id,
+      tgs_t.team_id as team1_id,
+      tgs_ct.team_id as team2_id,
+      t_t.name as team1_name,
+      t_ct.name as team2_name,
+      DATE_FORMAT(m.match_date, '%Y-%m-%d') as match_date,
+      m.league_id,
+      m.season_id,
+      mg.id as game_id,
+      map.name as map_name,
+      map.id as map_id,
+      mg.map_order,
+      COALESCE(tgs_t.score, 0) as team1_score,
+      COALESCE(tgs_ct.score, 0) as team2_score
+    FROM Matches m
+    JOIN MatchTeams mt1 ON m.id = mt1.match_id
+    JOIN MatchTeams mt2 ON m.id = mt2.match_id AND mt2.team_id != mt1.team_id
+    JOIN MatchGames mg ON m.id = mg.match_id
+    JOIN Maps map ON map.id = mg.map_id
+    JOIN TeamGameScores tgs_t ON mg.id = tgs_t.game_id AND tgs_t.starting_side = 'T'
+    JOIN TeamGameScores tgs_ct ON mg.id = tgs_ct.game_id AND tgs_ct.starting_side = 'CT'
+    JOIN Teams t_t ON tgs_t.team_id = t_t.id
+    JOIN Teams t_ct ON tgs_ct.team_id = t_ct.id
+    WHERE (mt1.team_id = ? OR mt2.team_id = ?)
+    ${seasonFilter}
+    ORDER BY m.match_date DESC, m.id DESC, mg.map_order ASC
+  `;
+
+  return runQuery<MatchGamesByTeam[]>(matchGamesQuery, queryParams);
+};
+
+const addTeamToMatch = async (
+  matchId: number,
+  seasonId: number,
+  leagueId: number,
+  teamId: number,
+  connection?: PoolConnection
+): Promise<void> => {
+  const addMatchTeamsQuery = `INSERT INTO MatchTeams (match_id, season_id, league_id, team_id) VALUES (?, ?, ?, ?)`;
+  await runQuery(
+    addMatchTeamsQuery,
+    [matchId, seasonId, leagueId, teamId],
+    connection
+  );
+};
+
+export const getHubMatchesByExternalMatchRoomId = async (
+  externalMatchRoomId: string,
+  connection?: PoolConnection
+) => {
+  const query = `SELECT id FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
+  const matches = await runQuery<Array<{ id: number }> | undefined>(
+    query,
+    [externalMatchRoomId],
+    connection
+  );
+  if (!matches || matches.length === 0) {
+    return null;
+  }
+  return matches;
+};
+
+export const addMatchToDatabase = async (
+  matchDetails: ChampionshipDetailsObjectCreated,
+  externalLeagueId: string
+) => {
+  if (matchDetails.status === FaceitMatchStatus.CHECK_IN) {
+    logger.info(
+      `Match ${matchDetails.match_id} is in check-in status, skipping`,
+      matchDetails
+    );
+    return;
+  }
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const matches = await getHubMatchesByExternalMatchRoomId(
+      matchDetails.match_id,
+      connection
+    );
+    if (matches && matches.length > 0) {
+      logger.info(
+        `${matches.length} matches with external_match_room_id ${matchDetails.match_id} already exists, skipping`,
+        matchDetails
+      );
+      return;
+    }
+
+    const seasonLeagueExternalRoom =
+      await getSeasonLeagueExternalIdByExternalId(externalLeagueId, connection);
+    if (!seasonLeagueExternalRoom) {
+      throw new Error(
+        `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
+      );
+    }
+
+    const teamOneExternalId = matchDetails.teams.faction1.faction_id;
+    const teamTwoExternalId = matchDetails.teams.faction2.faction_id;
+
+    const teamOne = await getSeasonLeagueTeamByExternalId(
+      teamOneExternalId,
+      connection
+    );
+    const teamTwo = await getSeasonLeagueTeamByExternalId(
+      teamTwoExternalId,
+      connection
+    );
+
+    if (!teamOne || !teamTwo) {
+      throw new Error(
+        `No SeasonLeagueTeam entry found for external_id: ${teamOneExternalId} or ${teamTwoExternalId}`
+      );
+    }
+    const { league_id, season_id, stage_id } = seasonLeagueExternalRoom;
+
+    const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
+
+    const matchScheduledAt = matchDetails.scheduled_at;
+    // Default time next weeks wednesday at 19:00 if no scheduled_at
+    const now = new Date();
+    const nextWednesday = new Date(now);
+    nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
+    nextWednesday.setHours(19, 0, 0, 0);
+
+    const match_date = nextWednesday.toISOString().slice(0, 10); // YYYY-MM-DD
+    const start_time = nextWednesday
+      ? new Date(nextWednesday).toISOString().slice(11, 19) // HH:MM:SS
+      : "00:00:00";
+
+    const params = [
+      league_id,
+      season_id,
+      stage_id,
+      matchDetails.best_of,
+      matchScheduledAt
+        ? new Date(matchScheduledAt * 1000).toISOString().slice(0, 10)
+        : match_date,
+      matchScheduledAt
+        ? new Date(matchScheduledAt * 1000).toISOString().slice(11, 19)
+        : start_time,
+      null,
+      matchDetails.match_id,
+      matchDetails.status,
+      matchDetails.round,
+      matchDetails.group
+    ];
+
+    const matchQuery = `
+      INSERT INTO Matches (
+        league_id,
+        season_id,
+        stage,
+        best_of,
+        match_date,
+        start_time,
+        end_time,
+        external_match_room_id,
+        status,
+        round,
+        \`group\`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `;
+
+    if (isBO2PlayedAs2xBO1) {
+      const firstMatch = await runQuery<{ insertId: number }>(
+        matchQuery,
+        params,
+        connection
+      );
+      const firstMatchId = firstMatch.insertId;
+      const secondMatch = await runQuery<{ insertId: number }>(
+        matchQuery,
+        params,
+        connection
+      );
+      const secondMatchId = secondMatch.insertId;
+
+      await Promise.all([
+        addTeamToMatch(
+          firstMatchId,
+          season_id,
+          league_id,
+          teamOne.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          firstMatchId,
+          season_id,
+          league_id,
+          teamTwo.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          secondMatchId,
+          season_id,
+          league_id,
+          teamOne.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          secondMatchId,
+          season_id,
+          league_id,
+          teamTwo.team_id,
+          connection
+        ),
+        updateMatchStatus(
+          matchDetails.match_id,
+          MatchStatus.SCHEDULED,
+          connection
+        )
+      ]);
+
+      await connection.commit();
+
+      return { matchIds: [firstMatchId, secondMatchId], isBO2PlayedAs2xBO1 };
+    } else {
+      const match = await runQuery<{ insertId: number }>(
+        matchQuery,
+        params,
+        connection
+      );
+      const matchId = match.insertId;
+
+      await Promise.all([
+        addTeamToMatch(
+          matchId,
+          season_id,
+          league_id,
+          teamOne.team_id,
+          connection
+        ),
+        addTeamToMatch(
+          matchId,
+          season_id,
+          league_id,
+          teamTwo.team_id,
+          connection
+        ),
+        updateMatchStatus(
+          matchDetails.match_id,
+          MatchStatus.SCHEDULED,
+          connection
+        )
+      ]);
+
+      await connection.commit();
+      return { matchIds: [matchId], isBO2PlayedAs2xBO1 };
+    }
+  } catch (error) {
+    await connection.rollback();
+    logger.error(
+      `Failed to insert match ${matchDetails.match_id} into database`,
+      error
+    );
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+export const updateMatchFinished = async (
+  externalMatchRoomId: string,
+  startedAt: string,
+  finishedAt: string
+): Promise<void> => {
+  const matches = await runQuery<Array<{ id: number }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+
+  if (matches.length === 0) {
+    logger.warn(
+      `No matches found with external_match_room_id: ${externalMatchRoomId}`
+    );
+    return;
+  }
+
+  const startTime = convertISOToTime(convertISOToFinnishTime(startedAt));
+  const endTime = convertISOToTime(convertISOToFinnishTime(finishedAt));
+
+  await runQuery(
+    "UPDATE Matches SET start_time = ?, end_time = ?, status = ? WHERE external_match_room_id = ?",
+    [startTime, endTime, MatchStatus.FINISHED, externalMatchRoomId]
+  );
+  logger.info(
+    `Updated start_time to ${startTime} and end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+  );
+};
+
+export const updateMatchEndTime = async (
+  externalMatchRoomId: string,
+  finishedAt: string
+): Promise<void> => {
+  const matches = await runQuery<Array<{ id: number }>>(
+    "SELECT id FROM Matches WHERE external_match_room_id = ?",
+    [externalMatchRoomId]
+  );
+
+  if (matches.length === 0) {
+    logger.warn(
+      `No matches found with external_match_room_id: ${externalMatchRoomId}`
+    );
+    return;
+  }
+
+  const endTime = convertISOToTime(convertISOToFinnishTime(finishedAt));
+
+  await runQuery(
+    "UPDATE Matches SET end_time = ? WHERE external_match_room_id = ?",
+    [endTime, externalMatchRoomId]
+  );
+
+  logger.info(
+    `Updated end_time to ${endTime} for ${matches.length} match(es) with external_match_room_id: ${externalMatchRoomId}`
+  );
+};
+
+export const updateMatchStatus = async (
+  externalMatchRoomId: string,
+  status: MatchStatus,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET status = ? WHERE external_match_room_id = ?",
+    [status, externalMatchRoomId],
+    connection
+  );
 };

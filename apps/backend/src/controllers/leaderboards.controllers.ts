@@ -1,6 +1,7 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import { getLeaderboard } from "../models/leaderboards.models";
 import { type LeaderboardResponse } from "@eggosystem/types";
+import { BadRequestError } from "../utils/errors";
 
 export const getFilteredMultipleLeaderboardsController = async (
   req: Request,
@@ -62,14 +63,14 @@ export const getFilteredMultipleLeaderboardsController = async (
 
 export const getSingleLeaderboardController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const { parsedParams } = req;
   const { leaderboards } = req.query;
 
   if (!leaderboards || typeof leaderboards !== "string") {
-    res.status(400).json({ error: "Leaderboards type is required" });
-    return;
+    return next(new BadRequestError("Leaderboards type is required"));
   }
 
   const result = await getLeaderboard({

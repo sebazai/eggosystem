@@ -1,8 +1,7 @@
-import type { Season } from "@eggosystem/types";
+import type { League, Season } from "@eggosystem/types";
 
 export interface SeasonLeague {
-  id: number;
-  name: string;
   tier: number;
   season_id: Season["id"];
+  league_id: League["id"];
 }

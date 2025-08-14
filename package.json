@@ -10,13 +10,14 @@
     "dev": "turbo dev",
     "start": "turbo start",
     "test": "turbo test",
+    "install:playwright": "pnpm exec playwright install && pnpm exec playwright install-deps",
     "test:watch": "pnpm --filter=frontend test:watch & pnpm --filter=backend test:watch & wait",
-    "test:e2e": "pnpm --filter=backend reseed:e2e && pnpm build && pnpm --filter=frontend test:e2e",
+    "test:e2e": "pnpm --filter=backend reseed:e2e && pnpm build && pnpm --filter=frontend test:e2e --",
     "test:all": "pnpm test && pnpm test:e2e",
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint --continue -- --fix",
     "clean": "turbo clean",
-    "check-types": "turbo check-types --",
+    "typecheck": "turbo typecheck --",
     "format": "prettier --write \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,mjs,js,jsx,json}\"",
     "prepare": "[ \"$NODE_ENV\" != \"production\" ] && husky || true",
@@ -25,7 +26,8 @@
     "migrate:down": "turbo migrate:down",
     "migrate:up": "turbo migrate:up",
     "migrate:make": "turbo migrate:make --",
-    "seed": "turbo seed --"
+    "seed": "turbo seed --",
+    "reseed": "pnpm --filter=backend reseed"
   },
   "lint-staged": {
     "**/*.{json,md,yml,js,ts,tsx,jsx}": "pnpm format",
@@ -38,20 +40,20 @@
   ],
   "dependencies": {
     "@opentelemetry/api": "1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "0.59.0",
-    "turbo": "2.5.3"
+    "@opentelemetry/auto-instrumentations-node": "0.62.0",
+    "turbo": "2.5.5"
   },
   "devDependencies": {
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
-    "@playwright/test": "1.52.0",
+    "@playwright/test": "1.54.2",
     "@types/node": "22.15.18",
-    "eslint": "9.26.0",
+    "eslint": "9.32.0",
     "husky": "9.1.7",
-    "lint-staged": "16.0.0",
-    "postcss": "8.5.3",
-    "prettier": "3.5.3",
-    "typescript": "5.8.3"
+    "lint-staged": "16.1.4",
+    "postcss": "8.5.6",
+    "prettier": "3.6.2",
+    "typescript": "5.9.2"
   },
   "packageManager": "pnpm@10.11.0"
 }

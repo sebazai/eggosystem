@@ -24,7 +24,9 @@ export default async function Layout({
             <DashboardBreadcrumbs />
           </div>
         </header>
-        <div className="container m-4 sm:m-10 ">{children}</div>
+        <div className="flex-1 overflow-auto">
+          <div className="container mx-auto p-6 max-w-full">{children}</div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

@@ -24,6 +24,8 @@ export type PlayerStatsResult = {
   flashes_thrown: number;
   total_ef_duration: number;
   kd: number;
+  kills_t?: number;
+  kills_ct?: number;
   multikill_2k: number;
   multikill_3k: number;
   multikill_4k: number;

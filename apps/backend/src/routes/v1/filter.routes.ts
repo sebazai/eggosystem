@@ -18,10 +18,16 @@ import {
   getFilteredPlayerGameDetailsController,
   getFilteredPlayerTeamDetailsController,
   getFilteredPlayerMatchHistoryController,
-  getFilteredPlayersStatsController
+  getFilteredPlayersStatsController,
+  getPlayerSkillDiagramController,
+  getMultiplePlayersSkillDiagramController,
+  getFilteredPlayerMapStatsController
 } from "../../controllers/players.controllers";
 import { getFilteredMatchesController } from "../../controllers/matches.controllers";
-import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
+import { getTeamPistolWinsController } from "../../controllers/pistol-wins.controllers";
+import { getTeamPlantStatsController } from "../../controllers/plant-stats.controllers";
+import { getTeamRetakeStatsController } from "../../controllers/retake-stats.controllers";
+import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
 
 const router = Router();
 
@@ -109,18 +115,16 @@ router.get(
   "/players/:steam_id/match-history",
   getFilteredPlayerMatchHistoryController
 );
+router.get("/players/:steam_id/skill-diagram", getPlayerSkillDiagramController);
+router.get(
+  "/players/skill-diagram/aggregate",
+  getMultiplePlayersSkillDiagramController
+);
+router.get("/players/:steam_id/map-stats", getFilteredPlayerMapStatsController);
 
 // Leaderboard
-router.get(
-  "/leaderboards/multiple",
-  parseQueryFilterParams,
-  getFilteredMultipleLeaderboardsController
-);
-router.get(
-  "/leaderboards",
-  parseQueryFilterParams,
-  getSingleLeaderboardController
-);
+router.get("/leaderboards/multiple", getFilteredMultipleLeaderboardsController);
+router.get("/leaderboards", getSingleLeaderboardController);
 
 // Matches
 router.get("/matches/recent", getFilteredMatchesController);
@@ -147,6 +151,27 @@ router.get(
   "/teams/:team_id/map-stats",
   validateNumericParams(),
   getFilteredTeamMapStatsController
+);
+router.get(
+  "/teams/:team_id/enhanced-map-stats",
+  validateNumericParams(["team_id"]),
+  getTeamEnhancedMapStatsController
+);
+
+router.get(
+  "/stats/teams/:teamId/pistol-wins",
+  validateNumericParams(),
+  getTeamPistolWinsController
+);
+router.get(
+  "/stats/teams/:teamId/plant-stats",
+  validateNumericParams(),
+  getTeamPlantStatsController
+);
+router.get(
+  "/stats/teams/:teamId/retake-stats",
+  validateNumericParams(),
+  getTeamRetakeStatsController
 );
 
 export default router;

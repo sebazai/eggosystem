@@ -38,7 +38,8 @@ import {
 } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useScrolled } from "@/hooks/useScrolled";
-import { useSignupOpenForAppId } from "@/hooks/data/useSignupOpenSeason";
+import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 
 interface MenuItemLink {
   title: string;
@@ -63,56 +64,104 @@ interface NavbarProps {
   }[];
 }
 
-const defaultProps: NavbarProps = {
-  logo: {
-    url: "/",
-    src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
-    alt: "Kanaliiga logo"
-  },
-  menu: [
+const getSeasonMenuItems = (
+  signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
+) => {
+  console.log("signupOrActiveSeason", signupOrActiveSeason);
+  if (!signupOrActiveSeason || !signupOrActiveSeason.full_name) {
+    return [];
+  }
+
+  return [
     {
-      title: "Organizations",
-      url: "/organizations",
-      hasFilters: false
-    },
-    {
-      title: "Teams",
-      url: "/teams",
-      hasFilters: true,
+      title: `${convertSeasonToS(signupOrActiveSeason.full_name)}`,
+      url: "#",
+      hasFilters: false,
       items: [
-        { title: "Browse Teams", url: "/teams", hasFilters: true },
-        { title: "Top Teams", url: "/topteams", hasFilters: true }
+        ...(signupOrActiveSeason.signup_end_date &&
+        new Date(signupOrActiveSeason.signup_end_date) >= new Date()
+          ? [
+              {
+                title: "Register",
+                url: `/seasons/${signupOrActiveSeason.season_id}/signup`,
+                hasFilters: false
+              }
+            ]
+          : []),
+        {
+          title: "Standings",
+          url: "/standings",
+          hasFilters: false
+        }
       ]
-    },
-    {
-      title: "Players",
-      url: "/players",
-      hasFilters: true
-    },
-    {
-      title: "Matches",
-      url: "/matches",
-      hasFilters: true
-    },
-    {
-      title: "Leaderboards",
-      url: "/leaderboards",
-      hasFilters: true
     }
-  ]
-  // mobileExtraLinks: [
-  //   { name: "Press", url: "#" },
-  //   { name: "Contact", url: "#" },
-  //   { name: "Imprint", url: "#" },
-  //   { name: "Sitemap", url: "#" }
-  // ]
+  ];
+};
+
+const getDefaultMenuItems = (
+  signupOrActiveSeason?: ActiveSignupOrSeasonForAppId
+) => {
+  const seasonMenuItems = getSeasonMenuItems(signupOrActiveSeason);
+  const defaultProps: NavbarProps = {
+    logo: {
+      url: "/",
+      src: createNextUrl("/images/kanaliiga/kanaliiga-logo-1800px.png"),
+      alt: "Kanaliiga logo"
+    },
+    menu: [
+      {
+        title: "Organizations",
+        url: "/organizations",
+        hasFilters: false
+      },
+      {
+        title: "Teams",
+        url: "#",
+        hasFilters: false,
+        items: [
+          { title: "Browse Teams", url: "/teams", hasFilters: true },
+          { title: "Top Teams", url: "/topteams", hasFilters: true }
+        ]
+      },
+      {
+        title: "Players",
+        url: "/players",
+        hasFilters: true
+      },
+      {
+        title: "Matches",
+        url: "/matches",
+        hasFilters: true
+      },
+      // {
+      //   title: "Calendar",
+      //   url: "/calendar",
+      //   hasFilters: false
+      // },
+      {
+        title: "Leaderboards",
+        url: "/leaderboards",
+        hasFilters: true
+      },
+      {
+        title: "Kanahautomo",
+        url: "/kanahautomo",
+        hasFilters: false
+      },
+      ...seasonMenuItems
+    ],
+    mobileExtraLinks: [{ name: "Kanaliiga", url: "https://kanaliiga.com" }]
+  };
+  return defaultProps;
 };
 
 export const Navigation = (props: NavbarProps) => {
   const pathname = usePathname();
-  const { seasonWithSignupOpen } = useSignupOpenForAppId(730);
+  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const navigationProps =
-    Object.keys(props).length === 0 ? defaultProps : props;
+    Object.keys(props).length === 0
+      ? getDefaultMenuItems(signupOrActiveSeason)
+      : props;
   const { logo, menu, mobileExtraLinks } = navigationProps;
 
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
@@ -122,6 +171,7 @@ export const Navigation = (props: NavbarProps) => {
 
   const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const params = useSearchParams();
 
   useEffect(() => {
@@ -129,6 +179,12 @@ export const Navigation = (props: NavbarProps) => {
       setIsSheetOpen(false);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    if (isScrolled && !hasScrolled) {
+      setHasScrolled(true);
+    }
+  }, [isScrolled, hasScrolled]);
 
   const [height, setHeight] = useState(0);
 
@@ -165,7 +221,7 @@ export const Navigation = (props: NavbarProps) => {
       );
       logoEl.removeEventListener("resize", updateNavHeightAndCheckMobile);
     };
-  }, [isScrolled]);
+  }, []);
 
   return (
     <div
@@ -183,16 +239,19 @@ export const Navigation = (props: NavbarProps) => {
     >
       <div className="py-4 lg:py-8 mx-auto max-w-screen-2xl">
         {/* Desktop Navigation - Sticky by Default */}
-        <div className="hidden w-full items-center justify-center gap-6 md:flex pointer-events-auto">
+        <div className="hidden w-full items-center justify-center gap-6 lg:flex pointer-events-auto">
           {logo && (
             <Link href={logo.url}>
               <Image
                 ref={logoRef}
-                className="logo transition-all duration-500"
+                className={cn(
+                  "logo transition-all duration-500",
+                  hasScrolled || pathname === "/" ? "logo-small" : "logo-large"
+                )}
                 src={logo.src}
                 alt={logo.alt}
-                width={isScrolled || pathname === "/" ? 80 : 153}
-                height={isScrolled || pathname === "/" ? 80 : 175}
+                width={153}
+                height={175}
                 priority
               />
             </Link>
@@ -200,17 +259,6 @@ export const Navigation = (props: NavbarProps) => {
           <NavigationMenu delayDuration={0} viewport={false}>
             <NavigationMenuList>
               {menu?.map((m) => renderMenuItem(m, params))}
-              {seasonWithSignupOpen &&
-                renderMenuItem(
-                  {
-                    title: `Register ${convertSeasonToS(
-                      seasonWithSignupOpen.full_name
-                    )}`,
-                    url: `/seasons/${seasonWithSignupOpen.season_id}/signup`,
-                    hasFilters: false
-                  },
-                  params
-                )}
             </NavigationMenuList>
           </NavigationMenu>
           <div className="ml-auto space-x-4">
@@ -219,13 +267,10 @@ export const Navigation = (props: NavbarProps) => {
         </div>
 
         {/* Mobile Navigation - Sticky in Portrait Mode, Non-Sticky in Landscape */}
-        <div className="block md:hidden sm:landscape:relative sticky top-0 z-50">
+        <div className="block lg:hidden sm:landscape:relative sticky top-0 z-50">
           <div className="flex items-center justify-between xs:landscape:justify-end md:landscape:justify-between">
             {logo && (
-              <Link
-                href={logo.url}
-                className="flex items-center gap-2 landscape:hidden"
-              >
+              <Link href={logo.url} className="flex items-center gap-2">
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
               </Link>
             )}
@@ -304,7 +349,10 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
   if (item.items) {
     return (
       <NavigationMenuItem key={item.title}>
-        <NavigationMenuTrigger className="text-kanaliiga-orange">
+        <NavigationMenuTrigger
+          onPointerMove={(event) => event.preventDefault()}
+          className="text-kanaliiga-orange"
+        >
           {item.title}
         </NavigationMenuTrigger>
         <NavigationMenuContent>

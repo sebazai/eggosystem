@@ -15,6 +15,7 @@
         "FACEIT_API_KEY",
         "JWT_EXPIRES_IN",
         "JWT_REFRESH_EXPIRES_IN",
+        "JWT_SECRET",
         "REDIS_HOST",
         "REDIS_PORT",
         "FRONTEND_URL",
@@ -33,7 +34,21 @@
         "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
         "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL",
         "OTEL_EXPORTER_OTLP_METRICS_PROTOCOL",
-        "TEST_TYPE"
+        "TEST_TYPE",
+        "DISCORD_CLIENT_ID",
+        "DISCORD_CLIENT_SECRET",
+        "DISCORD_BOT_TOKEN",
+        "DISCORD_GUILD_ID",
+        "FACEIT_WEBHOOK_API_KEY",
+        "TEST_TYPE_ENV",
+        "DISCORD_GENERAL_CHANNEL_ID",
+        "BACKEND_SERVICE_API_KEY",
+        "RABBITMQ_HOST",
+        "RABBITMQ_PORT",
+        "RABBITMQ_USER",
+        "RABBITMQ_PASSWORD",
+        "RABBITMQ_VHOST",
+        "CSRANKKER_BACKEND_API"
       ],
       "dependsOn": ["^build"],
       "inputs": [
@@ -80,9 +95,9 @@
     "format:check": {
       "dependsOn": ["^format:check"]
     },
-    "check-types": {
+    "typecheck": {
       "dependsOn": [
-        "^check-types",
+        "^typecheck",
         "@eggosystem/types#build",
         "@eggosystem/shared-msw#build"
       ]

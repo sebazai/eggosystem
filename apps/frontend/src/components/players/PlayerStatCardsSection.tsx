@@ -21,10 +21,8 @@ interface PlayerDetailsProps {
 const PlayerStatCardWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="bg-card rounded-md overflow-hidden mb-3">
-      <div className="p-3 sm:p-6">
-        <h2 className="text-xl font-semibold mb-3">Player Statistics</h2>
-        {children}
-      </div>
+      <h2 className="text-xl font-semibold mb-3">Player Statistics</h2>
+      {children}
     </div>
   );
 };

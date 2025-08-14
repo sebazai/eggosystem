@@ -10,11 +10,9 @@ if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV is not defined");
 }
 
-// Update with your config settings.
 if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
   logger.info("Loading .env.development & .env file");
-  dotenv.config({ path: ".env" });
-  dotenv.config({ path: ".env.development" });
+  dotenv.config({ path: [".env", ".env.development"], quiet: true });
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
@@ -31,12 +29,15 @@ if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
   }
 }
 
+if (!process.env.FRONTEND_URL) {
+  throw new Error("FRONTEND_URL is not defined");
+}
+
 // Initialize profiling as early as possible
 import { initializeProfiling } from "./configs/profiling";
 initializeProfiling();
 
 import express from "express";
-import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import passport from "./configs/passport";
@@ -44,37 +45,22 @@ import passport from "./configs/passport";
 import v1Router from "./routes";
 import { expressErrorHandler } from "./middlewares/express-error-handler";
 import cookieParser from "cookie-parser";
+import {
+  initializeDiscordClient,
+  setupDiscordEventHandlers
+} from "./services/discord.services";
+import { queueConsumerManager } from "./services/queue-consumer-manager";
+import cors from "cors";
 
 const app = express();
 
 app.use(cookieParser());
-
-const frontendUrlEnv = process.env.FRONTEND_URL;
-
-if (!frontendUrlEnv) {
-  throw new Error("FRONTEND_URL is not defined");
-}
-
-const frontendUrl = new URL(frontendUrlEnv);
-const frontendUrlOrigin = `${frontendUrl.protocol}//${frontendUrl.host}`;
-const allowList = [frontendUrlOrigin];
-
-const corsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) => {
-    if (!origin || allowList.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true
-} satisfies cors.CorsOptions;
-
-app.use(cors(corsOptions));
-
+app.use(
+  cors({
+    origin: true,
+    credentials: true
+  })
+);
 app.use(express.json());
 
 app.use(helmet());
@@ -84,5 +70,64 @@ app.use(passport.initialize());
 app.use("/api/v1", v1Router);
 
 app.use(expressErrorHandler);
+
+// Initialize Discord client if environment variables are available and not in test mode
+if (
+  process.env.DISCORD_BOT_TOKEN &&
+  process.env.DISCORD_GUILD_ID &&
+  process.env.NODE_ENV !== "test" &&
+  process.env.NODE_ENV !== "e2e" &&
+  process.env.TEST_TYPE !== "e2e"
+) {
+  initializeDiscordClient()
+    .then(() => {
+      logger.info("Discord client initialized successfully");
+      return setupDiscordEventHandlers();
+    })
+    .catch((error) => {
+      logger.error("Failed to initialize Discord client:", error);
+    });
+} else if (
+  process.env.NODE_ENV === "test" ||
+  process.env.NODE_ENV === "e2e" ||
+  process.env.TEST_TYPE === "e2e"
+) {
+  logger.info("Test environment detected, skipping Discord initialization");
+} else {
+  logger.info(
+    "Discord environment variables not found, skipping Discord initialization"
+  );
+}
+
+// Initialize queue consumers if not in test mode and RabbitMQ environment variables are available
+if (
+  process.env.NODE_ENV !== "test" &&
+  process.env.NODE_ENV !== "e2e" &&
+  process.env.TEST_TYPE !== "e2e" &&
+  process.env.RABBITMQ_HOST &&
+  process.env.RABBITMQ_USER &&
+  process.env.RABBITMQ_PASSWORD
+) {
+  queueConsumerManager
+    .startAllConsumers()
+    .then(() => {
+      logger.info("Queue consumers initialized successfully");
+    })
+    .catch((error) => {
+      logger.error("Failed to initialize queue consumers:", error);
+    });
+} else if (
+  process.env.NODE_ENV === "test" ||
+  process.env.NODE_ENV === "e2e" ||
+  process.env.TEST_TYPE === "e2e"
+) {
+  logger.info(
+    "Test environment detected, skipping queue consumer initialization"
+  );
+} else {
+  logger.info(
+    "RabbitMQ environment variables not found, skipping queue consumer initialization"
+  );
+}
 
 export { app };

@@ -1,10 +1,14 @@
 import type { PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import type {
+  FaceitMatchTeams,
   InsertSeasonTeamPlayer,
-  SeasonPlayerApprovals
+  SeasonPlayerApprovals,
+  SeasonTeamPlayer
 } from "@eggosystem/types";
 import { buildInsertQueryParts } from "../db/utils";
+import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { redisClient } from "../utils/redisClient";
 
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
@@ -41,4 +45,45 @@ export const isPlayerApprovedForSeasonManually = async (
   return {
     approved_by_organizer: !!result
   };
+};
+
+export const getSeasonTeamPlayersBySteamIds = async (steamIds: string[]) => {
+  const questionMarks = steamIds.map(() => "?").join(",");
+  const result = await runQuery<Array<SeasonTeamPlayer>>(
+    `SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (${questionMarks})`,
+    steamIds
+  );
+  return result;
+};
+
+export const validatePlayersInTeams = async (
+  teams: FaceitMatchTeams,
+  externalMatchIds: string
+) => {
+  // get teams with external_team_id from SeasonLeagueTeams
+  const teamsArray = [teams.faction1, teams.faction2];
+  for (const team of teamsArray) {
+    const teamFromDb = await getSeasonLeagueTeamByExternalId(team.faction_id);
+    if (!teamFromDb) {
+      throw new Error(
+        `Team with external_team_id ${team.faction_id} not found`
+      );
+    }
+    // get players from team.roster
+    const playerSteamIds = team.roster.map((player) => player.game_player_id);
+    // check if players are in SeasonTeamPlayers
+    const playersInSeasonTeamPlayers =
+      await getSeasonTeamPlayersBySteamIds(playerSteamIds);
+
+    if (playersInSeasonTeamPlayers.length !== playerSteamIds.length) {
+      // Add to redis as flag that players are not in SeasonTeamPlayers
+      const key = `match:invalid_players:${externalMatchIds}`;
+      const objectToSave = {
+        external_match_id: externalMatchIds,
+        steam_ids: playerSteamIds,
+        team_id: teamFromDb.team_id
+      };
+      await redisClient.set(key, JSON.stringify(objectToSave));
+    }
+  }
 };

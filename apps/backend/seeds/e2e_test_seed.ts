@@ -37,14 +37,13 @@ export async function seed(knex: Knex): Promise<void> {
     // Delete from SeasonTeamPlayers for ALL seasons (not just season 16)
     await knex("SeasonTeamPlayers").where({ steam_id: steamId }).del();
 
+    // Delete from SeasonTeamRegistrationPlayers for ALL seasons (not just season 16)
+    await knex("SeasonTeamRegistrationPlayers")
+      .where({ steam_id: steamId })
+      .del();
+
     // remove all manual approvals
     await knex("SeasonPlayerApprovals").where({ steam_id: steamId }).del();
-
-    // Delete from SeasonTeamRegistrations where this player is captain or co-captain
-    await knex("SeasonTeamRegistrations")
-      .where({ captain_steam_id: steamId })
-      .orWhere({ co_captain_steam_id: steamId })
-      .del();
   }
 
   // Clean up existing E2E test data
@@ -53,6 +52,7 @@ export async function seed(knex: Knex): Promise<void> {
     .del();
   await knex("AccountRoles").where({ account_id: 15003, game_id: 1 }).del();
   await knex("SeasonTeamPlayers").where({ season_id: 16 }).del();
+  await knex("SeasonTeamRegistrationPlayers").where({ season_id: 16 }).del();
   await knex("SeasonTeamRegistrations").where({ season_id: 16 }).del();
   await knex("Teams").where({ id: 999 }).del();
   await knex("Organizations").where({ id: 999 }).del();
@@ -196,7 +196,15 @@ export async function seed(knex: Knex): Promise<void> {
     { id: 103, token: "valid-token-789", email: "emailtest3@kanaliiga.fi" },
     { id: 104, token: "valid-token-abc", email: "emailtest4@kanaliiga.fi" },
     { id: 105, token: "valid-token-def", email: "emailtest5@kanaliiga.fi" },
-    { id: 106, token: "valid-token-mobile", email: "emailtest6@kanaliiga.fi" }
+    { id: 106, token: "valid-token-mobile", email: "emailtest6@kanaliiga.fi" },
+    // Additional tokens for bug verification tests to prevent conflicts
+    { id: 107, token: "bug-test-redis-token", email: "bugtest1@kanaliiga.fi" },
+    { id: 108, token: "bug-test-db-token", email: "bugtest2@kanaliiga.fi" },
+    { id: 109, token: "bug-test-multiple-1", email: "bugtest3@kanaliiga.fi" },
+    { id: 110, token: "bug-test-multiple-2", email: "bugtest4@kanaliiga.fi" },
+    { id: 111, token: "bug-test-multiple-3", email: "bugtest5@kanaliiga.fi" },
+    { id: 112, token: "bug-test-navigation", email: "bugtest6@kanaliiga.fi" },
+    { id: 113, token: "bug-test-loading", email: "bugtest7@kanaliiga.fi" }
   ];
 
   for (const account of validTokenAccounts) {
@@ -428,46 +436,47 @@ export async function seed(knex: Knex): Promise<void> {
     is_work_email_personal_email: true
   });
 
-  // Set up captain permissions for account_id 15003 (the auth user)
-  // First ensure the captain role exists
-  await knex.raw(
-    `
-    INSERT INTO Roles (role_name)
-    VALUES ('captain')
-    ON DUPLICATE KEY UPDATE role_name = VALUES(role_name)
-  `
-  );
+  // Create team registration and player records for season 16, team 999
+  // This will automatically create captain permissions via database triggers
+  await knex("SeasonTeamRegistrations").insert({
+    season_id: 16,
+    team_id: 999,
+    approved: true,
+    terms_and_conditions_approved: true
+  });
 
-  // Ensure the edit-registration permission exists
-  await knex.raw(
-    `
-    INSERT INTO Permissions (permission_name)
-    VALUES ('edit-registration')
-    ON DUPLICATE KEY UPDATE permission_name = VALUES(permission_name)
-  `
-  );
+  // Add players to the team registration with captain status
+  // This will automatically create captain permissions via database triggers
+  const teamPlayers = [
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999901", // account_id 15003 - Aabe (captain)
+      is_captain: true,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999904", // account_id 15006 - Trev (co-captain)
+      is_captain: false,
+      is_co_captain: true
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999903", // account_id 15005 - Quattra (co-captain)
+      is_captain: false,
+      is_co_captain: false
+    }
+  ];
 
-  // Add captain role to account_id 15003
-  await knex.raw(
-    `
-    INSERT INTO AccountRoles (account_id, role_id, game_id)
-    SELECT 15003, r.id, 1
-    FROM Roles r
-    WHERE r.role_name = 'captain'
-    ON DUPLICATE KEY UPDATE account_id = VALUES(account_id)
-  `
-  );
+  for (const player of teamPlayers) {
+    await knex("SeasonTeamRegistrationPlayers").insert(player);
+  }
 
-  // Add edit-registration permission scope for season 16, team 999 to account_id 15003
-  await knex.raw(
-    `
-    INSERT INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
-    SELECT 15003, p.id, 16, 999
-    FROM Permissions p
-    WHERE p.permission_name = 'edit-registration'
-    ON DUPLICATE KEY UPDATE account_id = VALUES(account_id)
-  `
-  );
+  // Captain permissions are now handled automatically by database triggers
+  // No need to manually insert AccountPermissionScopes or AccountRoles
 
   // Add SeasonPlayerRanks data for our NEW test players
   // This ensures backend validation passes during submission
@@ -596,5 +605,96 @@ export async function seed(knex: Knex): Promise<void> {
         rankData.faceit_kd ?? null
       ]
     );
+  }
+
+  // Add SeasonTeamPlayers records for the sortter API
+  // This is needed because the sortter API queries SeasonTeamPlayers table
+  const seasonTeamPlayersForSortter = [
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999901", // Aabe
+      role: "primary",
+      is_captain: true,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999902", // heppajpg
+      role: "primary",
+      is_captain: false,
+      is_co_captain: true
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999903", // Quattra
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999905", // Hoolyz
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999906", // RealPlayer1
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999907", // RealPlayer2
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    },
+    {
+      season_id: 16,
+      team_id: 999,
+      steam_id: "66561198999999908", // RealPlayer3
+      role: "primary",
+      is_captain: false,
+      is_co_captain: false
+    }
+  ];
+
+  for (const player of seasonTeamPlayersForSortter) {
+    await knex("SeasonTeamPlayers").insert(player);
+  }
+
+  // Add admin role for heppajpg (account_id 15004) for e2e tests
+  // This is needed because the sortter page requires admin role
+  await knex.raw(`
+    INSERT INTO AccountRoles (account_id, role_id, game_id) 
+    SELECT 15004, id, 1 FROM Roles WHERE role_name = 'admin'
+    ON DUPLICATE KEY UPDATE account_id = account_id
+  `);
+
+  // Add kana_elo values to SeasonPlayerRanks for the sortter API
+  // The sortter API needs kana_elo values to calculate team rankings
+  const kanaEloUpdates = [
+    { steam_id: "66561198999999901", kana_elo: 180 }, // Aabe
+    { steam_id: "66561198999999902", kana_elo: 175 }, // heppajpg
+    { steam_id: "66561198999999903", kana_elo: 170 }, // Quattra
+    { steam_id: "66561198999999905", kana_elo: 160 }, // Hoolyz
+    { steam_id: "66561198999999906", kana_elo: 160 }, // RealPlayer1
+    { steam_id: "66561198999999907", kana_elo: 150 }, // RealPlayer2
+    { steam_id: "66561198999999908", kana_elo: 150 } // RealPlayer3
+  ];
+
+  for (const update of kanaEloUpdates) {
+    await knex("SeasonPlayerRanks")
+      .where({ steam_id: update.steam_id, season_id: 16 })
+      .update({ kana_elo: update.kana_elo });
   }
 }

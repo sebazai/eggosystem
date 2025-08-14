@@ -1,6 +1,6 @@
 services:
   backend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:stage
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-backend:${BACKEND_VERSION}
     pull_policy: always
     depends_on:
       eggo-stage-db:
@@ -26,6 +26,16 @@ services:
       SMTP_PASSWORD: $SMTP_PASSWORD
       ALLSTAR_WEBHOOK_TOKEN: $ALLSTAR_WEBHOOK_TOKEN
       ALLSTAR_API_KEY: $ALLSTAR_API_KEY
+      DISCORD_CLIENT_ID: $DISCORD_CLIENT_ID
+      DISCORD_CLIENT_SECRET: $DISCORD_CLIENT_SECRET
+      DISCORD_BOT_TOKEN: $DISCORD_BOT_TOKEN
+      DISCORD_GUILD_ID: $DISCORD_GUILD_ID
+      RABBITMQ_HOST: eggo-stage-rabbitmq
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_STAGE_PASS}
+      BACKEND_SERVICE_API_KEY: ${STAGE_SERVICE_API_KEY}
+      JWT_SECRET: $JWT_SECRET
+      FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
     networks:
       - web
     volumes:
@@ -50,7 +60,7 @@ services:
     restart: always
 
   frontend:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:stage
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-frontend:${FRONTEND_VERSION}
     pull_policy: always
     depends_on:
       - backend
@@ -108,9 +118,12 @@ services:
 
   eggo-stage-redis:
     image: redis:8-alpine
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
     networks:
       - web
     restart: always
+    volumes:
+      - redis-stage-data:/data
 
   phpmyadmin-hubstage:
     depends_on:
@@ -142,7 +155,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-migrations:
-    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:staging
+    image: registry.gitlab.com/kanaliiga_public/kanahub/eggosystem/eggo-migrations:${MIGRATIONS_VERSION}
     depends_on:
       eggo-stage-db:
         condition: service_healthy
@@ -159,6 +172,36 @@ services:
       - web
     restart: no
 
+  eggo-stage-rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: eggo-stage-rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_STAGE_PASS}
+    networks:
+      - web
+    ports:
+      - "5672:5672"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq-hubstage.entrypoints=http"
+      - "traefik.http.routers.rabbitmq-hubstage.rule=Host(`hubstage-mq.kanaliiga.fi`)"
+      - "traefik.http.middlewares.rabbitmq-hubstage-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.rabbitmq-hubstage.middlewares=rabbitmq-hubstage-https-redirect"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.entrypoints=https"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.rule=Host(`hubstage-mq.kanaliiga.fi`)"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls=true"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls.domains[0].main=hubstage-mq.kanaliiga.fi"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.tls.certresolver=http"
+      - "traefik.http.routers.rabbitmq-hubstage-secure.service=rabbitmq-hubstage"
+      - "traefik.http.services.rabbitmq-hubstage.loadbalancer.server.port=15672"
+      - "traefik.docker.network=web"
+
 networks:
   web:
     external: true
+
+volumes:
+  redis-stage-data:
+    name: eggo_stage_redis_data

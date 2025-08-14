@@ -5,6 +5,7 @@ import { FilteredMatchesList } from "@/components/matches/FilteredMatchesList";
 import _ from "lodash";
 import { useFilters } from "@/context/FilterContext";
 import { ContentContainer } from "@/components/layout/ContentContainer";
+import { Suspense } from "react";
 
 export const RecentMatches = () => {
   const { filterParams, isLoading, error, isValidating } = useFilters();
@@ -26,7 +27,11 @@ export const RecentMatches = () => {
         />
       </div>
 
-      <FilteredMatchesList filterQueryParams={filterParams} />
+      <Suspense
+        fallback={<ContentContainer>Loading matches...</ContentContainer>}
+      >
+        <FilteredMatchesList filterQueryParams={filterParams} />
+      </Suspense>
     </div>
   );
 };

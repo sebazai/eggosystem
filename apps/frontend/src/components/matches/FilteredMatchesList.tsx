@@ -30,7 +30,7 @@ export const FilteredMatchesList = ({
       if (!acc[matchDate]) {
         acc[matchDate] = [];
       }
-      acc[matchDate].push(match);
+      acc[matchDate]?.push(match);
       return acc;
     },
     {} as Record<string, typeof matches>

@@ -1,11 +1,11 @@
 import React from "react";
-import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
-import { PlayerPageWithFilters } from "@/components/players/PlayerPageWithFilters";
+import { PlayerSummary } from "@/components/players/PlayerSummary";
 import type { Metadata } from "next";
 import { envConfig } from "@/configs/env";
 import type { SteamPlayer } from "@eggosystem/types";
 import { createPageMetadata } from "@/lib/metadata";
 import { ContentContainer } from "@/components/layout/ContentContainer";
+import PlayerTabLayoutClient from "./PlayerTabLayoutClient";
 
 interface PlayerDetailsProps {
   params: Promise<{
@@ -44,14 +44,8 @@ export default async function PlayerDetailsPage({
   }
 
   return (
-    <div className="mx-auto py-4 px-2">
-      <div className="mb-3">
-        <AutoBreadcrumbs />
-      </div>
-
-      <div className="mb-3">
-        <PlayerPageWithFilters steamId={steamId} />
-      </div>
-    </div>
+    <PlayerTabLayoutClient steamId={steamId}>
+      <PlayerSummary steamId={steamId} />
+    </PlayerTabLayoutClient>
   );
 }

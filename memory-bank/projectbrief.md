@@ -30,17 +30,3 @@
 3. **Usability**: Intuitive navigation and clear data presentation
 4. **Maintainability**: Clean code patterns and comprehensive testing
 5. **Mobile Experience**: Fully functional on mobile devices
-
-## Constraints
-
-- **Technology Stack**: Node.js/TypeScript backend, Next.js frontend
-- **Database**: PostgreSQL with complex relational data
-- **Development Environment**: DevContainer-based development
-- **Package Management**: PNPM monorepo structure
-
-## Key Stakeholders
-
-- **End Users**: Esports fans, players, teams, and analysts
-- **Content Creators**: Those needing detailed statistics for content
-- **Tournament Organizers**: League and tournament administrators
-- **Developers**: Internal development team maintaining the platform

@@ -9,7 +9,7 @@ export const manualPlayerApprovalFormSchema = z
     acceptedPlayerSteamIds: z
       .array(
         z.object({
-          name: z
+          steamId: z
             .string()
             .min(17, "Steam ID should be 17 numbers")
             .max(17, "Steam ID should be 17 numbers")
@@ -18,7 +18,7 @@ export const manualPlayerApprovalFormSchema = z
       .min(1, "At least one player must be added"),
     organizationName: z.string().optional(),
     organizationCode: z.string().optional(),
-    organizationWebsite: z.string().url().optional(),
+    organizationWebsite: z.string().url().optional().or(z.literal("")),
     newTeamName: z.string().optional(),
     ticketId: z.string().optional(),
     details: z.string().optional()
@@ -28,7 +28,7 @@ export const manualPlayerApprovalFormSchema = z
       if (!data.newTeamName?.trim()) {
         ctx.addIssue({
           path: ["newTeamName"],
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Team name is required"
         });
       }
@@ -37,21 +37,21 @@ export const manualPlayerApprovalFormSchema = z
       if (!data.organizationName?.trim()) {
         ctx.addIssue({
           path: ["organizationName"],
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Organization name is required"
         });
       }
       if (!data.organizationCode?.trim()) {
         ctx.addIssue({
           path: ["organizationCode"],
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Organization code is required"
         });
       }
       if (!data.organizationWebsite?.trim()) {
         ctx.addIssue({
           path: ["organizationWebsite"],
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           message: "Organization website is required"
         });
       }
@@ -59,12 +59,12 @@ export const manualPlayerApprovalFormSchema = z
     if (!data.teamId && !data.organizationId) {
       ctx.addIssue({
         path: ["organizationId"],
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Either Team or Organization has to be selected"
       });
       ctx.addIssue({
         path: ["teamId"],
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "Either Team or Organization has to be selected"
       });
     }

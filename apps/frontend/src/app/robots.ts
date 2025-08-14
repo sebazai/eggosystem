@@ -4,7 +4,9 @@ export default function robots(): MetadataRoute.Robots {
   const isProduction = process.env.NODE_ENV === "production";
   const isHubDev = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
-  return isProduction && !isHubDev.includes("hubdev")
+  return isProduction &&
+    !isHubDev.includes("hubdev") &&
+    !isHubDev.includes("hubstage")
     ? {
         rules: {
           userAgent: "*",

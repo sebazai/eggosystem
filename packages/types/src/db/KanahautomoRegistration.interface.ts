@@ -1,0 +1,7 @@
+export interface KanahautomoRegistration {
+  id: number;
+  steam_id: string; // steam_id from SteamPlayers (bigInteger)
+  organization_id: number;
+  accepted_terms: boolean;
+  created_at: string;
+}

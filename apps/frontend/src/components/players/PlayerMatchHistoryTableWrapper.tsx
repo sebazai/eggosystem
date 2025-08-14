@@ -34,10 +34,8 @@ const PlayerMatchHistoryTableWrapper = ({
 }) => {
   return (
     <div className="bg-card rounded-md overflow-hidden">
-      <div className="p-3 sm:p-6">
-        <h2 className="text-xl font-semibold mb-2">Match History</h2>
-        {children}
-      </div>
+      <h2 className="text-xl font-semibold mb-2">Match History</h2>
+      {children}
     </div>
   );
 };
@@ -243,7 +241,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (isLoading) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <div className="p-3 sm:p-6 text-center">
+        <div className="text-center">
           <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
           <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
         </div>
@@ -254,7 +252,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   if (matchHistory?.length === 0) {
     return (
       <PlayerMatchHistoryTableWrapper>
-        <div className="p-3 sm:p-6 text-center text-muted-foreground">
+        <div className="text-center text-muted-foreground">
           No match history available for this player with the current filters.
         </div>
       </PlayerMatchHistoryTableWrapper>

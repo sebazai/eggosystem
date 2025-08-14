@@ -4,11 +4,13 @@ import {
   type PostTeamManualPlayerApprovalSchemaType,
   type ActiveSeasonSignupForAppId,
   type SeasonRegisteredTeamsWithPlayers,
-  type SeasonTeamRegistration
+  type SeasonTeamRegistration,
+  type PlayerFullName
 } from "@eggosystem/types";
+import JSONBig from "json-bigint";
 import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
-import { getActiveSignupSeasonForAppId } from "../season.models";
+import { getActiveSignupOrActiveSeasonForAppId } from "../season.models";
 import { BadRequestError } from "../../utils/errors";
 import {
   insertCSPlayerRankForSeason,
@@ -23,7 +25,7 @@ export const addManuallyApprovedPartialSignupForSeason = async (
 ) => {
   const connection = await getConnection();
 
-  const activeSeason = await getActiveSignupSeasonForAppId(730);
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
 
   if (!activeSeason) {
     throw new BadRequestError("No active registration ongoing for CS");
@@ -80,8 +82,10 @@ export const addSeasonRankForPlayer = async (
 
 interface RegisteredTeamQueryResult extends SeasonTeamRegistration {
   team_name: string;
+  team_id: number;
   players: string;
   season_platform: SeasonPlatform;
+  season_id: number;
   captain_nickname: string;
   co_captain_nickname: string;
 }
@@ -91,32 +95,130 @@ export const getRegisteredTeams = async (seasonId: number) => {
     SELECT 
       str.*,
       t.name as team_name,
+      t.id as team_id,
       s.platform as season_platform,
-      spc.nickname as captain_nickname,
-      spcc.nickname as co_captain_nickname,
-      GROUP_CONCAT(CONCAT(sp.steam_id, ':', sp.nickname) SEPARATOR ',') as players
+      s.id as season_id,
+      MAX(CASE WHEN stp.is_captain = 1 THEN sp.nickname END) as captain_nickname,
+      MAX(CASE WHEN stp.is_co_captain = 1 THEN sp.nickname END) as co_captain_nickname,
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
+          'steam_id', sp.steam_id,
+          'nickname', sp.nickname,
+          'work_email', a.work_email,
+          'is_work_email_personal_email', a.is_work_email_personal_email
+        )
+      ) as players
     FROM SeasonTeamRegistrations str 
       JOIN Teams t ON str.team_id = t.id 
-      JOIN SeasonTeamPlayers stp ON str.team_id = stp.team_id AND stp.season_id = str.season_id
+      JOIN SeasonTeamRegistrationPlayers stp ON str.team_id = stp.team_id AND stp.season_id = str.season_id
       JOIN Seasons s ON str.season_id = s.id
-      LEFT JOIN SteamPlayers spc ON str.captain_steam_id = spc.steam_id
-      LEFT JOIN SteamPlayers spcc ON str.co_captain_steam_id = spcc.steam_id
       JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
+      JOIN Accounts a ON sp.account_id = a.id
     WHERE str.season_id = ?
     GROUP BY str.team_id, t.name, str.season_id
   `;
   const rows = await runQuery<RegisteredTeamQueryResult[]>(query, [seasonId]);
-  // Parse players string into array of objects
+  // Parse players JSON array into array of objects
   return rows.map(
     (row) =>
       ({
         ...row,
         players: row.players
-          ? row.players.split(",").map((p: string) => {
-              const [steam_id, nickname] = p.split(":");
-              return { steam_id, nickname };
-            })
+          ? JSONBig({ storeAsString: true }).parse(row.players)
           : []
       }) satisfies SeasonRegisteredTeamsWithPlayers
   );
+};
+
+export const getPlayerFullName = async (
+  steamId: string
+): Promise<PlayerFullName | undefined> => {
+  const query = `
+    SELECT 
+      sp.steam_id,
+      a.full_name
+    FROM SteamPlayers sp
+    JOIN Accounts a ON a.id = sp.account_id
+    WHERE sp.steam_id = ?
+  `;
+
+  const results = await runQuery<PlayerFullName[]>(query, [steamId]);
+  return results.length > 0 ? results[0] : undefined;
+};
+
+export const bulkApproveTeamRegistrations = async (
+  seasonId: number,
+  teamIds: number[],
+  approvedByAccountId: number
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // Update the approved status for all specified teams
+    const updateQuery = `
+      UPDATE SeasonTeamRegistrations 
+      SET approved = true, approved_by = ?
+      WHERE season_id = ? AND team_id IN (${teamIds.map(() => "?").join(",")})
+    `;
+
+    const result = await runQuery<{ affectedRows: number }>(
+      updateQuery,
+      [approvedByAccountId, seasonId, ...teamIds],
+      connection
+    );
+
+    // Get the updated teams using the existing function
+    const updatedTeams = await getRegisteredTeams(seasonId);
+
+    await connection.commit();
+
+    return {
+      success: true,
+      updatedCount: result.affectedRows,
+      teams: updatedTeams
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+export const manualValidityCheck = async (
+  seasonId: number,
+  teamIds: number[],
+  checkedByAccountId: number
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const updateQuery = `
+      UPDATE SeasonTeamRegistrations 
+      SET manual_validity_check_override = true, manual_validity_check_by = ?
+      WHERE season_id = ? AND team_id IN (${teamIds.map(() => "?").join(",")})
+    `;
+
+    const result = await runQuery<{ affectedRows: number }>(
+      updateQuery,
+      [checkedByAccountId, seasonId, ...teamIds],
+      connection
+    );
+
+    await connection.commit();
+
+    return {
+      success: true,
+      updatedCount: result.affectedRows
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };

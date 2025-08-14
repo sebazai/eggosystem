@@ -4,6 +4,9 @@ import { getOwnedGamesHandlers } from "./steam/GetOwnedGames-handlers";
 import { faceitPlayerGameRankHandlers } from "./faceit/GameRank-handlers";
 import { faceitMetadataHandlers } from "./faceit/Metadata-handlers";
 import { faceitTeamHandlers } from "./faceit/Teams-handlers";
+import { faceitMatchDetailsHandlers } from "./faceit/MatchDetails-handlers";
+import { faceitDemoHandlers } from "./faceit/Demo-handlers";
+import { faceitChampionshipHandlers } from "./faceit/ChampionshipDetails-handlers";
 
 const handlers = [
   ...getPlayerSummariesHandlers,
@@ -11,7 +14,10 @@ const handlers = [
   ...getOwnedGamesHandlers,
   ...faceitMetadataHandlers,
   ...faceitPlayerGameRankHandlers,
-  ...faceitTeamHandlers
+  ...faceitTeamHandlers,
+  ...faceitMatchDetailsHandlers,
+  ...faceitDemoHandlers,
+  ...faceitChampionshipHandlers
 ];
 
 export { handlers };

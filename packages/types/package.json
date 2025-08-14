@@ -4,21 +4,22 @@
   "description": "Shared TypeScript types for the Eggosystem project",
   "scripts": {
     "lint": "eslint .",
-    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "clean": "rm -rf cache dist"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "keywords": [],
   "author": "",
   "dependencies": {
-    "zod": "3.24.4"
+    "zod": "4.0.14"
   },
   "devDependencies": {
     "@eggosystem/tsconfig": "workspace:*",
     "@eggosystem/eslint": "workspace:*",
-    "@types/express": "5.0.2"
+    "@types/express": "5.0.3"
   },
   "exports": {
     ".": {

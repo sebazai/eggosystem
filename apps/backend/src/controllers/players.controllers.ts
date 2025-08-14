@@ -1,4 +1,4 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import {
   getPlayerDetailsBySteamId,
   getMultiplePlayerStatsByFilters,
@@ -8,7 +8,9 @@ import {
   getPlayerGameDetailsWithFilters,
   getPlayerTeamDetailsWithFilters,
   getPlayerStatsForLatestSeason,
-  getPlayerOldKanaElo
+  getPlayerOldKanaElo,
+  getPlayerMapStatsWithFilters,
+  setPlayerKanaElo
 } from "../models/player.models";
 
 import {
@@ -19,31 +21,37 @@ import {
 } from "../services/player-ranks.services";
 import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
+import {
+  getPlayerSkillDiagram,
+  getMultiplePlayersSkillDiagrams
+} from "../models/player-skills.models";
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError
+} from "../utils/errors";
+import { logger } from "../utils/app-logger";
 
 export const getPlayerBySteamIdController = async (
   req: RequestWithParams<{ steam_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const steam_id = req.params.steam_id;
   const [player] = await getPlayerBySteamId(steam_id);
-  if (!player) {
-    res.status(404).json({ message: "Not found" });
-    return;
-  }
+  if (!player) return next(new NotFoundError("Not found"));
   res.json(player);
 };
 
 export const getPlayerDetailsBySteamIdController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const steam_id = req.params.steam_id;
   const player = await getPlayerDetailsBySteamId(steam_id);
 
-  if (!player) {
-    res.status(404).json({ message: "User not found" });
-    return;
-  }
+  if (!player) return next(new NotFoundError("User not found"));
 
   res.status(200).json(player);
 };
@@ -89,7 +97,11 @@ export const getPlayerSteamAppIdRank = async (req: Request, res: Response) => {
   res.status(200).json(rank);
 };
 
-export const getPlayerPlatformRank = async (req: Request, res: Response) => {
+export const getPlayerPlatformRank = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const steam_id = req.params.steam_id;
   const platform = req.params.platform;
   const season_id = req.query.season_id?.toString()
@@ -106,7 +118,7 @@ export const getPlayerPlatformRank = async (req: Request, res: Response) => {
     res.status(200).json(platform_rank);
     return;
   }
-  res.status(400).json({ message: "Unknown platform enum" });
+  return next(new BadRequestError("Unknown platform enum"));
 };
 
 export const getFilteredPlayersStatsController = async (
@@ -122,7 +134,8 @@ export const getFilteredPlayersStatsController = async (
 
 export const getFilteredPlayerMatchHistoryController = async (
   req: RequestWithParams<{ steam_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const { steam_id } = req.params;
   const { parsedParams } = req;
@@ -132,12 +145,8 @@ export const getFilteredPlayerMatchHistoryController = async (
     parsedParams
   );
 
-  if (!matchHistory) {
-    res.status(404).json({
-      error: "Player match history not found."
-    });
-    return;
-  }
+  if (!matchHistory)
+    return next(new NotFoundError("Player match history not found."));
 
   res.status(200).json(matchHistory);
 };
@@ -201,33 +210,176 @@ export const getPlayerKanaRankController = async (
 
 export const getPlayerStatsForLatestSeasonController = async (
   req: RequestWithParams<{ steam_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const { steam_id } = req.params;
 
   const playerLatestSeasonStats = await getPlayerStatsForLatestSeason(steam_id);
 
-  if (!playerLatestSeasonStats) {
-    res
-      .status(404)
-      .json({ message: "Player stats not found for latest season" });
-    return;
-  }
+  if (!playerLatestSeasonStats)
+    return next(new NotFoundError("Player stats not found for latest season"));
 
   res.status(200).json(playerLatestSeasonStats);
 };
 
 export const getPlayerOldKanaEloController = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const steam_id = req.params.steam_id;
   const oldKanaElo = await getPlayerOldKanaElo(steam_id);
 
-  if (!oldKanaElo) {
-    res.status(404).json({ message: "No previous season data found" });
-    return;
-  }
+  if (!oldKanaElo)
+    return next(new NotFoundError("No previous season data found"));
 
   res.status(200).json(oldKanaElo);
+};
+
+/**
+ * Get player skill diagram data with 5 core skill categories
+ * Supports filtering by season, map, and stage
+ * @param req Request with steam_id parameter and filter params
+ * @param res Response with PlayerSkillDiagram object
+ */
+export const getPlayerSkillDiagramController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const skillDiagram = await getPlayerSkillDiagram(steam_id, parsedParams);
+
+  if (!skillDiagram)
+    return next(new NotFoundError("Player skill data not found"));
+
+  res.status(200).json(skillDiagram);
+};
+
+/**
+ * Get aggregated skill diagram for multiple players based on filter criteria
+ * Returns a single diagram that represents the group average skill profile
+ * @param req Request with filter parameters
+ * @param res Response with a single aggregated PlayerSkillDiagram
+ */
+export const getMultiplePlayersSkillDiagramController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { parsedParams } = req;
+
+  // Validate that only one filter type is selected
+  const filterTypes = [
+    parsedParams.team_ids !== null &&
+      Array.isArray(parsedParams.team_ids) &&
+      parsedParams.team_ids.length > 0,
+    parsedParams.tier !== null && parsedParams.tier !== undefined,
+    parsedParams.faceit_level !== null &&
+      parsedParams.faceit_level !== undefined,
+    parsedParams.cs2_rank_min !== null && parsedParams.cs2_rank_max !== null
+  ];
+
+  const activeFilters = filterTypes.filter(Boolean).length;
+
+  // Multiple filter types selected - reject with error
+  if (activeFilters > 1) {
+    return next(
+      new BadRequestError(
+        "Only one filter type (team, tier, faceit_level, or cs2_rank range) can be selected at a time"
+      )
+    );
+  }
+
+  const aggregatedSkillDiagram =
+    await getMultiplePlayersSkillDiagrams(parsedParams);
+
+  if (!aggregatedSkillDiagram) {
+    return next(
+      new NotFoundError("No player data found matching the specified filters")
+    );
+  }
+
+  res.status(200).json(aggregatedSkillDiagram);
+};
+
+export const getFilteredPlayerMapStatsController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+) => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const playerMapStats = await getPlayerMapStatsWithFilters(
+    steam_id,
+    parsedParams
+  );
+
+  res.status(200).json(playerMapStats);
+};
+
+export const setPlayerKanaEloController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { steam_id } = req.params;
+  const { kana_elo, calculus, season_id } = req.body;
+
+  // Validate required fields
+  if (kana_elo === undefined || kana_elo === null) {
+    return next(new BadRequestError("kana_elo is required"));
+  }
+
+  if (!calculus) {
+    return next(new BadRequestError("calculus is required"));
+  }
+
+  if (season_id === undefined || season_id === null) {
+    return next(new BadRequestError("season_id is required"));
+  }
+
+  // Validate data types
+  if (typeof kana_elo !== "number") {
+    return next(new BadRequestError("kana_elo must be a number"));
+  }
+
+  if (typeof season_id !== "number") {
+    return next(new BadRequestError("season_id must be a number"));
+  }
+
+  // Validate kana_elo range
+  if (kana_elo < 0 || kana_elo > 400) {
+    return next(new BadRequestError("kana_elo must be between 0 and 400"));
+  }
+
+  try {
+    // Update the kana_elo using the model function
+    const success = await setPlayerKanaElo(
+      steam_id,
+      kana_elo,
+      calculus,
+      season_id
+    );
+
+    if (!success) {
+      return next(
+        new NotFoundError("Player not found for the specified season")
+      );
+    }
+
+    res.status(200).json({
+      message: "Kana ELO updated successfully",
+      steam_id,
+      kana_elo,
+      calculus,
+      season_id
+    });
+  } catch (error) {
+    logger.error("Update Kana ELO error", error);
+    return next(new InternalServerError("Failed to update Kana ELO"));
+  }
 };

@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const nextJest = require("next/jest");
 
 const createJestConfig = nextJest({
@@ -5,14 +7,13 @@ const createJestConfig = nextJest({
 });
 
 const customJestConfig = {
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testEnvironment: "jsdom",
-  testMatch: ["<rootDir>/src/__tests__/unit/**/*.(test|spec).(js|jsx|ts|tsx)"],
-  collectCoverageFrom: [
-    "src/**/*.{js,jsx,ts,tsx}",
-    "!src/**/*.d.ts",
-    "!src/__tests__/**/*"
-  ],
+  testEnvironmentOptions: {
+    customExportConditions: ["react-jsx"]
+  },
+  testMatch: ["<rootDir>/src/**/*.(test).(js|jsx|ts|tsx)"],
+  collectCoverageFrom: ["src/**/*.{js,jsx,ts,tsx}", "!src/**/*.d.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1"
   },

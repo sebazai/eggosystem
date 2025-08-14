@@ -1,4 +1,4 @@
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import {
   getMatches,
   getMatchPlayerStats,
@@ -9,28 +9,81 @@ import {
   getMatchInfo,
   getMatch,
   getMatchGame,
-  getMatchMapVetoes
+  getMatchMapVetoes,
+  getMatchWithBreadcrumbInfo,
+  getMatchesWithTeamDataBySeasonId,
+  getMatchGamesByTeam
 } from "../models/match.models";
-import type { RequestWithParams } from "@eggosystem/types";
+import type {
+  MatchGame,
+  MatchInfo,
+  MatchTeamInfo,
+  MatchesWithTeamData,
+  RequestWithParams
+} from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
+import { getActiveSeasonForAppId } from "../models/season.models";
 
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
   res.status(200).json({ matches });
 };
 
+// Used externally by grmrpr
+export const getMatchesBySeasonIdController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const seasonId =
+    req.params.season_id === "active"
+      ? (await getActiveSeasonForAppId(730))?.season_id
+      : Number(req.params.season_id);
+
+  if (!seasonId) {
+    if (req.params.season_id === "active") {
+      return next(new NotFoundError("No current active season found"));
+    }
+    return next(new NotFoundError("Season not found"));
+  }
+
+  const matches = await getMatchesWithTeamDataBySeasonId(seasonId);
+  res.status(200).json({
+    matches: matches.map(
+      (match) =>
+        ({
+          ...match,
+          teams: JSON.parse(match.teams) as Record<string, MatchTeamInfo>
+        }) satisfies MatchesWithTeamData
+    )
+  });
+};
+
 export const getMatchController = async (
   req: RequestWithParams<{ match_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const matchId = parseInt(req.params.match_id, 10);
   const [match] = await getMatch(matchId);
 
   if (!match) {
-    res.status(404).json({ error: "Match not found" });
-    return;
+    return next(new NotFoundError("Match not found"));
   }
 
+  res.json(match);
+};
+
+export const getMatchBreadcrumbController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+  const [match] = await getMatchWithBreadcrumbInfo(matchId);
+  if (!match) {
+    return next(new NotFoundError("Match data not found"));
+  }
   res.json(match);
 };
 
@@ -60,7 +113,13 @@ export const getMatchInfoController = async (
     throw new NotFoundError("Match not found");
   }
 
-  res.json(match);
+  const matchInfo = {
+    ...match,
+    game_ids: JSON.parse(match.game_ids) as MatchGame["id"] | MatchGame["id"][],
+    teams: JSON.parse(match.teams) as Record<string, MatchTeamInfo>
+  } satisfies MatchInfo;
+
+  res.json(matchInfo);
 };
 
 export const getFilteredMatchesController = async (
@@ -78,7 +137,16 @@ export const getMatchTopPlayersController = async (
   res: Response
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
+
   const topplayers = await getMatchTopPlayers(match_id);
+
+  if (!topplayers) {
+    res
+      .status(404)
+      .json({ error: { message: "Could not find top players for match" } });
+    return;
+  }
+
   res.json(topplayers);
 };
 
@@ -109,6 +177,13 @@ export const getMatchGamesController = async (
   const match_id = parseInt(req.params.match_id, 10);
   const mapsPlayed = await getMatchGames(match_id);
 
+  if (mapsPlayed.length === 0) {
+    res
+      .status(404)
+      .json({ error: { message: "Could not find maps played for match" } });
+    return;
+  }
+
   res.json(mapsPlayed);
 };
 
@@ -119,4 +194,16 @@ export const getMatchMapVetoesController = async (
   const matchId = parseInt(req.params.match_id, 10);
   const vetoes = await getMatchMapVetoes(matchId);
   res.json(vetoes || []);
+};
+
+export const getMatchGamesByTeamController = async (
+  req: RequestWithParams<{ team_id: string }>,
+  res: Response
+) => {
+  const teamIdNumber = Number(req.params.team_id);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const matchGames = await getMatchGamesByTeam(teamIdNumber, seasonId);
+  res.json(matchGames);
 };

@@ -10,18 +10,17 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
-import type { Map, Match, MatchGame, SteamPlayer } from "@eggosystem/types";
+import type {
+  Map,
+  Match,
+  MatchGame,
+  Stage,
+  SteamPlayer
+} from "@eggosystem/types";
 import { envConfig } from "@/configs/env";
 
-const matchBreadcrumbLabel = (bestOf: number, stage: number) => {
-  if (stage === 1) {
-    return `BO${bestOf} - Regular`;
-  }
-  if (stage === 2) {
-    return `BO${bestOf} - Playoffs`;
-  }
-
-  return undefined;
+const matchBreadcrumbLabel = (bestOf: number, stage: string) => {
+  return `BO${bestOf} - ${stage}`;
 };
 
 // Simulate fetching a label for an ID
@@ -37,11 +36,12 @@ async function fetchLabelFor(resource: string, id: string): Promise<string> {
     }
     case "matches": {
       const response = await fetch(
-        `${envConfig.API_URL}/api/v1/${resource}/${id}`
+        `${envConfig.API_URL}/api/v1/${resource}/${id}/breadcrumb`
       );
-      const data: Match = await response.json();
+
+      const data: Match & Stage = await response.json();
       return (
-        matchBreadcrumbLabel(data.best_of, data.stage) ||
+        matchBreadcrumbLabel(data.best_of, data.name) ||
         `${resource.slice(0, -1)} ${id}`
       );
     }

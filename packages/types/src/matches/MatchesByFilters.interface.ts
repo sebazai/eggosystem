@@ -1,6 +1,6 @@
 import type {
   Match,
-  SeasonLeague,
+  League,
   Map,
   Team,
   TeamGameScore,
@@ -13,7 +13,7 @@ export interface MatchesByFilters {
   game_id: Nullable<MatchGame["id"]>;
   match_date: Match["match_date"];
   stage: Match["stage"];
-  league_name: SeasonLeague["name"];
+  league_name: League["name"];
   map_name: Map["name"];
   team1_name: Team["name"];
   team2_name: Team["name"];

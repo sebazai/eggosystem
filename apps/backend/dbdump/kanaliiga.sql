@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Jun 21, 2025 at 06:55 AM
+-- Generation Time: Aug 06, 2025 at 04:14 PM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -21,6 +21,24 @@ SET time_zone = "+00:00";
 -- Database: `kanaliiga`
 --
 
+DELIMITER $$
+--
+-- Functions
+--
+CREATE DEFINER=`kanadbuser`@`%` FUNCTION `get_account_id_from_steam_id` (`steam_id_param` BIGINT) RETURNS INT(10) UNSIGNED DETERMINISTIC READS SQL DATA BEGIN
+      DECLARE account_id_result INT UNSIGNED;
+      
+      SELECT la.account_id INTO account_id_result
+      FROM LinkedAccounts la
+      WHERE la.provider = 'steam' 
+      AND la.provider_id = CAST(steam_id_param AS CHAR)
+      LIMIT 1;
+      
+      RETURN account_id_result;
+    END$$
+
+DELIMITER ;
+
 -- --------------------------------------------------------
 
 --
@@ -36,6 +54,80 @@ CREATE TABLE `AccountPermissionScopes` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Triggers `AccountPermissionScopes`
+--
+DELIMITER $$
+CREATE TRIGGER `validate_captain_permission_on_insert` BEFORE INSERT ON `AccountPermissionScopes` FOR EACH ROW BEGIN
+      DECLARE captain_status BOOLEAN DEFAULT FALSE;
+      DECLARE steam_id_found BIGINT;
+      
+      -- Check if this permission is for a captain-related permission
+      IF EXISTS (
+        SELECT 1 FROM Permissions p 
+        WHERE p.id = NEW.permission_id 
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+      ) THEN
+        
+        -- Find the steam_id for this account
+        SELECT strp.steam_id INTO steam_id_found
+        FROM SeasonTeamRegistrationPlayers strp
+        WHERE strp.season_id = NEW.season_id
+        AND strp.team_id = NEW.team_id
+        AND get_account_id_from_steam_id(strp.steam_id) = NEW.account_id
+        LIMIT 1;
+        
+        -- Check if this account is actually a captain or co-captain for this season/team
+        SELECT (is_captain = 1 OR is_co_captain = 1) INTO captain_status
+        FROM SeasonTeamRegistrationPlayers
+        WHERE season_id = NEW.season_id
+        AND team_id = NEW.team_id
+        AND steam_id = steam_id_found;
+        
+        IF NOT captain_status THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Cannot assign captain permissions to non-captain/co-captain player';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `validate_captain_permission_on_update` BEFORE UPDATE ON `AccountPermissionScopes` FOR EACH ROW BEGIN
+      DECLARE captain_status BOOLEAN DEFAULT FALSE;
+      DECLARE steam_id_found BIGINT;
+      
+      -- Check if this permission is for a captain-related permission
+      IF EXISTS (
+        SELECT 1 FROM Permissions p 
+        WHERE p.id = NEW.permission_id 
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+      ) THEN
+        
+        -- Find the steam_id for this account
+        SELECT strp.steam_id INTO steam_id_found
+        FROM SeasonTeamRegistrationPlayers strp
+        WHERE strp.season_id = NEW.season_id
+        AND strp.team_id = NEW.team_id
+        AND get_account_id_from_steam_id(strp.steam_id) = NEW.account_id
+        LIMIT 1;
+        
+        -- Check if this account is actually a captain or co-captain for this season/team
+        SELECT (is_captain = 1 OR is_co_captain = 1) INTO captain_status
+        FROM SeasonTeamRegistrationPlayers
+        WHERE season_id = NEW.season_id
+        AND team_id = NEW.team_id
+        AND steam_id = steam_id_found;
+        
+        IF NOT captain_status THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Cannot assign captain permissions to non-captain/co-captain player';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
 
 -- --------------------------------------------------------
 
@@ -102,6 +194,23 @@ CREATE TABLE `AuditLog` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `FaceitWebhooks`
+--
+
+CREATE TABLE `FaceitWebhooks` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `received_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `external_payload_id` varchar(255) NOT NULL,
+  `event` varchar(255) NOT NULL,
+  `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
+  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
+  `error_type` varchar(255) DEFAULT NULL,
+  `error_details` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `Games`
 --
 
@@ -110,6 +219,69 @@ CREATE TABLE `Games` (
   `name` varchar(255) NOT NULL,
   `abbreviation` varchar(255) NOT NULL,
   `app_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `GameTypes`
+--
+
+CREATE TABLE `GameTypes` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `min_players` int(11) DEFAULT NULL,
+  `max_players` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `KanahautomoRegistrationGameTypes`
+--
+
+CREATE TABLE `KanahautomoRegistrationGameTypes` (
+  `game_type_id` int(10) UNSIGNED NOT NULL,
+  `kanahautomo_registration_id` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `KanahautomoRegistrations`
+--
+
+CREATE TABLE `KanahautomoRegistrations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `organization_id` int(10) UNSIGNED NOT NULL,
+  `accepted_terms` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `knex_migrations`
+--
+
+CREATE TABLE `knex_migrations` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `batch` int(11) DEFAULT NULL,
+  `migration_time` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `knex_migrations_lock`
+--
+
+CREATE TABLE `knex_migrations_lock` (
+  `index` int(10) UNSIGNED NOT NULL,
+  `is_locked` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -132,7 +304,7 @@ CREATE TABLE `Leagues` (
 
 CREATE TABLE `LinkedAccounts` (
   `account_id` int(10) UNSIGNED NOT NULL,
-  `provider` enum('steam') NOT NULL,
+  `provider` enum('steam','discord') NOT NULL,
   `provider_id` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -175,12 +347,15 @@ CREATE TABLE `Matches` (
   `id` int(10) UNSIGNED NOT NULL,
   `league_id` int(10) UNSIGNED NOT NULL,
   `season_id` int(10) UNSIGNED NOT NULL,
-  `stage` tinyint(3) UNSIGNED NOT NULL DEFAULT 2,
+  `stage` int(10) UNSIGNED NOT NULL,
   `best_of` tinyint(3) UNSIGNED NOT NULL,
   `match_date` date NOT NULL,
   `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
-  `external_match_room_id` varchar(255) DEFAULT NULL
+  `end_time` time DEFAULT NULL,
+  `external_match_room_id` varchar(255) DEFAULT NULL,
+  `group` tinyint(4) DEFAULT NULL,
+  `round` tinyint(4) DEFAULT NULL,
+  `status` enum('SCHEDULED','CHECK_IN','VOTING','CONFIGURING','READY','ONGOING','FINISHED','ABORTED','CANCELLED','FORFEIT') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -261,8 +436,37 @@ CREATE TABLE `Organizations` (
   `organization_code` varchar(255) NOT NULL,
   `logo` varchar(255) NOT NULL DEFAULT 'nologo.png',
   `website` varchar(255) NOT NULL,
-  `sort_order` int(10) UNSIGNED DEFAULT NULL
+  `sort_order` int(10) UNSIGNED DEFAULT NULL,
+  `discord_invite_link` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `OrganizerGames`
+--
+
+CREATE TABLE `OrganizerGames` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `organizer_id` int(10) UNSIGNED NOT NULL,
+  `game_id` int(10) UNSIGNED NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Organizers`
+--
+
+CREATE TABLE `Organizers` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `faceit_id` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -456,14 +660,30 @@ CREATE TABLE `Roles` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `SeasonLeagueExternalIds`
+--
+
+CREATE TABLE `SeasonLeagueExternalIds` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `league_id` int(10) UNSIGNED NOT NULL,
+  `stage_id` int(10) UNSIGNED NOT NULL,
+  `external_id` varchar(255) NOT NULL,
+  `external_league_name` varchar(255) DEFAULT NULL,
+  `type` varchar(255) NOT NULL,
+  `isBO2PlayedAs2xBO1` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `SeasonLeagues`
 --
 
 CREATE TABLE `SeasonLeagues` (
   `tier` int(11) NOT NULL,
   `season_id` int(10) UNSIGNED NOT NULL,
-  `league_id` int(10) UNSIGNED NOT NULL,
-  `external_id` varchar(255) DEFAULT NULL
+  `league_id` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -477,7 +697,8 @@ CREATE TABLE `SeasonLeagueTeams` (
   `team_id` int(10) UNSIGNED NOT NULL,
   `league_id` int(10) UNSIGNED NOT NULL,
   `placement` tinyint(3) UNSIGNED DEFAULT NULL,
-  `position_offset` tinyint(3) UNSIGNED DEFAULT NULL
+  `position_offset` tinyint(3) UNSIGNED DEFAULT NULL,
+  `external_team_id` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -533,20 +754,21 @@ CREATE TABLE `SeasonPlayerRanks` (
   `steam_id` bigint(20) NOT NULL,
   `season_id` int(10) UNSIGNED NOT NULL,
   `rank_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
-  `csgo_rank` int(11) DEFAULT -1,
+  `csgo_rank` int(11) DEFAULT NULL,
   `cs2_rank` int(11) DEFAULT NULL,
   `cs_hours` int(11) DEFAULT NULL,
   `faceit_level` int(11) DEFAULT NULL,
   `faceit_elo` int(11) DEFAULT NULL,
   `faceit_kd` decimal(3,2) DEFAULT NULL,
   `faceit_date` timestamp NULL DEFAULT '1970-01-01 10:00:00',
-  `kana_elo` int(11) DEFAULT 0,
+  `kana_elo` int(11) DEFAULT NULL,
   `esportal_kd` decimal(4,2) DEFAULT NULL,
   `esportal_elo` int(11) DEFAULT NULL,
   `esportal_rank` int(11) DEFAULT NULL,
   `hours_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
   `manual_external_rank` tinyint(1) NOT NULL DEFAULT 0,
-  `manual_steam_rank` tinyint(1) NOT NULL DEFAULT 0
+  `manual_steam_rank` tinyint(1) NOT NULL DEFAULT 0,
+  `calculus` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -558,6 +780,7 @@ CREATE TABLE `SeasonPlayerRanks` (
 CREATE TABLE `Seasons` (
   `id` int(10) UNSIGNED NOT NULL,
   `game_id` int(10) UNSIGNED NOT NULL,
+  `game_type_id` int(10) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `signup_start_date` datetime DEFAULT NULL,
@@ -577,7 +800,9 @@ CREATE TABLE `SeasonTeamPlayers` (
   `season_id` int(10) UNSIGNED NOT NULL,
   `team_id` int(10) UNSIGNED NOT NULL,
   `steam_id` bigint(20) NOT NULL,
-  `role` enum('primary','substitute') DEFAULT 'primary'
+  `role` enum('primary','substitute') DEFAULT 'primary',
+  `is_captain` tinyint(1) NOT NULL DEFAULT 0,
+  `is_co_captain` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -629,17 +854,230 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `SeasonTeamRegistrationPlayers`
+--
+
+CREATE TABLE `SeasonTeamRegistrationPlayers` (
+  `season_id` int(10) UNSIGNED NOT NULL,
+  `team_id` int(10) UNSIGNED NOT NULL,
+  `steam_id` bigint(20) NOT NULL,
+  `is_captain` tinyint(1) NOT NULL DEFAULT 0,
+  `is_co_captain` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+--
+-- Triggers `SeasonTeamRegistrationPlayers`
+--
+DELIMITER $$
+CREATE TRIGGER `add_captain_permissions_on_insert` AFTER INSERT ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      DECLARE permission_id_found INT UNSIGNED;
+      DECLARE role_id_found INT UNSIGNED;
+      
+      -- Only proceed if this is a captain or co-captain
+      IF NEW.is_captain = 1 OR NEW.is_co_captain = 1 THEN
+        
+        -- Get the account_id for this steam_id
+        SET account_id_found = get_account_id_from_steam_id(NEW.steam_id);
+        
+        -- Get the edit-registration permission id
+        SELECT id INTO permission_id_found FROM Permissions WHERE permission_name = 'edit-registration' LIMIT 1;
+        
+        -- Get the captain role id
+        SELECT id INTO role_id_found FROM Roles WHERE role_name = 'captain' LIMIT 1;
+        
+        -- Add the permission scope if it doesn't exist
+        INSERT IGNORE INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
+        VALUES (account_id_found, permission_id_found, NEW.season_id, NEW.team_id);
+        
+        -- Add the captain role if it doesn't exist
+        INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id)
+        VALUES (account_id_found, role_id_found, 1);
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `add_captain_permissions_on_update` AFTER UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      DECLARE permission_id_found INT UNSIGNED;
+      DECLARE role_id_found INT UNSIGNED;
+      
+      -- Only proceed if captain or co-captain status was added
+      IF ((OLD.is_captain = 0 AND NEW.is_captain = 1) OR (OLD.is_co_captain = 0 AND NEW.is_co_captain = 1)) THEN
+        
+        -- Get the account_id for this steam_id
+        SET account_id_found = get_account_id_from_steam_id(NEW.steam_id);
+        
+        -- Get the edit-registration permission id
+        SELECT id INTO permission_id_found FROM Permissions WHERE permission_name = 'edit-registration' LIMIT 1;
+        
+        -- Get the captain role id
+        SELECT id INTO role_id_found FROM Roles WHERE role_name = 'captain' LIMIT 1;
+        
+        -- Add the permission scope if it doesn't exist
+        INSERT IGNORE INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id)
+        VALUES (account_id_found, permission_id_found, NEW.season_id, NEW.team_id);
+        
+        -- Add the captain role if it doesn't exist
+        INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id)
+        VALUES (account_id_found, role_id_found, 1);
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `cleanup_captain_permissions_on_delete` AFTER DELETE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      
+      -- Get the account_id for this steam_id
+      SET account_id_found = get_account_id_from_steam_id(OLD.steam_id);
+      
+      -- If this was a captain or co-captain, clean up permissions
+      IF OLD.is_captain = 1 OR OLD.is_co_captain = 1 THEN
+        
+        -- Remove captain-related permissions for this season/team
+        DELETE aps FROM AccountPermissionScopes aps
+        JOIN Permissions p ON p.id = aps.permission_id
+        WHERE aps.account_id = account_id_found
+        AND aps.season_id = OLD.season_id
+        AND aps.team_id = OLD.team_id
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions');
+        
+        -- Check if this account has any other captain permissions
+        IF NOT EXISTS (
+          SELECT 1 FROM AccountPermissionScopes aps2
+          JOIN Permissions p2 ON p2.id = aps2.permission_id
+          WHERE aps2.account_id = account_id_found
+          AND p2.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+        ) THEN
+          -- Remove captain role if no other captain permissions exist
+          DELETE ar FROM AccountRoles ar
+          JOIN Roles r ON r.id = ar.role_id
+          WHERE ar.account_id = account_id_found
+          AND r.role_name = 'captain';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `cleanup_captain_permissions_on_update` AFTER UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      DECLARE account_id_found INT UNSIGNED;
+      
+      -- Get the account_id for this steam_id
+      SET account_id_found = get_account_id_from_steam_id(NEW.steam_id);
+      
+      -- If captain or co-captain status was removed, clean up permissions
+      IF (OLD.is_captain = 1 AND NEW.is_captain = 0) OR (OLD.is_co_captain = 1 AND NEW.is_co_captain = 0) THEN
+        
+        -- Remove captain-related permissions for this season/team
+        DELETE aps FROM AccountPermissionScopes aps
+        JOIN Permissions p ON p.id = aps.permission_id
+        WHERE aps.account_id = account_id_found
+        AND aps.season_id = NEW.season_id
+        AND aps.team_id = NEW.team_id
+        AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions');
+        
+        -- Check if this account has any other captain permissions
+        IF NOT EXISTS (
+          SELECT 1 FROM AccountPermissionScopes aps2
+          JOIN Permissions p2 ON p2.id = aps2.permission_id
+          WHERE aps2.account_id = account_id_found
+          AND p2.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+        ) THEN
+          -- Remove captain role if no other captain permissions exist
+          DELETE ar FROM AccountRoles ar
+          JOIN Roles r ON r.id = ar.role_id
+          WHERE ar.account_id = account_id_found
+          AND r.role_name = 'captain';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_captain_per_team_season` BEFORE INSERT ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_captain = 1 THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_captain = 1
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_captain_per_team_season_update` BEFORE UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_captain = 1 AND (OLD.is_captain = 0 OR OLD.is_captain IS NULL) THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_captain = 1
+          AND steam_id != NEW.steam_id
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_co_captain_per_team_season` BEFORE INSERT ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_co_captain = 1 THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_co_captain = 1
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one co-captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `unique_co_captain_per_team_season_update` BEFORE UPDATE ON `SeasonTeamRegistrationPlayers` FOR EACH ROW BEGIN
+      IF NEW.is_co_captain = 1 AND (OLD.is_co_captain = 0 OR OLD.is_co_captain IS NULL) THEN
+        IF EXISTS (
+          SELECT 1 FROM SeasonTeamRegistrationPlayers 
+          WHERE season_id = NEW.season_id 
+          AND team_id = NEW.team_id 
+          AND is_co_captain = 1
+          AND steam_id != NEW.steam_id
+        ) THEN
+          SIGNAL SQLSTATE '45000'
+          SET MESSAGE_TEXT = 'Only one co-captain allowed per team per season';
+        END IF;
+      END IF;
+    END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `SeasonTeamRegistrations`
 --
 
 CREATE TABLE `SeasonTeamRegistrations` (
   `season_id` int(10) UNSIGNED NOT NULL,
   `team_id` int(10) UNSIGNED NOT NULL,
-  `captain_steam_id` bigint(20) DEFAULT NULL,
-  `co_captain_steam_id` bigint(20) DEFAULT NULL,
   `approved` tinyint(1) NOT NULL DEFAULT 0,
   `external_platform_id` varchar(255) DEFAULT NULL,
-  `terms_and_conditions_approved` tinyint(1) NOT NULL
+  `terms_and_conditions_approved` tinyint(1) NOT NULL,
+  `approved_by` int(10) UNSIGNED DEFAULT NULL,
+  `manual_validity_check_by` int(10) UNSIGNED DEFAULT NULL,
+  `manual_validity_check_override` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -726,6 +1164,83 @@ CREATE TRIGGER `before_update_unique_external_platform` BEFORE UPDATE ON `Season
     END
 $$
 DELIMITER ;
+DELIMITER $$
+CREATE TRIGGER `cleanup_captain_permissions_on_registration_delete` BEFORE DELETE ON `SeasonTeamRegistrations` FOR EACH ROW BEGIN
+      DECLARE done INT DEFAULT FALSE;
+      DECLARE steam_id_val BIGINT;
+      DECLARE is_captain_val BOOLEAN;
+      DECLARE is_co_captain_val BOOLEAN;
+      DECLARE account_id_found INT UNSIGNED;
+      DECLARE cur CURSOR FOR 
+        SELECT steam_id, is_captain, is_co_captain 
+        FROM SeasonTeamRegistrationPlayers 
+        WHERE season_id = OLD.season_id AND team_id = OLD.team_id;
+      DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+      
+      OPEN cur;
+      
+      read_loop: LOOP
+        FETCH cur INTO steam_id_val, is_captain_val, is_co_captain_val;
+        IF done THEN
+          LEAVE read_loop;
+        END IF;
+        
+        -- If this was a captain or co-captain, clean up permissions
+        IF is_captain_val = 1 OR is_co_captain_val = 1 THEN
+          -- Get the account_id for this steam_id
+          SET account_id_found = get_account_id_from_steam_id(steam_id_val);
+          
+          -- Remove captain-related permissions for this season/team
+          DELETE aps FROM AccountPermissionScopes aps
+          JOIN Permissions p ON p.id = aps.permission_id
+          WHERE aps.account_id = account_id_found
+          AND aps.season_id = OLD.season_id
+          AND aps.team_id = OLD.team_id
+          AND p.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions');
+          
+          -- Check if this account has any other captain permissions
+          IF NOT EXISTS (
+            SELECT 1 FROM AccountPermissionScopes aps2
+            JOIN Permissions p2 ON p2.id = aps2.permission_id
+            WHERE aps2.account_id = account_id_found
+            AND p2.permission_name IN ('edit-registration', 'manage-team', 'captain-permissions')
+          ) THEN
+            -- Remove captain role if no other captain permissions exist
+            DELETE ar FROM AccountRoles ar
+            JOIN Roles r ON r.id = ar.role_id
+            WHERE ar.account_id = account_id_found
+            AND r.role_name = 'captain';
+          END IF;
+        END IF;
+      END LOOP;
+      
+      CLOSE cur;
+    END
+$$
+DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Stages`
+--
+
+CREATE TABLE `Stages` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `SteamPlayerKanaElo`
+--
+
+CREATE TABLE `SteamPlayerKanaElo` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `kana_elo` int(11) NOT NULL,
+  `steam_id` bigint(20) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -818,7 +1333,8 @@ ALTER TABLE `AccountPermissionScopes`
   ADD KEY `accountpermissionscopes_account_id_foreign` (`account_id`),
   ADD KEY `accountpermissionscopes_permission_id_foreign` (`permission_id`),
   ADD KEY `accountpermissionscopes_season_id_foreign` (`season_id`),
-  ADD KEY `accountpermissionscopes_team_id_foreign` (`team_id`);
+  ADD KEY `accountpermissionscopes_team_id_foreign` (`team_id`),
+  ADD KEY `idx_account_permission_scopes_captain_validation` (`account_id`,`season_id`,`team_id`,`permission_id`);
 
 --
 -- Indexes for table `AccountRoles`
@@ -845,10 +1361,50 @@ ALTER TABLE `AuditLog`
   ADD KEY `auditlog_created_at_index` (`created_at`);
 
 --
+-- Indexes for table `FaceitWebhooks`
+--
+ALTER TABLE `FaceitWebhooks`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `Games`
 --
 ALTER TABLE `Games`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `GameTypes`
+--
+ALTER TABLE `GameTypes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_game_types_game` (`game_id`);
+
+--
+-- Indexes for table `KanahautomoRegistrationGameTypes`
+--
+ALTER TABLE `KanahautomoRegistrationGameTypes`
+  ADD PRIMARY KEY (`game_type_id`,`kanahautomo_registration_id`),
+  ADD KEY `fk_kana_reg_game_types_reg` (`kanahautomo_registration_id`);
+
+--
+-- Indexes for table `KanahautomoRegistrations`
+--
+ALTER TABLE `KanahautomoRegistrations`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `kanahautomoregistrations_steam_id_organization_id_unique` (`steam_id`,`organization_id`),
+  ADD KEY `kanahautomoregistrations_organization_id_foreign` (`organization_id`);
+
+--
+-- Indexes for table `knex_migrations`
+--
+ALTER TABLE `knex_migrations`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `knex_migrations_lock`
+--
+ALTER TABLE `knex_migrations_lock`
+  ADD PRIMARY KEY (`index`);
 
 --
 -- Indexes for table `Leagues`
@@ -884,7 +1440,8 @@ ALTER TABLE `Maps`
 --
 ALTER TABLE `Matches`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `matches_season_id_league_id_foreign` (`season_id`,`league_id`);
+  ADD KEY `matches_season_id_league_id_foreign` (`season_id`,`league_id`),
+  ADD KEY `matches_stage_foreign` (`stage`);
 
 --
 -- Indexes for table `MatchGameClips`
@@ -899,6 +1456,8 @@ ALTER TABLE `MatchGameClips`
 --
 ALTER TABLE `MatchGames`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `matchgames_demofile_unique` (`demofile`),
+  ADD UNIQUE KEY `matchgames_match_id_map_id_map_order_unique` (`match_id`,`map_id`,`map_order`),
   ADD KEY `matchgames_match_id_foreign` (`match_id`),
   ADD KEY `matchgames_map_id_foreign` (`map_id`);
 
@@ -926,6 +1485,21 @@ ALTER TABLE `Organizations`
   ADD UNIQUE KEY `organizations_name_unique` (`name`);
 
 --
+-- Indexes for table `OrganizerGames`
+--
+ALTER TABLE `OrganizerGames`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `organizergames_organizer_id_game_id_unique` (`organizer_id`,`game_id`),
+  ADD KEY `organizergames_game_id_foreign` (`game_id`);
+
+--
+-- Indexes for table `Organizers`
+--
+ALTER TABLE `Organizers`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `organizers_faceit_id_unique` (`faceit_id`);
+
+--
 -- Indexes for table `Permissions`
 --
 ALTER TABLE `Permissions`
@@ -937,6 +1511,7 @@ ALTER TABLE `Permissions`
 --
 ALTER TABLE `PlayerStats`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `playerstats_game_id_steam_id_unique` (`game_id`,`steam_id`),
   ADD KEY `playerstats_steam_id_foreign` (`steam_id`),
   ADD KEY `playerstats_game_id_foreign` (`game_id`);
 
@@ -945,6 +1520,7 @@ ALTER TABLE `PlayerStats`
 --
 ALTER TABLE `PlayerTrades`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `playertrades_unique` (`game_id`,`trader_steam_id`,`killer_steam_id`,`victim_steam_id`,`round_number`),
   ADD KEY `playertrades_trader_steam_id_foreign` (`trader_steam_id`),
   ADD KEY `playertrades_killer_steam_id_foreign` (`killer_steam_id`),
   ADD KEY `playertrades_victim_steam_id_foreign` (`victim_steam_id`),
@@ -970,6 +1546,14 @@ ALTER TABLE `RolePermissions`
 ALTER TABLE `Roles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `roles_role_name_unique` (`role_name`);
+
+--
+-- Indexes for table `SeasonLeagueExternalIds`
+--
+ALTER TABLE `SeasonLeagueExternalIds`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `seasonleagueexternalids_season_id_league_id_external_id_unique` (`season_id`,`league_id`,`external_id`),
+  ADD KEY `seasonleagueexternalids_stage_id_foreign` (`stage_id`);
 
 --
 -- Indexes for table `SeasonLeagues`
@@ -1009,7 +1593,8 @@ ALTER TABLE `SeasonPlayerRanks`
 --
 ALTER TABLE `Seasons`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `seasons_game_id_foreign` (`game_id`);
+  ADD KEY `seasons_game_id_foreign` (`game_id`),
+  ADD KEY `seasons_game_type_id_foreign` (`game_type_id`);
 
 --
 -- Indexes for table `SeasonTeamPlayers`
@@ -1020,14 +1605,35 @@ ALTER TABLE `SeasonTeamPlayers`
   ADD KEY `seasonteamplayers_steam_id_foreign` (`steam_id`);
 
 --
+-- Indexes for table `SeasonTeamRegistrationPlayers`
+--
+ALTER TABLE `SeasonTeamRegistrationPlayers`
+  ADD PRIMARY KEY (`season_id`,`team_id`,`steam_id`),
+  ADD KEY `seasonteamregistrationplayers_steam_id_foreign` (`steam_id`),
+  ADD KEY `idx_season_team_registration_players_captain` (`season_id`,`team_id`,`is_captain`,`is_co_captain`);
+
+--
 -- Indexes for table `SeasonTeamRegistrations`
 --
 ALTER TABLE `SeasonTeamRegistrations`
   ADD PRIMARY KEY (`season_id`,`team_id`),
   ADD UNIQUE KEY `unique_season_external_platform_id` (`season_id`,`external_platform_id`),
   ADD KEY `seasonteamregistrations_team_id_foreign` (`team_id`),
-  ADD KEY `seasonteamregistrations_captain_steam_id_foreign` (`captain_steam_id`),
-  ADD KEY `seasonteamregistrations_co_captain_steam_id_foreign` (`co_captain_steam_id`);
+  ADD KEY `seasonteamregistrations_approved_by_foreign` (`approved_by`),
+  ADD KEY `seasonteamregistrations_manual_validity_check_by_foreign` (`manual_validity_check_by`);
+
+--
+-- Indexes for table `Stages`
+--
+ALTER TABLE `Stages`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `SteamPlayerKanaElo`
+--
+ALTER TABLE `SteamPlayerKanaElo`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `steamplayerkanaelo_steam_id_unique` (`steam_id`);
 
 --
 -- Indexes for table `SteamPlayers`
@@ -1041,6 +1647,7 @@ ALTER TABLE `SteamPlayers`
 --
 ALTER TABLE `TeamGameScores`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `teamgamescores_game_id_team_id_unique` (`game_id`,`team_id`),
   ADD KEY `teamgamescores_match_id_team_id_foreign` (`match_id`,`team_id`),
   ADD KEY `teamgamescores_game_id_foreign` (`game_id`);
 
@@ -1090,10 +1697,40 @@ ALTER TABLE `AuditLog`
   MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `FaceitWebhooks`
+--
+ALTER TABLE `FaceitWebhooks`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `Games`
 --
 ALTER TABLE `Games`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `GameTypes`
+--
+ALTER TABLE `GameTypes`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `KanahautomoRegistrations`
+--
+ALTER TABLE `KanahautomoRegistrations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `knex_migrations`
+--
+ALTER TABLE `knex_migrations`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `knex_migrations_lock`
+--
+ALTER TABLE `knex_migrations_lock`
+  MODIFY `index` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Leagues`
@@ -1144,6 +1781,18 @@ ALTER TABLE `Organizations`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `OrganizerGames`
+--
+ALTER TABLE `OrganizerGames`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Organizers`
+--
+ALTER TABLE `Organizers`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `Permissions`
 --
 ALTER TABLE `Permissions`
@@ -1174,6 +1823,12 @@ ALTER TABLE `Roles`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `SeasonLeagueExternalIds`
+--
+ALTER TABLE `SeasonLeagueExternalIds`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `SeasonPlayerApprovals`
 --
 ALTER TABLE `SeasonPlayerApprovals`
@@ -1189,6 +1844,18 @@ ALTER TABLE `SeasonPlayerRanks`
 -- AUTO_INCREMENT for table `Seasons`
 --
 ALTER TABLE `Seasons`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Stages`
+--
+ALTER TABLE `Stages`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `SteamPlayerKanaElo`
+--
+ALTER TABLE `SteamPlayerKanaElo`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
@@ -1243,6 +1910,26 @@ ALTER TABLE `AuditLog`
   ADD CONSTRAINT `auditlog_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL;
 
 --
+-- Constraints for table `GameTypes`
+--
+ALTER TABLE `GameTypes`
+  ADD CONSTRAINT `fk_game_types_game` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `KanahautomoRegistrationGameTypes`
+--
+ALTER TABLE `KanahautomoRegistrationGameTypes`
+  ADD CONSTRAINT `fk_kana_reg_game_types_game_type` FOREIGN KEY (`game_type_id`) REFERENCES `GameTypes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_kana_reg_game_types_reg` FOREIGN KEY (`kanahautomo_registration_id`) REFERENCES `KanahautomoRegistrations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `KanahautomoRegistrations`
+--
+ALTER TABLE `KanahautomoRegistrations`
+  ADD CONSTRAINT `kanahautomoregistrations_organization_id_foreign` FOREIGN KEY (`organization_id`) REFERENCES `Organizations` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `kanahautomoregistrations_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `LinkedAccounts`
 --
 ALTER TABLE `LinkedAccounts`
@@ -1260,7 +1947,8 @@ ALTER TABLE `MapRoundStats`
 -- Constraints for table `Matches`
 --
 ALTER TABLE `Matches`
-  ADD CONSTRAINT `matches_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `matches_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `matches_stage_foreign` FOREIGN KEY (`stage`) REFERENCES `Stages` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `MatchGameClips`
@@ -1289,6 +1977,13 @@ ALTER TABLE `MatchTeamMapVetoes`
 ALTER TABLE `MatchTeams`
   ADD CONSTRAINT `matchteams_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `matchteams_season_id_team_id_league_id_foreign` FOREIGN KEY (`season_id`,`team_id`,`league_id`) REFERENCES `SeasonLeagueTeams` (`season_id`, `team_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `OrganizerGames`
+--
+ALTER TABLE `OrganizerGames`
+  ADD CONSTRAINT `organizergames_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `organizergames_organizer_id_foreign` FOREIGN KEY (`organizer_id`) REFERENCES `Organizers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `PlayerStats`
@@ -1320,6 +2015,13 @@ ALTER TABLE `RolePermissions`
   ADD CONSTRAINT `rolepermissions_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `Roles` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `SeasonLeagueExternalIds`
+--
+ALTER TABLE `SeasonLeagueExternalIds`
+  ADD CONSTRAINT `seasonleagueexternalids_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonleagueexternalids_stage_id_foreign` FOREIGN KEY (`stage_id`) REFERENCES `Stages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `SeasonLeagues`
 --
 ALTER TABLE `SeasonLeagues`
@@ -1330,8 +2032,7 @@ ALTER TABLE `SeasonLeagues`
 -- Constraints for table `SeasonLeagueTeams`
 --
 ALTER TABLE `SeasonLeagueTeams`
-  ADD CONSTRAINT `seasonleagueteams_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `seasonleagueteams_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `seasonleagueteams_season_id_league_id_foreign` FOREIGN KEY (`season_id`,`league_id`) REFERENCES `SeasonLeagues` (`season_id`, `league_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SeasonPlayerApprovals`
@@ -1354,23 +2055,36 @@ ALTER TABLE `SeasonPlayerRanks`
 -- Constraints for table `Seasons`
 --
 ALTER TABLE `Seasons`
-  ADD CONSTRAINT `seasons_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `seasons_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `seasons_game_type_id_foreign` FOREIGN KEY (`game_type_id`) REFERENCES `GameTypes` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `SeasonTeamPlayers`
 --
 ALTER TABLE `SeasonTeamPlayers`
-  ADD CONSTRAINT `seasonteamplayers_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `seasonteamplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SeasonTeamRegistrationPlayers`
+--
+ALTER TABLE `SeasonTeamRegistrationPlayers`
+  ADD CONSTRAINT `seasonteamregistrationplayers_season_id_team_id_foreign` FOREIGN KEY (`season_id`,`team_id`) REFERENCES `SeasonTeamRegistrations` (`season_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonteamregistrationplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SeasonTeamRegistrations`
 --
 ALTER TABLE `SeasonTeamRegistrations`
-  ADD CONSTRAINT `seasonteamregistrations_captain_steam_id_foreign` FOREIGN KEY (`captain_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `seasonteamregistrations_co_captain_steam_id_foreign` FOREIGN KEY (`co_captain_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `seasonteamregistrations_approved_by_foreign` FOREIGN KEY (`approved_by`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `seasonteamregistrations_manual_validity_check_by_foreign` FOREIGN KEY (`manual_validity_check_by`) REFERENCES `Accounts` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `seasonteamregistrations_season_id_foreign` FOREIGN KEY (`season_id`) REFERENCES `Seasons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `seasonteamregistrations_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `SteamPlayerKanaElo`
+--
+ALTER TABLE `SteamPlayerKanaElo`
+  ADD CONSTRAINT `steamplayerkanaelo_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`);
 
 --
 -- Constraints for table `SteamPlayers`
@@ -1403,6 +2117,14 @@ ALTER TABLE `Teams`
 --
 ALTER TABLE `UserPolicyAcceptances`
   ADD CONSTRAINT `userpolicyacceptances_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+
+DELIMITER $$
+--
+-- Events
+--
+CREATE DEFINER=`kanamain`@`%` EVENT `delete_old_audit_logs` ON SCHEDULE EVERY 1 DAY STARTS '2025-05-21 06:26:17' ON COMPLETION NOT PRESERVE ENABLE DO DELETE FROM AuditLog WHERE created_at < NOW() - INTERVAL 1 YEAR$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

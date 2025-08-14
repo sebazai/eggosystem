@@ -28,7 +28,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   if (isLoading) {
     return (
       <div className="bg-card rounded-md overflow-hidden mb-3">
-        <div className="p-3 sm:p-6 border-b border-kanaliiga-orange animate-pulse">
+        <div className="border-b border-kanaliiga-orange animate-pulse">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full" />
             <div className="space-y-2">

@@ -23,7 +23,7 @@ export const updateAccount = async (
 
   const workEmailVerificationToken = uuid.v4();
 
-  const oneDayLater = getSevenDaysLaterInMillis();
+  const sevenDaysLaterInMillis = getSevenDaysLaterInMillis();
 
   const hasWorkEmailChanged =
     formData.work_email && formData.work_email !== existingAccount.work_email;
@@ -34,7 +34,7 @@ export const updateAccount = async (
     work_email: formData.work_email ? formData.work_email : null,
     work_email_token: hasWorkEmailChanged ? workEmailVerificationToken : null,
     work_email_token_expires_at: hasWorkEmailChanged
-      ? new Date(oneDayLater)
+      ? new Date(sevenDaysLaterInMillis)
       : null,
     work_email_verified:
       hasWorkEmailChanged || !formData.work_email
@@ -83,9 +83,8 @@ export const updateAccount = async (
       handleEmailVerification(
         accountId,
         formData.work_email,
-        "verify:work-email",
         workEmailVerificationToken,
-        oneDayLater
+        sevenDaysLaterInMillis
       ).catch((err) => {
         logger.error("Failed to send verification email:", err);
       });
@@ -246,10 +245,14 @@ export const getAccountIdBySteamId = async (
  * @param accountId
  * @returns
  */
-export const getAccountById = async (accountId: number) => {
+export const getAccountById = async (
+  accountId: number,
+  connection?: PoolConnection
+) => {
   const [account] = await runQuery<Array<Account | undefined>>(
     "SELECT * FROM Accounts WHERE id = ?",
-    [accountId]
+    [accountId],
+    connection
   );
   if (!account) {
     throw new NotFoundError("Account not found");

@@ -3,9 +3,11 @@ import {
   getOrgs,
   getOrgById,
   getOrganizationApprovedTeamsController,
-  getOrgTeamTrophiesController
+  getOrgTeamTrophiesController,
+  getOrgDiscordInviteLinkController
 } from "../../controllers/organizations.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import { authenticateJWT } from "../../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -20,6 +22,12 @@ router.get(
   "/:id/teams",
   validateNumericParams(),
   getOrganizationApprovedTeamsController
+);
+router.get(
+  "/:id/discord-invite-link",
+  validateNumericParams(),
+  authenticateJWT,
+  getOrgDiscordInviteLinkController
 );
 
 export default router;

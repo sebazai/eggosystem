@@ -92,7 +92,7 @@ export const SignupForm = ({
   );
   const { user, loading: loadingUser } = useAuth();
   const schema = signupFormSchema({ platform });
-  const baseSchema = baseSignupFormSchema({ platform })._def.schema;
+  const baseSchema = baseSignupFormSchema({ platform });
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editUrl, setEditUrl] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -316,7 +316,7 @@ export const SignupForm = ({
       method: "POST",
       body: JSON.stringify(formDataStripped)
     });
-    setSuccessMessage("Saved draft for 7 days.");
+    setSuccessMessage("Saved draft for 30 days.");
     toast.success("Draft saved successfully", {
       description: "You can continue editing your draft later on this page."
     });

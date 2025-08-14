@@ -76,8 +76,6 @@ export const getTeamPistolWins = async (
         (mrs.round_number = 1 OR mrs.round_number = CASE WHEN mg.regulation_rounds = 30 THEN 16 ELSE 13 END)
         AND ${query}
     GROUP BY
-        m.season_id,
-        s.name,
         maps.id,
         maps.name,
         t.id,

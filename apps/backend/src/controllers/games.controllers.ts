@@ -1,4 +1,4 @@
-import { type Response } from "express";
+import { type Response, type NextFunction } from "express";
 import { type RequestWithParams } from "@eggosystem/types";
 import {
   getGameRoundInfo,
@@ -8,6 +8,7 @@ import {
   getGameTopPlayers,
   getGameClip
 } from "../models/game.models";
+import { NotFoundError } from "../utils/errors";
 
 export const getGameTeamRoundBreakdownController = async (
   req: RequestWithParams<{ game_id: string }>,
@@ -52,21 +53,28 @@ export const getGamePlayerStatsController = async (
 
 export const getGameTopPlayersController = async (
   req: RequestWithParams<{ game_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const game_id = parseInt(req.params.game_id, 10);
   const topplayers = await getGameTopPlayers(game_id);
+  if (!topplayers) {
+    return next(
+      new NotFoundError("Could not find top players for match game id")
+    );
+  }
   res.json(topplayers);
 };
 
 export const getGameClipController = async (
   req: RequestWithParams<{ game_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const game_id = parseInt(req.params.game_id, 10);
   const clip = await getGameClip(game_id);
   if (clip.length === 0) {
-    res.status(404).json({ error: { message: "Clip not found" } });
+    return next(new NotFoundError("Clip not found"));
   } else {
     res.json(clip[0]);
   }

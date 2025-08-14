@@ -1,9 +1,12 @@
-import { type Response } from "express";
+import { type Response, type NextFunction } from "express";
 import {
   getTeamValuesForSorter,
-  getTeamPlayerValuesForSortter
+  getTeamPlayerValuesForSortter,
+  getTeamsForSeason,
+  checkPlayerAdditionEligibility
 } from "../models/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
+import { NotFoundError, BadRequestError } from "../utils/errors";
 
 /**
  * Controller to get team values for sorter functionality
@@ -19,6 +22,7 @@ export const getTeamValuesController = async (
   res: Response
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
+
   const teamValues = await getTeamValuesForSorter(seasonId);
   res.json(teamValues);
 };
@@ -29,7 +33,8 @@ export const getTeamValuesController = async (
  */
 export const getTeamValueByIdController = async (
   req: RequestWithParams<{ season_id: string; team_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
@@ -40,10 +45,11 @@ export const getTeamValueByIdController = async (
   );
 
   if (!team) {
-    res.status(404).json({
-      message: `Team with ID ${teamId} not found for season ${seasonId}`
-    });
-    return;
+    return next(
+      new NotFoundError(
+        `Team with ID ${teamId} not found for season ${seasonId}`
+      )
+    );
   }
 
   res.json(team);
@@ -65,7 +71,8 @@ export const getTeamValueByIdController = async (
  */
 export const getTeamPlayerValuesController = async (
   req: RequestWithParams<{ season: string; team: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   const seasonId = Number(req.params.season);
   const teamId = Number(req.params.team);
@@ -73,10 +80,11 @@ export const getTeamPlayerValuesController = async (
   const playerValues = await getTeamPlayerValuesForSortter(seasonId, teamId);
 
   if (playerValues.length === 0) {
-    res.status(404).json({
-      message: `No players found for team ${teamId} in season ${seasonId}`
-    });
-    return;
+    return next(
+      new NotFoundError(
+        `No players found for team ${teamId} in season ${seasonId}`
+      )
+    );
   }
 
   // Convert null values to 0 for the response
@@ -88,8 +96,57 @@ export const getTeamPlayerValuesController = async (
     faceit_elo: player.faceit_elo ?? 0,
     hours: player.hours ?? 0,
     kanarating: player.kanarating ?? 0,
-    fkd: player.fkd ?? 0
+    fkd: player.fkd ?? 0,
+    kana_elo: player.kana_elo ?? 0,
+    calculus: player.calculus ?? null
   }));
 
   res.json(formattedPlayerValues);
+};
+
+/**
+ * Controller to get all teams for a specific season
+ * Returns teams with their league information
+ */
+export const getTeamsForSeasonController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response
+): Promise<void> => {
+  const seasonId = Number(req.params.season_id);
+
+  const teams = await getTeamsForSeason(seasonId);
+  res.json(teams);
+};
+
+/**
+ * Controller to check if a player can be added to a team
+ * Returns analysis of the player's impact on team balance
+ */
+export const checkPlayerAdditionEligibilityController = async (
+  req: RequestWithParams<{
+    season_id: string;
+    team_id: string;
+    steam_id: string;
+  }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const seasonId = Number(req.params.season_id);
+  const teamId = Number(req.params.team_id);
+  const steamId = req.params.steam_id;
+
+  try {
+    const eligibility = await checkPlayerAdditionEligibility(
+      seasonId,
+      teamId,
+      steamId
+    );
+    res.json(eligibility);
+  } catch (error) {
+    return next(
+      new BadRequestError(
+        error instanceof Error ? error.message : "Unknown error"
+      )
+    );
+  }
 };

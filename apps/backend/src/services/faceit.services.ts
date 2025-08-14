@@ -18,6 +18,15 @@ import {
   FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
 
+export const convertFaceitGameToAppId = (game: string) => {
+  switch (game) {
+    case "6d9298b7-73e4-4672-96b5-720293ba2a4a":
+      return 730;
+    default:
+      throw new Error(`Unknown game: ${game}`);
+  }
+};
+
 // E2E Test mode mocking
 const isE2EMode =
   process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";
@@ -99,7 +108,11 @@ export const getFaceITGameRank = async (
 const getFaceITMetaData = async (
   faceit_player_id: string,
   game: "cs2" | "csgo" = "cs2"
-) => {
+): Promise<{
+  faceit_kdr: number;
+  faceit_matches_played: number;
+  faceit_last_match: number;
+} | null> => {
   const { controller, clearAbortTimeout } =
     createAbortController("getFaceITMetaData");
 
@@ -361,4 +374,51 @@ export const getFaceITTeamDetails = async (faceit_team_id: string) => {
   const data: FaceITTeamDetails = await response.json();
   await redisClient.set(redisKey, JSON.stringify(data), "EX", expireInOneDay);
   return data;
+};
+
+export const getFaceITMatchDetails = async <T>(match_id: string) => {
+  const webURL = `https://open.faceit.com/data/v4/matches/${match_id}`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  return response.json() as Promise<T>;
+};
+
+export const getFaceITChampionshipDetails = async <T>(
+  championship_id: string
+) => {
+  const webURL = `https://open.faceit.com/data/v4/championships/${championship_id}`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  return response.json() as Promise<T>;
+};
+
+export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
+  const demoAPI = "https://open.faceit.com/download/v2/demos/download";
+  const demoHeaders = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+
+  const response = await fetch(demoAPI, {
+    method: "POST",
+    headers: demoHeaders,
+    body: JSON.stringify({
+      resource_url: matchGameDemoUrl
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to get demo download URL: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+  return data.payload.download_url; // Return download URL from response
 };

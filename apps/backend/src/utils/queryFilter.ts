@@ -6,7 +6,11 @@ interface FilterGroup {
 }
 
 export type Filter =
-  | { column: string; value: Nullable<Array<string | number>> } // Single column filter
+  | {
+      column: string;
+      value?: Nullable<Array<string | number>>;
+      between?: [number, number];
+    } // Single column filter or BETWEEN
   | {
       column: Array<{ column: string }>;
       value: Nullable<Array<string | number>>;
@@ -35,7 +39,19 @@ export const generateQueryWithFilters = (
         queryParts.push(`(${nestedResult.query})`);
         queryParams.push(...nestedResult.queryParams);
       }
-    } else if (filter.value !== null && filter.value.length > 0) {
+    } else if (
+      typeof filter.column === "string" &&
+      (filter as { between?: [number, number] }).between
+    ) {
+      // BETWEEN support
+      const between = (filter as { between: [number, number] }).between;
+      queryParts.push(`${filter.column} BETWEEN ? AND ?`);
+      queryParams.push(between[0], between[1]);
+    } else if (
+      filter.value !== null &&
+      filter.value !== undefined &&
+      filter.value.length > 0
+    ) {
       if (Array.isArray(filter.column)) {
         // Handle multiple OR columns
         if (filter.value.length === 1) {
@@ -56,9 +72,10 @@ export const generateQueryWithFilters = (
             )
             .join(" OR ");
           queryParts.push(`(${orConditions})`);
-          queryParams.push(
-            ...filter.value.flatMap((v) => Array(filter.column.length).fill(v))
-          );
+          // For each column, push the full value array
+          filter.column.forEach(() => {
+            queryParams.push(...filter.value!);
+          });
         }
       } else {
         // Single column filter

@@ -5,6 +5,7 @@ import type { SeasonDetails } from "@eggosystem/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import type React from "react";
+import { RedirectType, redirect } from "next/navigation";
 
 type SignupPageProps = {
   params: Promise<{ season: string }>;
@@ -36,6 +37,31 @@ export default async function SignupPage({ params }: SignupPageProps) {
   );
   const data: SeasonDetails = await result.json();
 
+  // Check if user is already a captain or co-captain for this season
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  if (token) {
+    const myRegRes = await fetch(
+      `${envConfig.API_URL}/api/v1/registrations/season/${season}/my-registration`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        cache: "no-store"
+      }
+    );
+    if (myRegRes.ok) {
+      const myReg = await myRegRes.json();
+      if (myReg.teamId) {
+        redirect(
+          `/seasons/${season}/signup/team/${myReg.teamId}/edit`,
+          RedirectType.replace
+        );
+      }
+    }
+  }
+
   // See if saved draft
   try {
     const cookieStore = await cookies();
@@ -50,13 +76,21 @@ export default async function SignupPage({ params }: SignupPageProps) {
       }
     );
 
+    if (draftExists.ok) {
+      const draft = await draftExists.json();
+      return (
+        <SignupContainer>
+          <SignupForm
+            seasonId={season}
+            platform={data.platform}
+            draft={draft}
+          />
+        </SignupContainer>
+      );
+    }
     return (
       <SignupContainer>
-        <SignupForm
-          seasonId={season}
-          platform={data.platform}
-          draft={draftExists.ok ? await draftExists.json() : undefined}
-        />
+        <SignupForm seasonId={season} platform={data.platform} />
       </SignupContainer>
     );
   } catch (err) {

@@ -37,9 +37,11 @@ import {
   FormMessage
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { usePlayerFullName } from "@/hooks/data/dashboard/usePlayerFullName";
+import type { FieldValues } from "react-hook-form";
 
 const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
-  const steamIds = data.acceptedPlayerSteamIds.map((p) => p.name);
+  const steamIds = data.acceptedPlayerSteamIds.map((p) => p.steamId);
 
   // New team and new org
   if (data.teamId === CREATE_NEW_VALUE) {
@@ -103,8 +105,41 @@ const generatePayload = (data: ManualPlayerApprovalFormSchemaType) => {
   throw new Error("Invalid form data");
 };
 
+function SteamIdInputWithName({
+  field,
+  index
+}: {
+  field: FieldValues;
+  index: number;
+}) {
+  const steamId = field.value;
+  const { fullName, loading, error } = usePlayerFullName(steamId);
+
+  return (
+    <FormItem>
+      <Label className="pb-1">Accepted Player Steam ID #{index + 1}</Label>
+      <FormControl>
+        <Input
+          {...field}
+          placeholder="Insert player steamid"
+          data-testid={`player-steam-id-${index}`}
+        />
+      </FormControl>
+      {steamId && steamId.length === 17 && (
+        <div className="text-xs text-muted-foreground mt-1 min-h-[1.25rem]">
+          {loading && "Loading name..."}
+          {!loading && error && <span className="text-red-500">Not found</span>}
+          {!loading && !error && fullName && <span>{fullName}</span>}
+          {!loading && !error && !fullName && <span>No name found</span>}
+        </div>
+      )}
+      <FormMessage />
+    </FormItem>
+  );
+}
+
 export function ManualPlayerApprovalForm() {
-  const methods = useForm<ManualPlayerApprovalFormSchemaType>({
+  const methods = useForm({
     resolver: zodResolver(manualPlayerApprovalFormSchema),
     defaultValues: {
       acceptedPlayerSteamIds: [],
@@ -125,11 +160,10 @@ export function ManualPlayerApprovalForm() {
   const { organizations } = useSelectableOrgs(selectedTeamId);
   const { teams } = useSelectableTeams(selectedOrgId);
 
-  const { fields, append, remove } =
-    useFieldArray<ManualPlayerApprovalFormSchemaType>({
-      control: methods.control,
-      name: "acceptedPlayerSteamIds"
-    });
+  const { fields, append, remove } = useFieldArray({
+    control: methods.control,
+    name: "acceptedPlayerSteamIds"
+  });
 
   const onSubmit = async (data: ManualPlayerApprovalFormSchemaType) => {
     setErrorMessage(null);
@@ -270,29 +304,16 @@ export function ManualPlayerApprovalForm() {
           <div className="flex gap-2" key={field.id}>
             <FormField
               control={methods.control}
-              name={`acceptedPlayerSteamIds.${index}.name`}
+              name={`acceptedPlayerSteamIds.${index}.steamId`}
               render={({ field }) => (
-                <FormItem>
-                  <Label className="pb-1">
-                    Accepted Player Steam ID #{index + 1}
-                  </Label>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Insert player steamid"
-                      data-testid={`player-steam-id-${index}`}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                <SteamIdInputWithName field={field} index={index} />
               )}
             />
-
             <Button
               type="button"
               onClick={() => remove(index)}
               variant="secondary"
-              className="self-end"
+              className="self-center"
             >
               Remove
             </Button>
@@ -300,7 +321,7 @@ export function ManualPlayerApprovalForm() {
         ))}
         <Button
           type="button"
-          onClick={() => append({ name: "" })}
+          onClick={() => append({ steamId: "" })}
           variant="outline"
         >
           <PlusIcon /> Add player

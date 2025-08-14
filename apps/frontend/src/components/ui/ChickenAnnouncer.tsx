@@ -11,6 +11,7 @@ interface ChickenAnnouncerProps {
   showDelay?: number; // Delay in ms before showing the chicken
   autoHideAfter?: number; // Auto-hide after this many ms (if provided)
   walkSpeed?: number; // Walking speed in pixels per second
+  onChickenClick?: () => void; // Callback when chicken is clicked
 }
 
 export const ChickenAnnouncer = ({
@@ -18,7 +19,8 @@ export const ChickenAnnouncer = ({
   targetUrl = "/new-features",
   showDelay = 1000,
   autoHideAfter,
-  walkSpeed = 50 // Default walking speed
+  walkSpeed = 50, // Default walking speed
+  onChickenClick
 }: ChickenAnnouncerProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isBubbleVisible, setIsBubbleVisible] = useState(false);
@@ -102,6 +104,11 @@ export const ChickenAnnouncer = ({
   }, [isVisible, walkSpeed]);
 
   const handleClick = () => {
+    // Call the onChickenClick callback if provided
+    if (onChickenClick) {
+      onChickenClick();
+    }
+
     setIsBubbleVisible(false);
     setTimeout(() => {
       setIsVisible(false);
@@ -133,8 +140,10 @@ export const ChickenAnnouncer = ({
               : "opacity-0 translate-y-4 pointer-events-none"
           )}
           style={{
-            maxWidth: "200px",
+            maxWidth: "300px",
+            minWidth: "240px",
             marginBottom: "60px",
+            padding: "12px",
             position: "absolute",
             bottom: "100%",
             left: "50%",
@@ -142,7 +151,7 @@ export const ChickenAnnouncer = ({
           }}
           onClick={handleClick}
         >
-          <div className="font-bold text-sm text-black dark:text-white">
+          <div className="font-bold text-center whitespace-pre-line px-2 text-black dark:text-white text-base">
             {message}
           </div>
           <div className="absolute h-4 w-4 bg-white dark:bg-gray-800 border-b border-r border-gray-300 dark:border-gray-600 transform rotate-45 left-0 right-0 mx-auto -mb-2 bottom-0"></div>

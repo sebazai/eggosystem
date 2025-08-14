@@ -9,7 +9,8 @@ import { expireIn30Days, redisClient } from "../utils/redisClient";
 import {
   getPlayerHoursForSeason,
   getPlayerRankForSeason,
-  getPlayerKanaElo
+  getPlayerKanaElo,
+  getTopXPlayersKanaElo
 } from "../models/season-player-ranks.models";
 import { getCS2RankFromLeetify } from "./leetify.services";
 import { getFaceITCS2Rank } from "./faceit.services";
@@ -30,7 +31,10 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
 
   const hoursInRedis = await redisClient.get(redisKey);
   if (hoursInRedis) {
-    return { hours: Number(hoursInRedis) };
+    const hoursNumber = Number(hoursInRedis);
+    if (hoursNumber > 0) {
+      return { hours: hoursNumber };
+    }
   }
 
   const steamHours = await getSteamHoursForAppId(steam_id, 730);
@@ -192,7 +196,6 @@ export const getCSRank = async (
         return dbRank;
       }
     }
-
     // 2. Try Redis cache
     const cachedRank = await getRankFromCache(steam_id);
     if (cachedRank) {
@@ -248,93 +251,74 @@ export const getPlayerRankForPlatform = async (
   }
 };
 
-// Kanarank rank configuration
-const KANARANKS = [
-  { name: "EGG", thresholds: [0, 33, 67] },
-  { name: "CHICK", thresholds: [100, 134, 167] },
-  { name: "CHICKEN", thresholds: [200, 234, 267] },
-  { name: "COCK", thresholds: [300, 334, 367] }
+// Kanarank rank configuration based on elo thresholds
+const KANARANK_THRESHOLDS = [
+  { rank: "COCK", subrank: 1, min_elo: 320 }, // COCK_1: 320+ elo
+  { rank: "COCK", subrank: 2, min_elo: 300 }, // COCK_2: 300-319 elo
+  { rank: "COCK", subrank: 3, min_elo: 280 }, // COCK_3: 280-299 elo
+  { rank: "CHICKEN", subrank: 1, min_elo: 250 }, // CHICKEN_1: 250-279 elo
+  { rank: "CHICKEN", subrank: 2, min_elo: 220 }, // CHICKEN_2: 220-249 elo
+  { rank: "CHICKEN", subrank: 3, min_elo: 185 }, // CHICKEN_3: 185-219 elo
+  { rank: "CHICK", subrank: 1, min_elo: 145 }, // CHICK_1: 145-184 elo
+  { rank: "CHICK", subrank: 2, min_elo: 120 }, // CHICK_2: 120-144 elo
+  { rank: "CHICK", subrank: 3, min_elo: 100 }, // CHICK_3: 100-119 elo
+  { rank: "EGG", subrank: 1, min_elo: 85 }, // EGG_1: 85-99 elo
+  { rank: "EGG", subrank: 2, min_elo: 60 }, // EGG_2: 60-84 elo
+  { rank: "EGG", subrank: 3, min_elo: 0 } // EGG_3: 0-59 elo
 ];
 
 // Top rankings configuration
 const TOP_PLAYERS_COUNT = 50; // Total players to track positions for
 const TOP_COCK_COUNT = 10; // Only top 10 get the TOP_COCK rank
 
+const getPlayerThreshold = (kana_elo: number) => {
+  for (const threshold of KANARANK_THRESHOLDS) {
+    if (kana_elo >= threshold.min_elo) {
+      return threshold;
+    }
+  }
+  throw new Error("No threshold found");
+};
 /**
  * Get player's kanarank based on their kana_elo value and position among all players
  */
+interface PlayerKanaRank {
+  rank: string;
+  subrank: number;
+  is_top50: boolean;
+  position: number | null;
+}
+
 export const getPlayerKanaRank = async (steam_id: string) => {
-  // Get the player's kana_elo
-  const { kana_elo } = await getPlayerKanaElo(steam_id);
+  const playerKanaElo = await getPlayerKanaElo(steam_id);
+  if (!playerKanaElo) {
+    return null;
+  }
+  const { kana_elo } = playerKanaElo;
 
-  // Default response structure
-  const response: {
-    rank: string;
-    subrank: number;
-    is_top50: boolean;
-    position: number | null;
-  } = {
-    rank: "",
-    subrank: 0,
-    is_top50: false,
-    position: null
-  };
+  const topPlayers = await getTopXPlayersKanaElo(TOP_PLAYERS_COUNT);
 
-  // Get top 50 players by kana_elo
-  const topPlayers = await runQuery<
-    Array<{ steam_id: string; kana_elo: number }>
-  >(
-    `SELECT steam_id, kana_elo 
-     FROM SeasonPlayerRanks 
-     GROUP BY steam_id
-     ORDER BY kana_elo DESC
-     LIMIT ?`,
-    [TOP_PLAYERS_COUNT]
-  );
-
-  // Find player position in top players
   const playerPosition = topPlayers.findIndex(
     (player) => player.steam_id === steam_id
   );
 
-  // Player is in top 50
-  if (playerPosition !== -1) {
-    const position = playerPosition + 1; // +1 because array is 0-indexed
-    response.position = position;
-    response.is_top50 = true;
+  const position = playerPosition + 1;
 
-    // Only top 10 get the special TOP_COCK rank
-    if (position <= TOP_COCK_COUNT) {
-      response.rank = "TOP_COCK";
-      return response;
-    }
-
-    // For positions 11-50, determine their regular rank but include position
-    // Fall through to regular rank determination
+  if (position <= TOP_COCK_COUNT && position > 0) {
+    return {
+      rank: "TOP_COCK",
+      subrank: 1,
+      is_top50: true,
+      position: position
+    } satisfies PlayerKanaRank;
   }
 
-  // Determine regular rank based on kana_elo
-  for (const rank of KANARANKS) {
-    // Check if player's elo is in this rank's range
-    if (kana_elo <= rank.thresholds[2]) {
-      response.rank = rank.name;
+  const playerThreshold = getPlayerThreshold(kana_elo);
 
-      // Determine subrank
-      if (kana_elo <= rank.thresholds[0]) {
-        response.subrank = 1;
-      } else if (kana_elo <= rank.thresholds[1]) {
-        response.subrank = 2;
-      } else {
-        response.subrank = 3;
-      }
-
-      return response;
-    }
-  }
-
-  // If player's elo is higher than any defined rank but not in top 10,
-  // assign highest regular rank
-  response.rank = "COCK";
-  response.subrank = 3;
-  return response;
+  return {
+    rank: playerThreshold.rank,
+    subrank: playerThreshold.subrank,
+    is_top50: playerPosition !== -1,
+    position: playerPosition !== -1 ? position : null
+  } satisfies PlayerKanaRank;
 };

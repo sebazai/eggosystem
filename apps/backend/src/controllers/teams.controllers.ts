@@ -7,7 +7,10 @@ import {
   getFilteredTopTeams,
   getTeamById,
   getTeamsWithoutOrgs,
-  getOneTeamByFilters
+  getOneTeamByFilters,
+  getTeamKeyPlayers,
+  getTeamPlayers,
+  getTeamsByLeague
 } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
@@ -18,10 +21,10 @@ export const getAllTeams = async (req: Request, res: Response) => {
 };
 
 export const getTeamByIdController = async (
-  req: RequestWithParams<{ teamId: string }>,
+  req: RequestWithParams<{ team_id: string }>,
   res: Response
 ) => {
-  const teamIdNumber = Number(req.params.teamId);
+  const teamIdNumber = Number(req.params.team_id);
   const [team] = await getTeamById(teamIdNumber);
   if (!team) {
     throw new NotFoundError("Team not found");
@@ -122,5 +125,41 @@ export const getTeamsWithoutOrgController = async (
   res: Response
 ) => {
   const teams = await getTeamsWithoutOrgs();
+  res.json(teams);
+};
+
+export const getTeamKeyPlayersController = async (
+  req: RequestWithParams<{ team_id: string }>,
+  res: Response
+) => {
+  const teamIdNumber = Number(req.params.team_id);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const keyPlayers = await getTeamKeyPlayers(teamIdNumber, seasonId);
+  res.json(keyPlayers);
+};
+
+export const getTeamPlayersController = async (
+  req: RequestWithParams<{ team_id: string }>,
+  res: Response
+) => {
+  const teamIdNumber = Number(req.params.team_id);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const players = await getTeamPlayers(teamIdNumber, seasonId);
+  res.json(players);
+};
+
+export const getTeamsByLeagueController = async (
+  req: RequestWithParams<{ league_id: string }>,
+  res: Response
+) => {
+  const leagueIdNumber = Number(req.params.league_id);
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+  const teams = await getTeamsByLeague(leagueIdNumber, seasonId);
   res.json(teams);
 };

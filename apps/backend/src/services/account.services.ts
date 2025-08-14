@@ -1,22 +1,22 @@
-import { expireInOneDay, redisClient } from "../utils/redisClient";
+import { expireIn7Days, redisClient } from "../utils/redisClient";
 import { sendVerificationEmail } from "./email.services";
 
 export const handleEmailVerification = async (
   accountId: number,
   email: string,
-  redisKey: string,
   emailToken: string,
   expirationTimeMillis: number
 ) => {
+  const redisKey = `verify:work-email:${emailToken}`;
   await redisClient.set(
-    `${redisKey}:${emailToken}`,
+    redisKey,
     JSON.stringify({
       accountId,
       email: email,
       expirationTime: expirationTimeMillis
     }),
     "EX",
-    expireInOneDay
+    expireIn7Days
   );
 
   await sendVerificationEmail(email, emailToken);

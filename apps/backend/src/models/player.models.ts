@@ -12,7 +12,8 @@ import {
   type PlayerGameDetailsByFilters,
   type PlayerTeamDetailsByFilters,
   type PlayerStatsTable,
-  type PlayerStatsForLatestSeason
+  type PlayerStatsForLatestSeason,
+  type PlayerMapStats
 } from "@eggosystem/types";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
@@ -402,46 +403,66 @@ export const getPlayerStatsWithFilters = async (
 
   const teamIdsJoin = team_ids && team_ids.length > 0;
 
-  // Get player's aggregate statistics
   const statsQuery = `
+    WITH player_games AS (
+      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id
+      FROM SteamPlayers p
+      INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
+      WHERE ${query}
+    ),
+    player_stats AS (
+      SELECT 
+        pg.steam_id,
+        pg.nickname,
+        COUNT(DISTINCT pg.game_id) as maps_played,
+        SUM(ps.kills) as kills,
+        SUM(ps.assists) as assists,
+        SUM(ps.deaths) as deaths,
+        SUM(ps.flash_assists) as flash_assists,
+        SUM(ps.awp_kills) as awp_kills,
+        SUM(ps.utility_damage) as utility_damage,
+        SUM(ps.headshots) as headshots,
+        SUM(ps.first_kills) as first_kills,
+        SUM(ps.first_deaths) as first_deaths,
+        AVG(ps.adr) as adr,
+        AVG(ps.kana_rating) as kana_rating,
+        AVG(ps.hs_percent) as hs_percent,
+        SUM(ps.clutches_won) as clutches_won,
+        SUM(ps.clutches) - SUM(ps.clutches_won) as clutches_lost,
+        AVG(ps.kast) as kast,
+        SUM(ps.enemies_flashed) as enemies_flashed,
+        SUM(ps.mates_flashed) as mates_flashed,
+        SUM(ps.self_flashes) as self_flashes,
+        SUM(ps.total_damage) as total_damage,
+        SUM(ps.flashes_thrown) as flashes_thrown,
+        SUM(ps.total_ef_duration) as total_ef_duration,
+        ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
+        SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
+        SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
+        SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
+        SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
+        SUM(ps.kills_t) as kills_t,
+        SUM(ps.kills_ct) as kills_ct
+      FROM player_games pg
+      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
+      GROUP BY pg.steam_id, pg.nickname
+    ),
+    player_rounds AS (
+      SELECT 
+        pg.steam_id,
+        COUNT(DISTINCT mrs.id) as rounds_played
+      FROM player_games pg
+      INNER JOIN MapRoundStats mrs ON mrs.game_id = pg.game_id
+      GROUP BY pg.steam_id
+    )
     SELECT 
-      p.steam_id,
-      p.nickname,
-      COUNT(DISTINCT mg.id) as maps_played,
-      SUM(ps.kills) as kills,
-      SUM(ps.assists) as assists,
-      SUM(ps.deaths) as deaths,
-      SUM(ps.flash_assists) as flash_assists,
-      SUM(ps.awp_kills) as awp_kills,
-      SUM(ps.utility_damage) as utility_damage,
-      SUM(ps.headshots) as headshots,
-      SUM(ps.first_kills) as first_kills,
-      SUM(ps.first_deaths) as first_deaths,
-      AVG(ps.adr) as adr,
-      AVG(ps.kana_rating) as kana_rating,
-      AVG(ps.hs_percent) as hs_percent,
-      SUM(ps.clutches_won) as clutches_won,
-      SUM(ps.clutches) - SUM(ps.clutches_won) as clutches_lost,
-      AVG(ps.kast) as kast,
-      SUM(ps.enemies_flashed) as enemies_flashed,
-      SUM(ps.mates_flashed) as mates_flashed,
-      SUM(ps.self_flashes) as self_flashes,
-      SUM(ps.total_damage) as total_damage,
-      SUM(ps.flashes_thrown) as flashes_thrown,
-      SUM(ps.total_ef_duration) as total_ef_duration,
-      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
-      SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
-      SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
-      SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
-      SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
-      COUNT(DISTINCT ps.id) as rounds_played
-    FROM SteamPlayers p
-    INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
-    WHERE ${query}
-    GROUP BY p.steam_id, p.nickname
+      ps.*,
+      pr.rounds_played
+    FROM player_stats ps
+    INNER JOIN player_rounds pr ON pr.steam_id = ps.steam_id
   `;
 
   const [playerStats] = await runQuery<Array<PlayerStatsResult | undefined>>(
@@ -486,22 +507,21 @@ export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
 };
 
 export const getPlayerOldKanaElo = async (steam_id: string) => {
+  // Find the most recent season where player has both kana_rating and kana_elo data
   const query = `
     SELECT 
-      spr.steam_id,
-      spr.season_id as last_played_season_id,
+      ps.steam_id,
+      m.season_id as last_played_season_id,
       spr.kana_elo
-    FROM SeasonPlayerRanks spr
-    INNER JOIN (
-      SELECT DISTINCT m.season_id
-      FROM PlayerStats ps
-      INNER JOIN MatchGames mg ON mg.id = ps.game_id
-      INNER JOIN Matches m ON m.id = mg.match_id
-      WHERE ps.steam_id = ?
-      ORDER BY m.season_id DESC
-      LIMIT 1
-    ) last_season ON last_season.season_id = spr.season_id
-    WHERE spr.steam_id = ?
+    FROM PlayerStats ps 
+    JOIN MatchGames mg ON ps.game_id = mg.id 
+    LEFT JOIN Matches m ON m.id = mg.match_id 
+    LEFT JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id 
+    WHERE ps.steam_id = ? 
+      AND spr.kana_elo IS NOT NULL 
+      AND ps.kana_rating IS NOT NULL 
+    GROUP BY m.season_id 
+    ORDER BY m.season_id DESC 
     LIMIT 1
   `;
 
@@ -511,7 +531,97 @@ export const getPlayerOldKanaElo = async (steam_id: string) => {
       last_played_season_id: number;
       kana_elo: number;
     }>
-  >(query, [steam_id, steam_id]);
+  >(query, [steam_id]);
 
+  // If no data found with both kana_rating and kana_elo, return null
   return result.length > 0 ? result[0] : null;
+};
+
+export const getPlayerMapStatsWithFilters = async (
+  steam_id: string,
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+) => {
+  // Fetch all maps once to get both IDs and names
+  const allMaps = await runQuery<Array<{ id: number; name: string }>>(
+    "SELECT id, name FROM Maps"
+  );
+  const mapsRecord = allMaps.reduce(
+    (acc, map) => {
+      acc[map.id] = map.name;
+      return acc;
+    },
+    {} as Record<number, string>
+  );
+
+  // Determine which maps to process
+  const mapsToProcess =
+    map_ids && map_ids.length > 0 ? map_ids : allMaps.map((m) => m.id);
+
+  // Create all the promises for parallel execution
+  const mapStatPromises = mapsToProcess.map(async (mapId) => {
+    // Create filter params for this specific map
+    const mapFilterParams = {
+      season_ids,
+      league_ids,
+      team_ids,
+      stages,
+      map_ids: [mapId]
+    };
+
+    // Get both player stats and game details in parallel
+    const [playerStats, gameDetails] = await Promise.all([
+      getPlayerStatsWithFilters(steam_id, mapFilterParams),
+      getPlayerGameDetailsWithFilters(steam_id, mapFilterParams)
+    ]);
+
+    if (playerStats && gameDetails && gameDetails.length > 0) {
+      const details = gameDetails[0];
+
+      if (!details) return null;
+
+      const mapStats: PlayerMapStats = {
+        ...playerStats,
+        map_id: mapId,
+        map_name: mapsRecord[mapId] || `unknown_map_${mapId}`,
+        wins: details.wins,
+        losses: details.losses,
+        win_percentage:
+          details.matches_played > 0
+            ? (details.wins / details.matches_played) * 100
+            : 0,
+        kills_t: playerStats.kills_t || 0,
+        kills_ct: playerStats.kills_ct || 0
+      };
+
+      return mapStats;
+    }
+
+    return null;
+  });
+
+  // Wait for all promises to resolve and filter out null results
+  const results = await Promise.all(mapStatPromises);
+  return results.filter(Boolean) as PlayerMapStats[];
+};
+
+export const setPlayerKanaElo = async (
+  steam_id: string,
+  kana_elo: number,
+  calculus: string,
+  season_id: number
+): Promise<boolean> => {
+  const query = `
+    UPDATE SeasonPlayerRanks 
+    SET calculus = ?, kana_elo = ? 
+    WHERE season_id = ? AND steam_id = ?
+  `;
+
+  const result = await runQuery<{ affectedRows: number }>(query, [
+    calculus,
+    kana_elo,
+    season_id,
+    steam_id
+  ]);
+
+  return result.affectedRows > 0;
 };

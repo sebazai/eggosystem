@@ -1,5 +1,6 @@
 import { type SteamUserPayload } from "@eggosystem/types";
-import { type Request, type Response } from "express";
+import { type Request, type Response, type NextFunction } from "express";
+import { UnauthorizedError, ForbiddenError } from "../utils/errors";
 import jwt from "jsonwebtoken";
 import { v4 as uuid } from "uuid";
 import {
@@ -41,11 +42,14 @@ export const login = async (req: Request, res: Response) => {
   setCookies(res, accessToken, refreshToken);
 };
 
-export const refreshToken = async (req: Request, res: Response) => {
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const refreshToken = req.cookies?.refresh_token;
   if (!refreshToken) {
-    res.status(401).json({ message: "No refresh token" });
-    return;
+    return next(new UnauthorizedError("No refresh token"));
   }
 
   try {
@@ -60,8 +64,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     if (!storedToken || storedToken !== refreshToken) {
       clearCookies(res);
-      res.status(403).json({ message: "Invalid refresh token" });
-      return;
+      return next(new ForbiddenError("Invalid refresh token"));
     }
 
     // Refresh permissions.
@@ -83,7 +86,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     res.json({ message: "Token refreshed" });
   } catch (_err) {
     clearCookies(res);
-    res.status(403).json({ message: "Error while updating refresh token" });
+    return next(new ForbiddenError("Error while updating refresh token"));
   }
 };
 

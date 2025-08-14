@@ -8,9 +8,9 @@ import type {
   Season,
   Team,
   Map,
-  MultiFilterSelectableIds
+  MultiFilterSelectableIds,
+  Stage
 } from "@eggosystem/types";
-import { StageFilter } from "./StageFilter";
 import { useMultiFilterSelectables } from "@/hooks/data/useMultiFilterSelectables";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { FilterParamsQuery } from "@/lib/utils";
@@ -52,10 +52,12 @@ const getFilterComponent = (
   switch (key) {
     case "stages":
       return (
-        <StageFilter
+        <ItemFilter<Stage>
           key={key}
-          selectedStages={selectedItems}
-          selectableStages={selectableIds}
+          filterName="stages"
+          labelKey="name"
+          selectedItems={selectedItems}
+          selectableIds={selectableIds}
           isValidating={isValidating}
           handleSetSearchParams={handleSetSearchParams}
           openFilter={openFilter}

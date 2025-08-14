@@ -1,0 +1,8 @@
+dsn: mariadb://root:dev-pass@eggo-devdb:3306/kanaliiga
+er:
+  skip: false
+  format: mermaid
+  hideDef: true
+  showColumnTypes:
+    related: true
+    primary: true

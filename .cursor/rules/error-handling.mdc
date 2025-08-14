@@ -1,184 +1,340 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+
 # Error Handling Patterns
 
-This document defines rules and best practices for error handling in the codebase, with emphasis on avoiding unnecessary try/catch blocks and using proper Jest testing patterns.
+This document defines rules and best practices for error handling in the codebase, with emphasis on RFC 7807 compliance and avoiding unnecessary try/catch blocks.
 
-## General Principles
+## RFC 7807 Problem Details
 
-### Avoid Unnecessary Try/Catch Blocks
+All error responses follow RFC 7807 Problem Details for HTTP APIs format:
 
-**Rule**: Do not use try/catch blocks unless absolutely necessary and all other error handling approaches have been exhausted.
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "User not found",
+  "instance": "/v1/players/123"
+}
+```
 
-**Why**: Try/catch blocks can mask errors, make code harder to read, and often indicate improper error handling architecture.
+The `express-error-handler` middleware automatically converts all errors to this format with `application/problem+json` content type.
 
-**Instead of try/catch, prefer**:
-- Let errors bubble up naturally to be handled at appropriate boundaries
-- Use proper error handling middleware in Express applications
-- Use built-in error handling mechanisms of frameworks and libraries
-- Use functional error handling patterns (Result types, Either types)
-- Use proper validation libraries that return structured errors
+## Error Handling Patterns by Layer
 
-### When Try/Catch Is Acceptable
+### Controllers and Routes: Use `return next(new Error())`
 
-Use try/catch blocks only when:
-- **Integration boundaries**: Calling external APIs, databases, or third-party libraries that throw unpredictable errors
-- **Resource cleanup**: Need to ensure cleanup of resources (files, connections) regardless of success/failure
-- **Graceful degradation**: Non-critical operations that should not break the main flow
-- **Top-level error boundaries**: Application entry points, route handlers, middleware
-- **Converting error types**: When you need to transform low-level errors into domain-specific errors
+**Rule**: In controllers and routes, use `return next(new ErrorClass("message"))` to pass errors to the RFC 7807 middleware.
 
 ```typescript
-// ❌ Bad - unnecessary try/catch for validation
-try {
-  const result = validateUser(userData);
-  return result;
-} catch (error) {
-  throw new BadRequestError("Validation failed");
-}
+// ✅ Good - Controller pattern
+export const getUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = await getUser(req.params.id);
+  if (!user) {
+    return next(new NotFoundError("User not found"));
+  }
+  res.json(user);
+};
 
-// ✅ Good - let validation library handle errors properly
-const result = validateUser(userData); // Throws structured validation errors
-return result;
+// ✅ Good - Route pattern
+router.get("/user/:id", async (req, res, next) => {
+  if (!req.auth) {
+    return next(new UnauthorizedError("Authentication required"));
+  }
+  // ... rest of logic
+});
+```
 
-// ✅ Good - necessary for external API integration
+### Models and Services: Let Errors Bubble Up
+
+**Rule**: In models and services, throw errors and let them bubble up to the express-error-handler.
+
+```typescript
+// ✅ Good - Service throws error
+export const getUser = async (id: string): Promise<User> => {
+  const user = await db.query("SELECT * FROM users WHERE id = ?", [id]);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  return user;
+};
+
+// ✅ Good - Model throws error
+export const createUser = async (userData: UserData): Promise<User> => {
+  if (!userData.email) {
+    throw new BadRequestError("Email is required");
+  }
+  return await db.insert("users", userData);
+};
+```
+
+## When to Use Try/Catch
+
+**Rule**: Use try/catch only when you need `finally` cleanup, such as database transactions.
+
+```typescript
+// ✅ Good - Database transaction with cleanup
+export const updateSignupForSeason = async (
+  season: SeasonDetails,
+  teamId: number,
+  formData: SignupFormValues
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const data = await handleSignupFormForSeasonUpdate(
+      season.id,
+      teamId,
+      formData,
+      connection
+    );
+    await connection.commit();
+    return data;
+  } catch (error) {
+    await connection.rollback();
+    throw error; // Let it bubble up to express-error-handler
+  } finally {
+    connection.release();
+  }
+};
+
+// ❌ Bad - Unnecessary try/catch
 try {
-  const response = await externalApi.call();
-  return response.data;
+  const user = await getUser(id);
+  return user;
 } catch (error) {
-  logger.error("External API failed", error);
-  throw new ServiceUnavailableError("External service unavailable");
+  throw new NotFoundError("User not found"); // Unnecessary wrapping
 }
+```
+
+## Error Classes
+
+Use appropriate error classes for different scenarios:
+
+```typescript
+import {
+  BadRequestError, // 400
+  UnauthorizedError, // 401
+  ForbiddenError, // 403
+  NotFoundError, // 404
+  InternalServerError // 500
+} from "../utils/errors";
+
+// Custom titles for RFC 7807
+throw new BadRequestError("Invalid data", 400, "Validation Failed");
 ```
 
 ## Jest Testing Patterns
 
-### Use `await expect().rejects` for Testing Expected Failures
-
-**Rule**: In Jest tests, always use `await expect().rejects.toThrow()` instead of manual try/catch blocks when testing functions that should throw errors.
+Use `await expect().rejects.toThrow()` for testing expected failures:
 
 ```typescript
-// ❌ Bad - manual try/catch in tests
-it("should fail with invalid data", async () => {
-  try {
-    await serviceFunction(invalidData);
-    throw new Error("Should have failed"); // This is a code smell
-  } catch (error) {
-    expect(error.message).toContain("invalid");
-  }
+// ✅ Good - Test error scenarios
+it("should throw NotFoundError when user not found", async () => {
+  await expect(getUser("invalid-id")).rejects.toThrow(NotFoundError);
+  await expect(getUser("invalid-id")).rejects.toThrow("User not found");
 });
 
-// ✅ Good - use Jest's built-in async error testing
-it("should fail with invalid data", async () => {
-  await expect(serviceFunction(invalidData)).rejects.toThrow(/invalid/);
-});
+// ✅ Good - Test controller error handling
+it("should return 404 for missing user", async () => {
+  const response = await request(app)
+    .get("/api/v1/users/999")
+    .expect(404)
+    .expect("Content-Type", "application/problem+json");
 
-// ✅ Good - test specific error types
-it("should throw BadRequestError with specific message", async () => {
-  await expect(serviceFunction(invalidData)).rejects.toThrow(BadRequestError);
-  await expect(serviceFunction(invalidData)).rejects.toThrow("Data validation failed");
-});
-```
-
-### Jest Error Testing Best Practices
-
-- Use **regex patterns** in `toThrow()` for flexible error message matching: `.toThrow(/pattern/)`
-- Use **specific error classes** when testing error types: `.toThrow(CustomError)`
-- Use **exact strings** only when error messages are stable: `.toThrow("exact message")`
-- Use simple `.toThrow()` when you just need to verify any error is thrown
-
-```typescript
-// Different approaches for different scenarios
-await expect(fn()).rejects.toThrow(); // Any error
-await expect(fn()).rejects.toThrow(/validation/); // Message contains "validation"
-await expect(fn()).rejects.toThrow(ValidationError); // Specific error type
-await expect(fn()).rejects.toThrow("User not found"); // Exact message
-```
-
-## Error Handling Architecture
-
-### Structured Error Handling
-
-Prefer structured error handling over generic try/catch:
-
-```typescript
-// ✅ Good - structured error types
-class ValidationError extends Error {
-  constructor(public field: string, message: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
-
-class ServiceError extends Error {
-  constructor(public service: string, public statusCode: number, message: string) {
-    super(message);
-    this.name = 'ServiceError';
-  }
-}
-
-// ✅ Good - error handling middleware
-app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
-  if (error instanceof ValidationError) {
-    return res.status(400).json({ error: error.message, field: error.field });
-  }
-  if (error instanceof ServiceError) {
-    return res.status(error.statusCode).json({ error: error.message });
-  }
-  // Handle unexpected errors
-  logger.error("Unexpected error", error);
-  return res.status(500).json({ error: "Internal server error" });
+  expect(response.body).toMatchObject({
+    type: "about:blank",
+    title: "Not Found",
+    status: 404,
+    detail: "User not found"
+  });
 });
 ```
-
-### Function-Level Error Handling
-
-```typescript
-// ❌ Bad - swallowing errors with generic try/catch
-async function processUser(userData: any) {
-  try {
-    const user = await createUser(userData);
-    await sendWelcomeEmail(user);
-    return user;
-  } catch (error) {
-    console.log("Something went wrong");
-    return null; // Swallows error, caller doesn't know what happened
-  }
-}
-
-// ✅ Good - let errors bubble up with context
-async function processUser(userData: UserData): Promise<User> {
-  const user = await createUser(userData); // Let validation errors bubble up
-  
-  // Only catch non-critical operations
-  try {
-    await sendWelcomeEmail(user);
-  } catch (error) {
-    logger.warn("Welcome email failed for user", user.id, error);
-    // Don't throw - email failure shouldn't break user creation
-  }
-  
-  return user;
-}
-```
-
-## Code Review Guidelines
-
-When reviewing code, flag these patterns:
-
-- **Empty catch blocks**: `catch (error) { }`
-- **Generic error swallowing**: `catch (error) { return null; }`
-- **Manual error throwing in tests**: `throw new Error("Should have failed")`
-- **Try/catch for simple validation**: Use validation libraries instead
-- **Nested try/catch blocks**: Often indicates architectural issues
-- **Try/catch without proper logging**: Errors disappear silently
 
 ## Summary
 
-- **Default**: Let errors bubble up naturally
+- **Controllers/Routes**: `return next(new ErrorClass("message"))`
+- **Models/Services**: `throw new ErrorClass("message")`
+- **Try/Catch**: Only for database transactions with cleanup
+- **RFC 7807**: All errors automatically formatted as Problem Details
+- **Testing**: Use `await expect().rejects.toThrow()` for error scenarios
+
+- **Testing**: Use `await expect().rejects.toThrow()` for expected failures
+- **Integration**: Use try/catch for external dependencies and resource cleanup
+- **Architecture**: Implement structured error handling at application boundaries
+- **Never**: Swallow errors silently or use try/catch for simple validation
+
+# Error Handling Patterns
+
+This document defines rules and best practices for error handling in the codebase, with emphasis on RFC 7807 compliance and avoiding unnecessary try/catch blocks.
+
+## RFC 7807 Problem Details
+
+All error responses follow RFC 7807 Problem Details for HTTP APIs format:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "User not found",
+  "instance": "/v1/players/123"
+}
+```
+
+The `express-error-handler` middleware automatically converts all errors to this format with `application/problem+json` content type.
+
+## Error Handling Patterns by Layer
+
+### Controllers and Routes: Use `return next(new Error())`
+
+**Rule**: In controllers and routes, use `return next(new ErrorClass("message"))` to pass errors to the RFC 7807 middleware.
+
+```typescript
+// ✅ Good - Controller pattern
+export const getUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = await getUser(req.params.id);
+  if (!user) {
+    return next(new NotFoundError("User not found"));
+  }
+  res.json(user);
+};
+
+// ✅ Good - Route pattern
+router.get("/user/:id", async (req, res, next) => {
+  if (!req.auth) {
+    return next(new UnauthorizedError("Authentication required"));
+  }
+  // ... rest of logic
+});
+```
+
+### Models and Services: Let Errors Bubble Up
+
+**Rule**: In models and services, throw errors and let them bubble up to the express-error-handler.
+
+```typescript
+// ✅ Good - Service throws error
+export const getUser = async (id: string): Promise<User> => {
+  const user = await db.query("SELECT * FROM users WHERE id = ?", [id]);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  return user;
+};
+
+// ✅ Good - Model throws error
+export const createUser = async (userData: UserData): Promise<User> => {
+  if (!userData.email) {
+    throw new BadRequestError("Email is required");
+  }
+  return await db.insert("users", userData);
+};
+```
+
+## When to Use Try/Catch
+
+**Rule**: Use try/catch only when you need `finally` cleanup, such as database transactions.
+
+```typescript
+// ✅ Good - Database transaction with cleanup
+export const updateSignupForSeason = async (
+  season: SeasonDetails,
+  teamId: number,
+  formData: SignupFormValues
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const data = await handleSignupFormForSeasonUpdate(
+      season.id,
+      teamId,
+      formData,
+      connection
+    );
+    await connection.commit();
+    return data;
+  } catch (error) {
+    await connection.rollback();
+    throw error; // Let it bubble up to express-error-handler
+  } finally {
+    connection.release();
+  }
+};
+
+// ❌ Bad - Unnecessary try/catch
+try {
+  const user = await getUser(id);
+  return user;
+} catch (error) {
+  throw new NotFoundError("User not found"); // Unnecessary wrapping
+}
+```
+
+## Error Classes
+
+Use appropriate error classes for different scenarios:
+
+```typescript
+import {
+  BadRequestError, // 400
+  UnauthorizedError, // 401
+  ForbiddenError, // 403
+  NotFoundError, // 404
+  InternalServerError // 500
+} from "../utils/errors";
+
+// Custom titles for RFC 7807
+throw new BadRequestError("Invalid data", 400, "Validation Failed");
+```
+
+## Jest Testing Patterns
+
+Use `await expect().rejects.toThrow()` for testing expected failures:
+
+```typescript
+// ✅ Good - Test error scenarios
+it("should throw NotFoundError when user not found", async () => {
+  await expect(getUser("invalid-id")).rejects.toThrow(NotFoundError);
+  await expect(getUser("invalid-id")).rejects.toThrow("User not found");
+});
+
+// ✅ Good - Test controller error handling
+it("should return 404 for missing user", async () => {
+  const response = await request(app)
+    .get("/api/v1/users/999")
+    .expect(404)
+    .expect("Content-Type", "application/problem+json");
+
+  expect(response.body).toMatchObject({
+    type: "about:blank",
+    title: "Not Found",
+    status: 404,
+    detail: "User not found"
+  });
+});
+```
+
+## Summary
+
+- **Controllers/Routes**: `return next(new ErrorClass("message"))`
+- **Models/Services**: `throw new ErrorClass("message")`
+- **Try/Catch**: Only for database transactions with cleanup
+- **RFC 7807**: All errors automatically formatted as Problem Details
+- **Testing**: Use `await expect().rejects.toThrow()` for error scenarios
+
 - **Testing**: Use `await expect().rejects.toThrow()` for expected failures
 - **Integration**: Use try/catch for external dependencies and resource cleanup
 - **Architecture**: Implement structured error handling at application boundaries

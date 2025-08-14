@@ -2,6 +2,15 @@ import Link from "next/link";
 import { FooterPartners } from "../sponsors/FooterPartners";
 
 const Footer = () => {
+  // Get Git SHA from environment variables
+  const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || "";
+  const gitlabUrl =
+    process.env.NEXT_PUBLIC_GITLAB_URL ||
+    "https://gitlab.com/kanaliiga_public/kanahub/eggosystem";
+
+  // Format Git SHA to show only first 7 characters
+  const shortSha = gitSha.substring(0, 7);
+
   return (
     <footer className="bg-secondary mt-4 sm:mt-12 px-4 sm:px-12">
       <div className="max-w-screen-2xl mx-auto">
@@ -95,6 +104,12 @@ const Footer = () => {
             >
               Gitlab
             </Link>
+            {shortSha && (
+              <>
+                <br />
+                Current build: <Link href={gitlabUrl}>{shortSha}</Link>
+              </>
+            )}
           </p>
           <p>
             <Link href={"/privacy-policy"}>Privacy Policy</Link>

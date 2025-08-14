@@ -1,3 +1,5 @@
+import moment from "moment-timezone";
+
 export const getSevenDaysLaterInMillis = () => {
   const now = new Date();
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -12,4 +14,24 @@ export const getMonthDifference = (timestamp1: number, timestamp2: number) => {
   const monthsDiff = date2.getMonth() - date1.getMonth();
 
   return yearsDiff * 12 + monthsDiff;
+};
+
+export const convertISOToTime = (isoString: string) => {
+  return new Date(isoString).toISOString().slice(11, 19);
+};
+
+export const convertISOToFinnishTime = (isoString: string) => {
+  const utcDate = moment(isoString);
+  const finnishTime = utcDate
+    .tz("Europe/Helsinki")
+    .format("YYYY-MM-DD HH:mm:ss");
+  return finnishTime;
+};
+
+export const generateYMD = (timestamp: number): string => {
+  const date = new Date(timestamp * 1000);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };

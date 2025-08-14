@@ -1,5 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
+import jwt from "jsonwebtoken";
+import { ForbiddenError, UnauthorizedError } from "../../utils/errors";
 
 import {
   login,
@@ -15,6 +17,10 @@ import {
 } from "../../models/account.models";
 import { getRolesForAccountId } from "../../services/auth.services";
 import { logger } from "../../utils/app-logger";
+import {
+  updateUserDiscordId,
+  getDiscordIdByAccountId
+} from "../../models/discord.models";
 
 const router = Router();
 
@@ -91,12 +97,11 @@ router.get(
 router.post("/refresh", refreshToken);
 router.get("/logout", logout);
 
-router.get("/me", authenticateJWT, async (req, res) => {
+router.get("/me", authenticateJWT, async (req, res, next) => {
   if (req.auth && req.auth.provider === "steam") {
     const userInDb = await getAuthUserBySteamId(req.auth.provider_id);
     if (!userInDb) {
-      res.status(403).json({ message: "Bad request" });
-      return;
+      return next(new ForbiddenError("Bad request"));
     }
 
     const userPolicy = await getUserProfileAcceptanceForVersion(
@@ -112,6 +117,10 @@ router.get("/me", authenticateJWT, async (req, res) => {
       : // Tick the marketing box if privacy_policy version changes and user had it ticked.
         await getLatestUserProfileMarketingConsent(req.auth.account_id);
 
+    // Check if user has Discord linked
+    const discordId = await getDiscordIdByAccountId(userInDb.account_id);
+    const discordLinked = !!discordId;
+
     const userPayload = {
       account_id: userInDb.account_id,
       provider_id: userInDb.steam_id,
@@ -122,12 +131,167 @@ router.get("/me", authenticateJWT, async (req, res) => {
         : false,
       acceptedMarketing: hasMarketingConsent,
       isPersonalEmail: userInDb.is_work_email_personal_email,
+      discordLinked,
       roles
     } satisfies UserFullPayload;
     res.json({ user: userPayload });
     return;
   }
-  res.status(401).json({ message: "Unauthorized" });
+  return next(new UnauthorizedError("Unauthorized"));
+});
+
+// Discord OAuth endpoints
+router.get("/discord/login", authenticateJWT, (req, res, next) => {
+  if (!req.auth) {
+    return next(new UnauthorizedError("Unauthorized"));
+  }
+
+  logger.info(
+    `Initiating Discord OAuth for account_id: ${req.auth.account_id}`
+  );
+
+  const stateToken = jwt.sign(
+    { account_id: req.auth.account_id },
+    process.env.JWT_SECRET!,
+    { expiresIn: "5m" }
+  );
+
+  const params = new URLSearchParams({
+    client_id: process.env.DISCORD_CLIENT_ID!,
+    redirect_uri: `${process.env.BACKEND_URL}/api/v1/auth/discord/callback`,
+    response_type: "code",
+    scope: "identify",
+    state: stateToken
+  });
+
+  const discordAuthUrl = `https://discord.com/api/oauth2/authorize?${params.toString()}`;
+  logger.info(
+    `Redirecting to Discord OAuth for account_id: ${req.auth.account_id}`
+  );
+  res.redirect(discordAuthUrl);
+});
+
+router.get("/discord/callback", async (req, res) => {
+  try {
+    const code = req.query.code as string;
+    const state = req.query.state as string;
+
+    logger.info(
+      `Discord callback received. Code: ${code ? "present" : "missing"}, State: ${state ? "present" : "missing"}`
+    );
+
+    if (!code) {
+      logger.error("No code provided in Discord callback");
+      res.redirect(
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_code`
+      );
+      return;
+    }
+
+    if (!state) {
+      logger.error("No state parameter provided in Discord callback");
+      res.redirect(
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_state`
+      );
+      return;
+    }
+
+    let accountId: number;
+    try {
+      const decoded = jwt.verify(state, process.env.JWT_SECRET!) as {
+        account_id: number;
+      };
+      accountId = decoded.account_id;
+    } catch (jwtError) {
+      logger.error(
+        "Invalid or expired state token in Discord callback:",
+        jwtError
+      );
+      res.redirect(
+        `${process.env.FRONTEND_URL}/kanahautomo?discordError=invalid_state`
+      );
+      return;
+    }
+
+    // Exchange code for access token
+    const tokenResponse = await fetch("https://discord.com/api/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({
+        client_id: process.env.DISCORD_CLIENT_ID!,
+        client_secret: process.env.DISCORD_CLIENT_SECRET!,
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: `${process.env.BACKEND_URL}/api/v1/auth/discord/callback`
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      logger.error(
+        `Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText}`,
+        {
+          status: tokenResponse.status,
+          statusText: tokenResponse.statusText,
+          error: errorText
+        }
+      );
+      throw new Error(`Token exchange failed: ${tokenResponse.statusText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    const { access_token } = tokenData;
+
+    if (!access_token) {
+      throw new Error("No access token received from Discord");
+    }
+
+    // Fetch user info from Discord
+    const userResponse = await fetch("https://discord.com/api/users/@me", {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    if (!userResponse.ok) {
+      const errorText = await userResponse.text();
+      logger.error(
+        `User info fetch failed: ${userResponse.status} ${userResponse.statusText}`,
+        {
+          status: userResponse.status,
+          statusText: userResponse.statusText,
+          error: errorText
+        }
+      );
+      throw new Error(`User info fetch failed: ${userResponse.statusText}`);
+    }
+
+    const discordUser = await userResponse.json();
+    const discordUserId = discordUser.id;
+
+    if (!discordUserId) {
+      throw new Error("No Discord user ID received");
+    }
+
+    // Store Discord user ID in database
+    await updateUserDiscordId(accountId, discordUserId);
+
+    logger.info(
+      `Discord account linked for user ${accountId}: ${discordUserId}`
+    );
+
+    // Redirect back to frontend with success
+    res.redirect(
+      `${process.env.FRONTEND_URL}/kanahautomo?discordLinked=1&discordUserId=${discordUserId}`
+    );
+  } catch (error) {
+    logger.error("Discord OAuth callback error:", error);
+    res.redirect(
+      `${process.env.FRONTEND_URL}/kanahautomo?discordError=callback_failed`
+    );
+  }
 });
 
 export default router;

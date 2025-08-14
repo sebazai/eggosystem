@@ -1,5 +1,5 @@
 # Base image
-FROM node:22-slim@sha256:ec318fe0dc46b56bcc1ca42a202738aeb4f3e347a7b4dd9f9f1df12ea7aa385a AS base
+FROM node:22-slim@sha256:b2fa526a10dad3c5ab4b3779eca81607ed05a96160ef5497c36cd4ebed68803d AS base
 RUN apt update && apt upgrade -y
 WORKDIR /usr/src/app
 # Install pnpm globally - do this first as it changes least often
@@ -33,10 +33,14 @@ ARG NEXT_PUBLIC_API_URL=https://hub.kanaliiga.fi
 ARG NEXT_PUBLIC_CLIENT_API_URL=https://hub.kanaliiga.fi
 ARG NEXT_PUBLIC_BASE_PATH
 ARG NEXT_PUBLIC_BASE_URL=https://hub.kanaliiga.fi
+ARG NEXT_PUBLIC_GIT_SHA
+ARG NEXT_PUBLIC_GITLAB_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_CLIENT_API_URL=${NEXT_PUBLIC_CLIENT_API_URL}
 ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
 ENV NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA}
+ENV NEXT_PUBLIC_GITLAB_URL=${NEXT_PUBLIC_GITLAB_URL}
 RUN pnpm build --filter=frontend
 
 # Stage 2: Run Stage

@@ -76,16 +76,67 @@ export const expressFetcher = async <T>(
 
   // Prepend NEXT_PUBLIC_BASE_PATH if defined
   const basePath = envConfig.API_URL;
+  const isInternalApi =
+    typeof url === "string" && basePath && url.startsWith("/api/");
+
   if (typeof url === "string" && basePath) {
     url = `${basePath}${url}`;
   }
 
-  const res = await fetch(url, options);
-  if (!res.ok) {
-    const resultJson = await res.json();
-    throw new Error(resultJson.message ?? "An error occurred");
+  try {
+    const res = await fetch(url, options);
+
+    if (!res.ok) {
+      let errorMessage = `API request failed with status ${res.status}`;
+
+      try {
+        const resultJson = await res.json();
+
+        // For internal APIs, try to use RFC 7807 error format
+        if (isInternalApi && resultJson) {
+          // Check if it's an RFC 7807 error response
+          if (resultJson.detail && resultJson.status && resultJson.type) {
+            errorMessage = resultJson.detail;
+          }
+          // Check for legacy error format
+          else if (resultJson.error) {
+            errorMessage = resultJson.error;
+          }
+          // Check for generic message field
+          else if (resultJson.message) {
+            errorMessage = resultJson.message;
+          }
+        }
+        // For external APIs, just try to get a message
+        else if (resultJson?.message) {
+          errorMessage = resultJson.message;
+        }
+      } catch (parseError) {
+        // If parsing fails, use the default error message
+        console.error("Failed to parse error response:", parseError);
+      }
+
+      // Create error with additional properties
+      const error = new Error(errorMessage) as Error & { status?: number };
+      error.status = res.status;
+      throw error;
+    }
+
+    // For non-JSON responses (rare edge case)
+    const contentType = res.headers.get("content-type");
+    if (contentType && !contentType.includes("application/json")) {
+      console.warn("Non-JSON response received:", contentType);
+      return {} as T;
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error(
+      `API fetch error for ${typeof url === "string" ? url : "request"}:`,
+      error
+    );
+    throw error;
   }
-  return res.json();
 };
 
 export const createBaseUrl = (path?: string) => {

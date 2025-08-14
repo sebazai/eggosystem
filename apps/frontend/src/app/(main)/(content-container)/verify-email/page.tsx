@@ -16,7 +16,13 @@ interface VerifyEmailPageProps {
   }>;
 }
 
-async function VerifyEmailContent({ token }: { token: string }) {
+async function VerifyEmailContent({
+  token,
+  success
+}: {
+  token: string;
+  success: boolean;
+}) {
   if (!token) {
     return (
       <Card className="w-full max-w-md">
@@ -33,24 +39,9 @@ async function VerifyEmailContent({ token }: { token: string }) {
     );
   }
 
-  let success = false;
-
-  const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ token }),
-    cache: "no-store" // don't cache
-  });
-
-  if (res.ok) {
-    success = true;
-  }
-
   if (success) {
     return (
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md" data-testid="verify-email-success-card">
         <CardContent className="flex flex-col items-center gap-4">
           <CheckCircleIcon
             className="h-16 w-16 text-[hsl(35,93%,49%)]"
@@ -89,6 +80,15 @@ export default async function VerifyEmailPage({
 }: VerifyEmailPageProps) {
   const { token } = await searchParams;
 
+  const res = await fetch(`${envConfig.API_URL}/api/v1/verify-email`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ token }),
+    cache: "no-store" // don't cache
+  });
+
   return (
     <div className="flex justify-center p-4">
       <Suspense
@@ -104,7 +104,7 @@ export default async function VerifyEmailPage({
           </Card>
         }
       >
-        <VerifyEmailContent token={token} />
+        <VerifyEmailContent token={token} success={res.ok} />
       </Suspense>
     </div>
   );

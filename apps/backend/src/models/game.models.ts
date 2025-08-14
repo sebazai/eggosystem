@@ -4,13 +4,35 @@ import {
   type GameTeamRoundBreakdown,
   type GamePlayerStats,
   type MatchOrGameTopPlayerAwards,
-  type GameClip
+  type GameClip,
+  type MatchDemoReadyWebhook,
+  type ChampionshipDetailsDemoReady,
+  type MatchGame
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   fetchPlayerStatsForMatchOrGame,
   matchTopStats
 } from "../shared/fetch-stat";
+import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getConnection } from "../db/mysqlConnection";
+import { type PoolConnection } from "mysql2/promise";
+import { parseDemoUrl } from "../utils/demo-url-parser";
+import { sendDemoForAllStarPOTGClip } from "../services/allstar.services";
+import {
+  publishToParseQueue,
+  createDemoProcessingRequest
+} from "../services/parse-queue.services";
+import { logger } from "../utils/app-logger";
+import { type ParsedPayload } from "../types/parse-queue.types";
+import { generateQueryWithFilters } from "../utils/queryFilter";
+import { upsertTeamGameScore } from "./team-game-score.models";
+import { upsertPlayerStatsForGame } from "./player-stats.models";
+import { upsertPlayerTradesForGame } from "./player-trades.models";
+import { upsertMapRoundStats } from "./map-round-stat.models";
+import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
+import { getDemoDownloadUrl } from "../services/faceit.services";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -125,6 +147,12 @@ export const getGameTopPlayers = async (game_id: number) => {
   );
   const queryResults = await Promise.all(queries);
 
+  if (
+    Object.entries(queryResults[0]).every(([_, value]) => value === undefined)
+  ) {
+    return null;
+  }
+
   return Object.assign({}, ...queryResults) as MatchOrGameTopPlayerAwards;
 };
 
@@ -135,4 +163,349 @@ export const getGameClip = async (game_id: number) => {
       WHERE game_id = ?
   `;
   return runQuery<GameClip[]>(query, [game_id]);
+};
+
+/**
+ * Publish demo processing request to parse_queue
+ */
+const publishDemoProcessingRequest = async (
+  gameId: number,
+  demoUrl: string,
+  reparse: boolean = false
+): Promise<void> => {
+  try {
+    const demoProcessingRequest = createDemoProcessingRequest(
+      gameId,
+      demoUrl,
+      5, // Medium priority for demo processing
+      "game-processor",
+      reparse
+    );
+
+    await publishToParseQueue(demoProcessingRequest);
+
+    logger.info("Demo processing request published to parse_queue", {
+      gameId,
+      demoUrl,
+      queue: "parse_queue",
+      request: demoProcessingRequest
+    });
+  } catch (error) {
+    logger.error("Failed to publish demo processing request to parse_queue", {
+      gameId,
+      demoUrl,
+      queue: "parse_queue",
+      error
+    });
+    // Don't throw - this is a non-critical operation
+  }
+};
+
+const getMatchGameByDemoUrl = async (demoUrl: string) => {
+  const query = `SELECT * FROM MatchGames WHERE demofile = ?`;
+  const [game] = await runQuery<Array<MatchGame | undefined>>(query, [demoUrl]);
+  return game;
+};
+
+export const addMatchGameToDatabaseAndProcessDemo = async (
+  webhookData: MatchDemoReadyWebhook,
+  matchDetails: ChampionshipDetailsDemoReady,
+  externalLeagueId: string
+) => {
+  const { demo_url } = webhookData.payload;
+
+  const gameWithDemo = await getMatchGameByDemoUrl(demo_url);
+
+  const parsedDemoUrl = parseDemoUrl(demo_url);
+  if (!parsedDemoUrl) {
+    throw new Error(`Invalid demo url: ${demo_url}`);
+  }
+
+  const demoDownloadUrl = await getDemoDownloadUrl(demo_url);
+
+  const { match_id } = matchDetails;
+
+  // We can have multiple matches for the same external match room id, so we need to get all of them
+  const matches = await getHubMatchesByExternalMatchRoomId(match_id);
+
+  if (!matches || matches.length === 0) {
+    throw new Error(
+      `No matches found when adding match games for external_id: ${externalLeagueId}`
+    );
+  }
+
+  const seasonLeague =
+    await getSeasonLeagueExternalIdByExternalId(externalLeagueId);
+
+  if (!seasonLeague) {
+    throw new Error(
+      `No SeasonLeagueExternalId entry found when adding match games for external_id: ${externalLeagueId}`
+    );
+  }
+
+  const { isBO2PlayedAs2xBO1 } = seasonLeague;
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+    const mapPlayedIn = parsedDemoUrl.mapNumber;
+    const matchMapVetoes = await getMatchTeamMapVetoPicksAndDeciders(
+      matches[0].id,
+      connection
+    );
+    const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
+
+    if (
+      isBO2PlayedAs2xBO1 &&
+      matchDetails.best_of === 2 &&
+      matches.length === 2
+    ) {
+      // We should receive 2 picks, as both 2xBO1 matches have the same picks.
+      if (matchMapVetoes.length !== 2) {
+        throw new Error("Something is very wrong with this 2xBO1");
+      }
+
+      const matchObject = matches[mapPlayedIn - 1];
+
+      if (!matchObject) {
+        throw new Error("Could not find match object for 2xBO1 matches");
+      }
+
+      const insertedRow = await upsertMatchGameForMatch({
+        match_id: matchObject.id,
+        map_id: mapPlayedVoteObject.map_id,
+        map_order: mapPlayedIn,
+        demo_file: demo_url,
+        connection
+      });
+      await connection.commit();
+
+      await Promise.all([
+        sendDemoForAllStarPOTGClip(
+          gameWithDemo?.id ?? insertedRow.insertId,
+          demo_url
+        ),
+        publishDemoProcessingRequest(
+          gameWithDemo?.id ?? insertedRow.insertId,
+          demoDownloadUrl,
+          !gameWithDemo
+        )
+      ]);
+    } else {
+      const match = matches[0];
+
+      if (!match) {
+        throw new Error(
+          `Could not find match object for external match room id: ${match_id}`
+        );
+      }
+
+      if (!mapPlayedVoteObject) {
+        logger.error(
+          `Could not find map played vote object for match ${match_id}, map played in: ${mapPlayedIn - 1}, matchMapVetoes: ${JSON.stringify(matchMapVetoes)}`
+        );
+        throw new Error(
+          `Could not find map played vote object for match_id: ${match_id}`
+        );
+      }
+
+      const insertedRow = await upsertMatchGameForMatch({
+        match_id: match.id,
+        map_id: mapPlayedVoteObject.map_id,
+        map_order: mapPlayedIn,
+        demo_file: demo_url,
+        connection
+      });
+
+      await connection.commit();
+
+      await Promise.all([
+        sendDemoForAllStarPOTGClip(
+          gameWithDemo?.id ?? insertedRow.insertId,
+          demo_url
+        ),
+        publishDemoProcessingRequest(
+          gameWithDemo?.id ?? insertedRow.insertId,
+          demoDownloadUrl,
+          !gameWithDemo
+        )
+      ]);
+    }
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const getMatchIdByGameId = async (
+  gameId: number,
+  connection?: PoolConnection
+) => {
+  const query = `SELECT match_id FROM MatchGames WHERE id = ?`;
+  return runQuery<Array<{ match_id: number } | undefined>>(
+    query,
+    [gameId],
+    connection
+  );
+};
+
+export const upsertMatchGameForMatch = async ({
+  match_id,
+  map_id,
+  map_order,
+  demo_file,
+  regulation_rounds,
+  connection
+}: {
+  match_id: number;
+  map_id: number;
+  map_order: number;
+  demo_file: string;
+  regulation_rounds?: number;
+  connection?: PoolConnection;
+}) => {
+  const query = `
+    INSERT INTO MatchGames (match_id, map_id, map_order, demofile, regulation_rounds) 
+    VALUES (?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+      demofile = VALUES(demofile),
+      regulation_rounds = VALUES(regulation_rounds)
+  `;
+
+  return await runQuery<{ insertId: number }>(
+    query,
+    [match_id, map_id, map_order, demo_file, regulation_rounds ?? 24],
+    connection
+  );
+};
+
+const getTeamIdByPlayerSteamIdsAndGameId = async (
+  playerSteamIds: string[],
+  gameId: number,
+  connection?: PoolConnection
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "mg.id",
+      value: [gameId]
+    },
+    {
+      column: "stp.steam_id",
+      value: playerSteamIds
+    }
+  ]);
+  const baseQuery = `SELECT DISTINCT mt.team_id FROM MatchGames mg 
+      JOIN Matches m ON mg.match_id = m.id 
+      JOIN MatchTeams mt ON m.id = mt.match_id 
+      JOIN SeasonTeamPlayers stp ON mt.team_id = stp.team_id AND mt.season_id = stp.season_id 
+      WHERE ${query}`;
+  return runQuery<Array<{ team_id: number } | undefined>>(
+    baseQuery,
+    queryParams,
+    connection
+  );
+};
+
+export const saveParsedDemoDataForGame = async (
+  game_id: string,
+  parsed_payload: ParsedPayload
+) => {
+  const {
+    Score,
+    Players,
+    NewRoundInfo: RoundInfo,
+    Trades,
+    Clutches: _Clutches,
+    RoundImpacts: _RoundImpacts
+  } = parsed_payload;
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const gameId = Number(game_id);
+    const [match] = await getMatchIdByGameId(gameId, connection);
+    if (!match) {
+      throw new Error(`Could not find parent match for game ${gameId}`);
+    }
+
+    const team1PlayerSteamIds = Object.values(Players)
+      .filter((player) => player.Team === 1)
+      .map((player) => player.SteamID);
+
+    const team2PlayerSteamIds = Object.values(Players)
+      .filter((player) => player.Team === 2)
+      .map((player) => player.SteamID);
+
+    const terroristTeamResult = await getTeamIdByPlayerSteamIdsAndGameId(
+      team1PlayerSteamIds,
+      gameId,
+      connection
+    );
+    const counterTerroristTeamResult = await getTeamIdByPlayerSteamIdsAndGameId(
+      team2PlayerSteamIds,
+      gameId,
+      connection
+    );
+
+    const terroristTeam = terroristTeamResult[0];
+    const counterTerroristTeam = counterTerroristTeamResult[0];
+
+    if (!terroristTeam || !counterTerroristTeam) {
+      throw new Error(
+        `Could not find team for game ${gameId} with player steam ids for team 1: ${team1PlayerSteamIds} and team 2: ${team2PlayerSteamIds}`
+      );
+    }
+
+    await Promise.all([
+      upsertTeamGameScore({
+        match_id: match.match_id,
+        team_id: terroristTeam.team_id,
+        game_id: gameId,
+        starting_side: "T",
+        score: Score.Team1Score,
+        halftime_score: Score.Team1HTScore,
+        overtime_score: Score.Team1OTScore,
+        connection
+      }),
+      upsertTeamGameScore({
+        match_id: match.match_id,
+        team_id: counterTerroristTeam.team_id,
+        game_id: gameId,
+        starting_side: "CT",
+        score: Score.Team2Score,
+        halftime_score: Score.Team2HTScore,
+        overtime_score: Score.Team2OTScore,
+        connection
+      }),
+      ...Object.values(Players).map((player) =>
+        upsertPlayerStatsForGame({
+          gameId,
+          playerStats: player,
+          connection
+        })
+      ),
+      upsertPlayerTradesForGame({
+        gameId,
+        playerTrades: Trades,
+        connection
+      }),
+      upsertMapRoundStats({
+        gameId,
+        tTeamIdTeam1: terroristTeam.team_id,
+        ctTeamIdTeam2: counterTerroristTeam.team_id,
+        mapRoundStats: RoundInfo.Rounds,
+        connection
+      })
+    ]);
+
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };

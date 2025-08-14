@@ -14,13 +14,14 @@ import {
   getGameTopPlayersController,
   getGameClipController
 } from "../../controllers/games.controllers";
+import { NotFoundError } from "../../utils/errors";
 
 const router = Router();
 
 router.get(
   "/:game_id",
   validateNumericParams(),
-  async (req: RequestWithParams<{ game_id: string }>, res) => {
+  async (req: RequestWithParams<{ game_id: string }>, res, next) => {
     const gameId = Number(req.params.game_id);
     const [game] = await runQuery<
       Array<
@@ -36,8 +37,7 @@ router.get(
       [gameId]
     );
     if (!game) {
-      res.status(404).json({ message: "Game not found" });
-      return;
+      return next(new NotFoundError("Game not found"));
     }
     res.json(game);
   }

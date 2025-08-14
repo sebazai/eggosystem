@@ -137,18 +137,32 @@ export const setSeasonTeamPlayers = async (
   teamId?: number
 ) => {
   for (const player of validSignupData.players) {
-    await setSeasonTeamPlayer(player.steamId, seasonId, teamId);
+    await setSeasonTeamPlayer(
+      player.steamId,
+      Boolean(player.captain),
+      Boolean(player.coCaptain),
+      seasonId,
+      teamId
+    );
   }
 };
 
 export const setSeasonTeamPlayer = async (
   steamId: string,
+  isCaptain: boolean,
+  isCoCaptain: boolean,
   seasonId?: number,
   teamId?: number
 ) => {
   await runQuery(
-    "INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id) VALUES (?, ?, ?)",
-    [seasonId ?? 1, validSignupData.teamId ?? teamId, steamId]
+    "INSERT INTO SeasonTeamRegistrationPlayers (season_id, team_id, steam_id, is_captain, is_co_captain) VALUES (?, ?, ?, ?, ?)",
+    [
+      seasonId ?? 1,
+      validSignupData.teamId ?? teamId,
+      steamId,
+      Boolean(isCaptain),
+      Boolean(isCoCaptain)
+    ]
   );
 };
 
@@ -199,4 +213,46 @@ export const clearOrganization = (orgId?: number) => {
   if (orgId) {
     return runQuery("DELETE FROM Organizations WHERE id = ?", [orgId]);
   }
+};
+
+export const insertTestKanahautomoRegistration = async (
+  steamId: string,
+  organizationId: number,
+  acceptedTerms: boolean = false
+) => {
+  return runQuery<{ insertId: number }>(
+    "INSERT INTO KanahautomoRegistrations (steam_id, organization_id, accepted_terms) VALUES (?, ?, ?)",
+    [steamId, organizationId, acceptedTerms]
+  );
+};
+
+export const removeTestKanahautomoRegistration = async (
+  steamId: string,
+  organizationId: number
+) => {
+  return runQuery(
+    "DELETE FROM KanahautomoRegistrations WHERE steam_id = ? AND organization_id = ?",
+    [steamId, organizationId]
+  );
+};
+
+export const clearTestKanahautomoRegistrations = async () => {
+  return runQuery("DELETE FROM KanahautomoRegistrations");
+};
+
+export const insertTestOrganization = async (
+  name: string,
+  organizationCode?: string
+) => {
+  const code =
+    organizationCode ||
+    `TEST-ORG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return runQuery<{ insertId: number }>(
+    "INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES (?, ?, ?, ?, ?)",
+    [name, "Finland", code, "nologo.png", "http://test.org"]
+  );
+};
+
+export const clearTestOrganization = async (name: string) => {
+  return runQuery("DELETE FROM Organizations WHERE name = ?", [name]);
 };

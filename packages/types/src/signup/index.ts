@@ -59,7 +59,7 @@ const baseSignupFormSchema = (context: { platform: SeasonPlatform }) =>
       teamExternalId: teamExternalIdSchema(context.platform),
       newTeam: newTeamSchema.optional(),
       captainHasReadTermAndConditions: z.literal<boolean>(true, {
-        errorMap: () => ({
+        error: () => ({
           message: "You need to be aware of the terms and conditions."
         })
       }),

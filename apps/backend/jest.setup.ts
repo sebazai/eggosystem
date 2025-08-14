@@ -29,9 +29,13 @@ beforeAll(() => {
   // Enable API mocking before all the tests.
   mswServer.listen({
     onUnhandledRequest: (request, print) => {
+      // Ignore Discord WebSocket connections and other Discord-related requests
       if (
         request.url.includes("127.0.0.1") ||
-        request.url.includes("localhost:4318")
+        request.url.includes("localhost:4318") ||
+        request.url.includes("gateway.discord.gg") ||
+        request.url.includes("discord.com") ||
+        request.url.includes("discord.gg")
       ) {
         return;
       }

@@ -5,4 +5,6 @@ export interface SeasonTeamPlayer {
   team_id: Team["id"];
   steam_id: SteamPlayer["steam_id"];
   role: "primary" | "substitute";
+  is_captain: boolean;
+  is_co_captain: boolean;
 }
