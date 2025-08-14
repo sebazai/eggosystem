@@ -64,7 +64,13 @@ app.use(
 app.use(express.json());
 
 app.use(helmet());
-app.use(morgan("dev"));
+app.use(
+  morgan("dev", {
+    skip: (req, _res) => {
+      return req.url === "/api/v1/health";
+    }
+  })
+);
 app.use(passport.initialize());
 
 app.use("/api/v1", v1Router);
