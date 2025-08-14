@@ -20,7 +20,7 @@ services:
       FACEIT_API_KEY: $FACEIT_API_KEY
       OTEL_SERVICE_NAME: eggosystem-stage-backend-1
       OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=stage,service.namespace=eggosystem,service.version=1.0.0,service.instance.id=backend"
-      OTEL_EXPORTER_OTLP_PROFILING_ENDPOINT: http://alloy:4040
+      OTEL_EXPORTER_OTLP_PROFILING_ENDPOINT: "http://alloy:4040"
       OTEL_EXPORTER_OTLP_PROFILING_REGION_TAG: staging
       OTEL_EXPORTER_OTLP_PROFILING_VERSION_TAG: 1.0.0
       PRIVACY_POLICY_VERSION: $PRIVACY_POLICY_VERSION
