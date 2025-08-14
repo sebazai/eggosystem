@@ -16,12 +16,11 @@ Database pooling, API for CS stats.
 
 To enable profiling with Grafana Cloud via Alloy, the following environment variables are configured:
 
-- `PYROSCOPE_SERVER_ADDRESS` - Points to your local Alloy instance (e.g., `http://172.17.0.1:4040`)
-- `PYROSCOPE_AUTH_TOKEN` - Optional when using local Alloy (Alloy handles authentication to Grafana Cloud)
-- `PYROSCOPE_APPLICATION_NAME` - Application name for profiling (default: `kanaliiga-backend`)
+- `OTEL_EXPORTER_OTLP_PROFILING_ENDPOINT` - Points to your local Alloy instance (e.g., `http://172.17.0.1:4040`)
+- `OTEL_EXPORTER_OTLP_PROFILING_AUTH_TOKEN` - Optional when using local Alloy (Alloy handles authentication to Grafana Cloud)
 - `ENABLE_PROFILING` - Set to `true` to enable profiling in development mode
-- `REGION` - Optional region tag for profiling metadata
-- `VERSION` - Optional version tag for profiling metadata
+- `OTEL_EXPORTER_OTLP_PROFILING_REGION_TAG` - Optional region tag for profiling metadata
+- `OTEL_EXPORTER_OTLP_PROFILING_VERSION_TAG` - Optional version tag for profiling metadata
 
 ### Alloy-based Setup
 

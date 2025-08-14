@@ -1,14 +1,16 @@
-import Pyroscope from "@pyroscope/nodejs";
+import Pyroscope, { type PyroscopeConfig } from "@pyroscope/nodejs";
 
 export function initializeProfiling() {
   if (
     process.env.NODE_ENV === "production" ||
     process.env.ENABLE_PROFILING === "true"
   ) {
-    const pyroscopeServerAddress = process.env.PYROSCOPE_SERVER_ADDRESS;
-    const pyroscopeAuthToken = process.env.PYROSCOPE_AUTH_TOKEN;
+    const pyroscopeServerAddress =
+      process.env.OTEL_EXPORTER_OTLP_PROFILING_ENDPOINT;
+    const pyroscopeAuthToken =
+      process.env.OTEL_EXPORTER_OTLP_PROFILING_AUTH_TOKEN;
     const pyroscopeApplicationName =
-      process.env.PYROSCOPE_APPLICATION_NAME || "kanaliiga-backend";
+      process.env.OTEL_SERVICE_NAME || "eggosystem-backend-1";
 
     if (!pyroscopeServerAddress) {
       console.warn(
@@ -34,12 +36,13 @@ export function initializeProfiling() {
         serverAddress: pyroscopeServerAddress,
         appName: pyroscopeApplicationName,
         tags: {
-          region: process.env.REGION || "unknown",
-          version: process.env.VERSION || "1.0.0",
-          environment: process.env.NODE_ENV || "development"
+          region:
+            process.env.OTEL_EXPORTER_OTLP_PROFILING_REGION_TAG || "unknown",
+          version:
+            process.env.OTEL_EXPORTER_OTLP_PROFILING_VERSION_TAG || "unknown"
         },
         ...(pyroscopeAuthToken && { authToken: pyroscopeAuthToken })
-      };
+      } satisfies PyroscopeConfig;
 
       Pyroscope.init(config);
 
