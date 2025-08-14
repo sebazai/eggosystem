@@ -584,4 +584,61 @@ describe("SortterPage", () => {
       screen.getByText("Populate Kanaelo Queue").closest("button")
     ).toBeDisabled();
   });
+
+  it("disables Save and Finalize buttons when kana_elo error is present but keeps Populate Kanaelo Queue enabled", () => {
+    // This test reproduces the bug: Save/Finalize buttons should be DISABLED when kana_elo is missing
+    (useSortter as jest.Mock).mockReturnValue({
+      teams: mockTeams,
+      seasons: mockSeasons,
+      playerValues: [],
+      placements: [], // No placements because of kana_elo error
+      selectedSeason: 2,
+      selectedTeamId: null,
+      floatingPosition: null,
+      comments: {},
+      divisions: {},
+      isLoadingTeams: false,
+      isLoadingSeasons: false,
+      isLoadingPlayerValues: false,
+      isLoadingPlacements: false,
+      isSaving: false,
+      isFinalizing: false,
+      isViewMode: false,
+      error:
+        "Cannot generate placements: kana_elo data has not been calculated yet. Please complete the kanaelo calculation process first.",
+      setSelectedSeason: mockSetSelectedSeason,
+      showTeamPlayerValues: mockShowTeamPlayerValues,
+      closeTeamPlayerValues: mockCloseTeamPlayerValues,
+      prefetchPlayerValues: mockPrefetchPlayerValues,
+      handleCommentChange: mockHandleCommentChange,
+      handleDivisionChange: mockHandleDivisionChange,
+      savePlacements: mockSavePlacements,
+      finalizePlacements: mockFinalizePlacements
+    });
+
+    renderWithErrorSuppression(<SortterPage />);
+
+    // Should show kana_elo specific error message
+    expect(screen.getByText("Kanaelo Data Required")).toBeInTheDocument();
+    expect(
+      screen.getByText(/kana_elo data has not been calculated yet/)
+    ).toBeInTheDocument();
+
+    // Save and Finalize buttons should be DISABLED when kana_elo error is present
+    expect(
+      screen.getByText("Save Placements").closest("button")
+    ).toBeDisabled();
+    expect(
+      screen.getByText("Finalize Placements").closest("button")
+    ).toBeDisabled();
+
+    // But Populate Kanaelo Queue button should remain ENABLED to fix the issue
+    expect(
+      screen.getByText("Populate Kanaelo Queue").closest("button")
+    ).not.toBeDisabled();
+
+    // Teams table and division summary should be hidden
+    expect(screen.queryByText("Team Rankings")).not.toBeInTheDocument();
+    expect(screen.queryByText("Division Summary")).not.toBeInTheDocument();
+  });
 });

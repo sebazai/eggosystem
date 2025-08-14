@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const IORedis = jest.createMockFromModule("ioredis");
+
+// In-memory storage for the mock
+const mockRedisStorage = new Map<string, string>();
+
 (IORedis as any).prototype.get.mockImplementation((key: any) => {
   if (key === "123123") {
     return "mockRefreshToken";
@@ -7,8 +11,27 @@ const IORedis = jest.createMockFromModule("ioredis");
   if (key === "123124") {
     return "differentRefreshToken";
   }
-  return undefined;
+
+  // Handle team placements and other keys
+  return mockRedisStorage.get(key) || null;
 });
-(IORedis as any).prototype.set = jest.fn().mockResolvedValue("OK");
-(IORedis as any).prototype.del = jest.fn();
+
+(IORedis as any).prototype.set = jest
+  .fn()
+  .mockImplementation((key: any, value: any) => {
+    mockRedisStorage.set(key, value);
+    return Promise.resolve("OK");
+  });
+
+(IORedis as any).prototype.del = jest.fn().mockImplementation((key: any) => {
+  const existed = mockRedisStorage.has(key);
+  mockRedisStorage.delete(key);
+  return Promise.resolve(existed ? 1 : 0);
+});
+
+// Helper function to clear mock storage between tests
+(IORedis as any).clearMockStorage = () => {
+  mockRedisStorage.clear();
+};
+
 module.exports = IORedis as any;

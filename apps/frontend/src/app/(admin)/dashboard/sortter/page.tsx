@@ -187,6 +187,18 @@ const generateDivisionOptions = (count: number) => {
   return options;
 };
 
+// Check if error is specifically about missing kanaelo data
+const isKanaeloMissingError = (error: unknown): boolean => {
+  if (!error) return false;
+  const errorString = error.toString().toLowerCase();
+  return (
+    errorString.includes("kana_elo") &&
+    ((errorString.includes("not") && errorString.includes("calculated")) ||
+      errorString.includes("missing") ||
+      errorString.includes("invalid"))
+  );
+};
+
 export default function SortterPage() {
   // TODO: Could be moved into a state / dropdown
   const teamsPerDivision = 12;
@@ -355,7 +367,8 @@ export default function SortterPage() {
                   !selectedSeason ||
                   isSaving ||
                   isLoadingPlacements ||
-                  isViewMode
+                  isViewMode ||
+                  error // Disable when ANY error is present (including kana_elo errors)
                 }
                 variant="outline"
                 className="ml-auto"
@@ -375,7 +388,8 @@ export default function SortterPage() {
                   !selectedSeason ||
                   isFinalizing ||
                   isLoadingPlacements ||
-                  isViewMode
+                  isViewMode ||
+                  error // Disable when ANY error is present (including kana_elo errors)
                 }
                 variant="default"
                 className="ml-auto"
@@ -413,7 +427,7 @@ export default function SortterPage() {
           </div>
         </div>
 
-        {error && (
+        {error && !isKanaeloMissingError(error) && (
           <div className="p-4 border border-red-400 bg-red-100 dark:bg-red-900/20 rounded-lg">
             <h5 className="text-sm font-medium text-red-800 dark:text-red-300">
               Error
@@ -424,10 +438,24 @@ export default function SortterPage() {
           </div>
         )}
 
+        {error && isKanaeloMissingError(error) && (
+          <div className="p-4 border border-amber-400 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+            <h5 className="text-sm font-medium text-amber-800 dark:text-amber-300">
+              Kanaelo Data Required
+            </h5>
+            <div className="text-sm text-amber-700 dark:text-amber-400">
+              Team placements cannot be generated because kana_elo data has not
+              been calculated yet. Please click &quot;Populate Kanaelo
+              Queue&quot; to start the calculation process.
+            </div>
+          </div>
+        )}
+
         {/* Division Summary Card */}
         {!isLoadingTeams &&
           !isLoadingPlacements &&
-          divisionSummary.length > 0 && (
+          divisionSummary.length > 0 &&
+          !(error && isKanaeloMissingError(error)) && (
             <Card className="flex-shrink-0">
               <CardHeader className="py-2">
                 <CardTitle className="text-base">Division Summary</CardTitle>
@@ -452,158 +480,161 @@ export default function SortterPage() {
             </Card>
           )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Team Rankings</CardTitle>
-            <CardDescription>
-              View and manage team rankings with kanapoints analysis
-              {teams.length > 0 && ` (${teams.length} teams)`}
-              <span className="ml-2 text-xs text-muted-foreground italic">
-                Double-click a team to view player details
-              </span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-2">
-            {isLoadingTeams || isLoadingPlacements ? (
-              <div className="flex justify-center items-center p-12">
-                <Spinner size="lg" />
-                <span className="ml-4 text-muted-foreground">
-                  Loading team data...
+        {/* Only show teams table if we don't have a kanaelo missing error */}
+        {!(error && isKanaeloMissingError(error)) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Rankings</CardTitle>
+              <CardDescription>
+                View and manage team rankings with kanapoints analysis
+                {teams.length > 0 && ` (${teams.length} teams)`}
+                <span className="ml-2 text-xs text-muted-foreground italic">
+                  Double-click a team to view player details
                 </span>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-medium text-sm w-12">
-                        ID
-                      </th>
-                      <th className="text-left p-2 font-medium text-sm w-36">
-                        Team
-                      </th>
-                      <th className="text-left p-2 font-medium text-sm w-28">
-                        kanaelo (sum 5 / avg4)
-                      </th>
-                      <th className="text-left p-2 font-medium text-sm w-28">
-                        Division
-                      </th>
-                      <th className="text-center p-2 font-medium text-sm w-72">
-                        Graph (0-350)
-                      </th>
-                      <th className="text-left p-2 font-medium text-sm w-72">
-                        Comments
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {teams.map((team, index) => {
-                      const totalValue = team.top5_values.reduce(
-                        (sum, val) => sum + val,
-                        0
-                      );
-                      const avgValue = calculateAvg(team.top5_values);
-                      const teamDivision =
-                        team.division ??
-                        divisions[team.team_id] ??
-                        (placements && placements.length > 0
-                          ? 1
-                          : Math.floor(index / teamsPerDivision) + 1);
-                      const colorClass = getRowColorClass(teamDivision - 1);
-
-                      // Check if this is the first team in a new division
-                      const prevTeam = index > 0 ? teams[index - 1] : null;
-                      const prevDivision = prevTeam
-                        ? (prevTeam.division ??
-                          divisions[prevTeam.team_id] ??
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-2">
+              {isLoadingTeams || isLoadingPlacements ? (
+                <div className="flex justify-center items-center p-12">
+                  <Spinner size="lg" />
+                  <span className="ml-4 text-muted-foreground">
+                    Loading team data...
+                  </span>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr className="border-b">
+                        <th className="text-left p-2 font-medium text-sm w-12">
+                          ID
+                        </th>
+                        <th className="text-left p-2 font-medium text-sm w-36">
+                          Team
+                        </th>
+                        <th className="text-left p-2 font-medium text-sm w-28">
+                          kanaelo (sum 5 / avg4)
+                        </th>
+                        <th className="text-left p-2 font-medium text-sm w-28">
+                          Division
+                        </th>
+                        <th className="text-center p-2 font-medium text-sm w-72">
+                          Graph (0-350)
+                        </th>
+                        <th className="text-left p-2 font-medium text-sm w-72">
+                          Comments
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teams.map((team, index) => {
+                        const totalValue = team.top5_values.reduce(
+                          (sum, val) => sum + val,
+                          0
+                        );
+                        const avgValue = calculateAvg(team.top5_values);
+                        const teamDivision =
+                          divisions[team.team_id] ?? // Local changes take precedence
+                          team.division ?? // Then original placement
                           (placements && placements.length > 0
                             ? 1
-                            : Math.floor((index - 1) / teamsPerDivision) + 1))
-                        : null;
-                      const isFirstInDivision = prevDivision !== teamDivision;
+                            : Math.floor(index / teamsPerDivision) + 1);
+                        const colorClass = getRowColorClass(teamDivision - 1);
 
-                      return (
-                        <React.Fragment key={team.team_id}>
-                          {isFirstInDivision && index > 0 && (
-                            <tr className="border-t-4 border-gray-800 dark:border-gray-200">
-                              <td colSpan={6} className="h-1 p-0"></td>
+                        // Check if this is the first team in a new division
+                        const prevTeam = index > 0 ? teams[index - 1] : null;
+                        const prevDivision = prevTeam
+                          ? (prevTeam.division ??
+                            divisions[prevTeam.team_id] ??
+                            (placements && placements.length > 0
+                              ? 1
+                              : Math.floor((index - 1) / teamsPerDivision) + 1))
+                          : null;
+                        const isFirstInDivision = prevDivision !== teamDivision;
+
+                        return (
+                          <React.Fragment key={team.team_id}>
+                            {isFirstInDivision && index > 0 && (
+                              <tr className="border-t-4 border-gray-800 dark:border-gray-200">
+                                <td colSpan={6} className="h-1 p-0"></td>
+                              </tr>
+                            )}
+                            <tr
+                              className={`border-b ${colorClass} transition-colors hover:bg-opacity-80 cursor-pointer`}
+                              onDoubleClick={(e) =>
+                                handleTeamDoubleClick(team.team_id, e)
+                              }
+                              onMouseEnter={() => handleTeamHover(team.team_id)}
+                            >
+                              <td className="py-4 px-2 font-medium text-sm">
+                                {team.team_id}
+                              </td>
+                              <td className="py-4 px-2 font-medium text-sm">
+                                {team.team_name}
+                              </td>
+                              <td className="py-4 px-2 text-sm">
+                                <div className="font-medium">
+                                  {totalValue} / {avgValue}
+                                </div>
+                              </td>
+                              <td className="py-4 px-2">
+                                <Select
+                                  value={teamDivision.toString()}
+                                  onValueChange={(value) => {
+                                    handleDivisionChange(
+                                      team.team_id,
+                                      parseInt(value, 10),
+                                      team.division
+                                    );
+                                  }}
+                                  disabled={isViewMode}
+                                >
+                                  <SelectTrigger className="w-36 h-10 text-sm">
+                                    <SelectValue placeholder="Division" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {divisionOptions.map((div) => (
+                                      <SelectItem
+                                        key={div.value}
+                                        value={div.value.toString()}
+                                      >
+                                        {div.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </td>
+                              <td className="py-4 px-2">
+                                <div className="w-full h-[120px]">
+                                  <MiniChart data={team.top5_values} />
+                                </div>
+                              </td>
+                              <td className="p-2">
+                                <Textarea
+                                  value={comments[team.team_id] || ""}
+                                  onChange={(e) =>
+                                    handleCommentChange(
+                                      team.team_id,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="min-h-[120px] h-[120px] text-sm resize-none"
+                                  placeholder="Add comments..."
+                                  disabled={isViewMode}
+                                  rows={5}
+                                />
+                              </td>
                             </tr>
-                          )}
-                          <tr
-                            className={`border-b ${colorClass} transition-colors hover:bg-opacity-80 cursor-pointer`}
-                            onDoubleClick={(e) =>
-                              handleTeamDoubleClick(team.team_id, e)
-                            }
-                            onMouseEnter={() => handleTeamHover(team.team_id)}
-                          >
-                            <td className="py-4 px-2 font-medium text-sm">
-                              {team.team_id}
-                            </td>
-                            <td className="py-4 px-2 font-medium text-sm">
-                              {team.team_name}
-                            </td>
-                            <td className="py-4 px-2 text-sm">
-                              <div className="font-medium">
-                                {totalValue} / {avgValue}
-                              </div>
-                            </td>
-                            <td className="py-4 px-2">
-                              <Select
-                                value={teamDivision.toString()}
-                                onValueChange={(value) =>
-                                  handleDivisionChange(
-                                    team.team_id,
-                                    parseInt(value, 10),
-                                    team.division
-                                  )
-                                }
-                                disabled={isViewMode}
-                              >
-                                <SelectTrigger className="w-36 h-10 text-sm">
-                                  <SelectValue placeholder="Division" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {divisionOptions.map((div) => (
-                                    <SelectItem
-                                      key={div.value}
-                                      value={div.value.toString()}
-                                    >
-                                      {div.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="py-4 px-2">
-                              <div className="w-full h-[120px]">
-                                <MiniChart data={team.top5_values} />
-                              </div>
-                            </td>
-                            <td className="p-2">
-                              <Textarea
-                                value={comments[team.team_id] || ""}
-                                onChange={(e) =>
-                                  handleCommentChange(
-                                    team.team_id,
-                                    e.target.value
-                                  )
-                                }
-                                className="min-h-[120px] h-[120px] text-sm resize-none"
-                                placeholder="Add comments..."
-                                disabled={isViewMode}
-                                rows={5}
-                              />
-                            </td>
-                          </tr>
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Floating player values window */}
         {selectedTeamId && floatingPosition && selectedTeam && (
