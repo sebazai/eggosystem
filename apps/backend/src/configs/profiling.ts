@@ -19,7 +19,7 @@ export function initializeProfiling() {
 
     // Auth token is optional when using local Alloy
     const isLocalAlloy =
-      pyroscopeServerAddress.includes("172.17.0.1") ||
+      pyroscopeServerAddress.includes("alloy") ||
       pyroscopeServerAddress.includes("localhost");
 
     if (!pyroscopeAuthToken && !isLocalAlloy) {
