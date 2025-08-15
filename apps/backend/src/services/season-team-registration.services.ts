@@ -186,6 +186,16 @@ export const validatePlayersFromDBForSignup = async (
         `Player ${playerData.steam_id} has not accepted privacy policy.`
       );
     }
+    if (!playerData.work_email_verified) {
+      throw new BadRequestError(
+        `Player ${playerData.steam_id} has not verified e-mail their e-mail.`
+      );
+    }
+    if (!playerData.is_valid_full_name) {
+      throw new BadRequestError(
+        `Player ${playerData.steam_id} profile data missing.`
+      );
+    }
     if (!playerData.is_valid_work_email) {
       const manuallyApprovedPlayer = await isPlayerApprovedForSeasonManually(
         seasonId,
@@ -198,11 +208,6 @@ export const validatePlayersFromDBForSignup = async (
           `Player ${playerData.steam_id} does not have valid work e-mail and has not been approved by organizer. Contact the organizer in Discord.`
         );
       }
-    }
-    if (!playerData.is_valid_full_name) {
-      throw new BadRequestError(
-        `Player ${playerData.steam_id} profile data missing.`
-      );
     }
   }
 };

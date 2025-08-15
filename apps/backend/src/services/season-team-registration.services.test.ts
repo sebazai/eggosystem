@@ -532,7 +532,7 @@ describe("Season team registration services", () => {
         } catch (error) {
           const asBadreq = error as BadRequestError;
           expect(asBadreq.message).toEqual(
-            "Player 12345678901234568 does not have valid work e-mail or has not been approved by organizer. Contact the organizer in Discord."
+            "Player 12345678901234568 has not verified e-mail their e-mail."
           );
         }
       });

@@ -237,6 +237,8 @@ export const SignupForm = ({
     watchPlayers.every(
       (p) =>
         p.hasValidData &&
+        p.hasValidWorkEmail &&
+        p.isEmailVerified &&
         p.rank !== -1 &&
         (p.externalRank !== -1 ||
           seasonDetails?.platform === SeasonPlatform.Kanaliiga) &&
