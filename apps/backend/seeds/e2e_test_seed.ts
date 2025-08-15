@@ -115,13 +115,18 @@ export async function seed(knex: Knex): Promise<void> {
     { id: 15004 },
     { id: 15005 },
     { id: 15006 },
+    { id: 15007 }, // New player with valid work email
     { id: 15008 },
     { id: 15009 },
     { id: 15010 },
     { id: 15011 },
     { id: 15012 },
     { id: 15013 },
-    { id: 15014 }
+    { id: 15014 },
+    { id: 15015 }, // New player with valid work email
+    { id: 15016 }, // New player with valid work email
+    { id: 15017 }, // New player with valid work email
+    { id: 15018 } // New player with valid work email
   ];
 
   for (const user of users) {
@@ -341,6 +346,52 @@ export async function seed(knex: Knex): Promise<void> {
       account_id: 15014,
       steam_id: "66561198999999913",
       nickname: "NoFaceitRankPlayer"
+    },
+    // New players with valid work emails for signup form tests
+    {
+      account_id: 15007,
+      steam_id: "66561198999999920",
+      nickname: "ValidWorkEmail1",
+      work_email: "test+15007@kanaliiga.fi",
+      work_email_verified: 1,
+      is_work_email_personal_email: false,
+      discord: "validworkemail1#1234"
+    },
+    {
+      account_id: 15015,
+      steam_id: "66561198999999921",
+      nickname: "ValidWorkEmail2",
+      work_email: "test+15015@kanaliiga.fi",
+      work_email_verified: 1,
+      is_work_email_personal_email: false,
+      discord: "validworkemail2#1234"
+    },
+    {
+      account_id: 15016,
+      steam_id: "66561198999999922",
+      nickname: "ValidWorkEmail3",
+      work_email: "test+15016@kanaliiga.fi",
+      work_email_verified: 1,
+      is_work_email_personal_email: false,
+      discord: "validworkemail3#1234"
+    },
+    {
+      account_id: 15017,
+      steam_id: "66561198999999923",
+      nickname: "ValidWorkEmail4",
+      work_email: "test+15017@kanaliiga.fi",
+      work_email_verified: 1,
+      is_work_email_personal_email: false,
+      discord: "validworkemail4#1234"
+    },
+    {
+      account_id: 15018,
+      steam_id: "66561198999999924",
+      nickname: "ValidWorkEmail5",
+      work_email: "test+15018@kanaliiga.fi",
+      work_email_verified: 1,
+      is_work_email_personal_email: false,
+      discord: "validworkemail5#1234"
     }
   ];
 
@@ -570,6 +621,52 @@ export async function seed(knex: Knex): Promise<void> {
       faceit_elo: undefined, // No FaceIT ELO
       faceit_level: undefined, // No FaceIT level - this will trigger external rank error
       faceit_kd: undefined // No FaceIT KD
+    },
+    // New players with valid work emails and complete rank data
+    {
+      steam_id: "66561198999999920", // ValidWorkEmail1
+      season_id: 16,
+      cs_hours: 1800,
+      cs2_rank: 15,
+      faceit_elo: 1400,
+      faceit_level: 8,
+      faceit_kd: 1.3
+    },
+    {
+      steam_id: "66561198999999921", // ValidWorkEmail2
+      season_id: 16,
+      cs_hours: 2000,
+      cs2_rank: 18,
+      faceit_elo: 1600,
+      faceit_level: 9,
+      faceit_kd: 1.4
+    },
+    {
+      steam_id: "66561198999999922", // ValidWorkEmail3
+      season_id: 16,
+      cs_hours: 1600,
+      cs2_rank: 14,
+      faceit_elo: 1300,
+      faceit_level: 7,
+      faceit_kd: 1.2
+    },
+    {
+      steam_id: "66561198999999923", // ValidWorkEmail4
+      season_id: 16,
+      cs_hours: 2100,
+      cs2_rank: 19,
+      faceit_elo: 1700,
+      faceit_level: 10,
+      faceit_kd: 1.6
+    },
+    {
+      steam_id: "66561198999999924", // ValidWorkEmail5
+      season_id: 16,
+      cs_hours: 1750,
+      cs2_rank: 16,
+      faceit_elo: 1450,
+      faceit_level: 8,
+      faceit_kd: 1.35
     }
     // NOTE: Intentionally NOT adding SeasonPlayerRanks for 66561198999999910 (InsufficientHoursPlayer)
     // so it falls back to Steam API mock which returns null for hours detection failure

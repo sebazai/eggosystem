@@ -165,11 +165,11 @@ async function setupCompleteRegistrationForm(
 // Helper function to fill 5 players with valid Steam IDs
 async function fillValidPlayers(page: Page, authenticatedUserId?: string) {
   const validPlayers = [
-    "66561198999999901", // account_id 15003 - Aabe (has E2E data)
-    "66561198999999902", // account_id 15004 - heppajpg (has E2E data)
-    "66561198999999903", // account_id 15005 - Quattra (has E2E data)
-    "66561198999999905", // account_id 15008 - Hoolyz (has E2E data)
-    "66561198999999906" // account_id 15009 - RealPlayer1 (has E2E data)
+    "66561198999999920", // account_id 15007 - ValidWorkEmail1 (has valid work email)
+    "66561198999999921", // account_id 15015 - ValidWorkEmail2 (has valid work email)
+    "66561198999999922", // account_id 15016 - ValidWorkEmail3 (has valid work email)
+    "66561198999999923", // account_id 15017 - ValidWorkEmail4 (has valid work email)
+    "66561198999999924" // account_id 15018 - ValidWorkEmail5 (has valid work email)
   ];
 
   // If an authenticated user ID is provided, ensure they are in the list
@@ -581,7 +581,12 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Use a different authenticated user for this test to avoid conflicts
-      await setupAuthForUser(page, 15005, "66561198999999903", "Quattra");
+      await setupAuthForUser(
+        page,
+        15007,
+        "66561198999999920",
+        "ValidWorkEmail1"
+      );
 
       // Set up complete registration form
       await setupCompleteRegistrationForm(
@@ -591,7 +596,7 @@ test.describe("Signup Form", () => {
       );
 
       // Fill in 5 players with valid Steam IDs (include authenticated user)
-      await fillValidPlayers(page, "66561198999999903");
+      await fillValidPlayers(page, "66561198999999920");
 
       // Wait for nicknames to load after Steam IDs are entered
       await page.waitForTimeout(2000); // Give time for async data loading
@@ -601,20 +606,20 @@ test.describe("Signup Form", () => {
       const nicknameCount = await nicknameSpans.count();
       expect(nicknameCount).toBeGreaterThan(0);
 
-      // Verify nicknames from E2E seed data (Aabe should be in the list)
+      // Verify nicknames from E2E seed data (ValidWorkEmail1 should be in the list)
       await expect(nicknameSpans.nth(0)).toBeVisible();
-      await expect(nicknameSpans.nth(0)).toContainText(/aabe/i);
+      await expect(nicknameSpans.nth(0)).toContainText(/ValidWorkEmail1/i);
 
-      // Find Quattra in the list (he should be there somewhere since he's the authenticated user)
-      let foundQuattra = false;
+      // Find ValidWorkEmail1 in the list (he should be there somewhere since he's the authenticated user)
+      let foundAuthUser = false;
       for (let i = 0; i < nicknameCount; i++) {
         const nickname = await nicknameSpans.nth(i).textContent();
-        if (nickname && /quattra/i.test(nickname)) {
-          foundQuattra = true;
+        if (nickname && /ValidWorkEmail1/i.test(nickname)) {
+          foundAuthUser = true;
           break;
         }
       }
-      expect(foundQuattra).toBe(true);
+      expect(foundAuthUser).toBe(true);
 
       // Assign captain and co-captain roles
       await assignCaptain(page);
@@ -671,7 +676,12 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Use a different authenticated user for this test to avoid conflicts
-      await setupAuthForUser(page, 15008, "66561198999999905", "Hoolyz");
+      await setupAuthForUser(
+        page,
+        15015,
+        "66561198999999921",
+        "ValidWorkEmail2"
+      );
 
       // Set up complete registration form
       await setupCompleteRegistrationForm(
@@ -681,7 +691,7 @@ test.describe("Signup Form", () => {
       );
 
       // Fill in 5 players with valid Steam IDs (include authenticated user)
-      await fillValidPlayers(page, "66561198999999905");
+      await fillValidPlayers(page, "66561198999999921");
 
       // Test 1: Check that all captain and co-captain checkboxes exist
       for (let i = 0; i < 5; i++) {

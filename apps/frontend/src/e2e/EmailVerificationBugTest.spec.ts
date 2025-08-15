@@ -31,10 +31,6 @@ test.describe("Email Verification Bug Verification", () => {
       await expect(
         page.locator("text=Email verified successfully!")
       ).toBeVisible();
-
-      console.log(
-        "✅ Redis token verification works correctly - bug is fixed!"
-      );
     });
 
     test("should verify email successfully using database fallback", async ({
@@ -56,10 +52,6 @@ test.describe("Email Verification Bug Verification", () => {
       await expect(
         page.locator("text=Email verified successfully!")
       ).toBeVisible();
-
-      console.log(
-        "✅ Database fallback verification works correctly - bug is fixed!"
-      );
     });
 
     test("should fail gracefully with invalid token", async ({ page }) => {
@@ -84,8 +76,6 @@ test.describe("Email Verification Bug Verification", () => {
       await expect(
         page.locator("text=Email verified successfully!")
       ).not.toBeVisible();
-
-      console.log("✅ Invalid token handling works correctly!");
     });
 
     test("should handle expired token correctly", async ({ page }) => {
@@ -101,8 +91,6 @@ test.describe("Email Verification Bug Verification", () => {
       await expect(
         page.locator("text=Email verified successfully!")
       ).not.toBeVisible();
-
-      console.log("✅ Expired token handling works correctly!");
     });
   });
 
@@ -126,8 +114,6 @@ test.describe("Email Verification Bug Verification", () => {
       await homeButton.click();
       await page.waitForURL("**/");
       expect(page.url()).toContain("/");
-
-      console.log("✅ Navigation from success state works!");
     });
 
     test("should have working navigation from error state", async ({
@@ -149,8 +135,6 @@ test.describe("Email Verification Bug Verification", () => {
       await editEmailButton.click();
       await page.waitForURL("**/profile*");
       expect(page.url()).toContain("/profile");
-
-      console.log("✅ Navigation from error state works!");
     });
   });
 
@@ -175,8 +159,6 @@ test.describe("Email Verification Bug Verification", () => {
         await expect(
           page.locator("text=Email verified successfully!")
         ).toBeVisible();
-
-        console.log(`✅ Token ${token} verified successfully!`);
       }
     });
   });
