@@ -121,12 +121,13 @@ get_league_details() {
         return 1
     fi
     
-    # Get seasons for this league
-    local seasons=$(make_api_request "/leagues/$league_id/seasons")
-    if [ $? -ne 0 ]; then
-        print_warning "Failed to get seasons for league $league_id"
-        seasons="{}"
-    fi
+    # Deprectated
+    # # Get seasons for this league
+    # local seasons=$(make_api_request "/leagues/$league_id/seasons")
+    # if [ $? -ne 0 ]; then
+    #     print_warning "Failed to get seasons for league $league_id"
+    #     seasons="{}"
+    # fi
     
     # Combine details and seasons
     local combined=$(jq -s '.[0] * {seasons: .[1]}' <(echo "$details") <(echo "$seasons") 2>/dev/null)

@@ -27,9 +27,13 @@ import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
 import kanahautomoRouter from "./v1/kanahautomo.routes";
 import stageRouter from "./v1/stage.routes";
 import standingsRouter from "./v1/standings.routes";
+import casterRouter from "./v1/caster.routes";
 
 // Create a new Router instance
 const v1Router = Router();
+
+// Caster routes
+v1Router.use("/casters", casterRouter);
 
 // Dashboard - Apply CORS
 v1Router.use("/auth", corsMiddleware, authRouter);

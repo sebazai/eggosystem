@@ -11,8 +11,7 @@ import {
   getMatchPlayerStatsController,
   getMatchTeamStatsController,
   getMatchGamesController,
-  getMatchMapVetoesController,
-  getMatchGamesByTeamController
+  getMatchMapVetoesController
 } from "./matches.controllers";
 import {
   getMatches,
@@ -26,12 +25,10 @@ import {
   getMatchTeamStats,
   getMatchGames,
   getMatchMapVetoes,
-  getMatchGamesByTeam,
   getMatchesWithTeamDataBySeasonId
 } from "../models/match.models";
 import {
   type RequestWithParams,
-  type MatchGamesByTeam,
   type Match,
   type Stage,
   type MatchInfoQuery,
@@ -80,9 +77,6 @@ const mockGetMatchGames = getMatchGames as jest.MockedFunction<
 >;
 const mockGetMatchMapVetoes = getMatchMapVetoes as jest.MockedFunction<
   typeof getMatchMapVetoes
->;
-const mockGetMatchGamesByTeam = getMatchGamesByTeam as jest.MockedFunction<
-  typeof getMatchGamesByTeam
 >;
 const mockGetMatchesWithTeamDataBySeasonId =
   getMatchesWithTeamDataBySeasonId as jest.MockedFunction<
@@ -143,23 +137,6 @@ const mockMatchesWithTeamData: MatchesWithTeamDataQuery[] = [
     })
   }
 ];
-
-const mockMatchGamesByTeam = {
-  match_id: 123,
-  team1_id: 1,
-  team2_id: 2,
-  team1_name: "Team A",
-  team2_name: "Team B",
-  match_date: "2024-01-01",
-  league_id: 1,
-  season_id: 1,
-  game_id: 123,
-  map_name: "de_dust2",
-  map_id: 1,
-  map_order: 1,
-  team1_score: 16,
-  team2_score: 13
-} satisfies MatchGamesByTeam;
 
 // Type definitions for test requests
 type TestRequestWithParams<P = Record<string, string>> =
@@ -808,34 +785,6 @@ describe("Matches Controllers", () => {
       );
 
       expect(mockGetMatchMapVetoes).toHaveBeenCalledWith(NaN);
-    });
-  });
-
-  describe("getMatchGamesByTeamController", () => {
-    it("should return games by team for valid match ID", async () => {
-      mockRequest.params = { team_id: "123" };
-      mockRequest.query = { season_id: "1" };
-      mockGetMatchGamesByTeam.mockResolvedValue([mockMatchGamesByTeam]);
-
-      await getMatchGamesByTeamController(
-        mockRequest as TestRequestWithParams<{ team_id: string }>,
-        mockResponse as Response
-      );
-
-      expect(mockGetMatchGamesByTeam).toHaveBeenCalledWith(123, 1);
-      expect(mockJson).toHaveBeenCalledWith([mockMatchGamesByTeam]);
-    });
-
-    it("should handle invalid match games by team ID", async () => {
-      mockRequest.params = { team_id: "invalid" };
-      mockRequest.query = {};
-
-      await getMatchGamesByTeamController(
-        mockRequest as TestRequestWithParams<{ team_id: string }>,
-        mockResponse as Response
-      );
-
-      expect(mockGetMatchGamesByTeam).toHaveBeenCalledWith(NaN, undefined);
     });
   });
 });

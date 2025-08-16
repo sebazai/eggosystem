@@ -11,8 +11,7 @@ import {
   getMatchGame,
   getMatchMapVetoes,
   getMatchWithBreadcrumbInfo,
-  getMatchesWithTeamDataBySeasonId,
-  getMatchGamesByTeam
+  getMatchesWithTeamDataBySeasonId
 } from "../models/match.models";
 import type {
   MatchGame,
@@ -194,16 +193,4 @@ export const getMatchMapVetoesController = async (
   const matchId = parseInt(req.params.match_id, 10);
   const vetoes = await getMatchMapVetoes(matchId);
   res.json(vetoes || []);
-};
-
-export const getMatchGamesByTeamController = async (
-  req: RequestWithParams<{ team_id: string }>,
-  res: Response
-) => {
-  const teamIdNumber = Number(req.params.team_id);
-  const seasonId = req.query.season_id
-    ? Number(req.query.season_id)
-    : undefined;
-  const matchGames = await getMatchGamesByTeam(teamIdNumber, seasonId);
-  res.json(matchGames);
 };
