@@ -133,6 +133,7 @@ export const ListRegistrationDrafts = () => {
   return (
     <div className="bg-card rounded-md overflow-hidden mt-8">
       <div className="overflow-x-auto">
+        <div>In progress length: {registrationDrafts.length}</div>
         <table className="text-xs w-full">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
