@@ -5,6 +5,8 @@ import {
   getRolesForAccountId
 } from "../services/auth.services";
 import { JWT_PUBLIC_KEY } from "../configs/jwt-keys";
+import { logger } from "../utils/app-logger";
+import { UnauthorizedError } from "../utils/errors";
 
 interface CheckPermissionOptions {
   staticPermissions?: string[];
@@ -167,3 +169,30 @@ export const authenticateJWT = expressjwt({
     return req.cookies?.access_token || null;
   }
 });
+
+export const checkApiKeyOrJWT = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  // Check for API key first
+  const apiKey = req.headers["x-api-key"];
+  if (apiKey && apiKey === process.env.BACKEND_SERVICE_API_KEY) {
+    logger.info("API key authentication successful");
+    return next(); // API key is valid, proceed
+  }
+
+  // If no valid API key, use JWT authentication
+  void authenticateJWT(req, res, (err) => {
+    if (err) {
+      return next(
+        new UnauthorizedError(
+          "Authentication required. Please provide a valid token or API key."
+        )
+      );
+    }
+
+    // Check JWT permissions
+    void checkPermissions({ fallbackRoles: ["admin"] })(req, res, next);
+  });
+};

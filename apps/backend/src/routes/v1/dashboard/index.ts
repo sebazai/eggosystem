@@ -4,11 +4,14 @@ import { checkPermissions } from "../../../middlewares/auth.middleware";
 import teamsRouter from "./team.routes";
 import organizationRouter from "./organization.routes";
 import registrationRouter from "./registration.routes";
+import sortterRouter from "./sortter.routes";
+
 const router = Router();
 
 router.use("/teams", teamsRouter);
 router.use("/organizations", organizationRouter);
 router.use("/registration", registrationRouter);
+router.use("/sortter", sortterRouter);
 router.get(
   "/",
   checkPermissions({

@@ -59,7 +59,9 @@ export function useSortter(placeTeamsInDivision: number) {
     isLoading: isLoadingTeams,
     isValidating: isValidatingTeams
   } = useSWR<TeamSortterValues[]>(
-    selectedSeason ? `/api/v1/sortter/season/${selectedSeason}` : null,
+    selectedSeason
+      ? `/api/v1/dashboard/sortter/season/${selectedSeason}/teams`
+      : null,
     clientApiFetch,
     {
       revalidateOnFocus: false
@@ -74,7 +76,7 @@ export function useSortter(placeTeamsInDivision: number) {
     mutate: mutatePlacements
   } = useSWR<PlacementsResponse>(
     selectedSeason && seasons && seasons.length > 0
-      ? `/api/v1/sortter/season/${selectedSeason}/placements?teams_per_division=${placeTeamsInDivision}`
+      ? `/api/v1/dashboard/sortter/season/${selectedSeason}/placements?teams_per_division=${placeTeamsInDivision}`
       : null,
     clientApiFetch,
     {
@@ -138,7 +140,7 @@ export function useSortter(placeTeamsInDivision: number) {
     mutate: mutatePlayerValues
   } = useSWR<PlayerSortterValues[]>(
     selectedSeason && selectedTeamId
-      ? `/api/v1/sortter/season/${selectedSeason}/team/${selectedTeamId}/playervalues`
+      ? `/api/v1/dashboard/sortter/season/${selectedSeason}/team/${selectedTeamId}/playervalues`
       : null,
     clientApiFetch,
     {
@@ -167,7 +169,7 @@ export function useSortter(placeTeamsInDivision: number) {
     async (teamId: number) => {
       if (!selectedSeason) return;
 
-      const key = `/api/v1/sortter/season/${selectedSeason}/team/${teamId}/playervalues`;
+      const key = `/api/v1/dashboard/sortter/season/${selectedSeason}/team/${teamId}/playervalues`;
 
       // If we already have this data cached, don't refetch
       if (prefetchCache.current.has(key)) return;
@@ -202,7 +204,7 @@ export function useSortter(placeTeamsInDivision: number) {
       setFloatingPosition(position);
 
       // Check if we have prefetched data for this team
-      const key = `/api/v1/sortter/season/${selectedSeason}/team/${teamId}/playervalues`;
+      const key = `/api/v1/dashboard/sortter/season/${selectedSeason}/team/${teamId}/playervalues`;
 
       if (prefetchCache.current.has(key)) {
         // Use the prefetched data
@@ -256,7 +258,7 @@ export function useSortter(placeTeamsInDivision: number) {
 
         // Send the request to the server
         await clientApiFetch(
-          `/api/v1/sortter/season/${selectedSeason}/placements`,
+          `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
           {
             method: "POST",
             body: JSON.stringify({ placements: updatedPlacements })
@@ -315,7 +317,7 @@ export function useSortter(placeTeamsInDivision: number) {
 
       // Send the request to the server
       await clientApiFetch(
-        `/api/v1/sortter/season/${selectedSeason}/placements`,
+        `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
         {
           method: "POST",
           body: JSON.stringify({ placements: updatedPlacements })
@@ -362,7 +364,7 @@ export function useSortter(placeTeamsInDivision: number) {
 
       // Then finalize
       await clientApiFetch(
-        `/api/v1/sortter/season/${selectedSeason}/finalize`,
+        `/api/v1/dashboard/sortter/season/${selectedSeason}/finalize`,
         {
           method: "POST"
         }

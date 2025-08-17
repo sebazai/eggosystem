@@ -86,11 +86,11 @@ describe("useSortter", () => {
       if (url === "/api/v1/seasons") {
         return Promise.resolve(mockSeasons);
       }
-      if (url === "/api/v1/sortter/season/2") {
+      if (url === "/api/v1/dashboard/sortter/season/2/teams") {
         return Promise.resolve(mockTeams);
       }
       if (
-        url.startsWith("/api/v1/sortter/season/2/placements") &&
+        url.startsWith("/api/v1/dashboard/sortter/season/2/placements") &&
         (!options || !options.method)
       ) {
         return Promise.resolve(mockPlacements);
@@ -174,11 +174,11 @@ describe("useSortter", () => {
       if (url === "/api/v1/seasons") {
         return Promise.resolve(mockSeasons);
       }
-      if (url === "/api/v1/sortter/season/2") {
+      if (url === "/api/v1/dashboard/sortter/season/2/teams") {
         return Promise.resolve(mockTeams);
       }
       if (
-        url.startsWith("/api/v1/sortter/season/2/placements") &&
+        url.startsWith("/api/v1/dashboard/sortter/season/2/placements") &&
         (!options || !options.method)
       ) {
         return Promise.resolve(mockPlacements);
@@ -234,17 +234,17 @@ describe("useSortter", () => {
       if (url === "/api/v1/seasons") {
         return Promise.resolve(mockSeasons);
       }
-      if (url === "/api/v1/sortter/season/2") {
+      if (url === "/api/v1/dashboard/sortter/season/2/teams") {
         return Promise.resolve(mockTeams);
       }
       if (
-        url.startsWith("/api/v1/sortter/season/2/placements") &&
+        url.startsWith("/api/v1/dashboard/sortter/season/2/placements") &&
         (!options || !options.method)
       ) {
         return Promise.resolve(mockPlacements);
       }
       if (
-        url === "/api/v1/sortter/season/2/placements" &&
+        url === "/api/v1/dashboard/sortter/season/2/placements" &&
         options?.method === "POST"
       ) {
         return Promise.resolve({
@@ -303,17 +303,17 @@ describe("useSortter", () => {
       if (url === "/api/v1/seasons") {
         return Promise.resolve(mockSeasons);
       }
-      if (url === "/api/v1/sortter/season/2") {
+      if (url === "/api/v1/dashboard/sortter/season/2/teams") {
         return Promise.resolve(mockTeams);
       }
       if (
-        url.startsWith("/api/v1/sortter/season/2/placements") &&
+        url.startsWith("/api/v1/dashboard/sortter/season/2/placements") &&
         (!options || !options.method)
       ) {
         return Promise.resolve(mockPlacements);
       }
       if (
-        url === "/api/v1/sortter/season/2/placements" &&
+        url === "/api/v1/dashboard/sortter/season/2/placements" &&
         options?.method === "POST"
       ) {
         return Promise.resolve({ message: "Placements saved successfully" });
@@ -345,7 +345,7 @@ describe("useSortter", () => {
 
     // Verify clientApiFetch was called with the right parameters for the POST request
     expect(clientApiFetch).toHaveBeenCalledWith(
-      "/api/v1/sortter/season/2/placements",
+      "/api/v1/dashboard/sortter/season/2/placements",
       {
         method: "POST",
         body: expect.stringContaining('"team_id":1') // Check that we're sending placements data
@@ -386,17 +386,17 @@ describe("useSortter", () => {
       if (url === "/api/v1/seasons") {
         return Promise.resolve(mockSeasons);
       }
-      if (url === "/api/v1/sortter/season/2") {
+      if (url === "/api/v1/dashboard/sortter/season/2/teams") {
         return Promise.resolve(mockTeams);
       }
       if (
-        url.startsWith("/api/v1/sortter/season/2/placements") &&
+        url.startsWith("/api/v1/dashboard/sortter/season/2/placements") &&
         (!options || !options.method)
       ) {
         return Promise.resolve(mockPlacements);
       }
       if (
-        url === "/api/v1/sortter/season/2/placements" &&
+        url === "/api/v1/dashboard/sortter/season/2/placements" &&
         options?.method === "POST"
       ) {
         return Promise.reject(new Error("Failed to save placements")); // POST request fails
@@ -454,11 +454,11 @@ describe("useSortter", () => {
       if (url === "/api/v1/seasons") {
         return Promise.resolve(mockSeasons);
       }
-      if (url === "/api/v1/sortter/season/2") {
+      if (url === "/api/v1/dashboard/sortter/season/2/teams") {
         return Promise.resolve(mockTeams);
       }
       if (
-        url.startsWith("/api/v1/sortter/season/2/placements") &&
+        url.startsWith("/api/v1/dashboard/sortter/season/2/placements") &&
         (!options || !options.method)
       ) {
         return Promise.resolve(mockPlacements);
