@@ -87,7 +87,7 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockRedisClient.get).toHaveBeenCalledWith("730-active-season");
+      expect(mockRedisClient.get).toHaveBeenCalledWith("1-730-active-season");
       expect(mockSet).toHaveBeenCalledWith(
         "Cache-Control",
         "public, max-age=86400"
@@ -96,7 +96,7 @@ describe("Seasons Controllers", () => {
     });
 
     it("should fetch and cache season if not cached", async () => {
-      mockRequest.params = { app_id: "730" };
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
       mockRedisClient.get.mockResolvedValue(null);
       mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(mockActiveSeason);
 
@@ -110,9 +110,9 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(730);
+      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(1, 730);
       expect(mockRedisClient.set).toHaveBeenCalledWith(
-        "730-active-season",
+        "1-730-active-season",
         456,
         "EX",
         2592000
@@ -125,7 +125,7 @@ describe("Seasons Controllers", () => {
     });
 
     it("should return 404 when no active season found", async () => {
-      mockRequest.params = { app_id: "730" };
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
       mockRedisClient.get.mockResolvedValue(null);
       mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
 
@@ -141,14 +141,14 @@ describe("Seasons Controllers", () => {
 
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "No active season found for app",
+          message: "No active season found for app 730 and organizer 1",
           status: 404
         })
       );
     });
 
     it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid" };
+      mockRequest.params = { app_id: "invalid", organizer_id: "1" };
       mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
@@ -161,10 +161,10 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(NaN);
+      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(1, NaN);
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "No active season found for app",
+          message: "No active season found for app NaN and organizer 1",
           status: 404
         })
       );
@@ -173,7 +173,7 @@ describe("Seasons Controllers", () => {
 
   describe("getActiveSignupSeasonForApp", () => {
     it("should return 404 when no active signup season found", async () => {
-      mockRequest.params = { app_id: "730" };
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
       mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
@@ -188,14 +188,14 @@ describe("Seasons Controllers", () => {
 
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "No active signup season found for app",
+          message: "No active signup season found for app 730 and organizer 1",
           status: 404
         })
       );
     });
 
     it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid" };
+      mockRequest.params = { app_id: "invalid", organizer_id: "invalid" };
       mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
 
       const mockNext = jest.fn();
@@ -208,10 +208,11 @@ describe("Seasons Controllers", () => {
         mockNext
       );
 
-      expect(mockGetActiveSignupSeasonForAppId).toHaveBeenCalledWith(NaN);
+      expect(mockGetActiveSignupSeasonForAppId).toHaveBeenCalledWith(NaN, NaN);
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: "No active signup season found for app",
+          message:
+            "No active signup season found for app NaN and organizer NaN",
           status: 404
         })
       );
@@ -219,8 +220,9 @@ describe("Seasons Controllers", () => {
   });
 
   describe("GetActiveSignupOrActiveSeasonForAppId", () => {
+    const mockNext = jest.fn();
     it("should return undefined when no signup end date found", async () => {
-      mockRequest.params = { app_id: "730" };
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
       mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(undefined);
 
       await getActiveSignupOrActiveSeasonForAppController(
@@ -228,14 +230,15 @@ describe("Seasons Controllers", () => {
           app_id: string;
           organizer_id: string;
         }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockJson).toHaveBeenCalledWith(undefined);
     });
 
     it("should return season when found", async () => {
-      mockRequest.params = { app_id: "730" };
+      mockRequest.params = { app_id: "730", organizer_id: "1" };
       mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
         mockActiveSeason
       );
@@ -245,44 +248,55 @@ describe("Seasons Controllers", () => {
           app_id: string;
           organizer_id: string;
         }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
+        1,
         730
       );
       expect(mockJson).toHaveBeenCalledWith(mockActiveSeason);
     });
 
     it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid" };
+      mockRequest.params = { app_id: "invalid", organizer_id: "1" };
 
       await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
         }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
-        NaN
-      );
+      expect(
+        mockGetActiveSignupOrActiveSeasonForAppId
+      ).not.toHaveBeenCalledWith(1, NaN);
     });
 
     it("should handle negative app ID", async () => {
-      mockRequest.params = { app_id: "-730" };
+      mockRequest.params = { app_id: "-730", organizer_id: "1" };
 
       await getActiveSignupOrActiveSeasonForAppController(
         mockRequest as TestRequestWithParams<{
           app_id: string;
           organizer_id: string;
         }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
-        -730
+      expect(
+        mockGetActiveSignupOrActiveSeasonForAppId
+      ).not.toHaveBeenCalledWith(1, -730);
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "Invalid app ID or organizer ID: app_id=-730, organizer_id=1",
+          status: 400
+        })
       );
     });
   });

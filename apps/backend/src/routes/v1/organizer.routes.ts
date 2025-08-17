@@ -9,19 +9,19 @@ import {
 const router = Router();
 
 router.get(
-  "/:organizer_id/app/:app_id/active-season",
+  "/:organizer_id/app/:app_id/seasons/active",
   validateNumericParams(),
   getActiveSeasonForApp
 );
 
 router.get(
-  "/:organizer_id/app/:app_id/signup-open",
+  "/:organizer_id/app/:app_id/seasons/signup-open",
   validateNumericParams(),
   getActiveSignupSeasonForApp
 );
 
 router.get(
-  "/:organizer_id/app/:app_id/active-signup",
+  "/:organizer_id/app/:app_id/seasons/active-signup-open",
   validateNumericParams(),
   getActiveSignupOrActiveSeasonForAppController
 );

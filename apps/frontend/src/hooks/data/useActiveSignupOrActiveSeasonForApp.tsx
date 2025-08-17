@@ -5,7 +5,7 @@ import type { ActiveSignupOrSeasonForAppId } from "@eggosystem/types";
 import useSWR from "swr";
 
 export const useActiveSignupOrActiveSeasonForApp = (appId: number) => {
-  const apiUrl = `/api/v1/seasons/app/${appId}/active-signup`;
+  const apiUrl = `/api/v1/organizer/1/app/${appId}/seasons/active-signup-open`;
 
   const { data, error, isValidating, isLoading } =
     useSWR<ActiveSignupOrSeasonForAppId>(apiUrl, clientApiFetch, {
