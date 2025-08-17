@@ -9,7 +9,11 @@ import {
   getPlayerKanaRankController,
   getPlayerOldKanaEloController,
   getPlayerStatsForLatestSeasonController,
-  setPlayerKanaEloController
+  setPlayerKanaEloController,
+  getPlayerHistoricalDataController,
+  getPlayerHistoricalAverageByRankController,
+  getPlayerHistoricalAverageByLevelController,
+  getPlayerHistoricalAverageController
 } from "../../controllers/players.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
@@ -61,6 +65,34 @@ router.post(
   "/:steam_id/set-kanaelo",
   createApiKeyValidator(process.env.BACKEND_SERVICE_API_KEY),
   setPlayerKanaEloController
+);
+
+// Historical data route
+router.get(
+  "/:steam_id/historical-data",
+  corsMiddleware,
+  getPlayerHistoricalDataController
+);
+
+// Historical average routes
+router.get(
+  "/historical/rank/:rank",
+  corsMiddleware,
+  validateNumericParams(["rank"]),
+  getPlayerHistoricalAverageByRankController
+);
+
+router.get(
+  "/historical/level/:level",
+  corsMiddleware,
+  validateNumericParams(["level"]),
+  getPlayerHistoricalAverageByLevelController
+);
+
+router.get(
+  "/historical/avg",
+  corsMiddleware,
+  getPlayerHistoricalAverageController
 );
 
 export default router;

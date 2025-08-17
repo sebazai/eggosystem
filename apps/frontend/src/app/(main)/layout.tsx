@@ -134,8 +134,8 @@ export default function RootLayout({
               <ScrollToTop />
               <ChickenFeatureAnnouncer
                 showDelay={2000}
-                message="NEW FEATURES! Check them out!"
-                featureDate="2025-07-01"
+                message="NEW FEATURE: Historical Player Data! Track your performance over time and compare to Kanaliiga Average."
+                featureDate="2025-08-17"
               />
               <div className="min-h-svh min-w-[320px] w-full">
                 <AuthProvider>

@@ -14,12 +14,23 @@ import {
 } from "../models/player.models";
 
 import {
+  getPlayerHistoricalData,
+  getPlayerHistoricalAverageByRank,
+  getPlayerHistoricalAverageByLevel,
+  getPlayerHistoricalAverage
+} from "../models/player-historical.models";
+
+import {
   getPlayerHoursForSteamAppId,
   getPlayerAppIdRank,
   getPlayerRankForPlatform,
   getPlayerKanaRank
 } from "../services/player-ranks.services";
-import { isSeasonPlatform, type RequestWithParams } from "@eggosystem/types";
+import {
+  isSeasonPlatform,
+  type RequestWithParams,
+  type HistoricalDataParams
+} from "@eggosystem/types";
 import { isSteamProfilePublic } from "../services/steam.services";
 import {
   getPlayerSkillDiagram,
@@ -381,5 +392,88 @@ export const setPlayerKanaEloController = async (
   } catch (error) {
     logger.error("Update Kana ELO error", error);
     return next(new InternalServerError("Failed to update Kana ELO"));
+  }
+};
+
+export const getPlayerHistoricalDataController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { steam_id } = req.params;
+    const params = parseHistoricalParams(req.query); // No default games - returns all data
+    const historicalData = await getPlayerHistoricalData(steam_id, params);
+    res.json(historicalData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const parseHistoricalParams = (
+  query: { games?: string; period?: string },
+  defaultGames?: number
+): HistoricalDataParams => {
+  const games = query.games ? parseInt(query.games) : defaultGames;
+  const period = query.period;
+
+  // Validate games parameter
+  const validGames = [5, 10, 15, 20, 30, 40, 50];
+  const finalGames = games && validGames.includes(games) ? games : defaultGames;
+
+  // Validate period parameter
+  const finalPeriod =
+    period === "this_season" || period === "last_season" ? period : undefined;
+
+  return {
+    games: finalGames,
+    period: finalPeriod
+  };
+};
+
+export const getPlayerHistoricalAverageByRankController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const rank = parseInt(req.params.rank);
+    const params = parseHistoricalParams(req.query, 15); // Default to 15 games for backward compatibility with tests
+
+    const averageData = await getPlayerHistoricalAverageByRank(rank, params);
+    res.json(averageData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPlayerHistoricalAverageByLevelController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const level = parseInt(req.params.level);
+    const params = parseHistoricalParams(req.query, 15); // Default to 15 games for backward compatibility with tests
+
+    const averageData = await getPlayerHistoricalAverageByLevel(level, params);
+    res.json(averageData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPlayerHistoricalAverageController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const params = parseHistoricalParams(req.query, 15); // Default to 15 games for backward compatibility with tests
+
+    const averageData = await getPlayerHistoricalAverage(params);
+    res.json(averageData);
+  } catch (error) {
+    next(error);
   }
 };

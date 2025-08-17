@@ -14,6 +14,72 @@ export default function NewFeaturesPage() {
       <h1 className="text-4xl font-heading font-bold mb-6">New Features</h1>
 
       <div className="space-y-8">
+        {/* August 17, 2025 Features */}
+        <section className="bg-card p-6 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">August 17, 2025</h2>
+          </div>
+
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:flex-1">
+                <h3 className="text-xl font-bold mb-2">
+                  Historical Player Performance Analytics 📈
+                </h3>
+                <p className="mb-2">
+                  We&apos;ve added a new Historical Data tab to player profiles,
+                  allowing you to track performance trends over time and compare
+                  against league averages.
+                </p>
+
+                <h4 className="font-bold text-lg mb-2">Key Features</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>Visualize performance trends across multiple matches</li>
+                  <li>
+                    Compare your stats against Kanaliiga Average and FACEIT
+                    level peers
+                  </li>
+                  <li>
+                    Track improvements in KanaRating, K/D ratio, ADR and more
+                  </li>
+                  <li>
+                    View advanced metrics like crosshair placement and
+                    counter-strafing percentages
+                  </li>
+                </ul>
+
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 rounded-md mt-4 mb-3">
+                  <p className="font-bold">Note:</p>
+                  <p>
+                    The Historical Data tab has its own filtering system
+                    separate from the general filters. Currently you can filter
+                    by last 15/30 games or by FACEIT level, but not by map or
+                    other criteria.
+                  </p>
+                </div>
+
+                <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                  <strong>Where to find it:</strong> Go to any player&apos;s
+                  profile page and click on the &quot;Historical Data&quot; tab.
+                </div>
+              </div>
+
+              <div className="md:w-2/5">
+                <Image
+                  src={createNextUrl(
+                    "/images/features/historical-data-preview.png"
+                  )}
+                  width={600}
+                  height={350}
+                  alt="Historical Data Preview"
+                  className="rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* July 1, 2025 Features */}
         <section className="bg-card p-6 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
@@ -428,7 +494,6 @@ export default function NewFeaturesPage() {
             <li>Upcoming match information page</li>
             <li>Match calendar with filters</li>
             <li>Team management dashboard for captains</li>
-            <li>Historical data visualization with interactive charts</li>
             <li>Team calendar doodle for scheduling matches with opponents</li>
           </ul>
         </section>

@@ -56,6 +56,11 @@ function PlayerTabLayoutContent({
       value: "mapstats",
       label: "Map Statistics",
       pathname: `/players/${steamId}/mapstats`
+    },
+    {
+      value: "historical",
+      label: "Historical Data",
+      pathname: `/players/${steamId}/historical`
     }
   ];
 

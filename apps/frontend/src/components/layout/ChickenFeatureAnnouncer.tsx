@@ -20,7 +20,7 @@ export const ChickenFeatureAnnouncer = ({
   autoHideAfter = undefined, // Don't auto-hide by default
   message = "NEW FEATURES NEW FEATURES",
   targetUrl = "/new-features",
-  featureDate = "2025-07-01" // Default to the chicken announcer date
+  featureDate = "2025-08-17" // Updated to the historical data feature announcement date
 }: ChickenFeatureAnnouncerProps) => {
   const { showChicken } = useChickenAnnouncer();
 
@@ -69,16 +69,8 @@ export const ChickenFeatureAnnouncer = ({
     // If user has already seen this announcement, don't show it
     if (hasSeenAnnouncement(featureDate)) return;
 
-    // Check if the feature date is within the last 7 days
-    const featureDateObj = new Date(featureDate);
-    const currentDate = new Date();
-
-    // Calculate the difference in days
-    const diffTime = currentDate.getTime() - featureDateObj.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Only show if the feature is within 7 days
-    if (diffDays > 7) return;
+    // No longer checking if feature date is within the last 7 days
+    // Announcer will show until explicitly clicked
 
     // Show the chicken after the specified delay
     const timer = setTimeout(() => {
