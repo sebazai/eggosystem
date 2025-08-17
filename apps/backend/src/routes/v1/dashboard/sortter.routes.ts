@@ -48,7 +48,7 @@ router.get(
 // GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/player/:steam_id/eligibility
 router.get(
   "/season/:season_id/team/:team_id/player/:steam_id/eligibility",
-  validateNumericParams(),
+  validateNumericParams(["season_id", "team_id"]),
   checkPlayerAdditionEligibilityController
 );
 
