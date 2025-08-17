@@ -175,7 +175,7 @@ describe("Enhanced Finalize Team Placements", () => {
 
     // Create test season
     await runQuery(
-      "INSERT INTO Seasons (id, game_id, name, full_name, start_date, platform) VALUES (?, 1, 'Test Season', 'Test Season Full', '2024-01-01', 'kanaliiga')",
+      "INSERT INTO Seasons (id, game_id, name, full_name, start_date, platform) VALUES (?, 1, 'Test Season', 'Test Season Full', '2024-01-01', 'faceit')",
       [testSeasonId]
     );
 
@@ -209,11 +209,11 @@ describe("Enhanced Finalize Team Placements", () => {
 
     // Create team registrations (approved)
     await runQuery(
-      "INSERT INTO SeasonTeamRegistrations (season_id, team_id, approved, terms_and_conditions_approved) VALUES (?, ?, 1, 1)",
+      "INSERT INTO SeasonTeamRegistrations (season_id, team_id, approved, terms_and_conditions_approved, external_platform_id) VALUES (?, ?, 1, 1, '1234567890')",
       [testSeasonId, testTeamId1]
     );
     await runQuery(
-      "INSERT INTO SeasonTeamRegistrations (season_id, team_id, approved, terms_and_conditions_approved) VALUES (?, ?, 1, 1)",
+      "INSERT INTO SeasonTeamRegistrations (season_id, team_id, approved, terms_and_conditions_approved, external_platform_id) VALUES (?, ?, 1, 1, '1234567891')",
       [testSeasonId, testTeamId2]
     );
 
@@ -300,7 +300,7 @@ describe("Enhanced Finalize Team Placements", () => {
 
   it("should require admin authentication", async () => {
     const response = await request(app)
-      .post(`/api/v1/sortter/season/${testSeasonId}/finalize`)
+      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
       .expect(401);
 
     expect(response.body.message || response.text).toContain("Unauthorized");
@@ -330,14 +330,14 @@ describe("Enhanced Finalize Team Placements", () => {
     ];
 
     await request(app)
-      .post(`/api/v1/sortter/season/${testSeasonId}/placements`)
+      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/placements`)
       .set("Authorization", `Bearer ${adminJWT}`)
       .send({ placements })
       .expect(200);
 
     // Now finalize the placements
     const response = await request(app)
-      .post(`/api/v1/sortter/season/${testSeasonId}/finalize`)
+      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
       .set("Authorization", `Bearer ${adminJWT}`)
       .expect(200);
 
@@ -427,7 +427,7 @@ describe("Enhanced Finalize Team Placements", () => {
 
     // Try to finalize again
     const response = await request(app)
-      .post(`/api/v1/sortter/season/${testSeasonId}/finalize`)
+      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
       .set("Authorization", `Bearer ${adminJWT}`)
       .expect(403);
 

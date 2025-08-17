@@ -5,15 +5,20 @@ import type {
   ActiveSignupOrSeasonForAppId
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import { type PoolConnection } from "mysql2/promise";
 
 export const getSeasons = async () => {
   return runQuery<Season[]>("SELECT * FROM Seasons");
 };
 
-export const getSeasonById = async (id: number) => {
+export const getSeasonById = async (
+  id: number,
+  connection?: PoolConnection
+) => {
   const [data] = await runQuery<[Season | undefined]>(
     "SELECT * FROM Seasons WHERE id = ?",
-    [id]
+    [id],
+    connection
   );
   return data;
 };

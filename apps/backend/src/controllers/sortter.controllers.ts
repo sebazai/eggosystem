@@ -70,12 +70,12 @@ export const getTeamValueByIdController = async (
  * Converts null values to 0 for numeric fields in the response
  */
 export const getTeamPlayerValuesController = async (
-  req: RequestWithParams<{ season: string; team: string }>,
+  req: RequestWithParams<{ season_id: string; team_id: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const seasonId = Number(req.params.season);
-  const teamId = Number(req.params.team);
+  const seasonId = Number(req.params.season_id);
+  const teamId = Number(req.params.team_id);
 
   const playerValues = await getTeamPlayerValuesForSortter(seasonId, teamId);
 

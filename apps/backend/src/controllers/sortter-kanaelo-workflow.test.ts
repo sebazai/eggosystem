@@ -404,7 +404,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
     // The system should NOT auto-generate placements in this state
     const response = await request(app)
       .get(
-        `/api/v1/sortter/season/${testSeasonId}/placements?teams_per_division=12`
+        `/api/v1/dashboard/sortter/season/${testSeasonId}/placements?teams_per_division=12`
       )
       .set("Authorization", `Bearer ${adminJWT}`);
 
@@ -428,7 +428,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
     // This test confirms the fix is working correctly
     const response = await request(app)
       .get(
-        `/api/v1/sortter/season/${testSeasonId}/placements?teams_per_division=12`
+        `/api/v1/dashboard/sortter/season/${testSeasonId}/placements?teams_per_division=12`
       )
       .set("Authorization", `Bearer ${adminJWT}`)
       .expect(400);
@@ -533,7 +533,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       // STEP 2: Get placements (should now work with valid kana_elo)
       const placementsResponse = await request(app)
         .get(
-          `/api/v1/sortter/season/${testSeasonId}/placements?teams_per_division=12`
+          `/api/v1/dashboard/sortter/season/${testSeasonId}/placements?teams_per_division=12`
         )
         .set("Authorization", `Bearer ${adminJWT}`)
         .expect(200);
@@ -559,7 +559,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       );
 
       const saveResponse = await request(app)
-        .post(`/api/v1/sortter/season/${testSeasonId}/placements`)
+        .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/placements`)
         .set("Authorization", `Bearer ${adminJWT}`)
         .send({ placements: modifiedPlacements })
         .expect(200);
@@ -571,7 +571,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       // STEP 4: Verify saved placements have comments
       const savedPlacementsResponse = await request(app)
         .get(
-          `/api/v1/sortter/season/${testSeasonId}/placements?teams_per_division=12`
+          `/api/v1/dashboard/sortter/season/${testSeasonId}/placements?teams_per_division=12`
         )
         .set("Authorization", `Bearer ${adminJWT}`)
         .expect(200);
@@ -586,7 +586,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
 
       // STEP 5: Finalize placements
       const finalizeResponse = await request(app)
-        .post(`/api/v1/sortter/season/${testSeasonId}/finalize`)
+        .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
         .set("Authorization", `Bearer ${adminJWT}`)
         .expect(200);
 
@@ -623,7 +623,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
       // STEP 7: Verify placements are now marked as finalized
       const finalizedStatusResponse = await request(app)
         .get(
-          `/api/v1/sortter/season/${testSeasonId}/placements?teams_per_division=12`
+          `/api/v1/dashboard/sortter/season/${testSeasonId}/placements?teams_per_division=12`
         )
         .set("Authorization", `Bearer ${adminJWT}`)
         .expect(200);
@@ -632,7 +632,7 @@ describe("Sortter Kanaelo Workflow Issue", () => {
 
       // STEP 8: Verify cannot save placements after finalization
       const lockedSaveResponse = await request(app)
-        .post(`/api/v1/sortter/season/${testSeasonId}/placements`)
+        .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/placements`)
         .set("Authorization", `Bearer ${adminJWT}`)
         .send({ placements: modifiedPlacements })
         .expect(403);
