@@ -2,10 +2,7 @@ import { Router } from "express";
 import {
   getSeasonsController,
   getSeasonByIdController,
-  getSeasonDetailsByIdController,
-  getActiveSeasonForApp,
-  getActiveSignupSeasonForApp,
-  getActiveSignupOrActiveSeasonForAppController
+  getSeasonDetailsByIdController
 } from "../../controllers/seasons.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 
@@ -17,23 +14,6 @@ router.get(
   "/:id/details",
   validateNumericParams(),
   getSeasonDetailsByIdController
-);
-router.get(
-  "/app/:app_id/active",
-  validateNumericParams(),
-  getActiveSeasonForApp
-);
-
-router.get(
-  "/app/:app_id/signup-open",
-  validateNumericParams(),
-  getActiveSignupSeasonForApp
-);
-
-router.get(
-  "/app/:app_id/active-signup",
-  validateNumericParams(),
-  getActiveSignupOrActiveSeasonForAppController
 );
 
 export default router;

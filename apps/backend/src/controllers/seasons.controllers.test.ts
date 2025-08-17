@@ -2,24 +2,14 @@ import { type Response } from "express";
 import {
   getSeasonsController,
   getSeasonByIdController,
-  getSeasonDetailsByIdController,
-  getActiveSeasonForApp,
-  getActiveSignupSeasonForApp,
-  getActiveSignupOrActiveSeasonForAppController
+  getSeasonDetailsByIdController
 } from "./seasons.controllers";
 import {
   getSeasons,
   getSeasonById,
-  getSeasonDetailsById,
-  getActiveOrLatestSeasonForAppId,
-  getActiveSignupSeasonForAppId,
-  getActiveSignupOrActiveSeasonForAppId
+  getSeasonDetailsById
 } from "../models/season.models";
-import { redisClient } from "../utils/redisClient";
-import type {
-  ActiveSignupOrSeasonForAppId,
-  RequestWithParams
-} from "@eggosystem/types";
+import type { RequestWithParams } from "@eggosystem/types";
 import type { Season, SeasonDetails } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
 
@@ -34,19 +24,6 @@ const mockGetSeasonById = getSeasonById as jest.MockedFunction<
 const mockGetSeasonDetailsById = getSeasonDetailsById as jest.MockedFunction<
   typeof getSeasonDetailsById
 >;
-const mockGetActiveOrLatestSeasonForAppId =
-  getActiveOrLatestSeasonForAppId as jest.MockedFunction<
-    typeof getActiveOrLatestSeasonForAppId
-  >;
-const mockGetActiveSignupSeasonForAppId =
-  getActiveSignupSeasonForAppId as jest.MockedFunction<
-    typeof getActiveSignupSeasonForAppId
-  >;
-const mockGetActiveSignupOrActiveSeasonForAppId =
-  getActiveSignupOrActiveSeasonForAppId as jest.MockedFunction<
-    typeof getActiveSignupOrActiveSeasonForAppId
-  >;
-const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
 // Test data objects
 const mockSeason = {
@@ -73,13 +50,6 @@ const mockSeasonDetails = {
   end_date: "2024-12-31",
   app_id: 730
 } satisfies SeasonDetails;
-
-const mockActiveSeason = {
-  season_id: 456,
-  platform: SeasonPlatform.FACEIT,
-  signup_end_date: "2024-12-31",
-  full_name: "Test Season Full Name"
-} satisfies ActiveSignupOrSeasonForAppId;
 
 const mockSeasons = [mockSeason] satisfies Season[];
 
@@ -309,191 +279,6 @@ describe("Seasons Controllers", () => {
           message: "Season not found",
           status: 404
         })
-      );
-    });
-  });
-
-  describe("getActiveSeasonForApp", () => {
-    it("should return cached season if available", async () => {
-      mockRequest.params = { app_id: "730" };
-      mockRedisClient.get.mockResolvedValue("456");
-
-      const mockNext = jest.fn();
-      await getActiveSeasonForApp(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockRedisClient.get).toHaveBeenCalledWith("730-active-season");
-      expect(mockSet).toHaveBeenCalledWith(
-        "Cache-Control",
-        "public, max-age=86400"
-      );
-      expect(mockJson).toHaveBeenCalledWith({ season_id: 456 });
-    });
-
-    it("should fetch and cache season if not cached", async () => {
-      mockRequest.params = { app_id: "730" };
-      mockRedisClient.get.mockResolvedValue(null);
-      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(mockActiveSeason);
-
-      const mockNext = jest.fn();
-      await getActiveSeasonForApp(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(730);
-      expect(mockRedisClient.set).toHaveBeenCalledWith(
-        "730-active-season",
-        456,
-        "EX",
-        2592000
-      );
-      expect(mockSet).toHaveBeenCalledWith(
-        "Cache-Control",
-        "public, max-age=86400"
-      );
-      expect(mockJson).toHaveBeenCalledWith(mockActiveSeason);
-    });
-
-    it("should return 404 when no active season found", async () => {
-      mockRequest.params = { app_id: "730" };
-      mockRedisClient.get.mockResolvedValue(null);
-      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
-
-      const mockNext = jest.fn();
-      await getActiveSeasonForApp(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No active season found for app",
-          status: 404
-        })
-      );
-    });
-
-    it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid" };
-      mockGetActiveOrLatestSeasonForAppId.mockResolvedValue(undefined);
-
-      const mockNext = jest.fn();
-      await getActiveSeasonForApp(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetActiveOrLatestSeasonForAppId).toHaveBeenCalledWith(NaN);
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No active season found for app",
-          status: 404
-        })
-      );
-    });
-  });
-
-  describe("getActiveSignupSeasonForApp", () => {
-    it("should return 404 when no active signup season found", async () => {
-      mockRequest.params = { app_id: "730" };
-      mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
-
-      const mockNext = jest.fn();
-      await getActiveSignupSeasonForApp(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No active signup season found for app",
-          status: 404
-        })
-      );
-    });
-
-    it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid" };
-      mockGetActiveSignupSeasonForAppId.mockResolvedValue(undefined);
-
-      const mockNext = jest.fn();
-      await getActiveSignupSeasonForApp(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetActiveSignupSeasonForAppId).toHaveBeenCalledWith(NaN);
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "No active signup season found for app",
-          status: 404
-        })
-      );
-    });
-  });
-
-  describe("GetActiveSignupOrActiveSeasonForAppId", () => {
-    it("should return undefined when no signup end date found", async () => {
-      mockRequest.params = { app_id: "730" };
-      mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(undefined);
-
-      await getActiveSignupOrActiveSeasonForAppController(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
-      );
-
-      expect(mockJson).toHaveBeenCalledWith(undefined);
-    });
-
-    it("should return season when found", async () => {
-      mockRequest.params = { app_id: "730" };
-      mockGetActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
-        mockActiveSeason
-      );
-
-      await getActiveSignupOrActiveSeasonForAppController(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
-      );
-
-      expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
-        730
-      );
-      expect(mockJson).toHaveBeenCalledWith(mockActiveSeason);
-    });
-
-    it("should handle invalid app ID", async () => {
-      mockRequest.params = { app_id: "invalid" };
-
-      await getActiveSignupOrActiveSeasonForAppController(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
-      );
-
-      expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
-        NaN
-      );
-    });
-
-    it("should handle negative app ID", async () => {
-      mockRequest.params = { app_id: "-730" };
-
-      await getActiveSignupOrActiveSeasonForAppController(
-        mockRequest as TestRequestWithParams<{ app_id: string }>,
-        mockResponse as Response
-      );
-
-      expect(mockGetActiveSignupOrActiveSeasonForAppId).toHaveBeenCalledWith(
-        -730
       );
     });
   });

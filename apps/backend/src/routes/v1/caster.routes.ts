@@ -12,7 +12,8 @@ import {
   getPlayerBySteamIdController
 } from "../../controllers/players.controllers";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
-import { cacheResponseMiddleware } from "../../middlewares/cache-filtered-queries";
+import { getFilteredTeamIdDetailsController } from "../../controllers/teams.controllers";
+import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
 
 const router = Router();
 
@@ -43,13 +44,24 @@ router.get(
 );
 
 router.get("/players/:steam_id", getPlayerBySteamIdController);
+
+// Filters, do not cache these routes
 router.get(
   "/players/:steam_id/statistics",
   parseQueryFilterParams,
-  cacheResponseMiddleware({
-    cachePrefix: "filtered"
-  }),
   getFilteredPlayerStatisticsController
+);
+router.get(
+  "/teams/:team_id/details",
+  parseQueryFilterParams,
+  validateNumericParams(),
+  getFilteredTeamIdDetailsController
+);
+router.get(
+  "/teams/:team_id/enhanced-map-stats",
+  parseQueryFilterParams,
+  validateNumericParams(["team_id"]),
+  getTeamEnhancedMapStatsController
 );
 
 export default router;

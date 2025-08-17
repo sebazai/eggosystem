@@ -44,7 +44,8 @@ export const addManualRankForPlayerController = async (
   req: Request,
   res: Response
 ) => {
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  // TODO: Make this dynamic
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }
@@ -59,7 +60,8 @@ export const getRegisteredTeamsController = async (
   req: Request,
   res: Response
 ) => {
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  // TODO: Make this dynamic
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }
@@ -137,7 +139,8 @@ export const bulkApproveTeamRegistrationsController = async (
     return;
   }
 
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  // TODO: Make this dynamic
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }
@@ -169,7 +172,8 @@ export const manualValidityCheckController = async (
     return;
   }
 
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  // TODO: Make this dynamic
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
   if (!activeSeason) {
     throw new BadRequestError("No signup for any season for app id 730");
   }

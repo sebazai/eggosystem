@@ -25,7 +25,8 @@ export const addManuallyApprovedPartialSignupForSeason = async (
 ) => {
   const connection = await getConnection();
 
-  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(730);
+  // TODO: Make this dynamic
+  const activeSeason = await getActiveSignupOrActiveSeasonForAppId(1, 730);
 
   if (!activeSeason) {
     throw new BadRequestError("No active registration ongoing for CS");

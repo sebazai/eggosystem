@@ -28,6 +28,7 @@ import kanahautomoRouter from "./v1/kanahautomo.routes";
 import stageRouter from "./v1/stage.routes";
 import standingsRouter from "./v1/standings.routes";
 import casterRouter from "./v1/caster.routes";
+import organizerRouter from "./v1/organizer.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -35,7 +36,7 @@ const v1Router = Router();
 // Caster routes
 v1Router.use("/casters", casterRouter);
 
-// Dashboard - Apply CORS
+// Apply CORS
 v1Router.use("/auth", corsMiddleware, authRouter);
 v1Router.use("/accounts", corsMiddleware, authenticateJWT, accountRouter);
 v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
@@ -48,6 +49,7 @@ v1Router.use("/faceit", corsMiddleware, faceitRouter);
 v1Router.use("/players", playerRouter);
 
 // Mount the routers
+v1Router.use("/organizers", organizerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/games", gameRouter);
 v1Router.use("/organizations", organizationRouter);
