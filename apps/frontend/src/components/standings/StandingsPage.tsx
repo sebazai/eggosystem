@@ -7,7 +7,7 @@ import { StandingsTable } from "@/components/standings/StandingsTable";
 import { useStandings } from "@/hooks/data/useStandings";
 import { useStandingLeagues } from "@/hooks/data/useStandingLeagues";
 
-export default function StandingsPage() {
+export default function StandingsPage({ seasonId }: { seasonId: string }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -16,7 +16,7 @@ export default function StandingsPage() {
     standingsLeagues,
     isLoading: isLoadingLeagues,
     isError: isErrorLeagues
-  } = useStandingLeagues();
+  } = useStandingLeagues(seasonId);
 
   // Get league from URL params or default to Masters A
   const initialLeague = searchParams.get("league");

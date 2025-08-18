@@ -89,7 +89,12 @@ const getSeasonMenuItems = (
           : []),
         {
           title: "Standings",
-          url: "/standings",
+          url: `/seasons/${signupOrActiveSeason.season_id}/standings`,
+          hasFilters: false
+        },
+        {
+          title: "Calendar",
+          url: `/seasons/${signupOrActiveSeason.season_id}/calendar`,
           hasFilters: false
         }
       ]
@@ -132,11 +137,6 @@ const getDefaultMenuItems = (
         url: "/matches",
         hasFilters: true
       },
-      // {
-      //   title: "Calendar",
-      //   url: "/calendar",
-      //   hasFilters: false
-      // },
       {
         title: "Leaderboards",
         url: "/leaderboards",

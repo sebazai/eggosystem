@@ -63,6 +63,13 @@ async function fetchLabelFor(resource: string, id: string): Promise<string> {
       const data: { name: string } = await response.json();
       return data.name || `${resource.slice(0, -1)} ${id}`;
     }
+    case "seasons": {
+      const response = await fetch(
+        `${envConfig.API_URL}/api/v1/${resource}/${id}`
+      );
+      const data: { name: string } = await response.json();
+      return data.name || `${resource.slice(0, -1)} ${id}`;
+    }
     default:
       return id;
   }

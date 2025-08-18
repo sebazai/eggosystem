@@ -639,7 +639,8 @@ interface EventDetails {
   };
 }
 
-export default function CalendarPage() {
+export default function CalendarPage({ seasonId }: { seasonId: string }) {
+  const _seasonToFetch = seasonId;
   const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(
     "dayGridMonth"
   );
