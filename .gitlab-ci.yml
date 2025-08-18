@@ -563,6 +563,8 @@ deploy-prod:
   extends: [.main-all-app]
   resource_group: production
   when: manual
+  needs:
+    - deploy-stage
   environment:
     name: production
     url: https://${HUB_PUBLIC_URL}
@@ -620,6 +622,12 @@ deploy-stage:
     - ssh ubuntu@$HUB_STAGE_IP "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
     - ssh ubuntu@$HUB_STAGE_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml pull"
     - ssh ubuntu@$HUB_STAGE_IP "docker compose -f ~/docker/eggosystem-staging/docker-compose.yml up -d"
+    - exitcode=$(ssh ubuntu@$HUB_STAGE_IP "docker wait eggosystem-staging-eggo-migrations-1")
+    - |
+      if [ "$exitcode" != "0" ]; then
+        echo "Migration container exited with code $exitcode. Pipeline failed."
+        exit 1
+      fi
     - |
       echo ""
       echo "=============================================="
