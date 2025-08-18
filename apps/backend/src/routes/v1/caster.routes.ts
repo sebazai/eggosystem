@@ -23,7 +23,7 @@ router.get(
   getLeaguesBySeasonController
 );
 router.get(
-  "/seasons/:season_id/teams/league/:league_id",
+  "/seasons/:season_id/league/:league_id/teams",
   validateNumericParams(),
   getTeamsByLeagueController
 );
