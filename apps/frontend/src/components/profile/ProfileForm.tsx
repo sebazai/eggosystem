@@ -191,6 +191,8 @@ const ProfileFormInputs = ({
       acceptMarketing: Boolean(acceptedMarketing)
     }
   });
+  const [resendEmailButtonDisabled, setResendEmailButtonDisabled] =
+    useState(false);
 
   const workEmailDirty = !!form.formState.dirtyFields.work_email;
 
@@ -355,9 +357,16 @@ const ProfileFormInputs = ({
           <Button type="submit">Save Changes</Button>
           {emailsVerified?.work_email_token_expires_at ? (
             <Button
-              onClick={() => requestNewEmailVerificationLinks()}
+              onClick={() => {
+                setResendEmailButtonDisabled(true);
+                requestNewEmailVerificationLinks();
+                setTimeout(() => {
+                  setResendEmailButtonDisabled(false);
+                }, 1000);
+              }}
               type="button"
               variant={"secondary"}
+              disabled={resendEmailButtonDisabled}
             >
               Re-send validation email
             </Button>
