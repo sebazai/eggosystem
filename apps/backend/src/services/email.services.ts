@@ -56,7 +56,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
           <p>If you are unable to click the button, you can also copy and paste the following link into your browser:</p>
   
           <p style="word-break: break-all;">
-            ${verificationUrl}
+            <pre>${verificationUrl.replace("https://", "")}</pre>
           </p>
   
           <hr style="border: none; border-top: 1px solid #eee; margin: 40px 0;" />
