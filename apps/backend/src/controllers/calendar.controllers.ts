@@ -1,14 +1,16 @@
 import { type Request, type Response } from "express";
-import { getMatchesBySeasonAndLeague } from "../models/match.models";
+import { getMatchesBySeasonAndLeagueWithStreamUrls } from "../models/match.models";
 
 export const getMatchesBySeasonAndLeagueController = async (
   req: Request,
   res: Response
 ) => {
   const { season_id, league_id } = req.params;
-  const matches = await getMatchesBySeasonAndLeague(
-    Number(season_id),
-    Number(league_id)
+  const seasonId = Number(season_id);
+  const leagueId = league_id === "all" ? null : Number(league_id);
+  const matches = await getMatchesBySeasonAndLeagueWithStreamUrls(
+    seasonId,
+    leagueId
   );
   res.json(matches);
 };

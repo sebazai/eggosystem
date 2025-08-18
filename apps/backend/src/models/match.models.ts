@@ -706,29 +706,9 @@ export const updateMatchStatus = async (
   );
 };
 
-// {
-//   match_id: "14",
-//   title: "Team Beta vs Team Delta",
-//   match_start: "2025-08-02T19:30:00",
-//   match_end: "2025-08-02T21:30:00",
-//   league_name: "Masters",
-//   league_tier: 1,
-//   streamUrl: ["https://twitch.tv/kanaliiga", "https://twitch.tv/kanaliiga2"],
-//   match_team1: "Team Beta",
-//   match_team2: "Team Delta"
-// }
-
-export const getMatchesBySeasonAndLeague = async (
-  seasonId: number,
-  leagueId: number
-) => {
-  const query = `SELECT * FROM Matches WHERE season_id = ? AND league_id = ?`;
-  return runQuery<Match[]>(query, [seasonId, leagueId]);
-};
-
 export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
   seasonId: number,
-  leagueId: number
+  leagueId: number | null
 ) => {
   const query = `
     SELECT 
@@ -756,7 +736,7 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     LEFT JOIN MatchTeams mt ON m.id = mt.match_id
     LEFT JOIN Teams t ON mt.team_id = t.id
     LEFT JOIN Reservations r ON m.id = r.match_id
-    WHERE m.season_id = ? AND m.league_id = ?
+    WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?)
     GROUP BY m.id, m.league_id, m.season_id, m.stage, m.match_date, m.start_time, m.end_time, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
   `;
 
@@ -780,7 +760,7 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       team_names: string | null;
       stream_urls: string | null;
     }>
-  >(query, [seasonId, leagueId]);
+  >(query, [seasonId, leagueId, leagueId]);
 
   return results.map((match) => {
     const teamNames = match.team_names || "Unknown vs Unknown";

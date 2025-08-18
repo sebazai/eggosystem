@@ -6,7 +6,7 @@ const router = Router();
 
 router.get(
   "/seasons/:season_id/leagues/:league_id/matches",
-  validateNumericParams(),
+  validateNumericParams(["season_id"]),
   getMatchesBySeasonAndLeagueController
 );
 

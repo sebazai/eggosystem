@@ -157,4 +157,51 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof match.season_platform).toBe("string");
     });
   });
+
+  it("should return all matches for season 14 when leagueId is null", async () => {
+    // Act - Query season 14 with null leagueId to fetch all matches regardless of league
+    const result = await getMatchesBySeasonAndLeagueWithStreamUrls(14, null);
+
+    // Assert - Should return exactly 849 matches for season 14
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(849);
+
+    // Verify that we get matches from multiple leagues (not just one league)
+    const uniqueLeagues = new Set(result.map((match) => match.league_name));
+    expect(uniqueLeagues.size).toBeGreaterThan(1);
+
+    // Verify all matches have the expected structure
+    result.forEach((match) => {
+      expect(match).toHaveProperty("match_id");
+      expect(match).toHaveProperty("title");
+      expect(match).toHaveProperty("match_start");
+      expect(match).toHaveProperty("match_end");
+      expect(match).toHaveProperty("league_name");
+      expect(match).toHaveProperty("league_tier");
+      expect(match).toHaveProperty("streamUrl");
+      expect(match).toHaveProperty("match_team1");
+      expect(match).toHaveProperty("match_team2");
+      expect(match).toHaveProperty("external_match_room_id");
+      expect(match).toHaveProperty("season_platform");
+
+      // Verify data types
+      expect(typeof match.match_id).toBe("string");
+      expect(typeof match.title).toBe("string");
+      expect(typeof match.match_start).toBe("string");
+      expect(typeof match.match_end).toBe("string");
+      expect(typeof match.league_name).toBe("string");
+      expect(typeof match.league_tier).toBe("number");
+      expect(Array.isArray(match.streamUrl)).toBe(true);
+      expect(typeof match.match_team1).toBe("string");
+      expect(typeof match.match_team2).toBe("string");
+      expect(typeof match.season_platform).toBe("string");
+
+      // Verify date formats
+      expect(match.match_start).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+      );
+      expect(match.match_end).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+    });
+  });
 });
