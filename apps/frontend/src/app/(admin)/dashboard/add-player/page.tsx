@@ -65,7 +65,7 @@ export default function AddPlayerPage() {
 
   // Get active season (app_id 730 for CS)
   const { data: activeSeason } = useSWR<{ season_id: number }>(
-    "/api/v1/organizer/1/app/730/seasons/active",
+    "/api/v1/organizers/1/app/730/seasons/active",
     clientApiFetch,
     { revalidateOnFocus: false }
   );

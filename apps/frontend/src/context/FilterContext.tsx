@@ -52,7 +52,7 @@ export const FilterProvider = ({
   const { data, error, isValidating, isLoading } = useSWR<
     { season_id: number },
     Error
-  >(`/api/v1/organizer/1/app/${appId}/seasons/active`, expressFetcher, {
+  >(`/api/v1/organizers/1/app/${appId}/seasons/active`, expressFetcher, {
     revalidateOnFocus: false,
     revalidateIfStale: false,
     keepPreviousData: true,

@@ -148,7 +148,7 @@ GET /api/v1/now
 #### Active Season for App
 
 ```
-GET /api/v1/organizer/1/app/730/seasons/active
+GET /api/v1/organizers/1/app/730/seasons/active
 ```
 
 **Response**:
