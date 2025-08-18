@@ -1,10 +1,10 @@
 import { type Request, type Response, type NextFunction } from "express";
-import * as playerHistoricalModels from "../../../models/player-historical.models";
+import * as playerHistoricalModels from "../../models/player-historical.models";
 import {
   getPlayerHistoricalAverageByRankController,
   getPlayerHistoricalAverageByLevelController,
   getPlayerHistoricalAverageController
-} from "../../../controllers/players.controllers";
+} from "../../controllers/players.controllers";
 
 // Mock the player historical models
 jest.mock("../../../models/player-historical.models");
