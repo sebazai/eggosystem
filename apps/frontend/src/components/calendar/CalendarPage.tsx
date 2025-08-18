@@ -75,11 +75,14 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
     title: match.title,
     start: match.match_start,
     end: match.match_end,
+    backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280", // fallback to gray
+    borderColor: DIVISIONS[match.league_tier]?.borderColor || "#4b5563", // fallback to darker gray
     extendedProps: {
       league: match.league_name,
       streamUrl: match.streamUrl,
       team1: match.match_team1,
-      team2: match.match_team2
+      team2: match.match_team2,
+      tier: match.league_tier
     }
   }));
 };

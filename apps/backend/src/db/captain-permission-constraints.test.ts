@@ -446,6 +446,34 @@ describe("Captain Permission Triggers", () => {
       []
     );
     expect(firstTeamPerms.length).toBe(0);
+    await runQuery("DELETE FROM Games WHERE id IN (999, 998)", []);
+    await runQuery("DELETE FROM Seasons WHERE id IN (999, 998)", []);
+    await runQuery("DELETE FROM Teams WHERE id IN (999, 998)", []);
+    await runQuery(
+      "DELETE FROM SeasonTeamRegistrations WHERE season_id IN (999, 998)",
+      []
+    );
+    await runQuery(
+      "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id IN (999, 998)",
+      []
+    );
+    await runQuery(
+      "DELETE FROM AccountPermissionScopes WHERE season_id IN (999, 998)",
+      []
+    );
+    await runQuery(
+      "DELETE FROM AccountRoles WHERE account_id IN (999, 998)",
+      []
+    );
+    await runQuery("DELETE FROM Accounts WHERE id IN (999, 998)", []);
+    await runQuery(
+      "DELETE FROM SteamPlayers WHERE steam_id IN (76561198000000999, 76561198000000998)",
+      []
+    );
+    await runQuery(
+      "DELETE FROM LinkedAccounts WHERE account_id IN (999, 998)",
+      []
+    );
   });
 
   it("prevents non-captain/co-captain from having captain permissions", async () => {
