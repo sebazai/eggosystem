@@ -7,7 +7,7 @@ import {
 } from "../../controllers/players.controllers";
 
 // Mock the player historical models
-jest.mock("../../../models/player-historical.models");
+jest.mock("../../models/player-historical.models");
 
 const mockPlayerModels = playerHistoricalModels as jest.Mocked<
   typeof playerHistoricalModels

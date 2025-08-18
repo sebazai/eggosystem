@@ -9,7 +9,8 @@ import type {
   EventClickArg,
   EventContentArg,
   MoreLinkContentArg,
-  MoreLinkMountArg
+  MoreLinkMountArg,
+  EventInput
 } from "@fullcalendar/core";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +34,6 @@ import {
   ExternalLink,
   Calendar,
   Clock,
-  MapPin,
   List,
   Grid3X3,
   Filter
@@ -58,563 +58,36 @@ const DIVISIONS = {
 
 type DivisionName = keyof typeof DIVISIONS;
 
-// Helper function to get division colors
-const _getDivisionColors = (division: DivisionName) => DIVISIONS[division];
-
-// Enhanced mock data with more examples and stream links - Updated for July 2025
-const rawMockEvents = [
-  {
-    id: "1",
-    title: "Team Alpha vs Team Beta",
-    start: "2025-07-22T19:00:00",
-    end: "2025-07-22T21:00:00",
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_dust2",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Alpha",
-      team2: "Team Beta",
-      description: "Quarter-final match in Masters playoffs"
-    }
-  },
-  {
-    id: "2",
-    title: "Team Gamma vs Team Delta",
-    start: "2025-07-23T20:00:00",
-    end: "2025-07-23T22:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_mirage",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Gamma",
-      team2: "Team Delta",
-      description: "Semi-final match in Masters playoffs"
-    }
-  },
-  {
-    id: "3",
-    title: "Team Epsilon vs Team Zeta",
-    start: "2025-07-24T19:30:00",
-    end: "2025-07-24T21:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_inferno",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Epsilon",
-      team2: "Team Zeta",
-      description: "Grand final match in Masters playoffs"
-    }
-  },
-  {
-    id: "4",
-    title: "Team Eta vs Team Theta",
-    start: "2025-07-25T18:00:00",
-    end: "2025-07-25T20:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_overpass",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Eta",
-      team2: "Team Theta",
-      description: "Third place match in Masters playoffs"
-    }
-  },
-  {
-    id: "5",
-    title: "Team Iota vs Team Kappa",
-    start: "2025-07-26T20:30:00",
-    end: "2025-07-26T22:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_ancient",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Iota",
-      team2: "Team Kappa",
-      description: "Exhibition match"
-    }
-  },
-  // Additional examples for different dates
-  {
-    id: "6",
-    title: "Team Lambda vs Team Mu",
-    start: "2025-07-27T19:00:00",
-    end: "2025-07-27T21:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_vertigo",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Lambda",
-      team2: "Team Mu",
-      description: "Regular season match"
-    }
-  },
-  {
-    id: "7",
-    title: "Team Nu vs Team Xi",
-    start: "2025-07-28T20:00:00",
-    end: "2025-07-28T22:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_nuke",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Nu",
-      team2: "Team Xi",
-      description: "Regular season match"
-    }
-  },
-  {
-    id: "8",
-    title: "Team Omicron vs Team Pi",
-    start: "2025-07-29T19:30:00",
-    end: "2025-07-29T21:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_cache",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Omicron",
-      team2: "Team Pi",
-      description: "Regular season match"
-    }
-  },
-  // Multiple events on same day to test overflow
-  {
-    id: "9",
-    title: "Team Rho vs Team Sigma",
-    start: "2025-07-30T18:00:00",
-    end: "2025-07-30T20:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_train",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Rho",
-      team2: "Team Sigma",
-      description: "Regular season match"
-    }
-  },
-  {
-    id: "10",
-    title: "Team Tau vs Team Upsilon",
-    start: "2025-07-30T20:30:00",
-    end: "2025-07-30T22:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_cobblestone",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Tau",
-      team2: "Team Upsilon",
-      description: "Regular season match"
-    }
-  },
-  {
-    id: "11",
-    title: "Team Phi vs Team Chi",
-    start: "2025-07-30T23:00:00",
-    end: "2025-07-31T01:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_dust2",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Phi",
-      team2: "Team Chi",
-      description: "Regular season match"
-    }
-  },
-  // More events for testing
-  {
-    id: "12",
-    title: "Team Psi vs Team Omega",
-    start: "2025-07-31T19:00:00",
-    end: "2025-07-31T21:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_mirage",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Psi",
-      team2: "Team Omega",
-      description: "Regular season match"
-    }
-  },
-  {
-    id: "13",
-    title: "Team Alpha vs Team Gamma",
-    start: "2025-08-01T20:00:00",
-    end: "2025-08-01T22:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Masters",
-      map: "de_inferno",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Alpha",
-      team2: "Team Gamma",
-      description: "Regular season match"
-    }
-  },
+const rawMockEvents: EventInput[] = [
   {
     id: "14",
     title: "Team Beta vs Team Delta",
     start: "2025-08-02T19:30:00",
     end: "2025-08-02T21:30:00",
-
     extendedProps: {
-      type: "match",
       league: "Masters",
-      map: "de_overpass",
       streamUrl: "https://twitch.tv/kanaliiga",
       team1: "Team Beta",
-      team2: "Team Delta",
-      description: "Regular season match"
+      team2: "Team Delta"
     }
   },
-  // Adding 20+ events to July 30th to test overflow handling
   {
     id: "15",
     title: "Team A1 vs Team B1",
     start: "2025-07-30T18:00:00",
     end: "2025-07-30T20:00:00",
-
     extendedProps: {
-      type: "match",
       league: "Challengers",
-      map: "de_dust2",
       streamUrl: "https://twitch.tv/kanaliiga",
       team1: "Team A1",
-      team2: "Team B1",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "16",
-    title: "Team C1 vs Team D1",
-    start: "2025-07-30T20:30:00",
-    end: "2025-07-30T22:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Challengers",
-      map: "de_mirage",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team C1",
-      team2: "Team D1",
-      description: "Night match"
-    }
-  },
-  {
-    id: "17",
-    title: "Team E1 vs Team F1",
-    start: "2025-07-30T19:00:00",
-    end: "2025-07-30T21:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Challengers",
-      map: "de_inferno",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team E1",
-      team2: "Team F1",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "18",
-    title: "Team G1 vs Team H1",
-    start: "2025-07-30T15:30:00",
-    end: "2025-07-30T17:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Challengers",
-      map: "de_overpass",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team G1",
-      team2: "Team H1",
-      description: "Late afternoon match"
-    }
-  },
-  {
-    id: "19",
-    title: "Team I1 vs Team J1",
-    start: "2025-07-30T18:00:00",
-    end: "2025-07-30T20:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Challengers",
-      map: "de_ancient",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team I1",
-      team2: "Team J1",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "20",
-    title: "Team K1 vs Team L1",
-    start: "2025-07-30T20:30:00",
-    end: "2025-07-30T22:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Challengers",
-      map: "de_vertigo",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team K1",
-      team2: "Team L1",
-      description: "Night match"
-    }
-  },
-  {
-    id: "21",
-    title: "Team M1 vs Team N1",
-    start: "2025-07-30T23:00:00",
-    end: "2025-07-31T01:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Challengers",
-      map: "de_nuke",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team M1",
-      team2: "Team N1",
-      description: "Late night match"
-    }
-  },
-  {
-    id: "22",
-    title: "Team O1 vs Team P1",
-    start: "2025-07-30T18:30:00",
-    end: "2025-07-30T20:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Prospects",
-      map: "de_cache",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team O1",
-      team2: "Team P1",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "23",
-    title: "Team Q1 vs Team R1",
-    start: "2025-07-30T21:00:00",
-    end: "2025-07-30T23:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Prospects",
-      map: "de_train",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Q1",
-      team2: "Team R1",
-      description: "Night match"
-    }
-  },
-  {
-    id: "24",
-    title: "Team S1 vs Team T1",
-    start: "2025-07-30T19:30:00",
-    end: "2025-07-30T21:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Prospects",
-      map: "de_cobblestone",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team S1",
-      team2: "Team T1",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "25",
-    title: "Team U1 vs Team V1",
-    start: "2025-07-30T16:00:00",
-    end: "2025-07-30T18:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Prospects",
-      map: "de_dust2",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team U1",
-      team2: "Team V1",
-      description: "Late afternoon match"
-    }
-  },
-  {
-    id: "26",
-    title: "Team W1 vs Team X1",
-    start: "2025-07-30T18:30:00",
-    end: "2025-07-30T20:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Prospects",
-      map: "de_mirage",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team W1",
-      team2: "Team X1",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "27",
-    title: "Team Y1 vs Team Z1",
-    start: "2025-07-30T21:00:00",
-    end: "2025-07-30T23:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Prospects",
-      map: "de_inferno",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team Y1",
-      team2: "Team Z1",
-      description: "Night match"
-    }
-  },
-  {
-    id: "28",
-    title: "Team A2 vs Team B2",
-    start: "2025-07-30T18:15:00",
-    end: "2025-07-30T20:15:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div4",
-      map: "de_overpass",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team A2",
-      team2: "Team B2",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "29",
-    title: "Team C2 vs Team D2",
-    start: "2025-07-30T20:45:00",
-    end: "2025-07-30T22:45:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div4",
-      map: "de_ancient",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team C2",
-      team2: "Team D2",
-      description: "Night match"
-    }
-  },
-  {
-    id: "30",
-    title: "Team E2 vs Team F2",
-    start: "2025-07-30T15:00:00",
-    end: "2025-07-30T17:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div4",
-      map: "de_vertigo",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team E2",
-      team2: "Team F2",
-      description: "Late afternoon match"
-    }
-  },
-  {
-    id: "31",
-    title: "Team G2 vs Team H2",
-    start: "2025-07-30T17:30:00",
-    end: "2025-07-30T19:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div4",
-      map: "de_nuke",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team G2",
-      team2: "Team H2",
-      description: "Evening match"
-    }
-  },
-  {
-    id: "32",
-    title: "Team I2 vs Team J2",
-    start: "2025-07-30T20:00:00",
-    end: "2025-07-30T22:00:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div4",
-      map: "de_cache",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team I2",
-      team2: "Team J2",
-      description: "Night match"
-    }
-  },
-  {
-    id: "33",
-    title: "Team K2 vs Team L2",
-    start: "2025-07-30T22:30:00",
-    end: "2025-07-31T00:30:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div4",
-      map: "de_train",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team K2",
-      team2: "Team L2",
-      description: "Late night match"
-    }
-  },
-  {
-    id: "34",
-    title: "Team M2 vs Team N2",
-    start: "2025-07-30T19:15:00",
-    end: "2025-07-30T21:15:00",
-
-    extendedProps: {
-      type: "match",
-      league: "Div5",
-      map: "de_cobblestone",
-      streamUrl: "https://twitch.tv/kanaliiga",
-      team1: "Team M2",
-      team2: "Team N2",
-      description: "Evening match"
+      team2: "Team B1"
     }
   }
 ];
 
 // Process raw events to add correct colors based on division
 const mockEvents = rawMockEvents.map((event) => {
-  const division = event.extendedProps.league as DivisionName;
+  const division = event.extendedProps?.league as DivisionName;
   const colors = DIVISIONS[division];
   return {
     ...event,
@@ -628,15 +101,10 @@ interface EventDetails {
   title: string;
   start: string;
   end: string;
-  extendedProps: {
-    type: string;
-    league: string;
-    map: string;
-    streamUrl: string;
-    team1: string;
-    team2: string;
-    description: string;
-  };
+  league: string;
+  streamUrl?: string;
+  team1: string;
+  team2: string;
 }
 
 export default function CalendarPage({ seasonId }: { seasonId: string }) {
@@ -657,18 +125,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       return mockEvents;
     }
     return mockEvents.filter(
-      (event) => event.extendedProps.league === selectedDivision
+      (event) => event.extendedProps?.league === selectedDivision
     );
   }, [selectedDivision]);
-
-  // Debug: Log events to console
-  console.log(
-    "Mock events:",
-    mockEvents.length,
-    "events loaded",
-    "Filtered:",
-    filteredEvents.length
-  );
 
   // Change view when view state changes
   useEffect(() => {
@@ -695,20 +154,21 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
           title: event.title,
           start: event.startStr,
           end: event.endStr,
-          extendedProps: event.extendedProps as EventDetails["extendedProps"]
-        });
+          league: event.extendedProps?.league || "",
+          streamUrl: event.extendedProps?.streamUrl,
+          team1: event.extendedProps?.team1 || "",
+          team2: event.extendedProps?.team2 || ""
+        } satisfies EventDetails);
         setIsDialogOpen(true);
       },
       eventContent: (arg: EventContentArg) => {
-        const props = arg.event.extendedProps as {
-          map: string;
-          league: string;
-        };
         return (
           <div className="p-1 text-xs">
             <div className="font-semibold truncate">{arg.event.title}</div>
-            <div className="text-xs opacity-75">{props.map}</div>
-            <div className="text-xs font-medium mt-0.5">{props.league}</div>
+
+            <div className="text-xs font-medium mt-0.5">
+              {arg.event.extendedProps?.league}
+            </div>
           </div>
         );
       },
@@ -787,8 +247,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   };
 
   const handleStreamClick = () => {
-    if (selectedEvent?.extendedProps.streamUrl) {
-      window.open(selectedEvent.extendedProps.streamUrl, "_blank");
+    if (selectedEvent?.streamUrl) {
+      window.open(selectedEvent.streamUrl, "_blank");
     }
   };
 
@@ -899,7 +359,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                 {filteredEvents
                   .sort(
                     (a, b) =>
-                      new Date(a.start).getTime() - new Date(b.start).getTime()
+                      new Date(a.start?.toString() ?? "").getTime() -
+                      new Date(b.start?.toString() ?? "").getTime()
                   )
                   .map((event) => (
                     <div
@@ -907,11 +368,14 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                       className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer gap-3"
                       onClick={() => {
                         setSelectedEvent({
-                          id: event.id,
-                          title: event.title,
-                          start: event.start,
-                          end: event.end,
-                          extendedProps: event.extendedProps
+                          id: event.id!,
+                          title: event.title!,
+                          start: event.start?.toString() ?? "",
+                          end: event.end?.toString() ?? "",
+                          league: event.extendedProps?.league ?? "",
+                          streamUrl: event.extendedProps?.streamUrl ?? "",
+                          team1: event.extendedProps?.team1 ?? "",
+                          team2: event.extendedProps?.team2 ?? ""
                         });
                         setIsDialogOpen(true);
                       }}
@@ -926,15 +390,16 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                             {event.title}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(event.start), "PPP 'at' p")} -{" "}
-                            {format(new Date(event.end), "p")}
+                            {format(
+                              new Date(event.start?.toString() ?? ""),
+                              "PPP 'at' p"
+                            )}{" "}
+                            -{" "}
+                            {format(new Date(event.end?.toString() ?? ""), "p")}
                           </p>
                           <div className="flex gap-2 mt-1 flex-wrap">
-                            <Badge variant="outline" className="text-xs">
-                              {event.extendedProps.map}
-                            </Badge>
                             <Badge variant="secondary" className="text-xs">
-                              {event.extendedProps.league}
+                              {event.extendedProps?.league}
                             </Badge>
                           </div>
                         </div>
@@ -969,35 +434,22 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
 
           {selectedEvent && (
             <div className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-lg">{selectedEvent.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {selectedEvent.extendedProps.description}
-                </p>
-              </div>
+              <h3 className="font-semibold text-lg">{selectedEvent.title}</h3>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
                     {format(new Date(selectedEvent.start), "PPP 'at' p")} -{" "}
-                    {format(new Date(selectedEvent.end), "p")}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">
-                    Map: {selectedEvent.extendedProps.map}
+                    {selectedEvent.end
+                      ? format(new Date(selectedEvent.end), "p")
+                      : "TBA"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    {selectedEvent.extendedProps.league}
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs">
-                    {selectedEvent.extendedProps.type}
+                    {selectedEvent.league}
                   </Badge>
                 </div>
               </div>
