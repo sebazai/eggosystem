@@ -28,6 +28,7 @@ import stageRouter from "./v1/stage.routes";
 import standingsRouter from "./v1/standings.routes";
 import casterRouter from "./v1/caster.routes";
 import organizerRouter from "./v1/organizer.routes";
+import calendarRouter from "./v1/calendar.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -47,6 +48,7 @@ v1Router.use("/faceit", corsMiddleware, faceitRouter);
 v1Router.use("/players", playerRouter);
 
 // Mount the routers
+v1Router.use("/calendar", calendarRouter);
 v1Router.use("/organizers", organizerRouter);
 v1Router.use("/matches", matchRouter);
 v1Router.use("/games", gameRouter);

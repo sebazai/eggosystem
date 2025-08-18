@@ -705,3 +705,120 @@ export const updateMatchStatus = async (
     connection
   );
 };
+
+// {
+//   match_id: "14",
+//   title: "Team Beta vs Team Delta",
+//   match_start: "2025-08-02T19:30:00",
+//   match_end: "2025-08-02T21:30:00",
+//   league_name: "Masters",
+//   league_tier: 1,
+//   streamUrl: ["https://twitch.tv/kanaliiga", "https://twitch.tv/kanaliiga2"],
+//   match_team1: "Team Beta",
+//   match_team2: "Team Delta"
+// }
+
+export const getMatchesBySeasonAndLeague = async (
+  seasonId: number,
+  leagueId: number
+) => {
+  const query = `SELECT * FROM Matches WHERE season_id = ? AND league_id = ?`;
+  return runQuery<Match[]>(query, [seasonId, leagueId]);
+};
+
+export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
+  seasonId: number,
+  leagueId: number
+) => {
+  const query = `
+    SELECT 
+      m.id,
+      m.league_id,
+      m.season_id,
+      s.platform,
+      m.stage,
+      m.match_date,
+      m.start_time,
+      m.end_time,
+      m.best_of,
+      m.external_match_room_id,
+      m.status,
+      m.round,
+      m.group,
+      l.name as league_name,
+      sl.tier as league_tier,
+      GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ' vs ') as team_names,
+      JSON_ARRAYAGG(DISTINCT r.stream_url) as stream_urls
+    FROM Matches m
+    LEFT JOIN Leagues l ON m.league_id = l.id
+    LEFT JOIN SeasonLeagues sl ON m.season_id = sl.season_id AND m.league_id = sl.league_id
+    LEFT JOIN Seasons s ON m.season_id = s.id
+    LEFT JOIN MatchTeams mt ON m.id = mt.match_id
+    LEFT JOIN Teams t ON mt.team_id = t.id
+    LEFT JOIN Reservations r ON m.id = r.match_id
+    WHERE m.season_id = ? AND m.league_id = ?
+    GROUP BY m.id, m.league_id, m.season_id, m.stage, m.match_date, m.start_time, m.end_time, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
+  `;
+
+  const results = await runQuery<
+    Array<{
+      id: number;
+      league_id: number;
+      season_id: number;
+      platform: string;
+      stage: number;
+      match_date: string;
+      start_time: string;
+      end_time: string;
+      best_of: number;
+      external_match_room_id: string | null;
+      status: string;
+      round: number;
+      group: number;
+      league_name: string;
+      league_tier: number;
+      team_names: string | null;
+      stream_urls: string | null;
+    }>
+  >(query, [seasonId, leagueId]);
+
+  return results.map((match) => {
+    const teamNames = match.team_names || "Unknown vs Unknown";
+    const teams = teamNames.split(" vs ");
+
+    // Calculate end time if it's null
+    let endTime = match.end_time;
+    if (!endTime) {
+      // Assume each best_of game takes 1 hour
+      const hoursToAdd = match.best_of || 1;
+      const startTime = new Date(`${match.match_date}T${match.start_time}`);
+      const endDate = new Date(
+        startTime.getTime() + hoursToAdd * 60 * 60 * 1000
+      );
+
+      // If the calculated end time goes to the next day, cap it at 23:59:00
+      const startDate = new Date(`${match.match_date}T00:00:00`);
+      const nextDay = new Date(startDate.getTime() + 24 * 60 * 60 * 1000);
+
+      if (endDate >= nextDay) {
+        endTime = "23:59:00";
+      } else {
+        endTime = endDate.toTimeString().split(" ")[0]; // Get HH:MM:SS format
+      }
+    }
+
+    return {
+      match_id: match.id.toString(),
+      title: teamNames,
+      match_start: `${match.match_date}T${match.start_time}`,
+      match_end: `${match.match_date}T${endTime}`,
+      league_name: match.league_name,
+      league_tier: match.league_tier,
+      streamUrl: match.stream_urls ? JSON.parse(match.stream_urls) : [],
+      match_team1: teams[0] || "Unknown",
+      match_team2: teams[1] || "Unknown",
+      external_match_room_id: match.external_match_room_id,
+      season_platform: match.platform
+    };
+  });
+};

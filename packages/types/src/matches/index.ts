@@ -10,3 +10,4 @@ export * from "./MatchHistoryResult.interface";
 export * from "./MatchMapVetoes.interface";
 export * from "./MatchesWithTeamData.interface";
 export * from "./MatchGamesByTeam.interface";
+export * from "./MatchWithStreamUrls.interface";
