@@ -36,7 +36,7 @@ export const getMatchesBySeasonIdController = async (
 ) => {
   const seasonId =
     req.params.season_id === "active"
-      ? (await getActiveSeasonForAppId(730))?.season_id
+      ? (await getActiveSeasonForAppId(1, 730))?.season_id
       : Number(req.params.season_id);
 
   if (!seasonId) {

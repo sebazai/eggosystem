@@ -34,7 +34,7 @@ export const getFaceitLeaguesController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const activeSeason = await getActiveSeasonForAppId(730);
+  const activeSeason = await getActiveSeasonForAppId(1, 730);
   if (!activeSeason) {
     res.json({
       standingsLeagues: []

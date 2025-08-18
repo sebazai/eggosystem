@@ -61,18 +61,22 @@ export const getActiveOrLatestSeasonForAppId = async (
   return activeSeason;
 };
 
-export const getActiveSeasonForAppId = async (app_id: number) => {
+export const getActiveSeasonForAppId = async (
+  organizer_id: number,
+  app_id: number
+) => {
   const [activeSeason] = await runQuery<
     Array<{ season_id: number } | undefined>
   >(
     `SELECT s.id AS season_id
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
-     WHERE g.app_id = ?
+     JOIN Organizers o ON s.organizer_id = o.id
+     WHERE g.app_id = ? AND o.id = ?
      AND s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())
      ORDER BY s.id DESC
      LIMIT 1;`,
-    [app_id, app_id]
+    [app_id, organizer_id, app_id]
   );
   return activeSeason;
 };
