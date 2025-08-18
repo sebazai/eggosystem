@@ -123,6 +123,13 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       },
       events: calendarMatches ? transformMatchesToEvents(calendarMatches) : [],
       eventClick: (info: EventClickArg) => {
+        // Close any open popover when an event is clicked
+        const popover = document.querySelector(".fc-more-popover");
+        if (popover) {
+          // Remove the popover from DOM
+          popover.remove();
+        }
+
         const event = info.event;
         setSelectedEvent({
           id: event.id,

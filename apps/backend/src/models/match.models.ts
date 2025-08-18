@@ -794,7 +794,11 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       match_end: `${match.match_date}T${endTime}`,
       league_name: match.league_name,
       league_tier: match.league_tier,
-      streamUrl: match.stream_urls ? JSON.parse(match.stream_urls) : [],
+      streamUrl: match.stream_urls
+        ? JSON.parse(match.stream_urls).filter(
+            (url: string | null) => url !== null
+          )
+        : [],
       match_team1: teams[0] || "Unknown",
       match_team2: teams[1] || "Unknown",
       external_match_room_id: match.external_match_room_id,
