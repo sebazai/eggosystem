@@ -39,24 +39,23 @@ import {
   Filter
 } from "lucide-react";
 import { format } from "date-fns";
+import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 
 // Division definitions with darker, more readable colors
-const DIVISIONS = {
-  Masters: { color: "#b91c1c", borderColor: "#991b1b" }, // Darker red
-  Challengers: { color: "#1d4ed8", borderColor: "#1e40af" }, // Darker blue
-  Prospects: { color: "#047857", borderColor: "#065f46" }, // Darker green
-  Div4: { color: "#b45309", borderColor: "#92400e" }, // Darker orange
-  Div5: { color: "#6d28d9", borderColor: "#5b21b6" }, // Darker purple
-  Div6: { color: "#be185d", borderColor: "#9d174d" }, // Darker pink
-  Div7: { color: "#0e7490", borderColor: "#155e75" }, // Darker cyan
-  Div8: { color: "#4d7c0f", borderColor: "#365314" }, // Darker lime
-  Div9: { color: "#c2410c", borderColor: "#9a3412" }, // Darker red-orange
-  Div10: { color: "#7c3aed", borderColor: "#6d28d9" }, // Darker violet
-  Div11: { color: "#0f766e", borderColor: "#134e4a" }, // Darker teal
-  Div12: { color: "#a16207", borderColor: "#854d0e" } // Darker yellow
-} as const;
-
-type DivisionName = keyof typeof DIVISIONS;
+const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
+  1: { color: "#b91c1c", borderColor: "#991b1b" }, // Darker red
+  2: { color: "#1d4ed8", borderColor: "#1e40af" }, // Darker blue
+  3: { color: "#047857", borderColor: "#065f46" }, // Darker green
+  4: { color: "#b45309", borderColor: "#92400e" }, // Darker orange
+  5: { color: "#6d28d9", borderColor: "#5b21b6" }, // Darker purple
+  6: { color: "#be185d", borderColor: "#9d174d" }, // Darker pink
+  7: { color: "#0e7490", borderColor: "#155e75" }, // Darker cyan
+  8: { color: "#4d7c0f", borderColor: "#365314" }, // Darker lime
+  9: { color: "#c2410c", borderColor: "#9a3412" }, // Darker red-orange
+  10: { color: "#7c3aed", borderColor: "#6d28d9" }, // Darker violet
+  11: { color: "#0f766e", borderColor: "#134e4a" }, // Darker teal
+  12: { color: "#a16207", borderColor: "#854d0e" } // Darker yellow
+};
 
 const rawMockEvents: EventInput[] = [
   {
@@ -66,6 +65,7 @@ const rawMockEvents: EventInput[] = [
     end: "2025-08-02T21:30:00",
     extendedProps: {
       league: "Masters",
+      tier: 1,
       streamUrl: "https://twitch.tv/kanaliiga",
       team1: "Team Beta",
       team2: "Team Delta"
@@ -78,6 +78,7 @@ const rawMockEvents: EventInput[] = [
     end: "2025-07-30T20:00:00",
     extendedProps: {
       league: "Challengers",
+      tier: 2,
       streamUrl: "https://twitch.tv/kanaliiga",
       team1: "Team A1",
       team2: "Team B1"
@@ -87,12 +88,12 @@ const rawMockEvents: EventInput[] = [
 
 // Process raw events to add correct colors based on division
 const mockEvents = rawMockEvents.map((event) => {
-  const division = event.extendedProps?.league as DivisionName;
-  const colors = DIVISIONS[division];
+  const division = event.extendedProps?.tier;
+  const colors = DIVISIONS[division ?? 1];
   return {
     ...event,
-    backgroundColor: colors.color,
-    borderColor: colors.borderColor
+    backgroundColor: colors?.color,
+    borderColor: colors?.borderColor
   };
 });
 
@@ -114,10 +115,12 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   );
   const [selectedEvent, setSelectedEvent] = useState<EventDetails | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDivision, setSelectedDivision] = useState<
-    DivisionName | "all"
-  >("all");
+  const [selectedDivision, setSelectedDivision] = useState<number | "all">(
+    "all"
+  );
   const calendarRef = useRef<FullCalendar>(null);
+  const { seasonLeagues, isLoading: isLoadingSeasonLeagues } =
+    useSeasonLeagues(seasonId);
 
   // Filter events based on selected division
   const filteredEvents = useMemo(() => {
@@ -125,7 +128,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       return mockEvents;
     }
     return mockEvents.filter(
-      (event) => event.extendedProps?.league === selectedDivision
+      (event) => event.extendedProps?.tier === selectedDivision
     );
   }, [selectedDivision]);
 
@@ -282,9 +285,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                   <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
                     <Select
-                      value={selectedDivision}
-                      onValueChange={(value: DivisionName | "all") =>
-                        setSelectedDivision(value)
+                      value={selectedDivision.toString()}
+                      onValueChange={(value) =>
+                        setSelectedDivision(parseInt(value, 10))
                       }
                     >
                       <SelectTrigger className="w-32">
@@ -292,18 +295,18 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Divisions</SelectItem>
-                        <SelectItem value="Masters">Masters</SelectItem>
-                        <SelectItem value="Challengers">Challengers</SelectItem>
-                        <SelectItem value="Prospects">Prospects</SelectItem>
-                        <SelectItem value="Div4">Div4</SelectItem>
-                        <SelectItem value="Div5">Div5</SelectItem>
-                        <SelectItem value="Div6">Div6</SelectItem>
-                        <SelectItem value="Div7">Div7</SelectItem>
-                        <SelectItem value="Div8">Div8</SelectItem>
-                        <SelectItem value="Div9">Div9</SelectItem>
-                        <SelectItem value="Div10">Div10</SelectItem>
-                        <SelectItem value="Div11">Div11</SelectItem>
-                        <SelectItem value="Div12">Div12</SelectItem>
+                        {isLoadingSeasonLeagues ? (
+                          <SelectItem value="loading">Loading...</SelectItem>
+                        ) : (
+                          seasonLeagues?.map((league) => (
+                            <SelectItem
+                              key={league.id}
+                              value={league.tier.toString()}
+                            >
+                              {league.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -327,13 +330,15 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
               </CardTitle>
               {/* Division Legend */}
               <div className="flex flex-wrap gap-2 mt-4">
-                {Object.entries(DIVISIONS).map(([division, colors]) => (
-                  <div key={division} className="flex items-center gap-1">
+                {seasonLeagues?.map((league) => (
+                  <div key={league.id} className="flex items-center gap-1">
                     <div
                       className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: colors.color }}
+                      style={{
+                        backgroundColor: DIVISIONS[league.tier]?.color
+                      }}
                     ></div>
-                    <span className="text-xs">{division}</span>
+                    <span className="text-xs">{league.name}</span>
                   </div>
                 ))}
               </div>
