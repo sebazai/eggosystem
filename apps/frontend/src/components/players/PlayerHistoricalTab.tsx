@@ -216,14 +216,30 @@ const ComparisonPanel = ({
   unit?: string;
   compareLabel: string;
 }) => {
-  const playerVsCompare =
-    playerValue > compareValue
+  // Determine if this metric is one where lower values are better
+  const isLowerBetter =
+    title === "Time to Damage" || title === "Crosshair Placement";
+
+  // For metrics where lower is better, invert the comparison logic
+  const playerVsCompare = isLowerBetter
+    ? playerValue < compareValue
+      ? "better"
+      : playerValue > compareValue
+        ? "worse"
+        : "equal"
+    : playerValue > compareValue
       ? "better"
       : playerValue < compareValue
         ? "worse"
         : "equal";
-  const playerVsAvg =
-    playerValue > avgValue
+
+  const playerVsAvg = isLowerBetter
+    ? playerValue < avgValue
+      ? "better"
+      : playerValue > avgValue
+        ? "worse"
+        : "equal"
+    : playerValue > avgValue
       ? "better"
       : playerValue < avgValue
         ? "worse"
@@ -270,7 +286,7 @@ const ComparisonPanel = ({
         return {
           name: "Crosshair Placement",
           description:
-            "Angle between cursor position when enemy is in sight and when the shot is taken & hit. Lower is better.",
+            "Angle between cursor position when enemy is in sight and when the shot is taken & hit. Lower values are better.",
           calculation: "Percentage of pre-aimed shots that connect"
         };
       case "counter-strafing":
@@ -287,11 +303,17 @@ const ComparisonPanel = ({
           description: "Percentage of kills achieved through headshots",
           calculation: "Headshot kills ÷ Total kills × 100"
         };
+      case "time to damage":
+        return {
+          name: "Time to Damage",
+          description:
+            "Time taken in milliseconds from when enemy is in sight to when the shot is taken. Lower values are better.",
+          calculation: "Average response time in milliseconds"
+        };
       default:
         return {
           name: metricTitle,
-          description:
-            "Time taken from when enemy is in sight to when the shot is taken. Lower is better.",
+          description: "Performance metric for player evaluation",
           calculation: "Statistical analysis"
         };
     }
@@ -561,7 +583,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
     allCompareOptions.find((opt) => opt.value === compareOption)?.label ||
     compareOption;
 
-  // Calculate current player stats (using latest values from real data)
+  // Calculate current player stats (using average of all displayed matches instead of just latest)
   const currentPlayerStats = useMemo(() => {
     if (!historicalData || historicalData.length === 0) {
       return {
@@ -575,9 +597,23 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
       };
     }
 
-    const latest = historicalData[0]; // Data should be ordered by latest date first
-    if (!latest) {
-      return {
+    // Calculate averages across all matches in the data set
+    const totalMatches = historicalData.length;
+    const sums = historicalData.reduce(
+      (acc, match) => {
+        return {
+          kanarating: acc.kanarating + match.kana_rating,
+          kd: acc.kd + match.kd_ratio,
+          adr: acc.adr + match.adr,
+          timeToDamage: acc.timeToDamage + (match.ttd || 0),
+          crosshairPlacement:
+            acc.crosshairPlacement + (match.crosshair_placement || 0),
+          counterStrafing:
+            acc.counterStrafing + (match.counter_strafing_percent || 0),
+          headshotPercentage: acc.headshotPercentage + match.hs_percent
+        };
+      },
+      {
         kanarating: 0,
         kd: 0,
         adr: 0,
@@ -585,17 +621,18 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         crosshairPlacement: 0,
         counterStrafing: 0,
         headshotPercentage: 0
-      };
-    }
+      }
+    );
 
+    // Return averages
     return {
-      kanarating: latest.kana_rating,
-      kd: latest.kd_ratio,
-      adr: latest.adr,
-      timeToDamage: latest.ttd || 0,
-      crosshairPlacement: latest.crosshair_placement || 0,
-      counterStrafing: latest.counter_strafing_percent || 0,
-      headshotPercentage: latest.hs_percent
+      kanarating: sums.kanarating / totalMatches,
+      kd: sums.kd / totalMatches,
+      adr: sums.adr / totalMatches,
+      timeToDamage: sums.timeToDamage / totalMatches,
+      crosshairPlacement: sums.crosshairPlacement / totalMatches,
+      counterStrafing: sums.counterStrafing / totalMatches,
+      headshotPercentage: sums.headshotPercentage / totalMatches
     };
   }, [historicalData]);
 
