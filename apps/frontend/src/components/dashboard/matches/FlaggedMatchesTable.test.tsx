@@ -349,6 +349,150 @@ describe("FlaggedMatchesTable", () => {
     });
   });
 
+  describe("Edge Cases - Undefined/Null Arrays", () => {
+    it("handles undefined steam_ids array", () => {
+      const dataWithUndefinedSteamIds: FlaggedMatches[] = [
+        {
+          external_match_id: "match_undefined",
+          steam_ids: undefined,
+          team_id: 99,
+          match_ids: [501],
+          players_added_for_this_match: ["player1"]
+        }
+      ];
+
+      mockUseFlaggedMatches.mockReturnValue({
+        flaggedMatches: dataWithUndefinedSteamIds,
+        isLoading: false,
+        error: undefined,
+        isValidating: false
+      });
+
+      render(<FlaggedMatchesTable />);
+
+      // Should show "None" instead of crashing
+      const noneElements = screen.getAllByText("None");
+      expect(noneElements.length).toBeGreaterThan(0);
+      expect(screen.getByText("match_undefined")).toBeInTheDocument();
+    });
+
+    it("handles undefined match_ids array", () => {
+      const dataWithUndefinedMatchIds: FlaggedMatches[] = [
+        {
+          external_match_id: "match_undefined_match_ids",
+          steam_ids: ["76561198123456789"],
+          team_id: 88,
+          match_ids: undefined,
+          players_added_for_this_match: ["player1"]
+        }
+      ];
+
+      mockUseFlaggedMatches.mockReturnValue({
+        flaggedMatches: dataWithUndefinedMatchIds,
+        isLoading: false,
+        error: undefined,
+        isValidating: false
+      });
+
+      render(<FlaggedMatchesTable />);
+
+      // Should show "None" for match_ids instead of crashing
+      const noneElements = screen.getAllByText("None");
+      expect(noneElements.length).toBeGreaterThan(0);
+      expect(screen.getByText("match_undefined_match_ids")).toBeInTheDocument();
+    });
+
+    it("handles undefined players_added_for_this_match array", () => {
+      const dataWithUndefinedPlayers: FlaggedMatches[] = [
+        {
+          external_match_id: "match_undefined_players",
+          steam_ids: ["76561198123456789"],
+          team_id: 77,
+          match_ids: [601],
+          players_added_for_this_match: undefined
+        }
+      ];
+
+      mockUseFlaggedMatches.mockReturnValue({
+        flaggedMatches: dataWithUndefinedPlayers,
+        isLoading: false,
+        error: undefined,
+        isValidating: false
+      });
+
+      render(<FlaggedMatchesTable />);
+
+      // Should show "None" for added players instead of crashing
+      const noneElements = screen.getAllByText("None");
+      expect(noneElements.length).toBeGreaterThan(0);
+      expect(screen.getByText("match_undefined_players")).toBeInTheDocument();
+    });
+
+    it("handles empty arrays gracefully", () => {
+      const dataWithEmptyArrays: FlaggedMatches[] = [
+        {
+          external_match_id: "match_empty_arrays",
+          steam_ids: [], // Empty array
+          team_id: 66,
+          match_ids: [], // Empty array
+          players_added_for_this_match: [] // Empty array
+        }
+      ];
+
+      mockUseFlaggedMatches.mockReturnValue({
+        flaggedMatches: dataWithEmptyArrays,
+        isLoading: false,
+        error: undefined,
+        isValidating: false
+      });
+
+      render(<FlaggedMatchesTable />);
+
+      // Should show "None" for all empty arrays
+      const noneElements = screen.getAllByText("None");
+      expect(noneElements.length).toBe(3); // Steam IDs, Match IDs, and Added Players
+      expect(screen.getByText("match_empty_arrays")).toBeInTheDocument();
+    });
+
+    it("handles mixed undefined and valid data", () => {
+      const mixedData: FlaggedMatches[] = [
+        {
+          external_match_id: "match_mixed_1",
+          steam_ids: ["76561198123456789"], // Valid
+          team_id: 55,
+          match_ids: undefined,
+          players_added_for_this_match: ["player1"] // Valid
+        },
+        {
+          external_match_id: "match_mixed_2",
+          steam_ids: undefined,
+          team_id: 44,
+          match_ids: [701, 702], // Valid
+          players_added_for_this_match: [] // Empty
+        }
+      ];
+
+      mockUseFlaggedMatches.mockReturnValue({
+        flaggedMatches: mixedData,
+        isLoading: false,
+        error: undefined,
+        isValidating: false
+      });
+
+      render(<FlaggedMatchesTable />);
+
+      // Should handle mixed data gracefully
+      expect(screen.getByText("match_mixed_1")).toBeInTheDocument();
+      expect(screen.getByText("match_mixed_2")).toBeInTheDocument();
+      expect(screen.getByText("76561198123456789")).toBeInTheDocument();
+      expect(screen.getByText("701")).toBeInTheDocument();
+      expect(screen.getByText("player1")).toBeInTheDocument();
+
+      const noneElements = screen.getAllByText("None");
+      expect(noneElements.length).toBeGreaterThan(0);
+    });
+  });
+
   describe("Accessibility", () => {
     beforeEach(() => {
       mockUseFlaggedMatches.mockReturnValue({

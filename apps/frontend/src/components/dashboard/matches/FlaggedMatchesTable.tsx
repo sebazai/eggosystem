@@ -42,6 +42,12 @@ export const FlaggedMatchesTable = () => {
         header: "Steam IDs",
         cell: ({ getValue }) => {
           const steamIds = getValue();
+
+          // Early return for undefined/null/empty cases
+          if (!steamIds || steamIds.length === 0) {
+            return <span className="text-muted-foreground text-xs">None</span>;
+          }
+
           return (
             <div className="flex flex-wrap gap-1">
               {steamIds.slice(0, 3).map((steamId) => (
@@ -64,6 +70,12 @@ export const FlaggedMatchesTable = () => {
         header: "Match IDs",
         cell: ({ getValue }) => {
           const matchIds = getValue();
+
+          // Early return for undefined/null/empty cases
+          if (!matchIds || matchIds.length === 0) {
+            return <span className="text-muted-foreground text-xs">None</span>;
+          }
+
           return (
             <div className="flex flex-wrap gap-1">
               {matchIds.slice(0, 2).map((matchId) => (
@@ -86,9 +98,12 @@ export const FlaggedMatchesTable = () => {
         header: "Added Players",
         cell: ({ getValue }) => {
           const addedPlayers = getValue();
-          if (addedPlayers.length === 0) {
+
+          // Early return for undefined/null/empty cases
+          if (!addedPlayers || addedPlayers.length === 0) {
             return <span className="text-muted-foreground text-sm">None</span>;
           }
+
           return (
             <div className="flex flex-wrap gap-1">
               {addedPlayers.slice(0, 2).map((player) => (
