@@ -43,10 +43,10 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
 
       // Check date format
       expect(firstMatch.match_start).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
       );
       expect(firstMatch.match_end).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
       );
 
       // Check that title contains both team names
@@ -69,10 +69,10 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
     if (firstMatch) {
       // Verify the match has all required properties
       expect(firstMatch.match_start).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
       );
       expect(firstMatch.match_end).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
       );
       expect(Array.isArray(firstMatch.streamUrl)).toBe(true);
       expect(typeof firstMatch.title).toBe("string");
@@ -199,9 +199,9 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
 
       // Verify date formats
       expect(match.match_start).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
       );
-      expect(match.match_end).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+      expect(match.match_end).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
     });
   });
 });

@@ -51,8 +51,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
       {
         match_id: "1",
         title: "Team Alpha vs Team Beta",
-        match_start: "2025-08-01T20:00:00",
-        match_end: "2025-08-01T22:00:00",
+        match_start: "2025-08-01T20:00:00Z",
+        match_end: "2025-08-01T22:00:00Z",
         league_name: "Masters",
         league_tier: 1,
         streamUrl: ["https://twitch.tv/stream1", "https://twitch.tv/stream2"],
@@ -104,8 +104,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
       {
         match_id: "2",
         title: "Team Gamma vs Team Delta",
-        match_start: "2025-08-02T21:00:00",
-        match_end: "2025-08-02T23:00:00",
+        match_start: "2025-08-02T21:00:00Z",
+        match_end: "2025-08-02T23:00:00Z",
         league_name: "Masters",
         league_tier: 1,
         streamUrl: [],
@@ -174,8 +174,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Unit Tests", () => {
       {
         match_id: "16",
         title: "Team Echo vs Team Foxtrot",
-        match_start: "2025-08-04T20:00:00",
-        match_end: "2025-08-04T23:00:00", // Expected calculated end time (20:00 + 3 hours)
+        match_start: "2025-08-04T20:00:00Z",
+        match_end: "2025-08-04T23:00:00Z", // Expected calculated end time (20:00 + 3 hours)
         league_name: "Masters",
         league_tier: 1,
         streamUrl: [],

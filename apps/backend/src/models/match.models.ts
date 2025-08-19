@@ -795,8 +795,8 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     return {
       match_id: match.id.toString(),
       title: teamNames,
-      match_start: `${match.match_date}T${match.start_time}`,
-      match_end: `${match.match_date}T${endTime}`,
+      match_start: `${match.match_date}T${match.start_time}Z`,
+      match_end: `${match.match_date}T${endTime}Z`,
       league_name: match.league_name,
       league_tier: match.league_tier,
       streamUrl: match.stream_urls

@@ -37,7 +37,7 @@ import {
   Grid3X3,
   Filter
 } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
@@ -88,7 +88,6 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
 };
 
 export default function CalendarPage({ seasonId }: { seasonId: string }) {
-  const _seasonToFetch = seasonId;
   const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(
     "dayGridMonth"
   );
@@ -240,7 +239,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-heading font-bold mb-2">Match Calendar</h1>
         <p className="text-muted-foreground">
@@ -345,55 +344,62 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {calendarMatches?.map((match) => (
-                  <div
-                    key={match.match_id}
-                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer gap-3"
-                    onClick={() => {
-                      setSelectedEvent({
-                        id: match.match_id,
-                        title: match.title,
-                        start: match.match_start,
-                        end: match.match_end,
-                        league: match.league_name,
-                        streamUrl: match.streamUrl,
-                        team1: match.match_team1,
-                        team2: match.match_team2
-                      });
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    <div className="flex items-start gap-4 flex-1 min-w-0">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-                        style={{
-                          backgroundColor: DIVISIONS[match.league_tier]?.color
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold truncate">
-                          {match.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(match.match_start), "PPP 'at' p")} -{" "}
-                          {format(new Date(match.match_end), "p")}
-                        </p>
-                        <div className="flex gap-2 mt-1 flex-wrap">
-                          <Badge variant="secondary" className="text-xs">
-                            {match.league_name}
-                          </Badge>
+                {calendarMatches
+                  ?.sort((a, b) => {
+                    return (
+                      new Date(b.match_start).getTime() -
+                      new Date(a.match_start).getTime()
+                    );
+                  })
+                  .map((match) => (
+                    <div
+                      key={match.match_id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer gap-3"
+                      onClick={() => {
+                        setSelectedEvent({
+                          id: match.match_id,
+                          title: match.title,
+                          start: match.match_start,
+                          end: match.match_end,
+                          league: match.league_name,
+                          streamUrl: match.streamUrl,
+                          team1: match.match_team1,
+                          team2: match.match_team2
+                        });
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                          style={{
+                            backgroundColor: DIVISIONS[match.league_tier]?.color
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">
+                            {match.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {formatInTimezone(match.match_start, "PPP 'at' p")}{" "}
+                            - {formatInTimezone(match.match_end, "p")}
+                          </p>
+                          <div className="flex gap-2 mt-1 flex-wrap">
+                            <Badge variant="secondary" className="text-xs">
+                              {match.league_name}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0 w-full sm:w-auto"
+                      >
+                        View Details
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-shrink-0 w-full sm:w-auto"
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -421,9 +427,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    {format(new Date(selectedEvent.start), "PPP 'at' p")} -{" "}
+                    {formatInTimezone(selectedEvent.start, "PPP 'at' p")} -{" "}
                     {selectedEvent.end
-                      ? format(new Date(selectedEvent.end), "p")
+                      ? formatInTimezone(selectedEvent.end, "p")
                       : "TBA"}
                   </span>
                 </div>
@@ -474,9 +480,14 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     </>
                   )}
 
-                {/* View Match Details button - always available */}
-                <Button variant="outline" className="w-full">
-                  View Match Details
+                <Button
+                  onClick={() => {
+                    window.open(`/matches/${selectedEvent.id}`, "_blank");
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Go to Match
                 </Button>
               </div>
             </div>
