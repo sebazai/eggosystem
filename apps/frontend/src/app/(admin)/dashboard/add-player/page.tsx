@@ -36,6 +36,7 @@ interface EligibilityResult {
     team_id: number;
     team_name: string;
     current_top3_avg: number;
+    current_top4_avg: number; // Added top 4 average
     new_avg_with_player: number;
     new_player_kana_elo: number;
     csrankker_components?: {
@@ -59,9 +60,11 @@ export default function AddPlayerPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
   const [isChecking, setIsChecking] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [eligibilityResult, setEligibilityResult] =
     useState<EligibilityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // Get active season (app_id 730 for CS)
   const { data: activeSeason } = useSWR<{ season_id: number }>(
@@ -73,7 +76,7 @@ export default function AddPlayerPage() {
   // Get teams for the active season
   const { data: teams, isLoading: isLoadingTeams } = useSWR<Team[]>(
     activeSeason
-      ? `/api/v1/sortter/season/${activeSeason.season_id}/teams`
+      ? `/api/v1/dashboard/sortter/season/${activeSeason.season_id}/teams`
       : null,
     clientApiFetch,
     { revalidateOnFocus: false }
@@ -91,7 +94,7 @@ export default function AddPlayerPage() {
 
     try {
       const result = await clientApiFetch<EligibilityResult>(
-        `/api/v1/sortter/season/${activeSeason.season_id}/team/${selectedTeamId}/player/${steamId}/eligibility`
+        `/api/v1/dashboard/sortter/season/${activeSeason.season_id}/team/${selectedTeamId}/player/${steamId}/eligibility`
       );
       setEligibilityResult(result);
     } catch (err) {
@@ -108,6 +111,7 @@ export default function AddPlayerPage() {
     // Clear results when steam ID changes
     setEligibilityResult(null);
     setError(null);
+    setSuccess(null);
   };
 
   const handleTeamChange = (value: string) => {
@@ -115,6 +119,43 @@ export default function AddPlayerPage() {
     // Clear results when team changes
     setEligibilityResult(null);
     setError(null);
+    setSuccess(null);
+  };
+
+  const handleAddPlayer = async () => {
+    if (!eligibilityResult || !activeSeason) {
+      return;
+    }
+
+    setIsAdding(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await clientApiFetch(
+        `/api/v1/dashboard/sortter/season/${activeSeason.season_id}/team/${selectedTeamId}/player/${steamId}/add`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            kana_elo: eligibilityResult.selectedTeam.new_player_kana_elo,
+            calculus: eligibilityResult.selectedTeam.csrankker_components || {}
+          })
+        }
+      );
+
+      setSuccess(
+        `Player successfully added to ${eligibilityResult.selectedTeam.team_name}`
+      );
+
+      // Clear eligibility check result after successful addition
+      setEligibilityResult(null);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to add player to team"
+      );
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -150,13 +191,21 @@ export default function AddPlayerPage() {
               {/* Team Selector */}
               <div className="space-y-2">
                 <Label htmlFor="team">Team</Label>
-                <Select value={selectedTeamId} onValueChange={handleTeamChange}>
-                  <SelectTrigger>
+                <Select
+                  value={selectedTeamId}
+                  onValueChange={handleTeamChange}
+                  data-testid="team-select"
+                >
+                  <SelectTrigger data-testid="team-selector">
                     <SelectValue placeholder="Select a team" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent data-testid="team-dropdown">
                     {isLoadingTeams ? (
-                      <SelectItem value="loading" disabled>
+                      <SelectItem
+                        value="loading"
+                        disabled
+                        data-testid="loading-option"
+                      >
                         Loading teams...
                       </SelectItem>
                     ) : teams && teams.length > 0 ? (
@@ -164,12 +213,18 @@ export default function AddPlayerPage() {
                         <SelectItem
                           key={team.team_id}
                           value={team.team_id.toString()}
+                          data-value={team.team_id.toString()}
+                          data-testid={`team-option-${team.team_id}`}
                         >
                           {team.team_name} ({team.league_name})
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-teams" disabled>
+                      <SelectItem
+                        value="no-teams"
+                        disabled
+                        data-testid="no-teams-option"
+                      >
                         No teams available
                       </SelectItem>
                     )}
@@ -186,6 +241,7 @@ export default function AddPlayerPage() {
                   placeholder="Enter Steam ID"
                   value={steamId}
                   onChange={(e) => handleSteamIdChange(e.target.value)}
+                  data-testid="steam-id-input"
                 />
               </div>
 
@@ -194,6 +250,7 @@ export default function AddPlayerPage() {
                 onClick={handleCheckEligibility}
                 disabled={!selectedTeamId || !steamId || isChecking}
                 className="w-full"
+                data-testid="check-eligibility-button"
               >
                 {isChecking ? (
                   <>
@@ -207,8 +264,22 @@ export default function AddPlayerPage() {
 
               {/* Error Display */}
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" data-testid="error-message">
                   <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <Alert
+                  variant="default"
+                  className="border-green-500 bg-green-50 dark:bg-green-900/20"
+                  data-testid="success-message"
+                >
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-700 dark:text-green-300">
+                    {success}
+                  </AlertDescription>
                 </Alert>
               )}
             </CardContent>
@@ -218,7 +289,14 @@ export default function AddPlayerPage() {
           {eligibilityResult && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle
+                  className="flex items-center gap-2"
+                  data-testid={
+                    eligibilityResult.canAddPlayer
+                      ? "eligibility-success"
+                      : "eligibility-failure"
+                  }
+                >
                   {eligibilityResult.canAddPlayer ? (
                     <>
                       <CheckCircle className="h-5 w-5 text-green-500" />
@@ -248,7 +326,13 @@ export default function AddPlayerPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>New Player Kana Elo:</span>
+                      <span>Current Top 4 Average:</span>
+                      <span className="font-mono">
+                        {eligibilityResult.selectedTeam.current_top4_avg}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>New Player Stabilized Kana Elo:</span>
                       <span className="font-mono">
                         {eligibilityResult.selectedTeam.new_player_kana_elo}
                       </span>
@@ -304,7 +388,9 @@ export default function AddPlayerPage() {
                         </span>
                       </div>
                       <div className="flex justify-between pt-2 border-t">
-                        <span className="font-medium">Total:</span>
+                        <span className="font-medium">
+                          Total (Original Kana Elo):
+                        </span>
                         <span className="font-mono font-semibold">
                           {eligibilityResult.selectedTeam.csrankker_components
                             .trueLevel +
@@ -314,6 +400,12 @@ export default function AddPlayerPage() {
                               .hour +
                             eligibilityResult.selectedTeam.csrankker_components
                               .kana}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs mt-1 text-muted-foreground">
+                        <span>
+                          Note: The stabilized value is used for team
+                          calculations
                         </span>
                       </div>
                     </div>
@@ -348,6 +440,7 @@ export default function AddPlayerPage() {
                   variant={
                     eligibilityResult.canAddPlayer ? "default" : "destructive"
                   }
+                  data-testid="eligibility-message"
                 >
                   <AlertDescription>
                     {eligibilityResult.canAddPlayer
@@ -355,6 +448,29 @@ export default function AddPlayerPage() {
                       : `The new average (${eligibilityResult.selectedTeam.new_avg_with_player}) is higher than the top team's average (${eligibilityResult.topTeamsInLeague[0]?.avg4}), so the player cannot be added.`}
                   </AlertDescription>
                 </Alert>
+
+                {/* Add Player Button */}
+                {eligibilityResult.canAddPlayer && (
+                  <Button
+                    onClick={handleAddPlayer}
+                    disabled={isAdding}
+                    className="w-full"
+                    variant="default"
+                    data-testid="add-player-button"
+                  >
+                    {isAdding ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Adding Player...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Add Player to Team
+                      </>
+                    )}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           )}

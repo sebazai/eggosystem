@@ -308,6 +308,7 @@ export const checkPlayerAdditionEligibility = async (
     team_id: number;
     team_name: string;
     current_top3_avg: number;
+    current_top4_avg: number; // Added top 4 average
     new_avg_with_player: number;
     new_player_kana_elo: number;
     csrankker_components?: {
@@ -356,9 +357,9 @@ export const checkPlayerAdditionEligibility = async (
   // Get CSRankker components for display
   const csrankkerComponents = await fetchCSRankkerComponents(newPlayerSteamId);
 
-  // Get the selected team's current top 3 players + new player analysis
+  // Get the selected team's current top players + new player analysis
   const selectedTeamQuery = `
-    WITH TeamTop3Players AS (
+    WITH TeamTopPlayers AS (
       SELECT
         t.id AS team_id,
         t.name AS team_name,
@@ -375,8 +376,9 @@ export const checkPlayerAdditionEligibility = async (
     SELECT
       ttp.team_id,
       ttp.team_name,
-      ROUND(AVG(CASE WHEN ttp.player_rank <= 3 THEN ttp.kana_elo ELSE NULL END), 3) AS current_top3_avg
-    FROM TeamTop3Players ttp
+      ROUND(AVG(CASE WHEN ttp.player_rank <= 3 THEN ttp.kana_elo ELSE NULL END), 3) AS current_top3_avg,
+      ROUND(AVG(CASE WHEN ttp.player_rank <= 4 THEN ttp.kana_elo ELSE NULL END), 3) AS current_top4_avg
+    FROM TeamTopPlayers ttp
     GROUP BY ttp.team_id, ttp.team_name
   `;
 
@@ -385,6 +387,7 @@ export const checkPlayerAdditionEligibility = async (
       team_id: number;
       team_name: string;
       current_top3_avg: number;
+      current_top4_avg: number;
     }>
   >(selectedTeamQuery, [seasonId, seasonId, teamId]);
 
@@ -456,6 +459,7 @@ export const checkPlayerAdditionEligibility = async (
       team_id: selectedTeamResult.team_id,
       team_name: selectedTeamResult.team_name,
       current_top3_avg: selectedTeamResult.current_top3_avg,
+      current_top4_avg: selectedTeamResult.current_top4_avg,
       new_player_kana_elo: stabilizedKanaElo,
       new_avg_with_player: newAvgWithPlayer,
       csrankker_components: csrankkerComponents

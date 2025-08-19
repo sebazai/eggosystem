@@ -18,7 +18,19 @@ export const insertSeasonTeamPlayer = async (
   data: InsertSeasonTeamPlayer,
   connection?: PoolConnection
 ) => {
-  const { columns, placeholders, values } = buildInsertQueryParts(data);
+  // Ensure required fields are always included
+  const playerData = {
+    ...data,
+    steam_id: data.steam_id // Make sure steam_id is always present
+  };
+
+  const { columns, placeholders, values } = buildInsertQueryParts(playerData);
+
+  // Make sure we have at least the steam_id
+  if (columns.length === 0) {
+    throw new Error("Cannot insert player without steam_id");
+  }
+
   return runQuery<{ insertId: number }>(
     `INSERT INTO SeasonTeamPlayers (season_id, team_id, ${columns.join(", ")}) VALUES (?, ?, ${placeholders})`,
     [seasonId, teamId, ...values],

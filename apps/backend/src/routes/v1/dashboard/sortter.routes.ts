@@ -4,7 +4,8 @@ import {
   getTeamValueByIdController,
   getTeamPlayerValuesController,
   getTeamsForSeasonController,
-  checkPlayerAdditionEligibilityController
+  checkPlayerAdditionEligibilityController,
+  addPlayerToTeamController
 } from "../../../controllers/sortter.controllers";
 import {
   getPreliminaryPlacementsController,
@@ -50,6 +51,13 @@ router.get(
   "/season/:season_id/team/:team_id/player/:steam_id/eligibility",
   validateNumericParams(["season_id", "team_id"]),
   checkPlayerAdditionEligibilityController
+);
+
+// POST /api/v1/dashboard/sortter/season/:season_id/team/:team_id/player/:steam_id/add
+router.post(
+  "/season/:season_id/team/:team_id/player/:steam_id/add",
+  validateNumericParams(["season_id", "team_id"]),
+  addPlayerToTeamController
 );
 
 // POST /api/v1/dashboard/sortter/season/:season_id/populate-kanaelo-queue

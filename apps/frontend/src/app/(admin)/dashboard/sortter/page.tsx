@@ -326,9 +326,12 @@ export default function SortterPage() {
         total_players: number;
         queued_players: number;
         failed_players: number;
-      }>(`/api/v1/sortter/season/${selectedSeason}/populate-kanaelo-queue`, {
-        method: "POST"
-      });
+      }>(
+        `/api/v1/dashboard/sortter/season/${selectedSeason}/populate-kanaelo-queue`,
+        {
+          method: "POST"
+        }
+      );
 
       toast.success(
         `Successfully added ${response.queued_players} players to the kanaelo calculation queue`

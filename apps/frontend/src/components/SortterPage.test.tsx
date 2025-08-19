@@ -506,7 +506,7 @@ describe("SortterPage", () => {
 
     // Verify the API was called
     expect(mockClientApiFetch).toHaveBeenCalledWith(
-      "/api/v1/sortter/season/2/populate-kanaelo-queue",
+      "/api/v1/dashboard/sortter/season/2/populate-kanaelo-queue",
       {
         method: "POST"
       }
