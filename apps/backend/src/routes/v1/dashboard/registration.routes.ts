@@ -8,70 +8,20 @@ import {
   bulkApproveTeamRegistrationsController,
   manualValidityCheckController
 } from "../../../controllers/dashboard/registration.controllers";
-import { checkPermissions } from "../../../middlewares/auth.middleware";
 import { auditReadEntity } from "../../../middlewares/audit-log.middleware";
 
 const router = Router();
 
-router.post(
-  "/approved",
-  checkPermissions({
-    staticPermissions: ["write:registration"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
-  addManuallyApprovedPlayersController
-);
+router.post("/approved", addManuallyApprovedPlayersController);
 router.get(
   "/players/:steamId/full-name",
-  checkPermissions({
-    staticPermissions: ["read:registration"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
   auditReadEntity("Accounts through SteamPlayer", "steamId"),
   getPlayerFullNameController
 );
-router.post(
-  "/rank",
-  checkPermissions({
-    staticPermissions: ["write:rank"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
-  addManualRankForPlayerController
-);
-router.get(
-  "/registered",
-  checkPermissions({
-    staticPermissions: ["read:registration"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
-  getRegisteredTeamsController
-);
-
-router.get(
-  "/drafts",
-  checkPermissions({
-    staticPermissions: ["read:registration"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
-  getAllRegistrationDraftsController
-);
-
-router.post(
-  "/bulk-approve",
-  checkPermissions({
-    staticPermissions: ["write:registration"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
-  bulkApproveTeamRegistrationsController
-);
-
-router.post(
-  "/manual-validity-check",
-  checkPermissions({
-    staticPermissions: ["write:registration"],
-    fallbackRoles: ["admin", "helpdesk"]
-  }),
-  manualValidityCheckController
-);
+router.post("/rank", addManualRankForPlayerController);
+router.get("/registered", getRegisteredTeamsController);
+router.get("/drafts", getAllRegistrationDraftsController);
+router.post("/bulk-approve", bulkApproveTeamRegistrationsController);
+router.post("/manual-validity-check", manualValidityCheckController);
 
 export default router;

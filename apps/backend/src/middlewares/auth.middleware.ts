@@ -6,7 +6,11 @@ import {
 } from "../services/auth.services";
 import { JWT_PUBLIC_KEY } from "../configs/jwt-keys";
 import { logger } from "../utils/app-logger";
-import { UnauthorizedError } from "../utils/errors";
+import {
+  ForbiddenError,
+  UnauthorizedError,
+  BadRequestError
+} from "../utils/errors";
 
 interface CheckPermissionOptions {
   staticPermissions?: string[];
@@ -34,10 +38,7 @@ export function checkPermissions({
     next: NextFunction
   ): Promise<void> => {
     if (!req.auth) {
-      res
-        .status(403)
-        .json({ error: { message: "Forbidden: Requires authentication" } });
-      return;
+      return next(new UnauthorizedError("Forbidden: Requires authentication"));
     }
 
     const permissions: string[] = await getPermissionsForAccountId(
@@ -58,10 +59,7 @@ export function checkPermissions({
       for (const key of paramKeys) {
         const value = req.params[key];
         if (!value) {
-          res
-            .status(400)
-            .json({ error: { message: `Missing route param: ${key}` } });
-          return;
+          return next(new BadRequestError(`Missing route param: ${key}`));
         }
 
         // key = "season_id" -> scope part = "season-<id>"
@@ -80,10 +78,7 @@ export function checkPermissions({
       return next();
     }
 
-    res
-      .status(403)
-      .json({ error: { message: "Forbidden: Insufficient permissions" } });
-    return;
+    return next(new ForbiddenError("Forbidden: Insufficient permissions"));
   };
 }
 
@@ -105,10 +100,7 @@ export function checkJWTPermissions({
     next: NextFunction
   ): Promise<void> => {
     if (!req.auth) {
-      res
-        .status(403)
-        .json({ error: { message: "Forbidden: Requires authentication" } });
-      return;
+      return next(new ForbiddenError("Forbidden: Requires authentication"));
     }
 
     const permissions = req.auth.permissions;
@@ -126,10 +118,7 @@ export function checkJWTPermissions({
       for (const key of paramKeys) {
         const value = req.params[key];
         if (!value) {
-          res
-            .status(400)
-            .json({ error: { message: `Missing route param: ${key}` } });
-          return;
+          return next(new BadRequestError(`Missing route param: ${key}`));
         }
 
         // key = "season_id" -> scope part = "season-<id>"
@@ -148,10 +137,7 @@ export function checkJWTPermissions({
       return next();
     }
 
-    res
-      .status(403)
-      .json({ error: { message: "Forbidden: Insufficient permissions" } });
-    return;
+    return next(new ForbiddenError("Forbidden: Insufficient permissions"));
   };
 }
 

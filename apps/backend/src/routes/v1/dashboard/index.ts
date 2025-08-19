@@ -9,11 +9,41 @@ import matchRouter from "./match.routes";
 
 const router = Router();
 
-router.use("/teams", teamsRouter);
-router.use("/organizations", organizationRouter);
-router.use("/registration", registrationRouter);
-router.use("/sortter", sortterRouter);
-router.use("/matches", matchRouter);
+router.use(
+  "/teams",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  teamsRouter
+);
+router.use(
+  "/organizations",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  organizationRouter
+);
+router.use(
+  "/registration",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  registrationRouter
+);
+router.use(
+  "/sortter",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  sortterRouter
+);
+router.use(
+  "/matches",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  matchRouter
+);
 router.get(
   "/",
   checkPermissions({

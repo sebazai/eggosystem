@@ -49,11 +49,14 @@ describe("checkPermission middleware", () => {
     const middleware = checkPermissions({});
     await middleware(req as Request, res as Response, next);
 
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Forbidden: Requires authentication" }
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Requires authentication",
+        status: 401
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should allow if static permission matches", async () => {
@@ -101,11 +104,14 @@ describe("checkPermission middleware", () => {
 
     await middleware(req as Request, res as Response, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Missing route param: team_id" }
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Missing route param: team_id",
+        status: 400
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should allow if fallback role matches", async () => {
@@ -135,11 +141,14 @@ describe("checkPermission middleware", () => {
 
     await middleware(req as Request, res as Response, next);
 
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Forbidden: Insufficient permissions" }
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Insufficient permissions",
+        status: 403
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 });
 
@@ -174,11 +183,14 @@ describe("checkJWTPermission middleware", () => {
     const middleware = checkJWTPermissions({});
     await middleware(req as Request, res as Response, next);
 
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Forbidden: Requires authentication" }
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Requires authentication",
+        status: 403
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should allow if static permission matches in permissions array", async () => {
@@ -242,11 +254,14 @@ describe("checkJWTPermission middleware", () => {
 
     await middleware(req as Request, res as Response, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Missing route param: team_id" }
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Missing route param: team_id",
+        status: 400
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it("should allow if fallback role matches in roles array", async () => {
@@ -306,10 +321,13 @@ describe("checkJWTPermission middleware", () => {
 
     await middleware(req as Request, res as Response, next);
 
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: { message: "Forbidden: Insufficient permissions" }
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Forbidden: Insufficient permissions",
+        status: 403
+      })
+    );
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 });
