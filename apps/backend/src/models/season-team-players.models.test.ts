@@ -3,6 +3,7 @@ import {
   getSeasonTeamPlayersBySteamIds
 } from "./season-team-players.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
+import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 import { redisClient } from "../utils/redisClient";
 import type {
   FaceitMatchTeams,
@@ -12,12 +13,17 @@ import type {
 
 // Mock dependencies
 jest.mock("./season-league-team.models");
+jest.mock("./match.models");
 jest.mock("../utils/redisClient");
 jest.mock("../db/mysqlRunQuery");
 
 const mockGetSeasonLeagueTeamByExternalId =
   getSeasonLeagueTeamByExternalId as jest.MockedFunction<
     typeof getSeasonLeagueTeamByExternalId
+  >;
+const mockGetHubMatchesByExternalMatchRoomId =
+  getHubMatchesByExternalMatchRoomId as jest.MockedFunction<
+    typeof getHubMatchesByExternalMatchRoomId
   >;
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 
@@ -99,7 +105,8 @@ describe("season-team-players.models", () => {
         steam_id: "steam123",
         role: "primary",
         is_captain: false,
-        is_co_captain: false
+        is_co_captain: false,
+        match_id: null
       },
       {
         season_id: 1,
@@ -107,17 +114,21 @@ describe("season-team-players.models", () => {
         steam_id: "steam456",
         role: "primary",
         is_captain: false,
-        is_co_captain: false
+        is_co_captain: false,
+        match_id: null
       }
     ];
+
+    const mockMatchIds = [{ id: 1001 }, { id: 1002 }];
 
     beforeEach(() => {
       jest.clearAllMocks();
       mockRedisClient.set.mockResolvedValue("OK");
+      mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue(mockMatchIds);
     });
 
     describe("successful validation", () => {
-      it("should validate all players successfully when all players are registered", async () => {
+      it("should validate all players successfully when all players have null match_id", async () => {
         // Arrange
         mockGetSeasonLeagueTeamByExternalId
           .mockResolvedValueOnce(mockSeasonLeagueTeam1)
@@ -126,7 +137,7 @@ describe("season-team-players.models", () => {
         // Mock the internal getSeasonTeamPlayersBySteamIds calls
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
-          .mockResolvedValueOnce(mockSeasonTeamPlayers) // Team 1 players
+          .mockResolvedValueOnce(mockSeasonTeamPlayers) // Team 1 players (all have null match_id)
           .mockResolvedValueOnce([
             {
               season_id: 1,
@@ -134,14 +145,18 @@ describe("season-team-players.models", () => {
               steam_id: "steam789",
               role: "primary",
               is_captain: false,
-              is_co_captain: false
+              is_co_captain: false,
+              match_id: null
             }
-          ]); // Team 2 players
+          ]); // Team 2 players (all have null match_id)
 
         // Act
         await validatePlayersInTeams(mockTeams, "match123");
 
         // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledTimes(2);
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
           "team1-external-id"
@@ -160,12 +175,29 @@ describe("season-team-players.models", () => {
           ["steam789"]
         );
 
-        // Should not call Redis set since all players are valid
+        // Should not call Redis set since all players have null match_id (no substitutes from other matches)
         expect(mockRedisClient.set).not.toHaveBeenCalled();
       });
     });
 
-    describe("team not found scenarios", () => {
+    describe("error scenarios", () => {
+      it("should throw error when external match is not found", async () => {
+        // Arrange
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue(null);
+
+        // Act & Assert
+        await expect(
+          validatePlayersInTeams(mockTeams, "match123")
+        ).rejects.toThrow(
+          "Match with external_match_room_id match123 not found"
+        );
+
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
+        expect(mockGetSeasonLeagueTeamByExternalId).not.toHaveBeenCalled();
+      });
+
       it("should throw error when first team is not found", async () => {
         // Arrange
         mockGetSeasonLeagueTeamByExternalId.mockResolvedValueOnce(undefined);
@@ -177,6 +209,9 @@ describe("season-team-players.models", () => {
           "Team with external_team_id team1-external-id not found"
         );
 
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledTimes(1);
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
           "team1-external-id"
@@ -191,7 +226,7 @@ describe("season-team-players.models", () => {
 
         // Mock the internal getSeasonTeamPlayersBySteamIds call for first team
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
-        mockRunQuery.mockResolvedValueOnce([mockSeasonTeamPlayers]);
+        mockRunQuery.mockResolvedValueOnce(mockSeasonTeamPlayers);
 
         // Act & Assert
         await expect(
@@ -200,6 +235,9 @@ describe("season-team-players.models", () => {
           "Team with external_team_id team2-external-id not found"
         );
 
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledTimes(2);
         expect(mockGetSeasonLeagueTeamByExternalId).toHaveBeenCalledWith(
           "team1-external-id"
@@ -227,7 +265,8 @@ describe("season-team-players.models", () => {
               steam_id: "steam123",
               role: "primary",
               is_captain: false,
-              is_co_captain: false
+              is_co_captain: false,
+              match_id: null
             }
           ]) // Only one player found
           .mockResolvedValueOnce([
@@ -237,7 +276,8 @@ describe("season-team-players.models", () => {
               steam_id: "steam789",
               role: "primary",
               is_captain: false,
-              is_co_captain: false
+              is_co_captain: false,
+              match_id: null
             }
           ]); // All team 2 players found
 
@@ -245,13 +285,18 @@ describe("season-team-players.models", () => {
         await validatePlayersInTeams(mockTeams, "match123");
 
         // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockRedisClient.set).toHaveBeenCalledTimes(1);
         expect(mockRedisClient.set).toHaveBeenCalledWith(
           "match:invalid_players:match123",
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam123", "steam456"],
-            team_id: 101
+            team_id: 101,
+            match_ids: [1001, 1002],
+            players_added_for_this_match: []
           })
         );
       });
@@ -272,6 +317,9 @@ describe("season-team-players.models", () => {
         await validatePlayersInTeams(mockTeams, "match123");
 
         // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockRedisClient.set).toHaveBeenCalledTimes(2);
 
         // First call for team 1
@@ -281,7 +329,9 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam123", "steam456"],
-            team_id: 101
+            team_id: 101,
+            match_ids: [1001, 1002],
+            players_added_for_this_match: []
           })
         );
 
@@ -292,21 +342,23 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam789"],
-            team_id: 102
+            team_id: 102,
+            match_ids: [1001, 1002],
+            players_added_for_this_match: []
           })
         );
       });
 
-      it("should not flag players when all players are registered", async () => {
+      it("should not flag players when all players are registered with null match_id", async () => {
         // Arrange
         mockGetSeasonLeagueTeamByExternalId
           .mockResolvedValueOnce(mockSeasonLeagueTeam1)
           .mockResolvedValueOnce(mockSeasonLeagueTeam2);
 
-        // Mock that all players are registered
+        // Mock that all players are registered with null match_id (no substitutes from other matches)
         const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
         mockRunQuery
-          .mockResolvedValueOnce(mockSeasonTeamPlayers) // All team 1 players found
+          .mockResolvedValueOnce(mockSeasonTeamPlayers) // All team 1 players found (null match_id)
           .mockResolvedValueOnce([
             {
               season_id: 1,
@@ -314,15 +366,401 @@ describe("season-team-players.models", () => {
               steam_id: "steam789",
               role: "primary",
               is_captain: false,
-              is_co_captain: false
+              is_co_captain: false,
+              match_id: null
             }
-          ]); // All team 2 players found
+          ]); // All team 2 players found (null match_id)
+
+        // Act
+        await validatePlayersInTeams(mockTeams, "match123");
+
+        // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("match_id validation scenarios", () => {
+      it("should validate successfully when players with match_id are in the valid match ids", async () => {
+        // Arrange
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 1001 // Valid match id
+            },
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              role: "primary",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ])
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              role: "substitute",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 1002 // Valid match id
+            }
+          ]);
+
+        // Act
+        await validatePlayersInTeams(mockTeams, "match123");
+
+        // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
+
+      it("should flag players when some players with match_id are not in valid match ids", async () => {
+        // Arrange
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 9999 // Invalid match id (not in mockMatchIds)
+            },
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              role: "primary",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ])
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              role: "primary",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ]);
+
+        // Act
+        await validatePlayersInTeams(mockTeams, "match123");
+
+        // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
+        expect(mockRedisClient.set).toHaveBeenCalledWith(
+          "match:invalid_players:match123",
+          JSON.stringify({
+            external_match_id: "match123",
+            steam_ids: ["steam123", "steam456"],
+            team_id: 101,
+            match_ids: [1001, 1002],
+            players_added_for_this_match: ["steam123"]
+          })
+        );
+      });
+
+      it("should include players_added_for_this_match in Redis when players have valid match_ids", async () => {
+        // Arrange
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 1001 // Valid match id
+            }
+            // Missing steam456 - only 1 player found when 2 expected
+          ])
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              role: "primary",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ]);
+
+        // Act
+        await validatePlayersInTeams(mockTeams, "match123");
+
+        // Assert
+        expect(mockRedisClient.set).toHaveBeenCalledWith(
+          "match:invalid_players:match123",
+          JSON.stringify({
+            external_match_id: "match123",
+            steam_ids: ["steam123", "steam456"],
+            team_id: 101,
+            match_ids: [1001, 1002],
+            players_added_for_this_match: ["steam123"]
+          })
+        );
+      });
+    });
+
+    describe("role validation scenarios", () => {
+      it("should validate successfully when players with match_id have substitute role", async () => {
+        // Arrange
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "substitute", // Correct role for player with match_id
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 1001
+            },
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              role: "primary", // Correct role for player without match_id
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ])
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              role: "primary",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ]);
+
+        // Act
+        await validatePlayersInTeams(mockTeams, "match123");
+
+        // Assert - No Redis call should be made since all validations pass
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
+
+      it("should handle mix of primary and substitute players correctly", async () => {
+        // Arrange
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam123",
+              role: "primary", // Should have null match_id for primary
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            },
+            {
+              season_id: 1,
+              team_id: 101,
+              steam_id: "steam456",
+              role: "substitute", // Should have match_id for substitute
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 1001
+            }
+          ])
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              role: "substitute",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: 1002
+            }
+          ]);
+
+        // Act
+        await validatePlayersInTeams(mockTeams, "match123");
+
+        // Assert - All validations should pass
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("boundary analysis scenarios", () => {
+      it("should handle single match id in array", async () => {
+        // Arrange
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([
+          { id: 1001 }
+        ]);
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce(mockSeasonTeamPlayers)
+          .mockResolvedValueOnce([
+            {
+              season_id: 1,
+              team_id: 102,
+              steam_id: "steam789",
+              role: "primary",
+              is_captain: false,
+              is_co_captain: false,
+              match_id: null
+            }
+          ]);
 
         // Act
         await validatePlayersInTeams(mockTeams, "match123");
 
         // Assert
         expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
+
+      it("should handle maximum typical roster size", async () => {
+        // Arrange - Create teams with 10 players each (maximum typical roster)
+        const largeTeams: FaceitMatchTeams = {
+          faction1: {
+            faction_id: "team1-external-id",
+            leader: "leader1",
+            avatar: "avatar1.jpg",
+            roster: Array.from({ length: 10 }, (_, i) => ({
+              player_id: `player${i + 1}`,
+              nickname: `Player${i + 1}`,
+              avatar: `player${i + 1}.jpg`,
+              membership: "member" as const,
+              game_player_id: `steam${100 + i}`,
+              game_player_name: `Player${i + 1}`,
+              game_skill_level: 10,
+              anticheat_required: true
+            })),
+            substituted: false,
+            name: "Large Team 1",
+            type: "premade"
+          },
+          faction2: {
+            faction_id: "team2-external-id",
+            leader: "leader2",
+            avatar: "avatar2.jpg",
+            roster: Array.from({ length: 10 }, (_, i) => ({
+              player_id: `player${i + 11}`,
+              nickname: `Player${i + 11}`,
+              avatar: `player${i + 11}.jpg`,
+              membership: "member" as const,
+              game_player_id: `steam${200 + i}`,
+              game_player_name: `Player${i + 11}`,
+              game_skill_level: 8,
+              anticheat_required: true
+            })),
+            substituted: false,
+            name: "Large Team 2",
+            type: "premade"
+          }
+        };
+
+        mockGetSeasonLeagueTeamByExternalId
+          .mockResolvedValueOnce(mockSeasonLeagueTeam1)
+          .mockResolvedValueOnce(mockSeasonLeagueTeam2);
+
+        const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
+        mockRunQuery
+          .mockResolvedValueOnce(
+            Array.from({ length: 10 }, (_, i) => ({
+              season_id: 1,
+              team_id: 101,
+              steam_id: `steam${100 + i}`,
+              role: "primary",
+              is_captain: i === 0,
+              is_co_captain: i === 1,
+              match_id: null
+            }))
+          )
+          .mockResolvedValueOnce(
+            Array.from({ length: 10 }, (_, i) => ({
+              season_id: 1,
+              team_id: 102,
+              steam_id: `steam${200 + i}`,
+              role: "primary",
+              is_captain: i === 0,
+              is_co_captain: i === 1,
+              match_id: null
+            }))
+          );
+
+        // Act
+        await validatePlayersInTeams(largeTeams, "match123");
+
+        // Assert - All players should be valid
+        expect(mockRedisClient.set).not.toHaveBeenCalled();
+      });
+
+      it("should handle empty match_ids array from database", async () => {
+        // Arrange
+        mockGetHubMatchesByExternalMatchRoomId.mockResolvedValue([]);
+
+        // Act & Assert
+        await expect(
+          validatePlayersInTeams(mockTeams, "match123")
+        ).rejects.toThrow(
+          "Match with external_match_room_id match123 not found"
+        );
+
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
+        expect(mockGetSeasonLeagueTeamByExternalId).not.toHaveBeenCalled();
       });
     });
 
@@ -353,6 +791,9 @@ describe("season-team-players.models", () => {
         await validatePlayersInTeams(teamsWithEmptyRoster, "match123");
 
         // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockRunQuery).toHaveBeenCalledWith(
           "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN ()",
           []
@@ -386,7 +827,8 @@ describe("season-team-players.models", () => {
               steam_id: "steam123",
               role: "primary",
               is_captain: false,
-              is_co_captain: false
+              is_co_captain: false,
+              match_id: null
             }
           ])
           .mockResolvedValueOnce([
@@ -396,7 +838,8 @@ describe("season-team-players.models", () => {
               steam_id: "steam789",
               role: "primary",
               is_captain: false,
-              is_co_captain: false
+              is_co_captain: false,
+              match_id: null
             }
           ]);
 
@@ -404,6 +847,9 @@ describe("season-team-players.models", () => {
         await validatePlayersInTeams(teamsWithSinglePlayer, "match123");
 
         // Assert
+        expect(mockGetHubMatchesByExternalMatchRoomId).toHaveBeenCalledWith(
+          "match123"
+        );
         expect(mockRunQuery).toHaveBeenCalledWith(
           "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
           ["steam123"]
@@ -424,7 +870,8 @@ describe("season-team-players.models", () => {
           steam_id: "steam123",
           role: "primary",
           is_captain: false,
-          is_co_captain: false
+          is_co_captain: false,
+          match_id: null
         },
         {
           season_id: 1,
@@ -432,7 +879,8 @@ describe("season-team-players.models", () => {
           steam_id: "steam456",
           role: "primary",
           is_captain: false,
-          is_co_captain: false
+          is_co_captain: false,
+          match_id: null
         }
       ];
 

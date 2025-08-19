@@ -2,6 +2,7 @@ import type { PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import type {
   FaceitMatchTeams,
+  FlaggedMatches,
   InsertSeasonTeamPlayer,
   SeasonPlayerApprovals,
   SeasonTeamPlayer
@@ -9,6 +10,7 @@ import type {
 import { buildInsertQueryParts } from "../db/utils";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { redisClient } from "../utils/redisClient";
+import { getHubMatchesByExternalMatchRoomId } from "./match.models";
 
 export const insertSeasonTeamPlayer = async (
   seasonId: number,
@@ -58,9 +60,18 @@ export const getSeasonTeamPlayersBySteamIds = async (steamIds: string[]) => {
 
 export const validatePlayersInTeams = async (
   teams: FaceitMatchTeams,
-  externalMatchIds: string
+  externalMatchId: string
 ) => {
-  // get teams with external_team_id from SeasonLeagueTeams
+  const matchIds = await getHubMatchesByExternalMatchRoomId(externalMatchId);
+
+  if (!matchIds || matchIds.length === 0) {
+    throw new Error(
+      `Match with external_match_room_id ${externalMatchId} not found`
+    );
+  }
+
+  const matchIdsArray = matchIds.map((match) => match.id);
+
   const teamsArray = [teams.faction1, teams.faction2];
   for (const team of teamsArray) {
     const teamFromDb = await getSeasonLeagueTeamByExternalId(team.faction_id);
@@ -75,14 +86,27 @@ export const validatePlayersInTeams = async (
     const playersInSeasonTeamPlayers =
       await getSeasonTeamPlayersBySteamIds(playerSteamIds);
 
-    if (playersInSeasonTeamPlayers.length !== playerSteamIds.length) {
+    // check if any player has match_id other then null, if it does, it should be in the matchIds array
+    const playersWithMatchId = playersInSeasonTeamPlayers.filter(
+      (player): player is SeasonTeamPlayer & { match_id: number } =>
+        player.match_id !== null
+    );
+
+    if (
+      playersInSeasonTeamPlayers.length !== playerSteamIds.length ||
+      playersWithMatchId.some((stp) => !matchIdsArray.includes(stp.match_id))
+    ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
-      const key = `match:invalid_players:${externalMatchIds}`;
+      const key = `match:invalid_players:${externalMatchId}`;
       const objectToSave = {
-        external_match_id: externalMatchIds,
+        external_match_id: externalMatchId,
         steam_ids: playerSteamIds,
-        team_id: teamFromDb.team_id
-      };
+        team_id: teamFromDb.team_id,
+        match_ids: matchIdsArray,
+        players_added_for_this_match: playersWithMatchId.map(
+          (stp) => stp.steam_id
+        )
+      } satisfies FlaggedMatches;
       await redisClient.set(key, JSON.stringify(objectToSave));
     }
   }

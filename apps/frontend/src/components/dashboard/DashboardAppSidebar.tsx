@@ -98,22 +98,22 @@ const data: { navMain: Array<MenuItem> } = {
       url: createDashboardNextUrl("sortter"),
       requiredRoles: ["helpdesk"],
       items: [] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "Demo parser",
+      url: "#",
+      requiredRoles: ["admin"],
+      items: [
+        // {
+        //   title: "Problems",
+        //   url: "#"
+        // },
+        {
+          title: "Flagged matches",
+          url: createDashboardNextUrl("matches/flagged")
+        }
+      ] satisfies Array<SubMenuItem>
     }
-    // {
-    //   title: "Demo parser",
-    //   url: "#",
-    //   requiredRoles: ["admin"],
-    //   items: [
-    //     {
-    //       title: "Problems",
-    //       url: "#"
-    //     },
-    //     {
-    //       title: "Flagged matches",
-    //       url: "#"
-    //     }
-    //   ] satisfies Array<SubMenuItem>
-    // },
     // {
     //   title: "Helpdesk",
     //   url: "#",

@@ -1,4 +1,10 @@
-import type { SteamPlayer, Season, Team } from "@eggosystem/types";
+import type {
+  SteamPlayer,
+  Season,
+  Team,
+  Nullable,
+  Match
+} from "@eggosystem/types";
 
 export interface SeasonTeamPlayer {
   season_id: Season["id"];
@@ -7,4 +13,5 @@ export interface SeasonTeamPlayer {
   role: "primary" | "substitute";
   is_captain: boolean;
   is_co_captain: boolean;
+  match_id: Nullable<Match["id"]>;
 }
