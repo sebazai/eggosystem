@@ -800,9 +800,13 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="Kanarating"
-              playerValue={currentPlayerStats.kanarating}
-              compareValue={comparisonStats.kanarating}
-              avgValue={leagueAverages?.avg_kana_rating || 0}
+              playerValue={
+                Math.round(currentPlayerStats.kanarating * 100) / 100
+              }
+              compareValue={Math.round(comparisonStats.kanarating * 100) / 100}
+              avgValue={
+                Math.round((leagueAverages?.avg_kana_rating || 0) * 100) / 100
+              }
               compareLabel={comparisonStats.label}
             />
           )}
@@ -859,9 +863,11 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="K/D Ratio"
-              playerValue={currentPlayerStats.kd}
-              compareValue={comparisonStats.kd}
-              avgValue={leagueAverages?.avg_kd_ratio || 0}
+              playerValue={Math.round(currentPlayerStats.kd * 100) / 100}
+              compareValue={Math.round(comparisonStats.kd * 100) / 100}
+              avgValue={
+                Math.round((leagueAverages?.avg_kd_ratio || 0) * 100) / 100
+              }
               unit=""
               compareLabel={comparisonStats.label}
             />
@@ -919,9 +925,9 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="ADR"
-              playerValue={currentPlayerStats.adr}
-              compareValue={comparisonStats.adr}
-              avgValue={leagueAverages?.avg_adr || 0}
+              playerValue={Math.round(currentPlayerStats.adr * 10) / 10}
+              compareValue={Math.round(comparisonStats.adr * 10) / 10}
+              avgValue={Math.round((leagueAverages?.avg_adr || 0) * 10) / 10}
               unit=""
               compareLabel={comparisonStats.label}
             />
@@ -985,9 +991,9 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="Time to Damage"
-              playerValue={currentPlayerStats.timeToDamage}
-              compareValue={comparisonStats.timeToDamage}
-              avgValue={leagueAverages?.avg_ttd || 0}
+              playerValue={Math.round(currentPlayerStats.timeToDamage)}
+              compareValue={Math.round(comparisonStats.timeToDamage * 10) / 10}
+              avgValue={Math.round(leagueAverages?.avg_ttd || 0)}
               unit="ms"
               compareLabel={comparisonStats.label}
             />
@@ -1048,9 +1054,17 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="Crosshair Placement"
-              playerValue={currentPlayerStats.crosshairPlacement}
-              compareValue={comparisonStats.crosshairPlacement}
-              avgValue={leagueAverages?.avg_crosshair_placement || 0}
+              playerValue={
+                Math.round(currentPlayerStats.crosshairPlacement * 10) / 10
+              }
+              compareValue={
+                Math.round(comparisonStats.crosshairPlacement * 10) / 10
+              }
+              avgValue={
+                Math.round(
+                  (leagueAverages?.avg_crosshair_placement || 0) * 10
+                ) / 10
+              }
               unit=""
               compareLabel={comparisonStats.label}
             />
@@ -1115,9 +1129,17 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="Counter-strafing"
-              playerValue={currentPlayerStats.counterStrafing}
-              compareValue={comparisonStats.counterStrafing}
-              avgValue={leagueAverages?.avg_counter_strafing_percent || 0}
+              playerValue={
+                Math.round(currentPlayerStats.counterStrafing * 10) / 10
+              }
+              compareValue={
+                Math.round(comparisonStats.counterStrafing * 10) / 10
+              }
+              avgValue={
+                Math.round(
+                  (leagueAverages?.avg_counter_strafing_percent || 0) * 10
+                ) / 10
+              }
               unit="%"
               compareLabel={comparisonStats.label}
             />
@@ -1175,9 +1197,9 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
           {showComparison && comparisonStats && (
             <ComparisonPanel
               title="Headshot %"
-              playerValue={currentPlayerStats.headshotPercentage}
-              compareValue={comparisonStats.headshotPercentage}
-              avgValue={leagueAverages?.avg_hs_percent || 0}
+              playerValue={Math.round(currentPlayerStats.headshotPercentage)}
+              compareValue={Math.round(comparisonStats.headshotPercentage)}
+              avgValue={Math.round(leagueAverages?.avg_hs_percent || 0)}
               unit="%"
               compareLabel={comparisonStats.label}
             />

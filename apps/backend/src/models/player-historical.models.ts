@@ -89,7 +89,7 @@ export const getPlayerHistoricalAverageByRank = async (
     maxRank = Math.min(30000, rank + 500); // Cap at max possible CS2 rank
   }
 
-  // All-time average for specific rank range - no games/period filtering
+  // Use the simple query approach without season-matching requirement
   const query = `
     SELECT 
       ROUND(AVG(ps.kana_rating), 1) as avg_kana_rating,
@@ -106,9 +106,8 @@ export const getPlayerHistoricalAverageByRank = async (
       END), 1) as avg_counter_strafing_percent,
       ROUND(AVG(ps.hs_percent), 1) as avg_hs_percent
     FROM PlayerStats ps
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id
+    JOIN SteamPlayers sp ON ps.steam_id = sp.steam_id
+    JOIN SeasonPlayerRanks spr ON sp.steam_id = spr.steam_id
     WHERE ps.kana_rating IS NOT NULL 
       AND ps.adr IS NOT NULL 
       AND ps.hs_percent IS NOT NULL
@@ -137,7 +136,7 @@ export const getPlayerHistoricalAverageByLevel = async (
   level: number,
   _params: HistoricalDataParams = {}
 ): Promise<PlayerHistoricalAverage> => {
-  // All-time average for specific FACEIT level - no games/period filtering
+  // Use simple query approach for consistent results with proper skill progression
   const query = `
     SELECT 
       ROUND(AVG(ps.kana_rating), 1) as avg_kana_rating,
@@ -154,9 +153,8 @@ export const getPlayerHistoricalAverageByLevel = async (
       END), 1) as avg_counter_strafing_percent,
       ROUND(AVG(ps.hs_percent), 1) as avg_hs_percent
     FROM PlayerStats ps
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    INNER JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id
+    JOIN SteamPlayers sp ON ps.steam_id = sp.steam_id
+    JOIN SeasonPlayerRanks spr ON sp.steam_id = spr.steam_id
     WHERE ps.kana_rating IS NOT NULL 
       AND ps.adr IS NOT NULL 
       AND ps.hs_percent IS NOT NULL
