@@ -18,7 +18,8 @@ import type {
   MatchInfo,
   MatchTeamInfo,
   MatchesWithTeamData,
-  RequestWithParams
+  RequestWithParams,
+  RequestWithParamsAndQuery
 } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
 import { getActiveSeasonForAppId } from "../models/season.models";
@@ -30,7 +31,7 @@ export const getMatchesController = async (req: Request, res: Response) => {
 
 // Used externally by grmrpr
 export const getMatchesBySeasonIdController = async (
-  req: RequestWithParams<{ season_id: string }>,
+  req: RequestWithParamsAndQuery<{ season_id: string }, { league_id?: string }>,
   res: Response,
   next: NextFunction
 ) => {
@@ -39,6 +40,7 @@ export const getMatchesBySeasonIdController = async (
       ? (await getActiveSeasonForAppId(1, 730))?.season_id
       : Number(req.params.season_id);
 
+  const leagueId = req.query.league_id ? Number(req.query.league_id) : null;
   if (!seasonId) {
     if (req.params.season_id === "active") {
       return next(new NotFoundError("No current active season found"));
@@ -46,7 +48,7 @@ export const getMatchesBySeasonIdController = async (
     return next(new NotFoundError("Season not found"));
   }
 
-  const matches = await getMatchesWithTeamDataBySeasonId(seasonId);
+  const matches = await getMatchesWithTeamDataBySeasonId(seasonId, leagueId);
   res.status(200).json({
     matches: matches.map(
       (match) =>

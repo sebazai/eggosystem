@@ -34,7 +34,8 @@ export const getMatches = (): Promise<Match[]> => {
 };
 
 export const getMatchesWithTeamDataBySeasonId = async (
-  seasonId: number
+  seasonId: number,
+  leagueId: number | null
 ): Promise<MatchesWithTeamDataQuery[]> => {
   const query = `
     SELECT 
@@ -63,12 +64,16 @@ export const getMatchesWithTeamDataBySeasonId = async (
     JOIN Teams t ON mt.team_id = t.id
     JOIN Seasons s ON s.id = m.season_id
     JOIN Leagues l ON l.id = m.league_id
-    WHERE m.season_id = ?
+    WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?) AND m.status NOT IN ('FINISHED', 'CANCELLED', 'FORFEIT', 'ABORTED')
     GROUP BY m.id, m.match_date, m.start_time, m.end_time, m.external_match_room_id, 
              m.league_id, l.name, m.season_id, s.full_name, s.platform, m.best_of, m.stage
     ORDER BY m.match_date DESC
   `;
-  return runQuery<MatchesWithTeamDataQuery[]>(query, [seasonId]);
+  return runQuery<MatchesWithTeamDataQuery[]>(query, [
+    seasonId,
+    leagueId,
+    leagueId
+  ]);
 };
 
 export const getMatch = (matchId: number) => {
