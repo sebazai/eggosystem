@@ -27,6 +27,7 @@ import {
   getMatchMapVetoes,
   getMatchesWithTeamDataBySeasonId
 } from "../models/match.models";
+import { getActiveSeasonForAppId } from "../models/season.models";
 import {
   type RequestWithParams,
   type Match,
@@ -81,6 +82,10 @@ const mockGetMatchMapVetoes = getMatchMapVetoes as jest.MockedFunction<
 const mockGetMatchesWithTeamDataBySeasonId =
   getMatchesWithTeamDataBySeasonId as jest.MockedFunction<
     typeof getMatchesWithTeamDataBySeasonId
+  >;
+const mockGetActiveSeasonForAppId =
+  getActiveSeasonForAppId as jest.MockedFunction<
+    typeof getActiveSeasonForAppId
   >;
 
 // Test data objects
@@ -153,6 +158,7 @@ describe("Matches Controllers", () => {
   beforeEach(() => {
     mockRequest = {
       params: {},
+      query: {},
       parsedParams: {
         season_ids: null,
         league_ids: null,
@@ -213,7 +219,10 @@ describe("Matches Controllers", () => {
         mockNext
       );
 
-      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(123);
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        123,
+        null
+      );
       expect(mockJson).toHaveBeenCalledWith({
         matches: mockMatchesWithTeamData.map((match) => ({
           ...match,
@@ -253,7 +262,10 @@ describe("Matches Controllers", () => {
         mockNext
       );
 
-      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(-123);
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        -123,
+        null
+      );
       expect(mockJson).toHaveBeenCalledWith({
         matches: mockMatchesWithTeamData.map((match) => ({
           ...match,
@@ -284,7 +296,10 @@ describe("Matches Controllers", () => {
           })
         );
       } else {
-        expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(0);
+        expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+          0,
+          null
+        );
         expect(mockJson).toHaveBeenCalledWith({
           matches: mockMatchesWithTeamData.map((match) => ({
             ...match,
@@ -292,6 +307,129 @@ describe("Matches Controllers", () => {
           }))
         });
       }
+    });
+
+    it("should return matches for valid season ID with league_id filter", async () => {
+      mockRequest.params = { season_id: "123" };
+      mockRequest.query = { league_id: "456" };
+      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
+        mockMatchesWithTeamData
+      );
+
+      const mockNext = jest.fn();
+      await getMatchesBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        123,
+        456
+      );
+      expect(mockJson).toHaveBeenCalledWith({
+        matches: mockMatchesWithTeamData.map((match) => ({
+          ...match,
+          teams: JSON.parse(match.teams)
+        }))
+      });
+    });
+
+    it("should return matches for valid season ID with invalid league_id", async () => {
+      mockRequest.params = { season_id: "123" };
+      mockRequest.query = { league_id: "invalid" };
+      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
+        mockMatchesWithTeamData
+      );
+
+      const mockNext = jest.fn();
+      await getMatchesBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Invalid league_id becomes NaN when passed through Number()
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        123,
+        null
+      );
+      expect(mockJson).toHaveBeenCalledWith({
+        matches: mockMatchesWithTeamData.map((match) => ({
+          ...match,
+          teams: JSON.parse(match.teams)
+        }))
+      });
+    });
+
+    it("should filter out matches with excluded statuses", async () => {
+      mockRequest.params = { season_id: "123" };
+      // Create test data that includes matches with different statuses
+      const mixedStatusMatches: MatchesWithTeamDataQuery[] = [
+        {
+          ...mockMatchesWithTeamData[0],
+          match_id: 1
+        },
+        {
+          ...mockMatchesWithTeamData[0],
+          match_id: 2
+        }
+      ];
+
+      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
+        mixedStatusMatches
+      );
+
+      const mockNext = jest.fn();
+      await getMatchesBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      // Verify the model is called with correct parameters
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        123,
+        null
+      );
+
+      // Verify response contains the filtered matches
+      expect(mockJson).toHaveBeenCalledWith({
+        matches: mixedStatusMatches.map((match) => ({
+          ...match,
+          teams: JSON.parse(match.teams)
+        }))
+      });
+    });
+
+    it("should handle active season with league_id filter", async () => {
+      mockRequest.params = { season_id: "active" };
+      mockRequest.query = { league_id: "789" };
+
+      // Mock the active season lookup
+      mockGetActiveSeasonForAppId.mockResolvedValue({ season_id: 999 });
+
+      mockGetMatchesWithTeamDataBySeasonId.mockResolvedValue(
+        mockMatchesWithTeamData
+      );
+
+      const mockNext = jest.fn();
+      await getMatchesBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response,
+        mockNext
+      );
+
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        999,
+        789
+      );
+      expect(mockJson).toHaveBeenCalledWith({
+        matches: mockMatchesWithTeamData.map((match) => ({
+          ...match,
+          teams: JSON.parse(match.teams)
+        }))
+      });
     });
   });
 

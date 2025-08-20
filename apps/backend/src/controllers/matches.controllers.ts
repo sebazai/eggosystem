@@ -40,7 +40,11 @@ export const getMatchesBySeasonIdController = async (
       ? (await getActiveSeasonForAppId(1, 730))?.season_id
       : Number(req.params.season_id);
 
-  const leagueId = req.query.league_id ? Number(req.query.league_id) : null;
+  const leagueId = req.query.league_id
+    ? isNaN(Number(req.query.league_id))
+      ? null
+      : Number(req.query.league_id)
+    : null;
   if (!seasonId) {
     if (req.params.season_id === "active") {
       return next(new NotFoundError("No current active season found"));
