@@ -31,7 +31,7 @@ export const updateAccount = async (
   const updatedUser = {
     nickname: formData.nickname,
     full_name: formData.full_name,
-    work_email: formData.work_email ? formData.work_email : null,
+    work_email: formData.work_email,
     work_email_token: hasWorkEmailChanged
       ? workEmailVerificationToken
       : existingAccount.work_email_token,
@@ -40,10 +40,9 @@ export const updateAccount = async (
       : existingAccount.work_email_token_expires_at
         ? new Date(existingAccount.work_email_token_expires_at)
         : null,
-    work_email_verified:
-      hasWorkEmailChanged || !formData.work_email
-        ? false
-        : existingAccount.work_email_verified,
+    work_email_verified: hasWorkEmailChanged
+      ? false
+      : existingAccount.work_email_verified,
     discord: formData.discord ?? null,
     is_work_email_personal_email: formData.isPersonalEmail || false
   } satisfies UpdateUserProfile;
