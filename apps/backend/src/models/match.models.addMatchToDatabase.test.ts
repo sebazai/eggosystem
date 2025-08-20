@@ -6,8 +6,7 @@ import { getConnection } from "../db/mysqlConnection";
 import { validMatchDetailsMatchCreated } from "@eggosystem/shared-msw";
 import {
   type ChampionshipDetailsObjectCreated,
-  FaceitMatchStatus,
-  MatchStatus
+  FaceitMatchStatus
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 
@@ -215,8 +214,6 @@ describe("addMatchToDatabase", () => {
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
-      mockRunQuery.mockResolvedValueOnce([]);
 
       const result = await addMatchToDatabase(matchDetails, externalLeagueId);
 
@@ -293,8 +290,6 @@ describe("addMatchToDatabase", () => {
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
-      mockRunQuery.mockResolvedValueOnce([]);
 
       const result = await addMatchToDatabase(matchDetails, externalLeagueId);
 
@@ -308,7 +303,7 @@ describe("addMatchToDatabase", () => {
       expect(mockConnection.release).toHaveBeenCalled();
 
       // Verify two match insertions
-      expect(mockRunQuery).toHaveBeenCalledTimes(8); // 1 check + 2 insertions + 4 team associations + 1 status update
+      expect(mockRunQuery).toHaveBeenCalledTimes(7); // 1 check + 2 insertions + 4 team associations
     });
   });
 
@@ -354,8 +349,6 @@ describe("addMatchToDatabase", () => {
       mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
-      mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
       mockRunQuery.mockResolvedValueOnce([]);
 
       await addMatchToDatabase(matchDetails, externalLeagueId);
@@ -428,8 +421,6 @@ describe("addMatchToDatabase", () => {
       mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
-      mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
       mockRunQuery.mockResolvedValueOnce([]);
 
       await addMatchToDatabase(matchDetails, externalLeagueId);
@@ -559,8 +550,6 @@ describe("addMatchToDatabase", () => {
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
       mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
-      mockRunQuery.mockResolvedValueOnce([]);
 
       await addMatchToDatabase(matchDetails, externalLeagueId);
 
@@ -573,60 +562,6 @@ describe("addMatchToDatabase", () => {
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO MatchTeams"),
         [1000, 1, 1, 200], // match_id, season_id, league_id, team_id
-        mockConnection
-      );
-    });
-  });
-
-  describe("status update", () => {
-    it("should update match status to SCHEDULED", async () => {
-      const matchDetails = validMatchDetailsMatchCreated;
-      const externalLeagueId = "test-league-id";
-
-      // Mock no existing match
-      mockRunQuery.mockResolvedValueOnce([]);
-      // Mock season league external ID found
-      mockGetSeasonLeagueExternalIdByExternalId.mockResolvedValueOnce({
-        id: 1,
-        external_id: externalLeagueId,
-        league_id: 1,
-        season_id: 1,
-        stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
-        type: "roundRobin",
-        external_league_name: "Test League"
-      });
-      // Mock teams found
-      mockGetSeasonLeagueTeamByExternalId
-        .mockResolvedValueOnce({
-          season_id: 1,
-          team_id: 1,
-          league_id: 1,
-          placement: null,
-          position_offset: null
-        })
-        .mockResolvedValueOnce({
-          season_id: 1,
-          team_id: 2,
-          league_id: 1,
-          placement: null,
-          position_offset: null
-        });
-
-      // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
-      // Mock team to match associations
-      mockRunQuery.mockResolvedValueOnce([]);
-      mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
-      mockRunQuery.mockResolvedValueOnce([]);
-
-      await addMatchToDatabase(matchDetails, externalLeagueId);
-
-      // Verify status update
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        expect.stringContaining("UPDATE Matches SET status = ?"),
-        [MatchStatus.SCHEDULED, matchDetails.match_id],
         mockConnection
       );
     });
@@ -674,8 +609,6 @@ describe("addMatchToDatabase", () => {
       mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
       // Mock team to match associations
       mockRunQuery.mockResolvedValueOnce([]);
-      mockRunQuery.mockResolvedValueOnce([]);
-      // Mock status update
       mockRunQuery.mockResolvedValueOnce([]);
 
       const result = await addMatchToDatabase(matchDetails, externalLeagueId);

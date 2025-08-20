@@ -24,7 +24,12 @@ import {
 } from "../shared/fetch-stat";
 import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
-import { convertISOToFinnishTime, convertISOToTime } from "../utils/date-utils";
+import {
+  adjustMatchDateTime,
+  convertISOToFinnishTime,
+  convertISOToTime,
+  getMatchDateTime
+} from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
 import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
@@ -498,29 +503,22 @@ export const addMatchToDatabase = async (
 
     const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
 
-    const matchScheduledAt = matchDetails.scheduled_at;
-    // Default time next weeks wednesday at 19:00 if no scheduled_at
-    const now = new Date();
-    const nextWednesday = new Date(now);
-    nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
-    nextWednesday.setHours(19, 0, 0, 0);
+    const { match_date, start_time } = getMatchDateTime(
+      matchDetails.scheduled_at
+    );
 
-    const match_date = nextWednesday.toISOString().slice(0, 10); // YYYY-MM-DD
-    const start_time = nextWednesday
-      ? new Date(nextWednesday).toISOString().slice(11, 19) // HH:MM:SS
-      : "00:00:00";
+    const realBestOf =
+      matchDetails.best_of === 2 && isBO2PlayedAs2xBO1
+        ? 1
+        : matchDetails.best_of;
 
     const params = [
       league_id,
       season_id,
       stage_id,
-      matchDetails.best_of,
-      matchScheduledAt
-        ? new Date(matchScheduledAt * 1000).toISOString().slice(0, 10)
-        : match_date,
-      matchScheduledAt
-        ? new Date(matchScheduledAt * 1000).toISOString().slice(11, 19)
-        : start_time,
+      realBestOf,
+      match_date,
+      start_time,
       null,
       matchDetails.match_id,
       matchDetails.status,
@@ -551,9 +549,30 @@ export const addMatchToDatabase = async (
         connection
       );
       const firstMatchId = firstMatch.insertId;
+
+      const { match_date: secondMatchDate, start_time: secondMatchTime } =
+        adjustMatchDateTime(match_date, start_time, {
+          hours: 1
+        });
+
+      // Create new params array for second match with adjusted date/time
+      const secondMatchParams = [
+        league_id,
+        season_id,
+        stage_id,
+        realBestOf,
+        secondMatchDate,
+        secondMatchTime,
+        null,
+        matchDetails.match_id,
+        matchDetails.status,
+        matchDetails.round,
+        matchDetails.group
+      ];
+
       const secondMatch = await runQuery<{ insertId: number }>(
         matchQuery,
-        params,
+        secondMatchParams,
         connection
       );
       const secondMatchId = secondMatch.insertId;
@@ -586,11 +605,6 @@ export const addMatchToDatabase = async (
           league_id,
           teamTwo.team_id,
           connection
-        ),
-        updateMatchStatus(
-          matchDetails.match_id,
-          MatchStatus.SCHEDULED,
-          connection
         )
       ]);
 
@@ -618,11 +632,6 @@ export const addMatchToDatabase = async (
           season_id,
           league_id,
           teamTwo.team_id,
-          connection
-        ),
-        updateMatchStatus(
-          matchDetails.match_id,
-          MatchStatus.SCHEDULED,
           connection
         )
       ]);
