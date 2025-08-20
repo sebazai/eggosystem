@@ -32,10 +32,14 @@ export const updateAccount = async (
     nickname: formData.nickname,
     full_name: formData.full_name,
     work_email: formData.work_email ? formData.work_email : null,
-    work_email_token: hasWorkEmailChanged ? workEmailVerificationToken : null,
+    work_email_token: hasWorkEmailChanged
+      ? workEmailVerificationToken
+      : existingAccount.work_email_token,
     work_email_token_expires_at: hasWorkEmailChanged
       ? new Date(sevenDaysLaterInMillis)
-      : null,
+      : existingAccount.work_email_token_expires_at
+        ? new Date(existingAccount.work_email_token_expires_at)
+        : null,
     work_email_verified:
       hasWorkEmailChanged || !formData.work_email
         ? false

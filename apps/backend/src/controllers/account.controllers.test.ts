@@ -190,4 +190,59 @@ describe("updateProfile Controller", () => {
     expect(connection.rollback).toHaveBeenCalled();
     expect(connection.release).toHaveBeenCalled();
   });
+
+  it("should preserve existing work email token when work email has not changed", async () => {
+    // Create account with existing unverified work email and token
+    const accountWithExistingToken: Account = {
+      ...mockedAccount,
+      work_email: "test@example.com",
+      work_email_verified: false,
+      work_email_token: "existing-token-123",
+      work_email_token_expires_at: new Date("2024-12-31").toISOString()
+    };
+
+    jest
+      .spyOn(accountModels, "getAccountById")
+      .mockResolvedValue(accountWithExistingToken);
+    jest.spyOn(accountModels, "userPolicyAcceptance").mockResolvedValue(null);
+    jest.spyOn(accountModels, "insertUserPolicyAcceptance").mockResolvedValue();
+
+    // Update profile with same work email (no change)
+    req.body = {
+      nickname: "Updated User",
+      full_name: "Updated Full Name",
+      work_email: "test@example.com", // Same email - no change
+      discord: "updatedDiscord",
+      acceptPrivacyPolicy: true,
+      acceptMarketing: false
+    };
+
+    const updateAccountDataSpy = jest
+      .spyOn(accountModels, "updateAccountData")
+      .mockResolvedValue(undefined);
+
+    const mockNext = jest.fn();
+    await updateAccountProfileController(
+      req as Request,
+      res as Response,
+      mockNext
+    );
+
+    // Verify that updateAccountData was called with preserved token data
+    expect(updateAccountDataSpy).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        work_email: "test@example.com",
+        work_email_token: "existing-token-123", // Should preserve existing token
+        work_email_token_expires_at: new Date("2024-12-31"), // Should preserve existing expiry
+        work_email_verified: false // Should remain false
+      }),
+      connection
+    );
+
+    expect(statusMock).toHaveBeenCalledWith(200);
+    expect(jsonMock).toHaveBeenCalledWith({
+      message: "Profile updated successfully."
+    });
+  });
 });
