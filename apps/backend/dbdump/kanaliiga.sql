@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Aug 06, 2025 at 04:14 PM
+-- Generation Time: Aug 20, 2025 at 01:58 AM
 -- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
@@ -781,6 +781,7 @@ CREATE TABLE `Seasons` (
   `id` int(10) UNSIGNED NOT NULL,
   `game_id` int(10) UNSIGNED NOT NULL,
   `game_type_id` int(10) UNSIGNED DEFAULT NULL,
+  `organizer_id` int(10) UNSIGNED NOT NULL DEFAULT 1,
   `name` varchar(255) NOT NULL,
   `full_name` varchar(255) NOT NULL,
   `signup_start_date` datetime DEFAULT NULL,
@@ -802,7 +803,8 @@ CREATE TABLE `SeasonTeamPlayers` (
   `steam_id` bigint(20) NOT NULL,
   `role` enum('primary','substitute') DEFAULT 'primary',
   `is_captain` tinyint(1) NOT NULL DEFAULT 0,
-  `is_co_captain` tinyint(1) NOT NULL DEFAULT 0
+  `is_co_captain` tinyint(1) NOT NULL DEFAULT 0,
+  `match_id` int(10) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1594,7 +1596,8 @@ ALTER TABLE `SeasonPlayerRanks`
 ALTER TABLE `Seasons`
   ADD PRIMARY KEY (`id`),
   ADD KEY `seasons_game_id_foreign` (`game_id`),
-  ADD KEY `seasons_game_type_id_foreign` (`game_type_id`);
+  ADD KEY `seasons_game_type_id_foreign` (`game_type_id`),
+  ADD KEY `seasons_organizer_id_foreign` (`organizer_id`);
 
 --
 -- Indexes for table `SeasonTeamPlayers`
@@ -1602,7 +1605,8 @@ ALTER TABLE `Seasons`
 ALTER TABLE `SeasonTeamPlayers`
   ADD PRIMARY KEY (`season_id`,`steam_id`,`team_id`),
   ADD KEY `seasonteamplayers_season_id_team_id_foreign` (`season_id`,`team_id`),
-  ADD KEY `seasonteamplayers_steam_id_foreign` (`steam_id`);
+  ADD KEY `seasonteamplayers_steam_id_foreign` (`steam_id`),
+  ADD KEY `seasonteamplayers_match_id_foreign` (`match_id`);
 
 --
 -- Indexes for table `SeasonTeamRegistrationPlayers`
@@ -2056,12 +2060,14 @@ ALTER TABLE `SeasonPlayerRanks`
 --
 ALTER TABLE `Seasons`
   ADD CONSTRAINT `seasons_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `Games` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `seasons_game_type_id_foreign` FOREIGN KEY (`game_type_id`) REFERENCES `GameTypes` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `seasons_game_type_id_foreign` FOREIGN KEY (`game_type_id`) REFERENCES `GameTypes` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `seasons_organizer_id_foreign` FOREIGN KEY (`organizer_id`) REFERENCES `Organizers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SeasonTeamPlayers`
 --
 ALTER TABLE `SeasonTeamPlayers`
+  ADD CONSTRAINT `seasonteamplayers_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `seasonteamplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
@@ -2084,7 +2090,7 @@ ALTER TABLE `SeasonTeamRegistrations`
 -- Constraints for table `SteamPlayerKanaElo`
 --
 ALTER TABLE `SteamPlayerKanaElo`
-  ADD CONSTRAINT `steamplayerkanaelo_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`);
+  ADD CONSTRAINT `steamplayerkanaelo_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SteamPlayers`
@@ -2117,14 +2123,6 @@ ALTER TABLE `Teams`
 --
 ALTER TABLE `UserPolicyAcceptances`
   ADD CONSTRAINT `userpolicyacceptances_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
-
-DELIMITER $$
---
--- Events
---
-CREATE DEFINER=`kanamain`@`%` EVENT `delete_old_audit_logs` ON SCHEDULE EVERY 1 DAY STARTS '2025-05-21 06:26:17' ON COMPLETION NOT PRESERVE ENABLE DO DELETE FROM AuditLog WHERE created_at < NOW() - INTERVAL 1 YEAR$$
-
-DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
