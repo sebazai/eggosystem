@@ -1,3 +1,4 @@
+import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
   type TeamSortterValues,
@@ -302,7 +303,8 @@ async function fetchCSRankkerComponents(
 export const checkPlayerAdditionEligibility = async (
   seasonId: number,
   teamId: number,
-  newPlayerSteamId: string
+  newPlayerSteamId: string,
+  options?: { connection?: PoolConnection }
 ): Promise<{
   selectedTeam: {
     team_id: number;
@@ -342,7 +344,8 @@ export const checkPlayerAdditionEligibility = async (
 
   const leagueResults = await runQuery<Array<{ league_name: string }>>(
     leagueQuery,
-    [seasonId, teamId]
+    [seasonId, teamId],
+    options?.connection
   );
 
   if (!leagueResults || leagueResults.length === 0) {
@@ -389,7 +392,7 @@ export const checkPlayerAdditionEligibility = async (
       current_top3_avg: number;
       current_top4_avg: number;
     }>
-  >(selectedTeamQuery, [seasonId, seasonId, teamId]);
+  >(selectedTeamQuery, [seasonId, seasonId, teamId], options?.connection);
 
   if (!selectedTeamResult) {
     throw new Error(
@@ -448,7 +451,7 @@ export const checkPlayerAdditionEligibility = async (
       avg4: number;
       rank: number;
     }>
-  >(topTeamsQuery, [seasonId, leagueName]);
+  >(topTeamsQuery, [seasonId, leagueName], options?.connection);
 
   // Check if the selected team's new average would be lower than the top team's avg4
   const topTeamAvg4 = topTeams[0]?.avg4 || 0;

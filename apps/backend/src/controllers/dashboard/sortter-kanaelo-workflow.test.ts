@@ -1,8 +1,8 @@
 import request from "supertest";
 import type { Request, Response, NextFunction } from "express";
-import { app } from "../app";
-import { runQuery } from "../db/mysqlRunQuery";
-import { generateTestJWT } from "../utils/auth-test-utils";
+import { app } from "../../app";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { generateTestJWT } from "../../utils/auth-test-utils";
 
 // Type definitions for database query results
 interface RankData {
@@ -33,7 +33,7 @@ interface Placement {
 }
 
 // Mock JWT configuration for tests
-jest.mock("../configs/jwt-keys", () => ({
+jest.mock("../../configs/jwt-keys", () => ({
   getJWTValues: jest.fn(() => ({
     JWT_PRIVATE_KEY: "mock-private-key",
     JWT_PUBLIC_KEY: "mock-public-key",
@@ -86,7 +86,7 @@ jest.mock("express-jwt", () => ({
 }));
 
 // Mock auth middleware
-jest.mock("../middlewares/auth.middleware", () => ({
+jest.mock("../../middlewares/auth.middleware", () => ({
   authenticateJWT: jest.fn(
     (req: Request, res: Response, next: NextFunction) => {
       const authHeader = req.headers.authorization;

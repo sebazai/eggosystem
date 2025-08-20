@@ -1,16 +1,16 @@
 import type { Response } from "express";
 import type { RequestWithParams } from "@eggosystem/types";
 import { addPlayerToTeamController } from "./sortter.controllers";
-import * as sortterModels from "../models/sortter.models";
-import * as playerModels from "../models/player.models";
-import * as rankModels from "../models/season-player-ranks.models";
-import { runQuery } from "../db/mysqlRunQuery";
+import * as sortterModels from "../../models/sortter.models";
+import * as playerModels from "../../models/player.models";
+import * as rankModels from "../../models/season-player-ranks.models";
+import { runQuery } from "../../db/mysqlRunQuery";
 
 // Mock dependencies
-jest.mock("../models/sortter.models");
-jest.mock("../models/player.models");
-jest.mock("../models/season-player-ranks.models");
-jest.mock("../db/mysqlRunQuery");
+jest.mock("../../models/sortter.models");
+jest.mock("../../models/player.models");
+jest.mock("../../models/season-player-ranks.models");
+jest.mock("../../db/mysqlRunQuery");
 
 const mockSortterModels = sortterModels as jest.Mocked<typeof sortterModels>;
 const mockPlayerModels = playerModels as jest.Mocked<typeof playerModels>;
@@ -92,14 +92,15 @@ describe("addPlayerToTeamController", () => {
     // Verify eligibility was checked
     expect(
       mockSortterModels.checkPlayerAdditionEligibility
-    ).toHaveBeenCalledWith(14, 1650, "76561198054765387");
+    ).toHaveBeenCalledWith(14, 1650, "76561198054765387", expect.any(Object));
 
     // Verify player kana_elo was set
     expect(mockPlayerModels.setPlayerKanaElo).toHaveBeenCalledWith(
       "76561198054765387",
       200,
       expect.any(String),
-      14
+      14,
+      expect.any(Object)
     );
 
     // Verify player was added to team
@@ -161,7 +162,8 @@ describe("addPlayerToTeamController", () => {
     expect(mockRankModels.insertFaceITPlayerRankForSeason).toHaveBeenCalled();
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      expect.any(Array)
+      expect.any(Array),
+      expect.any(Object)
     );
 
     // Verify success response
@@ -204,7 +206,7 @@ describe("addPlayerToTeamController", () => {
     // Verify eligibility was checked
     expect(
       mockSortterModels.checkPlayerAdditionEligibility
-    ).toHaveBeenCalledWith(14, 1650, "76561198054765387");
+    ).toHaveBeenCalledWith(14, 1650, "76561198054765387", expect.any(Object));
 
     // Verify player was NOT added to team (query not called)
     expect(mockRunQuery).not.toHaveBeenCalledWith(

@@ -15,6 +15,7 @@ import {
   type PlayerStatsForLatestSeason,
   type PlayerMapStats
 } from "@eggosystem/types";
+import { type PoolConnection } from "mysql2/promise";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
   return runQuery<Array<SteamPlayer | undefined>>(
@@ -608,7 +609,8 @@ export const setPlayerKanaElo = async (
   steam_id: string,
   kana_elo: number,
   calculus: string,
-  season_id: number
+  season_id: number,
+  connection?: PoolConnection
 ): Promise<boolean> => {
   const query = `
     UPDATE SeasonPlayerRanks 
@@ -616,12 +618,11 @@ export const setPlayerKanaElo = async (
     WHERE season_id = ? AND steam_id = ?
   `;
 
-  const result = await runQuery<{ affectedRows: number }>(query, [
-    calculus,
-    kana_elo,
-    season_id,
-    steam_id
-  ]);
+  const result = await runQuery<{ affectedRows: number }>(
+    query,
+    [calculus, kana_elo, season_id, steam_id],
+    connection
+  );
 
   return result.affectedRows > 0;
 };

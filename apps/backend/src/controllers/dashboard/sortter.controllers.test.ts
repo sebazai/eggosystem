@@ -1,18 +1,18 @@
 import { type Response, type Request, type NextFunction } from "express";
 import request from "supertest";
-import { app } from "../app";
+import { app } from "../../app";
 import {
   getTeamValuesController,
   getTeamValueByIdController,
   getTeamPlayerValuesController
 } from "./sortter.controllers";
-import * as sortterModels from "../models/sortter.models";
+import * as sortterModels from "../../models/sortter.models";
 import {
   type TeamSortterValues,
   type RequestWithParams
 } from "@eggosystem/types";
-import { runQuery } from "../db/mysqlRunQuery";
-import { getTeamValuesForSorter } from "../models/sortter.models";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { getTeamValuesForSorter } from "../../models/sortter.models";
 
 // Mock express-jwt middleware to recognize our test token
 jest.mock("express-jwt", () => ({
@@ -46,7 +46,7 @@ jest.mock("express-jwt", () => ({
 }));
 
 // Mock auth middleware
-jest.mock("../middlewares/auth.middleware", () => ({
+jest.mock("../../middlewares/auth.middleware", () => ({
   authenticateJWT: jest.fn(
     (req: Request, res: Response, next: NextFunction) => {
       const authHeader = req.headers.authorization;
@@ -99,8 +99,8 @@ jest.mock("../middlewares/auth.middleware", () => ({
 }));
 
 // Mock the model functions
-jest.mock("../models/sortter.models");
-jest.mock("../db/mysqlRunQuery");
+jest.mock("../../models/sortter.models");
+jest.mock("../../db/mysqlRunQuery");
 const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetTeamValuesForSorter =
   getTeamValuesForSorter as jest.MockedFunction<typeof getTeamValuesForSorter>;

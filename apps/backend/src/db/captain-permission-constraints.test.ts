@@ -8,7 +8,7 @@ describe("Captain Permission Triggers", () => {
   beforeEach(async () => {
     // Clean up - order matters due to foreign key constraints
     await runQuery(
-      "DELETE FROM AccountPermissionScopes WHERE season_id = 999",
+      "DELETE FROM AccountPermissionScopes WHERE season_id IN (999, 998)",
       []
     );
     await runQuery(
@@ -19,18 +19,30 @@ describe("Captain Permission Triggers", () => {
       "DELETE FROM SeasonTeamRegistrationPlayers WHERE season_id IN (999, 998)",
       []
     );
-    await runQuery("DELETE FROM SeasonTeamPlayers WHERE season_id = 999", []);
+    await runQuery(
+      "DELETE FROM SeasonTeamPlayers WHERE season_id IN (999, 998)",
+      []
+    );
     await runQuery(
       "DELETE FROM SeasonTeamRegistrations WHERE season_id IN (999, 998)",
       []
     );
-    await runQuery("DELETE FROM SeasonPlayerRanks WHERE season_id = 999", []);
     await runQuery(
-      "DELETE FROM SeasonPlayerApprovals WHERE season_id = 999",
+      "DELETE FROM SeasonPlayerRanks WHERE season_id IN (999, 998)",
       []
     );
-    await runQuery("DELETE FROM SeasonLeagueTeams WHERE season_id = 999", []);
-    await runQuery("DELETE FROM SeasonLeagues WHERE season_id = 999", []);
+    await runQuery(
+      "DELETE FROM SeasonPlayerApprovals WHERE season_id IN (999, 998)",
+      []
+    );
+    await runQuery(
+      "DELETE FROM SeasonLeagueTeams WHERE season_id IN (999, 998)",
+      []
+    );
+    await runQuery(
+      "DELETE FROM SeasonLeagues WHERE season_id IN (999, 998)",
+      []
+    );
     await runQuery("DELETE FROM Seasons WHERE id IN (999, 998)", []);
     await runQuery("DELETE FROM Teams WHERE id IN (999, 998)", []);
     await runQuery("DELETE FROM Games WHERE id IN (999, 998)", []);
@@ -374,7 +386,7 @@ describe("Captain Permission Triggers", () => {
       []
     );
     await runQuery(
-      "INSERT INTO Teams (id, name) VALUES (998, 'Test Team 2')",
+      "INSERT INTO Teams (id, name) VALUES (998, 'Test Team 2 Captain Permissions')",
       []
     );
     await runQuery(

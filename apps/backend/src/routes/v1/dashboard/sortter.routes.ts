@@ -6,13 +6,13 @@ import {
   getTeamsForSeasonController,
   checkPlayerAdditionEligibilityController,
   addPlayerToTeamController
-} from "../../../controllers/sortter.controllers";
+} from "../../../controllers/dashboard/sortter.controllers";
 import {
   getPreliminaryPlacementsController,
   savePreliminaryPlacementsController,
   finalizeTeamPlacementsController,
   getPlacementsFinalizationStatusController
-} from "../../../controllers/sortter-placements.controllers";
+} from "../../../controllers/dashboard/sortter-placements.controllers";
 import { populateKanaeloQueueController } from "../../../controllers/kanaelo.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 

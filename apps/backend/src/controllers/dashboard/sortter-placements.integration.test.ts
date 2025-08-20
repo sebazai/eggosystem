@@ -1,12 +1,12 @@
 import request from "supertest";
 import type { Request, Response, NextFunction } from "express";
-import { app } from "../app";
-import { runQuery } from "../db/mysqlRunQuery";
-import { generateTestJWT } from "../utils/auth-test-utils";
+import { app } from "../../app";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { generateTestJWT } from "../../utils/auth-test-utils";
 import IORedis from "ioredis";
 
 // Mock JWT configuration for tests
-jest.mock("../configs/jwt-keys", () => ({
+jest.mock("../../configs/jwt-keys", () => ({
   getJWTValues: jest.fn(() => ({
     JWT_PRIVATE_KEY: "mock-private-key",
     JWT_PUBLIC_KEY: "mock-public-key",
@@ -59,7 +59,7 @@ jest.mock("express-jwt", () => ({
 }));
 
 // Mock auth middleware
-jest.mock("../middlewares/auth.middleware", () => ({
+jest.mock("../../middlewares/auth.middleware", () => ({
   authenticateJWT: jest.fn(
     (req: Request, res: Response, next: NextFunction) => {
       const authHeader = req.headers.authorization;
@@ -112,7 +112,7 @@ jest.mock("../middlewares/auth.middleware", () => ({
 }));
 
 // Mock validate numeric params middleware
-jest.mock("../middlewares/validate-numeric-params", () => ({
+jest.mock("../../middlewares/validate-numeric-params", () => ({
   validateNumericParams: jest.fn(
     () => (req: Request, res: Response, next: NextFunction) => {
       // Just pass through for tests
@@ -122,7 +122,7 @@ jest.mock("../middlewares/validate-numeric-params", () => ({
 }));
 
 // Mock CORS middleware
-jest.mock("../middlewares/cors.middleware", () => ({
+jest.mock("../../middlewares/cors.middleware", () => ({
   corsMiddleware: jest.fn((req: Request, res: Response, next: NextFunction) => {
     // Just pass through for tests
     next();

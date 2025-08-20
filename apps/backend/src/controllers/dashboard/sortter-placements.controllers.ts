@@ -6,8 +6,8 @@ import {
   type RequestWithParamsAndQuery,
   type SeasonTeamRegistration
 } from "@eggosystem/types";
-import { logger } from "../utils/app-logger";
-import { getTeamValuesForSorter } from "../models/sortter.models";
+import { logger } from "../../utils/app-logger";
+import { getTeamValuesForSorter } from "../../models/sortter.models";
 import {
   savePreliminaryPlacements,
   getPreliminaryPlacements,
@@ -17,17 +17,17 @@ import {
   setPlacementsFinalized,
   isPlacementsFinalized,
   hasSeasonLeagueTeamsForSeason
-} from "../services/sortter-placements.services";
-import { runQuery } from "../db/mysqlRunQuery";
+} from "../../services/sortter-placements.services";
+import { runQuery } from "../../db/mysqlRunQuery";
 import {
   BadRequestError,
   NotFoundError,
   ForbiddenError,
   InternalServerError
-} from "../utils/errors";
-import { getConnection } from "../db/mysqlConnection";
+} from "../../utils/errors";
+import { getConnection } from "../../db/mysqlConnection";
 import _ from "lodash";
-import { getSeasonById } from "../models/season.models";
+import { getSeasonById } from "../../models/season.models";
 
 /**
  * Controller to get preliminary team placements

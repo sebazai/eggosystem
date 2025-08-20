@@ -4,21 +4,17 @@ import {
   getTeamPlayerValuesForSortter,
   getTeamsForSeason,
   checkPlayerAdditionEligibility
-} from "../models/sortter.models";
+} from "../../models/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
-import {
-  NotFoundError,
-  BadRequestError,
-  InternalServerError
-} from "../utils/errors";
-// insertSeasonTeamPlayer is no longer used since we're using direct SQL query
-// import { insertSeasonTeamPlayer } from "../models/season-team-players.models";
-import { setPlayerKanaElo } from "../models/player.models";
-import { runQuery } from "../db/mysqlRunQuery";
-import { insertFaceITPlayerRankForSeason } from "../models/season-player-ranks.models";
-import { getPlayerHoursForSteamAppId } from "../services/player-ranks.services";
-import { getFaceITCS2Rank } from "../services/faceit.services";
-import { getCSRank } from "../services/player-ranks.services";
+import { NotFoundError, BadRequestError } from "../../utils/errors";
+import { setPlayerKanaElo } from "../../models/player.models";
+import { runQuery } from "../../db/mysqlRunQuery";
+import { insertFaceITPlayerRankForSeason } from "../../models/season-player-ranks.models";
+import { getPlayerHoursForSteamAppId } from "../../services/player-ranks.services";
+import { getFaceITCS2Rank } from "../../services/faceit.services";
+import { getCSRank } from "../../services/player-ranks.services";
+import { getConnection } from "../../db/mysqlConnection";
+import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
 
 /**
  * Controller to get team values for sorter functionality
@@ -191,7 +187,9 @@ export const addPlayerToTeamController = async (
   // Don't require calculus anymore - it's optional
   const calculusData = calculus || {};
 
+  const connection = await getConnection();
   try {
+    await connection.beginTransaction();
     // 1. First, check if player has all required data in SeasonPlayerRanks
     const checkPlayerQuery = `
       SELECT 
@@ -213,7 +211,7 @@ export const addPlayerToTeamController = async (
         cs_hours: number | null;
         kana_elo: number | null;
       }>
-    >(checkPlayerQuery, [seasonId, steamId]);
+    >(checkPlayerQuery, [seasonId, steamId], connection);
 
     const existingPlayer =
       existingPlayerResult && existingPlayerResult.length > 0
@@ -250,7 +248,8 @@ export const addPlayerToTeamController = async (
           faceit_elo: faceitData.faceit_elo,
           faceit_kd: faceitData.faceit_kd,
           faceit_date: faceitData.faceit_date
-        }
+        },
+        { connection }
       );
     }
 
@@ -258,7 +257,8 @@ export const addPlayerToTeamController = async (
     const eligibility = await checkPlayerAdditionEligibility(
       seasonId,
       teamId,
-      steamId
+      steamId,
+      { connection }
     );
 
     // 4. Verify player is eligible
@@ -278,22 +278,19 @@ export const addPlayerToTeamController = async (
       steamId,
       eligibility.selectedTeam.new_player_kana_elo,
       calculusString,
-      seasonId
+      seasonId,
+      connection
     );
 
     // 6. Finally add the player to the team in SeasonTeamPlayers
-    try {
-      const teamPlayerQuery = `
-        INSERT INTO SeasonTeamPlayers (season_id, team_id, steam_id, role) 
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE role = VALUES(role)
-      `;
+    await insertSeasonTeamPlayer(
+      seasonId,
+      teamId,
+      { steam_id: steamId },
+      connection
+    );
 
-      await runQuery(teamPlayerQuery, [seasonId, teamId, steamId, "primary"]);
-    } catch (dbError) {
-      console.error("Database error adding player to team:", dbError);
-      throw dbError;
-    }
+    await connection.commit();
 
     res.status(200).json({
       message: "Player successfully added to the team",
@@ -303,12 +300,9 @@ export const addPlayerToTeamController = async (
       kana_elo
     });
   } catch (error) {
-    return next(
-      new InternalServerError(
-        error instanceof Error
-          ? error.message
-          : "Unknown error adding player to team"
-      )
-    );
+    await connection.rollback();
+    return next(error);
+  } finally {
+    connection.release();
   }
 };
