@@ -76,7 +76,7 @@ export const getActiveSeasonForAppId = async (
      AND s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW())
      ORDER BY s.id DESC
      LIMIT 1;`,
-    [app_id, organizer_id, app_id]
+    [app_id, organizer_id]
   );
   return activeSeason;
 };
