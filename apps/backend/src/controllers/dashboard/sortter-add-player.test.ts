@@ -106,7 +106,8 @@ describe("addPlayerToTeamController", () => {
     // Verify player was added to team
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "primary"]
+      [14, 1650, "76561198054765387", "primary"],
+      expect.any(Object)
     );
 
     // Verify success response
