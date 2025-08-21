@@ -62,8 +62,9 @@ export const useSignupStatus = (seasonId: string): UseSignupStatusReturn => {
         // No existing registration
       } else if (error instanceof ApiError && error.status === 401) {
         throw error;
+      } else {
+        throw error;
       }
-      throw error;
     }
 
     if (!hasExistingRegistration) {
@@ -77,8 +78,9 @@ export const useSignupStatus = (seasonId: string): UseSignupStatusReturn => {
           // No draft
         } else if (error instanceof ApiError && error.status === 401) {
           throw error;
+        } else {
+          throw error;
         }
-        throw error;
       }
     }
 
