@@ -2,6 +2,12 @@ import { envConfig } from "@/configs/env";
 
 let isRefreshing = false;
 let refreshSubscribers: (() => void)[] = [];
+let onAuthFailure: (() => void) | null = null;
+
+// Function to register auth failure callback
+export const setAuthFailureCallback = (callback: () => void) => {
+  onAuthFailure = callback;
+};
 
 const onTokenRefreshed = () => {
   refreshSubscribers.forEach((callback) => callback());
@@ -127,9 +133,17 @@ export async function clientApiFetch<T>(
 
       if (response.status === 401) {
         console.warn("No refresh token available or session expired.");
+        // Trigger auth failure callback if registered
+        if (onAuthFailure) {
+          onAuthFailure();
+        }
         throw new Error("No refresh token available or session expired.");
       }
 
+      // Trigger auth failure callback if registered
+      if (onAuthFailure) {
+        onAuthFailure();
+      }
       throw new Error("Token refresh failed");
     } catch (error) {
       refreshSubscribers = [];

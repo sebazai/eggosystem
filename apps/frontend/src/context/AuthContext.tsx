@@ -1,6 +1,6 @@
 "use client";
 
-import { clientApiFetch } from "@/lib/apiClient";
+import { clientApiFetch, setAuthFailureCallback } from "@/lib/apiClient";
 import {
   createContext,
   useCallback,
@@ -45,6 +45,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
     }
   };
+
+  // Register auth failure callback for automatic logout
+  useEffect(() => {
+    setAuthFailureCallback(() => {
+      console.log("Auth failure detected, logging out user");
+      setUser(null);
+      toast.error("Session expired. Please log in again.");
+    });
+  }, []);
 
   useEffect(() => {
     const fetchAuth = async () => {

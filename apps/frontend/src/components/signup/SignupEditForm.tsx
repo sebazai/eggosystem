@@ -21,16 +21,16 @@ export const SignupEditForm = ({
     teamId
   });
 
-  if (isLoading || isValidating) {
-    return <ContentContainer>Loading form data...</ContentContainer>;
-  }
-
   if (isError || !signupEditData) {
     return (
       <ContentContainer>
         {isError?.message ?? "Something went wrong..."}
       </ContentContainer>
     );
+  }
+
+  if (isLoading || isValidating) {
+    return <ContentContainer>Loading form data...</ContentContainer>;
   }
 
   return (
