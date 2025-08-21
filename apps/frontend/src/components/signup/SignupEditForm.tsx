@@ -16,10 +16,11 @@ export const SignupEditForm = ({
   teamId,
   platform
 }: SignupFormProps) => {
-  const { signupEditData, isLoading, isValidating, isError } = useSignupEdit({
-    seasonId,
-    teamId
-  });
+  const { signupEditData, isLoading, isValidating, isError, mutate } =
+    useSignupEdit({
+      seasonId,
+      teamId
+    });
 
   if (isError || !signupEditData) {
     return (
@@ -38,6 +39,7 @@ export const SignupEditForm = ({
       seasonId={seasonId}
       platform={platform}
       editValues={signupEditData}
+      onDraftSaved={mutate}
     />
   );
 };

@@ -36,6 +36,7 @@ interface SignupFormProps {
   platform: SeasonPlatform;
   draft?: SignupFormValues;
   editValues?: SignupFormValues;
+  onDraftSaved?: () => void;
 }
 
 const validateExternalPlaformId = async (
@@ -85,7 +86,8 @@ export const SignupForm = ({
   seasonId,
   platform,
   draft,
-  editValues
+  editValues,
+  onDraftSaved
 }: SignupFormProps) => {
   const [activeTab, setActiveTab] = useState(
     editValues ? "players" : "organization"
@@ -322,6 +324,9 @@ export const SignupForm = ({
     toast.success("Draft saved successfully", {
       description: "You can continue editing your draft later on this page."
     });
+
+    // Invalidate the edit form data cache to ensure fresh data is loaded
+    onDraftSaved?.();
   };
 
   if (!user) {
