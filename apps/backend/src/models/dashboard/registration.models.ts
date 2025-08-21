@@ -170,6 +170,13 @@ export const bulkApproveTeamRegistrations = async (
       connection
     );
 
+    const updateOrgApproved = `
+      UPDATE Teams
+      SET org_approved = true
+      WHERE id IN (${teamIds.map(() => "?").join(",")})
+    `;
+    await runQuery(updateOrgApproved, [...teamIds], connection);
+
     // Get the updated teams using the existing function
     const updatedTeams = await getRegisteredTeams(seasonId);
 
