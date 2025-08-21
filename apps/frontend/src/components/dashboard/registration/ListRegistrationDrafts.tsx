@@ -1,6 +1,7 @@
 "use client";
 
 import { useRegistrationDrafts } from "@/hooks/data/dashboard/useRegistrationDrafts";
+import { useRegisteredTeams } from "@/hooks/data/dashboard/useRegisteredTeams";
 import { Spinner } from "@/components/ui/icons";
 import { useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -17,6 +18,8 @@ import { type RegistrationDraftRaw } from "@eggosystem/types";
 
 export const ListRegistrationDrafts = () => {
   const { registrationDrafts, isLoading, error } = useRegistrationDrafts();
+  const { registeredTeams, isLoading: isLoadingRegistered } =
+    useRegisteredTeams();
   const columnHelper = createColumnHelper<RegistrationDraftRaw>();
 
   const columns = useMemo(
@@ -96,8 +99,24 @@ export const ListRegistrationDrafts = () => {
     [columnHelper]
   );
 
+  // Filter out drafts that are already in the registered teams list
+  const filteredDrafts = useMemo(() => {
+    if (!registrationDrafts || !registeredTeams) return [];
+
+    // Create a set of registered team platform IDs for faster lookup
+    const registeredTeamIds = new Set(
+      registeredTeams.map((team) => team.external_platform_id).filter(Boolean) // Filter out null/undefined values
+    );
+
+    // Filter out drafts that have matching platform IDs in the registered teams
+    return registrationDrafts.filter((draft) => {
+      const platformId = draft.teamExternalId;
+      return !platformId || !registeredTeamIds.has(platformId);
+    });
+  }, [registrationDrafts, registeredTeams]);
+
   const table = useReactTable({
-    data: registrationDrafts ?? [],
+    data: filteredDrafts,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
@@ -106,7 +125,7 @@ export const ListRegistrationDrafts = () => {
     debugTable: false
   });
 
-  if (isLoading) {
+  if (isLoading || isLoadingRegistered) {
     return (
       <div className="flex justify-center items-center h-32">
         <Spinner />
@@ -122,7 +141,7 @@ export const ListRegistrationDrafts = () => {
     );
   }
 
-  if (!registrationDrafts || registrationDrafts.length === 0) {
+  if (!filteredDrafts || filteredDrafts.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No registration drafts found.
@@ -133,7 +152,7 @@ export const ListRegistrationDrafts = () => {
   return (
     <div className="bg-card rounded-md overflow-hidden mt-8">
       <div className="overflow-x-auto">
-        <div>In progress length: {registrationDrafts.length}</div>
+        <div>In progress length: {filteredDrafts.length}</div>
         <table className="text-xs w-full">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
