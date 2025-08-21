@@ -103,7 +103,6 @@ export const useSignupStatus = (seasonId: string): UseSignupStatusReturn => {
     fetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 5 * 60 * 1000, // 5 minutes cache
       shouldRetryOnError: (error) => {
         // Don't retry on 401 (auth) or 404 (not found) errors
         if (error instanceof ApiError) {
