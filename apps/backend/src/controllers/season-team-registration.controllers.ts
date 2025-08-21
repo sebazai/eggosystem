@@ -17,6 +17,8 @@ import {
 } from "../services/season-team-registration.services";
 import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
 import { BadRequestError } from "../utils/errors";
+import { redisClient } from "../utils/redisClient";
+import { logger } from "../utils/app-logger";
 
 export const getTeamSignupDetails = async (
   req: RequestWithParams<{ season_id: string; team_id: string }>,
@@ -98,5 +100,12 @@ export const addSignupForSeasonController = async (
   await checkExternalId(season.platform, formData.teamExternalId);
 
   const result = await addSignupForSeason(season, formData);
+  try {
+    if (req.auth?.provider_id) {
+      await redisClient.del(`signup-${req.auth.provider_id}`);
+    }
+  } catch (error) {
+    logger.error("Error deleting Redis cache", error);
+  }
   res.json(result);
 };
