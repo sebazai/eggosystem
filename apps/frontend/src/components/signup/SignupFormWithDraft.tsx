@@ -22,9 +22,6 @@ export const SignupFormWithDraft = ({
   // Handle redirect to edit page if user has existing registration
   useEffect(() => {
     if (signupStatus?.shouldRedirectToEdit && signupStatus.redirectUrl) {
-      console.log(
-        "Client: User has existing registration, redirecting to edit"
-      );
       router.replace(signupStatus.redirectUrl);
     }
   }, [signupStatus, router]);
