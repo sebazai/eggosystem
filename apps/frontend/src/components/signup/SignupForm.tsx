@@ -524,35 +524,37 @@ export const SignupForm = ({
               )}
             />
 
-            <div className="flex gap-2 w-full pt-5">
-              <Button
-                type="reset"
-                onClick={() => {
-                  setActiveTab("organization");
-                  form.reset(defaultValues);
-                }}
-                variant="destructive"
-                className="w-[50%]"
-                disabled={
-                  form.formState.isSubmitting ||
-                  form.formState.isSubmitSuccessful
-                }
-              >
-                Reset
-              </Button>
-              <Button
-                type="button"
-                onClick={() => saveAsDraft(form.getValues())}
-                className="w-[50%]"
-                disabled={
-                  form.formState.isSubmitting ||
-                  form.formState.isSubmitSuccessful
-                }
-                data-testid="save-as-draft-button"
-              >
-                Save as draft
-              </Button>
-            </div>
+            {!isEditMode && (
+              <div className="flex gap-2 w-full pt-5">
+                <Button
+                  type="reset"
+                  onClick={() => {
+                    setActiveTab("organization");
+                    form.reset(defaultValues);
+                  }}
+                  variant="destructive"
+                  className="w-[50%]"
+                  disabled={
+                    form.formState.isSubmitting ||
+                    form.formState.isSubmitSuccessful
+                  }
+                >
+                  Reset
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => saveAsDraft(form.getValues())}
+                  className="w-[50%]"
+                  disabled={
+                    form.formState.isSubmitting ||
+                    form.formState.isSubmitSuccessful
+                  }
+                  data-testid="save-as-draft-button"
+                >
+                  Save as draft
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </form>
