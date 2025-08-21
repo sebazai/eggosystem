@@ -44,7 +44,7 @@ export default async function Page() {
 
           <div className="space-y-3">
             <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold text-blue-800 mb-1">
+              <h3 className="font-semibold mb-1">
                 1. Existing Organization (Recommended)
               </h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
@@ -60,7 +60,7 @@ export default async function Page() {
             </div>
 
             <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold text-green-800 mb-1">
+              <h3 className="font-semibold mb-1">
                 2. Existing Team (Not linked to any organization)
               </h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
@@ -75,9 +75,7 @@ export default async function Page() {
             </div>
 
             <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold text-purple-800 mb-1">
-                3. New Organization
-              </h3>
+              <h3 className="font-semibold mb-1">3. New Organization</h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
                 <li>Select &quot;Create New Organization&quot;</li>
                 <li>
@@ -89,16 +87,17 @@ export default async function Page() {
                 <li>New organization is created</li>
                 <li>Players are approved for any team in that organization</li>
                 <li>
-                  Team captains can create teams under this organization during
-                  signup, please inform them that they need to select this
-                  organization from the dropdown menu in the signup form
-                  organization tab.
+                  <strong className="text-kanaliiga-orange">Important:</strong>{" "}
+                  After creating the organization, instruct the team captains to
+                  select this new organization from the dropdown menu in the
+                  signup form&apos;s organization tab when they register their
+                  teams.
                 </li>
               </ul>
             </div>
 
             <div className="border border-gray-200 rounded p-3">
-              <h3 className="font-semibold text-orange-800 mb-1">
+              <h3 className="font-semibold mb-1">
                 4. New Team Under Existing Organization
               </h3>
               <ul className="list-disc list-inside space-y-1 text-sm">
@@ -108,6 +107,36 @@ export default async function Page() {
                 <li>
                   Players are approved for the organization, they can join any
                   team in the organization
+                </li>
+                <li>
+                  <strong className="text-kanaliiga-orange">Important:</strong>{" "}
+                  After creating the team, instruct the team captain to select
+                  this new team from the dropdown menu in the signup form&apos;s
+                  team tab when they register.
+                </li>
+              </ul>
+            </div>
+
+            <div className="border border-gray-200 rounded p-3">
+              <h3 className="font-semibold mb-1">
+                5. New Organization AND New Team
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Select &quot;Create New Organization&quot;</li>
+                <li>
+                  Fill in organization name, business ID, and website (all
+                  required)
+                </li>
+                <li>Add player Steam IDs</li>
+                <li>New organization is created</li>
+                <li>New team is created under the new organization</li>
+                <li>Players are approved for that specific team</li>
+                <li>
+                  <strong className="text-kanaliiga-orange">Important:</strong>{" "}
+                  After creating both the organization and team, instruct the
+                  team captain to select this new organization from the dropdown
+                  menu in the signup form&apos;s organization tab, and then
+                  select the new team from the team tab when they register.
                 </li>
               </ul>
             </div>
@@ -145,11 +174,11 @@ export default async function Page() {
           </ul>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-          <h3 className="font-semibold text-yellow-800 mb-1">
+        <div className="bg-muted border border-border rounded p-3">
+          <h3 className="font-semibold mb-1 text-foreground">
             Important Notes
           </h3>
-          <ul className="list-disc list-inside space-y-1 text-yellow-700">
+          <ul className="list-disc list-inside space-y-1 text-foreground">
             <li>You must select either organization OR team - not both</li>
             <li>
               Organization-level approval is recommended as it gives more
@@ -166,6 +195,10 @@ export default async function Page() {
               New organizations require business ID (y-tunnus) and website
             </li>
             <li>All Steam IDs must be exactly 17 digits</li>
+            <li>
+              When creating new organizations or teams, remember to inform the
+              relevant parties to select them from the signup form dropdowns
+            </li>
           </ul>
         </div>
       </div>
