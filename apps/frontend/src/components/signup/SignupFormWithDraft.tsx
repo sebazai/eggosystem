@@ -16,7 +16,8 @@ export const SignupFormWithDraft = ({
   platform
 }: SignupFormWithDraftProps) => {
   const router = useRouter();
-  const { signupStatus, isLoading, isError } = useSignupStatus(seasonId);
+  const { signupStatus, isLoading, isError, mutate } =
+    useSignupStatus(seasonId);
 
   // Handle redirect to edit page if user has existing registration
   useEffect(() => {
@@ -51,11 +52,16 @@ export const SignupFormWithDraft = ({
     );
   }
 
+  const handleDraftSaved = () => {
+    mutate();
+  };
+
   return (
     <SignupForm
       seasonId={seasonId}
       platform={platform}
       draft={signupStatus?.draft}
+      onDraftSaved={handleDraftSaved}
     />
   );
 };
