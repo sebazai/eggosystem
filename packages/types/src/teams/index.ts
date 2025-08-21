@@ -8,3 +8,4 @@ export * from "./TeamRetakeStats.interface";
 export * from "./TeamKeyPlayers.interface";
 export * from "./TeamPlayers.interface";
 export * from "./TeamsByLeague.interface";
+export * from "./TeamCaptain.interface";
