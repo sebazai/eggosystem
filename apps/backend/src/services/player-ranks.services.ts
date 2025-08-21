@@ -38,7 +38,7 @@ const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   }
 
   const steamHours = await getSteamHoursForAppId(steam_id, 730);
-  if (!steamHours) {
+  if (!steamHours || steamHours.playtime_forever === 0) {
     return { hours: -1 };
   }
 
