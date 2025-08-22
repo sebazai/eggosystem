@@ -261,4 +261,88 @@ describe("Player Ranks Services", () => {
       ).rejects.toThrow("Unknown app_id");
     });
   });
+
+  describe("getRankFromDatabase", () => {
+    // Since getRankFromDatabase is a private function, we need to test it through getCSRank
+    // with a season_id parameter to trigger the database path
+
+    it("should return rank from database when average_rank exists", async () => {
+      const validRankData = {
+        average_rank: 15000,
+        rank_updated_at: new Date().toISOString()
+      };
+
+      mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue(
+        validRankData
+      );
+
+      const result = await getCSRank(testSteamId, testSeasonId);
+
+      expect(result).toEqual(validRankData);
+      expect(
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason
+      ).toHaveBeenCalledWith(testSteamId, testSeasonId);
+    });
+
+    it("should return null when average_rank is 0", async () => {
+      const rankDataWithZeroRank = {
+        average_rank: 0,
+        rank_updated_at: new Date().toISOString()
+      };
+
+      mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue(
+        rankDataWithZeroRank
+      );
+
+      // Should fall back to cache since database returned 0 average_rank
+      await getCSRank(testSteamId, testSeasonId);
+
+      expect(
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason
+      ).toHaveBeenCalledWith(testSteamId, testSeasonId);
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        `730-${testSteamId}-rank`
+      );
+    });
+
+    it("should return null when getPlayerRankForSeason returns undefined", async () => {
+      mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue(
+        undefined
+      );
+
+      // Should fall back to cache since database returned undefined
+      await getCSRank(testSteamId, testSeasonId);
+
+      expect(
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason
+      ).toHaveBeenCalledWith(testSteamId, testSeasonId);
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        `730-${testSteamId}-rank`
+      );
+    });
+
+    it("should return null when rank object exists but average_rank is missing", async () => {
+      const rankDataWithoutAverageRank = {
+        rank_updated_at: new Date().toISOString()
+        // average_rank is missing
+      };
+
+      mockSeasonPlayerRanksModels.getPlayerRankForSeason.mockResolvedValue(
+        rankDataWithoutAverageRank as {
+          average_rank: number;
+          rank_updated_at: string;
+        }
+      );
+
+      // Should fall back to cache since average_rank is missing
+      await getCSRank(testSteamId, testSeasonId);
+
+      expect(
+        mockSeasonPlayerRanksModels.getPlayerRankForSeason
+      ).toHaveBeenCalledWith(testSteamId, testSeasonId);
+      expect(mockRedisClient.get).toHaveBeenCalledWith(
+        `730-${testSteamId}-rank`
+      );
+    });
+  });
 });
