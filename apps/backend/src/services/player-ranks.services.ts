@@ -82,7 +82,7 @@ const getRankFromDatabase = async (
   season_id: number
 ): Promise<CS2LeetifyAvgRank | null> => {
   const rankFromDb = await getPlayerRankForSeason(steam_id, season_id);
-  if (rankFromDb) {
+  if (rankFromDb?.average_rank) {
     logger.info(
       `[Rank] Found rank in database for steam_id: ${steam_id}, season_id: ${season_id} - rank: ${rankFromDb.average_rank}`
     );
