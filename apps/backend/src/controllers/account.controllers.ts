@@ -162,13 +162,18 @@ export const verifyEmailController = async (
       return next(new BadRequestError("Invalid or expired token."));
     }
 
-    await runQuery(
+    // Verify that the token's email matches the current work_email
+    const updateResult = await runQuery<{ affectedRows: number }>(
       `UPDATE Accounts
         SET work_email_verified = true,
         work_email_token_expires_at = NULL
-      WHERE id = ?`,
-      [parsedData.accountId]
+      WHERE id = ? AND work_email = ?`,
+      [parsedData.accountId, parsedData.email]
     );
+
+    if (updateResult.affectedRows === 0) {
+      return next(new BadRequestError("Invalid or expired token."));
+    }
     res.status(200).json({ message: "Email verified successfully" });
     return;
   }

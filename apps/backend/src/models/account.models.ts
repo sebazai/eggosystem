@@ -13,6 +13,7 @@ import { getConnection } from "../db/mysqlConnection";
 import { handleEmailVerification } from "../services/account.services";
 import { getSevenDaysLaterInMillis } from "../utils/date-utils";
 import { logger } from "../utils/app-logger";
+import { redisClient } from "../utils/redisClient";
 
 export const updateAccount = async (
   accountId: number,
@@ -27,6 +28,13 @@ export const updateAccount = async (
 
   const hasWorkEmailChanged =
     formData.work_email && formData.work_email !== existingAccount.work_email;
+
+  // Clean up old verification token from Redis if email changed
+  if (hasWorkEmailChanged && existingAccount.work_email_token) {
+    await redisClient.del(
+      `verify:work-email:${existingAccount.work_email_token}`
+    );
+  }
 
   const updatedUser = {
     nickname: formData.nickname,
@@ -121,7 +129,7 @@ export const updateAccountData = async (
     [updatedUser.nickname, accountId],
     connection
   );
-  return runQuery(
+  return await runQuery(
     `UPDATE Accounts 
       SET 
         full_name = ?,  
