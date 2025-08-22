@@ -72,7 +72,6 @@ describe("Email Verification Token Mismatch", () => {
     const email = "current@example.com";
     const token = "valid-token-123";
 
-    // Setup: Account with current email
     await runQuery(
       "INSERT INTO Accounts (id, work_email, work_email_verified) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE work_email = ?, work_email_verified = ?",
       [accountId, email, false, email, false]
