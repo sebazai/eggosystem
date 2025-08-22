@@ -399,9 +399,7 @@ export const ListRegisteredTeams = () => {
                             <div
                               key={player.steam_id}
                               className={`flex flex-col gap-1 p-3 bg-background rounded border min-w-[200px] max-w-full md:max-w-xs shadow-sm ${
-                                isInvalid
-                                  ? "border-red-500 bg-red-50/50"
-                                  : "border-border"
+                                isInvalid ? "border-red-500" : "border-border"
                               }`}
                             >
                               <span className="font-semibold text-foreground break-words">
