@@ -359,7 +359,7 @@ export const SignupForm = ({
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card>
-          <CardContent className="p-6 space-y-6">
+          <CardContent className="p-6 space-y-6 max-w-3xl">
             <h2 className="text-xl font-semibold">
               {isEditMode ? "Edit signup" : "Sign up Form"}
             </h2>
