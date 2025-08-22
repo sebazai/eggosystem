@@ -65,10 +65,6 @@ Run in monorepo root, this will setup seed and build frontend and run the e2e te
 
 `pnpm test:e2e`
 
-## Database
-
-Read [docs/database.md](docs/database.md) for better understanding of the DB Schema.
-
 ### Migrating ebinstats prod
 
 Note: run the migrations from either (no need to expose database locally)
