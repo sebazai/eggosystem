@@ -56,7 +56,7 @@ describe("POST /verify-email", () => {
       // Verify database update
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("UPDATE Accounts"),
-        ["123"]
+        ["123", "test@example.com"]
       );
     });
 
@@ -227,7 +227,7 @@ describe("POST /verify-email", () => {
       // Should use Redis data and update database
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("UPDATE Accounts"),
-        ["123"]
+        ["123", "test@example.com"]
       );
       expect(mockRedisClient.del).toHaveBeenCalledWith(
         `verify:work-email:${token}`
@@ -375,7 +375,7 @@ describe("POST /verify-email", () => {
 
       expect(updateCall).toBeDefined();
       expect(updateCall![0]).toContain("work_email_verified = true");
-      expect(updateCall![1]).toEqual(["789"]);
+      expect(updateCall![1]).toEqual(["789", "update@example.com"]);
     });
 
     it("should update all required fields when verifying via database", async () => {
@@ -456,7 +456,7 @@ describe("POST /verify-email", () => {
       // Verify database update was called with correct accountId
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("UPDATE Accounts"),
-        [456]
+        [456, "test@test.com"]
       );
 
       // Verify Redis cleanup
