@@ -222,7 +222,7 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        `pointer-events-none w-full sm:landscape:px-4 md:landscape:px-8 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
         // Always use backdrop blur for consistent appearance
         "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs",
         // Always use sticky positioning to prevent jumping
@@ -266,7 +266,7 @@ export const Navigation = (props: NavbarProps) => {
 
         {/* Mobile Navigation - Sticky in Portrait Mode, Non-Sticky in Landscape */}
         <div className="block lg:hidden sm:landscape:relative sticky top-0 z-50">
-          <div className="flex items-center justify-between xs:landscape:justify-end md:landscape:justify-between">
+          <div className="flex items-center justify-between">
             {logo && (
               <Link href={logo.url} className="flex items-center gap-2">
                 <Image src={logo.src} alt={logo.alt} width={75} height={75} />
