@@ -78,7 +78,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
       <div className="absolute inset-0 bg-center opacity-10"></div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 lg:py-24 2xl:py-32 w-full">
+      <div className="relative z-10 max-w-[1920px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-12 lg:py-24 2xl:py-32 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left Side - Hero Content */}
           <div className="space-y-6">
@@ -105,10 +105,10 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
-                  100+
+                  90+
                 </div>
                 <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
                   Organizations
@@ -116,7 +116,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
               <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
-                  600+
+                  800+
                 </div>
                 <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
                   Players
@@ -272,14 +272,16 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="grid md:grid-cols-4 gap-6">
             <Link href="/teams" className="group">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
-                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
-                  Browse Teams
-                </h3>
-                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
-                  Discover teams and their players
-                </p>
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+                <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
+                <div className="flex flex-col flex-grow">
+                  <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
+                    Browse Teams
+                  </h3>
+                  <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
+                    Discover teams and their players
+                  </p>
+                </div>
               </div>
             </Link>
 
@@ -287,38 +289,44 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               href={`/seasons/${currentSeasonId}/standings`}
               className="group"
             >
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
-                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
-                  View Standings
-                </h3>
-                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
-                  Check current league rankings
-                </p>
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+                <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
+                <div className="flex flex-col flex-grow">
+                  <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
+                    View Standings
+                  </h3>
+                  <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
+                    Check current league rankings
+                  </p>
+                </div>
               </div>
             </Link>
 
             <Link href="/matches" className="group">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <Play className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
-                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
-                  All Matches
-                </h3>
-                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
-                  Browse complete match history
-                </p>
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+                <Play className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
+                <div className="flex flex-col flex-grow">
+                  <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
+                    All Matches
+                  </h3>
+                  <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
+                    Browse complete match history
+                  </p>
+                </div>
               </div>
             </Link>
 
             <Link href="/organizations" className="group">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
-                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
-                  Organizations
-                </h3>
-                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
-                  Explore participating organizations
-                </p>
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+                <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
+                <div className="flex flex-col flex-grow">
+                  <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
+                    Organizations
+                  </h3>
+                  <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
+                    Explore participating organizations
+                  </p>
+                </div>
               </div>
             </Link>
           </div>

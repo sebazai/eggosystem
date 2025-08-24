@@ -42,7 +42,7 @@ export default async function Home() {
       </section>
       <section className="py-12 md:py-24 lg:py-32 2xl:py-40">
         <div className="flex flex-grow justify-center items-center w-full">
-          <div className="w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+          <div className="w-full max-w-[1920px] px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-6xl font-bold my-8 text-white">
               Building Corporate Culture Through Esports
             </h1>

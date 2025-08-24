@@ -7,7 +7,7 @@ export default function Layout({
 }>) {
   return (
     <div className="flex justify-normal xxs:justify-center">
-      <div className="w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+      <div className="w-full max-w-[1920px] px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
         <FilterProvider appId="730">{children}</FilterProvider>
       </div>
     </div>
