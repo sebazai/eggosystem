@@ -11,6 +11,7 @@ import type {
   TeamSortterValues
 } from "@eggosystem/types";
 import { toast } from "sonner";
+import { useComments } from "@/contexts/CommentsContext";
 
 type PlacementsResponse = {
   placements: TeamPlacement[];
@@ -33,7 +34,15 @@ export function useSortter(placeTeamsInDivision: number) {
     x: number;
     y: number;
   } | null>(null);
-  const [comments, setComments] = useState<{ [key: number]: string }>({});
+
+  // Use the comments context instead of local state
+  const {
+    setCommentForTeam,
+    initializeComments,
+    getAllComments,
+    registerSaveFunction
+  } = useComments();
+
   const [divisions, setDivisions] = useState<{ [key: number]: number }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -195,10 +204,11 @@ export function useSortter(placeTeamsInDivision: number) {
         newDivisions[placement.team_id] = placement.division;
       });
 
-      setComments(newComments);
+      // Use context function to initialize comments
+      initializeComments(newComments);
       setDivisions(newDivisions);
     }
-  }, [placements]);
+  }, [placements, initializeComments]);
 
   // Prefetch player values for hover
   const prefetchPlayerValues = useCallback(
@@ -259,55 +269,295 @@ export function useSortter(placeTeamsInDivision: number) {
     setFloatingPosition(null);
   }, []);
 
-  // Handle comment change for a team
-  const handleCommentChange = useCallback((teamId: number, comment: string) => {
-    setComments((prev) => ({
-      ...prev,
-      [teamId]: comment
-    }));
+  // Handle comment blur (only update state when user finishes editing)
+  const handleCommentBlur = useCallback(
+    (teamId: number, comment: string) => {
+      // Use the context function instead of local state with autoSave=true
+      setCommentForTeam(teamId, comment, true);
+    },
+    [setCommentForTeam]
+  );
+
+  // Keep this for backwards compatibility (but it won't be used)
+  const handleCommentChange = useCallback(() => {
+    // No-op - we're using uncontrolled inputs now
   }, []);
 
-  // Handle division change for a team
-  const handleDivisionChange = useCallback(
-    async (teamId: number, division: number, teamDivision: number | null) => {
-      // Update local state first
-      setDivisions((prev) => ({
-        ...prev,
-        [teamId]: division
-      }));
+  // Save preliminary placements
+  const savePlacements = useCallback(
+    async (overrideComments?: { [key: number]: string }) => {
+      if (!selectedSeason || !placements) return;
 
-      // Auto-save the division change
-      if (!selectedSeason || !placements || isViewMode) {
+      // Don't allow saving in view mode
+      if (isViewMode) {
+        toast.error("Cannot modify placements - they have been finalized");
         return;
       }
 
       try {
-        // Create updated placements with the new division
-        const updatedPlacements = placements.map((placement) => ({
-          ...placement,
-          division:
-            placement.team_id === teamId
-              ? division
-              : divisions[placement.team_id] || placement.division,
-          comments: comments[placement.team_id] || placement.comments
-        }));
+        setIsSaving(true);
 
-        // Send the request to the server
-        await clientApiFetch(
+        // Create updated placements array
+        // Get all comments from the context, or use override if provided
+        const currentComments = overrideComments || getAllComments();
+
+        console.log("Current comments before save:", currentComments);
+        console.log("Current divisions before save:", divisions);
+
+        // Find only the placements that have actually changed
+        const changedPlacements = placements
+          .filter((placement) => {
+            const currentDivision =
+              divisions[placement.team_id] || placement.division;
+            const currentComment =
+              currentComments[placement.team_id] || placement.comments;
+
+            // Only include placements that have changed
+            return (
+              currentDivision !== placement.division ||
+              currentComment !== placement.comments
+            );
+          })
+          .map((placement) => {
+            // Create updated placement with current values
+            const currentDivision =
+              divisions[placement.team_id] || placement.division;
+            const currentComment =
+              currentComments[placement.team_id] || placement.comments;
+
+            console.log(
+              `Updating team ${placement.team_id}: division ${placement.division} -> ${currentDivision}, comment changed: ${placement.comments !== currentComment}`
+            );
+
+            return {
+              ...placement,
+              division: currentDivision,
+              comments: currentComment
+            };
+          });
+
+        // If nothing has changed, don't send a request
+        if (changedPlacements.length === 0) {
+          console.log("No changes detected, skipping save");
+          setIsSaving(false);
+          return;
+        }
+
+        console.log(
+          `Saving ${changedPlacements.length} changed placements:`,
+          changedPlacements
+        );
+
+        // Send only the changed placements to the server
+        const response = await clientApiFetch(
           `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
           {
             method: "POST",
-            body: JSON.stringify({ placements: updatedPlacements })
+            body: JSON.stringify({ placements: changedPlacements })
           }
         );
 
-        // Force a complete revalidation
-        await mutatePlacements();
+        console.log("Save response:", response);
 
-        toast.success(`Team moved to division ${division}`);
+        // Update the local cache with the changes
+        if (placementsResponse) {
+          // Create a map of changed placements for quick lookup
+          const changedPlacementsMap = new Map(
+            changedPlacements.map((placement) => [placement.team_id, placement])
+          );
+
+          // Create updated placements array by merging changes
+          const updatedPlacements = placements.map((placement) => {
+            const changed = changedPlacementsMap.get(placement.team_id);
+            return changed || placement;
+          });
+
+          // Update the cache without revalidating
+          mutatePlacements(
+            {
+              placements: updatedPlacements,
+              isFinalized: placementsResponse.isFinalized
+            },
+            false // Don't revalidate from the server
+          );
+        }
+
+        // Show a toast notification for autosave with better dark theme visibility
+        toast.success("Changes saved successfully", {
+          duration: 2000,
+          position: "bottom-right",
+          style: {
+            background: "hsl(142.1 76.2% 36.3%)", // Darker green for better dark theme visibility
+            color: "white",
+            fontWeight: "500",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+          }
+        });
+      } catch (error) {
+        console.error("Error saving placements", error);
+        toast.error("Failed to save placements");
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [
+      selectedSeason,
+      placements,
+      divisions,
+      getAllComments,
+      mutatePlacements,
+      isViewMode,
+      placementsResponse
+    ]
+  );
+
+  // Register the savePlacements function with the CommentsContext
+  useEffect(() => {
+    // Only register if we have a valid season and placements
+    if (selectedSeason && placements) {
+      registerSaveFunction(savePlacements);
+    }
+  }, [registerSaveFunction, savePlacements, selectedSeason, placements]);
+
+  // Keep track of pending division changes to avoid race conditions
+  const pendingDivisionChanges = useRef<Map<number, number>>(new Map());
+
+  // Clean up pending changes when season changes
+  useEffect(() => {
+    pendingDivisionChanges.current.clear();
+  }, [selectedSeason]);
+
+  // Handle division change for a team
+  const handleDivisionChange = useCallback(
+    async (teamId: number, division: number, teamDivision: number | null) => {
+      console.log(
+        `Changing division for team ${teamId} from ${teamDivision} to ${division}`
+      );
+
+      // Track this change as pending
+      pendingDivisionChanges.current.set(teamId, division);
+
+      // Update local state first for immediate feedback
+      const newDivisions = {
+        ...divisions,
+        [teamId]: division
+      };
+
+      // Set local state immediately for responsive UI
+      setDivisions(newDivisions);
+
+      // Auto-save by calling savePlacements directly
+      if (!selectedSeason || !placements || isViewMode) {
+        pendingDivisionChanges.current.delete(teamId); // Clean up
+        return;
+      }
+
+      try {
+        console.log("Current divisions before update:", divisions);
+        console.log("New divisions with current change:", newDivisions);
+        console.log(
+          "All pending division changes:",
+          Object.fromEntries(pendingDivisionChanges.current)
+        );
+
+        // Find the specific placement we're updating
+        const teamPlacement = placements.find((p) => p.team_id === teamId);
+
+        if (!teamPlacement) {
+          console.error(`Team ${teamId} not found in placements`);
+          pendingDivisionChanges.current.delete(teamId); // Clean up
+          return;
+        }
+
+        // Create a single updated placement for just this team
+        const updatedPlacement = {
+          ...teamPlacement,
+          division: division
+        };
+
+        // Send only this team's updated placement to the server
+        // This is more efficient and avoids race conditions
+        const singleTeamUpdate = [updatedPlacement];
+
+        console.log("Sending single team update to server:", singleTeamUpdate);
+
+        // Send the request to the server
+        const response = await clientApiFetch(
+          `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
+          {
+            method: "POST",
+            body: JSON.stringify({ placements: singleTeamUpdate })
+          }
+        );
+
+        console.log("Division change saved successfully:", response);
+
+        // Update the local SWR cache with all pending division changes
+        if (placementsResponse) {
+          // Create a new placements array with ALL pending division changes
+          const updatedPlacements = placements.map((placement) => {
+            // Check if this team has a pending division change
+            const pendingDivision = pendingDivisionChanges.current.get(
+              placement.team_id
+            );
+
+            if (pendingDivision !== undefined) {
+              // Apply the pending division change
+              return {
+                ...placement,
+                division: pendingDivision
+              };
+            }
+
+            // No pending change, keep as is
+            return placement;
+          });
+
+          console.log(
+            "Updating cache with all pending changes:",
+            Object.fromEntries(pendingDivisionChanges.current)
+          );
+
+          // Update the cache without revalidating
+          mutatePlacements(
+            {
+              placements: updatedPlacements,
+              isFinalized: placementsResponse.isFinalized
+            },
+            false // Don't revalidate from the server
+          );
+
+          // Also update the local divisions state to ensure consistency
+          setDivisions((prev) => {
+            const updated = { ...prev };
+            // Apply all pending changes to local state
+            pendingDivisionChanges.current.forEach((division, teamId) => {
+              updated[teamId] = division;
+            });
+            return updated;
+          });
+        }
+
+        // Don't remove from pending changes yet - keep it until we're sure it's stable
+        // pendingDivisionChanges.current.delete(teamId);
+
+        // Show a toast notification for autosave with better dark theme visibility
+        toast.success("Division updated", {
+          duration: 2000,
+          position: "bottom-right",
+          style: {
+            background: "hsl(142.1 76.2% 36.3%)", // Darker green for better dark theme visibility
+            color: "white",
+            fontWeight: "500",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+          }
+        });
       } catch (error) {
         console.error("Error auto-saving division change:", error);
         toast.error("Failed to save division change");
+
+        // Remove from pending changes
+        pendingDivisionChanges.current.delete(teamId);
 
         // Revert the local state change on error
         setDivisions((prev) => {
@@ -326,61 +576,10 @@ export function useSortter(placeTeamsInDivision: number) {
       divisions,
       selectedSeason,
       placements,
-      comments,
-      mutatePlacements
+      mutatePlacements,
+      placementsResponse
     ]
   );
-
-  // Save preliminary placements
-  const savePlacements = useCallback(async () => {
-    if (!selectedSeason || !placements) return;
-
-    // Don't allow saving in view mode
-    if (isViewMode) {
-      toast.error("Cannot modify placements - they have been finalized");
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      // Create updated placements array
-      const updatedPlacements = placements.map((placement) => ({
-        ...placement,
-        division: divisions[placement.team_id] || placement.division,
-        comments: comments[placement.team_id] || placement.comments
-      }));
-
-      // Send the request to the server
-      await clientApiFetch(
-        `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
-        {
-          method: "POST",
-          body: JSON.stringify({ placements: updatedPlacements })
-        }
-      );
-
-      // Force a complete revalidation by setting the data to undefined first
-      await mutatePlacements(undefined);
-
-      // Then trigger a fresh fetch from the server
-      await mutatePlacements();
-
-      toast.success("Placements saved successfully");
-    } catch (error) {
-      console.error("Error saving placements", error);
-      toast.error("Failed to save placements");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [
-    selectedSeason,
-    placements,
-    divisions,
-    comments,
-    mutatePlacements,
-    isViewMode
-  ]);
 
   // Finalize placements to database
   const finalizePlacements = useCallback(async () => {
@@ -395,8 +594,24 @@ export function useSortter(placeTeamsInDivision: number) {
     try {
       setIsFinalizing(true);
 
+      // Get all current comments and divisions
+      const currentComments = getAllComments();
+
+      // Create updated placements with current state
+      const updatedPlacements = placements.map((placement) => ({
+        ...placement,
+        division: divisions[placement.team_id] || placement.division,
+        comments: currentComments[placement.team_id] || placement.comments
+      }));
+
       // Save current placements first
-      await savePlacements();
+      await clientApiFetch(
+        `/api/v1/dashboard/sortter/season/${selectedSeason}/placements`,
+        {
+          method: "POST",
+          body: JSON.stringify({ placements: updatedPlacements })
+        }
+      );
 
       // Then finalize
       await clientApiFetch(
@@ -409,15 +624,27 @@ export function useSortter(placeTeamsInDivision: number) {
       // Set view mode to true
       setIsViewMode(true);
 
-      // Update the placements data with the new finalized status
+      // Update the placements data with the new finalized status without refreshing
       if (placementsResponse) {
-        await mutatePlacements(
-          { ...placementsResponse, isFinalized: true },
-          false
+        mutatePlacements(
+          {
+            placements: updatedPlacements,
+            isFinalized: true
+          },
+          false // Don't revalidate
         );
       }
 
-      toast.success("Placements finalized and saved to database");
+      toast.success("Placements finalized and saved to database", {
+        duration: 3000,
+        position: "bottom-right",
+        style: {
+          background: "hsl(142.1 76.2% 36.3%)", // Darker green for better dark theme visibility
+          color: "white",
+          fontWeight: "500",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
+        }
+      });
     } catch (error) {
       console.error("Error finalizing placements", error);
       toast.error("Failed to finalize placements");
@@ -426,7 +653,9 @@ export function useSortter(placeTeamsInDivision: number) {
     }
   }, [
     selectedSeason,
-    savePlacements,
+    placements,
+    divisions,
+    getAllComments,
     placementsResponse,
     mutatePlacements,
     isViewMode
@@ -442,7 +671,6 @@ export function useSortter(placeTeamsInDivision: number) {
     selectedSeason,
     selectedTeamId,
     floatingPosition,
-    comments,
     divisions,
     isLoadingTeams,
     isLoadingSeasons,
@@ -460,6 +688,7 @@ export function useSortter(placeTeamsInDivision: number) {
     closeTeamPlayerValues,
     prefetchPlayerValues,
     handleCommentChange,
+    handleCommentBlur,
     handleDivisionChange,
     savePlacements,
     finalizePlacements

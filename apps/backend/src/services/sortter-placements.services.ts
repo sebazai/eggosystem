@@ -52,23 +52,85 @@ export const savePreliminaryPlacements = async (
   placements: TeamPlacement[]
 ): Promise<boolean> => {
   const key = getTeamPlacementsKey(seasonId);
-  await redisClient.set(key, JSON.stringify(placements), "EX", expireIn30Days);
-  logger.info(
-    `[SortterPlacements] Saved preliminary placements for season ${seasonId} with ${placements.length} teams`
-  );
 
-  // Verify the data was saved
-  const savedData = await redisClient.get(key);
-  if (savedData) {
-    logger.info(
-      `[SortterPlacements] Verified Redis save: found ${JSON.parse(savedData).length} teams for season ${seasonId}`
-    );
-  } else {
-    logger.warn(
-      `[SortterPlacements] Failed to verify Redis save for season ${seasonId} - no data found after save`
-    );
+  try {
+    // First, check if we already have placements stored
+    const existingData = await redisClient.get(key);
+    let existingPlacements: TeamPlacement[] = [];
+
+    if (existingData) {
+      try {
+        existingPlacements = JSON.parse(existingData);
+        logger.info(
+          `[SortterPlacements] Found existing placements for season ${seasonId}: ${existingPlacements.length} teams`
+        );
+      } catch (e) {
+        logger.error(
+          `[SortterPlacements] Error parsing existing placements: ${e}`
+        );
+      }
+    }
+
+    // If we're only updating a subset of teams, merge with existing data
+    if (
+      existingPlacements.length > 0 &&
+      placements.length < existingPlacements.length
+    ) {
+      logger.info(
+        `[SortterPlacements] Partial update detected: ${placements.length} teams vs ${existingPlacements.length} existing`
+      );
+
+      // Create a map of team_id to placement for quick lookup
+      const placementMap = new Map<number, TeamPlacement>();
+      placements.forEach((placement) => {
+        placementMap.set(placement.team_id, placement);
+      });
+
+      // Update existing placements with new data
+      const mergedPlacements = existingPlacements.map((existing) => {
+        const updated = placementMap.get(existing.team_id);
+        return updated || existing;
+      });
+
+      // Save the merged data
+      await redisClient.set(
+        key,
+        JSON.stringify(mergedPlacements),
+        "EX",
+        expireIn30Days
+      );
+      logger.info(
+        `[SortterPlacements] Merged and saved placements for season ${seasonId} with ${mergedPlacements.length} teams`
+      );
+    } else {
+      // Save the full placement data
+      await redisClient.set(
+        key,
+        JSON.stringify(placements),
+        "EX",
+        expireIn30Days
+      );
+      logger.info(
+        `[SortterPlacements] Saved full placements for season ${seasonId} with ${placements.length} teams`
+      );
+    }
+
+    // Verify the data was saved
+    const savedData = await redisClient.get(key);
+    if (savedData) {
+      logger.info(
+        `[SortterPlacements] Verified Redis save: found ${JSON.parse(savedData).length} teams for season ${seasonId}`
+      );
+    } else {
+      logger.warn(
+        `[SortterPlacements] Failed to verify Redis save for season ${seasonId} - no data found after save`
+      );
+    }
+    return true;
+  } catch (error) {
+    logger.error(`[SortterPlacements] Error saving placements: ${error}`);
+    throw error;
   }
-  return true;
 };
 
 /**

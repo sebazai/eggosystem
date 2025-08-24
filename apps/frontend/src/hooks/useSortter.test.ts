@@ -144,7 +144,7 @@ describe("useSortter", () => {
     expect(true).toBe(true);
   });
 
-  it("should handle comment changes", async () => {
+  it("should handle comment changes (no-op function)", async () => {
     // Mock data
     const mockSeasons = [{ id: 2, name: "Season 2" }];
     const mockTeams = [
@@ -195,13 +195,14 @@ describe("useSortter", () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
     });
 
-    // Test handleCommentChange
+    // Test handleCommentChange (now a no-op function)
     await act(async () => {
-      result.current.handleCommentChange(1, "New comment");
+      result.current.handleCommentChange();
     });
 
-    // Verify comment was updated
-    expect(result.current.comments[1]).toBe("New comment");
+    // Verify the function exists but doesn't modify state
+    expect(result.current.handleCommentChange).toBeDefined();
+    expect(typeof result.current.handleCommentChange).toBe("function");
   });
 
   it("should handle division changes", async () => {

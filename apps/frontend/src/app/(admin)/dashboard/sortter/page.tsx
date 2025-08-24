@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,15 +15,11 @@ import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { Textarea } from "@/components/ui/textarea";
 import { PlayerValuesFloatingWindow } from "@/components/dashboard/PlayerValuesFloatingWindow";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
+import { CommentsProvider, useComments } from "@/contexts/CommentsContext";
 import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+// Removed unused imports
+import MemoizedDivisionDropdown from "@/components/sortter/MemoizedDivisionDropdown";
 import React from "react";
 import {
   ChartContainer,
@@ -200,9 +196,16 @@ const isKanaeloMissingError = (error: unknown): boolean => {
   );
 };
 
-export default function SortterPage() {
+// Wrapper component that provides the CommentsContext
+function SortterPageContent() {
   // TODO: Could be moved into a state / dropdown
   const teamsPerDivision = 12;
+  // Get comments from the context
+  const { comments, setCommentForTeam } = useComments();
+
+  // Use refs to store comment textarea elements without triggering re-renders
+  const commentRefs = useRef<{ [key: number]: HTMLTextAreaElement | null }>({});
+
   const {
     teams,
     sortedSeasons,
@@ -211,7 +214,6 @@ export default function SortterPage() {
     selectedSeason,
     selectedTeamId,
     floatingPosition,
-    comments,
     divisions,
     isLoadingTeams,
     isLoadingSeasons,
@@ -224,7 +226,6 @@ export default function SortterPage() {
     showTeamPlayerValues,
     closeTeamPlayerValues,
     prefetchPlayerValues,
-    handleCommentChange,
     handleDivisionChange,
     savePlacements,
     finalizePlacements,
@@ -271,7 +272,12 @@ export default function SortterPage() {
 
     return actualMaxDivision;
   }, [teams, divisions, placements]);
-  const divisionOptions = generateDivisionOptions(maxDivision);
+
+  // Memoize division options to prevent recalculation on every render
+  const divisionOptions = React.useMemo(
+    () => generateDivisionOptions(maxDivision),
+    [maxDivision]
+  );
 
   // Calculate division summary
   const divisionSummary = React.useMemo(() => {
@@ -404,7 +410,7 @@ export default function SortterPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
-                onClick={savePlacements}
+                onClick={() => savePlacements()}
                 disabled={
                   !selectedSeason ||
                   isSaving ||
@@ -648,31 +654,14 @@ export default function SortterPage() {
                                 </div>
                               </td>
                               <td className="py-4 px-2">
-                                <Select
+                                <MemoizedDivisionDropdown
+                                  teamId={team.team_id}
                                   value={teamDivision.toString()}
-                                  onValueChange={(value) => {
-                                    handleDivisionChange(
-                                      team.team_id,
-                                      parseInt(value, 10),
-                                      team.division
-                                    );
-                                  }}
+                                  options={divisionOptions}
                                   disabled={isViewMode}
-                                >
-                                  <SelectTrigger className="w-36 h-10 text-sm">
-                                    <SelectValue placeholder="Division" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {divisionOptions.map((div) => (
-                                      <SelectItem
-                                        key={div.value}
-                                        value={div.value.toString()}
-                                      >
-                                        {div.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                  onValueChange={handleDivisionChange}
+                                  originalValue={team.division}
+                                />
                               </td>
                               <td className="py-4 px-2">
                                 <div className="w-full h-[120px]">
@@ -681,13 +670,62 @@ export default function SortterPage() {
                               </td>
                               <td className="p-2">
                                 <Textarea
-                                  value={comments[team.team_id] || ""}
-                                  onChange={(e) =>
-                                    handleCommentChange(
-                                      team.team_id,
-                                      e.target.value
-                                    )
+                                  defaultValue={
+                                    (comments[team.team_id] === " "
+                                      ? ""
+                                      : comments[team.team_id]) || ""
                                   }
+                                  ref={(el) => {
+                                    if (el) {
+                                      // Store the ref for this team
+                                      commentRefs.current[team.team_id] = el;
+                                    }
+                                  }}
+                                  onBlur={async () => {
+                                    const textarea =
+                                      commentRefs.current[team.team_id];
+                                    if (!textarea) return;
+
+                                    const newValue = textarea.value;
+                                    const currentValue =
+                                      comments[team.team_id] || "";
+
+                                    console.log(
+                                      `Comment check for team ${team.team_id}: current="${currentValue}" new="${newValue}"`
+                                    );
+
+                                    // Always update context and save if there's any change
+                                    // This handles both setting and clearing comments
+                                    if (currentValue !== newValue) {
+                                      // Convert empty string to space character for "empty" comments
+                                      const commentToSave =
+                                        newValue === "" ? " " : newValue;
+
+                                      // Update comment in context without auto-save
+                                      setCommentForTeam(
+                                        team.team_id,
+                                        commentToSave,
+                                        false // Disable auto-save
+                                      );
+
+                                      // Save immediately with the new comment value
+                                      try {
+                                        const updatedComments = {
+                                          ...comments,
+                                          [team.team_id]: commentToSave
+                                        };
+                                        await savePlacements(updatedComments);
+                                        console.log(
+                                          `Comment saved for team ${team.team_id}`
+                                        );
+                                      } catch (error) {
+                                        console.error(
+                                          `Failed to save comment for team ${team.team_id}:`,
+                                          error
+                                        );
+                                      }
+                                    }
+                                  }}
                                   className="min-h-[120px] h-[120px] text-sm resize-none"
                                   placeholder="Add comments..."
                                   disabled={isViewMode}
@@ -718,5 +756,14 @@ export default function SortterPage() {
         )}
       </div>
     </WithRoleProtection>
+  );
+}
+
+// Export the page with CommentsProvider
+export default function SortterPage() {
+  return (
+    <CommentsProvider>
+      <SortterPageContent />
+    </CommentsProvider>
   );
 }
