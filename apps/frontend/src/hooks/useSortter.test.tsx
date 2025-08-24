@@ -2,6 +2,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
+import { CommentsProvider } from "@/contexts/CommentsContext";
 
 // Mock the clientApiFetch
 jest.mock("@/lib/apiClient", () => ({
@@ -29,6 +30,13 @@ jest.mock("next/navigation", () => ({
     toString: jest.fn(() => "")
   })
 }));
+
+// Helper function to render hook with providers
+const renderHookWithProviders = (initialProps: number) => {
+  return renderHook(() => useSortter(initialProps), {
+    wrapper: ({ children }) => <CommentsProvider>{children}</CommentsProvider>
+  });
+};
 
 describe("useSortter", () => {
   beforeEach(() => {
@@ -98,8 +106,8 @@ describe("useSortter", () => {
       return Promise.reject(new Error(`Unmocked API call: ${url}`));
     });
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
@@ -125,8 +133,8 @@ describe("useSortter", () => {
       new Error(errorMessage)
     );
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
@@ -186,8 +194,8 @@ describe("useSortter", () => {
       return Promise.reject(new Error(`Unmocked API call: ${url}`));
     });
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
@@ -255,8 +263,8 @@ describe("useSortter", () => {
       return Promise.reject(new Error(`Unmocked API call: ${url}`));
     });
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
@@ -322,8 +330,8 @@ describe("useSortter", () => {
       return Promise.reject(new Error(`Unmocked API call: ${url}`));
     });
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
@@ -334,17 +342,12 @@ describe("useSortter", () => {
     // Verify that placements are loaded
     expect(result.current.placements).toHaveLength(1);
 
-    // Update a division
+    // Update a division - this will auto-save and show "Division updated"
     await act(async () => {
       result.current.handleDivisionChange(1, 2, null);
     });
 
-    // Save placements
-    await act(async () => {
-      await result.current.savePlacements();
-    });
-
-    // Verify clientApiFetch was called with the right parameters for the POST request
+    // Verify that the division change was auto-saved
     expect(clientApiFetch).toHaveBeenCalledWith(
       "/api/v1/dashboard/sortter/season/2/placements",
       {
@@ -353,8 +356,25 @@ describe("useSortter", () => {
       }
     );
 
-    // Verify toast.success was called
-    expect(toast.success).toHaveBeenCalledWith("Placements saved successfully");
+    // Verify the auto-save toast was shown
+    expect(toast.success).toHaveBeenCalledWith(
+      "Division updated",
+      expect.any(Object)
+    );
+
+    // Now test savePlacements - it should detect no changes and skip saving
+    await act(async () => {
+      await result.current.savePlacements();
+    });
+
+    // Since no changes were detected, savePlacements should not make another API call
+    // The API call count should remain the same (only the division change call)
+    const postCalls = (clientApiFetch as jest.Mock).mock.calls.filter(
+      (call) =>
+        call[0] === "/api/v1/dashboard/sortter/season/2/placements" &&
+        call[1]?.method === "POST"
+    );
+    expect(postCalls).toHaveLength(1); // Only the division change call
   });
 
   it("should handle save placements failure", async () => {
@@ -405,8 +425,8 @@ describe("useSortter", () => {
       return Promise.reject(new Error(`Unmocked API call: ${url}`));
     });
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
@@ -467,8 +487,8 @@ describe("useSortter", () => {
       return Promise.reject(new Error(`Unmocked API call: ${url}`));
     });
 
-    // Render the hook with act to properly handle async state updates
-    const rendered = renderHook(() => useSortter(12));
+    // Render the hook with providers
+    const rendered = renderHookWithProviders(12);
     const result = rendered.result;
 
     await act(async () => {
