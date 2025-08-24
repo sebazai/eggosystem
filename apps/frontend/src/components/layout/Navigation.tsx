@@ -232,7 +232,7 @@ export const Navigation = (props: NavbarProps) => {
     >
       <div
         className={cn(
-          "mx-auto max-w-screen-2xl",
+          "mx-auto max-w-[1920px]",
           options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8"
         )}
       >

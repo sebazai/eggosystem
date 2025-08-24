@@ -37,8 +37,8 @@ export default async function AllOrganizations(props: {
   const organizations: Organizations[] = await orgs.json();
 
   return (
-    <div>
-      <h1 className="text-3xl mb-4 md:mb-8">
+    <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+      <h1 className="text-3xl lg:text-4xl 2xl:text-5xl mb-4 md:mb-8">
         {search
           ? `Search results for "${search}" in Organizations`
           : "Organizations"}
@@ -51,7 +51,7 @@ export default async function AllOrganizations(props: {
       </div>
       <div>
         {/* Organization Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6 justify-items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 lg:gap-8 py-6 justify-items-center">
           {organizations.map((org) => (
             <FadeOnScroll key={org.id}>
               <OrganizationFlipCard

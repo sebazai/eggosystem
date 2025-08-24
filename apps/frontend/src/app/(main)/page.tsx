@@ -36,26 +36,27 @@ export default async function Home() {
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
-      <section className="min-h-screen">
+      <section>
         <Navigation options={{ removeBottomPadding: true }} />
         <HeroSection />
       </section>
-      <section className="py-8 md:py-16 lg:py-32">
+      <section className="py-12 md:py-24 lg:py-32 2xl:py-40">
         <div className="flex flex-grow justify-center items-center w-full">
-          <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-            <h1 className="text-2xl xs:text-3xl sm:text-4xl font-bold my-8 text-white">
-              Welcome to Kanaliiga – The World&apos;s Largest Corporate Esports
-              League
+          <div className="w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-6xl font-bold my-8 text-white">
+              Building Corporate Culture Through Esports
             </h1>
-            <p className="mb-4 text-lg text-slate-300">
-              Founded in 2018, Kanaliiga is home to over{" "}
-              <strong>2,500 players from 300+ organizations</strong> annually.
-              We bring professionals together through esports, cultivating
-              positive gaming culture within workplaces.
+            <p className="mb-4 text-xl lg:text-2xl 2xl:text-3xl text-slate-300">
+              Since 2018, Kanaliiga has been pioneering corporate esports in
+              Finland, bringing together{" "}
+              <strong>over 2,500 professionals from 300+ companies</strong>{" "}
+              annually. We&apos;re transforming workplace connections through
+              competitive gaming.
             </p>
-            <p className="mb-6 text-slate-300">
-              Our mission is to make esports a bridge for collaboration,
-              community, and healthy competition across the business world.
+            <p className="mb-6 text-lg lg:text-xl 2xl:text-2xl text-slate-300">
+              Our leagues foster teamwork, networking, and friendly competition
+              while building lasting connections across Finland&apos;s business
+              landscape.
             </p>
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />

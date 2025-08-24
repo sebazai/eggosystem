@@ -73,50 +73,62 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   };
 
   return (
-    <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+    <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-[800px] lg:min-h-[900px] 2xl:min-h-[1000px]">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-center opacity-10"></div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-screen-2xl mx-auto px-4 py-12">
+      <div className="relative z-10 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 lg:py-24 2xl:py-32 w-full">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left Side - Hero Content */}
           <div className="space-y-6">
             <div className="space-y-3">
               <Badge
                 variant="secondary"
-                className="bg-orange-500/20 text-orange-400 border-orange-500/30"
+                className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-base lg:text-lg 2xl:text-xl"
               >
                 CS2 Season 4 • Live Now
               </Badge>
 
-              <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight">
-                The World&apos;s Largest
+              <h1 className="text-4xl lg:text-6xl 2xl:text-7xl font-bold text-white leading-tight">
+                Finland&apos;s Premier
                 <span className="block text-orange-400">
                   Corporate Esports League
                 </span>
               </h1>
 
-              <p className="text-lg text-slate-300 leading-relaxed">
-                Over 600 players from 100+ organizations competing in the most
-                competitive CS2 season yet. Watch live matches, follow your
-                favorite teams, and join the community.
+              <p className="text-xl lg:text-2xl 2xl:text-3xl text-slate-300 leading-relaxed">
+                Join the most competitive CS2 corporate league in Finland. Watch
+                live matches, follow your favorite teams, and be part of our
+                thriving esports community.
               </p>
             </div>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-2xl font-bold text-orange-400">100+</div>
-                <div className="text-sm text-slate-400">Organizations</div>
+                <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
+                  100+
+                </div>
+                <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
+                  Organizations
+                </div>
               </div>
               <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-2xl font-bold text-orange-400">600+</div>
-                <div className="text-sm text-slate-400">Players</div>
+                <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
+                  600+
+                </div>
+                <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
+                  Players
+                </div>
               </div>
               <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-2xl font-bold text-orange-400">110+</div>
-                <div className="text-sm text-slate-400">Teams</div>
+                <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
+                  110+
+                </div>
+                <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
+                  Teams
+                </div>
               </div>
             </div>
 
@@ -124,23 +136,23 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-base lg:text-lg 2xl:text-xl h-auto"
                 onClick={() =>
                   router.push(`/seasons/${currentSeasonId}/calendar`)
                 }
               >
-                <Calendar className="mr-2 h-5 w-5" />
+                <Calendar className="mr-2 h-5 w-5 lg:h-6 lg:w-6 2xl:h-7 2xl:w-7" />
                 View Match Calendar
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white/20 hover:bg-white/10 px-8 py-3"
+                className="border-white/20 hover:bg-white/10 px-8 py-3 text-base lg:text-lg 2xl:text-xl h-auto"
                 onClick={() =>
                   window.open("https://www.twitch.tv/slougani", "_blank")
                 }
               >
-                <Play className="mr-2 h-5 w-5" />
+                <Play className="mr-2 h-5 w-5 lg:h-6 lg:w-6 2xl:h-7 2xl:w-7" />
                 Watch Live
               </Button>
             </div>
@@ -149,14 +161,14 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
           {/* Right Side - Upcoming Matches */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Calendar className="h-6 w-6 text-orange-400" />
+              <h2 className="text-2xl lg:text-3xl 2xl:text-4xl font-bold text-white flex items-center gap-2">
+                <Calendar className="h-6 w-6 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-orange-400" />
                 Upcoming Matches
               </h2>
               <Button
                 variant="ghost"
-                size="sm"
-                className="text-orange-400 hover:text-orange-300"
+                size="lg"
+                className="text-orange-400 hover:text-orange-300 text-base lg:text-lg 2xl:text-xl h-auto"
                 onClick={() =>
                   router.push(`/seasons/${currentSeasonId}/calendar`)
                 }
@@ -261,11 +273,11 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
           <div className="grid md:grid-cols-4 gap-6">
             <Link href="/teams" className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <Users className="h-8 w-8 text-orange-400 mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
+                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
                   Browse Teams
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
                   Discover teams and their players
                 </p>
               </div>
@@ -276,11 +288,11 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               className="group"
             >
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <TrendingUp className="h-8 w-8 text-orange-400 mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
+                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
                   View Standings
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
                   Check current league rankings
                 </p>
               </div>
@@ -288,11 +300,11 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
 
             <Link href="/matches" className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <Play className="h-8 w-8 text-orange-400 mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <Play className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
+                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
                   All Matches
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
                   Browse complete match history
                 </p>
               </div>
@@ -300,11 +312,11 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
 
             <Link href="/organizations" className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
-                <Users className="h-8 w-8 text-orange-400 mb-3" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+                <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3" />
+                <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
                   Organizations
                 </h3>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm lg:text-base 2xl:text-lg text-slate-400">
                   Explore participating organizations
                 </p>
               </div>

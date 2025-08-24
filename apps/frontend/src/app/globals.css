@@ -109,6 +109,7 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
   --breakpoint-xs: 30rem;
   --breakpoint-3xl: 120rem;
   --breakpoint-4xl: 150rem;
+  --breakpoint-max: 1920px;
   --color-kanaliiga-orange: var(--kanaliiga-orange);
   --color-kanaliiga-light-brown: var(--kanaliiga-light-brown);
   --color-background: var(--background);
