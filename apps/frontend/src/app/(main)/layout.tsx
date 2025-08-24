@@ -5,7 +5,7 @@ import localFont from "next/font/local";
 import { ThemeProvider } from "../../providers/ThemeProvider";
 import { ChickenAnnouncerProvider } from "@/providers/ChickenAnnouncerProvider";
 import { cn } from "@/lib/utils";
-import { Navigation } from "@/components/layout/Navigation";
+import { ConditionalNavigation } from "@/components/layout/ConditionalNavigation";
 import Footer from "@/components/layout/LayoutFooter";
 import SkipToContent from "@/components/layout/SkipToContent";
 import { KfcRain } from "@/components/layout/KfcRain";
@@ -82,7 +82,7 @@ export async function generateMetadata() {
   return createPageMetadata({
     title: { default: "Kanahub", template: "%s | Kanahub by Kanaliiga" },
     description:
-      "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ companies annually. Join us for a season of competitive gaming and community building."
+      "Kanaliiga is the world's largest corporate esports league, bringing together over 2,500 players from 300+ organizations annually. Join us for a season of competitive gaming and community building."
   });
 }
 
@@ -139,7 +139,7 @@ export default function RootLayout({
               />
               <div className="min-h-svh min-w-[320px] w-full">
                 <AuthProvider>
-                  <Navigation />
+                  <ConditionalNavigation />
                   <AcceptPolicyProvider>
                     <main className="w-full" id="main-content">
                       {children}

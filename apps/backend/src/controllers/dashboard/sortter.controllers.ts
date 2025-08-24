@@ -1,4 +1,3 @@
-import { type Response, type NextFunction } from "express";
 import {
   getTeamValuesForSorter,
   getTeamPlayerValuesForSortter,
@@ -15,6 +14,11 @@ import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { getCSRank } from "../../services/player-ranks.services";
 import { getConnection } from "../../db/mysqlConnection";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
+import { type Request, type Response, type NextFunction } from "express";
+import {
+  getTeamFlags,
+  createTeamFlagsFromDatabase
+} from "../../services/elo.services";
 
 /**
  * Controller to get team values for sorter functionality
@@ -279,6 +283,7 @@ export const addPlayerToTeamController = async (
       eligibility.selectedTeam.new_player_kana_elo,
       calculusString,
       seasonId,
+      undefined, // offered_elo (not needed here)
       connection
     );
 
@@ -304,5 +309,64 @@ export const addPlayerToTeamController = async (
     return next(error);
   } finally {
     connection.release();
+  }
+};
+
+export const getTeamFlagsController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Get all team flags from Redis
+    const teamFlags = await getTeamFlags();
+
+    res.json(teamFlags);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshTeamFlagsFromDatabaseController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Force refresh from database by calling getTeamFlags
+    // This will trigger createTeamFlagsFromDatabase if no flags exist
+    const teamFlags = await getTeamFlags();
+
+    res.json({
+      message: "Team flags refreshed from database",
+      count: teamFlags.length,
+      flags: teamFlags
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshTeamFlagsForSeasonController = async (
+  req: RequestWithParams<{ season_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const seasonId = Number(req.params.season_id);
+
+    // Create flags specifically for this season
+    await createTeamFlagsFromDatabase(seasonId);
+
+    // Get the updated flags
+    const teamFlags = await getTeamFlags();
+
+    res.json({
+      message: `Team flags refreshed for season ${seasonId}`,
+      count: teamFlags.length,
+      flags: teamFlags
+    });
+  } catch (error) {
+    next(error);
   }
 };

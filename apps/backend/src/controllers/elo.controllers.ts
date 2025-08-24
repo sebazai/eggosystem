@@ -29,7 +29,8 @@ export const stabilizeEloController = async (
   req: RequestWithBody<StabilizationRequest>,
   res: Response<StabilizationResponse>
 ): Promise<void> => {
-  const { playerId, currentValue, season, metadata: _metadata } = req.body;
+  const { playerId, season, metadata: _metadata } = req.body;
+  let { currentValue } = req.body;
 
   // Validate input
   if (!playerId) {
@@ -40,14 +41,16 @@ export const stabilizeEloController = async (
     throw new BadRequestError("currentValue is required");
   }
 
-  if (
-    typeof currentValue !== "number" ||
-    currentValue < 0 ||
-    currentValue > 400
-  ) {
-    throw new BadRequestError(
-      "currentValue must be a number between 0 and 400"
-    );
+  if (typeof currentValue !== "number") {
+    throw new BadRequestError("currentValue must be a number");
+  }
+
+  // Cap currentValue at 400
+  currentValue = Math.min(400, currentValue);
+
+  // Validate range (only lower bound now)
+  if (currentValue < 0) {
+    throw new BadRequestError("currentValue must be between 0 and 400");
   }
 
   if (!season) {

@@ -230,6 +230,7 @@ test:backend:
     - pnpm install --frozen-lockfile
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm --filter=backend seed
+    - pnpm migrate
   script:
     - npx turbo run test --filter=backend
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'

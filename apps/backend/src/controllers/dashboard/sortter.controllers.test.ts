@@ -133,7 +133,10 @@ describe("Sortter Controllers", () => {
             league_name: "League 1",
             top5_sum: 100,
             avg4: 25,
-            top5_values: [20, 20, 20, 20, 20]
+            orig4: 25,
+            top5_values: [20, 20, 20, 20, 20],
+            top5_offered_values: [20, 20, 20, 20, 20],
+            is_flagged: false
           }
         ];
 
@@ -165,7 +168,10 @@ describe("Sortter Controllers", () => {
             league_name: "League 1",
             top5_sum: 100,
             avg4: 25,
-            top5_values: [20, 20, 20, 20, 20]
+            orig4: 25,
+            top5_values: [20, 20, 20, 20, 20],
+            top5_offered_values: [20, 20, 20, 20, 20],
+            is_flagged: false
           }
         ];
 
@@ -201,7 +207,10 @@ describe("Sortter Controllers", () => {
             league_name: "League 1",
             top5_sum: 100,
             avg4: 25,
-            top5_values: [20, 20, 20, 20, 20]
+            orig4: 25,
+            top5_values: [20, 20, 20, 20, 20],
+            top5_offered_values: [20, 20, 20, 20, 20],
+            is_flagged: false
           }
         ];
 
@@ -316,7 +325,10 @@ describe("Sortter Controllers", () => {
             league_name: "League 1",
             top5_sum: 1418,
             avg4: 288.75,
-            top5_values: [300, 295, 285, 275, 263]
+            orig4: 288.75,
+            top5_values: [300, 295, 285, 275, 263],
+            top5_offered_values: [300, 295, 285, 275, 263],
+            is_flagged: false
           }
         ];
 
@@ -358,7 +370,10 @@ describe("Sortter Controllers", () => {
             league_name: "League 1",
             top5_sum: 1418,
             avg4: 288.75,
-            top5_values: [300, 295, 285, 275, 263]
+            orig4: 288.75,
+            top5_values: [300, 295, 285, 275, 263],
+            top5_offered_values: [300, 295, 285, 275, 263],
+            is_flagged: false
           },
           {
             team_id: 2054,
@@ -367,7 +382,10 @@ describe("Sortter Controllers", () => {
             league_name: "League 2",
             top5_sum: 1000,
             avg4: 200.0,
-            top5_values: [250, 250, 250, 250, 0]
+            orig4: 200.0,
+            top5_values: [250, 250, 250, 250, 0],
+            top5_offered_values: [250, 250, 250, 250, 0],
+            is_flagged: false
           }
         ];
 

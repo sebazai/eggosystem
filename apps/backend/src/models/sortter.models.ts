@@ -1,5 +1,6 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
+import { redisClient } from "../utils/redisClient";
 import {
   type TeamSortterValues,
   type TeamSortterValuesRaw,
@@ -30,6 +31,7 @@ export const getTeamValuesForSorter = async (
         COALESCE(l.name, 'Unassigned') AS league_name,
         spr.steam_id,
         spr.kana_elo,
+        spr.offered_elo,
         ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
       JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id
@@ -48,7 +50,8 @@ export const getTeamValuesForSorter = async (
         team_logo,
         league_name,
         player_rank,
-        kana_elo
+        kana_elo,
+        offered_elo
       FROM TeamPlayersKanaElo
       WHERE player_rank <= 5
     ),
@@ -60,7 +63,9 @@ export const getTeamValuesForSorter = async (
         league_name,
         SUM(kana_elo) AS top5_sum,
         ROUND(AVG(CASE WHEN player_rank <= 4 THEN kana_elo ELSE NULL END), 3) AS avg4,
-        JSON_ARRAYAGG(kana_elo ORDER BY player_rank) AS top5_values
+        ROUND(AVG(CASE WHEN player_rank <= 4 THEN offered_elo ELSE NULL END), 3) AS orig4,
+        JSON_ARRAYAGG(kana_elo ORDER BY player_rank) AS top5_values,
+        JSON_ARRAYAGG(offered_elo ORDER BY player_rank) AS top5_offered_values
       FROM TeamTop5Players
       GROUP BY team_id, team_name, team_logo, league_name
     )
@@ -71,7 +76,9 @@ export const getTeamValuesForSorter = async (
       league_name,
       top5_sum,
       avg4,
-      top5_values
+      orig4,
+      top5_values,
+      top5_offered_values
     FROM TeamValues
     ORDER BY avg4 DESC
   `;
@@ -82,17 +89,74 @@ export const getTeamValuesForSorter = async (
   const results = rawResults.map((team) => {
     // Parse the JSON string and ensure all values are numbers
     const parsedValues = JSON.parse(team.top5_values);
+    const parsedOfferedValues = team.top5_offered_values
+      ? JSON.parse(team.top5_offered_values)
+      : Array(parsedValues.length).fill(null);
 
     // Map each value to ensure they're all numbers
     const top5_values = Array.isArray(parsedValues)
       ? parsedValues.map((val) => Number(val))
       : [];
 
+    const top5_offered_values = Array.isArray(parsedOfferedValues)
+      ? parsedOfferedValues.map((val) => (val !== null ? Number(val) : null))
+      : [];
+
     return {
       ...team,
-      top5_values
+      top5_values,
+      top5_offered_values,
+      // Ensure orig4 is a number (or null if not available)
+      orig4: team.orig4 !== null ? Number(team.orig4) : null,
+      // Initialize is_flagged to false, will be updated later if needed
+      is_flagged: false as boolean
     };
   }) satisfies TeamSortterValues[];
+
+  // Check for team flags in Redis
+  try {
+    // Get all team flag keys for the current season
+    const flagKeys = await redisClient.keys(`team-flag:s${seasonId}:*`);
+    console.warn(
+      `Found ${flagKeys.length} team flag keys for season ${seasonId}`
+    );
+
+    if (flagKeys.length > 0) {
+      // Create a set of flagged team IDs for quick lookup
+      const flaggedTeamIds = new Set<number>();
+
+      // Extract team IDs from flag keys (format: team-flag:s{season_id}:l{league_id}:{team_id})
+      for (const key of flagKeys) {
+        const parts = key.split(":");
+        if (parts.length >= 4) {
+          const teamId = parseInt(parts[3], 10);
+          if (!isNaN(teamId)) {
+            flaggedTeamIds.add(teamId);
+          }
+        }
+      }
+
+      console.warn(`Flagged team IDs:`, Array.from(flaggedTeamIds));
+      console.warn(`Total teams in results: ${results.length}`);
+
+      // Mark flagged teams
+      let flaggedCount = 0;
+      for (const team of results) {
+        const isFlagged = flaggedTeamIds.has(team.team_id);
+        team.is_flagged = isFlagged;
+        if (isFlagged) {
+          flaggedCount++;
+          console.warn(`Team ${team.team_id} (${team.team_name}) is flagged`);
+        }
+      }
+
+      console.warn(
+        `Marked ${flaggedCount} teams as flagged out of ${results.length} total teams`
+      );
+    }
+  } catch (error) {
+    console.error("Error checking team flags:", error);
+  }
 
   return results;
 };
@@ -128,6 +192,7 @@ export const getTeamPlayerValuesForSortter = async (
       ROUND(AVG(ps.kana_rating), 6) AS kanarating,
       spr.faceit_kd AS fkd,
       spr.kana_elo,
+      spr.offered_elo,
       calculus
     FROM Teams t
     JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id

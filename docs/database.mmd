@@ -85,6 +85,7 @@ erDiagram
 "Seasons" }o--|| "Games" : ""
 "Seasons" }o--o| "GameTypes" : ""
 "Seasons" }o--|| "Organizers" : ""
+"SeasonTeamPlayers" }o--o| "Matches" : ""
 "SeasonTeamPlayers" }o--|| "SteamPlayers" : ""
 "SeasonTeamRegistrationPlayers" }o--|| "SeasonTeamRegistrations" : ""
 "SeasonTeamRegistrationPlayers" }o--|| "SteamPlayers" : ""
@@ -216,6 +217,9 @@ erDiagram
   bigint_20_ killer_steam_id FK
   bigint_20_ victim_steam_id FK
 }
+"PublicEmailDomains" {
+  int_10__unsigned id PK
+}
 "Reservations" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
@@ -265,6 +269,7 @@ erDiagram
   int_10__unsigned season_id PK
   int_10__unsigned team_id PK
   bigint_20_ steam_id PK
+  int_10__unsigned match_id FK
 }
 "SeasonTeamRegistrationPlayers" {
   int_10__unsigned season_id PK

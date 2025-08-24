@@ -54,7 +54,7 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Verification:</strong> Ensuring players are correctly
-          associated with their teams/companies.
+          associated with their teams/organizations.
         </li>
       </ul>
 

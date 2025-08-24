@@ -610,19 +610,38 @@ export const setPlayerKanaElo = async (
   kana_elo: number,
   calculus: string,
   season_id: number,
+  offered_elo?: number,
   connection?: PoolConnection
 ): Promise<boolean> => {
-  const query = `
-    UPDATE SeasonPlayerRanks 
-    SET calculus = ?, kana_elo = ? 
-    WHERE season_id = ? AND steam_id = ?
-  `;
+  // If offered_elo is provided, update both kana_elo and offered_elo
+  if (offered_elo !== undefined) {
+    const query = `
+      UPDATE SeasonPlayerRanks 
+      SET calculus = ?, kana_elo = ?, offered_elo = ? 
+      WHERE season_id = ? AND steam_id = ?
+    `;
 
-  const result = await runQuery<{ affectedRows: number }>(
-    query,
-    [calculus, kana_elo, season_id, steam_id],
-    connection
-  );
+    const result = await runQuery<{ affectedRows: number }>(
+      query,
+      [calculus, kana_elo, offered_elo, season_id, steam_id],
+      connection
+    );
 
-  return result.affectedRows > 0;
+    return result.affectedRows > 0;
+  } else {
+    // Backward compatibility - just update kana_elo without offered_elo
+    const query = `
+      UPDATE SeasonPlayerRanks 
+      SET calculus = ?, kana_elo = ? 
+      WHERE season_id = ? AND steam_id = ?
+    `;
+
+    const result = await runQuery<{ affectedRows: number }>(
+      query,
+      [calculus, kana_elo, season_id, steam_id],
+      connection
+    );
+
+    return result.affectedRows > 0;
+  }
 };

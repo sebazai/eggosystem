@@ -32,6 +32,7 @@ import {
   type ChartConfig
 } from "@/components/ui/chart";
 import { XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
+import { AlertTriangle } from "lucide-react";
 
 // Enhanced line chart component using shadcn Chart
 const MiniChart = ({ data }: { data: number[] }) => {
@@ -204,7 +205,7 @@ export default function SortterPage() {
   const teamsPerDivision = 12;
   const {
     teams,
-    seasons,
+    sortedSeasons,
     playerValues,
     placements,
     selectedSeason,
@@ -343,6 +344,30 @@ export default function SortterPage() {
     }
   };
 
+  // State for retry failed calculations
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  // Handle retrying failed kanaelo calculations
+  const handleRetryFailedCalculations = async () => {
+    try {
+      setIsRetrying(true);
+      const response = await clientApiFetch<{
+        message: string;
+        moved: number;
+        errors: number;
+        total: number;
+      }>(`/api/v1/dashboard/sortter/retry-failed-calculations`, {
+        method: "POST"
+      });
+
+      toast.success(response.message);
+    } catch (_error) {
+      toast.error("Failed to retry failed calculations");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
   return (
     <WithRoleProtection allowedRoles={["admin"]}>
       <div className="space-y-4 w-full flex flex-col">
@@ -353,11 +378,25 @@ export default function SortterPage() {
               Team ranking management and analysis tool
             </p>
           </div>
+
+          {/* Navigation Links */}
+          <div className="flex items-center space-x-4 pt-2">
+            <Button variant="ghost" size="sm" asChild>
+              <a
+                href={`/dashboard/sortter/team-flags${selectedSeason ? `?season=${selectedSeason}` : ""}`}
+                className="flex items-center gap-2"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                Team Flags
+              </a>
+            </Button>
+          </div>
+
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium">Season:</span>
               <SeasonSelector
-                seasons={seasons}
+                seasons={sortedSeasons || []}
                 selectedSeason={selectedSeason}
                 onChange={setSelectedSeason}
                 isLoading={isLoadingSeasons}
@@ -419,6 +458,25 @@ export default function SortterPage() {
                   </>
                 ) : (
                   "Populate Kanaelo Queue"
+                )}
+              </Button>
+
+              <Button
+                onClick={handleRetryFailedCalculations}
+                disabled={isRetrying}
+                variant="outline"
+                className="ml-2"
+              >
+                {isRetrying ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                    Retry Failed Calculations
+                  </>
                 )}
               </Button>
               {isViewMode && (
@@ -515,8 +573,8 @@ export default function SortterPage() {
                         <th className="text-left p-2 font-medium text-sm w-36">
                           Team
                         </th>
-                        <th className="text-left p-2 font-medium text-sm w-28">
-                          kanaelo (sum 5 / avg4)
+                        <th className="text-left p-2 font-medium text-sm w-36">
+                          kanaelo (sum 5 / avg4 / orig4)
                         </th>
                         <th className="text-left p-2 font-medium text-sm w-28">
                           Division
@@ -576,8 +634,17 @@ export default function SortterPage() {
                                 {team.team_name}
                               </td>
                               <td className="py-4 px-2 text-sm">
-                                <div className="font-medium">
-                                  {totalValue} / {avgValue}
+                                <div className="font-medium flex items-center gap-2">
+                                  {team.is_flagged && (
+                                    <AlertTriangle
+                                      className="h-4 w-4 text-orange-600 dark:text-orange-400"
+                                      aria-label="Team flagged for ELO adjustments"
+                                    />
+                                  )}
+                                  <span>
+                                    {totalValue} / {avgValue} /{" "}
+                                    {team.orig4 ? team.orig4.toFixed(3) : "N/A"}
+                                  </span>
                                 </div>
                               </td>
                               <td className="py-4 px-2">

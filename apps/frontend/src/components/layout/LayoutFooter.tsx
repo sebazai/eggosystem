@@ -12,7 +12,7 @@ const Footer = () => {
   const shortSha = gitSha.substring(0, 7);
 
   return (
-    <footer className="bg-secondary mt-4 sm:mt-12 px-4 sm:px-12">
+    <footer className="bg-secondary pt-4 sm:pt-12 px-4 sm:px-12">
       <div className="max-w-screen-2xl mx-auto">
         <div className="border-b border-gray-700 pb-6 mb-6"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

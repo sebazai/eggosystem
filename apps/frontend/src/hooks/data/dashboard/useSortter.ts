@@ -52,6 +52,26 @@ export function useSortter(placeTeamsInDivision: number) {
     revalidateOnFocus: false
   });
 
+  // Sort seasons in descending order (newest first)
+  const sortedSeasons = useMemo(() => {
+    if (!seasons) return [];
+    return [...seasons].sort((a, b) => b.id - a.id);
+  }, [seasons]);
+
+  // Find current active season (default to the newest season with highest ID)
+  const currentActiveSeason = useMemo(() => {
+    if (!sortedSeasons.length) return null;
+    // Since we don't have is_active property, just use the newest season (first in sorted array)
+    return sortedSeasons[0];
+  }, [sortedSeasons]);
+
+  // Update selectedSeason when currentActiveSeason changes (for initial load)
+  useEffect(() => {
+    if (!selectedSeason && currentActiveSeason?.id) {
+      setSelectedSeasonState(currentActiveSeason.id);
+    }
+  }, [selectedSeason, currentActiveSeason]);
+
   // Fetch team values for the selected season
   const {
     data: teams,
@@ -67,6 +87,22 @@ export function useSortter(placeTeamsInDivision: number) {
       revalidateOnFocus: false
     }
   );
+
+  // Debug: Log teams data when it changes
+  useEffect(() => {
+    if (teams && teams.length > 0) {
+      console.log("Teams data received:", teams);
+      const flaggedTeams = teams.filter((team) => team.is_flagged);
+      console.log(
+        `Flagged teams: ${flaggedTeams.length}/${teams.length}`,
+        flaggedTeams.map((t) => ({
+          id: t.team_id,
+          name: t.team_name,
+          flagged: t.is_flagged
+        }))
+      );
+    }
+  }, [teams]);
 
   // Fetch preliminary placements for the selected season
   const {
@@ -399,6 +435,8 @@ export function useSortter(placeTeamsInDivision: number) {
   return {
     teams: sortedTeams,
     seasons: seasons || [],
+    sortedSeasons: sortedSeasons || [],
+    currentActiveSeason,
     playerValues: playerValues || [],
     placements,
     selectedSeason,

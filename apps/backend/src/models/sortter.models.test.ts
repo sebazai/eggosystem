@@ -10,6 +10,19 @@ import { runQuery } from "../db/mysqlRunQuery";
 jest.mock("../db/mysqlRunQuery");
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
+// Mock Redis client
+jest.mock("../utils/redisClient", () => ({
+  redisClient: {
+    keys: jest.fn().mockResolvedValue([]),
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    quit: jest.fn(),
+    flushall: jest.fn()
+  },
+  expireIn30Days: 2592000
+}));
+
 // Mock fetch for CSRankker API calls
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -47,7 +60,9 @@ describe("Sortter Models", () => {
           league_name: "Test League",
           top5_sum: 1000,
           avg4: 250,
-          top5_values: "[100, 200, 300, 400, 500]"
+          orig4: null,
+          top5_values: "[100, 200, 300, 400, 500]",
+          top5_offered_values: "[null, null, null, null, null]"
         }
       ];
 
@@ -63,7 +78,10 @@ describe("Sortter Models", () => {
           league_name: "Test League",
           top5_sum: 1000,
           avg4: 250,
-          top5_values: [100, 200, 300, 400, 500]
+          orig4: null,
+          top5_values: [100, 200, 300, 400, 500],
+          top5_offered_values: [null, null, null, null, null],
+          is_flagged: false
         }
       ]);
     });
@@ -85,7 +103,9 @@ describe("Sortter Models", () => {
           league_name: "Test League",
           top5_sum: 1000,
           avg4: 250,
-          top5_values: "[100, 200, 300, 400, 500]"
+          orig4: null,
+          top5_values: "[100, 200, 300, 400, 500]",
+          top5_offered_values: "[null, null, null, null, null]"
         }
       ];
 
@@ -106,7 +126,9 @@ describe("Sortter Models", () => {
           league_name: "Test League",
           top5_sum: 1000,
           avg4: 250,
-          top5_values: "[100, 200, 300, 400, 500]"
+          orig4: null,
+          top5_values: "[100, 200, 300, 400, 500]",
+          top5_offered_values: "[null, null, null, null, null]"
         }
       ];
 
@@ -129,7 +151,9 @@ describe("Sortter Models", () => {
           league_name: "League 1",
           top5_sum: 500,
           avg4: 100,
-          top5_values: "[120, 110, 100, 90, 80]"
+          orig4: null,
+          top5_values: "[120, 110, 100, 90, 80]",
+          top5_offered_values: "[null, null, null, null, null]"
         }
       ];
 

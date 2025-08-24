@@ -11,17 +11,24 @@ export interface TeamSortterValues {
   top5_sum: number;
   /** Average of kanaelo for top 4 players */
   avg4: number;
+  /** Average of original/offered kanaelo for top 4 players (before stabilization) */
+  orig4: number | null;
   /** Kanaelo values for top 5 players as an array */
   top5_values: number[];
+  /** Original/offered kanaelo values for top 5 players as an array (before stabilization) */
+  top5_offered_values?: (number | null)[];
   comments?: string;
+  /** Flag indicating if the team has been flagged for ELO adjustments */
+  is_flagged: boolean;
 }
 
 /**
  * Interface for raw database results before parsing
  */
 export interface TeamSortterValuesRaw
-  extends Omit<TeamSortterValues, "top5_values"> {
+  extends Omit<TeamSortterValues, "top5_values" | "top5_offered_values"> {
   top5_values: string;
+  top5_offered_values?: string;
 }
 
 /**
@@ -53,6 +60,7 @@ export interface PlayerSortterValues {
   kanarating: number | null;
   fkd: number | null;
   kana_elo: SeasonPlayerRank["kana_elo"];
+  offered_elo?: number | null;
   calculus: string | null;
 }
 

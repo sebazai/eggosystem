@@ -100,7 +100,8 @@ describe("addPlayerToTeamController", () => {
       200,
       expect.any(String),
       14,
-      expect.any(Object)
+      undefined, // offered_elo parameter
+      expect.any(Object) // connection parameter
     );
 
     // Verify player was added to team

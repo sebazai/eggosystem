@@ -90,7 +90,9 @@ describe("Player Routes - set-kanaelo", () => {
         "76561198123456789",
         250,
         "test-calculus",
-        16
+        16,
+        undefined, // offered_elo parameter
+        undefined // connection parameter
       );
     });
 
@@ -157,39 +159,26 @@ describe("Player Routes - set-kanaelo", () => {
       });
     });
 
-    it("should return 400 when kana_elo is out of range", async () => {
-      const invalidRequest = {
-        kana_elo: 450,
-        calculus: "test-calculus",
-        season_id: 16
-      };
-
-      const response = await request(app)
-        .post("/api/v1/players/76561198123456789/set-kanaelo")
-        .set("X-API-KEY", TEST_API_KEY)
-        .send(invalidRequest);
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        type: "about:blank",
-        title: "Bad Request",
-        status: 400,
-        detail: "kana_elo must be between 0 and 400",
-        instance: "/api/v1/players/76561198123456789/set-kanaelo"
-      });
-    });
-
     it("should handle database errors gracefully", async () => {
       mockSetPlayerKanaElo.mockRejectedValueOnce(new Error("Database error"));
 
       const response = await request(app)
         .post("/api/v1/players/76561198123456789/set-kanaelo")
         .set("X-API-KEY", TEST_API_KEY)
-        .send(validRequest);
+        .send({
+          kana_elo: 250,
+          calculus: "test-calculus",
+          season_id: 16
+        });
 
       expect(response.status).toBe(500);
-      // The error response might not have an "error" property, just check it's not empty
-      expect(response.body).toBeDefined();
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "Failed to update Kana ELO",
+        instance: "/api/v1/players/76561198123456789/set-kanaelo"
+      });
     });
   });
 });

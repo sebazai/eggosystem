@@ -1,217 +1,317 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { cn, createNextUrl } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Calendar,
+  Clock,
+  ExternalLink,
+  Play,
+  TrendingUp,
+  Users
+} from "lucide-react";
+import { formatInTimezone } from "@/lib/timezone";
+import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
+import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import type { MatchWithStreamUrls } from "@eggosystem/types";
 import Link from "next/link";
-import { KanaMainPartners } from "../sponsors/KanaMainPartners";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useScrolled } from "@/hooks/useScrolled";
-import { MotionSponsorContainer } from "../sponsors/SponsorContainer";
 
-const overlays = [
-  {
-    id: 1,
-    title: "CS 2 Season 4",
-    subtitle: "CS2 Corporate esports Season 4 Starts September 1st."
-  },
-  {
-    id: 2,
-    title: "Last Season’s Stats",
-    subtitle: "850+ players · 120+ teams · 800+ matches"
-  },
-  {
-    id: 3,
-    title: "Think Your Team Has What It Takes?",
-    subtitle: "Rally your colleagues. Train hard. Rise to the top."
-  }
-];
+// Division definitions with darker, more readable colors
+const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
+  1: { color: "#b91c1c", borderColor: "#991b1b" }, // Darker red
+  2: { color: "#1d4ed8", borderColor: "#1e40af" }, // Darker blue
+  3: { color: "#047857", borderColor: "#065f46" }, // Darker green
+  4: { color: "#b45309", borderColor: "#92400e" }, // Darker orange
+  5: { color: "#6d28d9", borderColor: "#5b21b6" }, // Darker purple
+  6: { color: "#be185d", borderColor: "#9d174d" }, // Darker pink
+  7: { color: "#0e7490", borderColor: "#155e75" }, // Darker cyan
+  8: { color: "#4d7c0f", borderColor: "#365314" }, // Darker lime
+  9: { color: "#c2410c", borderColor: "#9a3412" }, // Darker red-orange
+  10: { color: "#7c3aed", borderColor: "#6d28d9" }, // Darker violet
+  11: { color: "#0f766e", borderColor: "#134e4a" }, // Darker teal
+  12: { color: "#a16207", borderColor: "#854d0e" } // Darker yellow
+};
 
 type HeroSectionProps = {
   device?: string;
 };
 
-export default function HeroSection({ device }: HeroSectionProps) {
-  const [step, setStep] = useState(0);
-  const [splashComplete, setSplashComplete] = useState(false);
-  const { isScrolled } = useScrolled();
-
-  const [videoSrc, setVideoSrc] = useState<string>(
-    device === "mobile"
-      ? createNextUrl(
-          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
-        )
-      : createNextUrl(
-          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
-        )
-  );
-  const videoRef = useRef<HTMLVideoElement>(null);
+export default function HeroSection({ device: _device }: HeroSectionProps) {
   const router = useRouter();
-  const { isMobile, isLandscape } = useIsMobile(device === "mobile");
 
-  useEffect(() => {
-    if (isMobile && !isLandscape) {
-      setVideoSrc(
-        createNextUrl(
-          "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_portrait.mp4"
-        )
-      );
-      return;
+  // Get current season (CS2 app ID is typically 1)
+  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
+  const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16"; // fallback to season 16
+
+  // Get upcoming matches for all divisions
+  const { calendarMatches, isLoading: isLoadingMatches } =
+    useSeasonCalendarMatches(currentSeasonId, "all");
+
+  // Filter to show only upcoming matches (next 7 days)
+  const upcomingMatches =
+    calendarMatches
+      ?.filter((match) => {
+        const matchDate = new Date(match.match_start);
+        const now = new Date();
+        const sevenDaysFromNow = new Date(
+          now.getTime() + 7 * 24 * 60 * 60 * 1000
+        );
+        return matchDate >= now && matchDate <= sevenDaysFromNow;
+      })
+      .slice(0, 6) || []; // Show max 6 matches
+
+  const handleMatchClick = (match: MatchWithStreamUrls) => {
+    router.push(`/matches/${match.match_id}`);
+  };
+
+  const handleStreamClick = (match: MatchWithStreamUrls) => {
+    if (match.streamUrl && match.streamUrl.length > 0) {
+      window.open(match.streamUrl[0], "_blank");
     }
-    setVideoSrc(
-      createNextUrl(
-        "/videos/20250424_EagerRichTofuHeyGirl-WmhqlBM0CyWc-FKM_source.mp4"
-      )
-    );
-  }, [isMobile, isLandscape]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (splashComplete) {
-      video.currentTime = 0;
-      video.play().catch(console.error);
-      const interval = setInterval(() => {
-        setStep((prev) => (prev < overlays.length ? prev + 1 : prev));
-      }, 4000);
-      return () => clearInterval(interval);
-    }
-  }, [splashComplete]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onLoadedData = () => {
-      setTimeout(() => {
-        setSplashComplete(true);
-      }, 4000);
-    };
-
-    video.addEventListener("canplay", onLoadedData);
-    return () => video.removeEventListener("canplay", onLoadedData);
-  }, []);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load();
-    }
-  }, [videoSrc]);
+  };
 
   return (
-    <>
-      <motion.div
-        className={cn(
-          "absolute inset-0 z-20 flex mt-20 sm:mt-5 flex-col items-center justify-center transition-opacity duration-500 mx-4 sm:mx-2",
-          splashComplete ? "opacity-0 pointer-events-none" : "opacity-100"
-        )}
-      >
-        <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mt-6 mb-4">
-          The Battle Begins.
-        </motion.h1>
-        <motion.p
-          className="text-sm xxs:text-lg lg:text-2xl text-center mobile-landscape:mb-5 mb-10"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0, duration: 4 }}
-        >
-          Presented by our proud CS sponsors & partners
-        </motion.p>
+    <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-center opacity-10"></div>
 
-        {/* Sponsor Logos Row */}
-        {/*         <MotionSponsorContainer classNames="mb-10 mobile-landscape:mb-5">
-          <CsMainSponsors />
-        </MotionSponsorContainer> */}
-        <MotionSponsorContainer>
-          <KanaMainPartners />
-        </MotionSponsorContainer>
-
-        <motion.div
-          className="mt-10 mobile-landscape:mt-5 w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"
-          aria-hidden
-        />
-      </motion.div>
-
-      <motion.section
-        className="relative w-full h-screen overflow-hidden max-w-screen-3xl mx-auto"
-        style={{
-          marginTop: isScrolled ? `calc(-1 * var(--nav-height))` : undefined
-        }}
-        id="cta"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: splashComplete ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <video
-          ref={videoRef}
-          className={cn("absolute top-0 left-0 w-full h-full z-0 object-fill")}
-          preload="auto"
-          muted
-          loop
-          playsInline
-        >
-          <source src={videoSrc} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/50 z-10" />
-
-        {/* Overlay Text */}
-        <div className="relative z-20 flex justify-center h-full pt-[25vh]">
-          <AnimatePresence mode="wait">
-            {(step === 0 || step > 0) && (
-              <motion.div
-                key={overlays[step]?.id}
-                initial={{ opacity: 0, y: step === overlays.length ? 50 : 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: step === overlays.length ? -50 : -20 }}
-                transition={{ duration: 0.8 }}
-                className={cn(
-                  "text-center px-4",
-                  step === overlays.length &&
-                    "flex flex-col items-center justify-center"
-                )}
+      {/* Main Content */}
+      <div className="relative z-10 max-w-screen-2xl mx-auto px-4 py-12">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Left Side - Hero Content */}
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <Badge
+                variant="secondary"
+                className="bg-orange-500/20 text-orange-400 border-orange-500/30"
               >
-                <motion.h1 className="text-xl xxs:text-3xl lg:text-6xl text-center font-bold mb-4">
-                  {step === overlays.length
-                    ? "Season Starts September 1st"
-                    : overlays[step]?.title}
-                </motion.h1>
+                CS2 Season 4 • Live Now
+              </Badge>
 
-                {step === overlays.length ? (
-                  <Button
-                    onClick={() => {
-                      router.push("/seasons/16/signup");
-                    }}
-                    variant="outline"
-                    className="text-lg py-2 px-6 sm:px-10 sm:py-8"
+              <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight">
+                The World&apos;s Largest
+                <span className="block text-orange-400">
+                  Corporate Esports League
+                </span>
+              </h1>
+
+              <p className="text-lg text-slate-300 leading-relaxed">
+                Over 600 players from 100+ organizations competing in the most
+                competitive CS2 season yet. Watch live matches, follow your
+                favorite teams, and join the community.
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-2xl font-bold text-orange-400">100+</div>
+                <div className="text-sm text-slate-400">Organizations</div>
+              </div>
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-2xl font-bold text-orange-400">600+</div>
+                <div className="text-sm text-slate-400">Players</div>
+              </div>
+              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-2xl font-bold text-orange-400">110+</div>
+                <div className="text-sm text-slate-400">Teams</div>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button
+                size="lg"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3"
+                onClick={() =>
+                  router.push(`/seasons/${currentSeasonId}/calendar`)
+                }
+              >
+                <Calendar className="mr-2 h-5 w-5" />
+                View Match Calendar
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-white/20 hover:bg-white/10 px-8 py-3"
+                onClick={() =>
+                  window.open("https://www.twitch.tv/slougani", "_blank")
+                }
+              >
+                <Play className="mr-2 h-5 w-5" />
+                Watch Live
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Side - Upcoming Matches */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <Calendar className="h-6 w-6 text-orange-400" />
+                Upcoming Matches
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-orange-400 hover:text-orange-300"
+                onClick={() =>
+                  router.push(`/seasons/${currentSeasonId}/calendar`)
+                }
+              >
+                View All
+              </Button>
+            </div>
+
+            {isLoadingMatches ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card
+                    key={i}
+                    className="bg-white/5 border-white/10 animate-pulse"
                   >
-                    Sign Up Now
-                  </Button>
-                ) : (
-                  <p className="text-sm xxs:text-lg lg:text-2xl text-white/70 mb-10 text-center">
-                    {overlays[step]?.subtitle}
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-3 h-3 bg-slate-600 rounded-full"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-slate-600 rounded w-3/4"></div>
+                          <div className="h-3 bg-slate-600 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : upcomingMatches.length > 0 ? (
+              <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                {upcomingMatches.map((match) => (
+                  <Card
+                    key={match.match_id}
+                    className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group"
+                    onClick={() => handleMatchClick(match)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                          style={{
+                            backgroundColor: DIVISIONS[match.league_tier]?.color
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-white text-sm truncate mb-1 group-hover:text-orange-400 transition-colors">
+                            {match.title}
+                          </h3>
+                          <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
+                            <Clock className="h-3 w-3" />
+                            <span>
+                              {formatInTimezone(
+                                match.match_start,
+                                "MMM d 'at' HH:mm"
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Badge
+                              variant="secondary"
+                              className="text-xs bg-white/10 text-slate-300 border-white/20"
+                            >
+                              {match.league_name}
+                            </Badge>
+                            {match.streamUrl && match.streamUrl.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 w-6 p-0 text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStreamClick(match);
+                                }}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-white/5 border-white/10">
+                <CardContent className="p-8 text-center">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                  <p className="text-lg text-white mb-2">
+                    No upcoming matches this week
                   </p>
-                )}
-              </motion.div>
+                  <p className="text-sm text-slate-400">
+                    Check back later for new matches
+                  </p>
+                </CardContent>
+              </Card>
             )}
-          </AnimatePresence>
+          </div>
         </div>
-        <div className="absolute bottom-4 right-4 z-30 text-white text-xs">
-          <Link
-            href="https://www.twitch.tv/slougani"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs sm:text-base hover:text-white/80 hover:underline transition-colors duration-300"
-          >
-            Video by Slougani
-          </Link>
+
+        {/* Bottom Section - Quick Links */}
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <div className="grid md:grid-cols-4 gap-6">
+            <Link href="/teams" className="group">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
+                <Users className="h-8 w-8 text-orange-400 mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  Browse Teams
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Discover teams and their players
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              href={`/seasons/${currentSeasonId}/standings`}
+              className="group"
+            >
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
+                <TrendingUp className="h-8 w-8 text-orange-400 mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  View Standings
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Check current league rankings
+                </p>
+              </div>
+            </Link>
+
+            <Link href="/matches" className="group">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
+                <Play className="h-8 w-8 text-orange-400 mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  All Matches
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Browse complete match history
+                </p>
+              </div>
+            </Link>
+
+            <Link href="/organizations" className="group">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300">
+                <Users className="h-8 w-8 text-orange-400 mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">
+                  Organizations
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Explore participating organizations
+                </p>
+              </div>
+            </Link>
+          </div>
         </div>
-      </motion.section>
-    </>
+      </div>
+    </section>
   );
 }

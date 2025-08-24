@@ -70,11 +70,18 @@ interface StabilizationResponse {
   };
 }
 
+interface TeamFlagWithDetails extends TeamFlagData {
+  adjustments: EloAdjustmentData[];
+  team_name?: string;
+}
+
 export const stabilizePlayerElo = async (
   steam_id: string,
   offered_elo: number,
-  _season?: string
+  targetSeason?: string
 ): Promise<StabilizationResponse> => {
+  // Cap the offered ELO at 400, which is the maximum allowed in the system
+  offered_elo = Math.min(400, offered_elo);
   // Get current player ELO
   const currentEloResults = await runQuery<PlayerEloRow[]>(
     "SELECT kana_elo FROM SeasonPlayerRanks WHERE steam_id = ? ORDER BY season_id DESC LIMIT 1",
@@ -258,10 +265,13 @@ export const stabilizePlayerElo = async (
 
   const team_id = teamResults.length > 0 ? teamResults[0].team_id : 0;
 
-  // Store adjustment data in Redis
+  // Parse target season if provided
+  const targetSeasonId = targetSeason ? parseInt(targetSeason) : season_id;
+
+  // Store adjustment data in Redis - use target season for storage
   await storeEloAdjustment({
     steam_id,
-    season_id,
+    season_id: targetSeasonId, // Use target season instead of historical season
     league_id,
     team_id,
     offered_elo,
@@ -269,28 +279,59 @@ export const stabilizePlayerElo = async (
     adjustment_reason: "stabilized"
   });
 
+  // Also store the offered ELO in the database for future reference
+  try {
+    // Use the model function directly
+    const { setPlayerKanaElo } = await import("../models/player.models.js");
+    await setPlayerKanaElo(
+      steam_id,
+      adjusted_elo,
+      JSON.stringify({ stabilized: true }),
+      targetSeasonId,
+      offered_elo
+    );
+  } catch (error) {
+    logger.error(`Failed to update offered_elo for player ${steam_id}:`, error);
+  }
+
   // Validate team adjustments and flag if necessary
   if (team_id > 0) {
     const validation = await validateTeamEloAdjustments(
       steam_id,
       team_id,
-      season_id,
+      targetSeasonId, // Use target season instead of historical season
       league_id,
       offered_elo,
       adjusted_elo
     );
 
     if (!validation.isValid) {
-      // Get all adjustments for flag data
+      // Get all adjustments for flag data - use target season, not historical season
       const allAdjustments = await getTeamEloAdjustments(
-        season_id,
+        targetSeasonId, // ✅ FIXED: Use target season instead of historical season
         league_id,
         team_id
       );
-      const flaggedPlayers = [
-        ...allAdjustments.map((adj) => adj.steam_id),
-        steam_id
-      ];
+
+      // Include current player
+      const currentPlayerAdjustment = {
+        steam_id,
+        season_id,
+        league_id,
+        team_id,
+        offered_elo,
+        adjusted_elo,
+        adjustment_reason: "proposed",
+        timestamp: new Date().toISOString()
+      };
+
+      // Combine all adjustments
+      const combinedAdjustments = [...allAdjustments, currentPlayerAdjustment];
+
+      // Only flag players with >15 ELO adjustment
+      const highAdjustmentPlayers = combinedAdjustments
+        .filter((adj) => Math.abs(adj.adjusted_elo - adj.offered_elo) > 15)
+        .map((adj) => adj.steam_id);
 
       await storeTeamFlag({
         season_id,
@@ -298,7 +339,7 @@ export const stabilizePlayerElo = async (
         team_id,
         flagged: true,
         reason: validation.reason || "Team validation failed",
-        flagged_players: flaggedPlayers
+        flagged_players: highAdjustmentPlayers
       });
 
       logger.warn(
@@ -428,8 +469,7 @@ export const validateTeamEloAdjustments = async (
     team_id
   );
 
-  // Check rule 2 first: Average offered vs adjusted ELO difference for top 4 players should not be >30 or <-30
-  // Since teams always have 5-9 players, we can always check top 4
+  // Create a complete list of adjustments including the current one
   const allAdjustments = [
     ...existingAdjustments,
     {
@@ -444,36 +484,16 @@ export const validateTeamEloAdjustments = async (
     }
   ];
 
-  // Sort by adjusted ELO descending and take top 4
-  const top4 = allAdjustments
-    .sort((a, b) => b.adjusted_elo - a.adjusted_elo)
-    .slice(0, 4);
-
-  const avgOfferedElo = top4.reduce((sum, adj) => sum + adj.offered_elo, 0) / 4;
-  const avgAdjustedElo =
-    top4.reduce((sum, adj) => sum + adj.adjusted_elo, 0) / 4;
-  const avgDifference = avgAdjustedElo - avgOfferedElo;
-
-  if (Math.abs(avgDifference) > 30) {
-    return {
-      isValid: false,
-      reason: `Average ELO jump too high for team (${avgDifference.toFixed(1)} ELO difference for top 4 players, limit is ±30)`,
-      existingAdjustments,
-      avgOfferedElo,
-      avgAdjustedElo
-    };
-  }
-
-  // Check rule 1: No more than 2 players with >30 ELO adjustment
-  const highAdjustments = existingAdjustments.filter(
-    (adj) => Math.abs(adj.adjusted_elo - adj.offered_elo) > 30
+  // Only rule: Flag teams with 3+ players that have >15 ELO adjustment
+  // Find all players with high adjustments (>15 ELO difference)
+  const highAdjustments = allAdjustments.filter(
+    (adj) => Math.abs(adj.adjusted_elo - adj.offered_elo) > 15
   );
 
-  const currentAdjustment = Math.abs(adjusted_elo - offered_elo);
-  if (currentAdjustment > 30 && highAdjustments.length >= 2) {
+  if (highAdjustments.length >= 3) {
     return {
       isValid: false,
-      reason: `Too many high adjustments for team (${highAdjustments.length + 1} players would have >30 ELO adjustment)`,
+      reason: `Team has ${highAdjustments.length} players with >15 ELO adjustment`,
       existingAdjustments
     };
   }
@@ -481,6 +501,167 @@ export const validateTeamEloAdjustments = async (
   return {
     isValid: true
   };
+};
+
+export const createTeamFlagsFromDatabase = async (
+  targetSeasonId?: number
+): Promise<void> => {
+  try {
+    logger.info("Creating team flags from Redis data...");
+
+    // Use provided season ID or default to season 16 (current active season)
+    const seasonId = targetSeasonId || 16;
+    const adjustmentKeys = await redisClient.keys(
+      `elo-adjustment:s${seasonId}:*`
+    );
+    logger.info(
+      `Found ${adjustmentKeys.length} ELO adjustment keys for season ${seasonId}`
+    );
+
+    // Load all adjustments
+    const allAdjustments: EloAdjustmentData[] = [];
+    for (const key of adjustmentKeys) {
+      const dataStr = await redisClient.get(key);
+      if (dataStr) {
+        try {
+          const data = JSON.parse(dataStr) as EloAdjustmentData;
+          allAdjustments.push(data);
+        } catch (_e) {
+          logger.warn(`Failed to parse data for key ${key}`);
+        }
+      }
+    }
+
+    logger.info(`Loaded ${allAdjustments.length} adjustments`);
+
+    // Group adjustments by team
+    const teamAdjustments = new Map<string, EloAdjustmentData[]>();
+
+    for (const adjustment of allAdjustments) {
+      const teamKey = `s${adjustment.season_id}:l${adjustment.league_id}:t${adjustment.team_id}`;
+      if (!teamAdjustments.has(teamKey)) {
+        teamAdjustments.set(teamKey, []);
+      }
+      teamAdjustments.get(teamKey)!.push(adjustment);
+    }
+
+    logger.info(`Found ${teamAdjustments.size} teams with adjustments`);
+
+    // Find teams that should be flagged
+    let flagsCreated = 0;
+
+    for (const [_teamKey, adjustments] of teamAdjustments.entries()) {
+      // Check how many have significant adjustments
+      const highAdjustments = adjustments.filter(
+        (adj) => Math.abs(adj.adjusted_elo - adj.offered_elo) > 15
+      );
+
+      if (highAdjustments.length >= 3) {
+        const seasonId = adjustments[0].season_id;
+        const leagueId = adjustments[0].league_id;
+        const teamId = adjustments[0].team_id;
+
+        // Check if this team is already flagged
+        const flagKey = `team-flag:s${seasonId}:l${leagueId}:${teamId}`;
+        const existingFlag = await redisClient.get(flagKey);
+
+        if (!existingFlag) {
+          // Create a new flag for this team
+          const highAdjustmentPlayers = highAdjustments.map(
+            (adj) => adj.steam_id
+          );
+
+          await storeTeamFlag({
+            season_id: seasonId,
+            league_id: leagueId,
+            team_id: teamId,
+            flagged: true,
+            reason: `Team has ${highAdjustments.length} players with >15 ELO adjustment`,
+            flagged_players: highAdjustmentPlayers
+          });
+
+          flagsCreated++;
+          logger.info(
+            `Created flag for team ${teamId} (league ${leagueId}, season ${seasonId}) with ${highAdjustments.length} high adjustments`
+          );
+        }
+      }
+    }
+
+    logger.info(`Created ${flagsCreated} new team flags`);
+  } catch (error) {
+    logger.error(`Failed to create team flags from Redis data: ${error}`);
+    throw error;
+  }
+};
+
+export const getTeamFlags = async (): Promise<TeamFlagWithDetails[]> => {
+  try {
+    // Get all team flag keys from Redis
+    const flagKeys = await redisClient.keys("team-flag:*");
+
+    if (!flagKeys.length) {
+      // No flags in Redis, create them from database
+      logger.info("No team flags found in Redis, creating from database...");
+      await createTeamFlagsFromDatabase(16); // Create flags for season 16
+
+      // Try to get flags again
+      const newFlagKeys = await redisClient.keys("team-flag:*");
+      if (newFlagKeys.length > 0) {
+        logger.info(`Created ${newFlagKeys.length} team flags from database`);
+      }
+    }
+
+    // Get all team flag data
+    const flagValues = await redisClient.mget(...flagKeys);
+    const teamFlags: TeamFlagWithDetails[] = [];
+
+    for (const flagValue of flagValues) {
+      if (flagValue) {
+        try {
+          const flagData = JSON.parse(flagValue) as TeamFlagData;
+
+          // Get ELO adjustments for this team
+          const adjustments = await getTeamEloAdjustments(
+            flagData.season_id,
+            flagData.league_id,
+            flagData.team_id
+          );
+
+          // Get team name if possible
+          let teamName: string | undefined;
+          try {
+            const teamResult = await runQuery<{ name: string }[]>(
+              "SELECT name FROM Teams WHERE id = ?",
+              [flagData.team_id]
+            );
+            teamName = teamResult.length > 0 ? teamResult[0].name : undefined;
+          } catch (error) {
+            logger.warn(
+              `Failed to get team name for team ${flagData.team_id}: ${error}`
+            );
+          }
+
+          teamFlags.push({
+            ...flagData,
+            adjustments,
+            team_name: teamName
+          });
+        } catch (error) {
+          logger.warn(`Failed to parse team flag data: ${error}`);
+        }
+      }
+    }
+
+    // Sort by timestamp (newest first)
+    return teamFlags.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  } catch (error) {
+    logger.error(`Failed to get team flags: ${error}`);
+    throw error;
+  }
 };
 
 function adjuster(
@@ -501,5 +682,6 @@ function adjuster(
   const multiplier = 1 + Math.max(minmax, Math.min(maxmin, diff));
   const adjustedElo = offeredElo * multiplier;
 
-  return Math.round(adjustedElo);
+  // Cap the ELO at 400, which is the maximum allowed in the system
+  return Math.min(400, Math.round(adjustedElo));
 }

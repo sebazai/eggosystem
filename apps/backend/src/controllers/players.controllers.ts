@@ -338,7 +338,8 @@ export const setPlayerKanaEloController = async (
   next: NextFunction
 ): Promise<void> => {
   const { steam_id } = req.params;
-  const { kana_elo, calculus, season_id } = req.body;
+  let { kana_elo, offered_elo } = req.body;
+  const { calculus, season_id } = req.body;
 
   // Validate required fields
   if (kana_elo === undefined || kana_elo === null) {
@@ -362,8 +363,21 @@ export const setPlayerKanaEloController = async (
     return next(new BadRequestError("season_id must be a number"));
   }
 
-  // Validate kana_elo range
-  if (kana_elo < 0 || kana_elo > 400) {
+  // If offered_elo is provided, validate it
+  if (offered_elo !== undefined && offered_elo !== null) {
+    if (typeof offered_elo !== "number") {
+      return next(new BadRequestError("offered_elo must be a number"));
+    }
+
+    // Cap offered_elo at 400
+    offered_elo = Math.min(400, offered_elo);
+  }
+
+  // Cap kana_elo at 400 to ensure it never exceeds the maximum
+  kana_elo = Math.min(400, kana_elo);
+
+  // Validate kana_elo range (only check lower bound now)
+  if (kana_elo < 0) {
     return next(new BadRequestError("kana_elo must be between 0 and 400"));
   }
 
@@ -373,7 +387,9 @@ export const setPlayerKanaEloController = async (
       steam_id,
       kana_elo,
       calculus,
-      season_id
+      season_id,
+      offered_elo,
+      undefined // connection parameter (not using transaction)
     );
 
     if (!success) {
@@ -382,13 +398,20 @@ export const setPlayerKanaEloController = async (
       );
     }
 
-    res.status(200).json({
+    const response = {
       message: "Kana ELO updated successfully",
       steam_id,
       kana_elo,
       calculus,
       season_id
-    });
+    };
+
+    // Include offered_elo in the response if it was provided
+    if (offered_elo !== undefined) {
+      Object.assign(response, { offered_elo });
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     logger.error("Update Kana ELO error", error);
     return next(new InternalServerError("Failed to update Kana ELO"));

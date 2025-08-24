@@ -253,7 +253,10 @@ describe("sortter-placements.controllers", () => {
           league_name: "Masters",
           top5_sum: 500,
           avg4: 100,
-          top5_values: [100, 95, 90, 85, 80]
+          orig4: 100,
+          top5_values: [100, 95, 90, 85, 80],
+          top5_offered_values: [100, 95, 90, 85, 80],
+          is_flagged: false
         }
       ];
 

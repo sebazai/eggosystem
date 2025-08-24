@@ -5,8 +5,12 @@ import {
   getTeamPlayerValuesController,
   getTeamsForSeasonController,
   checkPlayerAdditionEligibilityController,
-  addPlayerToTeamController
+  addPlayerToTeamController,
+  getTeamFlagsController,
+  refreshTeamFlagsFromDatabaseController,
+  refreshTeamFlagsForSeasonController
 } from "../../../controllers/dashboard/sortter.controllers";
+import { retryFailedKanaeloCalculationsController } from "../../../controllers/dashboard/kanaelo-retry.controllers";
 import {
   getPreliminaryPlacementsController,
   savePreliminaryPlacementsController,
@@ -93,6 +97,25 @@ router.post(
   "/season/:season_id/finalize",
   validateNumericParams(),
   finalizeTeamPlacementsController
+);
+
+// GET /api/v1/dashboard/sortter/team-flags
+router.get("/team-flags", getTeamFlagsController);
+
+// POST /api/v1/dashboard/sortter/team-flags (triggers database refresh)
+router.post("/team-flags", refreshTeamFlagsFromDatabaseController);
+
+// POST /api/v1/dashboard/sortter/team-flags/season/:season_id (creates flags for specific season)
+router.post(
+  "/team-flags/season/:season_id",
+  validateNumericParams(),
+  refreshTeamFlagsForSeasonController
+);
+
+// POST /api/v1/dashboard/sortter/retry-failed-calculations
+router.post(
+  "/retry-failed-calculations",
+  retryFailedKanaeloCalculationsController
 );
 
 export default router;

@@ -116,7 +116,7 @@ export default function NewFeaturesPage() {
                 </li>
                 <li>
                   <span className="font-medium">Company Management</span> - Join
-                  existing companies or create new ones for your organization
+                  existing organizations or create new ones
                 </li>
                 <li>
                   <span className="font-medium">Registration Dashboard</span> -
@@ -144,8 +144,8 @@ export default function NewFeaturesPage() {
               </ol>
 
               <p className="mb-2">
-                Perfect for companies who want to organize their employees and
-                help them find teammates for both casual and competitive
+                Perfect for organizations who want to organize their employees
+                and help them find teammates for both casual and competitive
                 matches! No need to wait - once you&apos;re in the Discord
                 channels, you can immediately start coordinating games with your
                 colleagues.

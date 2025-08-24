@@ -1,10 +1,6 @@
 "use server";
 
-import HeroSection from "@/components/layout/HeroSection";
-import { SignupButton } from "@/components/signup/SignupButton";
 import { Card, CardContent } from "@/components/ui/card";
-import { headers } from "next/headers";
-import { userAgent } from "next/server";
 import { CsMainSponsors } from "@/components/sponsors/CsMainSponsors";
 import { KanaMainPartners } from "@/components/sponsors/KanaMainPartners";
 import { SponsorContainer } from "@/components/sponsors/SponsorContainer";
@@ -12,6 +8,9 @@ import { CsSupportingOrgs } from "@/components/sponsors/CsSupportingOrgs";
 import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import HeroSection from "@/components/layout/HeroSection";
+import { SeasonButtons } from "@/components/landing/SeasonButtons";
+import { Navigation } from "@/components/layout/Navigation";
 
 interface LandingPageStats {
   unique_players: number;
@@ -35,28 +34,26 @@ export default async function Home() {
     ? await statistics.json()
     : defaultData;
 
-  const { device } = userAgent({ headers: await headers() });
-  const deviceType = device?.type === "mobile" ? "mobile" : "desktop";
-
   return (
-    <>
-      <section>
-        <HeroSection device={deviceType} />
+    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
+      <section className="min-h-screen">
+        <Navigation options={{ removeBottomPadding: true }} />
+        <HeroSection />
       </section>
-      <section className="my-8 md:my-16 lg:my-32">
-        <div className="flex flex-grow justify-center items-center min-h-screen w-full">
+      <section className="py-8 md:py-16 lg:py-32">
+        <div className="flex flex-grow justify-center items-center w-full">
           <div className="w-full max-w-screen-xl px-4 sm:px-8 lg:px-16">
-            <h1 className="text-2xl xs:text-3xl sm:text-4xl font-bold my-8">
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl font-bold my-8 text-white">
               Welcome to Kanaliiga – The World&apos;s Largest Corporate Esports
               League
             </h1>
-            <p className="mb-4 text-lg">
+            <p className="mb-4 text-lg text-slate-300">
               Founded in 2018, Kanaliiga is home to over{" "}
-              <strong>2,500 players from 300+ companies</strong> annually. We
-              bring professionals together through esports, cultivating positive
-              gaming culture within workplaces.
+              <strong>2,500 players from 300+ organizations</strong> annually.
+              We bring professionals together through esports, cultivating
+              positive gaming culture within workplaces.
             </p>
-            <p className="mb-6">
+            <p className="mb-6 text-slate-300">
               Our mission is to make esports a bridge for collaboration,
               community, and healthy competition across the business world.
             </p>
@@ -64,7 +61,7 @@ export default async function Home() {
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
             {/* Statistic Cards for All Seasons */}
-            <h3 className="xs:text-2xl font-semibold mb-4">
+            <h3 className="xs:text-2xl font-semibold mb-4 text-white">
               📊 All-Time Highlights For Counter-Strike
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -120,34 +117,32 @@ export default async function Home() {
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
-            {/* CS2 Season 4 Pitch */}
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6">
-              🎮 CS2 Season 4 – Kicking Off This Fall
+            {/* CS2 Season 4 Current Season */}
+            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">
+              🎮 CS2 Season 4 – Live Now
             </h2>
-            <p className="text-lg mb-2">
-              <strong>Registrations open June 1st – August 23rd</strong>
+            <p className="text-lg mb-2 text-slate-300">
+              <strong>Season is currently in progress</strong>
               <br />
-              <strong>Season begins September 1st</strong>
+              <strong>Watch live matches and follow your favorite teams</strong>
             </p>
 
-            <p className="mb-6">
-              Get ready for the fourth installment of our most competitive and
-              community-driven Counter-Strike 2 season yet. Whether you&apos;re
-              returning to defend your title or joining us for the first time,{" "}
-              <strong>CS2 Season 4</strong> promises intense matches, epic
-              plays, and unmatched corporate camaraderie.
+            <p className="mb-6 text-slate-300">
+              The fourth installment of our most competitive and
+              community-driven Counter-Strike 2 season is now live! With
+              hundreds of teams competing across multiple divisions,{" "}
+              <strong>CS2 Season 4</strong> is delivering intense matches, epic
+              plays, and unmatched corporate camaraderie every week.
             </p>
 
-            <ul className="list-disc list-inside mb-10 px-4 pb-2">
-              <li>Connect with hundreds of players from top companies</li>
-              <li>Build team spirit in and out of the server</li>
-              <li>Compete in a professionally organized league format</li>
-              <li>Appear in live-streamed broadcasts</li>
+            <ul className="list-disc list-inside mb-10 px-4 pb-2 text-slate-300">
+              <li>Watch live matches on our Twitch streams</li>
+              <li>Follow your favorite teams and players</li>
+              <li>Track standings and statistics in real-time</li>
+              <li>Join the community discussions and predictions</li>
             </ul>
 
-            <div className="text-center pb-3">
-              <SignupButton />
-            </div>
+            <SeasonButtons />
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
@@ -175,6 +170,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

@@ -62,6 +62,9 @@ interface NavbarProps {
     name: string;
     url: string;
   }[];
+  options?: {
+    removeBottomPadding?: boolean;
+  };
 }
 
 const getSeasonMenuItems = (
@@ -157,8 +160,9 @@ const getDefaultMenuItems = (
 export const Navigation = (props: NavbarProps) => {
   const pathname = usePathname();
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
+  const { options, ...otherProps } = props;
   const navigationProps =
-    Object.keys(props).length === 0
+    Object.keys(otherProps).length === 0
       ? getDefaultMenuItems(signupOrActiveSeason)
       : props;
   const { logo, menu, mobileExtraLinks } = navigationProps;
@@ -166,7 +170,7 @@ export const Navigation = (props: NavbarProps) => {
   const navRef = useRef<HTMLDivElement>(null); // Ref for the navbar
   const logoRef = useRef<HTMLImageElement>(null); // Ref for the logo
 
-  const { isScrolled, scrolledTo } = useScrolled();
+  const { isScrolled } = useScrolled();
 
   const { isMobile } = useIsMobile();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -184,15 +188,6 @@ export const Navigation = (props: NavbarProps) => {
       setHasScrolled(true);
     }
   }, [isScrolled, hasScrolled]);
-
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const updateHeight = () => setHeight(window.innerHeight);
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-    return () => window.removeEventListener("resize", updateHeight);
-  }, []);
 
   useEffect(() => {
     const logoEl = logoRef.current;
@@ -227,16 +222,20 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `mb-3 sm:mb-10 pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
-        pathname !== "/"
-          ? "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs"
-          : scrolledTo > height
-            ? "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs"
-            : "",
-        isScrolled || pathname !== "/" ? "sticky top-0" : "absolute top-0"
+        `pointer-events-none w-full px-4 sm:landscape:px-2 md:landscape:px-6 sm:px-8 lg:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        // Always use backdrop blur for consistent appearance
+        "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs",
+        // Always use sticky positioning to prevent jumping
+        "sticky top-0",
+        options?.removeBottomPadding ? "mb-3" : "mb-3 sm:mb-10"
       )}
     >
-      <div className="py-4 lg:py-8 mx-auto max-w-screen-2xl">
+      <div
+        className={cn(
+          "mx-auto max-w-screen-2xl",
+          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8"
+        )}
+      >
         {/* Desktop Navigation - Sticky by Default */}
         <div className="hidden w-full items-center justify-center gap-6 lg:flex pointer-events-auto">
           {logo && (

@@ -52,7 +52,9 @@ describe("setPlayerKanaEloController", () => {
       "76561198123456789",
       250,
       "test-calculus",
-      16
+      16,
+      undefined, // offered_elo parameter
+      undefined // connection parameter
     );
     expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
@@ -217,13 +219,15 @@ describe("setPlayerKanaEloController", () => {
     );
   });
 
-  it("should return 400 when kana_elo is greater than 400", async () => {
+  it("should cap kana_elo at 400 when value exceeds maximum", async () => {
     // Arrange
     mockRequest.body = {
       kana_elo: 450,
       calculus: "test-calculus",
       season_id: 16
     };
+
+    mockSetPlayerKanaElo.mockResolvedValueOnce(true);
 
     const mockNext = jest.fn();
 
@@ -234,13 +238,23 @@ describe("setPlayerKanaEloController", () => {
       mockNext
     );
 
-    // Assert
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "kana_elo must be between 0 and 400",
-        status: 400
-      })
+    // Assert - should cap at 400 and succeed
+    expect(mockSetPlayerKanaElo).toHaveBeenCalledWith(
+      "76561198123456789",
+      400, // Capped at 400
+      "test-calculus",
+      16,
+      undefined, // offered_elo parameter
+      undefined // connection parameter
     );
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Kana ELO updated successfully",
+      steam_id: "76561198123456789",
+      kana_elo: 400, // Capped value
+      calculus: "test-calculus",
+      season_id: 16
+    });
   });
 
   it("should handle database errors gracefully", async () => {

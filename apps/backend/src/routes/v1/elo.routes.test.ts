@@ -220,24 +220,45 @@ describe("POST /api/v1/elo/stabilize", () => {
     });
   });
 
-  it("should validate currentValue range", async () => {
+  it("should cap currentValue at 400 when value exceeds maximum", async () => {
+    // Mock database responses for the stabilizePlayerElo function
+    mockRunQuery
+      .mockResolvedValueOnce([{ kana_elo: 250 }]) // Current ELO query
+      .mockResolvedValueOnce([
+        {
+          season_id: 11,
+          league_id: 1,
+          avg_kana_rating: 1.15
+        }
+      ]) // Latest season and league query
+      .mockResolvedValueOnce([
+        {
+          avg_player_rating: 1.1
+        }
+      ]) // Player's average rating query
+      .mockResolvedValueOnce([
+        {
+          rowCount: 150,
+          leagueAvgRating: 1.0
+        }
+      ]) // League average rating query
+      .mockResolvedValueOnce([{ team_id: 123 }]); // Team lookup query
+
     const response = await request(app)
       .post("/api/v1/elo/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
-        currentValue: 500, // Above max of 400
+        currentValue: 500, // Above max of 400, should be capped
         season: "2024-spring"
       })
-      .expect(400);
+      .expect(200);
 
-    expect(response.body).toEqual({
-      type: "about:blank",
-      title: "Bad Request",
-      status: 400,
-      detail: "currentValue must be a number between 0 and 400",
-      instance: "/api/v1/elo/stabilize"
-    });
+    // Should succeed with capped value
+    expect(response.body).toHaveProperty("stabilizedValue");
+    expect(response.body).toHaveProperty("confidence");
+    expect(response.body).toHaveProperty("adjustmentFactor");
+    expect(response.body).toHaveProperty("metadata");
   });
 
   it("should reject requests with invalid API key", async () => {
