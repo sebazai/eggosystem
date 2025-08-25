@@ -110,6 +110,11 @@ const getSeasonMenuItems = (
           title: "Schedule",
           url: "https://kanaliiga.fi/pelit/counter-strike-2",
           hasFilters: false
+        },
+        {
+          title: "Faceit Links",
+          url: "/faceit-links",
+          hasFilters: false
         }
       ]
     }
