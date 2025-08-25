@@ -10,6 +10,10 @@ import {
   getTeamCaptainsForActiveSeasonController
 } from "../../controllers/team-captains.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import {
+  authenticateJWT,
+  checkJWTPermissions
+} from "../../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -18,10 +22,22 @@ router.get("/", getAllTeams);
 router.get("/org-missing", getTeamsWithoutOrgController);
 
 // Team captains routes
-router.get("/captains", getAllTeamCaptainsController);
-router.get("/season/active/captains", getTeamCaptainsForActiveSeasonController);
+router.get(
+  "/captains",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["admin", "captain", "helpdesk"] }),
+  getAllTeamCaptainsController
+);
+router.get(
+  "/season/active/captains",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["admin", "captain", "helpdesk"] }),
+  getTeamCaptainsForActiveSeasonController
+);
 router.get(
   "/season/:season_id/captains",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["admin", "captain", "helpdesk"] }),
   validateNumericParams(["season_id"]),
   getTeamCaptainsBySeasonIdController
 );

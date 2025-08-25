@@ -100,6 +100,16 @@ const getSeasonMenuItems = (
           title: "Calendar",
           url: `/seasons/${signupOrActiveSeason.season_id}/calendar`,
           hasFilters: false
+        },
+        {
+          title: "Captains",
+          url: "/captains",
+          hasFilters: false
+        },
+        {
+          title: "Schedule",
+          url: "https://kanaliiga.fi/pelit/counter-strike-2",
+          hasFilters: false
         }
       ]
     }
