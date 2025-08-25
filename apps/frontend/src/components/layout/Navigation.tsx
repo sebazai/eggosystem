@@ -222,7 +222,7 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `pointer-events-none w-full sm:landscape:px-4 md:landscape:px-8 max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        `pointer-events-none w-full sm:landscape:px-4 md:landscape:px-8 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
         // Always use backdrop blur for consistent appearance
         "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs",
         // Always use sticky positioning to prevent jumping
@@ -232,7 +232,7 @@ export const Navigation = (props: NavbarProps) => {
     >
       <div
         className={cn(
-          "mx-auto max-w-[1920px]",
+          "mx-auto max-w-screen-2xl ",
           options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8"
         )}
       >

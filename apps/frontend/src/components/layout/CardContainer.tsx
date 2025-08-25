@@ -10,7 +10,7 @@ export const CardContainer = ({
 }) => {
   return (
     <div className={cn("min-h-fit rounded-xl bg-card", classNames)}>
-      <div className="max-w-[1920px] mx-auto">{children}</div>
+      <div className="max-w-screen-2xl mx-auto">{children}</div>
     </div>
   );
 };
