@@ -10,7 +10,7 @@ export function SeasonButtons() {
   const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16"; // fallback to season 16
 
   return (
-    <div className="text-center pb-3 space-x-4">
+    <div className="text-center pb-3 flex flex-col sm:flex-row gap-4 sm:gap-4 sm:justify-center">
       <Button asChild variant="default" className="text-lg py-2 px-6">
         <Link href={`/seasons/${currentSeasonId}/calendar`}>
           View Match Calendar

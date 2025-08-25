@@ -144,17 +144,6 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                 <Calendar className="mr-2 h-5 w-5 lg:h-6 lg:w-6 2xl:h-7 2xl:w-7" />
                 View Match Calendar
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/20 hover:bg-white/10 px-8 py-3 text-base lg:text-lg 2xl:text-xl h-auto"
-                onClick={() =>
-                  window.open("https://www.twitch.tv/slougani", "_blank")
-                }
-              >
-                <Play className="mr-2 h-5 w-5 lg:h-6 lg:w-6 2xl:h-7 2xl:w-7" />
-                Watch Live
-              </Button>
             </div>
           </div>
 
