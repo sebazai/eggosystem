@@ -6,7 +6,7 @@ import {
 } from "../models/season.models";
 import { type RequestWithParams } from "@eggosystem/types";
 import _ from "lodash";
-import { expireIn30Days, redisClient } from "../utils/redisClient";
+import { expireInOneDay, redisClient } from "../utils/redisClient";
 import { BadRequestError, NotFoundError } from "../utils/errors";
 
 export const getActiveSeasonForApp = async (
@@ -34,7 +34,7 @@ export const getActiveSeasonForApp = async (
       )
     );
   }
-  await redisClient.set(redisKey, activeSeason.season_id, "EX", expireIn30Days);
+  await redisClient.set(redisKey, activeSeason.season_id, "EX", expireInOneDay);
   res.set("Cache-Control", "public, max-age=86400");
   res.json(activeSeason);
 };
