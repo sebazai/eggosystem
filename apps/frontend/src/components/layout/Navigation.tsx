@@ -64,6 +64,7 @@ interface NavbarProps {
   }[];
   options?: {
     removeBottomPadding?: boolean;
+    fullWidth?: boolean;
   };
 }
 
@@ -222,18 +223,20 @@ export const Navigation = (props: NavbarProps) => {
       ref={navRef}
       id="navigation"
       className={cn(
-        `pointer-events-none w-full sm:landscape:px-4 md:landscape:px-8 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
+        `pointer-events-none w-full mx-auto sm:landscape:px-4 md:landscape:px-8 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 z-50 ${isScrolled ? "scrolled" : ""}`,
         // Always use backdrop blur for consistent appearance
         "backdrop-blur-xs landscape:backdrop-blur-none md:landscape:backdrop-blur-xs",
         // Always use sticky positioning to prevent jumping
         "sticky top-0",
-        options?.removeBottomPadding ? "mb-3" : "mb-3 sm:mb-10"
+        options?.removeBottomPadding ? "mb-3" : "mb-3 sm:mb-10",
+        options?.fullWidth ? "max-w-[1920px]" : "max-w-screen-2xl"
       )}
     >
       <div
         className={cn(
           "mx-auto max-w-screen-2xl ",
-          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8"
+          options?.removeBottomPadding ? "pt-4 lg:pt-8" : "py-4 lg:py-8",
+          options?.fullWidth ? "max-w-[1920px]" : "max-w-screen-2xl"
         )}
       >
         {/* Desktop Navigation - Sticky by Default */}
