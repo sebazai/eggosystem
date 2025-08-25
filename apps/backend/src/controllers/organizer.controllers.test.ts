@@ -115,7 +115,7 @@ describe("Seasons Controllers", () => {
         "1-730-active-season",
         456,
         "EX",
-        2592000
+        86400
       );
       expect(mockSet).toHaveBeenCalledWith(
         "Cache-Control",
