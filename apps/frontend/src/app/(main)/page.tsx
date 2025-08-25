@@ -1,7 +1,6 @@
 "use server";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { CsMainSponsors } from "@/components/sponsors/CsMainSponsors";
 import { KanaMainPartners } from "@/components/sponsors/KanaMainPartners";
 import { SponsorContainer } from "@/components/sponsors/SponsorContainer";
 import { CsSupportingOrgs } from "@/components/sponsors/CsSupportingOrgs";
@@ -146,13 +145,13 @@ export default async function Home() {
             <SeasonButtons />
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
-
+            {/*             
             <SponsorContainer
               header="CS2 Season 4 Main Sponsors"
               classNames="mt-10 sm:mt-20"
             >
               <CsMainSponsors />
-            </SponsorContainer>
+            </SponsorContainer> */}
 
             <SponsorContainer
               classNames="mt-10 sm:mt-20"
