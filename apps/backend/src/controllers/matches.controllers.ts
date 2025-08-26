@@ -22,7 +22,7 @@ import type {
   RequestWithParamsAndQuery
 } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
-import { getActiveSeasonForAppId } from "../models/season.models";
+import { getActiveOrPassedSeasonId } from "../services/season.services";
 
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
@@ -33,24 +33,15 @@ export const getMatchesController = async (req: Request, res: Response) => {
 export const getMatchesBySeasonIdController = async (
   req: RequestWithParamsAndQuery<{ season_id: string }, { league_id?: string }>,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
-  const seasonId =
-    req.params.season_id === "active"
-      ? (await getActiveSeasonForAppId(1, 730))?.season_id
-      : Number(req.params.season_id);
+  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
 
   const leagueId = req.query.league_id
     ? isNaN(Number(req.query.league_id))
       ? null
       : Number(req.query.league_id)
     : null;
-  if (!seasonId) {
-    if (req.params.season_id === "active") {
-      return next(new NotFoundError("No current active season found"));
-    }
-    return next(new NotFoundError("Season not found"));
-  }
 
   const matches = await getMatchesWithTeamDataBySeasonId(seasonId, leagueId);
   res.status(200).json({

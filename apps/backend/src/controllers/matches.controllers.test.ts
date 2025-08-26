@@ -235,18 +235,13 @@ describe("Matches Controllers", () => {
       mockRequest.params = { season_id: "invalid" };
 
       const mockNext = jest.fn();
-      await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Season not found",
-          status: 404
-        })
-      );
+      await expect(
+        getMatchesBySeasonIdController(
+          mockRequest as TestRequestWithParams<{ season_id: string }>,
+          mockResponse as Response,
+          mockNext
+        )
+      ).rejects.toThrow("Invalid season ID");
     });
 
     it("should handle negative season ID", async () => {
@@ -256,22 +251,13 @@ describe("Matches Controllers", () => {
       );
 
       const mockNext = jest.fn();
-      await getMatchesBySeasonIdController(
-        mockRequest as TestRequestWithParams<{ season_id: string }>,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
-        -123,
-        null
-      );
-      expect(mockJson).toHaveBeenCalledWith({
-        matches: mockMatchesWithTeamData.map((match) => ({
-          ...match,
-          teams: JSON.parse(match.teams)
-        }))
-      });
+      await expect(
+        getMatchesBySeasonIdController(
+          mockRequest as TestRequestWithParams<{ season_id: string }>,
+          mockResponse as Response,
+          mockNext
+        )
+      ).rejects.toThrow("Invalid season ID");
     });
 
     it("should handle zero season ID", async () => {
@@ -287,26 +273,16 @@ describe("Matches Controllers", () => {
         mockNext
       );
 
-      // Check if the controller returned early (which it might for zero season IDs)
-      if (mockGetMatchesWithTeamDataBySeasonId.mock.calls.length === 0) {
-        expect(mockNext).toHaveBeenCalledWith(
-          expect.objectContaining({
-            message: "Season not found",
-            status: 404
-          })
-        );
-      } else {
-        expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
-          0,
-          null
-        );
-        expect(mockJson).toHaveBeenCalledWith({
-          matches: mockMatchesWithTeamData.map((match) => ({
-            ...match,
-            teams: JSON.parse(match.teams)
-          }))
-        });
-      }
+      expect(mockGetMatchesWithTeamDataBySeasonId).toHaveBeenCalledWith(
+        0,
+        null
+      );
+      expect(mockJson).toHaveBeenCalledWith({
+        matches: mockMatchesWithTeamData.map((match) => ({
+          ...match,
+          teams: JSON.parse(match.teams)
+        }))
+      });
     });
 
     it("should return matches for valid season ID with league_id filter", async () => {

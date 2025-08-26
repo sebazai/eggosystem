@@ -1,4 +1,5 @@
 import { getActiveSeasonForAppId } from "../models/season.models";
+import { BadRequestError } from "../utils/errors";
 
 export const getActiveOrPassedSeasonId = async (seasonId: string) => {
   if (seasonId === "active") {
@@ -6,14 +7,14 @@ export const getActiveOrPassedSeasonId = async (seasonId: string) => {
     if (activeSeasonId?.season_id) {
       return activeSeasonId.season_id;
     }
-    throw new Error("No active season found");
+    throw new BadRequestError("No active season found");
   }
   const seasonParseInt = parseInt(seasonId);
   if (isNaN(seasonParseInt)) {
-    throw new Error("Invalid season ID");
+    throw new BadRequestError("Invalid season ID");
   }
   if (seasonParseInt < 0) {
-    throw new Error("Invalid season ID");
+    throw new BadRequestError("Invalid season ID");
   }
   return seasonParseInt;
 };
