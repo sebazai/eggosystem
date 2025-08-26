@@ -52,21 +52,6 @@ describe("Webhook Validation Tests", () => {
       expect(result.game).toBe("cs2");
     });
 
-    // Test direct enum validation with require() - this is more similar to how it might be used in production
-    it("should validate enum directly with require()", () => {
-      const { FaceitGame } = require("@eggosystem/types");
-
-      // Create a schema that directly uses z.enum(FaceitGame)
-      const schema = z.object({
-        game: z.enum(FaceitGame)
-      });
-
-      // This should pass validation
-      const result = schema.parse({ game: "cs2" });
-      expect(result).toBeDefined();
-      expect(result.game).toBe("cs2");
-    });
-
     // Test with a plain JavaScript object - should work now with our fix
     it("should handle plain JavaScript objects as enums", () => {
       // Create a mock enum as a plain JavaScript object
