@@ -65,8 +65,14 @@ fi
 
 # Ensure the URL has a protocol
 if [[ ! "$BASE_URL" =~ ^https?:// ]]; then
-    BASE_URL="https://$BASE_URL"
-    print_status "Added https:// protocol: $BASE_URL"
+    # Use HTTP for localhost, HTTPS for other URLs
+    if [[ "$BASE_URL" =~ ^localhost ]]; then
+        BASE_URL="http://$BASE_URL"
+        print_status "Added http:// protocol for localhost: $BASE_URL"
+    else
+        BASE_URL="https://$BASE_URL"
+        print_status "Added https:// protocol: $BASE_URL"
+    fi
 fi
 
 # Construct the webhook URL
