@@ -1,0 +1,68 @@
+{
+  "items": [
+    {
+      "leader": "f00ee6f8-8cff-4e2a-991f-66a097d2404d",
+      "coleader": "",
+      "team": {
+        "team_id": "64ced6b2-2b35-446a-bb5e-08d0109b634c",
+        "name": "7dos",
+        "team_type": "premade",
+        "members": [
+          {
+            "user_id": "0ba95cc0-0431-4464-9956-29090f4bf974",
+            "nickname": "toroDoggo",
+            "avatar": "https://distribution.faceit-cdn.net/images/546164cf-e605-4589-8069-0c8e36623fd9.jpeg",
+            "country": "BR",
+            "skill_level": 3,
+            "faceit_url": "https://www.faceit.com/{lang}/players/toroDoggo"
+          },
+          {
+            "user_id": "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+            "nickname": "sububobi",
+            "avatar": "https://assets.faceit-cdn.net/avatars/8f1e3648-23d8-41e8-bf7e-d0d6308a31d0_1577796990858.jpg",
+            "country": "FI",
+            "skill_level": 8,
+            "faceit_url": "https://www.faceit.com/{lang}/players/sububobi"
+          },
+          {
+            "user_id": "31732779-8b7e-4d09-96dd-dfc2e07e77e9",
+            "nickname": "Defetkro",
+            "country": "FI",
+            "skill_level": 4,
+            "faceit_url": "https://www.faceit.com/{lang}/players/Defetkro"
+          },
+          {
+            "user_id": "3ddabb4f-4030-4fe9-891e-175f70ed0b7d",
+            "nickname": "meppi_",
+            "avatar": "https://distribution.faceit-cdn.net/images/7933ce81-8ef2-4782-a28e-48a981541b68.jpeg",
+            "country": "FI",
+            "skill_level": 6,
+            "faceit_url": "https://www.faceit.com/{lang}/players/meppi_"
+          },
+          {
+            "user_id": "f00ee6f8-8cff-4e2a-991f-66a097d2404d",
+            "nickname": "jozne",
+            "country": "FI",
+            "skill_level": 2,
+            "faceit_url": "https://www.faceit.com/{lang}/players/jozne"
+          }
+        ],
+        "leader": "f00ee6f8-8cff-4e2a-991f-66a097d2404d",
+        "chat_room_id": "team-64ced6b2-2b35-446a-bb5e-08d0109b634c",
+        "faceit_url": "https://www.faceit.com/{lang}/teams/64ced6b2-2b35-446a-bb5e-08d0109b634c"
+      },
+      "group": 0,
+      "substitutes": [],
+      "roster": [
+        "31732779-8b7e-4d09-96dd-dfc2e07e77e9",
+        "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+        "0ba95cc0-0431-4464-9956-29090f4bf974",
+        "3ddabb4f-4030-4fe9-891e-175f70ed0b7d",
+        "f00ee6f8-8cff-4e2a-991f-66a097d2404d"
+      ],
+      "status": "joined"
+    }
+  ],
+  "start": 0,
+  "end": 10
+}

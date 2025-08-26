@@ -27,5 +27,6 @@ export * from "./leetify/index";
 export * from "./sortter/index";
 export * from "./kanahautomo/index";
 export * from "./dashboard/registration";
-export * from "./registration";
-export * from "./standings";
+export * from "./registration/index";
+export * from "./standings/index";
+export * from "./season-league-external-id/index";

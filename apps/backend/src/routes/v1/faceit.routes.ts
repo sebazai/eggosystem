@@ -65,6 +65,7 @@ import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
 import { removeSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
+import { validateChampionshipTeamsController } from "../../controllers/faceit.controllers";
 
 const router = Router();
 
@@ -82,6 +83,11 @@ router.get(
     }
     res.json(data);
   }
+);
+
+router.get(
+  "/championship/:championship_id/validate",
+  validateChampionshipTeamsController
 );
 
 // championship_cancelled, championship_checkin, championship_created, championship_finished, championship_seeding, championship_started,

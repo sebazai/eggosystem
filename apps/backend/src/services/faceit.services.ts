@@ -1,7 +1,8 @@
 import {
   SeasonPlatform,
   type FaceITCSRank,
-  type FaceITTeamDetails
+  type FaceITTeamDetails,
+  type ChampionshipSubscription
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -396,6 +397,18 @@ export const getFaceITChampionshipDetails = async <T>(
   };
   const response = await fetch(webURL, { headers });
   return response.json() as Promise<T>;
+};
+
+export const getFaceITChampionshipSubscriptions = async (
+  championship_id: string
+) => {
+  const webURL = `https://open.faceit.com/data/v4/championships/${championship_id}/subscriptions`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  return response.json() as Promise<ChampionshipSubscription>;
 };
 
 export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
