@@ -13,19 +13,9 @@ export const CaptainsPage = ({
   seasonId: string;
   seasonName: string;
 }) => {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const { captains, isLoading, isValidating, isError } =
     useSeasonCaptains(seasonId);
-
-  if (loading) {
-    return (
-      <ContentContainer>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-lg">Loading...</div>
-        </div>
-      </ContentContainer>
-    );
-  }
 
   // Check if user has access
   if (!hasCaptainsAccess(user)) {
