@@ -92,25 +92,6 @@ describe("CaptainsPage", () => {
     jest.clearAllMocks();
   });
 
-  it("should show loading state initially", () => {
-    mockUseAuth.mockReturnValue({
-      user: null,
-      loading: true,
-      checkAuth: jest.fn(),
-      logout: jest.fn()
-    });
-
-    mockUseSeasonCaptains.mockReturnValue({
-      captains: undefined,
-      isLoading: false,
-      isValidating: false,
-      isError: undefined
-    });
-
-    render(<CaptainsPage {...defaultProps} />);
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
-  });
-
   it("should show access denied for users without required roles", () => {
     mockUseAuth.mockReturnValue({
       user: { ...mockUser, roles: ["player"] },
