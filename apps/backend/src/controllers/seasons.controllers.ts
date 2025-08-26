@@ -8,6 +8,7 @@ import _ from "lodash";
 import { NotFoundError } from "../utils/errors";
 import { getFaceitLinksForSeason } from "../models/faceit.models";
 import { getActiveOrPassedSeasonId } from "../services/season.services";
+import { getTeamCaptainsBySeasonId } from "../models/team.models";
 
 export const getSeasonsController = async (_req: Request, res: Response) => {
   const allSeasons = await getSeasons();
@@ -48,4 +49,13 @@ export const getFaceitLinksForSeasonController = async (
   const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
   const faceitLinks = await getFaceitLinksForSeason(seasonId);
   res.json(faceitLinks);
+};
+
+export const getTeamCaptainsBySeasonIdController = async (
+  req: Request,
+  res: Response
+) => {
+  const seasonId = await getActiveOrPassedSeasonId(req.params.season_id);
+  const captains = await getTeamCaptainsBySeasonId(seasonId);
+  res.json(captains);
 };

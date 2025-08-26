@@ -1,16 +1,16 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { useAuth } from "@/context/AuthContext";
-import CaptainsPage from "./page";
+import { CaptainsPage } from "./CaptainsPage";
 import type { UserFullPayload } from "@eggosystem/types";
 
 // Mock the auth context
 jest.mock("@/context/AuthContext");
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 
-// Mock the API client
-jest.mock("@/lib/apiClient", () => ({
-  clientApiFetch: jest.fn()
+// Mock the useSeasonCaptains hook
+jest.mock("@/hooks/data/useSeasonCaptains", () => ({
+  useSeasonCaptains: jest.fn()
 }));
 
 // Mock the role utilities
@@ -21,7 +21,7 @@ jest.mock("@/lib/roleUtils", () => ({
 
 // Import the mocked modules and type them as Jest mocks
 import { hasCaptainsAccess, getUserHighestRole } from "@/lib/roleUtils";
-import { clientApiFetch } from "@/lib/apiClient";
+import { useSeasonCaptains } from "@/hooks/data/useSeasonCaptains";
 
 // Type the imported modules as Jest mocks
 const mockHasCaptainsAccess = hasCaptainsAccess as jest.MockedFunction<
@@ -30,8 +30,8 @@ const mockHasCaptainsAccess = hasCaptainsAccess as jest.MockedFunction<
 const mockGetUserHighestRole = getUserHighestRole as jest.MockedFunction<
   typeof getUserHighestRole
 >;
-const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
-  typeof clientApiFetch
+const mockUseSeasonCaptains = useSeasonCaptains as jest.MockedFunction<
+  typeof useSeasonCaptains
 >;
 
 // Mock the layout components
@@ -83,6 +83,11 @@ const mockCaptains = [
 ];
 
 describe("CaptainsPage", () => {
+  const defaultProps = {
+    seasonId: "14",
+    seasonName: "Season 14"
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -95,7 +100,14 @@ describe("CaptainsPage", () => {
       logout: jest.fn()
     });
 
-    render(<CaptainsPage />);
+    mockUseSeasonCaptains.mockReturnValue({
+      captains: undefined,
+      isLoading: false,
+      isValidating: false,
+      isError: undefined
+    });
+
+    render(<CaptainsPage {...defaultProps} />);
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
@@ -109,7 +121,14 @@ describe("CaptainsPage", () => {
 
     mockHasCaptainsAccess.mockReturnValue(false);
 
-    render(<CaptainsPage />);
+    mockUseSeasonCaptains.mockReturnValue({
+      captains: undefined,
+      isLoading: false,
+      isValidating: false,
+      isError: undefined
+    });
+
+    render(<CaptainsPage {...defaultProps} />);
 
     expect(screen.getByText("Access Denied")).toBeInTheDocument();
     expect(
@@ -129,14 +148,17 @@ describe("CaptainsPage", () => {
     mockHasCaptainsAccess.mockReturnValue(true);
     mockGetUserHighestRole.mockReturnValue("admin");
 
-    mockClientApiFetch.mockResolvedValue(mockCaptains);
+    mockUseSeasonCaptains.mockReturnValue({
+      captains: mockCaptains,
+      isLoading: false,
+      isValidating: false,
+      isError: undefined
+    });
 
-    render(<CaptainsPage />);
+    render(<CaptainsPage {...defaultProps} />);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Team Captains - Active Season")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Team Captains - Season 14")).toBeInTheDocument();
       expect(screen.getByText("Access granted as:")).toBeInTheDocument();
       expect(screen.getByText("admin")).toBeInTheDocument();
       expect(screen.getByText("Team Alpha")).toBeInTheDocument();
@@ -158,16 +180,42 @@ describe("CaptainsPage", () => {
 
     mockHasCaptainsAccess.mockReturnValue(true);
 
-    mockClientApiFetch.mockRejectedValue(new Error("API Error"));
+    mockUseSeasonCaptains.mockReturnValue({
+      captains: undefined,
+      isLoading: false,
+      isValidating: false,
+      isError: new Error("Failed to load team captains")
+    });
 
-    render(<CaptainsPage />);
+    render(<CaptainsPage {...defaultProps} />);
 
     await waitFor(() => {
       expect(
         screen.getByText("Failed to load team captains")
       ).toBeInTheDocument();
-      expect(screen.getByText("Try Again")).toBeInTheDocument();
     });
+  });
+
+  it("should show loading state when data is loading", () => {
+    mockUseAuth.mockReturnValue({
+      user: mockUser,
+      loading: false,
+      checkAuth: jest.fn(),
+      logout: jest.fn()
+    });
+
+    mockHasCaptainsAccess.mockReturnValue(true);
+
+    mockUseSeasonCaptains.mockReturnValue({
+      captains: undefined,
+      isLoading: true,
+      isValidating: false,
+      isError: undefined
+    });
+
+    render(<CaptainsPage {...defaultProps} />);
+
+    expect(screen.getByText("Loading team captains...")).toBeInTheDocument();
   });
 
   it("should show empty state when no captains found", async () => {
@@ -180,12 +228,21 @@ describe("CaptainsPage", () => {
 
     mockHasCaptainsAccess.mockReturnValue(true);
 
-    mockClientApiFetch.mockResolvedValue([]);
+    mockUseSeasonCaptains.mockReturnValue({
+      captains: [],
+      isLoading: false,
+      isValidating: false,
+      isError: undefined
+    });
 
-    render(<CaptainsPage />);
+    render(<CaptainsPage {...defaultProps} />);
 
     await waitFor(() => {
-      expect(screen.getByText("No team captains found.")).toBeInTheDocument();
+      expect(screen.getByText("Team Captains - Season 14")).toBeInTheDocument();
+      // The table should be empty but still render
+      expect(screen.getByText("Team")).toBeInTheDocument();
+      expect(screen.getByText("Captain")).toBeInTheDocument();
+      expect(screen.getByText("Co-Captain")).toBeInTheDocument();
     });
   });
 });

@@ -3,10 +3,15 @@ import {
   getSeasonsController,
   getSeasonByIdController,
   getSeasonDetailsByIdController,
-  getFaceitLinksForSeasonController
+  getFaceitLinksForSeasonController,
+  getTeamCaptainsBySeasonIdController
 } from "../../controllers/seasons.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getLeaguesBySeasonController } from "../../controllers/caster.controllers";
+import {
+  authenticateJWT,
+  checkJWTPermissions
+} from "../../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -23,5 +28,12 @@ router.get(
   getLeaguesBySeasonController
 );
 router.get("/:season_id/faceit-links", getFaceitLinksForSeasonController);
+
+router.get(
+  "/:season_id/captains",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["admin", "captain", "helpdesk"] }),
+  getTeamCaptainsBySeasonIdController
+);
 
 export default router;

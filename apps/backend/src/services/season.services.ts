@@ -8,5 +8,12 @@ export const getActiveOrPassedSeasonId = async (seasonId: string) => {
     }
     throw new Error("No active season found");
   }
-  return Number(seasonId);
+  const seasonParseInt = parseInt(seasonId);
+  if (isNaN(seasonParseInt)) {
+    throw new Error("Invalid season ID");
+  }
+  if (seasonParseInt < 0) {
+    throw new Error("Invalid season ID");
+  }
+  return seasonParseInt;
 };
