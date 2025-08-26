@@ -103,7 +103,7 @@ const getSeasonMenuItems = (
         },
         {
           title: "Captains",
-          url: "/captains",
+          url: `/seasons/${signupOrActiveSeason.season_id}/captains`,
           hasFilters: false
         },
         {
@@ -113,7 +113,7 @@ const getSeasonMenuItems = (
         },
         {
           title: "Faceit Links",
-          url: "/faceit-links",
+          url: `/seasons/${signupOrActiveSeason.season_id}/faceit-links`,
           hasFilters: false
         }
       ]

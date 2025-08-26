@@ -9,10 +9,6 @@ import {
   getTeamCaptainsBySeasonIdController,
   getTeamCaptainsForActiveSeasonController
 } from "../../controllers/team-captains.controllers";
-import {
-  getFaceitLinksForSeasonController,
-  getFaceitLinksForActiveSeasonController
-} from "../../controllers/faceit-links.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import {
   authenticateJWT,
@@ -44,14 +40,6 @@ router.get(
   checkJWTPermissions({ fallbackRoles: ["admin", "captain", "helpdesk"] }),
   validateNumericParams(["season_id"]),
   getTeamCaptainsBySeasonIdController
-);
-
-// Faceit links routes
-router.get("/faceit-links", getFaceitLinksForActiveSeasonController);
-router.get(
-  "/season/:season_id/faceit-links",
-  validateNumericParams(["season_id"]),
-  getFaceitLinksForSeasonController
 );
 
 // This needs to be last as it's a catch-all for team_id

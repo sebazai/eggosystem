@@ -1,55 +1,20 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
-import { ExternalLink, Trophy, Users, Target } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useFaceitLinks } from "@/hooks/data/useFaceitLinks";
+import { Trophy, Users, ExternalLink, Target } from "lucide-react";
 
-interface FaceitLink {
-  id: number;
-  season_id: number;
-  league_id: number;
-  league_name: string;
-  external_id: string;
-  external_league_name: string | null;
-  type: string;
-  sort_priority: number;
-  faceit_url: string;
-}
-
-export default function FaceitLinksPage() {
+export const FaceitLinksPage = ({
+  seasonId,
+  seasonName
+}: {
+  seasonId: string;
+  seasonName: string;
+}) => {
   const { user: _user } = useAuth();
-  const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
-  const [faceitLinks, setFaceitLinks] = useState<FaceitLink[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const data = useFaceitLinks(seasonId);
 
-  useEffect(() => {
-    const fetchFaceitLinks = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/v1/teams/faceit-links");
-        if (!response.ok) {
-          throw new Error("Failed to fetch Faceit links");
-        }
-
-        const data = await response.json();
-        setFaceitLinks(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFaceitLinks();
-  }, []);
-
-  // Authentication check removed for testing
-
-  if (isLoading) {
+  if (data.isLoading || data.isValidating) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -62,18 +27,15 @@ export default function FaceitLinksPage() {
     );
   }
 
-  if (error) {
+  if (data.isError) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-100 rounded-lg p-8 text-center">
-            <div className="flex justify-center mb-4">
-              <Target className="h-16 w-16 text-red-500" />
-            </div>
+          <div className="border border-red-100 rounded-lg p-8 text-center">
             <h1 className="text-2xl font-bold text-red-700 mb-4">
               Error Loading Links
             </h1>
-            <p className="text-red-600 text-lg">{error}</p>
+            <p className="text-red-600 text-lg">{data.isError.message}</p>
           </div>
         </div>
       </div>
@@ -111,29 +73,20 @@ export default function FaceitLinksPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-slate-200 p-3 rounded-full">
-              <ExternalLink className="h-8 w-8 text-slate-700" />
-            </div>
-          </div>
           <h1 className="text-4xl font-bold text-foreground mb-4">
             Faceit Division Links
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Access your division&apos;s Faceit championship page.
           </p>
-          {signupOrActiveSeason && (
-            <div className="mt-4 inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full border border-slate-200">
-              <Trophy className="h-4 w-4" />
-              <span className="font-medium">
-                {signupOrActiveSeason.full_name}
-              </span>
-            </div>
-          )}
+          <div className="mt-4 inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full border border-slate-200">
+            <Trophy className="h-4 w-4" />
+            <span className="font-medium">{seasonName}</span>
+          </div>
         </div>
 
         {/* Links Grid */}
-        {faceitLinks.length === 0 ? (
+        {data.faceitLinks?.length === 0 ? (
           <div className="bg-card border rounded-lg p-8 text-center">
             <div className="flex justify-center mb-4">
               <Target className="h-16 w-16 text-muted-foreground" />
@@ -148,7 +101,7 @@ export default function FaceitLinksPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {faceitLinks.map((link) => (
+            {data.faceitLinks?.map((link) => (
               <div
                 key={link.id}
                 className="group bg-card border border-border rounded-xl p-8 hover:border-primary/50 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
@@ -212,4 +165,4 @@ export default function FaceitLinksPage() {
       </div>
     </div>
   );
-}
+};

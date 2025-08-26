@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
   getSeasonsController,
   getSeasonByIdController,
-  getSeasonDetailsByIdController
+  getSeasonDetailsByIdController,
+  getFaceitLinksForSeasonController
 } from "../../controllers/seasons.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getLeaguesBySeasonController } from "../../controllers/caster.controllers";
@@ -21,5 +22,6 @@ router.get(
   validateNumericParams(),
   getLeaguesBySeasonController
 );
+router.get("/:season_id/faceit-links", getFaceitLinksForSeasonController);
 
 export default router;
