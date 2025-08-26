@@ -69,7 +69,7 @@ export const FaceitLinksPage = ({
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -116,7 +116,10 @@ export const FaceitLinksPage = ({
                         {link.external_league_name || link.league_name}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {link.type.replace(/([A-Z])/g, " $1").trim()}
+                        {link.type
+                          .replace(/([A-Z])/g, " $1")
+                          .trim()
+                          .toLocaleUpperCase()}
                       </p>
                     </div>
                   </div>

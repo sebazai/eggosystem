@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { ExternalLink, Menu } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState, type JSX } from "react";
 import Link from "next/link";
@@ -45,6 +45,7 @@ interface MenuItemLink {
   title: string;
   url: string;
   hasFilters: boolean;
+  isExternal?: boolean;
   icon?: JSX.Element;
   items?: MenuItemLink[];
 }
@@ -109,7 +110,9 @@ const getSeasonMenuItems = (
         {
           title: "Schedule",
           url: "https://kanaliiga.fi/pelit/counter-strike-2",
-          hasFilters: false
+          hasFilters: false,
+          isExternal: true,
+          icon: <ExternalLink className="h-4 w-4" />
         },
         {
           title: "Faceit Links",
@@ -379,6 +382,8 @@ const renderMenuItem = (item: MenuItem, params: ReadonlyURLSearchParams) => {
                 title={component.title}
                 href={component.url}
                 {...(component.hasFilters ? { params } : {})}
+                icon={component.icon}
+                isExternal={component.isExternal}
               />
             ))}
           </ul>
@@ -423,8 +428,11 @@ const renderMobileMenuItem = (
                   query: subItem.hasFilters ? params.toString() : undefined
                 }}
                 onClick={closeMenuOnClick}
+                className="flex flex-row items-center gap-2"
+                target={subItem.isExternal ? "_blank" : undefined}
+                rel={subItem.isExternal ? "noopener noreferrer" : undefined}
               >
-                {subItem.title}
+                {subItem.title} {subItem.icon}
               </Link>
             </div>
           ))}
@@ -441,8 +449,10 @@ const renderMobileMenuItem = (
       }}
       onClick={closeMenuOnClick}
       className="font-semibold font-headings"
+      target={item.isExternal ? "_blank" : undefined}
+      rel={item.isExternal ? "noopener noreferrer" : undefined}
     >
-      {item.title}
+      {item.title} {item.icon}
     </Link>
   );
 };
@@ -450,10 +460,14 @@ const renderMobileMenuItem = (
 const ListItem = ({
   title,
   href,
-  params
+  params,
+  icon,
+  isExternal
 }: React.ComponentPropsWithoutRef<"li"> & {
   href: string;
   params?: ReadonlyURLSearchParams;
+  icon?: JSX.Element;
+  isExternal?: boolean;
 }) => {
   return (
     <li>
@@ -464,8 +478,10 @@ const ListItem = ({
             query: params ? params.toString() : undefined
           }}
           className="flex flex-row items-center gap-2"
+          target={isExternal ? "_blank" : undefined}
+          rel={isExternal ? "noopener noreferrer" : undefined}
         >
-          {title}
+          {title} {icon}
         </Link>
       </NavigationMenuLink>
     </li>
