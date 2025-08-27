@@ -30,7 +30,8 @@ interface DatabaseMatch {
 }
 
 /**
- * Fetches matches from FACEIT API for a specific championship
+ * Fetches upcoming matches from FACEIT API for a specific championship
+ * Uses type=upcoming to get only future matches, avoiding completed/ongoing matches
  */
 export const fetchFaceitChampionshipMatches = async (
   championshipId: string
@@ -43,7 +44,7 @@ export const fetchFaceitChampionshipMatches = async (
 
   try {
     const response = await fetch(
-      `https://open.faceit.com/data/v4/championships/${championshipId}/matches`,
+      `https://open.faceit.com/data/v4/championships/${championshipId}/matches?type=upcoming`,
       {
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -59,6 +60,9 @@ export const fetchFaceitChampionshipMatches = async (
     }
 
     const data: FaceitMatchesResponse = await response.json();
+
+    // Using type=upcoming query parameter to get only future matches
+    // This includes SCHEDULED and other upcoming match statuses
     return data.items || [];
   } catch (error) {
     logger.error(
@@ -270,7 +274,7 @@ export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
           championship.external_id
         );
         logger.info(
-          `Found ${faceitMatches.length} matches in FACEIT for championship ${championship.external_id}`
+          `Found ${faceitMatches.length} upcoming matches in FACEIT for championship ${championship.external_id}`
         );
 
         // Sync each match
