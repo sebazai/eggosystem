@@ -80,25 +80,25 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
 
       {/* Main Content */}
       <div className="relative z-10 max-w-[1920px] mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-12 lg:py-24 2xl:py-32 w-full">
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 items-start">
           {/* Left Side - Hero Content */}
           <div className="space-y-6">
             <div className="space-y-3">
               <Badge
                 variant="secondary"
-                className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-base lg:text-lg 2xl:text-xl"
+                className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
               >
                 CS2 Season 4 • Live Now
               </Badge>
 
-              <h1 className="text-4xl lg:text-6xl 2xl:text-7xl font-bold text-white leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-6xl font-bold text-white leading-tight">
                 Finland&apos;s Premier
                 <span className="block text-orange-400">
                   Corporate Esports League
                 </span>
               </h1>
 
-              <p className="text-xl lg:text-2xl 2xl:text-3xl text-slate-300 leading-relaxed">
+              <p className="text-lg sm:text-xl lg:text-xl 2xl:text-2xl text-slate-300 leading-relaxed">
                 Join the most competitive CS2 corporate league in Finland. Watch
                 live matches, follow your favorite teams, and be part of our
                 thriving esports community.
@@ -106,28 +106,28 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="text-center p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-2xl sm:text-3xl lg:text-3xl 2xl:text-4xl font-bold text-orange-400">
                   90+
                 </div>
-                <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
+                <div className="text-sm sm:text-base lg:text-base 2xl:text-lg text-slate-400">
                   Organizations
                 </div>
               </div>
-              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
+              <div className="text-center p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-2xl sm:text-3xl lg:text-3xl 2xl:text-4xl font-bold text-orange-400">
                   800+
                 </div>
-                <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
+                <div className="text-sm sm:text-base lg:text-base 2xl:text-lg text-slate-400">
                   Players
                 </div>
               </div>
-              <div className="text-center p-4 bg-white/5 rounded-lg border border-white/10">
-                <div className="text-3xl lg:text-4xl 2xl:text-5xl font-bold text-orange-400">
+              <div className="text-center p-3 sm:p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="text-2xl sm:text-3xl lg:text-3xl 2xl:text-4xl font-bold text-orange-400">
                   110+
                 </div>
-                <div className="text-base lg:text-lg 2xl:text-xl text-slate-400">
+                <div className="text-sm sm:text-base lg:text-base 2xl:text-lg text-slate-400">
                   Teams
                 </div>
               </div>
@@ -137,12 +137,12 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 size="lg"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 text-base lg:text-lg 2xl:text-xl h-auto"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-3 text-sm sm:text-base lg:text-base 2xl:text-lg h-auto"
                 onClick={() =>
                   router.push(`/seasons/${currentSeasonId}/calendar`)
                 }
               >
-                <Calendar className="mr-2 h-5 w-5 lg:h-6 lg:w-6 2xl:h-7 2xl:w-7" />
+                <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5 lg:h-5 lg:w-5 2xl:h-6 2xl:w-6" />
                 View Match Calendar
               </Button>
             </div>
@@ -151,14 +151,14 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
           {/* Right Side - Upcoming Matches */}
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl lg:text-3xl 2xl:text-4xl font-bold text-white flex items-center gap-2">
-                <Calendar className="h-6 w-6 lg:h-7 lg:w-7 2xl:h-8 2xl:w-8 text-orange-400" />
+              <h2 className="text-xl sm:text-2xl lg:text-2xl 2xl:text-3xl font-bold text-white flex items-center gap-2">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 lg:h-6 lg:w-6 2xl:h-7 2xl:w-7 text-orange-400" />
                 Upcoming Matches
               </h2>
               <Button
                 variant="ghost"
-                size="lg"
-                className="text-orange-400 hover:text-orange-300 text-base lg:text-lg 2xl:text-xl h-auto"
+                size="sm"
+                className="text-orange-400 hover:text-orange-300 text-sm sm:text-base lg:text-base 2xl:text-lg h-auto px-2 sm:px-4"
                 onClick={() =>
                   router.push(`/seasons/${currentSeasonId}/calendar`)
                 }
@@ -187,38 +187,38 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                 ))}
               </div>
             ) : upcomingMatches.length > 0 ? (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto">
+              <div className="space-y-3 sm:space-y-4 max-h-[400px] overflow-y-auto">
                 {upcomingMatches.map((match) => (
                   <Card
                     key={match.match_id}
                     className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group"
                     onClick={() => handleMatchClick(match)}
                   >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex items-start gap-2 sm:gap-3">
                         <div
-                          className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                          className="w-3 h-3 rounded-full flex-shrink-0 mt-1 flex-shrink-0"
                           style={{
                             backgroundColor: DIVISIONS[match.league_tier]?.color
                           }}
                         />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-white text-sm truncate mb-1 group-hover:text-orange-400 transition-colors">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <h3 className="font-semibold text-white text-sm lg:text-base mb-1 group-hover:text-orange-400 transition-colors break-words leading-tight">
                             {match.title}
                           </h3>
                           <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
-                            <Clock className="h-3 w-3" />
-                            <span>
+                            <Clock className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">
                               {formatInTimezone(
                                 match.match_start,
                                 "MMM d 'at' HH:mm"
                               )}
                             </span>
                           </div>
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-2">
                             <Badge
                               variant="secondary"
-                              className="text-xs bg-white/10 text-slate-300 border-white/20"
+                              className="text-xs bg-white/10 text-slate-300 border-white/20 flex-shrink-0"
                             >
                               {match.league_name}
                             </Badge>
@@ -226,7 +226,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 w-6 p-0 text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
+                                className="h-6 w-6 p-0 text-orange-400 hover:text-orange-300 hover:bg-orange-400/10 flex-shrink-0"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleStreamClick(match);
@@ -262,7 +262,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="grid md:grid-cols-4 gap-6">
             <Link href="/teams" className="group">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">
                   <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
@@ -279,7 +279,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               href={`/seasons/${currentSeasonId}/standings`}
               className="group"
             >
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <TrendingUp className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">
                   <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
@@ -293,7 +293,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             </Link>
 
             <Link href="/matches" className="group">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <Play className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">
                   <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">
@@ -307,7 +307,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             </Link>
 
             <Link href="/organizations" className="group">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[160px] md:min-h-[220px] lg:min-h-[240px] 2xl:min-h-[260px] flex flex-col">
+              <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">
                   <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">

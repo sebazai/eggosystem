@@ -14,15 +14,6 @@ export const CsSupportingOrgs = () => {
           height={59}
         />
       </Link> */}
-      <Link href={"https://tnnet.fi/"} target="_blank">
-        <Image
-          src={createNextUrl("/images/sponsors/tnnet.webp")}
-          className="w-[75px] h-[50px] sm:w-[150px] sm:h-[100px]"
-          alt="TNNet"
-          width={150}
-          height={100}
-        />
-      </Link>
       <Link href={"https://supermetrics.com/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/supermetrics.png")}
@@ -30,6 +21,33 @@ export const CsSupportingOrgs = () => {
           alt="Supermetrics"
           width={150}
           height={89}
+        />
+      </Link>
+      <Link href={"https://www.vilpe.com/en/"} target="_blank">
+        <Image
+          src={createNextUrl("/images/sponsors/vilpe.png")}
+          className="w-[150px] h-[43px] sm:w-[300px] sm:h-[86px] mobile-landscape:w-[150px] mobile-landscape:h-[43px]"
+          alt="Vilpe"
+          width={150}
+          height={43}
+        />
+      </Link>
+      <Link href={"https://warlockworks.fi/en/"} target="_blank">
+        <Image
+          src={createNextUrl("/images/sponsors/warlock-works-color.png")}
+          className="w-[150px] h-[60px] sm:w-[300px] sm:h-[120px] mobile-landscape:w-[150px] mobile-landscape:h-[60px]"
+          alt="Warlock Works"
+          width={150}
+          height={60}
+        />
+      </Link>
+      <Link href={"https://tnnet.fi/"} target="_blank">
+        <Image
+          src={createNextUrl("/images/sponsors/tnnet.webp")}
+          className="w-[75px] h-[50px] sm:w-[150px] sm:h-[100px]"
+          alt="TNNet"
+          width={150}
+          height={100}
         />
       </Link>
     </>
