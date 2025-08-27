@@ -239,7 +239,7 @@ export const FaceitLinksPage = ({
 
   if (data.isLoading || data.isValidating) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto">
         <div className="max-w-4xl mx-auto">
           <div className="bg-card border rounded-lg p-8 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-400 mx-auto mb-4"></div>
@@ -252,7 +252,7 @@ export const FaceitLinksPage = ({
 
   if (data.isError) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto">
         <div className="max-w-4xl mx-auto">
           <div className="border border-red-100 rounded-lg p-8 text-center">
             <h1 className="text-2xl font-bold text-red-700 mb-4">
@@ -266,62 +266,59 @@ export const FaceitLinksPage = ({
   }
 
   return (
-    <div className="mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Faceit Division Links
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Access your division&apos;s Faceit championship page.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full border border-slate-200">
-            <Trophy className="h-4 w-4" />
-            <span className="font-medium">{seasonName}</span>
-          </div>
+    <div className="max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-foreground mb-4">
+          Faceit Division Links
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          Access your division&apos;s Faceit championship page.
+        </p>
+        <div className="mt-4 inline-flex items-center gap-2 bg-slate-100 text-slate-700 px-4 py-2 rounded-full border border-slate-200">
+          <Trophy className="h-4 w-4" />
+          <span className="font-medium">{seasonName}</span>
         </div>
+      </div>
 
-        {/* Links Grid */}
-        {data.faceitLinks?.length === 0 ? (
-          <div className="bg-card border rounded-lg p-8 text-center">
-            <div className="flex justify-center mb-4">
-              <Target className="h-16 w-16 text-muted-foreground" />
-            </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">
-              No Faceit Links Available
-            </h2>
-            <p className="text-muted-foreground">
-              There are currently no Faceit division links available for this
-              season.
-            </p>
+      {/* Links Grid */}
+      {data.faceitLinks?.length === 0 ? (
+        <div className="bg-card border rounded-lg p-8 text-center">
+          <div className="flex justify-center mb-4">
+            <Target className="h-16 w-16 text-muted-foreground" />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {data.faceitLinks?.map((link) => (
-              <FaceitLinkCard key={link.id} link={link} />
-            ))}
-          </div>
-        )}
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            No Faceit Links Available
+          </h2>
+          <p className="text-muted-foreground">
+            There are currently no Faceit division links available for this
+            season.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {data.faceitLinks?.map((link) => (
+            <FaceitLinkCard key={link.id} link={link} />
+          ))}
+        </div>
+      )}
 
-        {/* Footer Info */}
-        <div className="mt-12 text-center">
-          <div className="bg-muted/30 rounded-lg p-6 max-w-2xl mx-auto">
-            <h3 className="font-semibold text-foreground mb-2">
-              About Faceit Integration
-            </h3>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-3">
-              Faceit is only used to schedule & play the matches . Statistics,
-              standings etc are on this page.
+      {/* Footer Info */}
+      <div className="mt-12 text-center">
+        <div className="bg-muted/30 rounded-lg p-6 max-w-2xl mx-auto">
+          <h3 className="font-semibold text-foreground mb-2">
+            About Faceit Integration
+          </h3>
+          <p className="text-muted-foreground text-sm leading-relaxed mb-3">
+            Faceit is only used to schedule & play the matches . Statistics,
+            standings etc are on this page.
+          </p>
+          <div className="border-t border-border pt-3">
+            <p className="text-muted-foreground text-xs">
+              <strong>Note:</strong> Team validation only confirms registration
+              status and data completeness. This does not validate that teams
+              are in the correct group (i.e. Group A or Group B).
             </p>
-            <div className="border-t border-border pt-3">
-              <p className="text-muted-foreground text-xs">
-                <strong>Note:</strong> Team validation only confirms
-                registration status and data completeness. This does not
-                validate that teams are in the correct group (i.e. Group A or
-                Group B).
-              </p>
-            </div>
           </div>
         </div>
       </div>

@@ -186,7 +186,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
           </div>
         );
       },
-      dayMaxEvents: 3, // Show max 3 events per day, rest will be shown as "+more"
+      dayMaxEvents: 2, // Reduced from 3 for mobile
       moreLinkClick: "popover", // Show remaining events in a popover
       moreLinkContent: (arg: MoreLinkContentArg) => {
         return `+${arg.num} more`;
@@ -228,7 +228,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       slotDuration: "00:30:00",
       expandRows: true, // Ensure rows expand to fill available space
       height: "auto",
-      eventMaxStack: 3, // Limit horizontal stacking in time slots
+      eventMaxStack: 2, // Reduced from 3 for mobile
       slotEventOverlap: false, // Prevent events from overlapping in time slots
       selectable: true,
       selectMirror: true,
@@ -287,106 +287,118 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   };
 
   return (
-    <div className="mx-auto py-8 px-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-heading font-bold mb-2">Match Calendar</h1>
-        <p className="text-muted-foreground">
+    <div className="mx-auto py-4 sm:py-8 px-2 sm:px-4">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">
+          Match Calendar
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           View and manage upcoming matches and events
         </p>
       </div>
 
       <Tabs defaultValue="calendar" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
-            <Grid3X3 className="h-4 w-4" />
-            Calendar View
+        <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
+          <TabsTrigger
+            value="calendar"
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
+            <Grid3X3 className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Calendar View</span>
+            <span className="sm:hidden">Calendar</span>
           </TabsTrigger>
-          <TabsTrigger value="list" className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            List View
+          <TabsTrigger
+            value="list"
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
+            <List className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">List View</span>
+            <span className="sm:hidden">List</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="calendar" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Calendar</span>
-                <div className="flex gap-2 items-center">
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    <Select
-                      value={selectedDivision.toString()}
-                      onValueChange={handleDivisionChange}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Division" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Divisions</SelectItem>
-                        {isLoadingSeasonLeagues ? (
-                          <SelectItem value="loading">Loading...</SelectItem>
-                        ) : (
-                          seasonLeagues?.map((league) => (
-                            <SelectItem
-                              key={league.id}
-                              value={league.id.toString()}
-                            >
-                              {league.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={view === "dayGridMonth" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleViewChange("dayGridMonth")}
-                    >
-                      Month
-                    </Button>
-                    <Button
-                      variant={view === "timeGridWeek" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleViewChange("timeGridWeek")}
-                    >
-                      Week
-                    </Button>
-                  </div>
+        <TabsContent value="calendar" className="mt-4 sm:mt-6">
+          <div className="space-y-4">
+            {/* Calendar Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              <span className="text-lg sm:text-xl font-semibold">Calendar</span>
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 sm:items-center">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <Select
+                    value={selectedDivision.toString()}
+                    onValueChange={handleDivisionChange}
+                  >
+                    <SelectTrigger className="w-full sm:w-32">
+                      <SelectValue placeholder="Division" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Divisions</SelectItem>
+                      {isLoadingSeasonLeagues ? (
+                        <SelectItem value="loading">Loading...</SelectItem>
+                      ) : (
+                        seasonLeagues?.map((league) => (
+                          <SelectItem
+                            key={league.id}
+                            value={league.id.toString()}
+                          >
+                            {league.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardTitle>
-              {/* Division Legend */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                {seasonLeagues?.map((league) => (
-                  <div key={league.id} className="flex items-center gap-1">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{
-                        backgroundColor: DIVISIONS[league.tier]?.color
-                      }}
-                    ></div>
-                    <span className="text-xs">{league.name}</span>
-                  </div>
-                ))}
+                <div className="flex gap-2">
+                  <Button
+                    variant={view === "dayGridMonth" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleViewChange("dayGridMonth")}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                  >
+                    Month
+                  </Button>
+                  <Button
+                    variant={view === "timeGridWeek" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleViewChange("timeGridWeek")}
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
+                  >
+                    Week
+                  </Button>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="calendar-container">
-                <FullCalendar ref={calendarRef} {...calendarOptions} />
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Division Legend */}
+            <div className="flex flex-wrap gap-2">
+              {seasonLeagues?.map((league) => (
+                <div key={league.id} className="flex items-center gap-1">
+                  <div
+                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full"
+                    style={{
+                      backgroundColor: DIVISIONS[league.tier]?.color
+                    }}
+                  ></div>
+                  <span className="text-xs">{league.name}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar */}
+            <div className="calendar-container">
+              <FullCalendar ref={calendarRef} {...calendarOptions} />
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="list" className="mt-6">
+        <TabsContent value="list" className="mt-4 sm:mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
                 <div className="flex items-center gap-2">
-                  <List className="h-5 w-5" />
-                  Upcoming Matches
+                  <List className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="text-lg sm:text-xl">Upcoming Matches</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
@@ -394,7 +406,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     value={selectedDivision.toString()}
                     onValueChange={handleDivisionChange}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue placeholder="Division" />
                     </SelectTrigger>
                     <SelectContent>
@@ -416,8 +428,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="pt-0 sm:pt-6">
+              <div className="space-y-3 sm:space-y-4">
                 {calendarMatches
                   ?.sort((a, b) => {
                     return (
@@ -428,7 +440,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                   .map((match) => (
                     <div
                       key={match.match_id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer gap-3"
+                      className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => {
                         setSelectedEvent({
                           id: match.match_id,
@@ -443,22 +455,22 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                         setIsDialogOpen(true);
                       }}
                     >
-                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
                         <div
-                          className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 mt-1"
                           style={{
                             backgroundColor: DIVISIONS[match.league_tier]?.color
                           }}
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">
+                          <h3 className="font-semibold break-words text-sm sm:text-base">
                             {match.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
                             {formatInTimezone(match.match_start, "PPP 'at' p")}{" "}
                             - {formatInTimezone(match.match_end, "p")}
                           </p>
-                          <div className="flex gap-2 mt-1 flex-wrap">
+                          <div className="flex gap-2 mt-2 flex-wrap">
                             <Badge variant="secondary" className="text-xs">
                               {match.league_name}
                             </Badge>
@@ -468,7 +480,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-shrink-0 w-full sm:w-auto"
+                        className="w-full sm:w-auto text-xs sm:text-sm"
                       >
                         View Details
                       </Button>
@@ -482,24 +494,26 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
 
       {/* Event Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Match Details
+              <Calendar className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-base sm:text-lg">Match Details</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Detailed information about the selected match
             </DialogDescription>
           </DialogHeader>
 
           {selectedEvent && (
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg">{selectedEvent.title}</h3>
+              <h3 className="font-semibold text-base sm:text-lg">
+                {selectedEvent.title}
+              </h3>
 
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-sm">
                     {formatInTimezone(selectedEvent.start, "PPP 'at' p")} -{" "}
                     {selectedEvent.end
@@ -524,7 +538,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                         // Single stream - show as button
                         <Button
                           onClick={() => handleStreamClick()}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 w-full"
                         >
                           <ExternalLink className="h-4 w-4" />
                           Watch Stream

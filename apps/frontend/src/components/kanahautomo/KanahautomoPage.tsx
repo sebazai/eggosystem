@@ -166,7 +166,7 @@ export default function KanahautomoPage() {
 
   if (authLoading || orgsLoading) {
     return (
-      <div className="mx-auto px-4 py-8">
+      <div className="mx-auto">
         <div className="flex justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
@@ -176,7 +176,7 @@ export default function KanahautomoPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto px-4 py-8">
+      <div className="mx-auto">
         <Card>
           <CardHeader>
             <div className="grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6">
@@ -224,7 +224,7 @@ export default function KanahautomoPage() {
 
   if (orgsError || !organizations) {
     return (
-      <div className="mx-auto px-4 py-8">
+      <div className="mx-auto">
         <Card>
           <CardHeader>
             <h1 className="text-2xl font-bold mb-4">Join Kanahautomo</h1>
@@ -304,7 +304,7 @@ export default function KanahautomoPage() {
   };
 
   return (
-    <div className="mx-auto px-4 py-8">
+    <div className="mx-auto">
       <Card className="mb-8">
         <CardHeader>
           <div
