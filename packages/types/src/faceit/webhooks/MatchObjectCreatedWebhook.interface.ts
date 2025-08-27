@@ -1,8 +1,4 @@
 import { z } from "zod";
-import {
-  FaceitGame,
-  FaceitGameSchema
-} from "../match-details/Details.interface";
 import { BaseWebhookSchema } from "./Webhooks.interface";
 
 interface MatchObjectCreatedEntity {
@@ -15,7 +11,7 @@ interface MatchObjectCreatedPayload {
   id: string;
   organizer_id: string;
   region: string;
-  game: FaceitGame;
+  game: string;
   version: number;
   entity: MatchObjectCreatedEntity;
   created_at: string;
@@ -41,12 +37,11 @@ const MatchObjectCreatedEntitySchema = z.object({
   type: z.string()
 });
 
-// Use the imported FaceitGameSchema directly
 const MatchObjectCreatedPayloadSchema = z.object({
   id: z.string(),
   organizer_id: z.string(),
   region: z.string(),
-  game: FaceitGameSchema, // Use the pre-defined schema instead of z.enum(FaceitGame)
+  game: z.string(),
   version: z.number(),
   entity: MatchObjectCreatedEntitySchema,
   created_at: z.string(),
