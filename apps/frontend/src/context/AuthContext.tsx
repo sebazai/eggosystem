@@ -1,6 +1,11 @@
 "use client";
 
-import { clientApiFetch, setAuthFailureCallback } from "@/lib/apiClient";
+import {
+  clientApiFetch,
+  setAuthFailureCallback,
+  markValidSession,
+  clearSessionState
+} from "@/lib/apiClient";
 import {
   createContext,
   useCallback,
@@ -30,6 +35,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         "/api/v1/auth/me"
       );
       setUser(res.user);
+      // Mark that we've had a valid session
+      markValidSession();
     } catch (_error) {
       setUser(null);
     } finally {
@@ -43,6 +50,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Logged out successfully");
     } finally {
       setUser(null);
+      // Clear session state to prevent false auth failure triggers
+      clearSessionState();
     }
   };
 
@@ -51,9 +60,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setAuthFailureCallback(() => {
       console.log("Auth failure detected, logging out user");
       setUser(null);
-      toast.error("Session expired. Please log in again.");
+      // Only show session expired message if we had a valid session
+      // This prevents false messages on first visit or after logout
+      if (user !== null) {
+        toast.error("Session expired. Please log in again.");
+      }
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchAuth = async () => {

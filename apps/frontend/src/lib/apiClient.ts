@@ -3,10 +3,21 @@ import { envConfig } from "@/configs/env";
 let isRefreshing = false;
 let refreshSubscribers: (() => void)[] = [];
 let onAuthFailure: (() => void) | null = null;
+let hasHadValidSession = false; // Track if we've had a valid session
 
 // Function to register auth failure callback
 export const setAuthFailureCallback = (callback: () => void) => {
   onAuthFailure = callback;
+};
+
+// Function to mark that we've had a valid session
+export const markValidSession = () => {
+  hasHadValidSession = true;
+};
+
+// Function to clear session state (for logout)
+export const clearSessionState = () => {
+  hasHadValidSession = false;
 };
 
 const onTokenRefreshed = () => {
@@ -133,15 +144,15 @@ export async function clientApiFetch<T>(
 
       if (response.status === 401) {
         console.warn("No refresh token available or session expired.");
-        // Trigger auth failure callback if registered
-        if (onAuthFailure) {
+        // Only trigger auth failure if we had a valid session that actually expired
+        if (onAuthFailure && hasHadValidSession) {
           onAuthFailure();
         }
         throw new Error("No refresh token available or session expired.");
       }
 
-      // Trigger auth failure callback if registered
-      if (onAuthFailure) {
+      // Only trigger auth failure for actual refresh failures when we had a session
+      if (onAuthFailure && hasHadValidSession) {
         onAuthFailure();
       }
       throw new Error("Token refresh failed");
