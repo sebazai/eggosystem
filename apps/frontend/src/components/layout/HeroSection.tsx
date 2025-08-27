@@ -49,18 +49,19 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   const { calendarMatches, isLoading: isLoadingMatches } =
     useSeasonCalendarMatches(currentSeasonId, "all");
 
-  // Filter to show only upcoming matches (next 7 days)
+  // Filter to show only upcoming matches (next 10 days)
   const upcomingMatches =
     calendarMatches
+      ?.sort((a, b) => a.league_tier - b.league_tier)
       ?.filter((match) => {
         const matchDate = new Date(match.match_start);
         const now = new Date();
-        const sevenDaysFromNow = new Date(
-          now.getTime() + 7 * 24 * 60 * 60 * 1000
+        const tenDaysFromNow = new Date(
+          now.getTime() + 10 * 24 * 60 * 60 * 1000
         );
-        return matchDate >= now && matchDate <= sevenDaysFromNow;
+        return matchDate >= now && matchDate <= tenDaysFromNow;
       })
-      .slice(0, 6) || []; // Show max 6 matches
+      .slice(0, 10) || []; // Show max 10 matches
 
   const handleMatchClick = (match: MatchWithStreamUrls) => {
     router.push(`/matches/${match.match_id}`);
