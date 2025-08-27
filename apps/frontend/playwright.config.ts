@@ -7,8 +7,8 @@ export default defineConfig({
   testDir: "./src/e2e",
   fullyParallel: true,
   forbidOnly: !!isCI,
-  // Increase retries for CI to handle flaky tests
-  retries: isCI ? 2 : 0,
+  // Add retries to handle potential initial compilation
+  retries: isCI ? 1 : 0,
   workers: undefined,
   // Configure multiple reporters
   reporter: [
@@ -17,9 +17,9 @@ export default defineConfig({
     ["list"] // Console output
   ],
 
-  // Increase timeout for E2E tests to handle API calls
-  timeout: 60000,
-  expect: { timeout: 15000 },
+  // Set a reasonable timeout
+  timeout: 30000,
+  expect: { timeout: 10000 },
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -27,11 +27,7 @@ export default defineConfig({
       mode: "only-on-failure",
       fullPage: true
     },
-    headless: true,
-    // Add action timeout
-    actionTimeout: 10000,
-    // Add navigation timeout
-    navigationTimeout: 30000
+    headless: true
   },
   projects: [
     {
@@ -44,6 +40,6 @@ export default defineConfig({
     command: "pnpm start:standalone",
     url: "http://localhost:3000",
     reuseExistingServer: !isCI,
-    timeout: 30000 // Give the server enough time to start
+    timeout: 20000 // Give the server enough time to start
   }
 });
