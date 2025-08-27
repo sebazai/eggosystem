@@ -37,7 +37,7 @@ export default async function AllOrganizations(props: {
   const organizations: Organizations[] = await orgs.json();
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+    <div className="max-w-screen-2xl mx-auto">
       <h1 className="text-3xl lg:text-4xl 2xl:text-5xl mb-4 md:mb-8">
         {search
           ? `Search results for "${search}" in Organizations`
