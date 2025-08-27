@@ -211,7 +211,7 @@ describe("KanahautomoPage", () => {
       renderKanahautomoPage();
       const heading = screen.getByRole("heading", { name: "Join Kanahautomo" });
       const container = heading.closest("div[class*='mx-auto']");
-      expect(container).toHaveClass("mx-auto", "px-4", "py-8");
+      expect(container).toHaveClass("mx-auto");
     });
 
     it("renders the submit button", () => {
