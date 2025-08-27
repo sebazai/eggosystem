@@ -1,12 +1,40 @@
 import { app } from "./src/app";
 import { logger } from "./src/utils/app-logger";
 import { queueConsumerManager } from "./src/services/queue-consumer-manager";
+import { startFaceitMatchSyncCron } from "./src/services/cron-scheduler.services";
 
 const port = process.env.PORT || 3001;
 
 const server = app.listen(port, () => {
   logger.info(`Server started at ${process.env.BACKEND_URL}`);
 });
+
+// Initialize FACEIT match sync cron job if FACEIT API key is available and not in test mode
+if (
+  process.env.FACEIT_API_KEY &&
+  process.env.NODE_ENV !== "test" &&
+  process.env.NODE_ENV !== "e2e" &&
+  process.env.TEST_TYPE !== "e2e"
+) {
+  try {
+    startFaceitMatchSyncCron();
+    logger.info("FACEIT match sync cron job initialized successfully");
+  } catch (error) {
+    logger.error("Failed to initialize FACEIT match sync cron job:", error);
+  }
+} else if (
+  process.env.NODE_ENV === "test" ||
+  process.env.NODE_ENV === "e2e" ||
+  process.env.TEST_TYPE === "e2e"
+) {
+  logger.info(
+    "Test environment detected, skipping FACEIT cron job initialization"
+  );
+} else {
+  logger.info(
+    "FACEIT_API_KEY environment variable not found, skipping FACEIT cron job initialization"
+  );
+}
 
 // Handle server shutdown gracefully
 process.on("SIGTERM", async () => {
