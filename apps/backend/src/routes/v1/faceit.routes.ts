@@ -49,7 +49,8 @@ import {
   validateChampionshipCreatedWebhook,
   validateChampionshipFinishedWebhook,
   validateChampionshipStartedWebhook,
-  validateChampionshipCancelledWebhook
+  validateChampionshipCancelledWebhook,
+  type RequestWithQueryAndBody
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -121,7 +122,8 @@ const processWebhookWithDetails = async <
   webhookValidator: (data: unknown) => W,
   getDetailsFunction: (id: string) => Promise<MD>,
   detailsValidator: (data: unknown) => MD,
-  eventType: string
+  eventType: string,
+  manualReprocess: boolean
 ) => {
   let matchDetails: MD | null = null;
   let externalMatchRoomId = (webhookData as any)?.payload?.id as string;
@@ -141,7 +143,8 @@ const processWebhookWithDetails = async <
       retryCount,
       eventType,
       validatedWebhook,
-      validatedMatchDetails
+      validatedMatchDetails,
+      manualReprocess
     );
 
     return {
@@ -157,6 +160,7 @@ const processWebhookWithDetails = async <
         String((webhookData as any).event),
         webhookData,
         matchDetails,
+        manualReprocess,
         "ZOD_VALIDATION_ERROR",
         JSON.stringify(error)
       );
@@ -169,6 +173,7 @@ const processWebhookWithDetails = async <
       String((webhookData as any).event),
       webhookData,
       matchDetails,
+      manualReprocess,
       "UNKNOWN_ERROR",
       JSON.stringify(error)
     );
@@ -180,7 +185,7 @@ router.post(
   "/webhook",
   createApiKeyValidator(process.env.FACEIT_WEBHOOK_API_KEY),
   async (
-    req: RequestWithBody<FaceITWebhookData>,
+    req: RequestWithQueryAndBody<{ reprocess?: string }, FaceITWebhookData>,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -190,6 +195,7 @@ router.post(
       webhookData.payload.organizer_id,
       appId
     );
+    const manualReprocess = req.query.reprocess === "true";
 
     if (!organizer || organizer.length === 0) {
       logger.error(
@@ -208,7 +214,8 @@ router.post(
           validateMatchObjectCreatedWebhook,
           getFaceITMatchDetails<MatchmakingDetailsObjectCreated>,
           validateMatchmakingDetailsObjectCreated,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
         res.status(200).send("Webhook received");
         return;
@@ -223,7 +230,8 @@ router.post(
           validateMatchObjectCreatedWebhook,
           getFaceITMatchDetails<ChampionshipDetailsObjectCreated>,
           validateChampionshipDetailsObjectCreated,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
 
         await addMatchToDatabase(
@@ -246,7 +254,8 @@ router.post(
           validateMatchStatusConfiguringWebhook,
           getFaceITMatchDetails<MatchmakingDetailsConfiguring>,
           validateMatchmakingDetailsConfiguring,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
         res.status(200).send("Webhook received");
         return;
@@ -260,7 +269,8 @@ router.post(
           validateMatchStatusConfiguringWebhook,
           getFaceITMatchDetails<ChampionshipDetailsConfiguring>,
           validateChampionshipDetailsConfiguring,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
         res.status(200).send("Webhook received");
         return;
@@ -277,7 +287,8 @@ router.post(
           validateMatchStatusReadyWebhook,
           getFaceITMatchDetails<MatchmakingDetailsReady>,
           validateMatchmakingDetailsReady,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
         await updateMatchStatus(
           validatedWebhook.payload.id,
@@ -296,7 +307,8 @@ router.post(
           validateMatchStatusReadyWebhook,
           getFaceITMatchDetails<ChampionshipDetailsReady>,
           validateChampionshipDetailsReady,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
 
         await addMatchTeamMapVetoes(
@@ -328,7 +340,8 @@ router.post(
             webhookData.retry_count,
             webhookData.event,
             webhookData,
-            matchDetails
+            matchDetails,
+            manualReprocess
           );
           // TODO: Is MatchStatus.FINISHED the correct status?
           await updateMatchStatus(externalMatchRoomId, MatchStatus.ABORTED);
@@ -343,7 +356,8 @@ router.post(
           webhookData.retry_count,
           webhookData.event,
           webhookData,
-          matchDetails
+          matchDetails,
+          manualReprocess
         );
         await updateMatchStatus(externalMatchRoomId, MatchStatus.FINISHED);
         res.status(200).send("Webhook received");
@@ -362,7 +376,8 @@ router.post(
           validateMatchDemoReadyWebhook,
           getFaceITMatchDetails<MatchmakingDetailsDemoReady>,
           validateMatchmakingDetailsDemoReady,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
         res.status(200).send("Webhook received");
         return;
@@ -377,7 +392,8 @@ router.post(
           validateMatchDemoReadyWebhook,
           getFaceITMatchDetails<ChampionshipDetailsDemoReady>,
           validateChampionshipDetailsDemoReady,
-          webhookData.event
+          webhookData.event,
+          manualReprocess
         );
         // Validate players in both teams that all the steam_ids are in the SeasonTeamPlayers table
         await validatePlayersInTeams(
@@ -402,7 +418,8 @@ router.post(
         webhookData.retry_count,
         webhookData.event,
         webhookData,
-        matchDetails
+        matchDetails,
+        manualReprocess
       );
       await updateMatchStatus(webhookData.payload.id, MatchStatus.ABORTED);
       res.status(200).send("Webhook received");
@@ -416,7 +433,8 @@ router.post(
         webhookData.retry_count,
         webhookData.event,
         webhookData,
-        matchDetails
+        matchDetails,
+        manualReprocess
       );
       await updateMatchStatus(webhookData.payload.id, MatchStatus.CANCELLED);
       res.status(200).send("Webhook received");
@@ -432,7 +450,8 @@ router.post(
         validateChampionshipCreatedWebhook,
         getFaceITChampionshipDetails<unknown>,
         (data) => data,
-        webhookData.event
+        webhookData.event,
+        manualReprocess
       );
       await addChampionshipToDatabase(validatedWebhook);
       res.status(200).send("Webhook received");
@@ -448,7 +467,8 @@ router.post(
         validateChampionshipStartedWebhook,
         getFaceITChampionshipDetails<unknown>,
         (data) => data,
-        webhookData.event
+        webhookData.event,
+        manualReprocess
       );
       res.status(200).send("Webhook received");
       return;
@@ -463,7 +483,8 @@ router.post(
         validateChampionshipFinishedWebhook,
         getFaceITChampionshipDetails<unknown>,
         (data) => data,
-        webhookData.event
+        webhookData.event,
+        manualReprocess
       );
       res.status(200).send("Webhook received");
       return;
@@ -478,7 +499,8 @@ router.post(
         validateChampionshipCancelledWebhook,
         getFaceITChampionshipDetails<unknown>,
         (data) => data,
-        webhookData.event
+        webhookData.event,
+        manualReprocess
       );
       await removeSeasonLeagueExternalId(validatedWebhook.payload.id);
       res.status(200).send("Webhook received");
@@ -490,7 +512,8 @@ router.post(
       webhookData.retry_count,
       webhookData.event,
       webhookData,
-      null
+      null,
+      manualReprocess
     );
 
     res.status(200).send("Webhook received");

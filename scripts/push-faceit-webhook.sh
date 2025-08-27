@@ -2,7 +2,7 @@
 
 # Script to push Faceit webhook data to the backend
 # Reads FACEIT_WEBHOOK_API_KEY from apps/backend/.env and prompts for JSON input and base URL
-# Can also reprocess webhooks from database by ID range
+# Can also reprocess webhooks from database by ID range (retry_count = 0, error_details IS NOT NULL, manual_reprocess = 0)
 
 set -e
 
@@ -86,7 +86,7 @@ fetch_webhook_from_db() {
     print_status "mysql command found: $(which mysql)" >&2
     
     # Query to fetch webhook data from FaceitWebhooks table (only retry_count = 0)
-    local query="SELECT data FROM FaceitWebhooks WHERE id = $id AND retry_count = 0 AND error_details IS NOT NULL"
+    local query="SELECT data FROM FaceitWebhooks WHERE id = $id AND retry_count = 0 AND error_details IS NOT NULL AND manual_reprocess = 0"
     print_status "Executing query: $query" >&2
     
     # Skip connection test since initial connection already worked
@@ -131,7 +131,7 @@ fetch_webhook_from_db() {
     fi
     
     if [[ -z "$result" ]]; then
-        print_warning "No webhook data found for ID $id (or retry_count != 0 or error_details IS NULL)" >&2
+        print_warning "No webhook data found for ID $id (or retry_count != 0 or error_details IS NULL or manual_reprocess != 0)" >&2
         return 1
     fi
     
@@ -240,10 +240,10 @@ if [[ ! "$BASE_URL" =~ ^https?:// ]]; then
     fi
 fi
 
-    # Construct the webhook URL
+    # Construct the webhook URL (will be updated based on operation mode)
     WEBHOOK_URL="$BASE_URL/api/v1/faceit/webhook"
 
-    print_status "Webhook URL: $WEBHOOK_URL"
+    print_status "Base webhook URL: $WEBHOOK_URL"
     
     # Test API connectivity before proceeding
     echo
@@ -265,12 +265,16 @@ fi
 echo
 print_status "Choose operation mode:"
 print_status "1. Send new webhook data (JSON input)"
-print_status "2. Reprocess webhooks from database by ID range (retry_count = 0 and error_details IS NOT NULL only)"
+print_status "2. Reprocess webhooks from database by ID range (retry_count = 0, error_details IS NOT NULL, manual_reprocess = 0 only)"
 read -p "Choose option (1 or 2): " OPERATION_MODE
 
 if [[ "$OPERATION_MODE" == "2" ]]; then
     # Database reprocessing mode
     print_status "Database reprocessing mode selected"
+    
+    # Add reprocess=true query parameter for database reprocessing
+    WEBHOOK_URL="$WEBHOOK_URL?reprocess=true"
+    print_status "Reprocessing webhook URL: $WEBHOOK_URL"
     
     # Database connection details
     echo
@@ -398,13 +402,13 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
         exit 1
     fi
     
-    print_success "Will reprocess ${#IDS[@]} webhooks (retry_count = 0 and error_details IS NOT NULL only): ${IDS[*]}"
+    print_success "Will reprocess ${#IDS[@]} webhooks (retry_count = 0, error_details IS NOT NULL, manual_reprocess = 0 only): ${IDS[*]}"
     
 
     
     # Confirm before proceeding
     echo
-    print_warning "This will send ${#IDS[@]} webhooks with retry_count = 0 and error_details to the API. Continue? (y/N)"
+    print_warning "This will send ${#IDS[@]} webhooks with retry_count = 0, error_details, and manual_reprocess = 0 to the API. Continue? (y/N)"
     read -p "Continue? " CONFIRM
     
     if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
@@ -439,7 +443,7 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
         print_status "webhook_data length: ${#webhook_data}"
         
         if [[ $fetch_result -ne 0 ]]; then
-            print_warning "Skipping ID $id (no data found, retry_count != 0, or no error_details)"
+            print_warning "Skipping ID $id (no data found, retry_count != 0, no error_details, or manual_reprocess != 0)"
             SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
             SKIPPED_IDS+=("$id")
             continue
@@ -472,7 +476,7 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
     print_status "Reprocessing complete!"
     print_success "Successfully processed: $SUCCESS_COUNT webhooks"
     if [[ $SKIPPED_COUNT -gt 0 ]]; then
-        print_warning "Skipped (no data, retry_count != 0, or no error_details): $SKIPPED_COUNT webhooks"
+        print_warning "Skipped (no data, retry_count != 0, no error_details, or manual_reprocess != 0): $SKIPPED_COUNT webhooks"
         print_status "Skipped IDs: ${SKIPPED_IDS[*]}"
     fi
     if [[ $FAILED_COUNT -gt 0 ]]; then

@@ -939,183 +939,373 @@ describe("FaceIT Routes - Webhook", () => {
   });
 
   describe("POST /webhook - championship_created", () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
+    describe("Reprocess Query Parameter", () => {
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
+          mockOrganizer
+        ]);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
 
-      // Organizer exists
-      mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([mockOrganizer]);
+        // Championship details fetch is not needed for assertions
+        jest
+          .spyOn(faceitServices, "getFaceITChampionshipDetails")
+          .mockResolvedValue({} as unknown as Record<string, unknown>);
 
-      // Save webhook succeeds
-      mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        // Mock active organizer season
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
+          id: 77
+        } as unknown as Season);
 
-      // Championship details fetch is not needed for assertions; return empty object
-      jest
-        .spyOn(faceitServices, "getFaceITChampionshipDetails")
-        .mockResolvedValue({} as unknown as Record<string, unknown>);
+        // Mock league resolution
+        mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValue({
+          season_id: 77,
+          league_id: 5,
+          tier: 1
+        } as unknown as SeasonLeague);
 
-      // No active season exists -> service throws
-      // Default: let service run; individual tests can override
-    });
-
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
-    it("should return 400 when no active organizer season exists", async () => {
-      // Inline minimal payload object (mirrors championship_created.json)
-      const championshipCreated = {
-        transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
-        event: "championship_created",
-        event_id: "d23815bd-47f3-4e2a-ba4f-c2cf077054b5",
-        third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
-        app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
-        timestamp: "2025-07-31T13:52:23Z",
-        retry_count: 0,
-        version: 1,
-        payload: {
-          id: "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
-          name: "5 Div S4 Lohko A",
-          owner_id: "281c1ff6-35bf-44f0-bac3-9d6edb34e695",
-          organizer_id: "d2372a88-623d-4ca3-9248-a480b6dfbe1a",
-          game: "cs2",
-          region: "EU",
-          description: "",
-          type: "roundRobin",
-          status: "created",
-          published: false,
-          featured: false,
-          archived: false,
-          admin_tool_enabled: true,
-          check_in_enabled: true,
-          rulesId: "",
-          slots: 16,
-          total_rounds: 15,
-          total_groups: 1,
-          check_in_clear: "2025-08-07T13:52:00Z",
-          check_in_start: "2025-08-07T13:22:00Z",
-          subscription_end: "2025-08-07T14:22:00Z",
-          subscription_start: "2025-07-31T14:22:00Z"
-        }
-      };
-
-      // Force service to throw for this case
-      jest
-        .spyOn(seasonLeagueExternalIdServices, "addChampionshipToDatabase")
-        .mockRejectedValueOnce(new Error("No active organizer season found"));
-
-      const response = await request(app)
-        .post("/api/v1/faceit/webhook")
-        .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
-        .send(championshipCreated);
-
-      expect(response.status).toBe(400);
-      expect(response.body).toEqual({
-        type: "about:blank",
-        title: "Bad Request",
-        status: 400,
-        detail: "No active organizer season found",
-        instance: "/api/v1/faceit/webhook"
+        // Mock DB insert
+        mockInsertSeasonLeagueExternalId.mockResolvedValue({
+          insertId: 1
+        } as unknown as { insertId: number });
       });
 
-      // Saved with event and payload
-      expect(mockSaveWebhookData).toHaveBeenCalledWith(
-        championshipCreated.payload.id,
-        "championship_created",
-        championshipCreated,
-        expect.any(Object)
-      );
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
 
-      // Service invoked with validated webhook
-      expect(
-        seasonLeagueExternalIdServices.addChampionshipToDatabase
-      ).toHaveBeenCalled();
+      it("should set manualProcessed to true when reprocess=true for championship_created", async () => {
+        const championshipCreated = {
+          transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
+          event: "championship_created",
+          event_id: "d23815bd-47f3-4e2a-ba4f-c2cf077054b5",
+          third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+          app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
+          timestamp: "2025-07-31T13:52:23Z",
+          retry_count: 0,
+          version: 1,
+          payload: {
+            id: "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
+            name: "5 Div S4 Lohko A",
+            owner_id: "281c1ff6-35bf-44f0-bac3-9d6edb34e695",
+            organizer_id: "d2372a88-623d-4ca3-9248-a480b6dfbe1a",
+            game: "cs2",
+            region: "EU",
+            description: "",
+            type: "roundRobin",
+            status: "created",
+            published: false,
+            featured: false,
+            archived: false,
+            admin_tool_enabled: true,
+            check_in_enabled: true,
+            rulesId: "",
+            slots: 16,
+            total_rounds: 15,
+            total_groups: 1,
+            check_in_clear: "2025-08-07T13:52:00Z",
+            check_in_start: "2025-08-07T13:22:00Z",
+            subscription_end: "2025-08-07T14:22:00Z",
+            subscription_start: "2025-07-31T14:22:00Z"
+          }
+        };
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook?reprocess=true")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(championshipCreated);
+
+        expect(response.status).toBe(200);
+
+        // Verify webhook data was saved with manualProcessed = true
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          championshipCreated.payload.id,
+          0, // retry_count
+          "championship_created",
+          championshipCreated,
+          expect.any(Object),
+          true // manualProcessed = true when reprocess=true
+        );
+      });
     });
 
-    it("should call DB insert with correct league, stage and flags for roundRobin championship name '5 Div S4 Lohko A'", async () => {
-      const championshipCreated = {
-        transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
-        event: "championship_created",
-        event_id: "d23815bd-47f3-4e2a-ba4f-c2cf077054b5",
-        third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
-        app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
-        timestamp: "2025-07-31T13:52:23Z",
-        retry_count: 0,
-        version: 1,
-        payload: {
-          id: "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
-          name: "5 Div S4 Lohko A",
-          owner_id: "281c1ff6-35bf-44f0-bac3-9d6edb34e695",
-          organizer_id: "d2372a88-623d-4ca3-9248-a480b6dfbe1a",
-          game: "cs2",
-          region: "EU",
-          description: "",
-          type: "roundRobin",
-          status: "created",
-          published: false,
-          featured: false,
-          archived: false,
-          admin_tool_enabled: true,
-          check_in_enabled: true,
-          rulesId: "",
-          slots: 16,
-          total_rounds: 15,
-          total_groups: 1,
-          check_in_clear: "2025-08-07T13:52:00Z",
-          check_in_start: "2025-08-07T13:22:00Z",
-          subscription_end: "2025-08-07T14:22:00Z",
-          subscription_start: "2025-07-31T14:22:00Z"
-        }
-      };
+    describe("Core Functionality", () => {
+      beforeEach(() => {
+        jest.clearAllMocks();
 
-      // Active organizer season mocked
-      mockGetOrganizerActiveSeasonForApp.mockResolvedValueOnce({
-        id: 77
-      } as unknown as Season);
+        // Organizer exists
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
+          mockOrganizer
+        ]);
 
-      // Mock league resolution from faceit name prefix '5'
-      mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
-        season_id: 77,
-        league_id: 5,
-        tier: 1
-      } as unknown as SeasonLeague);
+        // Save webhook succeeds
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
 
-      // DB insert mock
-      mockInsertSeasonLeagueExternalId.mockResolvedValueOnce({
-        insertId: 1
-      } as unknown as { insertId: number });
+        // Championship details fetch is not needed for assertions; return empty object
+        jest
+          .spyOn(faceitServices, "getFaceITChampionshipDetails")
+          .mockResolvedValue({} as unknown as Record<string, unknown>);
 
-      // Avoid network for championship details fetch
-      jest
-        .spyOn(faceitServices, "getFaceITChampionshipDetails")
-        .mockResolvedValue({} as unknown);
+        // No active season exists -> service throws
+        // Default: let service run; individual tests can override
+      });
 
-      const response = await request(app)
-        .post("/api/v1/faceit/webhook")
-        .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
-        .send(championshipCreated);
+      afterEach(() => {
+        jest.restoreAllMocks();
+      });
 
-      expect(response.status).toBe(200);
+      it("should return 400 when no active organizer season exists", async () => {
+        // Inline minimal payload object (mirrors championship_created.json)
+        const championshipCreated = {
+          transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
+          event: "championship_created",
+          event_id: "d23815bd-47f3-4e2a-ba4f-c2cf077054b5",
+          third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+          app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
+          timestamp: "2025-07-31T13:52:23Z",
+          retry_count: 0,
+          version: 1,
+          payload: {
+            id: "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
+            name: "5 Div S4 Lohko A",
+            owner_id: "281c1ff6-35bf-44f0-bac3-9d6edb34e695",
+            organizer_id: "d2372a88-623d-4ca3-9248-a480b6dfbe1a",
+            game: "cs2",
+            region: "EU",
+            description: "",
+            type: "roundRobin",
+            status: "created",
+            published: false,
+            featured: false,
+            archived: false,
+            admin_tool_enabled: true,
+            check_in_enabled: true,
+            rulesId: "",
+            slots: 16,
+            total_rounds: 15,
+            total_groups: 1,
+            check_in_clear: "2025-08-07T13:52:00Z",
+            check_in_start: "2025-08-07T13:22:00Z",
+            subscription_end: "2025-08-07T14:22:00Z",
+            subscription_start: "2025-07-31T14:22:00Z"
+          }
+        };
 
-      // Should have looked up league by first token of name -> '5'
-      expect(mockGetSeasonLeagueBySeasonAndFaceitName).toHaveBeenCalledWith(
-        77,
-        "5"
-      );
+        // Force service to throw for this case
+        jest
+          .spyOn(seasonLeagueExternalIdServices, "addChampionshipToDatabase")
+          .mockRejectedValueOnce(new Error("No active organizer season found"));
 
-      // Stage=1 (roundRobin), isBO2PlayedAs2xBO1=true
-      expect(mockInsertSeasonLeagueExternalId).toHaveBeenCalledWith(
-        "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
-        "5 Div S4 Lohko A",
-        77,
-        5,
-        1,
-        "roundRobin",
-        true
-      );
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(championshipCreated);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual({
+          type: "about:blank",
+          title: "Bad Request",
+          status: 400,
+          detail: "No active organizer season found",
+          instance: "/api/v1/faceit/webhook"
+        });
+
+        // Saved with event and payload
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          championshipCreated.payload.id,
+          0, // retry_count
+          "championship_created",
+          championshipCreated,
+          expect.any(Object),
+          false // manualProcessed
+        );
+
+        // Service invoked with validated webhook
+        expect(
+          seasonLeagueExternalIdServices.addChampionshipToDatabase
+        ).toHaveBeenCalled();
+      });
+
+      it("should call DB insert with correct league, stage and flags for roundRobin championship name '5 Div S4 Lohko A'", async () => {
+        const championshipCreated = {
+          transaction_id: "45c6cb33-cb52-40ea-933d-9427034adcf0",
+          event: "championship_created",
+          event_id: "d23815bd-47f3-4e2a-ba4f-c2cf077054b5",
+          third_party_id: "8f1e3648-23d8-41e8-bf7e-d0d6308a31d0",
+          app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
+          timestamp: "2025-07-31T13:52:23Z",
+          retry_count: 0,
+          version: 1,
+          payload: {
+            id: "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
+            name: "5 Div S4 Lohko A",
+            owner_id: "281c1ff6-35bf-44f0-bac3-9d6edb34e695",
+            organizer_id: "d2372a88-623d-4ca3-9248-a480b6dfbe1a",
+            game: "cs2",
+            region: "EU",
+            description: "",
+            type: "roundRobin",
+            status: "created",
+            published: false,
+            featured: false,
+            archived: false,
+            admin_tool_enabled: true,
+            check_in_enabled: true,
+            rulesId: "",
+            slots: 16,
+            total_rounds: 15,
+            total_groups: 1,
+            check_in_clear: "2025-08-07T13:52:00Z",
+            check_in_start: "2025-08-07T13:22:00Z",
+            subscription_end: "2025-08-07T14:22:00Z",
+            subscription_start: "2025-07-31T14:22:00Z"
+          }
+        };
+
+        // Active organizer season mocked
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValueOnce({
+          id: 77
+        } as unknown as Season);
+
+        // Mock league resolution from faceit name prefix '5'
+        mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
+          season_id: 77,
+          league_id: 5,
+          tier: 1
+        } as unknown as SeasonLeague);
+
+        // DB insert mock
+        mockInsertSeasonLeagueExternalId.mockResolvedValueOnce({
+          insertId: 1
+        } as unknown as { insertId: number });
+
+        // Avoid network for championship details fetch
+        jest
+          .spyOn(faceitServices, "getFaceITChampionshipDetails")
+          .mockResolvedValue({} as unknown);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(championshipCreated);
+
+        expect(response.status).toBe(200);
+
+        // Should have looked up league by first token of name -> '5'
+        expect(mockGetSeasonLeagueBySeasonAndFaceitName).toHaveBeenCalledWith(
+          77,
+          "5"
+        );
+
+        // Stage=1 (roundRobin), isBO2PlayedAs2xBO1=true
+        expect(mockInsertSeasonLeagueExternalId).toHaveBeenCalledWith(
+          "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
+          "5 Div S4 Lohko A",
+          77,
+          5,
+          1,
+          "roundRobin",
+          true
+        );
+      });
     });
   });
 
   describe("POST /webhook - match_object_created championship", () => {
+    describe("Reprocess Query Parameter", () => {
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
+          mockOrganizer
+        ]);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockAddMatchToDatabase.mockResolvedValue({
+          matchIds: [1],
+          isBO2PlayedAs2xBO1: false
+        });
+      });
+
+      it("should set manualProcessed to true when reprocess=true", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook?reprocess=true")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadObjectCreated);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved with manualProcessed = true
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
+          5, // retry_count from validWebhookPayloadObjectCreated
+          "match_object_created",
+          validWebhookPayloadObjectCreated,
+          expect.any(Object),
+          true // manualProcessed = true when reprocess=true
+        );
+      });
+
+      it("should set manualProcessed to false when reprocess=false", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook?reprocess=false")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadObjectCreated);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved with manualProcessed = false
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
+          5, // retry_count from validWebhookPayloadObjectCreated
+          "match_object_created",
+          validWebhookPayloadObjectCreated,
+          expect.any(Object),
+          false // manualProcessed = false when reprocess=false
+        );
+      });
+
+      it("should set manualProcessed to false when reprocess parameter is not provided", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadObjectCreated);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved with manualProcessed = false
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
+          5, // retry_count from validWebhookPayloadObjectCreated
+          "match_object_created",
+          validWebhookPayloadObjectCreated,
+          expect.any(Object),
+          false // manualProcessed = false when no reprocess parameter
+        );
+      });
+
+      it("should set manualProcessed to false when reprocess has invalid value", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook?reprocess=invalid")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadObjectCreated);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved with manualProcessed = false
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
+          5, // retry_count from validWebhookPayloadObjectCreated
+          "match_object_created",
+          validWebhookPayloadObjectCreated,
+          expect.any(Object),
+          false // manualProcessed = false when reprocess has invalid value
+        );
+      });
+    });
+
     describe("Authentication", () => {
       it("should return 401 when no API key is provided", async () => {
         const response = await request(app)
@@ -1238,9 +1428,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
+          5, // retry_count from validWebhookPayloadObjectCreated
           "match_object_created",
           validWebhookPayloadObjectCreated,
-          expect.any(Object)
+          expect.any(Object),
+          false // manualProcessed
         );
 
         // Verify match was added to database
@@ -1292,9 +1484,11 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(400);
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "invalid-match-id",
+          5, // retry_count from validWebhookPayloadObjectCreated base
           "match_object_created",
           invalidMatchPayload,
           expect.any(Object),
+          false, // manualProcessed
           "ZOD_VALIDATION_ERROR",
           expect.any(String)
         );
@@ -1318,9 +1512,11 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(400);
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "network-error-match-id",
+          5, // retry_count from validWebhookPayloadObjectCreated base
           "match_object_created",
           networkErrorPayload,
           null,
+          false, // manualProcessed
           "UNKNOWN_ERROR",
           expect.any(String)
         );
@@ -1490,9 +1686,11 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(500);
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "not-found-match-id",
+          5, // retry_count from validWebhookPayloadObjectCreated base
           "match_object_created",
           notFoundPayload,
           null,
+          false, // manualProcessed
           "UNKNOWN_ERROR",
           expect.any(String)
         );
@@ -1515,9 +1713,11 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(400);
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "missing-teams-match-id",
+          5, // retry_count from validWebhookPayloadObjectCreated base
           "match_object_created",
           missingTeamsPayload,
           expect.any(Object),
+          false, // manualProcessed
           "ZOD_VALIDATION_ERROR",
           expect.any(String)
         );
@@ -1540,9 +1740,11 @@ describe("FaceIT Routes - Webhook", () => {
         expect(response.status).toBe(400);
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "null-values-match-id",
+          5, // retry_count from validWebhookPayloadObjectCreated base
           "match_object_created",
           nullValuesPayload,
           expect.any(Object),
+          false, // manualProcessed
           "ZOD_VALIDATION_ERROR",
           expect.any(String)
         );
@@ -1568,11 +1770,13 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "some-other-match-id",
+          5, // retry_count from validWebhookPayloadObjectCreated base
           "match_object_created",
           expect.objectContaining(defaultMatchPayload),
           expect.objectContaining({
             match_id: "some-other-match-id"
-          })
+          }),
+          false // manualProcessed
         );
 
         // Verify match was added to database
@@ -1587,6 +1791,38 @@ describe("FaceIT Routes - Webhook", () => {
   });
 
   describe("POST /webhook - match_status_ready championship", () => {
+    describe("Reprocess Query Parameter", () => {
+      beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
+          mockOrganizer
+        ]);
+        mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+        mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
+        mockUpdateMatchStatus.mockResolvedValue(undefined);
+      });
+
+      it("should set manualProcessed to true when reprocess=true for match_status_ready", async () => {
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook?reprocess=true")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(validWebhookPayloadMatchStatusReady);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify webhook data was saved with manualProcessed = true
+        expect(mockSaveWebhookData).toHaveBeenCalledWith(
+          "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
+          0, // retry_count
+          "match_status_ready",
+          validWebhookPayloadMatchStatusReady,
+          expect.any(Object),
+          true // manualProcessed = true when reprocess=true
+        );
+      });
+    });
+
     describe("Success Cases", () => {
       beforeEach(() => {
         jest.clearAllMocks();
@@ -1610,9 +1846,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "1-32a13dfb-e5e7-4b0e-89ef-ab952e6d8191",
+          0, // retry_count
           "match_status_ready",
           validWebhookPayloadMatchStatusReady,
-          expect.any(Object)
+          expect.any(Object),
+          false // manualProcessed
         );
 
         // Verify match team map vetoes were added
@@ -1652,9 +1890,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "1-ffb4225f-ff51-42ed-acb5-af6714175934",
+          0, // retry_count
           "match_demo_ready",
           validWebhookMatchDemoReady,
-          validMatchDetailsMatchDemoReady
+          validMatchDetailsMatchDemoReady,
+          false // manualProcessed
         );
 
         // Verify players were validated
@@ -1697,9 +1937,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "1-dba8981d-5647-466a-be32-12a06fb8fc31",
+          0, // retry_count
           "match_status_finished",
           validWebhookPayloadMatchStatusFinished,
-          expect.any(Object)
+          expect.any(Object),
+          false // manualProcessed
         );
 
         // Verify match was updated with start and end times
@@ -1728,9 +1970,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "1-afk-abort-match-id",
+          0, // retry_count
           "match_status_finished",
           validWebhookPayloadMatchStatusFinishedAFKAbort,
-          expect.any(Object)
+          expect.any(Object),
+          false // manualProcessed
         );
 
         // Verify updateMatchEndTime was called for AFK abort case
@@ -1774,9 +2018,11 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify webhook data was saved
         expect(mockSaveWebhookData).toHaveBeenCalledWith(
           "1-matchmaking-ready-match-id",
+          0, // retry_count
           "match_status_ready",
           validWebhookPayloadMatchStatusReadyMatchmaking,
-          expect.any(Object)
+          expect.any(Object),
+          false // manualProcessed
         );
 
         // Verify match status was updated to ONGOING for matchmaking

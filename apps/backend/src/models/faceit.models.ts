@@ -8,14 +8,16 @@ export const saveWebhookData = async (
   event: string,
   data: object | unknown,
   details: object | unknown | null,
+  manualProcessed: boolean = false,
   errorType: FaceitValidationError | null = null,
   errorDetails: string | null = null
 ) => {
   return runQuery<{ insertId: number }>(
-    "INSERT INTO FaceitWebhooks (external_payload_id, retry_count, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO FaceitWebhooks (external_payload_id, retry_count, manual_reprocess, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     [
       externalPayloadId,
       retryCount,
+      manualProcessed,
       event,
       JSON.stringify(data),
       details ? JSON.stringify(details) : null,
