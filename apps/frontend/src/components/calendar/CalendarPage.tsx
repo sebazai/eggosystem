@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -88,14 +89,27 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
 };
 
 export default function CalendarPage({ seasonId }: { seasonId: string }) {
-  const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(
-    "dayGridMonth"
-  );
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize state from URL parameters
+  const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(() => {
+    const urlView = searchParams.get("view");
+    return urlView === "week" ? "timeGridWeek" : "dayGridMonth";
+  });
+
   const [selectedEvent, setSelectedEvent] = useState<EventDetails | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const [selectedDivision, setSelectedDivision] = useState<number | "all">(
-    "all"
+    () => {
+      const urlDivision = searchParams.get("division");
+      if (urlDivision === "all" || !urlDivision) return "all";
+      const parsedDivision = parseInt(urlDivision, 10);
+      return isNaN(parsedDivision) ? "all" : parsedDivision;
+    }
   );
+
   const calendarRef = useRef<FullCalendar>(null);
   const { seasonLeagues, isLoading: isLoadingSeasonLeagues } =
     useSeasonLeagues(seasonId);
@@ -103,13 +117,24 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const { calendarMatches, isLoading: _isLoadingCalendarMatches } =
     useSeasonCalendarMatches(seasonId, selectedDivision);
 
-  // Change view when view state changes
-  useEffect(() => {
-    if (calendarRef.current) {
-      const calendarApi = calendarRef.current.getApi();
-      calendarApi.changeView(view);
+  // Update URL parameters without page reload
+  const updateUrlParams = (
+    newView?: "dayGridMonth" | "timeGridWeek",
+    newDivision?: number | "all"
+  ) => {
+    const params = new URLSearchParams(searchParams);
+
+    if (newView !== undefined) {
+      params.set("view", newView === "timeGridWeek" ? "week" : "month");
     }
-  }, [view]);
+
+    if (newDivision !== undefined) {
+      params.set("division", newDivision.toString());
+    }
+
+    // Use replace to avoid adding to browser history for every filter change
+    router.replace(`?${params.toString()}`);
+  };
 
   const calendarOptions = useMemo(
     () => ({
@@ -143,11 +168,19 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         setIsDialogOpen(true);
       },
       eventContent: (arg: EventContentArg) => {
+        const startTime = formatInTimezone(arg.event.startStr, "p");
         return (
-          <div className="p-1 text-xs">
-            <div className="font-semibold truncate">{arg.event.title}</div>
-
-            <div className="text-xs font-medium mt-0.5">
+          <div className="px-1 py-0.5 text-xs overflow-hidden">
+            <div className="font-semibold truncate leading-tight">
+              {arg.event.title}
+            </div>
+            <div className="flex items-center gap-1 mt-0.5">
+              <Clock className="h-2.5 w-2.5 flex-shrink-0" />
+              <span className="text-[10px] font-medium truncate">
+                {startTime}
+              </span>
+            </div>
+            <div className="text-[10px] font-medium truncate leading-tight">
               {arg.event.extendedProps?.league}
             </div>
           </div>
@@ -195,6 +228,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       slotDuration: "00:30:00",
       expandRows: true, // Ensure rows expand to fill available space
       height: "auto",
+      eventMaxStack: 3, // Limit horizontal stacking in time slots
+      slotEventOverlap: false, // Prevent events from overlapping in time slots
       selectable: true,
       selectMirror: true,
       weekends: true,
@@ -224,7 +259,20 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   );
 
   const handleViewChange = (newView: "dayGridMonth" | "timeGridWeek") => {
+    if (calendarRef.current) {
+      const calendarApi = calendarRef.current.getApi();
+      // Preserve the current date when switching views
+      const currentDate = calendarApi.getDate();
+      calendarApi.changeView(newView, currentDate);
+    }
     setView(newView);
+    updateUrlParams(newView, undefined);
+  };
+
+  const handleDivisionChange = (value: string) => {
+    const newDivision = value === "all" ? "all" : parseInt(value, 10);
+    setSelectedDivision(newDivision);
+    updateUrlParams(undefined, newDivision);
   };
 
   const handleStreamClick = (url?: string) => {
@@ -269,9 +317,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     <Filter className="h-4 w-4" />
                     <Select
                       value={selectedDivision.toString()}
-                      onValueChange={(value) =>
-                        setSelectedDivision(parseInt(value, 10))
-                      }
+                      onValueChange={handleDivisionChange}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue placeholder="Division" />
@@ -337,9 +383,37 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         <TabsContent value="list" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <List className="h-5 w-5" />
-                Upcoming Matches
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <List className="h-5 w-5" />
+                  Upcoming Matches
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" />
+                  <Select
+                    value={selectedDivision.toString()}
+                    onValueChange={handleDivisionChange}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Division" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Divisions</SelectItem>
+                      {isLoadingSeasonLeagues ? (
+                        <SelectItem value="loading">Loading...</SelectItem>
+                      ) : (
+                        seasonLeagues?.map((league) => (
+                          <SelectItem
+                            key={league.id}
+                            value={league.id.toString()}
+                          >
+                            {league.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
