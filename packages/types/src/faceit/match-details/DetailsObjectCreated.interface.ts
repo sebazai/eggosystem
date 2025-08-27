@@ -1,16 +1,14 @@
 import { z } from "zod";
 import {
-  FaceitGame,
   FaceitMatchTeams,
   FaceitMatchStatus,
-  FaceitGameSchema,
   FaceitMatchTeamsSchema
 } from "./Details.interface";
 
 interface DetailsObjectCreatedBase {
   match_id: string;
   version: number;
-  game: FaceitGame;
+  game: string;
   region: string;
   competition_id: string;
   competition_name: string;
@@ -44,7 +42,7 @@ export type MatchmakingDetailsObjectCreated =
 const MatchmakingDetailsObjectCreatedBaseSchema = z.object({
   match_id: z.string(),
   version: z.number(),
-  game: FaceitGameSchema,
+  game: z.string(),
   region: z.string(),
   competition_id: z.string(),
   competition_type: z.literal("matchmaking"),

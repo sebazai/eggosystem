@@ -1,13 +1,11 @@
 import { z } from "zod";
 import {
   FaceitDetailedResultsFinished,
-  FaceitGame,
   FaceitMatchResultsFinished,
   FaceitMatchTeams,
   FaceitMatchResultsFinishedSchema,
   FaceitDetailedResultsFinishedSchema,
   FaceitMatchStatus,
-  FaceitGameSchema,
   FaceitVotingSchema,
   FaceitMatchTeamsSchema,
   FaceitVoting
@@ -17,7 +15,7 @@ import {
 export interface FaceitMatchDetailsFinished {
   match_id: string;
   version: number;
-  game: FaceitGame;
+  game: string;
   region: string;
   competition_id: string;
   competition_name: string;
@@ -42,7 +40,7 @@ export interface FaceitMatchDetailsFinished {
 const MatchFinishedBaseSchema = z.object({
   match_id: z.string(),
   version: z.number(),
-  game: FaceitGameSchema,
+  game: z.string(),
   region: z.string(),
   competition_id: z.string(),
   competition_name: z.string(),

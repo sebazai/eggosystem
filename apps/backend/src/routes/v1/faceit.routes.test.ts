@@ -41,7 +41,6 @@ import {
   type MatchObjectCreatedWebhook,
   type MatchDemoReadyWebhook,
   type MatchStatusReadyWebhook,
-  type FaceitGame,
   type Season,
   type SeasonLeague,
   type MatchStatusFinishedWebhook
@@ -908,7 +907,7 @@ export const validWebhookPayloadObjectCreated = {
     id: "1-9dd7f430-3bfa-42e9-84cd-1fb455d05978",
     organizer_id: "08b06cfc-74d0-454b-9a51-feda4b6b18da",
     region: "EU",
-    game: "cs2" as FaceitGame,
+    game: "cs2",
     version: 1,
     entity: {
       id: "3eb11474-6211-4c99-b0f2-1f3e857ab6aa",

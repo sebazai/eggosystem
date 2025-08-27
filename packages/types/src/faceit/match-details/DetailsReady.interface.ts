@@ -1,8 +1,6 @@
 import { z } from "zod";
 import {
-  FaceitGame,
   FaceitMatchTeams,
-  FaceitGameSchema,
   FaceitMatchStatus,
   FaceitMatchTeamsSchema,
   FaceitVoting,
@@ -12,7 +10,7 @@ import {
 interface DetailsReadyBase {
   match_id: string;
   version: number;
-  game: FaceitGame;
+  game: string;
   region: string;
   competition_id: string;
   competition_name: string;
@@ -33,7 +31,7 @@ interface DetailsReadyBase {
 const DetailsReadyBaseSchema = z.object({
   match_id: z.string(),
   version: z.number(),
-  game: FaceitGameSchema,
+  game: z.string(),
   region: z.string(),
   competition_id: z.string(),
   competition_name: z.string(),

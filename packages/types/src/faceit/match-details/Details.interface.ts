@@ -1,10 +1,5 @@
 import { z } from "zod";
 
-export enum FaceitGame {
-  CS2 = "cs2",
-  CSGO = "csgo"
-}
-
 export enum FaceitMatchStatus {
   SCHEDULED = "SCHEDULED",
   CHECK_IN = "CHECK_IN",
@@ -149,8 +144,6 @@ interface FaceitLocationEntity {
   guid: string;
   image_lg: string;
 }
-
-export const FaceitGameSchema = z.enum(FaceitGame);
 
 const FaceitPlayerRosterSchema = z.object({
   player_id: z.string(),

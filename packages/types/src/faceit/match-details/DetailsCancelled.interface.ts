@@ -1,9 +1,7 @@
 import { z } from "zod";
 import {
-  FaceitGame,
   FaceitMatchTeams,
   FaceitMatchStatus,
-  FaceitGameSchema,
   FaceitMatchTeamsSchema,
   FaceitDetailedResultsAbortedAndCancelledSchema,
   FaceitMatchResultsAbortedAndCancelledSchema,
@@ -14,7 +12,7 @@ import {
 interface DetailsCancelledBase {
   match_id: string;
   version: number;
-  game: FaceitGame;
+  game: string;
   region: string;
   competition_id: string;
   competition_name: string;
@@ -33,7 +31,7 @@ interface DetailsCancelledBase {
 const MatchDetailsCancelledBaseSchema = z.object({
   match_id: z.string(),
   version: z.number(),
-  game: FaceitGameSchema,
+  game: z.string(),
   region: z.string(),
   competition_id: z.string(),
   competition_name: z.string(),
