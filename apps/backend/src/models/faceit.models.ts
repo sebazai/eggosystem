@@ -4,6 +4,7 @@ import { type PoolConnection } from "mysql2/promise";
 
 export const saveWebhookData = async (
   externalPayloadId: string,
+  retryCount: number,
   event: string,
   data: object | unknown,
   details: object | unknown | null,
@@ -11,9 +12,10 @@ export const saveWebhookData = async (
   errorDetails: string | null = null
 ) => {
   return runQuery<{ insertId: number }>(
-    "INSERT INTO FaceitWebhooks (external_payload_id, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?)",
+    "INSERT INTO FaceitWebhooks (external_payload_id, retry_count, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?, ?)",
     [
       externalPayloadId,
+      retryCount,
       event,
       JSON.stringify(data),
       details ? JSON.stringify(details) : null,

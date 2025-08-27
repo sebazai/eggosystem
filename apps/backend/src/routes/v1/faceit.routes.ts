@@ -103,6 +103,7 @@ type FaceITWebhookData =
   | ChampionshipCreatedWebhook
   | {
       app_id: string;
+      retry_count: number;
       event:
         | "championship_cancelled"
         | "championship_checkin"
@@ -123,7 +124,8 @@ const processWebhookWithDetails = async <
   eventType: string
 ) => {
   let matchDetails: MD | null = null;
-  let externalMatchRoomId = "";
+  let externalMatchRoomId = (webhookData as any)?.payload?.id as string;
+  const retryCount = (webhookData as any)?.retry_count || 0;
   try {
     // Validate webhook data
     const validatedWebhook = webhookValidator(webhookData);
@@ -136,6 +138,7 @@ const processWebhookWithDetails = async <
     // Save to database
     await saveWebhookData(
       externalMatchRoomId,
+      retryCount,
       eventType,
       validatedWebhook,
       validatedMatchDetails
@@ -150,6 +153,7 @@ const processWebhookWithDetails = async <
       logger.error("Zod validation error", error);
       await saveWebhookData(
         externalMatchRoomId,
+        retryCount,
         String((webhookData as any).event),
         webhookData,
         matchDetails,
@@ -161,6 +165,7 @@ const processWebhookWithDetails = async <
     logger.error("Error handling webhook", error);
     await saveWebhookData(
       externalMatchRoomId,
+      retryCount,
       String((webhookData as any).event),
       webhookData,
       matchDetails,
@@ -320,6 +325,7 @@ router.post(
           await updateMatchEndTime(webhookData.payload.id, endTime);
           await saveWebhookData(
             externalMatchRoomId,
+            webhookData.retry_count,
             webhookData.event,
             webhookData,
             matchDetails
@@ -334,6 +340,7 @@ router.post(
         await updateMatchFinished(webhookData.payload.id, startTime, endTime);
         await saveWebhookData(
           externalMatchRoomId,
+          webhookData.retry_count,
           webhookData.event,
           webhookData,
           matchDetails
@@ -392,6 +399,7 @@ router.post(
       const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
       await saveWebhookData(
         webhookData.payload.id,
+        webhookData.retry_count,
         webhookData.event,
         webhookData,
         matchDetails
@@ -405,6 +413,7 @@ router.post(
       const matchDetails = await getFaceITMatchDetails(webhookData.payload.id);
       await saveWebhookData(
         webhookData.payload.id,
+        webhookData.retry_count,
         webhookData.event,
         webhookData,
         matchDetails
@@ -478,6 +487,7 @@ router.post(
 
     await saveWebhookData(
       webhookData.payload.id,
+      webhookData.retry_count,
       webhookData.event,
       webhookData,
       null

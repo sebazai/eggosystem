@@ -1,4 +1,5 @@
 import Pyroscope, { type PyroscopeConfig } from "@pyroscope/nodejs";
+import { logger } from "../utils/app-logger";
 
 export function initializeProfiling() {
   if (
@@ -13,7 +14,7 @@ export function initializeProfiling() {
       process.env.OTEL_SERVICE_NAME || "eggosystem-backend-1";
 
     if (!pyroscopeServerAddress) {
-      console.warn(
+      logger.warn(
         "PYROSCOPE_SERVER_ADDRESS not configured, skipping profiling initialization"
       );
       return;
@@ -25,7 +26,7 @@ export function initializeProfiling() {
       pyroscopeServerAddress.includes("localhost");
 
     if (!pyroscopeAuthToken && !isLocalAlloy) {
-      console.warn(
+      logger.warn(
         "PYROSCOPE_AUTH_TOKEN not configured for remote server, skipping profiling initialization"
       );
       return;
@@ -49,14 +50,14 @@ export function initializeProfiling() {
       // Start profiling
       Pyroscope.start();
 
-      console.log(
+      logger.info(
         `✅ Profiling initialized for ${pyroscopeApplicationName} -> ${pyroscopeServerAddress}`
       );
     } catch (error) {
       console.error("❌ Failed to initialize profiling:", error);
     }
   } else {
-    console.log(
+    logger.info(
       "⚠️ Profiling disabled (production mode or ENABLE_PROFILING not set)"
     );
   }

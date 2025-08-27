@@ -85,8 +85,8 @@ fetch_webhook_from_db() {
     fi
     print_status "mysql command found: $(which mysql)" >&2
     
-    # Query to fetch webhook data from FaceitWebhooks table
-    local query="SELECT data FROM FaceitWebhooks WHERE id = $id"
+    # Query to fetch webhook data from FaceitWebhooks table (only retry_count = 0)
+    local query="SELECT data FROM FaceitWebhooks WHERE id = $id AND retry_count = 0 AND error_details IS NOT NULL"
     print_status "Executing query: $query" >&2
     
     # Skip connection test since initial connection already worked
@@ -131,7 +131,7 @@ fetch_webhook_from_db() {
     fi
     
     if [[ -z "$result" ]]; then
-        print_warning "No webhook data found for ID $id" >&2
+        print_warning "No webhook data found for ID $id (or retry_count != 0 or error_details IS NULL)" >&2
         return 1
     fi
     
@@ -265,7 +265,7 @@ fi
 echo
 print_status "Choose operation mode:"
 print_status "1. Send new webhook data (JSON input)"
-print_status "2. Reprocess webhooks from database by ID range"
+print_status "2. Reprocess webhooks from database by ID range (retry_count = 0 and error_details IS NOT NULL only)"
 read -p "Choose option (1 or 2): " OPERATION_MODE
 
 if [[ "$OPERATION_MODE" == "2" ]]; then
@@ -398,13 +398,13 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
         exit 1
     fi
     
-    print_success "Will reprocess ${#IDS[@]} webhooks: ${IDS[*]}"
+    print_success "Will reprocess ${#IDS[@]} webhooks (retry_count = 0 and error_details IS NOT NULL only): ${IDS[*]}"
     
 
     
     # Confirm before proceeding
     echo
-    print_warning "This will send ${#IDS[@]} webhooks to the API. Continue? (y/N)"
+    print_warning "This will send ${#IDS[@]} webhooks with retry_count = 0 and error_details to the API. Continue? (y/N)"
     read -p "Continue? " CONFIRM
     
     if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
@@ -416,66 +416,32 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
     echo
     print_status "Starting webhook reprocessing..."
     
-    # Debug: Test basic operations
-    print_status "Debug: Testing basic operations..."
-    print_status "  Array length: ${#IDS[@]}"
-    print_status "  First ID: ${IDS[0]}"
-    print_status "  Last ID: ${IDS[$((${#IDS[@]}-1))]}"
-    print_status "  All IDs: ${IDS[*]}"
-    
     SUCCESS_COUNT=0
     FAILED_COUNT=0
+    SKIPPED_COUNT=0
     FAILED_IDS=()
-    
-    print_status "Debug: About to enter for loop..."
+    SKIPPED_IDS=()
     
     for id in "${IDS[@]}"; do
         echo
         print_status "Processing webhook ID: $id"
-        print_status "About to call fetch_webhook_from_db..."
-        
-        # Debug: Print all variables before function call
-        print_status "Debug - Variables before function call:"
-        print_status "  id: '$id'"
-        print_status "  DB_HOST: '$DB_HOST'"
-        print_status "  DB_PORT: '$DB_PORT'"
-        print_status "  DB_USER: '$DB_USER'"
-        print_status "  DB_NAME: '$DB_NAME'"
-        print_status "  DB_PASSWORD length: ${#DB_PASSWORD}"
-        
         # Fetch webhook data from database
         print_status "Fetching webhook data for ID $id..."
-        print_status "About to execute: fetch_webhook_from_db '$id' '$DB_HOST' '$DB_PORT' '$DB_USER' '$DB_PASSWORD' '$DB_NAME'"
         
-        print_status "Function exists check: $(type fetch_webhook_from_db 2>&1 || echo 'Function not found')"
-        
-        print_status "About to capture function output..."
-        
-        # Debug: Try a simple test first
-        print_status "Testing simple function call..."
-        test_result=$(echo "test")
-        print_status "Simple test result: $test_result"
-        
-        print_status "Now calling fetch_webhook_from_db..."
-        
-        # Debug: Test if we can call the function at all
-        print_status "Testing direct function call..."
-        fetch_webhook_from_db "$id" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD" "$DB_NAME"
-        direct_result=$?
-        print_status "Direct function call completed with exit code: $direct_result"
-        
-        print_status "Now trying with command substitution..."
+        # Fetch webhook data using command substitution (disable set -e temporarily)
+        set +e
         webhook_data=$(fetch_webhook_from_db "$id" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD" "$DB_NAME")
         fetch_result=$?
+        set -e
         
         print_status "Function call completed"
         print_status "fetch_webhook_from_db returned with exit code: $fetch_result"
         print_status "webhook_data length: ${#webhook_data}"
         
         if [[ $fetch_result -ne 0 ]]; then
-            print_warning "Skipping ID $id due to database error"
-            FAILED_COUNT=$((FAILED_COUNT + 1))
-            FAILED_IDS+=("$id")
+            print_warning "Skipping ID $id (no data found, retry_count != 0, or no error_details)"
+            SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
+            SKIPPED_IDS+=("$id")
             continue
         fi
         
@@ -496,15 +462,19 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
         sleep 0.5
         
         # Progress update
-        processed=$((SUCCESS_COUNT + FAILED_COUNT))
+        processed=$((SUCCESS_COUNT + FAILED_COUNT + SKIPPED_COUNT))
         total=${#IDS[@]}
-        print_status "Progress: $processed/$total webhooks processed"
+        print_status "Progress: $processed/$total webhooks processed (Success: $SUCCESS_COUNT, Failed: $FAILED_COUNT, Skipped: $SKIPPED_COUNT)"
     done
     
     # Summary
     echo
     print_status "Reprocessing complete!"
     print_success "Successfully processed: $SUCCESS_COUNT webhooks"
+    if [[ $SKIPPED_COUNT -gt 0 ]]; then
+        print_warning "Skipped (no data, retry_count != 0, or no error_details): $SKIPPED_COUNT webhooks"
+        print_status "Skipped IDs: ${SKIPPED_IDS[*]}"
+    fi
     if [[ $FAILED_COUNT -gt 0 ]]; then
         print_error "Failed to process: $FAILED_COUNT webhooks"
         print_status "Failed IDs: ${FAILED_IDS[*]}"
