@@ -49,3 +49,22 @@ export const removeSeasonLeagueExternalId = async (
   const query = `DELETE FROM SeasonLeagueExternalIds WHERE external_id = ?`;
   await runQuery(query, [externalId], connection);
 };
+
+export const getActiveSeasonChampionshipIds = async (): Promise<
+  { external_id: string; isBO2PlayedAs2xBO1: boolean }[]
+> => {
+  const query = `
+    SELECT slei.external_id, slei.isBO2PlayedAs2xBO1
+    FROM SeasonLeagueExternalIds slei
+    JOIN Seasons s ON slei.season_id = s.id
+    WHERE s.start_date <= NOW() 
+      AND (s.end_date IS NULL OR s.end_date >= NOW())
+  `;
+
+  const results =
+    await runQuery<Array<{ external_id: string; isBO2PlayedAs2xBO1: boolean }>>(
+      query
+    );
+
+  return results;
+};
