@@ -25,7 +25,7 @@ import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
-import { useTeamsBySeason } from "@/hooks/data/useTeamsBySeason";
+import { useTeamsBySeasonForAddPlayer } from "@/hooks/data/useTeamsBySeasonForAddPlayer";
 import { usePlayerEligibility } from "@/hooks/data/usePlayerEligibility";
 import { useAddPlayer } from "@/hooks/data/useAddPlayer";
 
@@ -46,7 +46,7 @@ export default function AddPlayerPage() {
 
   // Get teams for the selected season
   const { teams, isLoading: isLoadingTeams } =
-    useTeamsBySeason(selectedSeasonId);
+    useTeamsBySeasonForAddPlayer(selectedSeasonId);
 
   // Get player eligibility check
   const {

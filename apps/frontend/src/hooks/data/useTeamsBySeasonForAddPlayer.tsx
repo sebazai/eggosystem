@@ -9,9 +9,11 @@ interface Team {
   league_name: string;
 }
 
-export const useTeamsBySeason = (seasonId: string | number | null) => {
+export const useTeamsBySeasonForAddPlayer = (
+  seasonId: string | number | null
+) => {
   const apiUrl = seasonId
-    ? `/api/v1/dashboard/sortter/season/${seasonId}/teams`
+    ? `/api/v1/dashboard/sortter/season/${seasonId}/teams-for-add-player`
     : null;
 
   const { data, error, isValidating, isLoading } = useSWR<Team[]>(
