@@ -434,7 +434,7 @@ describe("addMatchToDatabase", () => {
           expect.any(Number), // stage_id
           matchDetails.best_of,
           expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), // match_date format
-          "19:00:00", // start_time
+          "17:00:00", // start_time
           null, // end_time
           matchDetails.match_id,
           matchDetails.status,

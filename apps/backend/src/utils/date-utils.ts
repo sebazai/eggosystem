@@ -37,24 +37,27 @@ export const generateYMD = (timestamp: number): string => {
 };
 
 export const getNextWednesdayMatchTime = () => {
-  const now = new Date();
-  const nextWednesday = new Date(now);
-  nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
+  const now = moment();
 
-  // Set to 20:00 Finnish time (UTC+2 in summer, UTC+3 in winter)
-  // Use Helsinki timezone to handle DST automatically
-  const helsinkiTime = new Date(
-    nextWednesday.toLocaleString("en-US", { timeZone: "Europe/Helsinki" })
-  );
-  helsinkiTime.setHours(20, 0, 0, 0);
+  // Find next Wednesday
+  const nextWednesday = now.clone().day(3); // 3 = Wednesday
+  if (nextWednesday.isSameOrBefore(now)) {
+    nextWednesday.add(1, "week");
+  }
 
-  // Convert Helsinki time to UTC for database storage
-  const utcTime = new Date(
-    helsinkiTime.toLocaleString("en-US", { timeZone: "UTC" })
-  );
+  // Set to 20:00 Helsinki time
+  const helsinkiTime = nextWednesday
+    .tz("Europe/Helsinki")
+    .hour(20)
+    .minute(0)
+    .second(0)
+    .millisecond(0);
 
-  const match_date = utcTime.toISOString().slice(0, 10); // YYYY-MM-DD
-  const start_time = utcTime.toISOString().slice(11, 19); // HH:MM:SS
+  // Convert to UTC for database storage
+  const utcTime = helsinkiTime.utc();
+
+  const match_date = utcTime.format("YYYY-MM-DD");
+  const start_time = utcTime.format("HH:mm:ss");
 
   return { match_date, start_time };
 };
