@@ -4,7 +4,7 @@ import { clientApiFetch } from "@/lib/apiClient";
 import type { TeamEligibilityResult } from "@eggosystem/types";
 import useSWR from "swr";
 
-export const usePlayerEligibility = (
+export const usePlayerTeamEligibility = (
   seasonId: string | null,
   teamId: string | null,
   steamId: string | null
@@ -12,7 +12,7 @@ export const usePlayerEligibility = (
   // Only create the key if all required parameters are present
   const key =
     seasonId && teamId && steamId
-      ? `/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/eligibility`
+      ? `/api/v1/dashboard/seasons/${seasonId}/team/${teamId}/player/${steamId}/eligibility`
       : null;
 
   const { data, error, isValidating, isLoading, mutate } =

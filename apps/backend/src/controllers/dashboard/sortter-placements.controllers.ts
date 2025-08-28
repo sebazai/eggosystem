@@ -7,7 +7,7 @@ import {
   type SeasonTeamRegistration
 } from "@eggosystem/types";
 import { logger } from "../../utils/app-logger";
-import { getTeamValuesForSorter } from "../../models/sortter.models";
+import { getTeamValuesForSortter } from "../../models/dashboard/sortter.models";
 import {
   savePreliminaryPlacements,
   getPreliminaryPlacements,
@@ -82,7 +82,7 @@ export const getPreliminaryPlacementsController = async (
       }>
     >(teamsQuery, [seasonId]);
 
-    const teams = await getTeamValuesForSorter(seasonId);
+    const teams = await getTeamValuesForSortter(seasonId);
 
     // Merge the league data with the team values
     const historicalPlacements = teamsWithLeagues.map((team) => {
@@ -131,7 +131,7 @@ export const getPreliminaryPlacementsController = async (
   logger.info(
     `Getting team values for season ${seasonId} to generate initial placements`
   );
-  const teams = await getTeamValuesForSorter(seasonId);
+  const teams = await getTeamValuesForSortter(seasonId);
   logger.info(`Retrieved ${teams.length} teams for initial placements`);
 
   if (teams.length === 0) {

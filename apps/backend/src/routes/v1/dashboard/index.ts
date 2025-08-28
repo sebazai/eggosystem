@@ -6,9 +6,17 @@ import organizationRouter from "./organization.routes";
 import registrationRouter from "./registration.routes";
 import sortterRouter from "./sortter.routes";
 import matchRouter from "./match.routes";
+import seasonRouter from "./season.routes";
 
 const router = Router();
 
+router.use(
+  "/seasons",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  seasonRouter
+);
 router.use(
   "/teams",
   checkPermissions({

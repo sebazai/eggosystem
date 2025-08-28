@@ -410,6 +410,10 @@ describe("Sortter Kanaelo Workflow Issue", () => {
 
     // AFTER FIX: This test should now pass - the system correctly rejects auto-generation
 
+    // Debug: Log the actual response to understand what's happening
+    console.log("Response status:", response.status);
+    console.log("Response body:", response.body);
+
     // The system should now return 400 Bad Request when kana_elo data is missing
     expect(response.status).toBe(400);
     expect(response.body.type).toBe("about:blank");

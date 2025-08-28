@@ -6,13 +6,13 @@ import {
   getTeamValueByIdController,
   getTeamPlayerValuesController
 } from "./sortter.controllers";
-import * as sortterModels from "../../models/sortter.models";
+import * as sortterModels from "../../models/dashboard/sortter.models";
 import {
   type TeamSortterValues,
   type RequestWithParams
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { getTeamValuesForSorter } from "../../models/sortter.models";
+import { getTeamValuesForSortter } from "../../models/dashboard/sortter.models";
 
 // Mock express-jwt middleware to recognize our test token
 jest.mock("express-jwt", () => ({
@@ -99,11 +99,13 @@ jest.mock("../../middlewares/auth.middleware", () => ({
 }));
 
 // Mock the model functions
-jest.mock("../../models/sortter.models");
+jest.mock("../../models/dashboard/sortter.models");
 jest.mock("../../db/mysqlRunQuery");
 const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetTeamValuesForSorter =
-  getTeamValuesForSorter as jest.MockedFunction<typeof getTeamValuesForSorter>;
+  getTeamValuesForSortter as jest.MockedFunction<
+    typeof getTeamValuesForSortter
+  >;
 
 describe("Sortter Controllers", () => {
   let mockRequest: Partial<RequestWithParams<Record<string, string>>>;
@@ -142,7 +144,7 @@ describe("Sortter Controllers", () => {
 
         mockRequest.params = { season_id: "1" };
         mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-        mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
+        mockSortterModels.getTeamValuesForSortter.mockResolvedValue(
           mockTeamValues
         );
 
@@ -151,7 +153,7 @@ describe("Sortter Controllers", () => {
           mockResponse as Response
         );
 
-        expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+        expect(mockSortterModels.getTeamValuesForSortter).toHaveBeenCalledWith(
           1
         );
         expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues);
@@ -177,7 +179,7 @@ describe("Sortter Controllers", () => {
 
         mockRequest.params = { season_id: "1", team_id: "1" };
         mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-        mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
+        mockSortterModels.getTeamValuesForSortter.mockResolvedValue(
           mockTeamValues
         );
 
@@ -192,7 +194,7 @@ describe("Sortter Controllers", () => {
           mockNext
         );
 
-        expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+        expect(mockSortterModels.getTeamValuesForSortter).toHaveBeenCalledWith(
           1
         );
         expect(mockResponse.json).toHaveBeenCalledWith(mockTeamValues[0]);
@@ -216,7 +218,7 @@ describe("Sortter Controllers", () => {
 
         mockRequest.params = { season_id: "1", team_id: "2" };
         mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-        mockSortterModels.getTeamValuesForSorter.mockResolvedValue(
+        mockSortterModels.getTeamValuesForSortter.mockResolvedValue(
           mockTeamValues
         );
 
@@ -231,7 +233,7 @@ describe("Sortter Controllers", () => {
           mockNext
         );
 
-        expect(mockSortterModels.getTeamValuesForSorter).toHaveBeenCalledWith(
+        expect(mockSortterModels.getTeamValuesForSortter).toHaveBeenCalledWith(
           1
         );
         expect(mockNext).toHaveBeenCalledWith(

@@ -1,11 +1,33 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SWRConfig } from "swr";
+import { SeasonPlatform } from "@eggosystem/types";
 import AddPlayerPage from "./page";
 
 // Mock clientApiFetch
 jest.mock("@/lib/apiClient", () => ({
   clientApiFetch: jest.fn()
+}));
+
+// Mock the hooks
+jest.mock("@/hooks/data/useActiveSignupOrActiveSeasonForApp", () => ({
+  useActiveSignupOrActiveSeasonForApp: jest.fn()
+}));
+
+jest.mock("@/hooks/data/useAllSeasons", () => ({
+  useAllSeasons: jest.fn()
+}));
+
+jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
+  useDashboardSeasonTeams: jest.fn()
+}));
+
+jest.mock("@/hooks/data/usePlayerTeamEligibility", () => ({
+  usePlayerTeamEligibility: jest.fn()
+}));
+
+jest.mock("@/hooks/data/useAddPlayer", () => ({
+  useAddPlayer: jest.fn()
 }));
 
 // Mock WithRoleProtection
@@ -58,16 +80,46 @@ jest.mock("@/components/ui/card", () => ({
   )
 }));
 
-// Import the mocked function
+// Import the mocked function and hooks
 import { clientApiFetch } from "@/lib/apiClient";
+import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
+import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
+import { useAddPlayer } from "@/hooks/data/useAddPlayer";
 
 describe("AddPlayerPage Component", () => {
   const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
     typeof clientApiFetch
   >;
 
+  // Cast mocked hooks
+  const mockUseActiveSignupOrActiveSeasonForApp =
+    useActiveSignupOrActiveSeasonForApp as jest.MockedFunction<
+      typeof useActiveSignupOrActiveSeasonForApp
+    >;
+  const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
+    typeof useAllSeasons
+  >;
+  const mockUseDashboardSeasonTeams =
+    useDashboardSeasonTeams as jest.MockedFunction<
+      typeof useDashboardSeasonTeams
+    >;
+  const mockUsePlayerTeamEligibility =
+    usePlayerTeamEligibility as jest.MockedFunction<
+      typeof usePlayerTeamEligibility
+    >;
+  const mockUseAddPlayer = useAddPlayer as jest.MockedFunction<
+    typeof useAddPlayer
+  >;
+
   // Mock responses
-  const mockActiveSeason = { season_id: 14 };
+  const mockActiveSeason = {
+    season_id: 14,
+    platform: SeasonPlatform.Kanaliiga,
+    signup_end_date: "2024-01-31",
+    full_name: "Season 14 - CS:GO"
+  };
   const mockTeams = [
     { team_id: 1650, team_name: "Test Team", league_name: "Test League" },
     { team_id: 1651, team_name: "Another Team", league_name: "Test League" }
@@ -110,10 +162,51 @@ describe("AddPlayerPage Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Default mock responses
-    mockClientApiFetch
-      .mockResolvedValueOnce(mockActiveSeason) // First call for active season
-      .mockResolvedValueOnce(mockTeams); // Second call for teams
+    // Set up default mock implementations for hooks
+    mockUseActiveSignupOrActiveSeasonForApp.mockReturnValue({
+      signupOrActiveSeason: mockActiveSeason,
+      isLoading: false,
+      isError: null,
+      isValidating: false
+    });
+
+    mockUseAllSeasons.mockReturnValue({
+      seasons: [
+        {
+          id: 14,
+          game_id: 1,
+          name: "Season 14",
+          full_name: "Season 14 - CS:GO",
+          signup_start_date: "2024-01-01",
+          signup_end_date: "2024-01-31",
+          platform: SeasonPlatform.Kanaliiga,
+          start_date: "2024-02-01",
+          end_date: "2024-03-31"
+        }
+      ],
+      isLoading: false,
+      isError: null,
+      isValidating: false
+    });
+
+    mockUseDashboardSeasonTeams.mockReturnValue({
+      teams: mockTeams,
+      isLoading: false,
+      isError: null,
+      isValidating: false
+    });
+
+    mockUsePlayerTeamEligibility.mockReturnValue({
+      eligibilityResult: undefined,
+      isLoading: false,
+      isError: null,
+      checkEligibility: jest.fn(),
+      clearResult: jest.fn()
+    });
+
+    mockUseAddPlayer.mockReturnValue({
+      addPlayer: jest.fn()
+    });
   });
 
   // Helper function to render the component with SWR config

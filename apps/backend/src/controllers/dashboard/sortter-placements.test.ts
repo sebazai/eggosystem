@@ -5,7 +5,7 @@ import {
 } from "./sortter-placements.controllers";
 import * as sortterPlacementsServices from "../../services/sortter-placements.services";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { getTeamValuesForSorter } from "../../models/sortter.models";
+import { getTeamValuesForSortter } from "../../models/dashboard/sortter.models";
 import type {
   RequestWithParamsAndBody,
   RequestWithParamsAndQuery,
@@ -18,7 +18,7 @@ const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 // Mock the services
 jest.mock("../../services/sortter-placements.services");
-jest.mock("../../models/sortter.models");
+jest.mock("../../models/dashboard/sortter.models");
 const mockedSavePreliminaryPlacements =
   sortterPlacementsServices.savePreliminaryPlacements as jest.MockedFunction<
     typeof sortterPlacementsServices.savePreliminaryPlacements
@@ -28,7 +28,9 @@ const mockedIsPlacementsFinalized =
     typeof sortterPlacementsServices.isPlacementsFinalized
   >;
 const mockedGetTeamValuesForSorter =
-  getTeamValuesForSorter as jest.MockedFunction<typeof getTeamValuesForSorter>;
+  getTeamValuesForSortter as jest.MockedFunction<
+    typeof getTeamValuesForSortter
+  >;
 
 // Type for test placements
 type TestPlacement = {

@@ -621,3 +621,33 @@ export const getTeamCaptainsBySeasonId = async (
 
   return results;
 };
+
+/**
+ * Gets teams for a specific season for the add player functionality
+ * Returns teams with their league information
+ *
+ * @param seasonId The season ID to filter by
+ */
+export const getTeamsForSeason = async (
+  seasonId: number
+): Promise<
+  Array<{ team_id: number; team_name: string; league_name: string }>
+> => {
+  const query = `
+    SELECT DISTINCT
+      t.id AS team_id,
+      t.name AS team_name,
+      COALESCE(l.name, 'Unassigned') AS league_name
+    FROM Teams t
+    JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
+    JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
+    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
+    LEFT JOIN Leagues l ON l.id = slt.league_id
+    WHERE strp.season_id = ?
+    ORDER BY t.name ASC
+  `;
+
+  return runQuery<
+    Array<{ team_id: number; team_name: string; league_name: string }>
+  >(query, [seasonId]);
+};

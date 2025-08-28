@@ -3,9 +3,6 @@ import {
   getTeamValuesController,
   getTeamValueByIdController,
   getTeamPlayerValuesController,
-  getTeamsForAddPlayerToTeamSeasonController,
-  checkPlayerAdditionEligibilityController,
-  addPlayerToTeamController,
   getTeamFlagsController,
   refreshTeamFlagsFromDatabaseController,
   refreshTeamFlagsForSeasonController
@@ -41,27 +38,6 @@ router.get(
   "/season/:season_id/team/:team_id/playervalues",
   validateNumericParams(),
   getTeamPlayerValuesController
-);
-
-// GET /api/v1/dashboard/sortter/season/:season_id/teams-for-add-player
-router.get(
-  "/season/:season_id/teams-for-add-player",
-  validateNumericParams(),
-  getTeamsForAddPlayerToTeamSeasonController
-);
-
-// GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/player/:steam_id/eligibility
-router.get(
-  "/season/:season_id/team/:team_id/player/:steam_id/eligibility",
-  validateNumericParams(["season_id", "team_id"]),
-  checkPlayerAdditionEligibilityController
-);
-
-// POST /api/v1/dashboard/sortter/season/:season_id/team/:team_id/player/:steam_id/add
-router.post(
-  "/season/:season_id/team/:team_id/player/:steam_id/add",
-  validateNumericParams(["season_id", "team_id"]),
-  addPlayerToTeamController
 );
 
 // POST /api/v1/dashboard/sortter/season/:season_id/populate-kanaelo-queue

@@ -1,13 +1,13 @@
-import { checkPlayerAdditionEligibility } from "./sortter.models";
+import { checkPlayerAdditionEligibility } from "./season.models";
 // We're not using runQuery directly anymore since we're mocking the entire function
 // import { runQuery } from "../db/mysqlRunQuery";
-import * as csrankkerUtils from "../models/sortter.models";
+import * as csrankkerUtils from "./season.models";
 
 // Mock dependencies
-jest.mock("../db/mysqlRunQuery");
-// We'll completely override the checkPlayerAdditionEligibility function and not try to mock internal functions
-jest.mock("../models/sortter.models", () => {
-  const originalModule = jest.requireActual("../models/sortter.models");
+jest.mock("../../db/mysqlRunQuery");
+// Mock the season models module where checkPlayerAdditionEligibility actually lives
+jest.mock("./season.models", () => {
+  const originalModule = jest.requireActual("./season.models");
   return {
     ...originalModule,
     checkPlayerAdditionEligibility: jest.fn()

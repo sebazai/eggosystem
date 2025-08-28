@@ -1,18 +1,18 @@
 import type { Response } from "express";
 import type { RequestWithParams } from "@eggosystem/types";
-import { addPlayerToTeamController } from "./sortter.controllers";
-import * as sortterModels from "../../models/sortter.models";
+import { addPlayerToTeamController } from "./season.controllers";
+import * as seasonModels from "../../models/dashboard/season.models";
 import * as playerModels from "../../models/player.models";
 import * as rankModels from "../../models/season-player-ranks.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 
 // Mock dependencies
-jest.mock("../../models/sortter.models");
+jest.mock("../../models/dashboard/season.models");
 jest.mock("../../models/player.models");
 jest.mock("../../models/season-player-ranks.models");
 jest.mock("../../db/mysqlRunQuery");
 
-const mockSortterModels = sortterModels as jest.Mocked<typeof sortterModels>;
+const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 const mockPlayerModels = playerModels as jest.Mocked<typeof playerModels>;
 const mockRankModels = rankModels as jest.Mocked<typeof rankModels>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
@@ -64,7 +64,7 @@ describe("addPlayerToTeamController", () => {
     ]);
 
     // Mock eligibility check
-    mockSortterModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
+    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
@@ -91,7 +91,7 @@ describe("addPlayerToTeamController", () => {
 
     // Verify eligibility was checked
     expect(
-      mockSortterModels.checkPlayerAdditionEligibility
+      mockSeasonModels.checkPlayerAdditionEligibility
     ).toHaveBeenCalledWith(14, 1650, "76561198054765387", expect.any(Object));
 
     // Verify player kana_elo was set
@@ -130,7 +130,7 @@ describe("addPlayerToTeamController", () => {
     mockRunQuery.mockResolvedValueOnce([]);
 
     // Mock eligibility check
-    mockSortterModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
+    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
@@ -186,7 +186,7 @@ describe("addPlayerToTeamController", () => {
     ]);
 
     // Mock eligibility check with ineligible result
-    mockSortterModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
+    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
@@ -207,7 +207,7 @@ describe("addPlayerToTeamController", () => {
 
     // Verify eligibility was checked
     expect(
-      mockSortterModels.checkPlayerAdditionEligibility
+      mockSeasonModels.checkPlayerAdditionEligibility
     ).toHaveBeenCalledWith(14, 1650, "76561198054765387", expect.any(Object));
 
     // Verify player was NOT added to team (query not called)
@@ -238,7 +238,7 @@ describe("addPlayerToTeamController", () => {
     ]);
 
     // Mock eligibility check
-    mockSortterModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
+    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
         team_name: "Test Team",
