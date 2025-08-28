@@ -1,0 +1,1 @@
+export * from "./TeamEligibilityResult.interface";

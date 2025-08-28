@@ -140,27 +140,18 @@ export const checkPlayerAdditionEligibilityController = async (
     team_id: string;
     steam_id: string;
   }>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
 
-  try {
-    const eligibility = await checkPlayerAdditionEligibility(
-      seasonId,
-      teamId,
-      steamId
-    );
-    res.json(eligibility);
-  } catch (error) {
-    return next(
-      new BadRequestError(
-        error instanceof Error ? error.message : "Unknown error"
-      )
-    );
-  }
+  const eligibility = await checkPlayerAdditionEligibility(
+    seasonId,
+    teamId,
+    steamId
+  );
+  res.json(eligibility);
 };
 
 /**

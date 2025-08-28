@@ -4,7 +4,8 @@ import { redisClient } from "../utils/redisClient";
 import {
   type TeamSortterValues,
   type TeamSortterValuesRaw,
-  type PlayerSortterValues
+  type PlayerSortterValues,
+  type TeamEligibilityResult
 } from "@eggosystem/types";
 
 /**
@@ -34,13 +35,11 @@ export const getTeamValuesForSorter = async (
         spr.offered_elo,
         ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
-      JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id
+      JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
       JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
-      JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
       LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
       LEFT JOIN Leagues l ON l.id = slt.league_id
       WHERE strp.season_id = ?
-        AND str.approved = 1
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamTop5Players AS (
@@ -370,30 +369,7 @@ export const checkPlayerAdditionEligibility = async (
   teamId: number,
   newPlayerSteamId: string,
   options?: { connection?: PoolConnection }
-): Promise<{
-  selectedTeam: {
-    team_id: number;
-    team_name: string;
-    current_top3_avg: number;
-    current_top4_avg: number; // Added top 4 average
-    new_avg_with_player: number;
-    new_player_kana_elo: number;
-    csrankker_components?: {
-      trueLevel: number;
-      mm: number;
-      hour: number;
-      kana: number;
-    };
-  };
-  topTeamsInLeague: Array<{
-    team_id: number;
-    team_name: string;
-    avg4: number;
-    rank: number;
-  }>;
-  canAddPlayer: boolean;
-  league_name: string;
-}> => {
+): Promise<TeamEligibilityResult> => {
   // First, get the league for the selected team
   const leagueQuery = `
     SELECT COALESCE(l.name, 'Unassigned') AS league_name

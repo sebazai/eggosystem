@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,94 +22,88 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
-import { clientApiFetch } from "@/lib/apiClient";
-import useSWR from "swr";
 
-interface Team {
-  team_id: number;
-  team_name: string;
-  league_name: string;
-}
-
-interface EligibilityResult {
-  selectedTeam: {
-    team_id: number;
-    team_name: string;
-    current_top3_avg: number;
-    current_top4_avg: number; // Added top 4 average
-    new_avg_with_player: number;
-    new_player_kana_elo: number;
-    csrankker_components?: {
-      trueLevel: number;
-      mm: number;
-      hour: number;
-      kana: number;
-    };
-  };
-  topTeamsInLeague: Array<{
-    team_id: number;
-    team_name: string;
-    avg4: number;
-    rank: number;
-  }>;
-  canAddPlayer: boolean;
-  league_name: string;
-}
+import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
+import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { useTeamsBySeason } from "@/hooks/data/useTeamsBySeason";
+import { usePlayerEligibility } from "@/hooks/data/usePlayerEligibility";
+import { useAddPlayer } from "@/hooks/data/useAddPlayer";
 
 export default function AddPlayerPage() {
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
-  const [isChecking, setIsChecking] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
-  const [eligibilityResult, setEligibilityResult] =
-    useState<EligibilityResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Get active season (app_id 730 for CS)
-  const { data: activeSeason } = useSWR<{ season_id: number }>(
-    "/api/v1/organizers/1/app/730/seasons/active",
-    clientApiFetch,
-    { revalidateOnFocus: false }
-  );
+  // Get all seasons
+  const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
 
-  // Get teams for the active season
-  const { data: teams, isLoading: isLoadingTeams } = useSWR<Team[]>(
-    activeSeason
-      ? `/api/v1/dashboard/sortter/season/${activeSeason.season_id}/teams`
-      : null,
-    clientApiFetch,
-    { revalidateOnFocus: false }
-  );
+  // Get active season (app_id 730 for CS)
+  const { signupOrActiveSeason: activeSeason } =
+    useActiveSignupOrActiveSeasonForApp(730);
+
+  // Get teams for the selected season
+  const { teams, isLoading: isLoadingTeams } =
+    useTeamsBySeason(selectedSeasonId);
+
+  // Get player eligibility check
+  const {
+    eligibilityResult,
+    isLoading: isChecking,
+    isError: eligibilityError,
+    checkEligibility,
+    clearResult
+  } = usePlayerEligibility(selectedSeasonId, selectedTeamId, steamId);
+
+  // Add player hook
+  const { addPlayer } = useAddPlayer();
+
+  // Set selected season to active season when it loads
+  useEffect(() => {
+    if (activeSeason && !selectedSeasonId) {
+      setSelectedSeasonId(activeSeason.season_id.toString());
+    }
+  }, [activeSeason, selectedSeasonId]);
+
+  // Handle eligibility check errors from SWR
+  useEffect(() => {
+    if (eligibilityError) {
+      setError(
+        eligibilityError instanceof Error
+          ? eligibilityError.message
+          : "Failed to check eligibility"
+      );
+    }
+  }, [eligibilityError]);
 
   const handleCheckEligibility = async () => {
-    if (!selectedTeamId || !steamId || !activeSeason) {
-      setError("Please select a team and enter a Steam ID");
-      return;
-    }
-
-    setIsChecking(true);
     setError(null);
-    setEligibilityResult(null);
+    setSuccess(null);
 
     try {
-      const result = await clientApiFetch<EligibilityResult>(
-        `/api/v1/dashboard/sortter/season/${activeSeason.season_id}/team/${selectedTeamId}/player/${steamId}/eligibility`
-      );
-      setEligibilityResult(result);
+      await checkEligibility();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to check eligibility"
       );
-    } finally {
-      setIsChecking(false);
     }
+  };
+
+  const handleSeasonChange = (value: string) => {
+    setSelectedSeasonId(value);
+    // Clear team selection and results when season changes
+    setSelectedTeamId("");
+    clearResult();
+    setError(null);
+    setSuccess(null);
   };
 
   const handleSteamIdChange = (value: string) => {
     setSteamId(value);
     // Clear results when steam ID changes
-    setEligibilityResult(null);
+    clearResult();
     setError(null);
     setSuccess(null);
   };
@@ -117,13 +111,13 @@ export default function AddPlayerPage() {
   const handleTeamChange = (value: string) => {
     setSelectedTeamId(value);
     // Clear results when team changes
-    setEligibilityResult(null);
+    clearResult();
     setError(null);
     setSuccess(null);
   };
 
   const handleAddPlayer = async () => {
-    if (!eligibilityResult || !activeSeason) {
+    if (!eligibilityResult || !selectedSeasonId) {
       return;
     }
 
@@ -132,23 +126,17 @@ export default function AddPlayerPage() {
     setSuccess(null);
 
     try {
-      await clientApiFetch(
-        `/api/v1/dashboard/sortter/season/${activeSeason.season_id}/team/${selectedTeamId}/player/${steamId}/add`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            kana_elo: eligibilityResult.selectedTeam.new_player_kana_elo,
-            calculus: eligibilityResult.selectedTeam.csrankker_components || {}
-          })
-        }
-      );
+      await addPlayer(selectedSeasonId, selectedTeamId, steamId, {
+        kana_elo: eligibilityResult.selectedTeam.new_player_kana_elo,
+        calculus: eligibilityResult.selectedTeam.csrankker_components || {}
+      });
 
       setSuccess(
         `Player successfully added to ${eligibilityResult.selectedTeam.team_name}`
       );
 
       // Clear eligibility check result after successful addition
-      setEligibilityResult(null);
+      clearResult();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to add player to team"
@@ -174,18 +162,56 @@ export default function AddPlayerPage() {
             <CardHeader>
               <CardTitle>Player Addition Check</CardTitle>
               <CardDescription>
-                Select a team and enter a Steam ID to check eligibility
+                Select a season, team and enter a Steam ID to check eligibility
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Season Display */}
+              {/* Season Selector */}
               <div className="space-y-2">
-                <Label>Active Season</Label>
-                <div className="text-sm text-muted-foreground">
-                  {activeSeason
-                    ? `Season ${activeSeason.season_id}`
-                    : "Loading..."}
-                </div>
+                <Label htmlFor="season">Season</Label>
+                <Select
+                  value={selectedSeasonId}
+                  onValueChange={handleSeasonChange}
+                  data-testid="season-select"
+                >
+                  <SelectTrigger data-testid="season-selector">
+                    <SelectValue placeholder="Select a season" />
+                  </SelectTrigger>
+                  <SelectContent data-testid="season-dropdown">
+                    {isLoadingSeasons ? (
+                      <SelectItem
+                        value="loading"
+                        disabled
+                        data-testid="loading-season-option"
+                      >
+                        Loading seasons...
+                      </SelectItem>
+                    ) : seasons && seasons.length > 0 ? (
+                      seasons
+                        .sort((a, b) => b.id - a.id) // Sort by ID descending (newest first)
+                        .map((season) => (
+                          <SelectItem
+                            key={season.id}
+                            value={season.id.toString()}
+                            data-value={season.id.toString()}
+                            data-testid={`season-option-${season.id}`}
+                          >
+                            {season.full_name}
+                            {activeSeason?.season_id === season.id &&
+                              " (Active)"}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      <SelectItem
+                        value="no-seasons"
+                        disabled
+                        data-testid="no-seasons-option"
+                      >
+                        No seasons available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Team Selector */}
@@ -248,7 +274,9 @@ export default function AddPlayerPage() {
               {/* Check Button */}
               <Button
                 onClick={handleCheckEligibility}
-                disabled={!selectedTeamId || !steamId || isChecking}
+                disabled={
+                  !selectedSeasonId || !selectedTeamId || !steamId || isChecking
+                }
                 className="w-full"
                 data-testid="check-eligibility-button"
               >
