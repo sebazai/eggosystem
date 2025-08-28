@@ -1,7 +1,7 @@
 import {
   getTeamValuesForSorter,
   getTeamPlayerValuesForSortter,
-  getTeamsForSeason,
+  getTeamsForAddPlayerToTeamSeason,
   checkPlayerAdditionEligibility
 } from "../../models/sortter.models";
 import type { RequestWithParams, TeamSortterValues } from "@eggosystem/types";
@@ -120,13 +120,13 @@ export const getTeamPlayerValuesController = async (
  * Controller to get all teams for a specific season
  * Returns teams with their league information
  */
-export const getTeamsForSeasonController = async (
+export const getTeamsForAddPlayerToTeamSeasonController = async (
   req: RequestWithParams<{ season_id: string }>,
   res: Response
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
 
-  const teams = await getTeamsForSeason(seasonId);
+  const teams = await getTeamsForAddPlayerToTeamSeason(seasonId);
   res.json(teams);
 };
 

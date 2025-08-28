@@ -1,7 +1,7 @@
 import {
   getTeamValuesForSorter,
   getTeamPlayerValuesForSortter,
-  getTeamsForSeason,
+  getTeamsForAddPlayerToTeamSeason,
   checkPlayerAdditionEligibility
 } from "./sortter.models";
 import { runQuery } from "../db/mysqlRunQuery";
@@ -274,7 +274,7 @@ describe("Sortter Models", () => {
 
       mockRunQuery.mockResolvedValue(mockData);
 
-      const result = await getTeamsForSeason(1);
+      const result = await getTeamsForAddPlayerToTeamSeason(1);
 
       expect(result).toEqual(mockData);
       expect(mockRunQuery).toHaveBeenCalledWith(
@@ -286,7 +286,7 @@ describe("Sortter Models", () => {
     it("should return empty array if no teams found", async () => {
       mockRunQuery.mockResolvedValue([]);
 
-      const result = await getTeamsForSeason(1);
+      const result = await getTeamsForAddPlayerToTeamSeason(1);
 
       expect(result).toEqual([]);
     });
@@ -310,7 +310,7 @@ describe("Sortter Models", () => {
       mockRunQuery.mockResolvedValueOnce(mockTeams);
 
       // Call the function
-      const result = await getTeamsForSeason(1);
+      const result = await getTeamsForAddPlayerToTeamSeason(1);
 
       // Check that runQuery was called with the correct SQL query
       expect(mockRunQuery).toHaveBeenCalledTimes(1);

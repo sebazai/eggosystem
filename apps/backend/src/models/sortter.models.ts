@@ -203,7 +203,6 @@ export const getTeamPlayerValuesForSortter = async (
     LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = strp.season_id
     WHERE strp.season_id = ?
       AND strp.team_id = ?
-      AND str.approved = 1
     GROUP BY
       sp.nickname,
       sp.steam_id,
@@ -232,7 +231,7 @@ export const getTeamPlayerValuesForSortter = async (
  * @param seasonId The season ID to filter by
  * @param isHistorical If true, don't filter by approved=true (for historical data)
  */
-export const getTeamsForSeason = async (
+export const getTeamsForAddPlayerToTeamSeason = async (
   seasonId: number
 ): Promise<
   Array<{ team_id: number; team_name: string; league_name: string }>
@@ -243,12 +242,11 @@ export const getTeamsForSeason = async (
       t.name AS team_name,
       COALESCE(l.name, 'Unassigned') AS league_name
     FROM Teams t
-    JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id
-    JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+    JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
+    JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
     LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
     LEFT JOIN Leagues l ON l.id = slt.league_id
     WHERE strp.season_id = ?
-      AND str.approved = 1
     ORDER BY t.name ASC
   `;
 
@@ -375,11 +373,10 @@ export const checkPlayerAdditionEligibility = async (
     SELECT COALESCE(l.name, 'Unassigned') AS league_name
     FROM Teams t
     JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
-    JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+    JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
     LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
     LEFT JOIN Leagues l ON l.id = slt.league_id
     WHERE strp.season_id = ? AND strp.team_id = ?
-      AND str.approved = 1
     LIMIT 1
   `;
 
@@ -411,11 +408,10 @@ export const checkPlayerAdditionEligibility = async (
         ROW_NUMBER() OVER (ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
       JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = ?
-      JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+      JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
       JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = ?
       WHERE t.id = ?
         AND spr.kana_elo IS NOT NULL
-        AND str.approved = 1
     )
     SELECT
       ttp.team_id,
@@ -457,13 +453,12 @@ export const checkPlayerAdditionEligibility = async (
         ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
       FROM Teams t
       JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
-      JOIN SeasonTeamRegistrationPlayers strp ON strp.team_id = t.id AND strp.season_id = slt.season_id
-      JOIN SeasonTeamRegistrations str ON str.team_id = t.id AND str.season_id = strp.season_id
+      JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = slt.season_id
+      JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
       JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id
       WHERE slt.season_id = ? AND l.name = ?
         AND spr.kana_elo IS NOT NULL
-        AND str.approved = 1
       ORDER BY t.id, spr.kana_elo DESC
     ),
     TeamAvg4 AS (

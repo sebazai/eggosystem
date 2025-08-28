@@ -3,7 +3,7 @@ import {
   getTeamValuesController,
   getTeamValueByIdController,
   getTeamPlayerValuesController,
-  getTeamsForSeasonController,
+  getTeamsForAddPlayerToTeamSeasonController,
   checkPlayerAdditionEligibilityController,
   addPlayerToTeamController,
   getTeamFlagsController,
@@ -43,11 +43,11 @@ router.get(
   getTeamPlayerValuesController
 );
 
-// GET /api/v1/dashboard/sortter/season/:season_id/teams
+// GET /api/v1/dashboard/sortter/season/:season_id/teams-for-add-player
 router.get(
-  "/season/:season_id/teams",
+  "/season/:season_id/teams-for-add-player",
   validateNumericParams(),
-  getTeamsForSeasonController
+  getTeamsForAddPlayerToTeamSeasonController
 );
 
 // GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/player/:steam_id/eligibility
