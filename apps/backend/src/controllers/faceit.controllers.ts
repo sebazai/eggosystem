@@ -11,6 +11,8 @@ import {
   type TeamWithExternalData,
   type ChampionshipDetails
 } from "@eggosystem/types";
+import { logger } from "../utils/app-logger";
+import { triggerManualFaceitSync } from "../services/cron-scheduler.services";
 
 export const validateChampionshipTeamsController = async (
   req: Request,
@@ -105,5 +107,25 @@ export const validateChampionshipTeamsController = async (
   res.json({
     teams: mapSubscriptionKeyToTeamReduce,
     maximumSlots
+  });
+};
+
+/**
+ * Controller to manually trigger FACEIT match synchronization
+ * This endpoint can be used for testing or manual operations
+ */
+export const triggerFaceitMatchSync = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  logger.info("Manual FACEIT match sync triggered via API endpoint");
+
+  // Start the sync process asynchronously
+  await triggerManualFaceitSync();
+
+  // Return immediate response to avoid timeout
+  res.status(200).json({
+    message: "FACEIT match sync initiated successfully",
+    note: "The sync process is running in the background. Check server logs for progress and results."
   });
 };

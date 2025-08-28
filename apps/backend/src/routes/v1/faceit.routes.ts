@@ -69,8 +69,10 @@ import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
 import { removeSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
-import { validateChampionshipTeamsController } from "../../controllers/faceit.controllers";
-import { triggerFaceitMatchSync } from "../../controllers/faceit-sync.controllers";
+import {
+  triggerFaceitMatchSync,
+  validateChampionshipTeamsController
+} from "../../controllers/faceit.controllers";
 
 const router = Router();
 
