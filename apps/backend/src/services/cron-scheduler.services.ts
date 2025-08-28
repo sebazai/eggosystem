@@ -40,18 +40,6 @@ export const startFaceitMatchSyncCron = (): void => {
   logger.info(
     "FACEIT match sync cron job started. Will run every 6 hours at 00:00, 06:00, 12:00, 18:00 (Helsinki time)"
   );
-
-  if (process.env.NODE_ENV === "development") {
-    logger.info("Development mode: Running initial FACEIT match sync...");
-    void setTimeout(async () => {
-      try {
-        await syncAllFaceitChampionshipMatches();
-        logger.info("Initial FACEIT match sync completed");
-      } catch (error) {
-        logger.error("Initial FACEIT match sync failed:", error);
-      }
-    }, 5000); // Wait 5 seconds after startup
-  }
 };
 
 export const triggerManualFaceitSync = async (): Promise<void> => {
