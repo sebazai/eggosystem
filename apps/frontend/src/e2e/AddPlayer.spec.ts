@@ -184,8 +184,24 @@ test.describe("Add Player Workflow", () => {
     await page.goto("/dashboard/add-player");
     await page.waitForLoadState("networkidle");
 
-    // Fill the form
-    // Wait for the team selector to be visible
+    // Wait for season to be automatically selected (we'll use season 14)
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 5000
+    });
+
+    // Wait for season 14 to be selected automatically, or select it manually
+    try {
+      await page.waitForSelector('[data-testid="season-option-14"]', {
+        timeout: 2000
+      });
+    } catch {
+      // If season 14 is not automatically selected, select it manually
+      await page.click('[data-testid="season-selector"]');
+      await page.waitForSelector('[data-testid="season-dropdown"]');
+      await page.click('[data-testid="season-option-14"]');
+    }
+
+    // Wait for teams to load after season selection
     await page.waitForSelector('[data-testid="team-selector"]', {
       timeout: 5000
     });
@@ -196,7 +212,7 @@ test.describe("Add Player Workflow", () => {
     // Wait for dropdown to appear
     await page.waitForSelector('[data-testid="team-dropdown"]');
 
-    // Select the team
+    // Select the team (use team 1650 which exists in season 14)
     await page.click(`[data-testid="team-option-1650"]`);
 
     // Enter Steam ID
@@ -323,9 +339,26 @@ test.describe("Add Player Workflow", () => {
     await page.goto("/dashboard/add-player");
     await page.waitForLoadState("networkidle");
 
-    // Wait for the team selector to be visible
+    // Wait for season to be automatically selected (we'll use season 14)
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 5000
+    });
+
+    // Wait for season 14 to be selected automatically, or select it manually
+    try {
+      await page.waitForSelector('[data-testid="season-option-14"]', {
+        timeout: 2000
+      });
+    } catch {
+      // If season 14 is not automatically selected, select it manually
+      await page.click('[data-testid="season-selector"]');
+      await page.waitForSelector('[data-testid="season-dropdown"]');
+      await page.click('[data-testid="season-option-14"]');
+    }
+
+    // Wait for teams to load after season selection
     await page.waitForSelector('[data-testid="team-selector"]', {
-      timeout: 30000
+      timeout: 5000
     });
 
     // Click the team selector
@@ -334,7 +367,7 @@ test.describe("Add Player Workflow", () => {
     // Wait for dropdown to appear
     await page.waitForSelector('[data-testid="team-dropdown"]');
 
-    // Select the team
+    // Select the team (use team 1650 which exists in season 14)
     await page.click(`[data-testid="team-option-1650"]`);
 
     // Enter Steam ID
@@ -380,9 +413,26 @@ test.describe("Add Player Workflow", () => {
     await page.goto("/dashboard/add-player");
     await page.waitForLoadState("networkidle");
 
-    // Wait for the team selector to be visible
+    // Wait for season to be automatically selected (we'll use season 14)
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 5000
+    });
+
+    // Wait for season 14 to be selected automatically, or select it manually
+    try {
+      await page.waitForSelector('[data-testid="season-option-14"]', {
+        timeout: 2000
+      });
+    } catch {
+      // If season 14 is not automatically selected, select it manually
+      await page.click('[data-testid="season-selector"]');
+      await page.waitForSelector('[data-testid="season-dropdown"]');
+      await page.click('[data-testid="season-option-14"]');
+    }
+
+    // Wait for teams to load after season selection
     await page.waitForSelector('[data-testid="team-selector"]', {
-      timeout: 30000
+      timeout: 5000
     });
 
     // Click the team selector
@@ -391,7 +441,7 @@ test.describe("Add Player Workflow", () => {
     // Wait for dropdown to appear
     await page.waitForSelector('[data-testid="team-dropdown"]');
 
-    // Select the team
+    // Select the team (use team 1650 which exists in season 14)
     await page.click(`[data-testid="team-option-1650"]`);
 
     // Enter invalid Steam ID
