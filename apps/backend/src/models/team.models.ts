@@ -601,14 +601,14 @@ export const getTeamCaptainsBySeasonId = async (
       captain_account.discord AS captain_discord,
       co_captain_account.discord AS co_captain_discord
     FROM Teams t
-    JOIN SeasonTeamRegistrations str ON t.id = str.team_id
-    JOIN SeasonTeamRegistrationPlayers strp_captain ON 
+    JOIN SeasonLeagueTeams str ON t.id = str.team_id
+    JOIN SeasonTeamPlayers strp_captain ON 
       strp_captain.season_id = str.season_id AND 
       strp_captain.team_id = str.team_id AND 
       strp_captain.is_captain = 1
     JOIN SteamPlayers sp_captain ON strp_captain.steam_id = sp_captain.steam_id
     JOIN Accounts captain_account ON sp_captain.account_id = captain_account.id
-    LEFT JOIN SeasonTeamRegistrationPlayers strp_co_captain ON 
+    LEFT JOIN SeasonTeamPlayers strp_co_captain ON 
       strp_co_captain.season_id = str.season_id AND 
       strp_co_captain.team_id = str.team_id AND 
       strp_co_captain.is_co_captain = 1
