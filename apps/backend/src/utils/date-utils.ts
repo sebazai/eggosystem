@@ -40,12 +40,21 @@ export const getNextWednesdayMatchTime = () => {
   const now = new Date();
   const nextWednesday = new Date(now);
   nextWednesday.setDate(now.getDate() + ((3 + 7 - now.getDay()) % 7));
-  nextWednesday.setHours(19, 0, 0, 0);
 
-  const match_date = nextWednesday.toISOString().slice(0, 10); // YYYY-MM-DD
-  const start_time = nextWednesday
-    ? new Date(nextWednesday).toISOString().slice(11, 19) // HH:MM:SS
-    : "00:00:00";
+  // Set to 20:00 Finnish time (UTC+2 in summer, UTC+3 in winter)
+  // Use Helsinki timezone to handle DST automatically
+  const helsinkiTime = new Date(
+    nextWednesday.toLocaleString("en-US", { timeZone: "Europe/Helsinki" })
+  );
+  helsinkiTime.setHours(20, 0, 0, 0);
+
+  // Convert Helsinki time to UTC for database storage
+  const utcTime = new Date(
+    helsinkiTime.toLocaleString("en-US", { timeZone: "UTC" })
+  );
+
+  const match_date = utcTime.toISOString().slice(0, 10); // YYYY-MM-DD
+  const start_time = utcTime.toISOString().slice(11, 19); // HH:MM:SS
 
   return { match_date, start_time };
 };

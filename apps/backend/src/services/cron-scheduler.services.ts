@@ -1,5 +1,5 @@
 import * as cron from "node-cron";
-import { syncAllFaceitChampionshipMatches } from "./faceit-match-sync.services";
+import { syncAllFaceitChampionshipMatches } from "./faceit.services";
 import { logger } from "../utils/app-logger";
 
 /**
@@ -7,8 +7,6 @@ import { logger } from "../utils/app-logger";
  * Runs every 6 hours at minutes 0 (00:00, 06:00, 12:00, 18:00)
  */
 export const startFaceitMatchSyncCron = (): void => {
-  logger.info("Initializing FACEIT match sync cron job...");
-
   // Schedule to run every 6 hours
   // Cron expression: "0 */6 * * *" means at minute 0 of every 6th hour
   cron.schedule(
@@ -43,7 +41,6 @@ export const startFaceitMatchSyncCron = (): void => {
     "FACEIT match sync cron job started. Will run every 6 hours at 00:00, 06:00, 12:00, 18:00 (Helsinki time)"
   );
 
-  // Optional: Run once immediately on startup (for testing/immediate sync)
   if (process.env.NODE_ENV === "development") {
     logger.info("Development mode: Running initial FACEIT match sync...");
     void setTimeout(async () => {
@@ -57,16 +54,7 @@ export const startFaceitMatchSyncCron = (): void => {
   }
 };
 
-/**
- * Manually trigger FACEIT match sync (useful for testing or manual operations)
- */
 export const triggerManualFaceitSync = async (): Promise<void> => {
   logger.info("Manual FACEIT match sync triggered...");
-  try {
-    await syncAllFaceitChampionshipMatches();
-    logger.info("Manual FACEIT match sync completed successfully");
-  } catch (error) {
-    logger.error("Manual FACEIT match sync failed:", error);
-    throw error;
-  }
+  await syncAllFaceitChampionshipMatches();
 };

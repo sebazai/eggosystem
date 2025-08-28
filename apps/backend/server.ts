@@ -18,22 +18,9 @@ if (
 ) {
   try {
     startFaceitMatchSyncCron();
-    logger.info("FACEIT match sync cron job initialized successfully");
   } catch (error) {
     logger.error("Failed to initialize FACEIT match sync cron job:", error);
   }
-} else if (
-  process.env.NODE_ENV === "test" ||
-  process.env.NODE_ENV === "e2e" ||
-  process.env.TEST_TYPE === "e2e"
-) {
-  logger.info(
-    "Test environment detected, skipping FACEIT cron job initialization"
-  );
-} else {
-  logger.info(
-    "FACEIT_API_KEY environment variable not found, skipping FACEIT cron job initialization"
-  );
 }
 
 // Handle server shutdown gracefully

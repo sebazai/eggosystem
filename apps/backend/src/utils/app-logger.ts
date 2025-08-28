@@ -7,6 +7,7 @@ import {
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { context, trace } from "@opentelemetry/api";
+import { isEmpty } from "lodash";
 
 const serviceName = process.env.OTEL_SERVICE_NAME ?? "eggosystem-backend-1";
 const resource = resourceFromAttributes({
@@ -89,7 +90,7 @@ export const logger = winston.createLogger({
         winston.format.splat(),
         winston.format.printf(
           ({ level, message, timestamp, stack, ...rest }) => {
-            return `${timestamp} ${level}: ${message} ${stack ? `\n${stack}` : ""} ${typeof rest === "object" ? JSON.stringify(rest, null, 2) : rest}`;
+            return `${timestamp} ${level}: ${message} ${stack ? `\n${stack}` : ""} ${typeof rest === "object" && !isEmpty(rest) ? JSON.stringify(rest, null, 2) : isEmpty(rest) ? "" : rest}`;
           }
         )
       ),

@@ -14,7 +14,6 @@ import leaguesRouter from "./v1/league.routes";
 import nowRouter from "./v1/now.routes";
 import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
-import faceitSyncRouter from "./v1/faceit-sync.routes";
 import allstarRouter from "./v1/allstar.routes";
 import registrationsRouter from "./v1/season-team-registration.routes";
 import gameRouter from "./v1/game.routes";
@@ -46,7 +45,6 @@ v1Router.use("/discord", corsMiddleware, discordRouter);
 v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
 v1Router.use("/registrations", corsMiddleware, registrationsRouter);
 v1Router.use("/faceit", corsMiddleware, faceitRouter);
-v1Router.use("/faceit-sync", corsMiddleware, authenticateJWT, faceitSyncRouter);
 v1Router.use("/players", playerRouter);
 
 // Mount the routers

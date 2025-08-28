@@ -8,7 +8,10 @@ import {
   convertFaceitGameToAppId
 } from "../../services/faceit.services";
 import { type Request, type Response, type NextFunction } from "express";
-import { authenticateJWT } from "../../middlewares/auth.middleware";
+import {
+  authenticateJWT,
+  checkPermissions
+} from "../../middlewares/auth.middleware";
 import { saveWebhookData } from "../../models/faceit.models";
 import { logger } from "../../utils/app-logger";
 import { ZodError } from "zod";
@@ -67,8 +70,16 @@ import { validatePlayersInTeams } from "../../models/season-team-players.models"
 import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
 import { removeSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
 import { validateChampionshipTeamsController } from "../../controllers/faceit.controllers";
+import { triggerFaceitMatchSync } from "../../controllers/faceit-sync.controllers";
 
 const router = Router();
+
+router.post(
+  "/sync",
+  authenticateJWT,
+  checkPermissions({ fallbackRoles: ["admin", "helpdesk"] }),
+  triggerFaceitMatchSync
+);
 
 router.get(
   "/teams/:faceit_team_id",

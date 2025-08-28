@@ -447,6 +447,31 @@ export const getHubMatchesByExternalMatchRoomId = async (
   return matches;
 };
 
+export const updateMatchDateAndStartTime = async (
+  matchId: number,
+  matchDate: string,
+  startTime: string
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Matches SET match_date = ?, start_time = ? WHERE id = ?",
+    [matchDate, startTime, matchId]
+  );
+};
+
+export const getMatchesByExternalId = async (
+  externalMatchRoomId: string
+): Promise<Match[]> => {
+  const query = `
+    SELECT *
+    FROM Matches 
+    WHERE external_match_room_id = ?
+    ORDER BY id, start_time ASC
+  `;
+
+  const matches = await runQuery<Match[]>(query, [externalMatchRoomId]);
+  return matches;
+};
+
 export const addMatchToDatabase = async (
   matchDetails: ChampionshipDetailsObjectCreated,
   externalLeagueId: string

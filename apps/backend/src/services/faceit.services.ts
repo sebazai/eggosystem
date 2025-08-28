@@ -2,7 +2,9 @@ import {
   SeasonPlatform,
   type FaceITCSRank,
   type FaceITTeamDetails,
-  type ChampionshipSubscription
+  type ChampionshipSubscription,
+  type FaceitMatchesResponse,
+  type FaceitMatch
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -18,6 +20,12 @@ import {
   FACEIT_DEFAULT_ELO,
   FACEIT_DEFAULT_KD
 } from "../utils/faceit-utils";
+import { runQuery } from "../db/mysqlRunQuery";
+import { getMatchDateTime, adjustMatchDateTime } from "../utils/date-utils";
+import {
+  getMatchesByExternalId,
+  updateMatchDateAndStartTime
+} from "../models/match.models";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
@@ -434,4 +442,162 @@ export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
 
   const data = await response.json();
   return data.payload.download_url; // Return download URL from response
+};
+
+export const fetchFaceitChampionshipUpcomingMatches = async (
+  championshipId: string
+) => {
+  const apiKey = process.env.FACEIT_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("FACEIT_API_KEY environment variable is required");
+  }
+
+  const response = await fetch(
+    `https://open.faceit.com/data/v4/championships/${championshipId}/matches?type=upcoming`,
+    {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `FACEIT API error for championship ${championshipId}: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data: FaceitMatchesResponse = await response.json();
+
+  return data.items;
+};
+
+/**
+ * Gets championship IDs from active seasons
+ */
+export const getActiveSeasonChampionshipIds = async (): Promise<
+  { external_id: string; isBO2PlayedAs2xBO1: boolean }[]
+> => {
+  const query = `
+    SELECT slei.external_id, slei.isBO2PlayedAs2xBO1
+    FROM SeasonLeagueExternalIds slei
+    JOIN Seasons s ON slei.season_id = s.id
+    WHERE s.start_date <= NOW() 
+      AND (s.end_date IS NULL OR s.end_date >= NOW())
+  `;
+
+  const results =
+    await runQuery<Array<{ external_id: string; isBO2PlayedAs2xBO1: boolean }>>(
+      query
+    );
+
+  return results;
+};
+
+export const syncMatchSchedule = async (
+  faceitMatch: FaceitMatch,
+  isBO2PlayedAs2xBO1: boolean
+): Promise<void> => {
+  const databaseMatches = await getMatchesByExternalId(faceitMatch.match_id);
+
+  if (databaseMatches.length === 0) {
+    logger.warn(
+      `No database matches found for external_match_room_id: ${faceitMatch.match_id}`
+    );
+    return;
+  }
+
+  // Convert FACEIT scheduled_at (Unix timestamp) to match_date and start_time
+  const faceitSchedule = getMatchDateTime(faceitMatch.scheduled_at);
+
+  const firstMatch = databaseMatches[0];
+  const first_match_date = firstMatch.match_date;
+  const first_match_time = firstMatch.start_time;
+  if (
+    first_match_date === faceitSchedule.match_date &&
+    first_match_time === faceitSchedule.start_time
+  ) {
+    return;
+  }
+
+  logger.info(
+    `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
+  );
+
+  if (isBO2PlayedAs2xBO1 && databaseMatches.length === 2) {
+    // Handle BO2 matches stored as 2 BO1 matches
+    // First match gets the FACEIT schedule
+    const firstMatch = databaseMatches[0];
+    await updateMatchDateAndStartTime(
+      firstMatch.id,
+      faceitSchedule.match_date,
+      faceitSchedule.start_time
+    );
+
+    // Second match gets +1 hour from the first match
+    const secondMatchSchedule = adjustMatchDateTime(
+      faceitSchedule.match_date,
+      faceitSchedule.start_time,
+      { hours: 1 }
+    );
+    await updateMatchDateAndStartTime(
+      databaseMatches[1].id,
+      secondMatchSchedule.match_date,
+      secondMatchSchedule.start_time
+    );
+
+    logger.info(
+      `Updated BO2 match schedules: First match at ${faceitSchedule.match_date} ${faceitSchedule.start_time}, Second match at ${secondMatchSchedule.match_date} ${secondMatchSchedule.start_time}`
+    );
+  } else {
+    await updateMatchDateAndStartTime(
+      databaseMatches[0].id,
+      faceitSchedule.match_date,
+      faceitSchedule.start_time
+    );
+
+    logger.info(
+      `Updated single match ${databaseMatches[0].id} schedule: ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
+    );
+  }
+};
+
+export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
+  logger.info("Starting FACEIT championship match sync...");
+
+  // Get all active season championship IDs
+  const championshipIds = await getActiveSeasonChampionshipIds();
+  logger.info(
+    `Found ${championshipIds.length} active season championships to sync`
+  );
+
+  if (championshipIds.length === 0) {
+    logger.info("No active season championships found. Sync completed.");
+    return;
+  }
+
+  for (const championship of championshipIds) {
+    logger.info(`Syncing championship: ${championship.external_id}`);
+
+    // Fetch matches from FACEIT API
+    const faceitMatches = await fetchFaceitChampionshipUpcomingMatches(
+      championship.external_id
+    );
+    logger.info(
+      `Found ${faceitMatches.length} upcoming matches in FACEIT for championship ${championship.external_id}`
+    );
+
+    // Sync each match
+    for (const faceitMatch of faceitMatches) {
+      try {
+        await syncMatchSchedule(faceitMatch, championship.isBO2PlayedAs2xBO1);
+      } catch (error) {
+        logger.error(`Error syncing match ${faceitMatch.match_id}:`, error);
+      }
+    }
+  }
+
+  logger.info(`FACEIT championship match sync completed.`);
 };
