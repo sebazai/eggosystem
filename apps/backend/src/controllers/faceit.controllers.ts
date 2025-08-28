@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import {
   getFaceITChampionshipDetails,
-  getFaceITChampionshipSubscriptions
+  getAllFaceITChampionshipSubscriptions
 } from "../services/faceit.services";
 import { NotFoundError } from "../utils/errors";
 import { getSeasonLeagueExternalIdByExternalId } from "../models/season-league-external-id.models";
@@ -42,7 +42,7 @@ export const validateChampionshipTeamsController = async (
     );
   }
 
-  const data = await getFaceITChampionshipSubscriptions(
+  const data = await getAllFaceITChampionshipSubscriptions(
     req.params.championship_id
   );
   if (!data) {

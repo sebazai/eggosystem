@@ -4,7 +4,8 @@ import {
   type FaceITTeamDetails,
   type ChampionshipSubscription,
   type FaceitMatchesResponse,
-  type FaceitMatch
+  type FaceitMatch,
+  type ChampionshipSubscriptionItem
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -26,6 +27,7 @@ import {
   getMatchesByExternalId,
   updateMatchDateAndStartTime
 } from "../models/match.models";
+import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
@@ -408,15 +410,60 @@ export const getFaceITChampionshipDetails = async <T>(
 };
 
 export const getFaceITChampionshipSubscriptions = async (
-  championship_id: string
+  championship_id: string,
+  offset: number = 0,
+  limit: number = 10
 ) => {
-  const webURL = `https://open.faceit.com/data/v4/championships/${championship_id}/subscriptions`;
+  const webURL = `https://open.faceit.com/data/v4/championships/${championship_id}/subscriptions?offset=${offset}&limit=${limit}`;
   const headers = {
     Accept: "application/json",
     Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
   };
   const response = await fetch(webURL, { headers });
   return response.json() as Promise<ChampionshipSubscription>;
+};
+
+/**
+ * Fetches ALL championship subscriptions by automatically handling pagination
+ * Returns the same data structure but with all items combined
+ */
+export const getAllFaceITChampionshipSubscriptions = async (
+  championship_id: string
+): Promise<ChampionshipSubscription> => {
+  // Get the first response to understand the structure
+  const firstResponse = await getFaceITChampionshipSubscriptions(
+    championship_id,
+    0,
+    10
+  );
+
+  // If we got all items in the first call, return as is
+  if (firstResponse.items.length < 10) {
+    return firstResponse;
+  }
+
+  // Otherwise, fetch all remaining items starting from the next page
+  // We already have the first page items, so start from offset 10
+  const remainingItems = await fetchAllItemsWithPagination<
+    ChampionshipSubscription,
+    ChampionshipSubscriptionItem
+  >(
+    (offset: number, limit: number) =>
+      getFaceITChampionshipSubscriptions(championship_id, offset, limit),
+    "items",
+    10,
+    10 // Start from offset 10 since we already have the first page
+  );
+
+  // Combine first page items with remaining items
+  const allItems = [...firstResponse.items, ...remainingItems];
+
+  return {
+    ...firstResponse,
+    items: allItems,
+    start: 0,
+    end: allItems.length
+  };
 };
 
 export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {

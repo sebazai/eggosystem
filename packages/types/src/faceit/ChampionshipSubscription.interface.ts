@@ -17,7 +17,7 @@ interface FaceitTeam {
   faceit_url: string;
 }
 
-interface ChampionshipSubscriptionItem {
+export interface ChampionshipSubscriptionItem {
   leader: string;
   coleader: string;
   team: FaceitTeam;
