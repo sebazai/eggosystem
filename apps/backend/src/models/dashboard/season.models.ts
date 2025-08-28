@@ -1,32 +1,9 @@
-import { type TeamEligibilityResult } from "@eggosystem/types";
+import {
+  type CSRankkerResponse,
+  type TeamEligibilityResult
+} from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../../db/mysqlRunQuery";
-
-/**
- * Interface for CSRankker API response
- */
-interface CSRankkerResponse {
-  status: string;
-  result: {
-    steamId: string;
-    seasonId: number;
-    originalKanaelo: number;
-    stabilizedKanaelo: number;
-    stabilizationInfo: {
-      confidence: number;
-      adjustmentFactor: number;
-      method: string;
-    };
-    components: {
-      trueLevel: number;
-      mm: number;
-      hour: number;
-      kana: number;
-    };
-    calculus: string;
-    timestamp: string;
-  };
-}
 
 /**
  * Gets stabilized kana_elo from CSRankker service
