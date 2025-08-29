@@ -63,19 +63,23 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
   // Sort matches by date/time first, then by tier
   const sortedMatches = sortMatchesByDateAndTier(matches);
 
-  return sortedMatches.map((match) => ({
+  return sortedMatches.map((match, index) => ({
     id: match.match_id,
     title: match.title,
     start: match.match_start,
     end: match.match_end,
     backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280", // fallback to gray
     borderColor: DIVISIONS[match.league_tier]?.borderColor || "#4b5563", // fallback to darker gray
+    // Add displayOrder to ensure proper sorting in popovers
+    displayOrder: index,
     extendedProps: {
       league: match.league_name,
       streamUrl: match.streamUrl,
       team1: match.match_team1,
       team2: match.match_team2,
-      tier: match.league_tier
+      tier: match.league_tier,
+      // Store the original sort order for popover sorting
+      sortOrder: index
     }
   }));
 };
@@ -193,32 +197,95 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         // This callback runs when the "more" link is mounted
         // We can use it to fix popover colors if needed
       },
-      didMount: () => {
-        // Add event listener for popover events to ensure colors are applied
-        document.addEventListener("click", (e) => {
-          const moreLink = e.target as HTMLElement;
-          if (moreLink && moreLink.classList.contains("fc-more-link")) {
-            // Wait for popover to be created
-            setTimeout(() => {
-              const popover = document.querySelector(".fc-more-popover");
-              if (popover) {
-                const events = popover.querySelectorAll(".fc-event");
-                events.forEach((eventEl: Element) => {
-                  const htmlEventEl = eventEl as HTMLElement;
-                  // Check if the event has a style attribute with background-color
-                  if (htmlEventEl.style.backgroundColor) {
-                    // Force the background color to show
-                    htmlEventEl.style.setProperty(
-                      "background-color",
-                      htmlEventEl.style.backgroundColor,
-                      "important"
-                    );
-                  }
-                });
-              }
-            }, 50);
+      // Custom popover content to ensure proper event sorting
+      popoverContent: (arg: {
+        events: Array<{
+          id: string;
+          title: string;
+          start: Date;
+          startStr: string;
+          endStr: string;
+          backgroundColor?: string;
+          borderColor?: string;
+          extendedProps?: {
+            league?: string;
+            streamUrl?: string[];
+            team1?: string;
+            team2?: string;
+            tier?: number;
+          };
+        }>;
+      }) => {
+        // Sort events by our custom order before displaying
+        const sortedEvents = arg.events.sort((a, b) => {
+          // First sort by start time
+          const timeA = new Date(a.start);
+          const timeB = new Date(b.start);
+          const timeComparison = timeA.getTime() - timeB.getTime();
+
+          // If times are the same, sort by league tier
+          if (timeComparison === 0) {
+            const tierA = a.extendedProps?.tier || 999;
+            const tierB = b.extendedProps?.tier || 999;
+            return tierA - tierB;
           }
+
+          return timeComparison;
         });
+
+        // Create custom popover content with sorted events
+        const popoverContent = document.createElement("div");
+        popoverContent.className = "fc-more-popover-content p-2";
+
+        sortedEvents.forEach((event) => {
+          const eventEl = document.createElement("div");
+          eventEl.className =
+            "fc-event fc-event-main mb-2 p-2 rounded cursor-pointer";
+          eventEl.style.backgroundColor = event.backgroundColor || "#6b7280";
+          eventEl.style.borderColor = event.borderColor || "#4b5563";
+          eventEl.style.color = "#ffffff";
+
+          const title = document.createElement("div");
+          title.className = "font-semibold text-sm mb-1";
+          title.textContent = event.title;
+
+          const time = document.createElement("div");
+          time.className = "text-xs opacity-90";
+          const startTime = formatInTimezone(event.start.toISOString(), "p");
+          time.textContent = `${startTime} - ${event.extendedProps?.league || ""}`;
+
+          eventEl.appendChild(title);
+          eventEl.appendChild(time);
+
+          // Add click handler to open event details
+          eventEl.addEventListener("click", () => {
+            setSelectedEvent({
+              id: event.id,
+              title: event.title,
+              start: event.startStr,
+              end: event.endStr,
+              league: event.extendedProps?.league || "",
+              streamUrl: event.extendedProps?.streamUrl,
+              team1: event.extendedProps?.team1 || "",
+              team2: event.extendedProps?.team2 || ""
+            } satisfies EventDetails);
+            setIsDialogOpen(true);
+
+            // Close the popover
+            const popover = document.querySelector(".fc-more-popover");
+            if (popover) {
+              popover.remove();
+            }
+          });
+
+          popoverContent.appendChild(eventEl);
+        });
+
+        return popoverContent;
+      },
+      didMount: () => {
+        // Calendar is now mounted with custom popover content
+        // No additional event listeners needed
       },
       slotMinTime: timeRange.minTime,
       slotMaxTime: timeRange.maxTime,
@@ -239,6 +306,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         minute: "2-digit" as const,
         hour12: false
       },
+      // Custom event ordering to ensure proper sorting in popovers
+      eventOrder: "displayOrder,start,-allDay",
       // Mobile-specific options
       handleWindowResize: true, // Handle window resize for responsive behavior
       windowResizeDelay: 100, // Delay for resize handling
