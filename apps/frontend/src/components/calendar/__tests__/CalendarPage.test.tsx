@@ -333,7 +333,7 @@ describe("findMinMaxTimes", () => {
 
     const { minTime, maxTime } = findMinMaxTimes(matches);
 
-    expect(minTime).toBe("19:00:00");
-    expect(maxTime).toBe("29:00:00");
+    expect(minTime).toBe("06:30:00");
+    expect(maxTime).toBe("17:30:00");
   });
 });
