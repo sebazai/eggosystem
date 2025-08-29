@@ -16,23 +16,8 @@ import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
+import { getUpcomingMatchesSorted, DIVISIONS } from "@/lib/calendar-utils";
 import Link from "next/link";
-
-// Division definitions with darker, more readable colors
-const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
-  1: { color: "#b91c1c", borderColor: "#991b1b" }, // Darker red
-  2: { color: "#1d4ed8", borderColor: "#1e40af" }, // Darker blue
-  3: { color: "#047857", borderColor: "#065f46" }, // Darker green
-  4: { color: "#b45309", borderColor: "#92400e" }, // Darker orange
-  5: { color: "#6d28d9", borderColor: "#5b21b6" }, // Darker purple
-  6: { color: "#be185d", borderColor: "#9d174d" }, // Darker pink
-  7: { color: "#0e7490", borderColor: "#155e75" }, // Darker cyan
-  8: { color: "#4d7c0f", borderColor: "#365314" }, // Darker lime
-  9: { color: "#c2410c", borderColor: "#9a3412" }, // Darker red-orange
-  10: { color: "#7c3aed", borderColor: "#6d28d9" }, // Darker violet
-  11: { color: "#0f766e", borderColor: "#134e4a" }, // Darker teal
-  12: { color: "#a16207", borderColor: "#854d0e" } // Darker yellow
-};
 
 type HeroSectionProps = {
   device?: string;
@@ -49,19 +34,12 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   const { calendarMatches, isLoading: isLoadingMatches } =
     useSeasonCalendarMatches(currentSeasonId, "all");
 
-  // Filter to show only upcoming matches (next 10 days)
-  const upcomingMatches =
-    calendarMatches
-      ?.sort((a, b) => a.league_tier - b.league_tier)
-      ?.filter((match) => {
-        const matchDate = new Date(match.match_start);
-        const now = new Date();
-        const tenDaysFromNow = new Date(
-          now.getTime() + 10 * 24 * 60 * 60 * 1000
-        );
-        return matchDate >= now && matchDate <= tenDaysFromNow;
-      })
-      .slice(0, 10) || []; // Show max 10 matches
+  // Get upcoming matches sorted by date/time first, then by tier
+  const upcomingMatches = getUpcomingMatchesSorted(
+    calendarMatches || [],
+    10,
+    10
+  );
 
   const handleMatchClick = (match: MatchWithStreamUrls) => {
     router.push(`/matches/${match.match_id}`);

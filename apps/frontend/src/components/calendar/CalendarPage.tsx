@@ -42,22 +42,7 @@ import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
-
-// Division definitions with darker, more readable colors
-const DIVISIONS: Record<number, { color: string; borderColor: string }> = {
-  1: { color: "#b91c1c", borderColor: "#991b1b" }, // Darker red
-  2: { color: "#1d4ed8", borderColor: "#1e40af" }, // Darker blue
-  3: { color: "#047857", borderColor: "#065f46" }, // Darker green
-  4: { color: "#b45309", borderColor: "#92400e" }, // Darker orange
-  5: { color: "#6d28d9", borderColor: "#5b21b6" }, // Darker purple
-  6: { color: "#be185d", borderColor: "#9d174d" }, // Darker pink
-  7: { color: "#0e7490", borderColor: "#155e75" }, // Darker cyan
-  8: { color: "#4d7c0f", borderColor: "#365314" }, // Darker lime
-  9: { color: "#c2410c", borderColor: "#9a3412" }, // Darker red-orange
-  10: { color: "#7c3aed", borderColor: "#6d28d9" }, // Darker violet
-  11: { color: "#0f766e", borderColor: "#134e4a" }, // Darker teal
-  12: { color: "#a16207", borderColor: "#854d0e" } // Darker yellow
-};
+import { sortMatchesByDateAndTier, DIVISIONS } from "@/lib/calendar-utils";
 
 interface EventDetails {
   id: string;
@@ -71,7 +56,10 @@ interface EventDetails {
 }
 
 const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
-  return matches.map((match) => ({
+  // Sort matches by date/time first, then by tier
+  const sortedMatches = sortMatchesByDateAndTier(matches);
+
+  return sortedMatches.map((match) => ({
     id: match.match_id,
     title: match.title,
     start: match.match_start,
@@ -430,14 +418,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
             </CardHeader>
             <CardContent className="pt-0 sm:pt-6">
               <div className="space-y-3 sm:space-y-4">
-                {calendarMatches
-                  ?.sort((a, b) => {
-                    return (
-                      new Date(b.match_start).getTime() -
-                      new Date(a.match_start).getTime()
-                    );
-                  })
-                  .map((match) => (
+                {sortMatchesByDateAndTier(calendarMatches || []).map(
+                  (match) => (
                     <div
                       key={match.match_id}
                       className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -485,7 +467,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                         View Details
                       </Button>
                     </div>
-                  ))}
+                  )
+                )}
               </div>
             </CardContent>
           </Card>
