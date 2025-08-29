@@ -106,6 +106,8 @@ export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
     { earliest: null as Date | null, latest: null as Date | null }
   );
 
+  console.log(times);
+
   if (!times.earliest || !times.latest) {
     return {
       minTime: "00:00:00",
@@ -113,15 +115,26 @@ export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
     };
   }
 
-  // Calculate time range in hours
-  const rangeInHours =
-    (times.latest.getTime() - times.earliest.getTime()) / (1000 * 60 * 60);
+  // Calculate time range based only on time of day (not full dates)
+  const earliestTime =
+    times.earliest.getHours() + times.earliest.getMinutes() / 60;
+  const latestTime = times.latest.getHours() + times.latest.getMinutes() / 60;
+
+  // Handle cases where events span midnight
+  let timeRange = latestTime - earliestTime;
+  if (timeRange < 0) {
+    timeRange += 24; // Add 24 hours if spanning midnight
+  }
+
+  console.log(
+    `Time range: ${timeRange} hours (${earliestTime}:00 to ${latestTime}:00)`
+  );
 
   // Create new Date objects for buffer calculations to avoid modifying originals
   const minDate = new Date(times.earliest);
   const maxDate = new Date(times.latest);
 
-  if (rangeInHours < 10) {
+  if (timeRange < 10) {
     // For ranges less than 10 hours, center the events in a 10-hour window
     const midPoint = new Date(
       (times.earliest.getTime() + times.latest.getTime()) / 2

@@ -295,8 +295,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       height: "auto",
       eventMaxStack: 2, // Reduced from 3 for mobile
       slotEventOverlap: false, // Prevent events from overlapping in time slots
-      selectable: true,
-      selectMirror: true,
+      selectable: false, // Disable date/time selection
+      selectMirror: false, // Disable selection mirror
       weekends: true,
       firstDay: 1, // Start week on Monday
       nowIndicator: true, // Show current time indicator
@@ -308,6 +308,10 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       },
       // Custom event ordering to ensure proper sorting in popovers
       eventOrder: "displayOrder,start,-allDay",
+      // Disable calendar interactions
+      editable: false, // Disable event editing
+      droppable: false, // Disable drag and drop
+      eventResizableFromStart: false, // Disable event resizing
       // Mobile-specific options
       handleWindowResize: true, // Handle window resize for responsive behavior
       windowResizeDelay: 100, // Delay for resize handling
@@ -315,8 +319,6 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       longPressDelay: 500, // Longer delay for mobile long press
       eventLongPressDelay: 500, // Delay for event long press
       selectLongPressDelay: 500, // Delay for selection long press
-      // Mobile viewport handling
-      aspectRatio: 1.35, // Better aspect ratio for mobile
       // Mobile event display
       dayMaxEventRows: 2, // Limit event rows on mobile
       // Mobile popover positioning
