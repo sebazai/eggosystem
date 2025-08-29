@@ -106,8 +106,6 @@ export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
     { earliest: null as Date | null, latest: null as Date | null }
   );
 
-  console.log(times);
-
   if (!times.earliest || !times.latest) {
     return {
       minTime: "00:00:00",
