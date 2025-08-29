@@ -14,10 +14,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.allstar.gg"
-      },
-      {
-        protocol: "https",
-        hostname: "static.hltv.org"
       }
     ]
   }

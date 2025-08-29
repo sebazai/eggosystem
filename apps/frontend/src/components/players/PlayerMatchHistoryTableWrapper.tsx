@@ -8,6 +8,7 @@ import {
   convertSeasonToS,
   mapToReadableNameCapitalFirst
 } from "@/lib/utils";
+import type { MatchHistoryResult } from "@eggosystem/types";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -42,6 +43,43 @@ const PlayerMatchHistoryTableWrapper = ({
 
 export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   const router = useRouter();
+
+  // Helper functions to avoid DRY violations
+  const isMatchUpcoming = (matchDate: string): boolean => {
+    const date = new Date(matchDate);
+    const now = new Date();
+    // Set the match date to end of day for comparison since we only have date, not time
+    date.setHours(23, 59, 59, 999);
+    return date > now;
+  };
+
+  const getMatchUrl = (
+    matchId: number,
+    matchDate: string,
+    gameId?: number
+  ): string => {
+    const isUpcoming = isMatchUpcoming(matchDate);
+    const baseUrl = isUpcoming ? "/matches/upcoming" : "/matches";
+    return gameId
+      ? `${baseUrl}/${matchId}/games/${gameId}`
+      : `${baseUrl}/${matchId}`;
+  };
+
+  const handleMatchNavigation = (
+    match: MatchHistoryResult,
+    openInNewTab = false
+  ) => {
+    const url = getMatchUrl(
+      match.match_id,
+      match.match_date,
+      match.game_id ?? undefined
+    );
+    if (openInNewTab) {
+      window.open(url, "_blank");
+    } else {
+      router.push(url);
+    }
+  };
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -331,21 +369,12 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
                   <tr
                     key={`${match.match_id}`}
                     className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                    onClick={() =>
-                      router.push(
-                        match.game_id
-                          ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`
-                      )
-                    }
+                    onClick={() => handleMatchNavigation(match)}
                     onMouseDown={(e) => {
                       // Handle middle mouse button (wheel) click
                       if (e.button === 1) {
                         e.preventDefault(); // Prevent scroll behavior
-                        const url = match.game_id
-                          ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`;
-                        window.open(url, "_blank");
+                        handleMatchNavigation(match, true);
                       }
                     }}
                   >

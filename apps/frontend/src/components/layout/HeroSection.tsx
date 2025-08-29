@@ -334,7 +334,17 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   }, [allUpcomingMatches, allUpcomingStreamedMatches, matchFilter]);
 
   const handleMatchClick = (match: MatchWithStreamUrls) => {
-    router.push(`/matches/${match.match_id}`);
+    // Check if match is in the future (upcoming) based on match_start
+    const matchDate = new Date(match.match_start);
+    const now = new Date();
+
+    if (matchDate > now) {
+      // Navigate to upcoming match page
+      router.push(`/matches/upcoming/${match.match_id}`);
+    } else {
+      // Navigate to completed/past match page
+      router.push(`/matches/${match.match_id}`);
+    }
   };
 
   const handleStreamClick = (match: MatchWithStreamUrls) => {

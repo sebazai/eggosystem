@@ -1,11 +1,13 @@
 import { type Response, type NextFunction } from "express";
 import {
   reserveStreamController,
-  unreserveStreamController
+  unreserveStreamController,
+  getMatchStreamReservationsController
 } from "./match-streams.controllers";
 import {
   createStreamReservation,
-  deleteStreamReservation
+  deleteStreamReservation,
+  getStreamReservationsByMatch
 } from "../models/match-streams.models";
 import { ConflictError } from "../utils/errors";
 import type {
@@ -25,6 +27,10 @@ const mockCreateStreamReservation =
 const mockDeleteStreamReservation =
   deleteStreamReservation as jest.MockedFunction<
     typeof deleteStreamReservation
+  >;
+const mockGetStreamReservationsByMatch =
+  getStreamReservationsByMatch as jest.MockedFunction<
+    typeof getStreamReservationsByMatch
   >;
 
 const mockReservation: Reservation = {
@@ -179,6 +185,55 @@ describe("match-streams controllers", () => {
       ).rejects.toThrow("Database connection failed");
 
       expect(mockDeleteStreamReservation).toHaveBeenCalledWith(123, 1);
+      expect(jsonMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getMatchStreamReservationsController", () => {
+    const mockReq = {
+      params: { match_id: "123" }
+    } as RequestWithParams<{ match_id: string }>;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it("should return stream URLs for match", async () => {
+      const mockReservations = [
+        { ...mockReservation, stream_url: "https://twitch.tv/caster1" },
+        { ...mockReservation, id: 2, stream_url: "https://twitch.tv/caster2" }
+      ];
+
+      mockGetStreamReservationsByMatch.mockResolvedValue(mockReservations);
+
+      await getMatchStreamReservationsController(mockReq, res as Response);
+
+      expect(mockGetStreamReservationsByMatch).toHaveBeenCalledWith(123);
+      expect(jsonMock).toHaveBeenCalledWith({
+        streamUrls: ["https://twitch.tv/caster1", "https://twitch.tv/caster2"]
+      });
+    });
+
+    it("should return empty array when no reservations found", async () => {
+      mockGetStreamReservationsByMatch.mockResolvedValue([]);
+
+      await getMatchStreamReservationsController(mockReq, res as Response);
+
+      expect(mockGetStreamReservationsByMatch).toHaveBeenCalledWith(123);
+      expect(jsonMock).toHaveBeenCalledWith({
+        streamUrls: []
+      });
+    });
+
+    it("should handle database errors", async () => {
+      const dbError = new Error("Database connection failed");
+      mockGetStreamReservationsByMatch.mockRejectedValue(dbError);
+
+      await expect(
+        getMatchStreamReservationsController(mockReq, res as Response)
+      ).rejects.toThrow("Database connection failed");
+
+      expect(mockGetStreamReservationsByMatch).toHaveBeenCalledWith(123);
       expect(jsonMock).not.toHaveBeenCalled();
     });
   });

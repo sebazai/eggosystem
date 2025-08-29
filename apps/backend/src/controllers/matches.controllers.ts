@@ -12,7 +12,8 @@ import {
   getMatchMapVetoes,
   getMatchWithBreadcrumbInfo,
   getMatchesWithTeamDataBySeasonId,
-  getMatchIs2xBO1
+  getMatchIs2xBO1,
+  getMatchTeamLineups
 } from "../models/match.models";
 import type {
   MatchGame,
@@ -180,16 +181,14 @@ export const getMatchTeamStatsController = async (
 
 export const getMatchGamesController = async (
   req: RequestWithParams<{ match_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
   const mapsPlayed = await getMatchGames(match_id);
 
   if (mapsPlayed.length === 0) {
-    res
-      .status(404)
-      .json({ error: { message: "Could not find maps played for match" } });
-    return;
+    return next(new NotFoundError("Could not find maps played for match"));
   }
 
   res.json(mapsPlayed);
@@ -202,4 +201,20 @@ export const getMatchMapVetoesController = async (
   const matchId = parseInt(req.params.match_id, 10);
   const vetoes = await getMatchMapVetoes(matchId);
   res.json(vetoes || []);
+};
+
+export const getMatchTeamLineupsController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+
+  const lineups = await getMatchTeamLineups(matchId);
+
+  if (!lineups) {
+    return next(new NotFoundError("Match lineups not found"));
+  }
+
+  res.json(lineups);
 };

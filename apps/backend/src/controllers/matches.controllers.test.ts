@@ -839,6 +839,7 @@ describe("Matches Controllers", () => {
 
   describe("getMatchGamesController", () => {
     it("should return games for valid match ID", async () => {
+      const mockNext = jest.fn();
       mockRequest.params = { match_id: "123" };
       const mockGames: MatchMapsPlayed[] = [
         {
@@ -853,7 +854,8 @@ describe("Matches Controllers", () => {
 
       await getMatchGamesController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatchGames).toHaveBeenCalledWith(123);
@@ -861,11 +863,13 @@ describe("Matches Controllers", () => {
     });
 
     it("should handle invalid match games ID", async () => {
+      const mockNext = jest.fn();
       mockRequest.params = { match_id: "invalid" };
 
       await getMatchGamesController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
       expect(mockGetMatchGames).toHaveBeenCalledWith(NaN);

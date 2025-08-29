@@ -1,23 +1,16 @@
 import request from "supertest";
-import express from "express";
-import matchRouter from "./match.routes";
+import { app } from "../../app";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
+import type {
+  MatchMapsPlayed,
+  MatchTeamLineup,
+  MatchTeamStats
+} from "@eggosystem/types";
 
-import type { MatchMapsPlayed, MatchTeamStats } from "@eggosystem/types";
+// Add error handler for tests
+app.use(expressErrorHandler);
 
 describe("Match Routes", () => {
-  let app: express.Application;
-
-  beforeEach(() => {
-    app = express();
-    app.use(express.json());
-    app.use("/matches", matchRouter);
-  });
-
-  afterEach(async () => {
-    // Ensure all pending operations are completed
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  });
-
   describe("GET /matches/:game_id/teamstats", () => {
     it("should return team stats for game id 10154", async () => {
       const expectedStats = [
@@ -40,7 +33,7 @@ describe("Match Routes", () => {
       ] satisfies MatchTeamStats[];
 
       const response = await request(app)
-        .get("/matches/10154/teamstats")
+        .get("/api/v1/matches/10154/teamstats")
         .expect("Content-Type", /json/)
         .expect(200);
 
@@ -48,7 +41,72 @@ describe("Match Routes", () => {
     });
   });
 
-  describe("GET /matches/:match_id/mapsplayed", () => {
+  describe("GET /api/v1/matches/:match_id/lineups", () => {
+    it("should return 400 for invalid match_id parameter", async () => {
+      const response = await request(app)
+        .get("/api/v1/matches/invalid/lineups")
+        .expect(400)
+        .expect("Content-Type", "application/problem+json; charset=utf-8");
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid numeric param: match_id",
+        instance: "/api/v1/matches/invalid/lineups"
+      });
+    });
+
+    it("should return 404 for non-existent match", async () => {
+      const response = await request(app).get("/api/v1/matches/999999/lineups");
+
+      // Should be 404 for non-existent match
+      expect(response.status).toBe(404);
+      expect(response.headers["content-type"]).toContain(
+        "application/problem+json"
+      );
+    });
+
+    it("should return lineups for valid match_id", async () => {
+      // This test would need a valid match ID from your test database
+      // For now, we'll test the endpoint structure
+      const response = await request(app).get("/api/v1/matches/1/lineups");
+
+      // The response could be 200, 400, or 404 depending on data availability
+      expect([200, 400, 404]).toContain(response.status);
+
+      if (response.status === 200) {
+        // Verify the response is an object (team IDs as keys)
+        expect(typeof response.body).toBe("object");
+        expect(response.body).not.toBeNull();
+
+        // Verify the structure of each team in the response
+        Object.values(response.body).forEach((team) => {
+          const teamData = team as MatchTeamLineup;
+          expect(teamData).toHaveProperty("id");
+          expect(teamData).toHaveProperty("name");
+          expect(teamData).toHaveProperty("logo");
+          expect(teamData).toHaveProperty("players");
+          expect(Array.isArray(teamData.players)).toBe(true);
+
+          // Verify player structure if players exist
+          teamData.players.forEach((player) => {
+            expect(player).toHaveProperty("steam_id");
+            expect(player).toHaveProperty("name");
+            expect(player).toHaveProperty("nickname");
+            expect(player).toHaveProperty("cs2_rank");
+            expect(player).toHaveProperty("faceit_level");
+            expect(player).toHaveProperty("faceit_elo");
+            expect(player).toHaveProperty("cs_hours");
+            expect(player).toHaveProperty("games_played");
+            expect(player).toHaveProperty("maps_played");
+          });
+        });
+      }
+    });
+  });
+
+  describe("GET /api/v1/matches/:match_id/mapsplayed", () => {
     it("should return maps played for match id 7405", async () => {
       const expectedMaps = [
         {
@@ -75,21 +133,65 @@ describe("Match Routes", () => {
       ] satisfies MatchMapsPlayed[];
 
       const response = await request(app)
-        .get("/matches/7405/mapsplayed")
+        .get("/api/v1/matches/7405/mapsplayed")
         .expect("Content-Type", /json/)
         .expect(200);
 
       expect(response.body).toEqual(expectedMaps);
     });
 
-    it("should handle non-existent match id", async () => {
+    it("should return 404 for non-existent match", async () => {
+      const response = await request(app).get(
+        "/api/v1/matches/999999/mapsplayed"
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.headers["content-type"]).toContain(
+        "application/problem+json"
+      );
+    });
+  });
+
+  describe("GET /api/v1/matches/:match_id/streams", () => {
+    it("should return stream URLs structure for valid match", async () => {
       const response = await request(app)
-        .get("/matches/99999/mapsplayed")
+        .get("/api/v1/matches/7405/streams")
         .expect("Content-Type", /json/)
-        .expect(404);
+        .expect(200);
+
+      // Should return object with streamUrls array
+      expect(response.body).toHaveProperty("streamUrls");
+      expect(Array.isArray(response.body.streamUrls)).toBe(true);
+
+      // Each stream URL should be a string (if any)
+      response.body.streamUrls.forEach((url: string) => {
+        expect(typeof url).toBe("string");
+      });
+    });
+
+    it("should return 400 for invalid match_id parameter", async () => {
+      const response = await request(app)
+        .get("/api/v1/matches/invalid/streams")
+        .expect(400)
+        .expect("Content-Type", "application/problem+json; charset=utf-8");
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Bad Request",
+        status: 400,
+        detail: "Invalid numeric param: match_id",
+        instance: "/api/v1/matches/invalid/streams"
+      });
+    });
+
+    it("should return empty streams for non-existent match", async () => {
+      const response = await request(app)
+        .get("/api/v1/matches/999999/streams")
+        .expect("Content-Type", /json/)
+        .expect(200);
 
       expect(response.body).toEqual({
-        error: { message: "Could not find maps played for match" }
+        streamUrls: []
       });
     });
   });

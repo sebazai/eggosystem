@@ -1,23 +1,30 @@
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { cn, createNextUrl, createTeamLogoUrl } from "@/lib/utils";
-import type { MatchInfo } from "@eggosystem/types";
+import type { MatchInfo, MatchTeamInfo } from "@eggosystem/types";
+
+// Local interface with teams as array instead of object
+interface ProcessedMatchInfo extends Omit<MatchInfo, "teams"> {
+  teams: MatchTeamInfo[];
+}
 import Link from "next/link";
 import { Tv } from "lucide-react";
 
 interface UpcomingMatchHeaderProps {
   matchId: number;
-  matchInfo: MatchInfo;
+  matchInfo: ProcessedMatchInfo;
   platform: string;
   externalMatchRoomUrl: string | null;
+  streamUrls?: string[]; // Optional array of stream URLs
   className?: string;
 }
 
 export function UpcomingMatchHeader({
   matchInfo,
+  streamUrls,
   className
 }: UpcomingMatchHeaderProps) {
-  // Get teams data safely
-  const team1 = matchInfo.teams?.[0] ?? {
+  // Get teams data safely (teams is now an array)
+  const team1 = matchInfo.teams[0] ?? {
     id: 0,
     name: "Team 1",
     logo: "",
@@ -25,7 +32,7 @@ export function UpcomingMatchHeader({
     organization_name: ""
   };
 
-  const team2 = matchInfo.teams?.[1] ?? {
+  const team2 = matchInfo.teams[1] ?? {
     id: 0,
     name: "Team 2",
     logo: "",
@@ -55,6 +62,10 @@ export function UpcomingMatchHeader({
 
   // For upcoming matches, we use a placeholder for the score
   const placeholderScore = "?";
+
+  // Check if we have any stream URLs available
+  const hasStreamUrls = streamUrls && streamUrls.length > 0;
+  const primaryStreamUrl = hasStreamUrls ? streamUrls[0] : null;
 
   return (
     <div
@@ -88,7 +99,11 @@ export function UpcomingMatchHeader({
             className="h-10 w-10 md:h-14 md:w-14 relative"
           >
             <NextImageFallback
-              src={createTeamLogoUrl(team1.logo || "")}
+              src={
+                team1.logo
+                  ? createTeamLogoUrl(team1.logo)
+                  : "/team-images/nologo.png"
+              }
               alt={`${team1.name} logo`}
               fill
               className="object-contain"
@@ -112,15 +127,17 @@ export function UpcomingMatchHeader({
               <span>
                 {seasonName} {leagueName}
               </span>
-              <Link
-                href="https://www.twitch.tv/kanaliigatv"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center mt-1 text-purple-400 hover:text-purple-300 transition-colors"
-              >
-                <Tv className="w-3 h-3 mr-1" />
-                <span>LIVE ON TWITCH</span>
-              </Link>
+              {hasStreamUrls && primaryStreamUrl && (
+                <Link
+                  href={primaryStreamUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center mt-1 text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  <Tv className="w-3 h-3 mr-1" />
+                  <span>LIVE ON TWITCH</span>
+                </Link>
+              )}
             </div>
             <div className="xs:hidden">-</div>
             {/* Score 2 */}
@@ -134,15 +151,17 @@ export function UpcomingMatchHeader({
             <div>
               {seasonName} {leagueName}
             </div>
-            <Link
-              href="https://www.twitch.tv/kanaliigatv"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center mt-1 text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              <Tv className="w-3 h-3 mr-1" />
-              <span>LIVE ON TWITCH</span>
-            </Link>
+            {hasStreamUrls && primaryStreamUrl && (
+              <Link
+                href={primaryStreamUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center mt-1 text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                <Tv className="w-3 h-3 mr-1" />
+                <span>LIVE ON TWITCH</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -170,7 +189,11 @@ export function UpcomingMatchHeader({
             className="h-10 w-10 md:h-14 md:w-14 relative"
           >
             <NextImageFallback
-              src={createTeamLogoUrl(team2.logo || "")}
+              src={
+                team2.logo
+                  ? createTeamLogoUrl(team2.logo)
+                  : "/team-images/nologo.png"
+              }
               alt={`${team2.name} logo`}
               fill
               className="object-contain"

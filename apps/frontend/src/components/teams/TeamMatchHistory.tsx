@@ -4,6 +4,7 @@ import {
   mapToReadableNameCapitalFirst,
   type FilterParamsQuery
 } from "@/lib/utils";
+import type { TeamMatchHistory as TeamMatchHistoryType } from "@eggosystem/types";
 
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -28,6 +29,40 @@ export const TeamMatchHistory = ({
   });
 
   const router = useRouter();
+
+  // Helper functions to avoid DRY violations
+  const isMatchUpcoming = (matchDate: string): boolean => {
+    const date = new Date(matchDate);
+    const now = new Date();
+    // Set the match date to end of day for comparison since we only have date, not time
+    date.setHours(23, 59, 59, 999);
+    return date > now;
+  };
+
+  const getMatchUrl = (
+    matchId: number,
+    matchDate: string,
+    gameId?: number
+  ): string => {
+    const isUpcoming = isMatchUpcoming(matchDate);
+    const baseUrl = isUpcoming ? "/matches/upcoming" : "/matches";
+    return gameId
+      ? `${baseUrl}/${matchId}/games/${gameId}`
+      : `${baseUrl}/${matchId}`;
+  };
+
+  const handleMatchNavigation = (
+    match: TeamMatchHistoryType,
+    openInNewTab = false
+  ) => {
+    const url = getMatchUrl(match.match_id, match.date, match.game_id);
+    if (openInNewTab) {
+      window.open(url, "_blank");
+    } else {
+      router.push(url);
+    }
+  };
+
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -128,7 +163,7 @@ export const TeamMatchHistory = ({
               </tr>
             ) : sortedMatches && sortedMatches.length > 0 ? (
               paginatedMatches.map((match) => {
-                const teamWon = match.result === "won";
+                const teamWon = match.result === "win";
                 const formattedDate = format(
                   new Date(match.date),
                   "dd.MM.yyyy"
@@ -138,21 +173,12 @@ export const TeamMatchHistory = ({
                   <tr
                     key={match.match_id}
                     className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                    onClick={() =>
-                      router.push(
-                        match.game_id
-                          ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`
-                      )
-                    }
+                    onClick={() => handleMatchNavigation(match)}
                     onMouseDown={(e) => {
                       // Handle middle mouse button (wheel) click
                       if (e.button === 1) {
                         e.preventDefault(); // Prevent scroll behavior
-                        const url = match.game_id
-                          ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`;
-                        window.open(url, "_blank");
+                        handleMatchNavigation(match, true);
                       }
                     }}
                   >
@@ -196,9 +222,9 @@ export const TeamMatchHistory = ({
                     <td className="hidden md:table-cell px-3 py-2 text-center">
                       <span
                         className={
-                          match.result === "won"
+                          match.result === "win"
                             ? "text-green-500"
-                            : match.result === "lost"
+                            : match.result === "loss"
                               ? "text-red-500"
                               : "text-yellow-500"
                         }

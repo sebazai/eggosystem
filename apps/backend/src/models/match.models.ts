@@ -1,6 +1,8 @@
 import { generateQueryWithFilters } from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
 import {
+  type League,
+  type Season,
   type Match,
   type MatchesByFilters,
   type ParsedParams,
@@ -11,6 +13,8 @@ import {
   type MatchTeamStats,
   type MatchMapVetoes,
   type Stage,
+  type MatchTeamLineup,
+  type MatchTeamLineupRaw,
   MatchStatus,
   type MatchInfoQuery,
   type MatchesWithTeamDataQuery,
@@ -18,8 +22,6 @@ import {
   FaceitMatchStatus,
   type MatchGamesByTeam,
   type MatchWithStreamUrls,
-  type Season,
-  type League,
   type SeasonLeague
 } from "@eggosystem/types";
 import {
@@ -489,7 +491,7 @@ export const getHubMatchesByExternalMatchRoomId = async (
   connection?: PoolConnection
 ) => {
   const query = `SELECT id FROM Matches WHERE external_match_room_id = ? ORDER BY id ASC`;
-  const matches = await runQuery<Array<{ id: number }> | undefined>(
+  const matches = await runQuery<Array<{ id: Match["id"] }> | undefined>(
     query,
     [externalMatchRoomId],
     connection
@@ -734,7 +736,7 @@ export const updateMatchFinished = async (
   startedAt: string,
   finishedAt: string
 ): Promise<void> => {
-  const matches = await runQuery<Array<{ id: number }>>(
+  const matches = await runQuery<Array<{ id: Match["id"] }>>(
     "SELECT id FROM Matches WHERE external_match_room_id = ?",
     [externalMatchRoomId]
   );
@@ -762,7 +764,7 @@ export const updateMatchEndTime = async (
   externalMatchRoomId: string,
   finishedAt: string
 ): Promise<void> => {
-  const matches = await runQuery<Array<{ id: number }>>(
+  const matches = await runQuery<Array<{ id: Match["id"] }>>(
     "SELECT id FROM Matches WHERE external_match_room_id = ?",
     [externalMatchRoomId]
   );
@@ -835,19 +837,19 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
 
   const results = await runQuery<
     Array<{
-      id: number;
-      league_id: number;
-      season_id: number;
+      id: Match["id"];
+      league_id: League["id"];
+      season_id: Season["id"];
       platform: Season["platform"];
-      stage: number;
-      match_date: string;
-      start_time: string;
-      end_time: string;
-      best_of: number;
-      external_match_room_id: string | null;
+      stage: Match["stage"];
+      match_date: Match["match_date"];
+      start_time: Match["start_time"];
+      end_time: Match["end_time"];
+      best_of: Match["best_of"];
+      external_match_room_id: Match["external_match_room_id"];
       status: Match["status"];
-      round: number;
-      group: number;
+      round: Match["round"];
+      group: Match["group"];
       league_name: League["name"];
       league_tier: SeasonLeague["tier"];
       team_names: string | null;
@@ -925,4 +927,127 @@ export const getMatchIdsWithSameExternalMatchRoomId = async (
     return [];
   }
   return getHubMatchesByExternalMatchRoomId(match.external_match_room_id);
+};
+
+export const getMatchTeamLineups = async (matchId: number) => {
+  const query = `
+    WITH PlayerGameCounts AS (
+      SELECT 
+        ps.steam_id,
+        COUNT(DISTINCT mg.id) as games_played,
+        AVG(ps.kana_rating) as kana_rating
+      FROM PlayerStats ps
+      JOIN MatchGames mg ON ps.game_id = mg.id
+      JOIN Matches m2 ON mg.match_id = m2.id
+      WHERE m2.season_id = (SELECT season_id FROM Matches WHERE id = ?)
+      GROUP BY ps.steam_id
+    ),
+    LatestPlayerRanks AS (
+      -- Get latest season data for each player as fallback
+      SELECT 
+        spr.steam_id,
+        spr.cs2_rank,
+        spr.faceit_level,
+        spr.faceit_elo,
+        spr.cs_hours,
+        ROW_NUMBER() OVER (PARTITION BY spr.steam_id ORDER BY spr.season_id DESC) as rank_recency
+      FROM SeasonPlayerRanks spr
+    ),
+    LatestPlayerMapCounts AS (
+      -- Get map counts from latest season as fallback
+      SELECT 
+        ps.steam_id,
+        COUNT(DISTINCT mg.id) as maps_played,
+        ROW_NUMBER() OVER (PARTITION BY ps.steam_id ORDER BY m2.season_id DESC) as map_recency
+      FROM PlayerStats ps
+      JOIN MatchGames mg ON ps.game_id = mg.id
+      JOIN Matches m2 ON mg.match_id = m2.id
+      GROUP BY ps.steam_id, m2.season_id
+    ),
+    RankedPlayers AS (
+      SELECT 
+        t.id as team_id,
+        t.name as team_name,
+        t.team_logo,
+        sp.steam_id,
+        sp.nickname as player_name,
+        sp.nickname as player_nickname,
+        -- Use current season data if available, otherwise use latest season data
+        COALESCE(spr_current.cs2_rank, spr_latest.cs2_rank) as cs2_rank,
+        COALESCE(spr_current.faceit_level, spr_latest.faceit_level) as faceit_level,
+        COALESCE(spr_current.faceit_elo, spr_latest.faceit_elo) as faceit_elo,
+        COALESCE(spr_current.cs_hours, spr_latest.cs_hours) as cs_hours,
+        COALESCE(pgc.games_played, 0) as games_played,
+        COALESCE(pgc.games_played, lpmc.maps_played, 0) as maps_played,
+        COALESCE(pgc.kana_rating, 0) as kana_rating,
+        ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY COALESCE(pgc.games_played, lpmc.maps_played, 0) DESC, sp.nickname) as player_rank
+      FROM Matches m
+      JOIN MatchTeams mt ON m.id = mt.match_id
+      JOIN Teams t ON mt.team_id = t.id
+      JOIN SeasonTeamPlayers stp ON stp.team_id = t.id AND stp.season_id = m.season_id
+      JOIN SteamPlayers sp ON stp.steam_id = sp.steam_id
+      LEFT JOIN SeasonPlayerRanks spr_current ON spr_current.steam_id = sp.steam_id AND spr_current.season_id = m.season_id
+      LEFT JOIN LatestPlayerRanks spr_latest ON spr_latest.steam_id = sp.steam_id AND spr_latest.rank_recency = 1
+      LEFT JOIN PlayerGameCounts pgc ON sp.steam_id = pgc.steam_id
+      LEFT JOIN LatestPlayerMapCounts lpmc ON lpmc.steam_id = sp.steam_id AND lpmc.map_recency = 1
+      WHERE m.id = ?
+    )
+    SELECT 
+      team_id,
+      team_name,
+      team_logo,
+      steam_id,
+      player_name,
+      player_nickname,
+      cs2_rank,
+      faceit_level,
+      faceit_elo,
+      cs_hours,
+      games_played,
+      maps_played
+    FROM RankedPlayers
+    WHERE player_rank <= 5
+    ORDER BY team_id, player_rank
+  `;
+
+  const results = await runQuery<MatchTeamLineupRaw[]>(query, [
+    matchId,
+    matchId
+  ]);
+
+  // Handle case where runQuery returns an object or empty result
+  if (!results || !Array.isArray(results) || results.length === 0) {
+    return null;
+  }
+
+  // Group players by team
+  const teams: Record<string, MatchTeamLineup> = {};
+
+  results.forEach((row: MatchTeamLineupRaw) => {
+    const teamKey = row.team_id.toString();
+
+    if (!teams[teamKey]) {
+      teams[teamKey] = {
+        id: row.team_id,
+        name: row.team_name,
+        logo: row.team_logo,
+        players: []
+      } satisfies MatchTeamLineup;
+    }
+
+    teams[teamKey].players.push({
+      steam_id: row.steam_id,
+      name: row.player_name,
+      nickname: row.player_nickname,
+      cs2_rank: row.cs2_rank,
+      faceit_level: row.faceit_level,
+      faceit_elo: row.faceit_elo,
+      cs_hours: row.cs_hours,
+      games_played: row.games_played,
+      maps_played: row.maps_played,
+      kana_rating: row.kana_rating
+    });
+  });
+
+  return teams;
 };

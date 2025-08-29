@@ -10,11 +10,13 @@ import {
   getMatchGameController,
   getMatchMapVetoesController,
   getMatchBreadcrumbController,
-  getMatchIs2xBO1Controller
+  getMatchIs2xBO1Controller,
+  getMatchTeamLineupsController
 } from "../../controllers/matches.controllers";
 import {
   reserveStreamController,
-  unreserveStreamController
+  unreserveStreamController,
+  getMatchStreamReservationsController
 } from "../../controllers/match-streams.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -72,7 +74,20 @@ router.get(
   getMatchIs2xBO1Controller
 );
 
+router.get(
+  "/:match_id/lineups",
+  validateNumericParams(),
+  getMatchTeamLineupsController
+);
+
 router.get("/", getMatchesController);
+
+// Get stream reservations for a match (public endpoint)
+router.get(
+  "/:match_id/streams",
+  validateNumericParams(),
+  getMatchStreamReservationsController
+);
 
 // Stream reservation routes (require authentication and caster role)
 router.post(

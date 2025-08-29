@@ -84,40 +84,77 @@ export const CombinedMapPerformanceRadar: React.FC<
       : [];
   }, [team2MapStats]);
 
-  // Create a map of all map names from both teams
+  // Create a map of all map names from both teams (normalize to avoid duplicates)
   const allMapNames = useMemo(() => {
     const mapNames = new Set<string>();
-    validTeam1MapStats.forEach((stat) => mapNames.add(stat.map_name));
-    validTeam2MapStats.forEach((stat) => mapNames.add(stat.map_name));
+    validTeam1MapStats.forEach((stat) =>
+      mapNames.add(mapToReadableName(stat.map_name))
+    );
+    validTeam2MapStats.forEach((stat) =>
+      mapNames.add(mapToReadableName(stat.map_name))
+    );
     return Array.from(mapNames);
   }, [validTeam1MapStats, validTeam2MapStats]);
 
   // Prepare data for radar chart combining both teams
   const chartData = useMemo(() => {
-    return allMapNames.map((mapName) => {
-      const team1Stat = validTeam1MapStats.find(
-        (stat) => stat.map_name === mapName
-      ) || {
-        map_name: mapName,
-        maps_played: 0,
-        wins: 0,
-        losses: 0,
-        win_percentage: 0
-      };
+    return allMapNames.map((normalizedMapName) => {
+      // Find stats by comparing normalized map names
+      const team1Stats = validTeam1MapStats.filter(
+        (stat) => mapToReadableName(stat.map_name) === normalizedMapName
+      );
+      const team2Stats = validTeam2MapStats.filter(
+        (stat) => mapToReadableName(stat.map_name) === normalizedMapName
+      );
 
-      const team2Stat = validTeam2MapStats.find(
-        (stat) => stat.map_name === mapName
-      ) || {
-        map_name: mapName,
-        maps_played: 0,
-        wins: 0,
-        losses: 0,
-        win_percentage: 0
-      };
+      // Combine stats for maps with the same normalized name
+      const team1Stat = team1Stats.reduce(
+        (acc, stat) => ({
+          map_name: normalizedMapName,
+          maps_played: acc.maps_played + (stat.maps_played || 0),
+          wins: acc.wins + (stat.wins || 0),
+          losses: acc.losses + (stat.losses || 0),
+          win_percentage: 0 // Will calculate below
+        }),
+        {
+          map_name: normalizedMapName,
+          maps_played: 0,
+          wins: 0,
+          losses: 0,
+          win_percentage: 0
+        }
+      );
+
+      const team2Stat = team2Stats.reduce(
+        (acc, stat) => ({
+          map_name: normalizedMapName,
+          maps_played: acc.maps_played + (stat.maps_played || 0),
+          wins: acc.wins + (stat.wins || 0),
+          losses: acc.losses + (stat.losses || 0),
+          win_percentage: 0 // Will calculate below
+        }),
+        {
+          map_name: normalizedMapName,
+          maps_played: 0,
+          wins: 0,
+          losses: 0,
+          win_percentage: 0
+        }
+      );
+
+      // Calculate win percentages
+      team1Stat.win_percentage =
+        team1Stat.maps_played > 0
+          ? (team1Stat.wins / team1Stat.maps_played) * 100
+          : 0;
+      team2Stat.win_percentage =
+        team2Stat.maps_played > 0
+          ? (team2Stat.wins / team2Stat.maps_played) * 100
+          : 0;
 
       return {
-        map: mapName,
-        mapName: mapToReadableName(mapName),
+        map: normalizedMapName,
+        mapName: normalizedMapName,
         team1Value:
           team1Stat.maps_played > 0
             ? team1Stat.wins / team1Stat.maps_played

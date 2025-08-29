@@ -14,6 +14,29 @@ export const FilteredMatchesList = ({
   const { matches, isError, isLoading, isValidating } =
     useRecentMatches(filterQueryParams);
 
+  // Helper function to determine the correct match URL
+  const getMatchUrl = (match: NonNullable<typeof matches>[0]) => {
+    // Since this component shows "recent matches" with scores, they are likely completed matches
+    // But we can still check if the match date is in the future as a safety measure
+    const matchDate = new Date(match.match_date);
+    const now = new Date();
+
+    // Set the match date to end of day for comparison since we only have date, not time
+    matchDate.setHours(23, 59, 59, 999);
+
+    if (matchDate > now) {
+      // Future match - route to upcoming page
+      return match.game_id
+        ? `/matches/upcoming/${match.match_id}`
+        : `/matches/upcoming/${match.match_id}`;
+    } else {
+      // Past/completed match - route to regular match page
+      return match.game_id
+        ? `/matches/${match.match_id}/games/${match.game_id}`
+        : `/matches/${match.match_id}`;
+    }
+  };
+
   if (isError) {
     return <ContentContainer>Error loading Matches</ContentContainer>;
   }
@@ -42,15 +65,7 @@ export const FilteredMatchesList = ({
           <h2 className="text-left text-sm sm:text-lg mb-2">{date}</h2>
           {matchesForDate.map((match, index) => (
             <div key={index} className="mb-2 sm:mb-4">
-              <Link
-                className="no-underline"
-                href="/matches/[id]"
-                as={
-                  match.game_id
-                    ? `/matches/${match.match_id}/games/${match.game_id}`
-                    : `/matches/${match.match_id}`
-                }
-              >
+              <Link className="no-underline" href={getMatchUrl(match)}>
                 <div className="bg-card grid grid-cols-[1fr_auto_1fr] min-h-10 md:min-h-12 items-center gap-2 px-0 transition-transform transform hover:scale-105 hover:ring-2 hover:ring-ring mb-1 rounded-lg shadow-md dark:shadow-muted">
                   <div className="flex items-center justify-end">
                     <div className="text-right xs:break-normal break-words text-sm sm:text-base mr-1">

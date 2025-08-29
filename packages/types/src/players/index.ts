@@ -9,3 +9,4 @@ export * from "./PlayerFullName.interface";
 export * from "./PlayerMapStats.interface";
 export * from "./PlayerHistoricalData.interface";
 export * from "./PlayerHistoricalAverage.interface";
+export * from "./PlayerStatistics.interface";

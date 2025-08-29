@@ -101,16 +101,31 @@ export const AutoBreadcrumbs = () => {
           // Resource ID – only if there is a valid resource name before it
           const resource = segments[i - 1];
           if (resource) {
-            try {
-              const label = await fetchLabelFor(resource, segment);
+            // Handle special case for /matches/upcoming/{match_id}
+            if (resource === "matches" && segment === "upcoming") {
+              crumbs.push({
+                href: hrefAccumulator,
+                label: "Upcoming"
+              });
+            } else if (
+              segments[i - 2] === "upcoming" &&
+              segments[i - 3] === "matches"
+            ) {
+              // This is the match_id in /matches/upcoming/{match_id}
+              const label = await fetchLabelFor("matches", segment).catch(
+                () => segment
+              );
               crumbs.push({
                 href: hrefAccumulator,
                 label
               });
-            } catch {
+            } else {
+              const label = await fetchLabelFor(resource, segment).catch(
+                () => segment
+              );
               crumbs.push({
                 href: hrefAccumulator,
-                label: segment
+                label
               });
             }
           }

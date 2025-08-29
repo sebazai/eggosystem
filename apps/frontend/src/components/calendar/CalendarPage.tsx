@@ -270,6 +270,70 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const { calendarMatches, isLoading: _isLoadingCalendarMatches } =
     useSeasonCalendarMatches(seasonId, selectedDivision);
 
+  // Helper functions
+  const isMatchUpcoming = (matchStart: string): boolean => {
+    const matchDate = new Date(matchStart);
+    const now = new Date();
+    return matchDate > now;
+  };
+
+  const getMatchButtonText = (matchStart: string, isDialog = false): string => {
+    const isUpcoming = isMatchUpcoming(matchStart);
+    if (isDialog) {
+      return isUpcoming ? "View Upcoming Match" : "View Match Details";
+    }
+    return isUpcoming ? "View Upcoming" : "View Details";
+  };
+
+  const openMatchUrl = (matchId: string, matchStart: string) => {
+    const matchUrl = isMatchUpcoming(matchStart)
+      ? `/matches/upcoming/${matchId}`
+      : `/matches/${matchId}`;
+
+    window.open(matchUrl, "_blank");
+  };
+
+  const handleMatchButtonClick = (
+    e: React.MouseEvent,
+    match: MatchWithStreamUrls
+  ) => {
+    e.stopPropagation(); // Prevent triggering the parent onClick
+    openMatchUrl(match.match_id, match.match_start);
+  };
+
+  const createEventDetails = (
+    id: string,
+    title: string,
+    start: string,
+    end: string,
+    league: string,
+    streamUrl?: string[],
+    team1?: string,
+    team2?: string,
+    status?: string
+  ): EventDetails => ({
+    id,
+    title,
+    start,
+    end,
+    league,
+    streamUrl,
+    team1: team1 || "",
+    team2: team2 || "",
+    status: status || ""
+  });
+
+  const handleEventSelect = (eventDetails: EventDetails) => {
+    setSelectedEvent(eventDetails);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogMatchClick = () => {
+    if (selectedEvent) {
+      openMatchUrl(selectedEvent.id, selectedEvent.start);
+    }
+  };
+
   // Update URL parameters without page reload
   const updateUrlParams = (
     newView?: "dayGridMonth" | "timeGridWeek",
@@ -314,18 +378,19 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         }
 
         const event = info.event;
-        setSelectedEvent({
-          id: event.id,
-          title: event.title,
-          start: event.startStr,
-          end: event.endStr,
-          league: event.extendedProps?.league || "",
-          streamUrl: event.extendedProps?.streamUrl,
-          team1: event.extendedProps?.team1 || "",
-          team2: event.extendedProps?.team2 || "",
-          status: event.extendedProps?.status || ""
-        } satisfies EventDetails);
-        setIsDialogOpen(true);
+        handleEventSelect(
+          createEventDetails(
+            event.id,
+            event.title,
+            event.startStr,
+            event.endStr,
+            event.extendedProps?.league || "",
+            event.extendedProps?.streamUrl,
+            event.extendedProps?.team1,
+            event.extendedProps?.team2,
+            event.extendedProps?.status || ""
+          )
+        );
       },
       eventContent: (arg: EventContentArg) => {
         const startTime = formatInTimezone(arg.event.startStr, "p");
@@ -432,18 +497,19 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
 
           // Add click handler to open event details
           eventEl.addEventListener("click", () => {
-            setSelectedEvent({
-              id: event.id,
-              title: event.title,
-              start: event.startStr,
-              end: event.endStr,
-              league: event.extendedProps?.league || "",
-              streamUrl: event.extendedProps?.streamUrl,
-              team1: event.extendedProps?.team1 || "",
-              team2: event.extendedProps?.team2 || "",
-              status: event.extendedProps?.status || ""
-            } satisfies EventDetails);
-            setIsDialogOpen(true);
+            handleEventSelect(
+              createEventDetails(
+                event.id,
+                event.title,
+                event.startStr,
+                event.endStr,
+                event.extendedProps?.league || "",
+                event.extendedProps?.streamUrl,
+                event.extendedProps?.team1,
+                event.extendedProps?.team2,
+                event.extendedProps?.status || ""
+              )
+            );
 
             // Close the popover
             const popover = document.querySelector(".fc-more-popover");
@@ -690,18 +756,19 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                       key={match.match_id}
                       className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => {
-                        setSelectedEvent({
-                          id: match.match_id,
-                          title: match.title,
-                          start: match.match_start,
-                          end: match.match_end,
-                          league: match.league_name,
-                          streamUrl: match.stream_urls,
-                          team1: match.match_team1,
-                          team2: match.match_team2,
-                          status: match.match_status
-                        });
-                        setIsDialogOpen(true);
+                        handleEventSelect(
+                          createEventDetails(
+                            match.match_id,
+                            match.title,
+                            match.match_start,
+                            match.match_end,
+                            match.league_name,
+                            match.stream_urls,
+                            match.match_team1,
+                            match.match_team2,
+                            match.match_status
+                          )
+                        );
                       }}
                     >
                       <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
@@ -730,8 +797,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                         variant="outline"
                         size="sm"
                         className="w-full sm:w-auto text-xs sm:text-sm"
+                        onClick={(e) => handleMatchButtonClick(e, match)}
                       >
-                        View Details
+                        {getMatchButtonText(match.match_start)}
                       </Button>
                     </div>
                   )
@@ -791,13 +859,11 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                   handleStreamClick={handleStreamClick}
                 />
                 <Button
-                  onClick={() => {
-                    window.open(`/matches/${selectedEvent.id}`, "_blank");
-                  }}
+                  onClick={handleDialogMatchClick}
                   variant="outline"
                   className="w-full"
                 >
-                  Go to Match
+                  {getMatchButtonText(selectedEvent.start, true)}
                 </Button>
               </div>
             </div>

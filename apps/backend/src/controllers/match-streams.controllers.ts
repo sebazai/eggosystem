@@ -1,7 +1,8 @@
 import { type Response, type NextFunction } from "express";
 import {
   createStreamReservation,
-  deleteStreamReservation
+  deleteStreamReservation,
+  getStreamReservationsByMatch
 } from "../models/match-streams.models";
 import type {
   RequestWithParams,
@@ -89,5 +90,22 @@ export const unreserveStreamController = async (
 
   res.json({
     message: "Stream reservation removed successfully"
+  });
+};
+
+export const getMatchStreamReservationsController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response
+) => {
+  // validateNumericParams middleware guarantees this is a valid number
+  const matchId = +req.params.match_id;
+
+  const reservations = await getStreamReservationsByMatch(matchId);
+
+  // Extract just the stream URLs for the frontend
+  const streamUrls = reservations.map((reservation) => reservation.stream_url);
+
+  res.json({
+    streamUrls
   });
 };
