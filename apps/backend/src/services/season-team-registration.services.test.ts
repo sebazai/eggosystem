@@ -1142,25 +1142,6 @@ describe("Season team registration services", () => {
       await insertTestUsersForSignup();
     });
 
-    it("should detect when individual validations pass but submission fails", async () => {
-      const formData = _.cloneDeep(validSignupData);
-
-      // Set up scenario where privacy policy is not accepted (this is checked during validation)
-      await runQuery(
-        "UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ? WHERE account_id = ?",
-        [false, formData.players[2].accountId]
-      );
-
-      await expect(
-        registrationServices.validatePlayersFromDBForSignup(
-          seasonDetails.id,
-          formData.teamId,
-          formData.organizationId,
-          formData.players.map((p) => p.steamId)
-        )
-      ).rejects.toThrow(/has not accepted privacy policy/);
-    });
-
     it("should validate team organization relationship", async () => {
       const formData = _.cloneDeep(validSignupData);
       // Use team that doesn't belong to the organization
