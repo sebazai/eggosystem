@@ -74,3 +74,129 @@ export const getUpcomingMatchesSorted = (
 
   return sorted;
 };
+
+/**
+ * Finds the earliest start time and latest end time from a list of matches
+ * Adds a 30-minute buffer before and after
+ * Returns times in HH:mm:ss format
+ */
+export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
+  if (!matches.length) {
+    return {
+      minTime: "00:00:00",
+      maxTime: "24:00:00"
+    };
+  }
+
+  // Find earliest start and latest end
+  const times = matches.reduce(
+    (acc, match) => {
+      const startTime = new Date(match.match_start);
+      const endTime = new Date(match.match_end);
+
+      if (!acc.earliest || startTime < acc.earliest) {
+        acc.earliest = startTime;
+      }
+      if (!acc.latest || endTime > acc.latest) {
+        acc.latest = endTime;
+      }
+
+      return acc;
+    },
+    { earliest: null as Date | null, latest: null as Date | null }
+  );
+
+  if (!times.earliest || !times.latest) {
+    return {
+      minTime: "00:00:00",
+      maxTime: "24:00:00"
+    };
+  }
+
+  // Calculate time range in hours
+  const rangeInHours =
+    (times.latest.getTime() - times.earliest.getTime()) / (1000 * 60 * 60);
+
+  // Create new Date objects for buffer calculations to avoid modifying originals
+  const minDate = new Date(times.earliest);
+  const maxDate = new Date(times.latest);
+
+  if (rangeInHours < 10) {
+    // For ranges less than 10 hours, center the events in a 10-hour window
+    const midPoint = new Date(
+      (times.earliest.getTime() + times.latest.getTime()) / 2
+    );
+    const fiveHoursInMs = 5 * 60 * 60 * 1000;
+
+    minDate.setTime(midPoint.getTime() - fiveHoursInMs);
+    maxDate.setTime(midPoint.getTime() + fiveHoursInMs);
+  } else {
+    // For ranges over 10 hours, just add 30-minute buffer
+    minDate.setMinutes(minDate.getMinutes() - 30);
+    maxDate.setMinutes(maxDate.getMinutes() + 30);
+  }
+
+  // Format times as HH:mm:ss
+  let minTime = minDate.toTimeString().slice(0, 8);
+  let maxTime = maxDate.toTimeString().slice(0, 8);
+
+  // Convert times to hours for easier calculation
+  const minHours =
+    minDate.getHours() +
+    minDate.getMinutes() / 60 +
+    minDate.getSeconds() / 3600;
+  let maxHours =
+    maxDate.getHours() +
+    maxDate.getMinutes() / 60 +
+    maxDate.getSeconds() / 3600;
+
+  // If max time is less than min time, add 24 hours to max time
+  if (maxHours < minHours) {
+    maxHours += 24;
+  }
+
+  // Calculate the current range in hours
+  const currentRange = maxHours - minHours;
+
+  // If range is less than 10 hours, extend it
+  if (currentRange < 10) {
+    // Center the events in a 10-hour window
+    const midPoint = minHours + currentRange / 2;
+    const newMinHours = midPoint - 5; // 5 hours before midpoint
+    const newMaxHours = midPoint + 5; // 5 hours after midpoint
+
+    // Convert hours back to HH:mm:ss format
+    const minH = Math.floor(newMinHours);
+    const minM = Math.floor((newMinHours - minH) * 60);
+    const minS = Math.floor(((newMinHours - minH) * 60 - minM) * 60);
+    minTime = `${minH.toString().padStart(2, "0")}:${minM.toString().padStart(2, "0")}:${minS.toString().padStart(2, "0")}`;
+
+    const maxH = Math.floor(newMaxHours);
+    const maxM = Math.floor((newMaxHours - maxH) * 60);
+    const maxS = Math.floor(((newMaxHours - maxH) * 60 - maxM) * 60);
+    maxTime = `${maxH.toString().padStart(2, "0")}:${maxM.toString().padStart(2, "0")}:${maxS.toString().padStart(2, "0")}`;
+  } else {
+    // Add 30-minute buffer on both sides
+    const newMinHours = minHours - 0.5;
+    const newMaxHours = maxHours + 0.5;
+
+    // Convert hours back to HH:mm:ss format
+    const minH = Math.floor(newMinHours);
+    const minM = Math.floor((newMinHours - minH) * 60);
+    const minS = Math.floor(((newMinHours - minH) * 60 - minM) * 60);
+    minTime = `${minH.toString().padStart(2, "0")}:${minM.toString().padStart(2, "0")}:${minS.toString().padStart(2, "0")}`;
+
+    const maxH = Math.floor(newMaxHours);
+    const maxM = Math.floor((newMaxHours - maxH) * 60);
+    const maxS = Math.floor(((newMaxHours - maxH) * 60 - maxM) * 60);
+    maxTime = `${maxH.toString().padStart(2, "0")}:${maxM.toString().padStart(2, "0")}:${maxS.toString().padStart(2, "0")}`;
+  }
+
+  // Cap minTime at day boundary
+  if (minTime < "00:00:00") minTime = "00:00:00";
+
+  return {
+    minTime,
+    maxTime
+  };
+};

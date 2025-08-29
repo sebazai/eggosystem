@@ -42,7 +42,11 @@ import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
-import { sortMatchesByDateAndTier, DIVISIONS } from "@/lib/calendar-utils";
+import {
+  sortMatchesByDateAndTier,
+  DIVISIONS,
+  findMinMaxTimes
+} from "@/lib/calendar-utils";
 
 interface EventDetails {
   id: string;
@@ -123,6 +127,12 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     // Use replace to avoid adding to browser history for every filter change
     router.replace(`?${params.toString()}`);
   };
+
+  // Calculate dynamic time range based on matches
+  const timeRange = useMemo(() => {
+    if (!calendarMatches) return { minTime: "00:00:00", maxTime: "24:00:00" };
+    return findMinMaxTimes(calendarMatches);
+  }, [calendarMatches]);
 
   const calendarOptions = useMemo(
     () => ({
@@ -210,8 +220,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
           }
         });
       },
-      slotMinTime: "14:00:00", // Start at 2 PM
-      slotMaxTime: "24:00:00", // End at midnight
+      slotMinTime: timeRange.minTime,
+      slotMaxTime: timeRange.maxTime,
       allDaySlot: false,
       slotDuration: "00:30:00",
       expandRows: true, // Ensure rows expand to fill available space
@@ -243,7 +253,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
       // Mobile popover positioning
       popoverParent: document.body // Ensure popover is positioned relative to body
     }),
-    [view, calendarMatches]
+    [view, calendarMatches, timeRange.minTime, timeRange.maxTime]
   );
 
   const handleViewChange = (newView: "dayGridMonth" | "timeGridWeek") => {
