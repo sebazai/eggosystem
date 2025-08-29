@@ -179,9 +179,7 @@ export const TabPlayers = ({
         if (playerData.status === "fulfilled") {
           setValue(`players.${index}.accountId`, playerData.value.account_id);
           const data = playerData.value;
-          const hasValidDataBool = Boolean(
-            data.is_valid_full_name && data.has_accepted_latest_privacy_policy
-          );
+          const hasValidDataBool = Boolean(data.is_valid_full_name);
           setValue(`players.${index}.hasValidData`, hasValidDataBool);
 
           const isEmailVerified = Boolean(data.work_email_verified);
@@ -677,8 +675,7 @@ export const TabPlayers = ({
                     <SignupPlayerNotification
                       data-testid={`policy-acceptance-error-${index}`}
                     >
-                      Ask the player to sign up for Kanahub & Accept the latest
-                      privacy policy.
+                      Ask the player to sign up for Kanahub.
                     </SignupPlayerNotification>
                   )}
 

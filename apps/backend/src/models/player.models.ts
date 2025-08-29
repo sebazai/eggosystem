@@ -40,16 +40,11 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
       CASE 
           WHEN a.full_name LIKE '% %' THEN TRUE 
           ELSE FALSE 
-      END AS is_valid_full_name,
-      CASE 
-          WHEN upa.accepted_privacy_policy = TRUE AND upa.privacy_policy_version = ? THEN TRUE 
-          ELSE FALSE 
-      END AS has_accepted_latest_privacy_policy
+      END AS is_valid_full_name
     FROM SteamPlayers p 
     JOIN Accounts a ON a.id = p.account_id
-    LEFT JOIN UserPolicyAcceptances upa ON upa.account_id = a.id
     WHERE p.steam_id = ?`,
-    [process.env.PRIVACY_POLICY_VERSION!, steam_id]
+    [steam_id]
   );
 
   return results.length > 0 ? results[0] : undefined;

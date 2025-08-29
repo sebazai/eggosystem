@@ -8,5 +8,4 @@ export interface PlayerDetailsBySteamId {
   work_email_verified: Account["work_email_verified"];
   is_valid_full_name: number;
   is_valid_work_email: number;
-  has_accepted_latest_privacy_policy: number;
 }

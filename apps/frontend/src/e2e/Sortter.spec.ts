@@ -39,8 +39,7 @@ test.skip("Sortter Page", () => {
             work_email: "work@example.com",
             work_email_verified: true,
             is_valid_work_email: true,
-            is_valid_full_name: true,
-            has_accepted_latest_privacy_policy: true
+            is_valid_full_name: true
           }
         })
       });

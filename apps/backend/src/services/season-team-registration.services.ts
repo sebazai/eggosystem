@@ -181,11 +181,6 @@ export const validatePlayersFromDBForSignup = async (
   }
 
   for (const playerData of filteredData) {
-    if (!playerData.has_accepted_latest_privacy_policy) {
-      throw new BadRequestError(
-        `Player ${playerData.steam_id} has not accepted privacy policy.`
-      );
-    }
     if (!playerData.work_email_verified) {
       throw new BadRequestError(
         `Player ${playerData.steam_id} has not verified e-mail their e-mail.`
