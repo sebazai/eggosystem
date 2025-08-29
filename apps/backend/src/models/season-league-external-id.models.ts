@@ -57,8 +57,13 @@ export const getActiveSeasonChampionshipIds = async (): Promise<
     SELECT slei.external_id, slei.isBO2PlayedAs2xBO1
     FROM SeasonLeagueExternalIds slei
     JOIN Seasons s ON slei.season_id = s.id
-    WHERE s.start_date <= NOW() 
-      AND (s.end_date IS NULL OR s.end_date >= NOW())
+    WHERE (
+      -- Active seasons (between start_date and end_date)
+      (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+      OR
+      -- Seasons in signup period (between signup_end_date and start_date)
+      (s.signup_end_date IS NOT NULL AND s.signup_end_date <= NOW() AND s.start_date > NOW())
+    )
   `;
 
   const results =
