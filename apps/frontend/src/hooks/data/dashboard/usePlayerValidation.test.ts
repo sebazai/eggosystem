@@ -8,13 +8,9 @@ jest.mock("@/lib/apiClient");
 jest.mock("@/lib/utils");
 jest.mock("swr");
 
-import { clientApiFetch } from "@/lib/apiClient";
 import { isValidSteamId } from "@/lib/utils";
-import useSWR from "swr";
+import useSWR, { type SWRResponse } from "swr";
 
-const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
-  typeof clientApiFetch
->;
 const mockIsValidSteamId = isValidSteamId as jest.MockedFunction<
   typeof isValidSteamId
 >;
@@ -72,7 +68,7 @@ describe("usePlayerValidation", () => {
       isValidating: false,
       mutate: mockMutate,
       isLoading: false
-    } as any);
+    } as SWRResponse);
   });
 
   describe("Initial State", () => {
