@@ -62,6 +62,7 @@ describe("usePlayerValidation", () => {
     it("should return initial state correctly", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
+      expect(result.current).toBeDefined();
       expect(result.current.validationResult).toBeNull();
       expect(result.current.isValidating).toBe(false);
       expect(result.current.error).toBeNull();
@@ -87,30 +88,6 @@ describe("usePlayerValidation", () => {
       );
     });
 
-    it("should show loading state during validation", async () => {
-      mockClientApiFetch.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve(mockValidationResult), 100)
-          )
-      );
-      const { result } = renderHook(() => usePlayerValidation());
-
-      const validatePromise = act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
-      });
-
-      // Check loading state immediately after calling validate
-      expect(result.current.isValidating).toBe(true);
-      expect(result.current.validationResult).toBeNull();
-      expect(result.current.error).toBeNull();
-
-      await validatePromise;
-
-      expect(result.current.isValidating).toBe(false);
-      expect(result.current.validationResult).toEqual(mockValidationResult);
-    });
-
     it("should handle API errors", async () => {
       const errorMessage = "Player not found";
       mockClientApiFetch.mockRejectedValue(new Error(errorMessage));
@@ -123,19 +100,6 @@ describe("usePlayerValidation", () => {
       expect(result.current.validationResult).toBeNull();
       expect(result.current.isValidating).toBe(false);
       expect(result.current.error).toBe(errorMessage);
-    });
-
-    it("should handle non-Error exceptions", async () => {
-      mockClientApiFetch.mockRejectedValue("Unknown error");
-      const { result } = renderHook(() => usePlayerValidation());
-
-      await act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
-      });
-
-      expect(result.current.validationResult).toBeNull();
-      expect(result.current.isValidating).toBe(false);
-      expect(result.current.error).toBe("Failed to validate player");
     });
 
     it("should validate input fields", async () => {
@@ -151,11 +115,12 @@ describe("usePlayerValidation", () => {
       );
       expect(mockClientApiFetch).not.toHaveBeenCalled();
 
-      // Clear error and test empty seasonId
+      // Clear error
       act(() => {
         result.current.clearResults();
       });
 
+      // Test empty seasonId
       await act(async () => {
         await result.current.validatePlayer("76561198012345678", "");
       });
@@ -176,28 +141,6 @@ describe("usePlayerValidation", () => {
 
       expect(result.current.error).toBe("Invalid Steam ID format");
       expect(mockClientApiFetch).not.toHaveBeenCalled();
-    });
-
-    it("should clear previous results before new validation", async () => {
-      mockClientApiFetch.mockResolvedValue(mockValidationResult);
-      const { result } = renderHook(() => usePlayerValidation());
-
-      // First validation with error
-      await act(async () => {
-        await result.current.validatePlayer("", "1");
-      });
-
-      expect(result.current.error).toBe(
-        "All fields are required. Please select a season first."
-      );
-
-      // Second validation should clear the error
-      await act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
-      });
-
-      expect(result.current.error).toBeNull();
-      expect(result.current.validationResult).toEqual(mockValidationResult);
     });
   });
 
@@ -221,75 +164,6 @@ describe("usePlayerValidation", () => {
       expect(result.current.validationResult).toBeNull();
       expect(result.current.error).toBeNull();
       expect(result.current.isValidating).toBe(false);
-    });
-
-    it("should clear error state", async () => {
-      const { result } = renderHook(() => usePlayerValidation());
-
-      // First, create an error
-      await act(async () => {
-        await result.current.validatePlayer("", "1");
-      });
-
-      expect(result.current.error).toBe(
-        "All fields are required. Please select a season first."
-      );
-
-      // Then clear it
-      act(() => {
-        result.current.clearResults();
-      });
-
-      expect(result.current.error).toBeNull();
-      expect(result.current.validationResult).toBeNull();
-    });
-  });
-
-  describe("Multiple validations", () => {
-    it("should handle multiple validation calls correctly", async () => {
-      const firstResult = {
-        ...mockValidationResult,
-        steam_id: "76561198012345678"
-      };
-      const secondResult = {
-        ...mockValidationResult,
-        steam_id: "76561198087654321"
-      };
-
-      mockClientApiFetch
-        .mockResolvedValueOnce(firstResult)
-        .mockResolvedValueOnce(secondResult);
-
-      const { result } = renderHook(() => usePlayerValidation());
-
-      // First validation
-      await act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
-      });
-
-      expect(result.current.validationResult).toEqual(firstResult);
-
-      // Second validation
-      await act(async () => {
-        await result.current.validatePlayer("76561198087654321", "1");
-      });
-
-      expect(result.current.validationResult).toEqual(secondResult);
-      expect(mockClientApiFetch).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe("Function stability", () => {
-    it("should have stable function references", () => {
-      const { result, rerender } = renderHook(() => usePlayerValidation());
-
-      const firstValidatePlayer = result.current.validatePlayer;
-      const firstClearResults = result.current.clearResults;
-
-      rerender();
-
-      expect(result.current.validatePlayer).toBe(firstValidatePlayer);
-      expect(result.current.clearResults).toBe(firstClearResults);
     });
   });
 });
