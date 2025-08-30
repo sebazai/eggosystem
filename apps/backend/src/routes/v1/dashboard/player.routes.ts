@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { addPlayerToTeamController } from "../../../controllers/dashboard/player.controllers";
+import {
+  addPlayerToTeamController,
+  validatePlayerController
+} from "../../../controllers/dashboard/player.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 
 const router = Router();
@@ -10,5 +13,8 @@ router.post(
   validateNumericParams(["season_id", "team_id"]),
   addPlayerToTeamController
 );
+
+// GET /api/v1/dashboard/players/:steam_id/validate?season_id=:season_id
+router.get("/:steam_id/validate", validatePlayerController);
 
 export default router;

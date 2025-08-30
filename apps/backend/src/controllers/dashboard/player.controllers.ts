@@ -13,6 +13,9 @@ import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
 import { type RequestWithParams } from "@eggosystem/types";
+import { getPlayerDetailsBySteamId } from "../../models/player.models";
+import { getPlayerRankForPlatform } from "../../services/player-ranks.services";
+import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
 /**
  * Controller to add a player to a team
  * This will:
@@ -159,5 +162,157 @@ export const addPlayerToTeamController = async (
     return next(error);
   } finally {
     connection.release();
+  }
+};
+
+/**
+ * Controller to validate player data before adding to team
+ * This checks:
+ * 1. Player hours from Steam API
+ * 2. CS2 rank from Leetify
+ * 3. Platform rank (FACEIT, etc.)
+ * 4. Kanahub profile validation
+ */
+export const validatePlayerController = async (
+  req: RequestWithParams<{
+    steam_id: string;
+  }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const steamId = req.params.steam_id;
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : undefined;
+
+  if (!seasonId) {
+    return next(new BadRequestError("season_id is a required query parameter"));
+  }
+
+  try {
+    // First, get the season details to get platform and app_id
+    const seasonQuery = `
+        SELECT s.platform, g.app_id 
+        FROM Seasons s 
+        JOIN Games g ON s.game_id = g.id 
+        WHERE s.id = ?
+      `;
+    const seasonResult = await runQuery<
+      Array<{ platform: SeasonPlatform; app_id: number }>
+    >(seasonQuery, [seasonId]);
+
+    if (!seasonResult || seasonResult.length === 0) {
+      return next(new BadRequestError(`Season with ID ${seasonId} not found`));
+    }
+
+    const season = seasonResult[0];
+    const { platform, app_id: appId } = season;
+
+    // Run all validation checks in parallel
+    const [hoursData, rankData, platformRankData, playerData] =
+      await Promise.allSettled([
+        getPlayerHoursForSteamAppId(steamId, appId, seasonId),
+        getCSRank(steamId, seasonId),
+        getPlayerRankForPlatform(steamId, platform, seasonId),
+        getPlayerDetailsBySteamId(steamId)
+      ]);
+
+    let externalRankData: number = -1;
+    if (platformRankData.status === "fulfilled" && platformRankData.value) {
+      const propertyName =
+        platform === SeasonPlatform.Kanaliiga ? "kana_elo" : "faceit_level";
+      externalRankData =
+        propertyName in platformRankData.value
+          ? platformRankData.value[
+              propertyName as keyof typeof platformRankData.value
+            ]
+          : -1;
+    }
+
+    // Process results
+    const validationResult: PlayerValidationResult = {
+      steam_id: steamId,
+      season_id: seasonId,
+      app_id: appId,
+      platform,
+      hours: {
+        value: hoursData.status === "fulfilled" ? hoursData.value.hours : -1,
+        success: hoursData.status === "fulfilled" && hoursData.value.hours > 0,
+        error:
+          hoursData.status === "rejected"
+            ? hoursData.reason?.message || "Unknown error"
+            : null
+      },
+      rank: {
+        value:
+          rankData.status === "fulfilled" ? rankData.value.average_rank : -1,
+        success:
+          rankData.status === "fulfilled" && rankData.value.average_rank > 0,
+        error:
+          hoursData.status === "rejected"
+            ? hoursData.reason?.message || "Unknown error"
+            : null
+      },
+      platform_rank: {
+        value: externalRankData,
+        success:
+          platformRankData.status === "fulfilled" &&
+          !!externalRankData &&
+          externalRankData > 0,
+        error:
+          platformRankData.status === "rejected"
+            ? platformRankData.reason?.message || "Unknown error"
+            : null
+      },
+      profile: {
+        success:
+          playerData.status === "fulfilled" &&
+          !!playerData.value &&
+          !!playerData.value.account_id &&
+          !!playerData.value.nickname &&
+          Boolean(playerData.value.work_email_verified) &&
+          Boolean(playerData.value.is_valid_full_name) &&
+          Boolean(playerData.value.is_valid_work_email),
+        data:
+          playerData.status === "fulfilled" && playerData.value
+            ? {
+                account_id: playerData.value.account_id,
+                nickname: playerData.value.nickname,
+                discord: playerData.value.discord || "",
+                work_email_verified: Boolean(
+                  playerData.value.work_email_verified
+                ),
+                is_valid_full_name: Boolean(
+                  playerData.value.is_valid_full_name
+                ),
+                is_valid_work_email: Boolean(
+                  playerData.value.is_valid_work_email
+                )
+              }
+            : null,
+        error:
+          playerData.status === "rejected"
+            ? playerData.reason?.status === 404
+              ? "Player not found in Kanahub"
+              : null
+            : null
+      },
+      overall_success: false, // Will be calculated below
+      can_add_to_team: false // Will be calculated below
+    };
+
+    console.log(validationResult);
+
+    // Calculate overall validation status
+    validationResult.overall_success =
+      validationResult.hours.success &&
+      validationResult.rank.success &&
+      validationResult.platform_rank.success &&
+      validationResult.profile.success;
+    validationResult.can_add_to_team = validationResult.overall_success;
+
+    res.status(200).json(validationResult);
+  } catch (error) {
+    return next(error);
   }
 };
