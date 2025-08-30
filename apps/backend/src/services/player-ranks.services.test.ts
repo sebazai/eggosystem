@@ -1,12 +1,17 @@
 import {
   getCSRank,
   getPlayerAppIdRank,
-  getPlayerHoursForSteamAppId
+  getPlayerHoursForSteamAppId,
+  getPlayerRankForPlatform
 } from "./player-ranks.services";
 import * as leetifyService from "./leetify.services";
 import * as seasonPlayerRanksModels from "../models/season-player-ranks.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
+import { getPlayerKanaElo } from "../models/season-player-ranks.models";
+import { getFaceITCS2Rank } from "./faceit.services";
+import { SeasonPlatform } from "@eggosystem/types";
+import { BadRequestError } from "../utils/errors";
 
 // Mock all external dependencies
 jest.mock("./leetify.services");
@@ -22,6 +27,12 @@ const mockSeasonPlayerRanksModels = seasonPlayerRanksModels as jest.Mocked<
 >;
 const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+const mockGetPlayerKanaElo = getPlayerKanaElo as jest.MockedFunction<
+  typeof getPlayerKanaElo
+>;
+const mockGetFaceITCS2Rank = getFaceITCS2Rank as jest.MockedFunction<
+  typeof getFaceITCS2Rank
+>;
 
 describe("Player Ranks Services", () => {
   const testSteamId = "76561198000000000";
@@ -343,6 +354,235 @@ describe("Player Ranks Services", () => {
       expect(mockRedisClient.get).toHaveBeenCalledWith(
         `730-${testSteamId}-rank`
       );
+    });
+  });
+
+  describe("getPlayerRankForPlatform", () => {
+    const mockSteamId = "76561197967885016";
+    const mockSeasonId = 15;
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    describe("when platform is null", () => {
+      it("should return null", async () => {
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          null,
+          mockSeasonId
+        );
+        expect(result).toBeNull();
+      });
+    });
+
+    describe("when platform is FACEIT", () => {
+      it("should directly call getFaceITCS2Rank without checking kana_elo", async () => {
+        const mockFaceitData = {
+          faceit_level: 7,
+          faceit_elo: 1850,
+          faceit_kd: 1.2,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_decay: false,
+            faceit_fallback: false
+          }
+        };
+        mockGetFaceITCS2Rank.mockResolvedValue(mockFaceitData);
+
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.FACEIT,
+          mockSeasonId
+        );
+
+        expect(mockGetPlayerKanaElo).not.toHaveBeenCalled();
+        expect(mockGetFaceITCS2Rank).toHaveBeenCalledWith(
+          mockSteamId,
+          mockSeasonId
+        );
+        expect(result).toEqual(mockFaceitData);
+      });
+
+      it("should handle FACEIT API errors gracefully", async () => {
+        mockGetFaceITCS2Rank.mockRejectedValue(new Error("FACEIT API error"));
+
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.FACEIT,
+            mockSeasonId
+          )
+        ).rejects.toThrow("FACEIT API error");
+      });
+    });
+
+    describe("when platform is Kanaliiga", () => {
+      it("should return kana_elo data when player has existing kana_elo", async () => {
+        const mockKanaElo = { kana_elo: 2000 };
+        mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
+
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Kanaliiga,
+          mockSeasonId
+        );
+
+        expect(mockGetPlayerKanaElo).toHaveBeenCalledWith(mockSteamId);
+        expect(result).toEqual({ kana_elo: 2000 });
+      });
+
+      it("should return null when player has no kana_elo", async () => {
+        mockGetPlayerKanaElo.mockResolvedValue(undefined);
+
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Kanaliiga,
+          mockSeasonId
+        );
+
+        expect(mockGetPlayerKanaElo).toHaveBeenCalledWith(mockSteamId);
+        expect(result).toBeNull();
+      });
+
+      it("should throw BadRequestError for kana_elo with zero value", async () => {
+        const mockKanaElo = { kana_elo: 0 };
+        mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
+
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.Kanaliiga,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Invalid kana_elo: value must be positive");
+      });
+
+      it("should throw BadRequestError for kana_elo with negative value", async () => {
+        const mockKanaElo = { kana_elo: -100 };
+        mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
+
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.Kanaliiga,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Invalid kana_elo: value must be positive");
+      });
+
+      it("should handle very high kana_elo values", async () => {
+        const mockKanaElo = { kana_elo: 9999 };
+        mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
+
+        const result = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Kanaliiga,
+          mockSeasonId
+        );
+
+        expect(result).toEqual({ kana_elo: 9999 });
+      });
+    });
+
+    describe("when platform is unknown", () => {
+      it("should throw BadRequestError for unknown platform", async () => {
+        const unknownPlatform = "UNKNOWN" as SeasonPlatform;
+
+        await expect(
+          getPlayerRankForPlatform(mockSteamId, unknownPlatform, mockSeasonId)
+        ).rejects.toThrow(BadRequestError);
+        await expect(
+          getPlayerRankForPlatform(mockSteamId, unknownPlatform, mockSeasonId)
+        ).rejects.toThrow("Unknown platform");
+      });
+    });
+
+    describe("integration scenarios", () => {
+      it("should handle multiple consecutive calls correctly", async () => {
+        const mockKanaElo = { kana_elo: 1500 };
+        mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
+        const mockFaceitData = {
+          faceit_level: 7,
+          faceit_elo: 1850,
+          faceit_kd: 1.2,
+          faceit_date: Date.now(),
+          metadata: {
+            faceit_decay: false,
+            faceit_fallback: false
+          }
+        };
+        mockGetFaceITCS2Rank.mockResolvedValue(mockFaceitData);
+
+        // First call - FACEIT platform
+        const result1 = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.FACEIT,
+          mockSeasonId
+        );
+        // Second call - Kanaliiga platform
+        const result2 = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Kanaliiga,
+          mockSeasonId
+        );
+
+        expect(mockGetPlayerKanaElo).toHaveBeenCalledTimes(1);
+        expect(mockGetPlayerKanaElo).toHaveBeenCalledWith(mockSteamId);
+        expect(mockGetFaceITCS2Rank).toHaveBeenCalledTimes(1);
+        expect(mockGetFaceITCS2Rank).toHaveBeenCalledWith(
+          mockSteamId,
+          mockSeasonId
+        );
+
+        expect(result1).toEqual(mockFaceitData);
+        expect(result2).toEqual({ kana_elo: 1500 });
+      });
+
+      it("should not interfere between different platform calls", async () => {
+        // Test that FACEIT calls don't affect Kanaliiga calls
+        mockGetFaceITCS2Rank.mockResolvedValue({
+          faceit_level: 8,
+          faceit_elo: 2000,
+          faceit_kd: 1.5,
+          faceit_date: Date.now(),
+          metadata: { faceit_decay: false, faceit_fallback: false }
+        });
+
+        const faceitResult = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.FACEIT,
+          mockSeasonId
+        );
+        expect(faceitResult).toEqual({
+          faceit_level: 8,
+          faceit_elo: 2000,
+          faceit_kd: 1.5,
+          faceit_date: expect.any(Number),
+          metadata: { faceit_decay: false, faceit_fallback: false }
+        });
+
+        // Kanaliiga call should still work independently
+        mockGetPlayerKanaElo.mockResolvedValue({ kana_elo: 1800 });
+        const kanaliigaResult = await getPlayerRankForPlatform(
+          mockSteamId,
+          SeasonPlatform.Kanaliiga,
+          mockSeasonId
+        );
+        expect(kanaliigaResult).toEqual({ kana_elo: 1800 });
+      });
+
+      it("should handle errors in kana_elo lookup gracefully", async () => {
+        mockGetPlayerKanaElo.mockRejectedValue(new Error("Database error"));
+
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.Kanaliiga,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Database error");
+      });
     });
   });
 });

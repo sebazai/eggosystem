@@ -7,6 +7,7 @@ import registrationRouter from "./registration.routes";
 import sortterRouter from "./sortter.routes";
 import matchRouter from "./match.routes";
 import seasonRouter from "./season.routes";
+import playerRouter from "./player.routes";
 
 const router = Router();
 
@@ -16,6 +17,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   seasonRouter
+);
+router.use(
+  "/players",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  playerRouter
 );
 router.use(
   "/teams",

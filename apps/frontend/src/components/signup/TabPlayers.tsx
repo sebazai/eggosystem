@@ -166,6 +166,13 @@ export const TabPlayers = ({
                 `players.${index}.externalRank`,
                 (externalRankData.value as FaceITCSRank).faceit_level
               );
+              break;
+            case SeasonPlatform.Kanaliiga:
+              setValue(
+                `players.${index}.externalRank`,
+                (externalRankData.value as { kana_elo: number }).kana_elo
+              );
+              break;
           }
         } else {
           setValue(`players.${index}.externalRank`, -1);

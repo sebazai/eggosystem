@@ -2,12 +2,17 @@
  * @jest-environment jsdom
  */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { SignupForm } from "./SignupForm";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
+import {
+  renderWithSWR,
+  setupFetchMock,
+  clearAllMocks
+} from "@/__tests__/utils/test-utils";
 
 // Mock dependencies
 jest.mock("@/context/AuthContext");
@@ -129,6 +134,9 @@ const mockEditValues: SignupFormValues = {
 
 describe("SignupForm", () => {
   beforeEach(() => {
+    clearAllMocks();
+    setupFetchMock();
+
     mockUseAuth.mockReturnValue({
       user: mockUser,
       loading: false,
@@ -146,20 +154,18 @@ describe("SignupForm", () => {
     mockClientApiFetch.mockResolvedValue({});
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe("Component Rendering", () => {
     it("should render signup form without draft or edit values", async () => {
-      render(<SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />);
+      renderWithSWR(
+        <SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />
+      );
 
       // Should show the form title
       expect(screen.getByText("Sign up Form")).toBeInTheDocument();
     });
 
     it("should render edit form with edit values", async () => {
-      render(
+      renderWithSWR(
         <SignupForm
           seasonId="1"
           platform={SeasonPlatform.Kanaliiga}
@@ -172,14 +178,14 @@ describe("SignupForm", () => {
     });
 
     it("should show save as draft button only in non-edit mode", async () => {
-      const { rerender } = render(
+      const { rerender } = renderWithSWR(
         <SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />
       );
 
       // Should show save as draft button in signup mode
       expect(screen.getByTestId("save-as-draft-button")).toBeInTheDocument();
 
-      // Rerender in edit mode
+      // Rerender in edit mode using the same wrapper
       rerender(
         <SignupForm
           seasonId="1"
@@ -202,7 +208,9 @@ describe("SignupForm", () => {
         isValidating: false
       });
 
-      render(<SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />);
+      renderWithSWR(
+        <SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />
+      );
 
       expect(screen.getByText("Loading...")).toBeInTheDocument();
     });
@@ -215,7 +223,9 @@ describe("SignupForm", () => {
         checkAuth: jest.fn()
       });
 
-      render(<SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />);
+      renderWithSWR(
+        <SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />
+      );
 
       // Should show steam login requirement
       expect(
@@ -241,7 +251,7 @@ describe("SignupForm", () => {
       };
 
       // Render with initial editValues
-      const { rerender } = render(
+      const { rerender } = renderWithSWR(
         <SignupForm
           seasonId="1"
           platform={SeasonPlatform.Kanaliiga}
@@ -266,7 +276,7 @@ describe("SignupForm", () => {
 
   describe("Draft Mode", () => {
     it("should load form with draft values", async () => {
-      render(
+      renderWithSWR(
         <SignupForm
           seasonId="1"
           platform={SeasonPlatform.Kanaliiga}
@@ -285,7 +295,7 @@ describe("SignupForm", () => {
   describe("Props Validation", () => {
     it("should accept all required props", () => {
       expect(() => {
-        render(
+        renderWithSWR(
           <SignupForm
             seasonId="1"
             platform={SeasonPlatform.Kanaliiga}
@@ -299,7 +309,9 @@ describe("SignupForm", () => {
 
     it("should work with minimal props", () => {
       expect(() => {
-        render(<SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />);
+        renderWithSWR(
+          <SignupForm seasonId="1" platform={SeasonPlatform.Kanaliiga} />
+        );
       }).not.toThrow();
     });
   });

@@ -4,11 +4,7 @@ import { SeasonPlatform } from "@eggosystem/types";
 
 <<<<<<< Updated upstream
 // Define test data
-const eligiblePlayer = "76561198054765387";
-=======
-// Define test data - using E2E mode Steam IDs for different scenarios
 const eligiblePlayer = "76561198054765387"; // Using a unique Steam ID to avoid conflicts
->>>>>>> Stashed changes
 const ineligiblePlayer = "76561197960383236";
 const invalidSteamId = "invalid-steam-id";
 const insufficientHoursPlayer = "66561198999999910"; // E2E mode: returns null hours
@@ -251,6 +247,7 @@ test.describe("Add Player Workflow", () => {
     page
   }) => {
     // Mock external APIs
+
     // Steam API player summary endpoint
     await page.route(
       "**/api.steampowered.com/ISteamUser/GetPlayerSummaries/**",
@@ -331,7 +328,7 @@ test.describe("Add Player Workflow", () => {
 
     // Mock the add player endpoint
     await page.route(
-      `**/api/v1/dashboard/sortter/season/*/team/*/player/${eligiblePlayer}/add`,
+      `**/api/v1/dashboard/players/${eligiblePlayer}/team/*/season/*/add`,
       async (route) => {
         await route.fulfill({
           status: 200,
@@ -347,8 +344,8 @@ test.describe("Add Player Workflow", () => {
     );
 
     // Navigate to the add player page
-    await page.goto("/dashboard/add-player");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/dashboard/players/add");
+    // Wait for key elements instead of networkidle to avoid timeout issues
 
     // Wait for season to be automatically selected (we'll use season 14)
     await page.waitForSelector('[data-testid="season-selector"]', {
@@ -434,6 +431,7 @@ test.describe("Add Player Workflow", () => {
     page
   }) => {
     // Mock external APIs
+
     // Steam API player summary endpoint
     await page.route(
       "**/api.steampowered.com/ISteamUser/GetPlayerSummaries/**",
@@ -513,8 +511,8 @@ test.describe("Add Player Workflow", () => {
     );
 
     // Navigate to the add player page
-    await page.goto("/dashboard/add-player");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/dashboard/players/add");
+    // Wait for key elements instead of networkidle to avoid timeout issues
 
     // Wait for season to be automatically selected (we'll use season 14)
     await page.waitForSelector('[data-testid="season-selector"]', {
@@ -593,8 +591,8 @@ test.describe("Add Player Workflow", () => {
     );
 
     // Navigate to the add player page
-    await page.goto("/dashboard/add-player");
-    await page.waitForLoadState("networkidle");
+    await page.goto("/dashboard/players/add");
+    // Wait for key elements instead of networkidle to avoid timeout issues
 
     // Wait for season to be automatically selected (we'll use season 14)
     await page.waitForSelector('[data-testid="season-selector"]', {
@@ -919,7 +917,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
 
     // Call the add player API
     await request.post(
-      `${apiBaseUrl}/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`,
+      `${apiBaseUrl}/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`,
       {
         headers: {
           Authorization: `Bearer ${jwtToken}`
@@ -975,7 +973,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
 
     // Call the add player API
     const addResponse = await request.post(
-      `${apiBaseUrl}/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`,
+      `${apiBaseUrl}/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`,
       {
         headers: {
           Authorization: `Bearer ${jwtToken}`
@@ -999,7 +997,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
       title: "Bad Request",
       status: 400,
       detail: "Player is not eligible for this team",
-      instance: `/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`
+      instance: `/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`
     };
 
     // Check mock error follows RFC 7807 format

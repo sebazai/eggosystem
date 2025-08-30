@@ -118,6 +118,7 @@ export const addPlayersForTeamInSeason = async (
 
     if (
       externalRank &&
+      "faceit_elo" in externalRank &&
       externalRank.faceit_elo === -1 &&
       platform !== SeasonPlatform.Kanaliiga
     ) {

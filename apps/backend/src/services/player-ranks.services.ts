@@ -17,6 +17,7 @@ import { getFaceITCS2Rank } from "./faceit.services";
 import { getSteamHoursForAppId } from "./steam.services";
 import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
+import { type FaceITCSRank } from "@eggosystem/types";
 
 const getPlayerHoursForCS = async (steam_id: string, season_id?: number) => {
   const redisKey = `730-${steam_id}-hours`;
@@ -237,15 +238,23 @@ export const getPlayerRankForPlatform = async (
   steam_id: string,
   platform: SeasonPlatform | null,
   season_id?: number
-) => {
+): Promise<FaceITCSRank | { kana_elo: number } | null> => {
   if (!platform) {
     return null;
   }
   switch (platform) {
     case SeasonPlatform.FACEIT:
       return getFaceITCS2Rank(steam_id, season_id);
-    case SeasonPlatform.Kanaliiga:
+    case SeasonPlatform.Kanaliiga: {
+      const kanaElo = await getPlayerKanaElo(steam_id);
+      if (kanaElo) {
+        if (kanaElo.kana_elo <= 0) {
+          throw new BadRequestError("Invalid kana_elo: value must be positive");
+        }
+        return { kana_elo: kanaElo.kana_elo };
+      }
       return null;
+    }
     default:
       throw new BadRequestError("Unknown platform");
   }
