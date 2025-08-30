@@ -1,10 +1,19 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { generateTestJWTForUser } from "./utils";
+import { SeasonPlatform } from "@eggosystem/types";
 
+<<<<<<< Updated upstream
 // Define test data
 const eligiblePlayer = "76561198054765387";
+=======
+// Define test data - using E2E mode Steam IDs for different scenarios
+const eligiblePlayer = "76561198054765387"; // Using a unique Steam ID to avoid conflicts
+>>>>>>> Stashed changes
 const ineligiblePlayer = "76561197960383236";
 const invalidSteamId = "invalid-steam-id";
+const insufficientHoursPlayer = "66561198999999910"; // E2E mode: returns null hours
+const noFaceitRankPlayer = "66561198999999913"; // E2E mode: throws FaceIT error
+const validationFailurePlayer = "66561198999999914"; // E2E mode: multiple validation failures
 // Unused but kept for clarity
 const _testTeam = "1650";
 
@@ -76,6 +85,163 @@ test.describe("Add Player Workflow", () => {
               division_name: "Masters"
             }
           ])
+        });
+      }
+    );
+
+    // Mock the validation endpoint with different scenarios based on Steam ID
+    await page.route(
+      "**/api/v1/dashboard/players/*/validate**",
+      async (route) => {
+        const url = route.request().url();
+        const steamId = url.match(/players\/([^/]+)\/validate/)?.[1];
+
+        // Create different validation responses based on Steam ID
+        let validationResponse;
+
+        if (steamId === insufficientHoursPlayer) {
+          // Player with insufficient hours
+          validationResponse = {
+            steam_id: steamId,
+            season_id: 14,
+            app_id: 730,
+            platform: SeasonPlatform.FACEIT,
+            hours: {
+              value: -1,
+              success: false,
+              error: "Insufficient hours detected"
+            },
+            rank: {
+              value: 15000,
+              success: true,
+              error: null
+            },
+            platform_rank: {
+              value: 5,
+              success: true,
+              error: null
+            },
+            profile: {
+              success: true,
+              data: {
+                account_id: 123,
+                nickname: "InsufficientHoursPlayer",
+                discord: "player#1234",
+                work_email_verified: true,
+                is_valid_full_name: true,
+                is_valid_work_email: true
+              },
+              error: null
+            },
+            overall_success: false
+          };
+        } else if (steamId === noFaceitRankPlayer) {
+          // Player without FACEIT rank
+          validationResponse = {
+            steam_id: steamId,
+            season_id: 14,
+            app_id: 730,
+            platform: SeasonPlatform.FACEIT,
+            hours: {
+              value: 1500,
+              success: true,
+              error: null
+            },
+            rank: {
+              value: 15000,
+              success: true,
+              error: null
+            },
+            platform_rank: {
+              value: -1,
+              success: false,
+              error: "No FaceIT rank found"
+            },
+            profile: {
+              success: true,
+              data: {
+                account_id: 124,
+                nickname: "NoFaceitPlayer",
+                discord: "player#5678",
+                work_email_verified: true,
+                is_valid_full_name: true,
+                is_valid_work_email: true
+              },
+              error: null
+            },
+            overall_success: false
+          };
+        } else if (steamId === validationFailurePlayer) {
+          // Player with multiple validation failures
+          validationResponse = {
+            steam_id: steamId,
+            season_id: 14,
+            app_id: 730,
+            platform: SeasonPlatform.FACEIT,
+            hours: {
+              value: -1,
+              success: false,
+              error: "Hours could not be determined"
+            },
+            rank: {
+              value: -1,
+              success: false,
+              error: "CS2 rank could not be determined"
+            },
+            platform_rank: {
+              value: -1,
+              success: false,
+              error: "Platform rank could not be determined"
+            },
+            profile: {
+              success: false,
+              data: null,
+              error: "Player not found in Kanahub"
+            },
+            overall_success: false
+          };
+        } else {
+          // Default successful validation for eligible players
+          validationResponse = {
+            steam_id: steamId,
+            season_id: 14,
+            app_id: 730,
+            platform: SeasonPlatform.FACEIT,
+            hours: {
+              value: 1500,
+              success: true,
+              error: null
+            },
+            rank: {
+              value: 15000,
+              success: true,
+              error: null
+            },
+            platform_rank: {
+              value: 5,
+              success: true,
+              error: null
+            },
+            profile: {
+              success: true,
+              data: {
+                account_id: 125,
+                nickname: "ValidPlayer",
+                discord: "player#9999",
+                work_email_verified: true,
+                is_valid_full_name: true,
+                is_valid_work_email: true
+              },
+              error: null
+            },
+            overall_success: true
+          };
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(validationResponse)
         });
       }
     );
@@ -218,7 +384,18 @@ test.describe("Add Player Workflow", () => {
     // Enter Steam ID
     await page.fill('[data-testid="steam-id-input"]', eligiblePlayer);
 
-    // Click check eligibility
+    // Step 1: Validate Player
+    await page.click('[data-testid="validate-player-button"]');
+
+        // Wait for validation result
+    await page.waitForSelector('[data-testid="validation-success"]');
+
+    // Verify validation result is shown
+    await expect(
+      page.locator('[data-testid="validation-success"]')
+    ).toBeVisible();
+
+    // Step 2: Check eligibility (should now be enabled)
     await page.click('[data-testid="check-eligibility-button"]');
 
     // Wait for eligibility result
@@ -373,7 +550,13 @@ test.describe("Add Player Workflow", () => {
     // Enter Steam ID
     await page.fill('[data-testid="steam-id-input"]', ineligiblePlayer);
 
-    // Click check eligibility
+    // Step 1: Validate Player
+    await page.click('[data-testid="validate-player-button"]');
+
+    // Wait for validation result
+    await page.waitForSelector('[data-testid="validation-success"]');
+
+    // Step 2: Check eligibility
     await page.click('[data-testid="check-eligibility-button"]');
 
     // Wait for eligibility result
@@ -447,16 +630,166 @@ test.describe("Add Player Workflow", () => {
     // Enter invalid Steam ID
     await page.fill('[data-testid="steam-id-input"]', invalidSteamId);
 
-    // Click check eligibility
-    await page.click('[data-testid="check-eligibility-button"]');
+    // Step 1: Try to validate player (should fail)
+    await page.click('[data-testid="validate-player-button"]');
 
-    // Wait for error message
+    // Wait for validation error
     await page.waitForSelector('[data-testid="error-message"]', {
       timeout: 10000
     });
 
-    // Verify error message is shown
+    // Verify validation error is shown
     await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
+
+    // Note: With invalid Steam ID, we can't proceed to eligibility check
+  });
+
+  test("should handle player with insufficient hours", async ({ page }) => {
+    // Navigate to the add player page
+    await page.goto("/dashboard/players/add");
+
+    // Wait for season to be automatically selected
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 5000
+    });
+
+    // Wait for teams to load after season selection
+    await page.waitForSelector('[data-testid="team-selector"]', {
+      timeout: 5000
+    });
+
+    // Click the team selector
+    await page.click('[data-testid="team-selector"]');
+
+    // Wait for dropdown to appear
+    await page.waitForSelector('[data-testid="team-dropdown"]');
+
+    // Select the team
+    await page.click(`[data-testid="team-option-1650"]`);
+
+    // Enter Steam ID for player with insufficient hours
+    await page.fill('[data-testid="steam-id-input"]', insufficientHoursPlayer);
+
+    // Step 1: Validate Player
+    await page.click('[data-testid="validate-player-button"]');
+
+    // Wait for validation result
+    await page.waitForSelector('[data-testid="validation-failure"]');
+
+    // Verify validation failed
+    await expect(
+      page.locator('[data-testid="validation-failure"]')
+    ).toBeVisible();
+
+    // Verify that eligibility check is disabled
+    await expect(
+      page.locator('[data-testid="check-eligibility-button"]')
+    ).toBeDisabled();
+  });
+
+  test("should handle player without FACEIT rank", async ({ page }) => {
+    // Navigate to the add player page
+    await page.goto("/dashboard/players/add");
+
+    // Wait for season to be automatically selected
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 5000
+    });
+
+    // Wait for teams to load after season selection
+    await page.waitForSelector('[data-testid="team-selector"]', {
+      timeout: 5000
+    });
+
+    // Click the team selector
+    await page.click('[data-testid="team-selector"]');
+
+    // Wait for dropdown to appear
+    await page.waitForSelector('[data-testid="team-dropdown"]');
+
+    // Select the team
+    await page.click(`[data-testid="team-option-1650"]`);
+
+    // Enter Steam ID for player without FACEIT rank
+    await page.fill('[data-testid="steam-id-input"]', noFaceitRankPlayer);
+
+    // Step 1: Validate Player
+    await page.click('[data-testid="validate-player-button"]');
+
+    // Wait for validation result
+    await page.waitForSelector('[data-testid="validation-failure"]');
+
+    // Verify validation failed due to missing FACEIT rank
+    await expect(
+      page.locator('[data-testid="validation-failure"]')
+    ).toBeVisible();
+
+    // Verify specific error about FACEIT rank
+    await expect(page.locator("text=No FaceIT rank found")).toBeVisible();
+
+    // Verify that eligibility check is disabled
+    await expect(
+      page.locator('[data-testid="check-eligibility-button"]')
+    ).toBeDisabled();
+  });
+
+  test("should handle player with multiple validation failures", async ({
+    page
+  }) => {
+    // Navigate to the add player page
+    await page.goto("/dashboard/players/add");
+
+    // Wait for season to be automatically selected
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 5000
+    });
+
+    // Wait for teams to load after season selection
+    await page.waitForSelector('[data-testid="team-selector"]', {
+      timeout: 5000
+    });
+
+    // Click the team selector
+    await page.click('[data-testid="team-selector"]');
+
+    // Wait for dropdown to appear
+    await page.waitForSelector('[data-testid="team-dropdown"]');
+
+    // Select the team
+    await page.click(`[data-testid="team-option-1650"]`);
+
+    // Enter Steam ID for player with multiple validation failures
+    await page.fill('[data-testid="steam-id-input"]', validationFailurePlayer);
+
+    // Step 1: Validate Player
+    await page.click('[data-testid="validate-player-button"]');
+
+    // Wait for validation result
+    await page.waitForSelector('[data-testid="validation-failure"]');
+
+    // Verify validation failed
+    await expect(
+      page.locator('[data-testid="validation-failure"]')
+    ).toBeVisible();
+
+    // Verify multiple error messages are shown
+    await expect(
+      page.locator("text=Hours could not be determined")
+    ).toBeVisible();
+    await expect(
+      page.locator("text=CS2 rank could not be determined")
+    ).toBeVisible();
+    await expect(
+      page.locator("text=Platform rank could not be determined")
+    ).toBeVisible();
+    await expect(
+      page.locator("text=Player not found in Kanahub")
+    ).toBeVisible();
+
+    // Verify that eligibility check is disabled
+    await expect(
+      page.locator('[data-testid="check-eligibility-button"]')
+    ).toBeDisabled();
   });
 });
 

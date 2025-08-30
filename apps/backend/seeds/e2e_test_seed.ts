@@ -25,7 +25,9 @@ export async function seed(knex: Knex): Promise<void> {
     "66561198999999910", // account_id 15002 - InsufficientHoursPlayer
     "66561198999999911", // account_id 15012 - IncompleteDetailsPlayer
     "66561198999999912", // account_id 15013 - RaceConditionPlayer
-    "66561198999999913" // account_id 15014 - NoFaceitRankPlayer (for testing external rank error)
+    "66561198999999913", // account_id 15014 - NoFaceitRankPlayer (for testing external rank error)
+    "76561198054765387", // account_id 15020 - EligiblePlayerForValidation
+    "66561198999999914" // account_id 15021 - ValidationFailurePlayer (multiple validation failures)
   ];
 
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
@@ -61,7 +63,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Clean up NEW test accounts and related data if they exist
   const testAccountIds = [
     15001, 15002, 15003, 15004, 15005, 15006, 15008, 15009, 15010, 15011, 15012,
-    15013, 15014
+    15013, 15014, 15020, 15021
   ];
   for (const accountId of testAccountIds) {
     await knex("LinkedAccounts").where({ account_id: accountId }).del();
@@ -126,7 +128,9 @@ export async function seed(knex: Knex): Promise<void> {
     { id: 15015 }, // New player with valid work email
     { id: 15016 }, // New player with valid work email
     { id: 15017 }, // New player with valid work email
-    { id: 15018 } // New player with valid work email
+    { id: 15018 }, // New player with valid work email
+    { id: 15020 }, // EligiblePlayerForValidation
+    { id: 15021 } // ValidationFailurePlayer
   ];
 
   for (const user of users) {
@@ -154,10 +158,35 @@ export async function seed(knex: Knex): Promise<void> {
       });
     }
 
+    // Special handling for ValidationFailurePlayer (account_id 15021)
+    if (user.id === 15021) {
+      // Set up incomplete/invalid data for testing multiple validation failures
+      await knex("Accounts").where({ id: user.id }).update({
+        work_email: null, // Missing work email
+        work_email_verified: 0, // Not verified
+        full_name: "Invalid", // Invalid full name (no space)
+        discord: null // Missing discord
+      });
+    }
+
     // Insert or update UserPolicyAcceptances using raw query with ON DUPLICATE KEY UPDATE
     // Use the same privacy policy version that the backend expects
     if (user.id === 15012) {
       // IncompleteDetailsPlayer - set up incomplete privacy policy acceptance
+      await knex.raw(
+        `
+        INSERT INTO UserPolicyAcceptances 
+          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+        VALUES 
+          (?, 0, 0, 'old_version')
+        ON DUPLICATE KEY UPDATE 
+          accepted_privacy_policy = 0,
+          privacy_policy_version = 'old_version'
+      `,
+        [user.id]
+      );
+    } else if (user.id === 15021) {
+      // ValidationFailurePlayer - set up incomplete privacy policy acceptance
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
@@ -392,6 +421,22 @@ export async function seed(knex: Knex): Promise<void> {
       work_email_verified: 1,
       is_work_email_personal_email: false,
       discord: "validworkemail5#1234"
+    },
+    // New players for add player validation tests
+    {
+      account_id: 15020,
+      steam_id: "76561198054765387",
+      nickname: "EligiblePlayerForValidation",
+      discord: "eligibleplayer#1234"
+    },
+    {
+      account_id: 15021,
+      steam_id: "66561198999999914",
+      nickname: "ValidationFailurePlayer",
+      // NOTE: This player will have intentionally incomplete/invalid data for testing multiple validation failures
+      work_email: null, // Missing work email
+      work_email_verified: 0, // Not verified
+      discord: null // Missing discord
     }
   ];
 
@@ -667,9 +712,20 @@ export async function seed(knex: Knex): Promise<void> {
       faceit_elo: 1450,
       faceit_level: 8,
       faceit_kd: 1.35
+    },
+    // New players for add player validation tests
+    {
+      steam_id: "76561198054765387", // EligiblePlayerForValidation
+      season_id: 16,
+      cs_hours: 2500,
+      cs2_rank: 20,
+      faceit_elo: 1800,
+      faceit_level: 10,
+      faceit_kd: 1.8
     }
-    // NOTE: Intentionally NOT adding SeasonPlayerRanks for 66561198999999910 (InsufficientHoursPlayer)
-    // so it falls back to Steam API mock which returns null for hours detection failure
+    // NOTE: Intentionally NOT adding SeasonPlayerRanks for:
+    // - 66561198999999910 (InsufficientHoursPlayer) - falls back to Steam API mock which returns null for hours detection failure
+    // - 66561198999999914 (ValidationFailurePlayer) - will have incomplete rank data for testing multiple validation failures
   ] satisfies Partial<SeasonPlayerRank>[];
 
   // Insert SeasonPlayerRanks data

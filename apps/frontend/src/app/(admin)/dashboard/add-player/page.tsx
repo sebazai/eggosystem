@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -27,14 +26,17 @@ import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignu
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
+import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddPlayer } from "@/hooks/data/useAddPlayer";
+import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
+import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationForm";
 
 export default function AddPlayerPage() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Get all seasons
@@ -47,6 +49,15 @@ export default function AddPlayerPage() {
   // Get teams for the selected season
   const { teams, isLoading: isLoadingTeams } =
     useDashboardSeasonTeams(selectedSeasonId);
+
+  // Get player validation hook
+  const {
+    validationResult,
+    isValidating,
+    error: validationError,
+    validatePlayer,
+    clearResults: clearValidationResults
+  } = usePlayerValidation();
 
   // Get player eligibility check
   const {
@@ -78,6 +89,20 @@ export default function AddPlayerPage() {
     }
   }, [eligibilityError]);
 
+  const handleValidatePlayer = async () => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await validatePlayer(steamId, selectedSeasonId);
+      // Success case - validationResult will be updated by the hook
+    } catch (err) {
+      // Error case - the error will be handled by the PlayerValidationForm component
+      // via the validationError prop from the hook
+      console.error("Validation failed:", err);
+    }
+  };
+
   const handleCheckEligibility = async () => {
     setError(null);
     setSuccess(null);
@@ -95,6 +120,7 @@ export default function AddPlayerPage() {
     setSelectedSeasonId(value);
     // Clear team selection and results when season changes
     setSelectedTeamId("");
+    clearValidationResults();
     clearResult();
     setError(null);
     setSuccess(null);
@@ -102,10 +128,13 @@ export default function AddPlayerPage() {
 
   const handleSteamIdChange = (value: string) => {
     setSteamId(value);
-    // Clear results when steam ID changes
-    clearResult();
-    setError(null);
-    setSuccess(null);
+    // Clear results when steam ID changes - but only if the value actually changed
+    if (value !== steamId) {
+      clearValidationResults();
+      clearResult();
+      setError(null);
+      setSuccess(null);
+    }
   };
 
   const handleTeamChange = (value: string) => {
@@ -135,7 +164,8 @@ export default function AddPlayerPage() {
         `Player successfully added to ${eligibilityResult.selectedTeam.team_name}`
       );
 
-      // Clear eligibility check result after successful addition
+      // Clear validation and eligibility check results after successful addition
+      clearValidationResults();
       clearResult();
     } catch (err) {
       setError(
@@ -156,7 +186,7 @@ export default function AddPlayerPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Input Form */}
           <Card>
             <CardHeader>
@@ -166,53 +196,21 @@ export default function AddPlayerPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Season Selector */}
-              <div className="space-y-2">
-                <Label htmlFor="season">Season</Label>
-                <Select
-                  value={selectedSeasonId}
-                  onValueChange={handleSeasonChange}
-                  data-testid="season-select"
-                >
-                  <SelectTrigger data-testid="season-selector">
-                    <SelectValue placeholder="Select a season" />
-                  </SelectTrigger>
-                  <SelectContent data-testid="season-dropdown">
-                    {isLoadingSeasons ? (
-                      <SelectItem
-                        value="loading"
-                        disabled
-                        data-testid="loading-season-option"
-                      >
-                        Loading seasons...
-                      </SelectItem>
-                    ) : seasons && seasons.length > 0 ? (
-                      seasons
-                        .sort((a, b) => b.id - a.id) // Sort by ID descending (newest first)
-                        .map((season) => (
-                          <SelectItem
-                            key={season.id}
-                            value={season.id.toString()}
-                            data-value={season.id.toString()}
-                            data-testid={`season-option-${season.id}`}
-                          >
-                            {season.full_name}
-                            {activeSeason?.season_id === season.id &&
-                              " (Active)"}
-                          </SelectItem>
-                        ))
-                    ) : (
-                      <SelectItem
-                        value="no-seasons"
-                        disabled
-                        data-testid="no-seasons-option"
-                      >
-                        No seasons available
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Player Validation Form */}
+              <PlayerValidationForm
+                steamId={steamId}
+                setSteamId={handleSteamIdChange}
+                seasonId={selectedSeasonId}
+                setSeasonId={handleSeasonChange}
+                seasons={seasons}
+                isLoadingSeasons={isLoadingSeasons}
+                isValidating={isValidating}
+                error={validationError}
+                onValidate={handleValidatePlayer}
+                activeSeason={activeSeason}
+                buttonText="1. Validate Player"
+                data-testid="validate-player-button"
+              />
 
               {/* Team Selector */}
               <div className="space-y-2">
@@ -258,24 +256,16 @@ export default function AddPlayerPage() {
                 </Select>
               </div>
 
-              {/* Steam ID Input */}
-              <div className="space-y-2">
-                <Label htmlFor="steamId">Steam ID</Label>
-                <Input
-                  id="steamId"
-                  type="text"
-                  placeholder="Enter Steam ID"
-                  value={steamId}
-                  onChange={(e) => handleSteamIdChange(e.target.value)}
-                  data-testid="steam-id-input"
-                />
-              </div>
-
-              {/* Check Button */}
+              {/* Check Eligibility Button */}
               <Button
                 onClick={handleCheckEligibility}
                 disabled={
-                  !selectedSeasonId || !selectedTeamId || !steamId || isChecking
+                  !selectedSeasonId ||
+                  !selectedTeamId ||
+                  !steamId ||
+                  isChecking ||
+                  !validationResult ||
+                  !validationResult.overall_success
                 }
                 className="w-full"
                 data-testid="check-eligibility-button"
@@ -286,14 +276,21 @@ export default function AddPlayerPage() {
                     Checking...
                   </>
                 ) : (
-                  "Check Eligibility"
+                  "2. Check Team Eligibility"
                 )}
               </Button>
 
-              {/* Error Display */}
-              {error && (
-                <Alert variant="destructive" data-testid="error-message">
-                  <AlertDescription>{error}</AlertDescription>
+              {/* Eligibility Error Display */}
+              {eligibilityError && (
+                <Alert
+                  variant="destructive"
+                  data-testid="eligibility-error-message"
+                >
+                  <AlertDescription>
+                    {eligibilityError instanceof Error
+                      ? eligibilityError.message
+                      : "Failed to check eligibility"}
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -313,7 +310,15 @@ export default function AddPlayerPage() {
             </CardContent>
           </Card>
 
-          {/* Results Display */}
+          {/* Validation Results Display */}
+          {validationResult && (
+            <PlayerValidationDisplay
+              validationResult={validationResult}
+              variant="compact"
+            />
+          )}
+
+          {/* Eligibility Results Display */}
           {eligibilityResult && (
             <Card>
               <CardHeader>
@@ -494,7 +499,7 @@ export default function AddPlayerPage() {
                     ) : (
                       <>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Add Player to Team
+                        3. Add Player to Team
                       </>
                     )}
                   </Button>
