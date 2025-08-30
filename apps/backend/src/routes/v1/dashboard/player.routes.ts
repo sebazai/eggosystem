@@ -9,7 +9,7 @@ const router = Router();
 
 // POST /api/v1/dashboard/players/:steam_id/seasons/:season_id/team/:team_id/add
 router.post(
-  "/:season_id/team/:team_id/player/:steam_id/add",
+  "/:steam_id/team/:team_id/season/:season_id/add",
   validateNumericParams(["season_id", "team_id"]),
   addPlayerToTeamController
 );

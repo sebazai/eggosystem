@@ -91,7 +91,8 @@ test.describe("Authentication Test", () => {
     // Start by checking authentication status
     console.log("Navigating to home page");
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    // Wait for page header to load instead of networkidle
+    await page.waitForSelector("main", { timeout: 10000 });
 
     // Take a screenshot of the home page
     await page.screenshot({ path: `test-results/home-page-${Date.now()}.png` });
@@ -100,7 +101,8 @@ test.describe("Authentication Test", () => {
     // Navigate to signup page
     console.log("Navigating to signup page");
     await page.goto("/seasons/16/signup");
-    await page.waitForLoadState("networkidle");
+    // Wait for signup form to load instead of networkidle
+    await page.waitForSelector("main", { timeout: 10000 });
 
     // Take a screenshot of the signup page
     await page.screenshot({
@@ -163,7 +165,10 @@ test.describe("Authentication Test", () => {
     // Now try to navigate to the add-player page
     console.log("Navigating to add-player page");
     await page.goto("/dashboard/players/add");
-    await page.waitForLoadState("networkidle");
+    // Wait for add player form to load instead of networkidle
+    await page.waitForSelector('[data-testid="season-selector"]', {
+      timeout: 10000
+    });
 
     // Take a screenshot of the add-player page
     await page.screenshot({

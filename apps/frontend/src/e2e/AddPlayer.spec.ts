@@ -2,7 +2,7 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import { generateTestJWTForUser } from "./utils";
 
 // Define test data
-const eligiblePlayer = "76561198054765387";
+const eligiblePlayer = "76561199999999999"; // Using a unique Steam ID to avoid conflicts
 const ineligiblePlayer = "76561197960383236";
 const invalidSteamId = "invalid-steam-id";
 // Unused but kept for clarity
@@ -85,6 +85,41 @@ test.describe("Add Player Workflow", () => {
     page
   }) => {
     // Mock external APIs
+    // CSRankker API endpoints
+    await page.route("**/csrankker.kanaliiga.fi/**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "success",
+          result: {
+            steamId: eligiblePlayer,
+            seasonId: 14,
+            originalKanaelo: 168,
+            stabilizedKanaelo: 147,
+            stabilizationInfo: {
+              confidence: 0.85,
+              adjustmentFactor: 0.875,
+              method: "exponential_decay"
+            },
+            components: {
+              trueLevel: 63,
+              mm: 67,
+              hour: 4,
+              kana: 34
+            },
+            calculus: JSON.stringify({
+              trueLevel: 63,
+              mm: 67,
+              hour: 4,
+              kana: 34
+            }),
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+    });
+
     // Steam API player summary endpoint
     await page.route(
       "**/api.steampowered.com/ISteamUser/GetPlayerSummaries/**",
@@ -165,7 +200,7 @@ test.describe("Add Player Workflow", () => {
 
     // Mock the add player endpoint
     await page.route(
-      `**/api/v1/dashboard/sortter/season/*/team/*/player/${eligiblePlayer}/add`,
+      `**/api/v1/dashboard/players/${eligiblePlayer}/team/*/season/*/add`,
       async (route) => {
         await route.fulfill({
           status: 200,
@@ -182,7 +217,7 @@ test.describe("Add Player Workflow", () => {
 
     // Navigate to the add player page
     await page.goto("/dashboard/players/add");
-    await page.waitForLoadState("networkidle");
+    // Wait for key elements instead of networkidle to avoid timeout issues
 
     // Wait for season to be automatically selected (we'll use season 14)
     await page.waitForSelector('[data-testid="season-selector"]', {
@@ -257,6 +292,41 @@ test.describe("Add Player Workflow", () => {
     page
   }) => {
     // Mock external APIs
+    // CSRankker API endpoints
+    await page.route("**/csrankker.kanaliiga.fi/**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          status: "success",
+          result: {
+            steamId: eligiblePlayer,
+            seasonId: 14,
+            originalKanaelo: 168,
+            stabilizedKanaelo: 147,
+            stabilizationInfo: {
+              confidence: 0.85,
+              adjustmentFactor: 0.875,
+              method: "exponential_decay"
+            },
+            components: {
+              trueLevel: 63,
+              mm: 67,
+              hour: 4,
+              kana: 34
+            },
+            calculus: JSON.stringify({
+              trueLevel: 63,
+              mm: 67,
+              hour: 4,
+              kana: 34
+            }),
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+    });
+
     // Steam API player summary endpoint
     await page.route(
       "**/api.steampowered.com/ISteamUser/GetPlayerSummaries/**",
@@ -337,7 +407,7 @@ test.describe("Add Player Workflow", () => {
 
     // Navigate to the add player page
     await page.goto("/dashboard/players/add");
-    await page.waitForLoadState("networkidle");
+    // Wait for key elements instead of networkidle to avoid timeout issues
 
     // Wait for season to be automatically selected (we'll use season 14)
     await page.waitForSelector('[data-testid="season-selector"]', {
@@ -411,7 +481,7 @@ test.describe("Add Player Workflow", () => {
 
     // Navigate to the add player page
     await page.goto("/dashboard/players/add");
-    await page.waitForLoadState("networkidle");
+    // Wait for key elements instead of networkidle to avoid timeout issues
 
     // Wait for season to be automatically selected (we'll use season 14)
     await page.waitForSelector('[data-testid="season-selector"]', {
@@ -478,7 +548,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Player and team data
     const seasonId = 14;
     const teamId = 1650;
-    const steamId = "76561198054765387"; // Eligible player
+    const steamId = "76561199999999999"; // Eligible player
 
     // 1. Call the eligibility check API
     const _eligibilityResponse = await request.get(
@@ -561,7 +631,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Player and team data
     const seasonId = 14;
     const teamId = 1650;
-    const steamId = "76561198054765387"; // Eligible player
+    const steamId = "76561199999999999"; // Eligible player
 
     // Mock the eligibility data
     const mockEligibilityData = {
@@ -586,7 +656,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
 
     // Call the add player API
     await request.post(
-      `${apiBaseUrl}/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`,
+      `${apiBaseUrl}/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`,
       {
         headers: {
           Authorization: `Bearer ${jwtToken}`
@@ -642,7 +712,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
 
     // Call the add player API
     const addResponse = await request.post(
-      `${apiBaseUrl}/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`,
+      `${apiBaseUrl}/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`,
       {
         headers: {
           Authorization: `Bearer ${jwtToken}`
@@ -666,7 +736,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
       title: "Bad Request",
       status: 400,
       detail: "Player is not eligible for this team",
-      instance: `/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`
+      instance: `/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`
     };
 
     // Check mock error follows RFC 7807 format
