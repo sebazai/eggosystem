@@ -445,30 +445,30 @@ describe("Player Ranks Services", () => {
         expect(result).toBeNull();
       });
 
-      it("should handle kana_elo with zero value", async () => {
+      it("should throw BadRequestError for kana_elo with zero value", async () => {
         const mockKanaElo = { kana_elo: 0 };
         mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
 
-        const result = await getPlayerRankForPlatform(
-          mockSteamId,
-          SeasonPlatform.Kanaliiga,
-          mockSeasonId
-        );
-
-        expect(result).toEqual({ kana_elo: 0 });
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.Kanaliiga,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Invalid kana_elo: value must be positive");
       });
 
-      it("should handle kana_elo with negative value", async () => {
+      it("should throw BadRequestError for kana_elo with negative value", async () => {
         const mockKanaElo = { kana_elo: -100 };
         mockGetPlayerKanaElo.mockResolvedValue(mockKanaElo);
 
-        const result = await getPlayerRankForPlatform(
-          mockSteamId,
-          SeasonPlatform.Kanaliiga,
-          mockSeasonId
-        );
-
-        expect(result).toEqual({ kana_elo: -100 });
+        await expect(
+          getPlayerRankForPlatform(
+            mockSteamId,
+            SeasonPlatform.Kanaliiga,
+            mockSeasonId
+          )
+        ).rejects.toThrow("Invalid kana_elo: value must be positive");
       });
 
       it("should handle very high kana_elo values", async () => {

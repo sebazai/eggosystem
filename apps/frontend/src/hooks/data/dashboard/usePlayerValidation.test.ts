@@ -6,9 +6,11 @@ import type { PlayerValidationResult } from "@eggosystem/types";
 // Mock dependencies
 jest.mock("@/lib/apiClient");
 jest.mock("@/lib/utils");
+jest.mock("swr");
 
 import { clientApiFetch } from "@/lib/apiClient";
 import { isValidSteamId } from "@/lib/utils";
+import useSWR from "swr";
 
 const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
   typeof clientApiFetch
@@ -16,6 +18,7 @@ const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
 const mockIsValidSteamId = isValidSteamId as jest.MockedFunction<
   typeof isValidSteamId
 >;
+const mockUseSWR = useSWR as jest.MockedFunction<typeof useSWR>;
 
 const mockValidationResult: PlayerValidationResult = {
   steam_id: "76561198012345678",
@@ -53,9 +56,23 @@ const mockValidationResult: PlayerValidationResult = {
 };
 
 describe("usePlayerValidation", () => {
+  const mockMutate = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockIsValidSteamId.mockReturnValue(true);
+
+    // Reset mockMutate to default implementation
+    mockMutate.mockImplementation(() => Promise.resolve());
+
+    // Mock SWR with default state
+    mockUseSWR.mockReturnValue({
+      data: null,
+      error: null,
+      isValidating: false,
+      mutate: mockMutate,
+      isLoading: false
+    } as any);
   });
 
   describe("Initial State", () => {
@@ -73,97 +90,79 @@ describe("usePlayerValidation", () => {
 
   describe("validatePlayer function", () => {
     it("should validate player successfully", async () => {
-      mockClientApiFetch.mockResolvedValue(mockValidationResult);
+      mockMutate.mockResolvedValueOnce(mockValidationResult);
       const { result } = renderHook(() => usePlayerValidation());
 
+      let returnedResult;
       await act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
+        returnedResult = await result.current.validatePlayer(
+          "76561198012345678",
+          "1"
+        );
       });
 
-      expect(result.current.validationResult).toEqual(mockValidationResult);
-      expect(result.current.isValidating).toBe(false);
-      expect(result.current.error).toBeNull();
-      expect(mockClientApiFetch).toHaveBeenCalledWith(
-        "/api/v1/dashboard/players/76561198012345678/validate?season_id=1"
-      );
+      expect(returnedResult).toEqual(mockValidationResult);
+      expect(mockMutate).toHaveBeenCalledTimes(1);
     });
 
     it("should handle API errors", async () => {
       const errorMessage = "Player not found";
-      mockClientApiFetch.mockRejectedValue(new Error(errorMessage));
       const { result } = renderHook(() => usePlayerValidation());
 
-      await act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
+      // Mock the mutate function to reject when called for this test only
+      mockMutate.mockImplementationOnce(() => {
+        throw new Error(errorMessage);
       });
 
-      expect(result.current.validationResult).toBeNull();
-      expect(result.current.isValidating).toBe(false);
-      expect(result.current.error).toBe(errorMessage);
+      await expect(async () => {
+        await result.current.validatePlayer("76561198012345678", "1");
+      }).rejects.toThrow(errorMessage);
     });
 
     it("should validate input fields", async () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       // Test empty steamId
-      await act(async () => {
+      await expect(async () => {
         await result.current.validatePlayer("", "1");
-      });
-
-      expect(result.current.error).toBe(
+      }).rejects.toThrow(
         "All fields are required. Please select a season first."
       );
-      expect(mockClientApiFetch).not.toHaveBeenCalled();
 
-      // Clear error
-      act(() => {
-        result.current.clearResults();
-      });
+      expect(mockMutate).not.toHaveBeenCalled();
 
       // Test empty seasonId
-      await act(async () => {
+      await expect(async () => {
         await result.current.validatePlayer("76561198012345678", "");
-      });
-
-      expect(result.current.error).toBe(
+      }).rejects.toThrow(
         "All fields are required. Please select a season first."
       );
-      expect(mockClientApiFetch).not.toHaveBeenCalled();
+
+      expect(mockMutate).not.toHaveBeenCalled();
     });
 
     it("should validate Steam ID format", async () => {
       mockIsValidSteamId.mockReturnValue(false);
       const { result } = renderHook(() => usePlayerValidation());
 
-      await act(async () => {
+      await expect(async () => {
         await result.current.validatePlayer("invalid-steam-id", "1");
-      });
+      }).rejects.toThrow("Invalid Steam ID format");
 
-      expect(result.current.error).toBe("Invalid Steam ID format");
-      expect(mockClientApiFetch).not.toHaveBeenCalled();
+      expect(mockMutate).not.toHaveBeenCalled();
     });
   });
 
   describe("clearResults function", () => {
-    it("should clear validation results and errors", async () => {
-      mockClientApiFetch.mockResolvedValue(mockValidationResult);
+    it("should clear validation results and errors", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
-      // First, set some results
-      await act(async () => {
-        await result.current.validatePlayer("76561198012345678", "1");
-      });
-
-      expect(result.current.validationResult).toEqual(mockValidationResult);
-
-      // Then clear them
+      // Test that clearResults calls mutate with undefined
       act(() => {
         result.current.clearResults();
       });
 
-      expect(result.current.validationResult).toBeNull();
-      expect(result.current.error).toBeNull();
-      expect(result.current.isValidating).toBe(false);
+      expect(mockMutate).toHaveBeenCalledWith(undefined, false);
     });
   });
 });

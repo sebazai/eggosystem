@@ -248,6 +248,9 @@ export const getPlayerRankForPlatform = async (
     case SeasonPlatform.Kanaliiga: {
       const kanaElo = await getPlayerKanaElo(steam_id);
       if (kanaElo) {
+        if (kanaElo.kana_elo <= 0) {
+          throw new BadRequestError("Invalid kana_elo: value must be positive");
+        }
         return { kana_elo: kanaElo.kana_elo };
       }
       return null;
