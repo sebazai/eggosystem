@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { SWRConfig } from "swr";
-import AddPlayerPage from "@/app/(admin)/dashboard/add-player/page";
+import AddPlayerPage from "@/app/(admin)/dashboard/players/add/page";
 import * as apiClient from "@/lib/apiClient";
 
 // Mock the apiClient module

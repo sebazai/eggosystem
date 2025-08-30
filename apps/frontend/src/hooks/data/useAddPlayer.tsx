@@ -15,7 +15,7 @@ export const useAddPlayer = () => {
     steamId: string,
     payload: AddPlayerPayload
   ) => {
-    const url = `/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/player/${steamId}/add`;
+    const url = `/api/v1/dashboard/players/${steamId}/seasons/${seasonId}/team/${teamId}/add`;
 
     // Make the POST request
     const result = await clientApiFetch(url, {

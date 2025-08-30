@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { RequestWithParams } from "@eggosystem/types";
-import { addPlayerToTeamController } from "./season.controllers";
+import { addPlayerToTeamController } from "./player.controllers";
 import * as seasonModels from "../../models/dashboard/season.models";
 import * as playerModels from "../../models/player.models";
 import * as rankModels from "../../models/season-player-ranks.models";

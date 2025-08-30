@@ -181,7 +181,7 @@ test.describe("Add Player Workflow", () => {
     );
 
     // Navigate to the add player page
-    await page.goto("/dashboard/add-player");
+    await page.goto("/dashboard/players/add");
     await page.waitForLoadState("networkidle");
 
     // Wait for season to be automatically selected (we'll use season 14)
@@ -336,7 +336,7 @@ test.describe("Add Player Workflow", () => {
     );
 
     // Navigate to the add player page
-    await page.goto("/dashboard/add-player");
+    await page.goto("/dashboard/players/add");
     await page.waitForLoadState("networkidle");
 
     // Wait for season to be automatically selected (we'll use season 14)
@@ -410,7 +410,7 @@ test.describe("Add Player Workflow", () => {
     );
 
     // Navigate to the add player page
-    await page.goto("/dashboard/add-player");
+    await page.goto("/dashboard/players/add");
     await page.waitForLoadState("networkidle");
 
     // Wait for season to be automatically selected (we'll use season 14)

@@ -162,7 +162,7 @@ test.describe("Authentication Test", () => {
 
     // Now try to navigate to the add-player page
     console.log("Navigating to add-player page");
-    await page.goto("/dashboard/add-player");
+    await page.goto("/dashboard/players/add");
     await page.waitForLoadState("networkidle");
 
     // Take a screenshot of the add-player page
