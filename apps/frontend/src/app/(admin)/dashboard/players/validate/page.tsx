@@ -13,10 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { isValidSteamId } from "@/lib/utils";
-import { clientApiFetch } from "@/lib/apiClient";
 import { SeasonPlatform } from "@eggosystem/types";
-import type { PlayerValidationResult } from "@eggosystem/types";
 import { FaceITLevelIcon } from "@/components/profile/FaceITLevelIcon";
 import { CS2PremierRankBadge } from "@/components/profile/CS2PremierRankBadge";
 import {
@@ -28,25 +25,30 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
+import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 
 export default function PlayerValidationPage() {
   const [steamId, setSteamId] = useState("");
   const [seasonId, setSeasonId] = useState("");
   const [platform, setPlatform] = useState<SeasonPlatform | null>(null);
-  const [isValidating, setIsValidating] = useState(false);
-  const [validationResult, setValidationResult] =
-    useState<PlayerValidationResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Get all seasons
   const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
 
+  // Player validation hook
+  const {
+    validationResult,
+    isValidating,
+    error,
+    validatePlayer,
+    clearResults
+  } = usePlayerValidation();
+
   // Clear results when season changes
   useEffect(() => {
     if (seasonId) {
-      setValidationResult(null);
-      setError(null);
+      clearResults();
       setSuccess(null);
 
       // Set platform from selected season
@@ -55,36 +57,11 @@ export default function PlayerValidationPage() {
         setPlatform(selectedSeason.platform);
       }
     }
-  }, [seasonId, seasons]);
+  }, [seasonId, seasons, clearResults]);
 
   const handleValidation = async () => {
-    if (!steamId || !seasonId || !platform) {
-      setError("All fields are required. Please select a season first.");
-      return;
-    }
-
-    if (!isValidSteamId(steamId)) {
-      setError("Invalid Steam ID format");
-      return;
-    }
-
-    setIsValidating(true);
-    setError(null);
     setSuccess(null);
-    setValidationResult(null);
-
-    try {
-      const result = await clientApiFetch<PlayerValidationResult>(
-        `/api/v1/dashboard/players/${steamId}/validate?season_id=${seasonId}`
-      );
-      setValidationResult(result);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to validate player"
-      );
-    } finally {
-      setIsValidating(false);
-    }
+    await validatePlayer(steamId, seasonId);
   };
 
   const getStatusIcon = (success: boolean) => {
