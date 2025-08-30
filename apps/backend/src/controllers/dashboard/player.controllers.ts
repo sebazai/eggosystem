@@ -301,8 +301,6 @@ export const validatePlayerController = async (
       can_add_to_team: false // Will be calculated below
     };
 
-    console.log(validationResult);
-
     // Calculate overall validation status
     validationResult.overall_success =
       validationResult.hours.success &&

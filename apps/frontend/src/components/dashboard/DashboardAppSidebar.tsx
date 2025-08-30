@@ -90,15 +90,16 @@ const data: { navMain: Array<MenuItem> } = {
     {
       title: "Players",
       url: "#",
-      requiredRoles: ["helpdesk"],
       items: [
         {
           title: "Add",
-          url: createDashboardNextUrl("players/add")
+          url: createDashboardNextUrl("players/add"),
+          requiredRoles: ["helpdesk", "admin"]
         },
         {
           title: "Validate",
-          url: createDashboardNextUrl("players/validate")
+          url: createDashboardNextUrl("players/validate"),
+          requiredRoles: ["helpdesk", "admin"]
         }
       ] satisfies Array<SubMenuItem>
     },
