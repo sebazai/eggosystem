@@ -1,12 +1,22 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PlayerValidationForm } from "./PlayerValidationForm";
 import { SeasonPlatform } from "@eggosystem/types";
 
 // Mock the UI components
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, disabled, "data-testid": testId }: any) => (
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    "data-testid"?: string;
+  }) => (
     <button onClick={onClick} disabled={disabled} data-testid={testId}>
       {children}
     </button>
@@ -20,7 +30,13 @@ jest.mock("@/components/ui/input", () => ({
     onChange,
     disabled,
     "data-testid": testId
-  }: any) => (
+  }: {
+    placeholder?: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
+    "data-testid"?: string;
+  }) => (
     <input
       placeholder={placeholder}
       value={value}
@@ -32,15 +48,27 @@ jest.mock("@/components/ui/input", () => ({
 }));
 
 jest.mock("@/components/ui/label", () => ({
-  Label: ({ children }: any) => <label>{children}</label>
+  Label: ({ children }: { children: React.ReactNode }) => (
+    <label>{children}</label>
+  )
 }));
 
 jest.mock("@/components/ui/select", () => ({
-  Select: ({ children, value, onValueChange, disabled }: any) => (
+  Select: ({
+    children,
+    value,
+    onValueChange,
+    disabled
+  }: {
+    children: React.ReactNode;
+    value?: string;
+    onValueChange?: (value: string) => void;
+    disabled?: boolean;
+  }) => (
     <div data-testid="select-container">
       <select
         value={value}
-        onChange={(e) => onValueChange(e.target.value)}
+        onChange={(e) => onValueChange?.(e.target.value)}
         disabled={disabled}
         data-testid="season-select"
       >
@@ -50,14 +78,34 @@ jest.mock("@/components/ui/select", () => ({
       {children}
     </div>
   ),
-  SelectTrigger: ({ children, "data-testid": testId }: any) => (
-    <div data-testid={testId}>{children}</div>
+  SelectTrigger: ({
+    children,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    "data-testid"?: string;
+  }) => <div data-testid={testId}>{children}</div>,
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <div>{placeholder}</div>
   ),
-  SelectValue: ({ placeholder }: any) => <div>{placeholder}</div>,
-  SelectContent: ({ children, "data-testid": testId }: any) => (
-    <div data-testid={testId}>{children}</div>
-  ),
-  SelectItem: ({ children, value, disabled, "data-testid": testId }: any) => (
+  SelectContent: ({
+    children,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    "data-testid"?: string;
+  }) => <div data-testid={testId}>{children}</div>,
+  SelectItem: ({
+    children,
+    value,
+    disabled,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    value: string;
+    disabled?: boolean;
+    "data-testid"?: string;
+  }) => (
     <option value={value} disabled={disabled} data-testid={testId}>
       {children}
     </option>
@@ -65,12 +113,22 @@ jest.mock("@/components/ui/select", () => ({
 }));
 
 jest.mock("@/components/ui/alert", () => ({
-  Alert: ({ children, variant, "data-testid": testId }: any) => (
+  Alert: ({
+    children,
+    variant,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    variant?: "default" | "destructive";
+    "data-testid"?: string;
+  }) => (
     <div data-testid={testId} data-variant={variant}>
       {children}
     </div>
   ),
-  AlertDescription: ({ children }: any) => <div>{children}</div>
+  AlertDescription: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  )
 }));
 
 jest.mock("lucide-react", () => ({

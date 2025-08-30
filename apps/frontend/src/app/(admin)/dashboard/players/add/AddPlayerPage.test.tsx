@@ -40,7 +40,7 @@ jest.mock("@/components/dashboard/PlayerValidationDisplay", () => ({
   PlayerValidationDisplay: ({
     validationResult
   }: {
-    validationResult: any;
+    validationResult: { overall_success: boolean };
   }) => (
     <div
       data-testid={
@@ -61,12 +61,19 @@ jest.mock("@/components/dashboard/PlayerValidationForm", () => ({
     onValidate,
     steamId,
     setSteamId,
-    seasonId,
-    setSeasonId,
     seasons,
     activeSeason,
     "data-testid": testId
-  }: any) => (
+  }: {
+    buttonText?: string;
+    disabled?: boolean;
+    onValidate: () => void;
+    steamId: string;
+    setSteamId: (value: string) => void;
+    seasons: { id: number; full_name: string }[] | undefined;
+    activeSeason?: { season_id: number } | null;
+    "data-testid"?: string;
+  }) => (
     <div>
       <input
         placeholder="Enter Steam ID"
@@ -81,8 +88,8 @@ jest.mock("@/components/dashboard/PlayerValidationForm", () => ({
         <div data-testid="season-dropdown">
           {seasons && seasons.length > 0 ? (
             seasons
-              .sort((a: any, b: any) => b.id - a.id)
-              .map((season: any) => (
+              .sort((a, b) => b.id - a.id)
+              .map((season) => (
                 <div
                   key={season.id}
                   data-value={season.id.toString()}

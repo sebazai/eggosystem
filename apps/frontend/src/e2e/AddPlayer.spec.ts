@@ -2,7 +2,6 @@ import { test, expect, type Page, type Route } from "@playwright/test";
 import { generateTestJWTForUser } from "./utils";
 import { SeasonPlatform } from "@eggosystem/types";
 
-<<<<<<< Updated upstream
 // Define test data
 const eligiblePlayer = "76561198054765387"; // Using a unique Steam ID to avoid conflicts
 const ineligiblePlayer = "76561197960383236";
@@ -384,7 +383,7 @@ test.describe("Add Player Workflow", () => {
     // Step 1: Validate Player
     await page.click('[data-testid="validate-player-button"]');
 
-        // Wait for validation result
+    // Wait for validation result
     await page.waitForSelector('[data-testid="validation-success"]');
 
     // Verify validation result is shown

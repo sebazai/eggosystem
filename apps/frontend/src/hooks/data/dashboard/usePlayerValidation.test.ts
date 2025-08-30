@@ -143,7 +143,7 @@ describe("usePlayerValidation", () => {
     });
 
     it("should set and clear loading state correctly", async () => {
-      let resolvePromise: (value: any) => void;
+      let resolvePromise: (value: PlayerValidationResult) => void = () => {};
       const promise = new Promise((resolve) => {
         resolvePromise = resolve;
       });
