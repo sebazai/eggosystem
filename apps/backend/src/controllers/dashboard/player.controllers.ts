@@ -297,8 +297,7 @@ export const validatePlayerController = async (
               : null
             : null
       },
-      overall_success: false, // Will be calculated below
-      can_add_to_team: false // Will be calculated below
+      overall_success: false // Will be calculated below
     };
 
     // Calculate overall validation status
@@ -307,7 +306,6 @@ export const validatePlayerController = async (
       validationResult.rank.success &&
       validationResult.platform_rank.success &&
       validationResult.profile.success;
-    validationResult.can_add_to_team = validationResult.overall_success;
 
     res.status(200).json(validationResult);
   } catch (error) {

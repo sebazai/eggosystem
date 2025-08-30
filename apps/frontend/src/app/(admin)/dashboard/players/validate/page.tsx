@@ -368,16 +368,12 @@ export default function PlayerValidationPage() {
 
             {/* Validation Summary */}
             <div className="pt-4">
-              {validationResult.can_add_to_team ? (
+              {validationResult.overall_success ? (
                 <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/20 dark:border-green-800">
                   <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
                   <p className="text-green-800 dark:text-green-200 font-medium">
                     Player validation successful! This player can be added to
                     teams.
-                  </p>
-                  <p className="text-green-600 dark:text-green-400 text-sm mt-1">
-                    Use the Add Player page to add this player to a specific
-                    team.
                   </p>
                 </div>
               ) : (

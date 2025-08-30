@@ -33,5 +33,4 @@ export interface PlayerValidationResult {
     error: string | null;
   };
   overall_success: boolean;
-  can_add_to_team: boolean;
 }
