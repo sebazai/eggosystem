@@ -166,7 +166,7 @@ export default function AddPlayerPage() {
   };
 
   return (
-    <WithRoleProtection>
+    <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
       <div className="flex flex-1 flex-col gap-6 p-4">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Add Player</h1>

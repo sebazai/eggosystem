@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { createPageMetadata } from "@/lib/metadata";
+import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -116,7 +117,9 @@ export default function RootLayout({
             <div className="flex flex-col min-h-svh min-w-[200px] w-full">
               <AuthProvider>
                 <AcceptPolicyProvider>
-                  <main id="main-content">{children}</main>
+                  <WithRoleProtection allowedRoles={["admin", "helpdesk"]}>
+                    <main id="main-content">{children}</main>
+                  </WithRoleProtection>
                 </AcceptPolicyProvider>
               </AuthProvider>
             </div>
