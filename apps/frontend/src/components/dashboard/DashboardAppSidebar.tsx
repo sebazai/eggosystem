@@ -106,7 +106,7 @@ const data: { navMain: Array<MenuItem> } = {
     {
       title: "Sortter",
       url: createDashboardNextUrl("sortter"),
-      requiredRoles: ["helpdesk"],
+      requiredRoles: ["admin"],
       items: [] satisfies Array<SubMenuItem>
     },
     {
