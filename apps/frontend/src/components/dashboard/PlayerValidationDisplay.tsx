@@ -95,6 +95,10 @@ export function PlayerValidationDisplay({
                     {validationResult.profile.data.discord || "Not set"}
                   </div>
                   <div>
+                    Work Email:{" "}
+                    {validationResult.profile.data.work_email || "Not set"}
+                  </div>
+                  <div>
                     Email Verified:{" "}
                     {validationResult.profile.data.work_email_verified
                       ? "Yes"
@@ -295,6 +299,10 @@ export function PlayerValidationDisplay({
                       <p>
                         Discord (captains only):{" "}
                         {validationResult.profile.data.discord || "Not set"}
+                      </p>
+                      <p>
+                        Work Email:{" "}
+                        {validationResult.profile.data.work_email || "Not set"}
                       </p>
                       <p>
                         Email Verified:{" "}

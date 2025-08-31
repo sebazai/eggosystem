@@ -186,7 +186,8 @@ describe("Add Player Validation Workflow (TDD)", () => {
         discord: "player#1234",
         work_email_verified: true,
         is_valid_full_name: true,
-        is_valid_work_email: true
+        is_valid_work_email: true,
+        work_email: "test@example.com"
       },
       error: null
     },

@@ -13,9 +13,9 @@ import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
 import { type RequestWithParams } from "@eggosystem/types";
-import { getPlayerDetailsBySteamId } from "../../models/player.models";
 import { getPlayerRankForPlatform } from "../../services/player-ranks.services";
 import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
+import { getPlayerDetailsForDashboardBySteamId } from "../../models/dashboard/player.models";
 /**
  * Controller to add a player to a team
  * This will:
@@ -93,6 +93,18 @@ export const addPlayerToTeamController = async (
 
       // Fetch real FACEIT data (levels 1-10, ELO values)
       const faceitData = await getFaceITCS2Rank(steamId);
+
+      if (faceitData.faceit_elo < 0) {
+        return next(new BadRequestError("FaceIT data not found"));
+      }
+
+      if (rankData.average_rank < 0) {
+        return next(new BadRequestError("CS2 rank not found"));
+      }
+
+      if (hoursData.hours < 0) {
+        return next(new BadRequestError("Hours not found"));
+      }
 
       // Create or update player in SeasonPlayerRanks with real data
       await insertFaceITPlayerRankForSeason(
@@ -214,7 +226,7 @@ export const validatePlayerController = async (
         getPlayerHoursForSteamAppId(steamId, appId, seasonId),
         getCSRank(steamId, seasonId),
         getPlayerRankForPlatform(steamId, platform, seasonId),
-        getPlayerDetailsBySteamId(steamId)
+        getPlayerDetailsForDashboardBySteamId(steamId)
       ]);
 
     let externalRankData: number = -1;
@@ -287,7 +299,8 @@ export const validatePlayerController = async (
                 ),
                 is_valid_work_email: Boolean(
                   playerData.value.is_valid_work_email
-                )
+                ),
+                work_email: playerData.value.work_email || null
               }
             : null,
         error:
@@ -307,6 +320,7 @@ export const validatePlayerController = async (
       validationResult.platform_rank.success &&
       validationResult.profile.success;
 
+    res.set("Cache-Control", "no-cache");
     res.status(200).json(validationResult);
   } catch (error) {
     return next(error);
