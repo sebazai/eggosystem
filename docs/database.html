@@ -49,6 +49,7 @@ erDiagram
 "AccountRoles" }o--|| "Games" : ""
 "AccountRoles" }o--|| "Roles" : ""
 "AuditLog" }o--o| "Accounts" : ""
+"CasterUrls" |o--|| "Accounts" : ""
 "GameTypes" }o--|| "Games" : ""
 "KanahautomoRegistrationGameTypes" }o--|| "GameTypes" : ""
 "KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
@@ -64,6 +65,8 @@ erDiagram
 "MatchGameClips" }o--|| "MatchGames" : ""
 "MatchGames" }o--|| "Maps" : ""
 "MatchGames" }o--|| "Matches" : ""
+"MatchStreams" }o--|| "Accounts" : ""
+"MatchStreams" }o--|| "Matches" : ""
 "MatchTeamMapVetoes" }o--|| "Maps" : ""
 "MatchTeamMapVetoes" }o--|| "MatchTeams" : ""
 "MatchTeams" }o--|| "Matches" : ""
@@ -76,6 +79,7 @@ erDiagram
 "PlayerTrades" }o--|| "SteamPlayers" : ""
 "PlayerTrades" }o--|| "SteamPlayers" : ""
 "PlayerTrades" }o--|| "SteamPlayers" : ""
+"Reservations" }o--o| "Accounts" : ""
 "Reservations" }o--|| "Matches" : ""
 "RolePermissions" }o--|| "Permissions" : ""
 "RolePermissions" }o--|| "Roles" : ""
@@ -130,6 +134,10 @@ erDiagram
 "AuditLog" {
   bigint_20__unsigned id PK
   int_10__unsigned user_id FK
+}
+"CasterUrls" {
+  int_10__unsigned id PK
+  int_10__unsigned account_id FK
 }
 "FaceitWebhooks" {
   int_10__unsigned id PK
@@ -189,6 +197,11 @@ erDiagram
   int_10__unsigned match_id FK
   tinyint_3__unsigned map_id FK
 }
+"MatchStreams" {
+  int_10__unsigned id PK
+  int_10__unsigned match_id FK
+  int_10__unsigned account_id FK
+}
 "MatchTeamMapVetoes" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
@@ -233,6 +246,7 @@ erDiagram
 "Reservations" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
+  int_10__unsigned account_id FK
 }
 "RolePermissions" {
   int_10__unsigned role_id PK

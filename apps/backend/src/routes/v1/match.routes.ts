@@ -11,8 +11,14 @@ import {
   getMatchMapVetoesController,
   getMatchBreadcrumbController
 } from "../../controllers/matches.controllers";
+import {
+  reserveStreamController,
+  unreserveStreamController
+} from "../../controllers/match-streams.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
+import { authenticateJWT } from "../../middlewares/auth.middleware";
+
 // New Router instance
 const router = Router();
 
@@ -57,5 +63,20 @@ router.get(
 );
 
 router.get("/", getMatchesController);
+
+// Stream reservation routes (require authentication and caster role)
+router.post(
+  "/:match_id/reserve-cast",
+  authenticateJWT,
+  validateNumericParams(),
+  reserveStreamController
+);
+
+router.delete(
+  "/:match_id/reserve-cast",
+  authenticateJWT,
+  validateNumericParams(),
+  unreserveStreamController
+);
 
 export default router;

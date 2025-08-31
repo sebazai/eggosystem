@@ -28,3 +28,12 @@ export const getUserHighestRole = (
 
   return user.roles[0] || null;
 };
+
+/**
+ * Check if user has caster role
+ */
+export const hasCasterAccess = (user: UserFullPayload | null): boolean => {
+  if (!user || !user.roles) return false;
+
+  return user.roles.includes("caster");
+};

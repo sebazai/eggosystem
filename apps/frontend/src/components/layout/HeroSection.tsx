@@ -166,59 +166,82 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
             ) : upcomingMatches.length > 0 ? (
               <div className="space-y-3 sm:space-y-4 max-h-[400px] overflow-y-auto">
-                {upcomingMatches.map((match) => (
-                  <Card
-                    key={match.match_id}
-                    className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group"
-                    onClick={() => handleMatchClick(match)}
-                  >
-                    <CardContent className="p-3 sm:p-4">
-                      <div className="flex items-start gap-2 sm:gap-3">
-                        <div
-                          className="w-3 h-3 rounded-full flex-shrink-0 mt-1 flex-shrink-0"
-                          style={{
-                            backgroundColor: DIVISIONS[match.league_tier]?.color
-                          }}
-                        />
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <h3 className="font-semibold text-white text-sm lg:text-base mb-1 group-hover:text-orange-400 transition-colors break-words leading-tight">
-                            {match.title}
-                          </h3>
-                          <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
-                            <Clock className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">
-                              {formatInTimezone(
-                                match.match_start,
-                                "MMM d 'at' HH:mm"
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between gap-2">
-                            <Badge
-                              variant="secondary"
-                              className="text-xs bg-white/10 text-slate-300 border-white/20 flex-shrink-0"
+                {upcomingMatches.map((match) => {
+                  const hasStream =
+                    match.streamUrl && match.streamUrl.length > 0;
+                  return (
+                    <Card
+                      key={match.match_id}
+                      className={`${
+                        hasStream
+                          ? "bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/15 ring-1 ring-orange-500/20"
+                          : "bg-white/5 border-white/10 hover:bg-white/10"
+                      } transition-all duration-300 cursor-pointer group relative`}
+                      onClick={() => handleMatchClick(match)}
+                    >
+                      {hasStream && (
+                        <div className="absolute top-2 right-2 text-lg opacity-90 bg-orange-500/20 rounded px-1.5 py-0.5">
+                          📺
+                        </div>
+                      )}
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0 mt-1 flex-shrink-0"
+                            style={{
+                              backgroundColor:
+                                DIVISIONS[match.league_tier]?.color
+                            }}
+                          />
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <h3
+                              className={`font-semibold text-sm lg:text-base mb-1 group-hover:text-orange-400 transition-colors break-words leading-tight ${
+                                hasStream ? "text-orange-100" : "text-white"
+                              }`}
                             >
-                              {match.league_name}
-                            </Badge>
-                            {match.streamUrl && match.streamUrl.length > 0 && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 text-orange-400 hover:text-orange-300 hover:bg-orange-400/10 flex-shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStreamClick(match);
-                                }}
+                              {match.title}
+                              {hasStream && (
+                                <span className="ml-2 text-xs bg-orange-500/30 text-orange-200 px-2 py-0.5 rounded-full">
+                                  LIVE STREAM
+                                </span>
+                              )}
+                            </h3>
+                            <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">
+                                {formatInTimezone(
+                                  match.match_start,
+                                  "MMM d 'at' HH:mm"
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs bg-white/10 text-slate-300 border-white/20 flex-shrink-0"
                               >
-                                <ExternalLink className="h-3 w-3" />
-                              </Button>
-                            )}
+                                {match.league_name}
+                              </Badge>
+                              {hasStream && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-orange-300 hover:text-orange-200 hover:bg-orange-400/20 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStreamClick(match);
+                                  }}
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <Card className="bg-white/5 border-white/10">

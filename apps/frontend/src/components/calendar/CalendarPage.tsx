@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSWRConfig } from "swr";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -47,6 +48,31 @@ import {
   DIVISIONS,
   findMinMaxTimes
 } from "@/lib/calendar-utils";
+import { StreamReservation } from "./StreamReservation";
+
+// Add custom CSS for stream matches
+const streamMatchStyles = `
+  .fc .stream-match {
+    border-width: 3px !important;
+    border-style: solid !important;
+    position: relative;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important;
+  }
+
+  .fc .stream-match::before {
+    content: "📺";
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    font-size: 14px;
+    z-index: 10;
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 2px;
+    padding: 1px 2px;
+    line-height: 1;
+  }
+`;
 
 interface EventDetails {
   id: string;
@@ -63,30 +89,40 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
   // Sort matches by date/time first, then by tier
   const sortedMatches = sortMatchesByDateAndTier(matches);
 
-  return sortedMatches.map((match, index) => ({
-    id: match.match_id,
-    title: match.title,
-    start: match.match_start,
-    end: match.match_end,
-    backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280", // fallback to gray
-    borderColor: DIVISIONS[match.league_tier]?.borderColor || "#4b5563", // fallback to darker gray
-    // Add displayOrder to ensure proper sorting in popovers
-    displayOrder: index,
-    extendedProps: {
-      league: match.league_name,
-      streamUrl: match.streamUrl,
-      team1: match.match_team1,
-      team2: match.match_team2,
-      tier: match.league_tier,
-      // Store the original sort order for popover sorting
-      sortOrder: index
-    }
-  }));
+  return sortedMatches.map((match, index) => {
+    const hasStream = match.streamUrl && match.streamUrl.length > 0;
+
+    return {
+      id: match.match_id,
+      title: match.title,
+      start: match.match_start,
+      end: match.match_end,
+      backgroundColor: DIVISIONS[match.league_tier]?.color || "#6b7280", // fallback to gray
+      borderColor: hasStream
+        ? "#f59e0b" // amber-500 for matches with streams
+        : DIVISIONS[match.league_tier]?.borderColor || "#4b5563", // fallback to darker gray
+      // Add displayOrder to ensure proper sorting in popovers
+      displayOrder: index,
+      // Add special styling for streamed matches
+      classNames: hasStream ? "stream-match" : "",
+      extendedProps: {
+        league: match.league_name,
+        streamUrl: match.streamUrl,
+        team1: match.match_team1,
+        team2: match.match_team2,
+        tier: match.league_tier,
+        hasStream: hasStream,
+        // Store the original sort order for popover sorting
+        sortOrder: index
+      }
+    };
+  });
 };
 
 export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { mutate } = useSWRConfig();
 
   // Initialize state from URL parameters
   const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(() => {
@@ -355,8 +391,18 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     }
   };
 
+  const handleStreamReservation = () => {
+    // Refresh calendar data to show the new stream
+    mutate(
+      `/api/v1/calendar/seasons/${seasonId}/leagues/${selectedDivision}/matches`
+    );
+  };
+
   return (
     <div className="mx-auto py-4 sm:py-8 px-2 sm:px-4">
+      {/* Inject stream match styles */}
+      <style dangerouslySetInnerHTML={{ __html: streamMatchStyles }} />
+
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">
           Match Calendar
@@ -596,41 +642,47 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
               <div className="flex flex-col gap-4 pt-2">
                 {/* Stream Section */}
                 {selectedEvent.streamUrl &&
-                  selectedEvent.streamUrl.length > 0 && (
-                    <>
-                      {selectedEvent.streamUrl.length === 1 ? (
-                        // Single stream - show as button
-                        <Button
-                          onClick={() => handleStreamClick()}
-                          className="flex items-center gap-2 w-full"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          Watch Stream
-                        </Button>
-                      ) : (
-                        // Multiple streams - show as links
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium">
-                            Available Streams:
-                          </h4>
-                          <div className="flex flex-col gap-1">
-                            {selectedEvent.streamUrl.map((url, index) => (
-                              <a
-                                key={index}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-primary hover:underline"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                                Stream {index + 1}
-                              </a>
-                            ))}
-                          </div>
+                selectedEvent.streamUrl.length > 0 ? (
+                  <>
+                    {selectedEvent.streamUrl.length === 1 ? (
+                      // Single stream - show as button
+                      <Button
+                        onClick={() => handleStreamClick()}
+                        className="flex items-center gap-2 w-full"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Watch Stream
+                      </Button>
+                    ) : (
+                      // Multiple streams - show as links
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">
+                          Available Streams:
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                          {selectedEvent.streamUrl.map((url, index) => (
+                            <a
+                              key={index}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Stream {index + 1}
+                            </a>
+                          ))}
                         </div>
-                      )}
-                    </>
-                  )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  // No streams - show reserve button for casters
+                  <StreamReservation
+                    matchId={selectedEvent.id}
+                    onReservationSuccess={handleStreamReservation}
+                  />
+                )}
 
                 <Button
                   onClick={() => {

@@ -37,3 +37,4 @@ export * from "./FaceitWebhook.interface";
 export * from "./Organizer.interface";
 export * from "./SteamPlayerKanaElo.interface";
 export * from "./KanahautomoRegistration.interface";
+export * from "./CasterUrl.interface";

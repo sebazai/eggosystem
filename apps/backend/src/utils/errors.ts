@@ -51,6 +51,16 @@ export class ForbiddenError extends BaseError {
   }
 }
 
+export class ConflictError extends BaseError {
+  status: number;
+
+  constructor(message: string, status?: number, title?: string) {
+    super(message, status ?? 409, title ?? "Conflict");
+    this.name = "Conflict";
+    this.status = status ?? 409;
+  }
+}
+
 export class InternalServerError extends BaseError {
   status: number;
 

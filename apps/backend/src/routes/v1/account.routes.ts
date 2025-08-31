@@ -4,6 +4,11 @@ import {
   sendVerificationEmails,
   updateAccountProfileController
 } from "../../controllers/account.controllers";
+import {
+  getCasterDefaultUrlController,
+  updateCasterDefaultUrlController,
+  deleteCasterDefaultUrlController
+} from "../../controllers/caster-urls.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
 import { type UserProfilePayload } from "@eggosystem/types";
@@ -48,5 +53,10 @@ router.post(
   validateNumericParams(),
   sendVerificationEmails
 );
+
+// Caster default URL routes (require caster role)
+router.get("/caster/default-url", getCasterDefaultUrlController);
+router.post("/caster/default-url", updateCasterDefaultUrlController);
+router.delete("/caster/default-url", deleteCasterDefaultUrlController);
 
 export default router;
