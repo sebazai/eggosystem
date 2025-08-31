@@ -68,9 +68,11 @@ const mockValidationResultSuccess: PlayerValidationResult = {
     success: true,
     data: {
       account_id: 123,
+      steam_id: "76561197960287930",
       nickname: "TestPlayer",
       discord: "TestPlayer#1234",
       work_email_verified: true,
+      is_work_email_personal_email: false,
       is_valid_full_name: true,
       is_valid_work_email: true,
       work_email: "test@example.com"
@@ -241,7 +243,7 @@ describe("PlayerValidationPage", () => {
       ).toBeInTheDocument();
       expect(screen.getByText("Email Verified: Yes")).toBeInTheDocument();
       expect(screen.getByText("Valid Name: Yes")).toBeInTheDocument();
-      expect(screen.getByText("Valid Work Email: Yes")).toBeInTheDocument();
+      expect(screen.getByText("Valid Email: Yes")).toBeInTheDocument();
     });
 
     it("should show overall success message", () => {

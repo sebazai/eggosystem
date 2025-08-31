@@ -8,8 +8,9 @@ export interface PlayerDetailsForDashboardBySteamId {
   nickname: SteamPlayer["nickname"];
   discord: Account["discord"];
   work_email_verified: Account["work_email_verified"];
-  is_valid_full_name: number;
-  is_valid_work_email: number;
+  is_work_email_personal_email: Account["is_work_email_personal_email"];
+  is_valid_full_name: boolean;
+  is_valid_work_email: boolean;
   work_email: Account["work_email"];
 }
 
@@ -35,15 +36,7 @@ export interface PlayerValidationResult {
   };
   profile: {
     success: boolean;
-    data: {
-      account_id: Account["id"];
-      nickname: Account["nickname"];
-      discord: Account["discord"];
-      work_email_verified: Account["work_email_verified"];
-      is_valid_full_name: boolean;
-      is_valid_work_email: boolean;
-      work_email: Account["work_email"];
-    } | null;
+    data: PlayerDetailsForDashboardBySteamId | null;
     error: string | null;
   };
   overall_success: boolean;

@@ -12,6 +12,7 @@ export const getPlayerDetailsForDashboardBySteamId = async (
         a.discord,
         a.work_email_verified,
         a.work_email,
+        a.is_work_email_personal_email,
         CASE 
             WHEN a.work_email IS NULL THEN FALSE
             WHEN a.work_email LIKE '%@%' THEN TRUE

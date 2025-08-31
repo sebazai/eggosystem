@@ -41,9 +41,11 @@ const mockValidationResult: PlayerValidationResult = {
     success: true,
     data: {
       account_id: 123,
+      steam_id: "76561197960287930",
       nickname: "TestPlayer",
       discord: "TestPlayer#1234",
       work_email_verified: true,
+      is_work_email_personal_email: false,
       is_valid_full_name: true,
       is_valid_work_email: true,
       work_email: "test@example.com"

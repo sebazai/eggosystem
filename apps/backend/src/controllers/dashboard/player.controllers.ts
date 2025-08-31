@@ -290,17 +290,21 @@ export const validatePlayerController = async (
             ? {
                 account_id: playerData.value.account_id,
                 nickname: playerData.value.nickname,
-                discord: playerData.value.discord || "",
+                steam_id: playerData.value.steam_id,
+                discord: playerData.value.discord || null,
+                work_email: playerData.value.work_email || null,
                 work_email_verified: Boolean(
                   playerData.value.work_email_verified
+                ),
+                is_work_email_personal_email: Boolean(
+                  playerData.value.is_work_email_personal_email
                 ),
                 is_valid_full_name: Boolean(
                   playerData.value.is_valid_full_name
                 ),
                 is_valid_work_email: Boolean(
                   playerData.value.is_valid_work_email
-                ),
-                work_email: playerData.value.work_email || null
+                )
               }
             : null,
         error:
@@ -320,7 +324,6 @@ export const validatePlayerController = async (
       validationResult.platform_rank.success &&
       validationResult.profile.success;
 
-    res.set("Cache-Control", "no-cache");
     res.status(200).json(validationResult);
   } catch (error) {
     return next(error);

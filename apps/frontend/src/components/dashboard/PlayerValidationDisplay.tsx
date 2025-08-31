@@ -98,6 +98,12 @@ export function PlayerValidationDisplay({
                     Work Email:{" "}
                     {validationResult.profile.data.work_email || "Not set"}
                   </div>
+                  {validationResult.profile.data
+                    .is_work_email_personal_email && (
+                    <div className="text-amber-600 font-medium">
+                      ⚠️ Personal Email Detected - Requires Admin Validation
+                    </div>
+                  )}
                   <div>
                     Email Verified:{" "}
                     {validationResult.profile.data.work_email_verified
@@ -304,6 +310,27 @@ export function PlayerValidationDisplay({
                         Work Email:{" "}
                         {validationResult.profile.data.work_email || "Not set"}
                       </p>
+                      {validationResult.profile.data
+                        .is_work_email_personal_email && (
+                        <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-amber-800 dark:bg-amber-950/20 dark:border-amber-800 dark:text-amber-200">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="font-medium">
+                              Personal Email Detected
+                            </span>
+                          </div>
+                          <p className="text-xs mt-1">
+                            Admin must validate employment status and verify if
+                            this email is company-related or personal.
+                          </p>
+                        </div>
+                      )}
+                      <p>
+                        Valid Email:{" "}
+                        {validationResult.profile.data.is_valid_work_email
+                          ? "Yes"
+                          : "No"}
+                      </p>
                       <p>
                         Email Verified:{" "}
                         {validationResult.profile.data.work_email_verified
@@ -313,12 +340,6 @@ export function PlayerValidationDisplay({
                       <p>
                         Valid Name:{" "}
                         {validationResult.profile.data.is_valid_full_name
-                          ? "Yes"
-                          : "No"}
-                      </p>
-                      <p>
-                        Valid Work Email:{" "}
-                        {validationResult.profile.data.is_valid_work_email
                           ? "Yes"
                           : "No"}
                       </p>

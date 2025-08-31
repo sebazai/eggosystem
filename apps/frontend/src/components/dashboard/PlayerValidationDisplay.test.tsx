@@ -61,9 +61,11 @@ describe("PlayerValidationDisplay", () => {
       success: true,
       data: {
         account_id: 123,
+        steam_id: "76561197960287930",
         nickname: "TestPlayer",
         discord: "player#1234",
         work_email_verified: true,
+        is_work_email_personal_email: false,
         is_valid_full_name: true,
         is_valid_work_email: true,
         work_email: "test@example.com"
@@ -299,7 +301,7 @@ describe("PlayerValidationDisplay", () => {
       ).toBeInTheDocument();
       expect(screen.getByText("Email Verified: Yes")).toBeInTheDocument();
       expect(screen.getByText("Valid Name: Yes")).toBeInTheDocument();
-      expect(screen.getByText("Valid Work Email: Yes")).toBeInTheDocument();
+      expect(screen.getByText("Valid Email: Yes")).toBeInTheDocument();
     });
   });
 
@@ -379,9 +381,11 @@ describe("PlayerValidationDisplay", () => {
           success: true,
           data: {
             account_id: 123,
+            steam_id: "76561197960287930",
             nickname: "TestPlayer",
             discord: "",
             work_email_verified: false,
+            is_work_email_personal_email: false,
             is_valid_full_name: true,
             is_valid_work_email: false,
             work_email: ""
@@ -409,6 +413,55 @@ describe("PlayerValidationDisplay", () => {
       // Should show detailed description style (when no variant specified, defaults to detailed)
       expect(
         screen.getByText(/Steam ID: 76561198054765387/)
+      ).toBeInTheDocument();
+    });
+
+    it("should show personal email warning when is_work_email_personal_email is true", () => {
+      const validationResultWithPersonalEmail = {
+        ...mockSuccessfulValidation,
+        profile: {
+          ...mockSuccessfulValidation.profile,
+          data: {
+            ...mockSuccessfulValidation.profile.data!,
+            is_work_email_personal_email: true
+          }
+        }
+      };
+
+      render(
+        <PlayerValidationDisplay
+          validationResult={validationResultWithPersonalEmail}
+          variant="compact"
+        />
+      );
+
+      expect(
+        screen.getByText(/Personal Email Detected - Requires Admin Validation/)
+      ).toBeInTheDocument();
+    });
+
+    it("should show detailed personal email warning in detailed view", () => {
+      const validationResultWithPersonalEmail = {
+        ...mockSuccessfulValidation,
+        profile: {
+          ...mockSuccessfulValidation.profile,
+          data: {
+            ...mockSuccessfulValidation.profile.data!,
+            is_work_email_personal_email: true
+          }
+        }
+      };
+
+      render(
+        <PlayerValidationDisplay
+          validationResult={validationResultWithPersonalEmail}
+          variant="detailed"
+        />
+      );
+
+      expect(screen.getByText(/Personal Email Detected/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Admin must validate employment status/)
       ).toBeInTheDocument();
     });
   });
