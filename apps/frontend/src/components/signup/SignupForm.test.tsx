@@ -12,7 +12,7 @@ import {
   renderWithSWR,
   setupFetchMock,
   clearAllMocks
-} from "@/__tests__/utils/test-utils";
+} from "@/test-utils/test-utils";
 
 // Mock dependencies
 jest.mock("@/context/AuthContext");

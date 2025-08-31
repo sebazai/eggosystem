@@ -36,7 +36,6 @@ export default function AddPlayerPage() {
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
-  const [_error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   // Get all seasons
@@ -81,16 +80,12 @@ export default function AddPlayerPage() {
   // Handle eligibility check errors from SWR
   useEffect(() => {
     if (eligibilityError) {
-      setError(
-        eligibilityError instanceof Error
-          ? eligibilityError.message
-          : "Failed to check eligibility"
-      );
+      // Error is handled by the eligibilityError display in the UI
+      console.error("Eligibility check failed:", eligibilityError);
     }
   }, [eligibilityError]);
 
   const handleValidatePlayer = async () => {
-    setError(null);
     setSuccess(null);
 
     try {
@@ -104,15 +99,13 @@ export default function AddPlayerPage() {
   };
 
   const handleCheckEligibility = async () => {
-    setError(null);
     setSuccess(null);
 
     try {
       await checkEligibility();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to check eligibility"
-      );
+      // Error is handled by the eligibilityError from the hook
+      console.error("Eligibility check failed:", err);
     }
   };
 
@@ -122,7 +115,6 @@ export default function AddPlayerPage() {
     setSelectedTeamId("");
     clearValidationResults();
     clearResult();
-    setError(null);
     setSuccess(null);
   };
 
@@ -132,7 +124,6 @@ export default function AddPlayerPage() {
     if (value !== steamId) {
       clearValidationResults();
       clearResult();
-      setError(null);
       setSuccess(null);
     }
   };
@@ -141,7 +132,6 @@ export default function AddPlayerPage() {
     setSelectedTeamId(value);
     // Clear results when team changes
     clearResult();
-    setError(null);
     setSuccess(null);
   };
 
@@ -151,7 +141,6 @@ export default function AddPlayerPage() {
     }
 
     setIsAdding(true);
-    setError(null);
     setSuccess(null);
 
     try {
@@ -168,9 +157,9 @@ export default function AddPlayerPage() {
       clearValidationResults();
       clearResult();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to add player to team"
-      );
+      // For now, just log the error - could add a toast notification or other error handling
+      console.error("Failed to add player:", err);
+      setSuccess(null);
     } finally {
       setIsAdding(false);
     }
