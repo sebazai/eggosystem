@@ -34,7 +34,7 @@ export const LeagueSelector = ({
       <SelectContent>
         {allLeagues.map((league) => (
           <SelectItem key={league.external_id} value={league.external_id}>
-            {league.league_name}
+            {league.external_league_name}
           </SelectItem>
         ))}
       </SelectContent>
