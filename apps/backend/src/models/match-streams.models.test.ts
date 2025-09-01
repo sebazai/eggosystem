@@ -128,7 +128,7 @@ describe("match-streams models", () => {
 
       expect(result).toBe("https://twitch.tv/testcaster");
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT default_stream_url FROM CasterUrls WHERE account_id = ?",
+        "SELECT default_stream_url FROM AccountCasterUrls WHERE account_id = ?",
         [1]
       );
     });

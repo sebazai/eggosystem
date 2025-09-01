@@ -33,7 +33,7 @@ describe("caster-urls models", () => {
 
       expect(result).toBe("https://twitch.tv/testcaster");
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT default_stream_url FROM CasterUrls WHERE account_id = ?",
+        "SELECT default_stream_url FROM AccountCasterUrls WHERE account_id = ?",
         [1]
       );
     });
@@ -62,12 +62,12 @@ describe("caster-urls models", () => {
       expect(mockRunQuery).toHaveBeenCalledTimes(2);
       expect(mockRunQuery).toHaveBeenNthCalledWith(
         1,
-        expect.stringContaining("INSERT INTO CasterUrls"),
+        expect.stringContaining("INSERT INTO AccountCasterUrls"),
         [1, "https://twitch.tv/testcaster"]
       );
       expect(mockRunQuery).toHaveBeenNthCalledWith(
         2,
-        "SELECT * FROM CasterUrls WHERE account_id = ?",
+        "SELECT * FROM AccountCasterUrls WHERE account_id = ?",
         [1]
       );
       expect(result).toEqual(mockCasterUrl);
@@ -99,7 +99,7 @@ describe("caster-urls models", () => {
 
       expect(result).toBe(true);
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "DELETE FROM CasterUrls WHERE account_id = ?",
+        "DELETE FROM AccountCasterUrls WHERE account_id = ?",
         [1]
       );
     });

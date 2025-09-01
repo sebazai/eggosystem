@@ -16,6 +16,10 @@ import {
   auditReadEntity,
   auditUpdateEntity
 } from "../../middlewares/audit-log.middleware";
+import {
+  authenticateJWT,
+  checkJWTPermissions
+} from "../../middlewares/auth.middleware";
 import { ForbiddenError, UnauthorizedError } from "../../utils/errors";
 
 const router = Router();
@@ -55,8 +59,23 @@ router.post(
 );
 
 // Caster default URL routes (require caster role)
-router.get("/caster/default-url", getCasterDefaultUrlController);
-router.post("/caster/default-url", updateCasterDefaultUrlController);
-router.delete("/caster/default-url", deleteCasterDefaultUrlController);
+router.get(
+  "/caster/default-url",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  getCasterDefaultUrlController
+);
+router.post(
+  "/caster/default-url",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  updateCasterDefaultUrlController
+);
+router.delete(
+  "/caster/default-url",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  deleteCasterDefaultUrlController
+);
 
 export default router;

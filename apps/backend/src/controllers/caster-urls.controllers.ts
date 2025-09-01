@@ -5,12 +5,7 @@ import {
   deleteCasterDefaultUrl
 } from "../models/caster-urls.models";
 import type { RequestWithBody } from "@eggosystem/types";
-import {
-  BadRequestError,
-  UnauthorizedError,
-  ForbiddenError
-} from "../utils/errors";
-import { getRolesForAccountId } from "../services/auth.services";
+import { BadRequestError } from "../utils/errors";
 import { z } from "zod";
 
 const updateDefaultUrlSchema = z.object({
@@ -25,26 +20,13 @@ export const getCasterDefaultUrlController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const user = req.auth;
-  if (!user) {
-    return next(new UnauthorizedError("Authentication required"));
-  }
+  const user = req.auth!; // Middleware ensures this is defined
 
-  // Check if user has caster role
-  const userRoles = await getRolesForAccountId(user.account_id);
-  if (!userRoles.includes("caster")) {
-    return next(new ForbiddenError("Caster role required"));
-  }
+  const defaultUrl = await getCasterDefaultUrl(user.account_id);
 
-  try {
-    const defaultUrl = await getCasterDefaultUrl(user.account_id);
-
-    res.json({
-      default_stream_url: defaultUrl
-    });
-  } catch (error) {
-    return next(error);
-  }
+  res.json({
+    default_stream_url: defaultUrl
+  });
 };
 
 export const updateCasterDefaultUrlController = async (
@@ -52,40 +34,20 @@ export const updateCasterDefaultUrlController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const user = req.auth;
-  if (!user) {
-    return next(new UnauthorizedError("Authentication required"));
-  }
-
-  // Check if user has caster role
-  const userRoles = await getRolesForAccountId(user.account_id);
-  if (!userRoles.includes("caster")) {
-    return next(new ForbiddenError("Caster role required"));
-  }
+  const user = req.auth!; // Middleware ensures this is defined
 
   // Validate request body
-  try {
-    updateDefaultUrlSchema.parse(req.body);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(new BadRequestError("Invalid request data"));
-    }
-    throw error;
-  }
+  updateDefaultUrlSchema.parse(req.body);
 
-  try {
-    const casterUrl = await setCasterDefaultUrl(
-      user.account_id,
-      req.body.default_stream_url
-    );
+  const casterUrl = await setCasterDefaultUrl(
+    user.account_id,
+    req.body.default_stream_url
+  );
 
-    res.json({
-      message: "Default stream URL updated successfully",
-      caster_url: casterUrl
-    });
-  } catch (error) {
-    return next(error);
-  }
+  res.json({
+    message: "Default stream URL updated successfully",
+    caster_url: casterUrl
+  });
 };
 
 export const deleteCasterDefaultUrlController = async (
@@ -93,27 +55,14 @@ export const deleteCasterDefaultUrlController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const user = req.auth;
-  if (!user) {
-    return next(new UnauthorizedError("Authentication required"));
+  const user = req.auth!; // Middleware ensures this is defined
+
+  const deleted = await deleteCasterDefaultUrl(user.account_id);
+  if (!deleted) {
+    return next(new BadRequestError("No default stream URL to delete"));
   }
 
-  // Check if user has caster role
-  const userRoles = await getRolesForAccountId(user.account_id);
-  if (!userRoles.includes("caster")) {
-    return next(new ForbiddenError("Caster role required"));
-  }
-
-  try {
-    const deleted = await deleteCasterDefaultUrl(user.account_id);
-    if (!deleted) {
-      return next(new BadRequestError("No default stream URL to delete"));
-    }
-
-    res.json({
-      message: "Default stream URL deleted successfully"
-    });
-  } catch (error) {
-    return next(error);
-  }
+  res.json({
+    message: "Default stream URL deleted successfully"
+  });
 };

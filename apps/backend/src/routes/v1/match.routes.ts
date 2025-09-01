@@ -17,7 +17,10 @@ import {
 } from "../../controllers/match-streams.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
-import { authenticateJWT } from "../../middlewares/auth.middleware";
+import {
+  authenticateJWT,
+  checkJWTPermissions
+} from "../../middlewares/auth.middleware";
 
 // New Router instance
 const router = Router();
@@ -68,6 +71,7 @@ router.get("/", getMatchesController);
 router.post(
   "/:match_id/reserve-cast",
   authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
   validateNumericParams(),
   reserveStreamController
 );
@@ -75,6 +79,7 @@ router.post(
 router.delete(
   "/:match_id/reserve-cast",
   authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
   validateNumericParams(),
   unreserveStreamController
 );

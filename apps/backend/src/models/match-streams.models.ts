@@ -31,12 +31,12 @@ export const createStreamReservation = async (
   }
 
   // Create the reservation
-  const insertResult = await runQuery(
+  const insertResult = await runQuery<{ insertId: number }>(
     `INSERT INTO Reservations (match_id, account_id, stream_url, hash) VALUES (?, ?, ?, ?)`,
     [data.match_id, data.account_id, data.stream_url, hash]
   );
 
-  const insertId = (insertResult as { insertId: number }).insertId;
+  const insertId = insertResult.insertId;
 
   // Return the created reservation
   const [newReservation] = await runQuery<Reservation[]>(
@@ -72,7 +72,7 @@ export const getCasterDefaultStreamUrl = async (
   accountId: number
 ): Promise<string | null> => {
   const result = await runQuery<{ default_stream_url: string }[]>(
-    `SELECT default_stream_url FROM CasterUrls WHERE account_id = ?`,
+    `SELECT default_stream_url FROM AccountCasterUrls WHERE account_id = ?`,
     [accountId]
   );
 

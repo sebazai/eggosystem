@@ -3,14 +3,11 @@ import {
   createStreamReservation,
   deleteStreamReservation
 } from "../models/match-streams.models";
-import type { RequestWithParams, RequestWithBody } from "@eggosystem/types";
-import {
-  BadRequestError,
-  UnauthorizedError,
-  ForbiddenError,
-  NotFoundError
-} from "../utils/errors";
-import { getRolesForAccountId } from "../services/auth.services";
+import type {
+  RequestWithParams,
+  RequestWithParamsAndBody
+} from "@eggosystem/types";
+import { BadRequestError, NotFoundError } from "../utils/errors";
 import { z } from "zod";
 
 const reserveStreamSchema = z.object({
@@ -21,52 +18,28 @@ const reserveStreamSchema = z.object({
 });
 
 export const reserveStreamController = async (
-  req: RequestWithBody<{ stream_url: string }>,
+  req: RequestWithParamsAndBody<{ match_id: string }, { stream_url: string }>,
   res: Response,
   next: NextFunction
 ) => {
-  const user = req.auth;
-  if (!user) {
-    return next(new UnauthorizedError("Authentication required"));
-  }
+  const user = req.auth!; // Middleware ensures this is defined
 
-  const matchId = parseInt(
-    (req as RequestWithParams<{ match_id: string }>).params.match_id
-  );
-  if (isNaN(matchId)) {
-    return next(new BadRequestError("Invalid match ID"));
-  }
-
-  // Check if user has caster role
-  const userRoles = await getRolesForAccountId(user.account_id);
-  if (!userRoles.includes("caster")) {
-    return next(new ForbiddenError("Caster role required"));
-  }
+  // validateNumericParams middleware guarantees this is a valid number
+  const matchId = +req.params.match_id;
 
   // Validate request body
-  try {
-    reserveStreamSchema.parse(req.body);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return next(new BadRequestError("Invalid request data"));
-    }
-    throw error;
-  }
+  reserveStreamSchema.parse(req.body);
 
-  try {
-    const reservation = await createStreamReservation({
-      match_id: matchId,
-      account_id: user.account_id,
-      stream_url: req.body.stream_url
-    });
+  const reservation = await createStreamReservation({
+    match_id: matchId,
+    account_id: user.account_id,
+    stream_url: req.body.stream_url
+  });
 
-    res.status(201).json({
-      message: "Stream reserved successfully",
-      reservation
-    });
-  } catch (error) {
-    return next(error);
-  }
+  res.status(201).json({
+    message: "Stream reserved successfully",
+    reservation
+  });
 };
 
 export const unreserveStreamController = async (
@@ -74,34 +47,19 @@ export const unreserveStreamController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const user = req.auth;
-  if (!user) {
-    return next(new UnauthorizedError("Authentication required"));
+  const user = req.auth!; // Middleware ensures this is defined
+
+  // validateNumericParams middleware guarantees this is a valid number
+  const matchId = +req.params.match_id;
+
+  const deleted = await deleteStreamReservation(matchId, user.account_id);
+  if (!deleted) {
+    return next(
+      new NotFoundError("No stream reservation found for this match")
+    );
   }
 
-  const matchId = parseInt(req.params.match_id);
-  if (isNaN(matchId)) {
-    return next(new BadRequestError("Invalid match ID"));
-  }
-
-  // Check if user has caster role
-  const userRoles = await getRolesForAccountId(user.account_id);
-  if (!userRoles.includes("caster")) {
-    return next(new ForbiddenError("Caster role required"));
-  }
-
-  try {
-    const deleted = await deleteStreamReservation(matchId, user.account_id);
-    if (!deleted) {
-      return next(
-        new NotFoundError("No stream reservation found for this match")
-      );
-    }
-
-    res.json({
-      message: "Stream reservation removed successfully"
-    });
-  } catch (error) {
-    return next(error);
-  }
+  res.json({
+    message: "Stream reservation removed successfully"
+  });
 };
