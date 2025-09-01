@@ -7,7 +7,7 @@ import type {
   RequestWithParams,
   RequestWithParamsAndBody
 } from "@eggosystem/types";
-import { BadRequestError, NotFoundError } from "../utils/errors";
+import { NotFoundError } from "../utils/errors";
 import { z } from "zod";
 
 const reserveStreamSchema = z.object({
@@ -20,7 +20,7 @@ const reserveStreamSchema = z.object({
 export const reserveStreamController = async (
   req: RequestWithParamsAndBody<{ match_id: string }, { stream_url: string }>,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const user = req.auth!; // Middleware ensures this is defined
 

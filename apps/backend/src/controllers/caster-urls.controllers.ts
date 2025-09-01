@@ -18,7 +18,7 @@ const updateDefaultUrlSchema = z.object({
 export const getCasterDefaultUrlController = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const user = req.auth!; // Middleware ensures this is defined
 
@@ -32,7 +32,7 @@ export const getCasterDefaultUrlController = async (
 export const updateCasterDefaultUrlController = async (
   req: RequestWithBody<{ default_stream_url: string }>,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const user = req.auth!; // Middleware ensures this is defined
 
