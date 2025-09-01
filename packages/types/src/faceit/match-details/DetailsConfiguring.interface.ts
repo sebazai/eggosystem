@@ -17,7 +17,7 @@ interface DetailsConfiguringBase {
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status: FaceitMatchStatus.CONFIGURING | FaceitMatchStatus.READY;
+  status: typeof FaceitMatchStatus.CONFIGURING | typeof FaceitMatchStatus.READY;
   faceit_url: string;
   configured_at: number;
 }
@@ -64,7 +64,7 @@ interface ChampionshipDetailsConfiguringBase extends DetailsConfiguringBase {
 
 export interface ChampionshipDetailsConfiguring
   extends ChampionshipDetailsConfiguringBase {
-  status: FaceitMatchStatus.CONFIGURING;
+  status: typeof FaceitMatchStatus.CONFIGURING;
 }
 
 const ChampionshipDetailsConfiguringBaseSchema = z.object({
@@ -76,7 +76,9 @@ const ChampionshipDetailsConfiguringBaseSchema = z.object({
 
 const ChampionshipDetailsConfiguringSchema = z.object({
   ...ChampionshipDetailsConfiguringBaseSchema.shape,
-  status: z.literal(FaceitMatchStatus.CONFIGURING)
+  status: z
+    .literal(FaceitMatchStatus.CONFIGURING)
+    .or(z.literal(FaceitMatchStatus.READY))
 });
 
 export function validateChampionshipDetailsConfiguring(data: unknown) {

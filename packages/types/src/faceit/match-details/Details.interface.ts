@@ -1,16 +1,16 @@
 import { z } from "zod";
 
-export enum FaceitMatchStatus {
-  SCHEDULED = "SCHEDULED",
-  CHECK_IN = "CHECK_IN",
-  VOTING = "VOTING",
-  CONFIGURING = "CONFIGURING",
-  READY = "READY",
-  ONGOING = "ONGOING",
-  FINISHED = "FINISHED",
-  ABORTED = "ABORTED",
-  CANCELLED = "CANCELLED"
-}
+export const FaceitMatchStatus = {
+  SCHEDULED: "SCHEDULED",
+  CHECK_IN: "CHECK_IN",
+  VOTING: "VOTING",
+  CONFIGURING: "CONFIGURING",
+  READY: "READY",
+  ONGOING: "ONGOING",
+  FINISHED: "FINISHED",
+  ABORTED: "ABORTED",
+  CANCELLED: "CANCELLED"
+} as const;
 
 // Player roster member interface
 interface FaceitPlayerRoster {

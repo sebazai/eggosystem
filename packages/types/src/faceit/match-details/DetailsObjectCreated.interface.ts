@@ -26,13 +26,13 @@ interface MatchmakingDetailsObjectCreatedBase extends DetailsObjectCreatedBase {
 interface MatchmakingDetailsObjectCreatedCheckIn
   extends MatchmakingDetailsObjectCreatedBase {
   teams: unknown; // {}
-  status: FaceitMatchStatus.CHECK_IN;
+  status: typeof FaceitMatchStatus.CHECK_IN;
 }
 
 interface MatchmakingDetailsObjectCreatedVoting
   extends MatchmakingDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
-  status: FaceitMatchStatus.VOTING;
+  status: typeof FaceitMatchStatus.VOTING;
 }
 
 export type MatchmakingDetailsObjectCreated =
@@ -88,34 +88,34 @@ interface ChampionshipDetailsObjectCreatedBase
 interface ChampionshipDetailsObjectCreatedCheckIn
   extends ChampionshipDetailsObjectCreatedBase {
   teams: unknown; // {}
-  status: FaceitMatchStatus.CHECK_IN;
+  status: typeof FaceitMatchStatus.CHECK_IN;
 }
 
 export interface ChampionshipDetailsObjectCreatedVoting
   extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
-  status: FaceitMatchStatus.VOTING;
+  status: typeof FaceitMatchStatus.VOTING;
   scheduled_at?: number;
 }
 
 interface ChampionshipDetailsObjectCreatedScheduled
   extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
-  status: FaceitMatchStatus.SCHEDULED;
+  status: typeof FaceitMatchStatus.SCHEDULED;
   scheduled_at: number;
 }
 
 interface ChampionshipDetailsObjectCreatedOnGoing
   extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
-  status: FaceitMatchStatus.ONGOING;
+  status: typeof FaceitMatchStatus.ONGOING;
   scheduled_at?: number;
 }
 
 interface ChampionshipDetailsObjectCreatedFinished
   extends ChampionshipDetailsObjectCreatedBase {
   teams: FaceitMatchTeams;
-  status: FaceitMatchStatus.FINISHED;
+  status: typeof FaceitMatchStatus.FINISHED;
   scheduled_at?: number;
 }
 

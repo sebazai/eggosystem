@@ -24,7 +24,7 @@ interface DetailsCancelledBase {
   finished_at: number;
   chat_room_id: string;
   best_of: number;
-  status: FaceitMatchStatus.CANCELLED;
+  status: typeof FaceitMatchStatus.CANCELLED;
   faceit_url: string;
 }
 

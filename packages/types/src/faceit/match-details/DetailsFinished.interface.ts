@@ -32,7 +32,7 @@ export interface FaceitMatchDetailsFinished {
   best_of: number;
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
-  status: "FINISHED";
+  status: typeof FaceitMatchStatus.FINISHED;
   faceit_url: string;
 }
 

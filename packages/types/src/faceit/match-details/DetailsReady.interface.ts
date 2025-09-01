@@ -20,10 +20,7 @@ interface DetailsReadyBase {
   calculate_elo: boolean;
   chat_room_id: string;
   best_of: number;
-  status:
-    | FaceitMatchStatus.READY
-    | FaceitMatchStatus.ONGOING
-    | FaceitMatchStatus.FINISHED;
+  status: keyof typeof FaceitMatchStatus;
   faceit_url: string;
   configured_at: number;
 }

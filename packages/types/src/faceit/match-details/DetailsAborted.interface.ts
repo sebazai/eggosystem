@@ -29,7 +29,7 @@ export interface DetailsAborted {
   best_of: number;
   results?: FaceitMatchResultsAbortedAndCancelled;
   detailed_results?: FaceitDetailedResultsAbortedAndCancelled[];
-  status: FaceitMatchStatus.ABORTED;
+  status: typeof FaceitMatchStatus.ABORTED;
   faceit_url: string;
 }
 

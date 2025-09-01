@@ -31,7 +31,7 @@ export interface DetailsDemoReadyBase {
   best_of: number;
   results: FaceitMatchResultsFinished;
   detailed_results: FaceitDetailedResultsFinished[];
-  status: FaceitMatchStatus;
+  status: keyof typeof FaceitMatchStatus;
   faceit_url: string;
 }
 
