@@ -6,7 +6,7 @@ import type { UserFullPayload } from "@eggosystem/types";
 export const hasCaptainsAccess = (user: UserFullPayload | null): boolean => {
   if (!user || !user.roles) return false;
 
-  const requiredRoles = ["admin", "captain", "helpdesk"];
+  const requiredRoles = ["admin", "captain", "helpdesk", "caster"];
   return user.roles.some((role) => requiredRoles.includes(role));
 };
 

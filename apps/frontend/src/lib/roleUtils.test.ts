@@ -71,6 +71,11 @@ describe("roleUtils", () => {
       expect(hasCaptainsAccess(helpdeskUser)).toBe(true);
     });
 
+    it("should return true for user with caster role", () => {
+      const casterUser = { ...mockUser, roles: ["caster"] };
+      expect(hasCaptainsAccess(casterUser)).toBe(true);
+    });
+
     it("should return false for user with only player role", () => {
       const playerUser = { ...mockUser, roles: ["player"] };
       expect(hasCaptainsAccess(playerUser)).toBe(false);

@@ -100,8 +100,8 @@ export const CaptainsPage = ({
             You don&apos;t have permission to view this page.
           </p>
           <p className="text-gray-600">
-            This page is restricted to users with admin, captain, or helpdesk
-            roles.
+            This page is restricted to users with admin, captain, helpdesk, or
+            caster roles.
           </p>
           {user && (
             <div className="mt-4 p-3 bg-gray-100 rounded-lg">

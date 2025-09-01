@@ -69,10 +69,11 @@ export const getMatchesWithTeamDataBySeasonId = async (
     JOIN Teams t ON mt.team_id = t.id
     JOIN Seasons s ON s.id = m.season_id
     JOIN Leagues l ON l.id = m.league_id
+    LEFT JOIN Reservations r ON m.id = r.match_id
     WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?) AND m.status NOT IN ('FINISHED', 'CANCELLED', 'FORFEIT', 'ABORTED')
     GROUP BY m.id, m.match_date, m.start_time, m.end_time, m.external_match_room_id, 
              m.league_id, l.name, m.season_id, s.full_name, s.platform, m.best_of, m.stage
-    ORDER BY m.match_date DESC
+    ORDER BY m.match_date DESC, CASE WHEN r.id IS NOT NULL THEN 0 ELSE 1 END, m.league_id
   `;
   return runQuery<MatchesWithTeamDataQuery[]>(query, [
     seasonId,
@@ -777,6 +778,7 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     LEFT JOIN Reservations r ON m.id = r.match_id
     WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?)
     GROUP BY m.id, m.league_id, m.season_id, m.stage, m.match_date, m.start_time, m.end_time, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
+    ORDER BY m.match_date DESC, CASE WHEN r.id IS NOT NULL THEN 0 ELSE 1 END, m.league_id
   `;
 
   const results = await runQuery<
