@@ -70,10 +70,15 @@ export const insertCSPlayerRankForSeason = async (
   seasonId: number,
   CS2Rank: SeasonPlayerRank["cs2_rank"],
   CS2Hours: SeasonPlayerRank["cs_hours"],
-  options?: { connection?: PoolConnection; isManuallyAdded?: boolean }
+  options?: {
+    connection?: PoolConnection;
+    isManuallyAddedRank?: boolean;
+    isManuallyAddedExternalRank?: boolean;
+  }
 ) => {
   const now = new Date();
-  const manuallyAddedRank = !!options?.isManuallyAdded;
+  const manuallyAddedRank = !!options?.isManuallyAddedRank;
+  const manuallyAddedExternalRank = !!options?.isManuallyAddedExternalRank;
 
   const query = `
       INSERT INTO SeasonPlayerRanks (
@@ -83,20 +88,31 @@ export const insertCSPlayerRankForSeason = async (
         cs2_rank,
         cs_hours,
         hours_updated_at,
-        manual_steam_rank
+        manual_steam_rank,
+        manual_external_rank
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         rank_updated_at = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(rank_updated_at), rank_updated_at),
         cs2_rank = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(cs2_rank), cs2_rank),
         cs_hours = IF(VALUES(cs_hours) IS NOT NULL, VALUES(cs_hours), cs_hours),
         hours_updated_at = IF(VALUES(cs_hours) IS NOT NULL, VALUES(hours_updated_at), hours_updated_at),
-        manual_steam_rank = VALUES(manual_steam_rank)
+        manual_steam_rank = VALUES(manual_steam_rank),
+        manual_external_rank = VALUES(manual_external_rank)
     `;
 
   return runQuery(
     query,
-    [steamId, seasonId, now, CS2Rank, CS2Hours, now, manuallyAddedRank],
+    [
+      steamId,
+      seasonId,
+      now,
+      CS2Rank,
+      CS2Hours,
+      now,
+      manuallyAddedRank,
+      manuallyAddedExternalRank
+    ],
     options?.connection
   );
 };
@@ -106,16 +122,23 @@ export const insertFaceITPlayerRankForSeason = async (
   seasonId: number,
   CS2Rank: SeasonPlayerRank["cs2_rank"],
   CS2Hours: SeasonPlayerRank["cs_hours"],
-  FaceITRank: Omit<FaceITCSRank, "metadata">,
-  options?: { connection?: PoolConnection; isManuallyAdded?: boolean }
+  FaceITRank: Omit<Partial<FaceITCSRank>, "metadata">,
+  options?: {
+    connection?: PoolConnection;
+    isManuallyAddedExternalRank?: boolean;
+    isManuallyAddedRank?: boolean;
+  }
 ) => {
-  const faceitLevel = FaceITRank.faceit_level;
-  const faceitDate = new Date(FaceITRank.faceit_date);
-  const faceitElo = FaceITRank.faceit_elo;
-  const faceitKD = FaceITRank.faceit_kd;
+  const faceitLevel = FaceITRank?.faceit_level;
+  const faceitDate = FaceITRank?.faceit_date
+    ? new Date(FaceITRank?.faceit_date)
+    : null;
+  const faceitElo = FaceITRank?.faceit_elo;
+  const faceitKD = FaceITRank?.faceit_kd;
 
   const now = new Date();
-  const manuallyAddedRank = !!options?.isManuallyAdded;
+  const manuallyAddedExternalRank = !!options?.isManuallyAddedExternalRank;
+  const manuallyAddedRank = !!options?.isManuallyAddedRank;
 
   const query = `
       INSERT INTO SeasonPlayerRanks (
@@ -129,9 +152,10 @@ export const insertFaceITPlayerRankForSeason = async (
         faceit_kd,
         faceit_date,
         hours_updated_at, 
-        manual_external_rank
+        manual_external_rank,
+        manual_steam_rank
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         rank_updated_at = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(rank_updated_at), rank_updated_at),
         cs2_rank = IF(VALUES(cs2_rank) IS NOT NULL, VALUES(cs2_rank), cs2_rank),
@@ -141,7 +165,8 @@ export const insertFaceITPlayerRankForSeason = async (
         faceit_kd = IF(VALUES(faceit_kd) IS NOT NULL, VALUES(faceit_kd), faceit_kd),
         faceit_date = IF(VALUES(faceit_elo) IS NOT NULL, VALUES(faceit_date), faceit_date),
         hours_updated_at = IF(VALUES(cs_hours) IS NOT NULL, VALUES(hours_updated_at), hours_updated_at),
-        manual_external_rank = VALUES(manual_external_rank)
+        manual_external_rank = VALUES(manual_external_rank),
+        manual_steam_rank = VALUES(manual_steam_rank)
     `;
 
   return runQuery(
@@ -149,14 +174,15 @@ export const insertFaceITPlayerRankForSeason = async (
     [
       steamId,
       seasonId,
-      now,
+      CS2Rank ? now : null,
       CS2Rank,
       CS2Hours,
-      faceitLevel,
-      faceitElo,
-      faceitKD,
+      faceitLevel ?? null,
+      faceitElo ?? null,
+      faceitKD ?? null,
       faceitDate,
-      now,
+      CS2Hours ? now : null,
+      manuallyAddedExternalRank,
       manuallyAddedRank
     ],
     options?.connection

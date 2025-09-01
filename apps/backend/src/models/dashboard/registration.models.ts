@@ -1,5 +1,5 @@
 import {
-  SeasonPlatform,
+  type SeasonPlatform,
   type SeasonPlayerRankFormValues,
   type PostTeamManualPlayerApprovalSchemaType,
   type ActiveSeasonSignupForAppId,
@@ -12,10 +12,7 @@ import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
 import { getActiveSignupOrActiveSeasonForAppId } from "../season.models";
 import { BadRequestError } from "../../utils/errors";
-import {
-  insertCSPlayerRankForSeason,
-  insertFaceITPlayerRankForSeason
-} from "../season-player-ranks.models";
+import { insertFaceITPlayerRankForSeason } from "../season-player-ranks.models";
 import { faceitEloToLevel } from "../../utils/faceit-utils";
 import { runQuery } from "../../db/mysqlRunQuery";
 
@@ -56,29 +53,28 @@ export const addSeasonRankForPlayer = async (
 ) => {
   const cs2Rank = formData.cs2_rank;
   const csHours = formData.cs_hours;
-  if (season.platform === SeasonPlatform.FACEIT && formData.external_elo) {
-    await insertFaceITPlayerRankForSeason(
-      formData.steam_id,
-      season.season_id,
-      cs2Rank ?? null,
-      csHours ?? null,
-      {
-        faceit_elo: formData.external_elo,
-        faceit_level: faceitEloToLevel(formData.external_elo),
-        faceit_kd: 0.95,
-        faceit_date: new Date().getTime()
-      },
-      { isManuallyAdded: true }
-    );
-  } else {
-    await insertCSPlayerRankForSeason(
-      formData.steam_id,
-      season.season_id,
-      cs2Rank ?? null,
-      csHours ?? null,
-      { isManuallyAdded: !!cs2Rank }
-    );
-  }
+
+  await insertFaceITPlayerRankForSeason(
+    formData.steam_id,
+    season.season_id,
+    cs2Rank ?? null,
+    csHours ?? null,
+    {
+      faceit_elo: formData.external_elo ?? undefined,
+      faceit_level: formData.external_elo
+        ? faceitEloToLevel(formData.external_elo)
+        : undefined,
+      faceit_kd: formData.external_kd
+        ? formData.external_kd
+        : formData.external_elo
+          ? 0.95
+          : undefined
+    },
+    {
+      isManuallyAddedExternalRank: !!formData.external_elo,
+      isManuallyAddedRank: !!cs2Rank
+    }
+  );
 };
 
 interface RegisteredTeamQueryResult extends SeasonTeamRegistration {

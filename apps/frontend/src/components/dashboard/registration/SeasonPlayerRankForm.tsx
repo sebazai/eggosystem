@@ -9,7 +9,8 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage
+  FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import {
   type SeasonPlayerRankFormValues
 } from "@eggosystem/types";
 import { toast } from "sonner";
-import { clientApiFetch } from "@/lib/apiClient";
+import { ApiError, clientApiFetch } from "@/lib/apiClient";
 
 export function SeasonPlayerRankForm() {
   const form = useForm<SeasonPlayerRankFormValues>({
@@ -27,6 +28,7 @@ export function SeasonPlayerRankForm() {
     defaultValues: {
       steam_id: "",
       external_elo: undefined,
+      external_kd: undefined,
       cs2_rank: undefined,
       cs_hours: undefined
     }
@@ -36,23 +38,23 @@ export function SeasonPlayerRankForm() {
 
   const onSubmit = async (values: SeasonPlayerRankFormValues) => {
     setLoading(true);
-    try {
-      const res = await clientApiFetch<{ ok: boolean }>(
-        "/api/v1/dashboard/registration/rank",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values)
-        }
-      );
 
-      if (!res.ok) throw new Error("Failed to submit");
+    try {
+      await clientApiFetch("/api/v1/dashboard/registration/rank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values)
+      });
 
       toast.success("Player rank submitted successfully");
       form.reset();
-    } catch (err) {
-      console.error(err);
-      toast.error("Submission failed");
+    } catch (error) {
+      console.error("Submission failed:", error);
+      if (error instanceof ApiError) {
+        toast.error(error.detail || "Submission failed");
+        return;
+      }
+      toast.error("Something went wrong... Please contact developers.");
     } finally {
       setLoading(false);
     }
@@ -95,6 +97,32 @@ export function SeasonPlayerRankForm() {
                   }}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="external_kd"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>External KD</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  {...field}
+                  value={field.value ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    field.onChange(val === "" ? undefined : Number(val));
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                Check from: https://faceitfinder.com/ (if empty, defaults to
+                0.95)
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
