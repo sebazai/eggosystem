@@ -5,9 +5,13 @@
  */
 
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import { SWRConfig } from "swr";
+import {
+  renderWithAuthAndSWR,
+  createMockUser,
+  createSWRConfig
+} from "@/test-utils/test-utils";
 import AddPlayerPage from "./page";
 import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
 
@@ -158,6 +162,9 @@ jest.mock("@/components/dashboard/PlayerValidationDisplay", () => ({
 }));
 
 describe("Add Player Validation Workflow (TDD)", () => {
+  // Create mock admin user for testing protected routes
+  const mockAdminUser = createMockUser({ roles: ["admin"] });
+
   const mockSuccessfulValidation: PlayerValidationResult = {
     steam_id: "76561198054765387",
     season_id: 14,
@@ -220,11 +227,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      const { rerender } = render(<AddPlayerPage />, { wrapper: Wrapper });
+      const { rerender } = renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       // Fill in form
       const steamIdInput = screen.getByTestId("steam-id-input");
@@ -288,11 +294,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      render(<AddPlayerPage />, { wrapper: Wrapper });
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       // Fill in form including team
       const steamIdInput = screen.getByTestId("steam-id-input");
@@ -328,11 +333,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      render(<AddPlayerPage />, { wrapper: Wrapper });
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       // Fill in form including team
       const steamIdInput = screen.getByTestId("steam-id-input");
@@ -364,11 +368,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      render(<AddPlayerPage />, { wrapper: Wrapper });
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       // Should display validation error
       expect(screen.getByTestId("validation-error")).toHaveTextContent(
@@ -386,11 +389,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      render(<AddPlayerPage />, { wrapper: Wrapper });
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       // Change Steam ID
       const steamIdInput = screen.getByTestId("steam-id-input");
@@ -412,11 +414,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      render(<AddPlayerPage />, { wrapper: Wrapper });
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       // Change season
       const seasonSelect = screen.getByTestId("season-select");
@@ -438,11 +439,10 @@ describe("Add Player Validation Workflow (TDD)", () => {
         clearResults: mockClearValidationResults
       });
 
-      const Wrapper = ({ children }: { children: React.ReactNode }) => (
-        <SWRConfig value={{ provider: () => new Map() }}>{children}</SWRConfig>
-      );
-
-      render(<AddPlayerPage />, { wrapper: Wrapper });
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
 
       const validateButton = screen.getByTestId("validate-button");
       expect(validateButton).toHaveTextContent("Validating...");

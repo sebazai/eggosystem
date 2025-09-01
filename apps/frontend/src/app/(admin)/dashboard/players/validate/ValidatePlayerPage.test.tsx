@@ -7,6 +7,13 @@ import type { PlayerValidationResult } from "@eggosystem/types";
 jest.mock("@/hooks/data/useAllSeasons");
 jest.mock("@/hooks/data/dashboard/usePlayerValidation");
 
+// Mock WithRoleProtection
+jest.mock("@/components/dashboard/WithRoleProtection", () => ({
+  WithRoleProtection: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="role-protection">{children}</div>
+  )
+}));
+
 // Mock dependencies
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
