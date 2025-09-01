@@ -3,7 +3,6 @@ import {
   ChampionshipDetailsFinished,
   ChampionshipDetailsObjectCreated,
   FaceitMatchStatus,
-  MatchStatus,
   MatchmakingDetailsReady,
   ChampionshipDetailsReady
 } from "@eggosystem/types";
@@ -460,7 +459,7 @@ export const validMatchDetailsMatchStatusFinished = {
       factions: { faction1: { score: 16 }, faction2: { score: 14 } }
     }
   ],
-  status: MatchStatus.FINISHED,
+  status: "FINISHED",
   round: 1,
   group: 1
 } satisfies ChampionshipDetailsFinished;
@@ -660,7 +659,7 @@ export const validMatchDetailsMatchStatusFinishedAFKAbort = {
     }
   },
   detailed_results: [],
-  status: MatchStatus.FINISHED,
+  status: "FINISHED",
   round: 1,
   group: 1
 } satisfies ChampionshipDetailsFinished;

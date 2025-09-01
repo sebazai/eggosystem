@@ -5,7 +5,6 @@ import {
   updateMatchStatus
 } from "./match.models";
 import {
-  MatchStatus,
   type ChampionshipDetailsReady,
   type MatchTeamMapVeto
 } from "@eggosystem/types";
@@ -180,7 +179,7 @@ export const addMatchTeamMapVetoes = async (
         )
       )
     );
-    await updateMatchStatus(match_id, MatchStatus.ONGOING, connection);
+    await updateMatchStatus(match_id, "ONGOING", connection);
     await connection.commit();
   } catch (error) {
     await connection.rollback();

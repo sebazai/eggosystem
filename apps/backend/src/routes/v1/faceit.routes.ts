@@ -53,7 +53,11 @@ import {
   validateChampionshipFinishedWebhook,
   validateChampionshipStartedWebhook,
   validateChampionshipCancelledWebhook,
-  type RequestWithQueryAndBody
+  type RequestWithQueryAndBody,
+  type MatchmakingDetailsFinished,
+  validateMatchmakingDetailsFinished,
+  type ChampionshipDetailsFinished,
+  validateChampionshipDetailsFinished
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
@@ -303,10 +307,7 @@ router.post(
           webhookData.event,
           manualReprocess
         );
-        await updateMatchStatus(
-          validatedWebhook.payload.id,
-          MatchStatus.ONGOING
-        );
+        await updateMatchStatus(validatedWebhook.payload.id, "ONGOING");
         res.status(200).send("Webhook received");
         return;
       }
@@ -336,18 +337,54 @@ router.post(
 
     // This happens for our Matches table once, even if BO3
     if (webhookData.event === "match_status_finished") {
-      if (validateMatchStatusFinishedWebhook(webhookData)) {
-        const externalMatchRoomId = webhookData.payload.id;
-        const matchDetails = await getFaceITMatchDetails(externalMatchRoomId);
-        const startTime = webhookData.payload.started_at;
-        if (
-          // Match was aborted due to AFK.
-          startTime === "1970-01-01T00:00:00Z" &&
-          validateMatchStatusFinishedAfterAbortWebhook(webhookData)
-        ) {
+      if (webhookData.payload.entity.type === "matchmaking") {
+        const {
+          webhookData: validatedWebhook,
+          matchDetails: validatedMatchDetails
+        } = await processWebhookWithDetails(
+          webhookData,
+          validateMatchStatusFinishedWebhook,
+          getFaceITMatchDetails<MatchmakingDetailsFinished>,
+          validateMatchmakingDetailsFinished,
+          webhookData.event,
+          manualReprocess
+        );
+        res.status(200).send("Webhook received");
+        return;
+      }
+      if (webhookData.payload.entity.type === "championship") {
+        if (validateMatchStatusFinishedWebhook(webhookData)) {
+          const externalMatchRoomId = webhookData.payload.id;
+          const matchDetails = await getFaceITMatchDetails(externalMatchRoomId);
+          const startTime = webhookData.payload.started_at;
+
+          if (
+            // Match was aborted due to AFK.
+            startTime === "1970-01-01T00:00:00Z" &&
+            validateMatchStatusFinishedAfterAbortWebhook(webhookData)
+          ) {
+            logger.info(
+              `Match ${externalMatchRoomId} was aborted due to AFK? ${startTime}`
+            );
+            const endTime = webhookData.payload.finished_at;
+            // We do not want to change the match status, as this means it was aborted due to AFK.
+            await updateMatchEndTime(webhookData.payload.id, endTime);
+            await saveWebhookData(
+              externalMatchRoomId,
+              webhookData.retry_count,
+              webhookData.event,
+              webhookData,
+              matchDetails,
+              manualReprocess
+            );
+            // TODO: Is MatchStatus.FINISHED the correct status?
+            await updateMatchStatus(externalMatchRoomId, "ABORTED");
+            res.status(200).send("Webhook received");
+            return;
+          }
+
           const endTime = webhookData.payload.finished_at;
-          // We do not want to change the match status, as this means it was aborted due to AFK.
-          await updateMatchEndTime(webhookData.payload.id, endTime);
+          await updateMatchFinished(webhookData.payload.id, startTime, endTime);
           await saveWebhookData(
             externalMatchRoomId,
             webhookData.retry_count,
@@ -356,23 +393,10 @@ router.post(
             matchDetails,
             manualReprocess
           );
-          // TODO: Is MatchStatus.FINISHED the correct status?
-          await updateMatchStatus(externalMatchRoomId, MatchStatus.ABORTED);
+          await updateMatchStatus(externalMatchRoomId, "FINISHED");
           res.status(200).send("Webhook received");
           return;
         }
-
-        const endTime = webhookData.payload.finished_at;
-        await updateMatchFinished(webhookData.payload.id, startTime, endTime);
-        await saveWebhookData(
-          externalMatchRoomId,
-          webhookData.retry_count,
-          webhookData.event,
-          webhookData,
-          matchDetails,
-          manualReprocess
-        );
-        await updateMatchStatus(externalMatchRoomId, MatchStatus.FINISHED);
         res.status(200).send("Webhook received");
         return;
       }
@@ -434,7 +458,7 @@ router.post(
         matchDetails,
         manualReprocess
       );
-      await updateMatchStatus(webhookData.payload.id, MatchStatus.ABORTED);
+      await updateMatchStatus(webhookData.payload.id, "ABORTED");
       res.status(200).send("Webhook received");
       return;
     }
@@ -449,7 +473,7 @@ router.post(
         matchDetails,
         manualReprocess
       );
-      await updateMatchStatus(webhookData.payload.id, MatchStatus.CANCELLED);
+      await updateMatchStatus(webhookData.payload.id, "CANCELLED");
       res.status(200).send("Webhook received");
       return;
     }

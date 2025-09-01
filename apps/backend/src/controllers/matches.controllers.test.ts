@@ -41,7 +41,6 @@ import {
   type MatchGame,
   type ParsedParams,
   type SeasonPlatform,
-  MatchStatus,
   type MatchMapsPlayed
 } from "@eggosystem/types";
 
@@ -99,7 +98,7 @@ const mockMatch = {
   end_time: "14:00:00",
   best_of: 1,
   external_match_room_id: "123",
-  status: MatchStatus.FINISHED,
+  status: "FINISHED",
   round: 1,
   group: 1
 } satisfies Match;
@@ -114,7 +113,7 @@ const mockMatchWithBreadcrumb = {
   end_time: "14:00:00",
   best_of: 1,
   external_match_room_id: "123",
-  status: MatchStatus.FINISHED,
+  status: "FINISHED",
   round: 1,
   group: 1,
   name: "Test Stage"

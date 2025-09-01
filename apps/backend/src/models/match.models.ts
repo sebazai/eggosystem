@@ -735,7 +735,7 @@ export const updateMatchEndTime = async (
 
 export const updateMatchStatus = async (
   externalMatchRoomId: string,
-  status: MatchStatus,
+  status: keyof typeof MatchStatus,
   connection?: PoolConnection
 ): Promise<void> => {
   await runQuery(
