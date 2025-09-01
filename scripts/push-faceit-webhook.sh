@@ -65,6 +65,7 @@ fetch_webhook_from_db() {
     local db_user="$4"
     local db_password="$5"
     local db_name="$6"
+    local event_filter="$7"
     
     print_status "Function entered successfully with ID: $id" >&2
     print_status "Database params: host=$db_host, port=$db_port, user=$db_user, db=$db_name" >&2
@@ -85,8 +86,15 @@ fetch_webhook_from_db() {
     fi
     print_status "mysql command found: $(which mysql)" >&2
     
-    # Query to fetch webhook data from FaceitWebhooks table (only retry_count = 0)
+    # Build query with optional event filter
     local query="SELECT data FROM FaceitWebhooks WHERE id = $id AND retry_count = 0 AND error_details IS NOT NULL AND manual_reprocess = 0"
+    
+    # Add event filter if provided
+    if [[ -n "$event_filter" ]]; then
+        query="$query AND event = '$event_filter'"
+        print_status "Filtering by event: $event_filter" >&2
+    fi
+    
     print_status "Executing query: $query" >&2
     
     # Skip connection test since initial connection already worked
@@ -131,7 +139,11 @@ fetch_webhook_from_db() {
     fi
     
     if [[ -z "$result" ]]; then
-        print_warning "No webhook data found for ID $id (or retry_count != 0 or error_details IS NULL or manual_reprocess != 0)" >&2
+        if [[ -n "$event_filter" ]]; then
+            print_warning "No webhook data found for ID $id with event '$event_filter' (or retry_count != 0 or error_details IS NULL or manual_reprocess != 0)" >&2
+        else
+            print_warning "No webhook data found for ID $id (or retry_count != 0 or error_details IS NULL or manual_reprocess != 0)" >&2
+        fi
         return 1
     fi
     
@@ -265,7 +277,7 @@ fi
 echo
 print_status "Choose operation mode:"
 print_status "1. Send new webhook data (JSON input)"
-print_status "2. Reprocess webhooks from database by ID range (retry_count = 0, error_details IS NOT NULL, manual_reprocess = 0 only)"
+print_status "2. Reprocess webhooks from database by ID range with optional event filtering (retry_count = 0, error_details IS NOT NULL, manual_reprocess = 0 only)"
 read -p "Choose option (1 or 2): " OPERATION_MODE
 
 if [[ "$OPERATION_MODE" == "2" ]]; then
@@ -404,11 +416,45 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
     
     print_success "Will reprocess ${#IDS[@]} webhooks (retry_count = 0, error_details IS NOT NULL, manual_reprocess = 0 only): ${IDS[*]}"
     
-
+    # Prompt for optional event filtering
+    echo
+    print_status "Optional: Filter by event type"
+    print_status "Available event types:"
+    print_status "  - match_object_created"
+    print_status "  - match_status_configuring"
+    print_status "  - match_status_ready"
+    print_status "  - match_status_finished"
+    print_status "  - match_demo_ready"
+    print_status "  - match_status_aborted"
+    print_status "  - match_status_cancelled"
+    print_status "  - championship_created"
+    print_status "  - championship_started"
+    print_status "  - championship_finished"
+    print_status "  - championship_cancelled"
+    echo
+    read -p "Enter event type to filter by (press Enter to process all events): " EVENT_FILTER
+    
+    if [[ -n "$EVENT_FILTER" ]]; then
+        # Validate event type
+        valid_events=("match_object_created" "match_status_configuring" "match_status_ready" "match_status_finished" "match_demo_ready" "match_status_aborted" "match_status_cancelled" "championship_created" "championship_started" "championship_finished" "championship_cancelled")
+        if [[ " ${valid_events[*]} " =~ " ${EVENT_FILTER} " ]]; then
+            print_success "Will filter by event type: $EVENT_FILTER"
+        else
+            print_error "Invalid event type: $EVENT_FILTER"
+            print_status "Valid events: ${valid_events[*]}"
+            exit 1
+        fi
+    else
+        print_status "No event filter applied - will process all event types"
+    fi
     
     # Confirm before proceeding
     echo
-    print_warning "This will send ${#IDS[@]} webhooks with retry_count = 0, error_details, and manual_reprocess = 0 to the API. Continue? (y/N)"
+    if [[ -n "$EVENT_FILTER" ]]; then
+        print_warning "This will send ${#IDS[@]} webhooks with event='$EVENT_FILTER', retry_count = 0, error_details, and manual_reprocess = 0 to the API. Continue? (y/N)"
+    else
+        print_warning "This will send ${#IDS[@]} webhooks with retry_count = 0, error_details, and manual_reprocess = 0 to the API. Continue? (y/N)"
+    fi
     read -p "Continue? " CONFIRM
     
     if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
@@ -434,7 +480,7 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
         
         # Fetch webhook data using command substitution (disable set -e temporarily)
         set +e
-        webhook_data=$(fetch_webhook_from_db "$id" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD" "$DB_NAME")
+        webhook_data=$(fetch_webhook_from_db "$id" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD" "$DB_NAME" "$EVENT_FILTER")
         fetch_result=$?
         set -e
         
@@ -443,7 +489,11 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
         print_status "webhook_data length: ${#webhook_data}"
         
         if [[ $fetch_result -ne 0 ]]; then
-            print_warning "Skipping ID $id (no data found, retry_count != 0, no error_details, or manual_reprocess != 0)"
+            if [[ -n "$EVENT_FILTER" ]]; then
+                print_warning "Skipping ID $id (no data found for event '$EVENT_FILTER', retry_count != 0, no error_details, or manual_reprocess != 0)"
+            else
+                print_warning "Skipping ID $id (no data found, retry_count != 0, no error_details, or manual_reprocess != 0)"
+            fi
             SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
             SKIPPED_IDS+=("$id")
             continue
@@ -476,7 +526,11 @@ if [[ "$OPERATION_MODE" == "2" ]]; then
     print_status "Reprocessing complete!"
     print_success "Successfully processed: $SUCCESS_COUNT webhooks"
     if [[ $SKIPPED_COUNT -gt 0 ]]; then
-        print_warning "Skipped (no data, retry_count != 0, no error_details, or manual_reprocess != 0): $SKIPPED_COUNT webhooks"
+        if [[ -n "$EVENT_FILTER" ]]; then
+            print_warning "Skipped (no data for event '$EVENT_FILTER', retry_count != 0, no error_details, or manual_reprocess != 0): $SKIPPED_COUNT webhooks"
+        else
+            print_warning "Skipped (no data, retry_count != 0, no error_details, or manual_reprocess != 0): $SKIPPED_COUNT webhooks"
+        fi
         print_status "Skipped IDs: ${SKIPPED_IDS[*]}"
     fi
     if [[ $FAILED_COUNT -gt 0 ]]; then
