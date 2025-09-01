@@ -61,3 +61,31 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {}
   })
 });
+
+// Mock DOM methods required by Radix UI components
+Object.defineProperty(Element.prototype, "scrollIntoView", {
+  writable: true,
+  value: jest.fn()
+});
+
+Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+  writable: true,
+  value: jest.fn()
+});
+
+// Mock ResizeObserver
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn()
+}));
+
+// Mock IntersectionObserver
+global.IntersectionObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+  root: null,
+  rootMargin: "",
+  thresholds: []
+}));

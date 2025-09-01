@@ -100,6 +100,11 @@ const data: { navMain: Array<MenuItem> } = {
           title: "Validate",
           url: createDashboardNextUrl("players/validate"),
           requiredRoles: ["helpdesk", "admin"]
+        },
+        {
+          title: "Substitute",
+          url: createDashboardNextUrl("players/substitute"),
+          requiredRoles: ["helpdesk", "admin"]
         }
       ] satisfies Array<SubMenuItem>
     },

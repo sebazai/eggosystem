@@ -1,21 +1,27 @@
 import type { Response } from "express";
 import type { RequestWithParams } from "@eggosystem/types";
-import { addPlayerToTeamController } from "./player.controllers";
+import {
+  addPlayerToTeamController,
+  addSubstitutePlayerController
+} from "./player.controllers";
 import * as seasonModels from "../../models/dashboard/season.models";
 import * as playerModels from "../../models/player.models";
 import * as rankModels from "../../models/season-player-ranks.models";
 import { runQuery } from "../../db/mysqlRunQuery";
+import * as matchUtils from "../../utils/matchUtils";
 
 // Mock dependencies
 jest.mock("../../models/dashboard/season.models");
 jest.mock("../../models/player.models");
 jest.mock("../../models/season-player-ranks.models");
 jest.mock("../../db/mysqlRunQuery");
+jest.mock("../../utils/matchUtils");
 
 const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 const mockPlayerModels = playerModels as jest.Mocked<typeof playerModels>;
 const mockRankModels = rankModels as jest.Mocked<typeof rankModels>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+const mockMatchUtils = matchUtils as jest.Mocked<typeof matchUtils>;
 
 describe("addPlayerToTeamController", () => {
   // Create test objects
@@ -267,6 +273,306 @@ describe("addPlayerToTeamController", () => {
       expect.objectContaining({
         message: expect.stringContaining("Failed to update player's kana_elo")
       })
+    );
+  });
+});
+
+describe("addSubstitutePlayerController", () => {
+  const mockRequest = {
+    params: {
+      season_id: "14",
+      team_id: "1650",
+      steam_id: "76561198054765387"
+    },
+    body: {}
+  } as unknown as RequestWithParams<{
+    season_id: string;
+    team_id: string;
+    steam_id: string;
+  }>;
+
+  const mockResponse = {
+    json: jest.fn().mockReturnThis(),
+    status: jest.fn().mockReturnThis()
+  } as unknown as Response;
+
+  const mockNext = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (mockResponse.json as jest.Mock).mockClear();
+    (mockResponse.status as jest.Mock).mockClear();
+    mockNext.mockClear();
+  });
+
+  it("should successfully add a substitute player without match_id", async () => {
+    // Mock successful insertion
+    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
+
+    await addSubstitutePlayerController(mockRequest, mockResponse, mockNext);
+
+    // Verify no eligibility check was performed
+    expect(
+      mockSeasonModels.checkPlayerAdditionEligibility
+    ).not.toHaveBeenCalled();
+
+    // Verify substitute player was added
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
+      [14, 1650, "76561198054765387", "substitute"],
+      expect.any(Object)
+    );
+
+    // Verify success response
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Substitute player successfully added to the team",
+      steam_id: "76561198054765387",
+      team_id: 1650,
+      season_id: 14,
+      role: "substitute",
+      match_id: null
+    });
+
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it("should successfully add a substitute player with numeric match_id", async () => {
+    const requestWithMatchId = {
+      ...mockRequest,
+      body: { match_id: 123 }
+    } as unknown as RequestWithParams<{
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    }>;
+
+    // Mock resolveMatchId to return the same numeric ID
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
+    // Mock successful insertion
+    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
+
+    await addSubstitutePlayerController(
+      requestWithMatchId,
+      mockResponse,
+      mockNext
+    );
+
+    // Verify match ID was resolved
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
+      "123",
+      14,
+      expect.any(Object)
+    );
+
+    // Verify no eligibility check was performed
+    expect(
+      mockSeasonModels.checkPlayerAdditionEligibility
+    ).not.toHaveBeenCalled();
+
+    // Verify substitute player was added with resolved match_id
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
+      [14, 1650, "76561198054765387", "substitute", 123],
+      expect.any(Object)
+    );
+
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Substitute player successfully added to the team",
+      steam_id: "76561198054765387",
+      team_id: 1650,
+      season_id: 14,
+      role: "substitute",
+      match_id: 123
+    });
+  });
+
+  it("should validate match_id format when provided", async () => {
+    const requestWithInvalidMatchId = {
+      ...mockRequest,
+      body: { match_id: "invalid" }
+    } as unknown as RequestWithParams<{
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    }>;
+
+    // Mock resolveMatchId to throw validation error
+    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(
+      new Error("Invalid match ID format: invalid")
+    );
+
+    await addSubstitutePlayerController(
+      requestWithInvalidMatchId,
+      mockResponse,
+      mockNext
+    );
+
+    // Verify match ID resolution was attempted
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
+      "invalid",
+      14,
+      expect.any(Object)
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Invalid match ID format: invalid"
+      })
+    );
+
+    expect(
+      mockSeasonModels.checkPlayerAdditionEligibility
+    ).not.toHaveBeenCalled();
+  });
+
+  it("should handle database transaction errors", async () => {
+    // Mock database error
+    const dbError = new Error("Database error");
+    mockRunQuery.mockRejectedValueOnce(dbError);
+
+    await addSubstitutePlayerController(mockRequest, mockResponse, mockNext);
+
+    // Verify no eligibility check was performed
+    expect(
+      mockSeasonModels.checkPlayerAdditionEligibility
+    ).not.toHaveBeenCalled();
+
+    expect(mockNext).toHaveBeenCalledWith(dbError);
+  });
+
+  it("should resolve Faceit room ID to match ID when provided", async () => {
+    const requestWithFaceitRoomId = {
+      ...mockRequest,
+      body: { match_id: "1-ff5e99c3-0765-4173-ba2a-398987b1b3ef" }
+    } as unknown as RequestWithParams<{
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    }>;
+
+    // Mock resolveMatchId to return internal match ID
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(456);
+    // Mock successful insertion
+    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
+
+    await addSubstitutePlayerController(
+      requestWithFaceitRoomId,
+      mockResponse,
+      mockNext
+    );
+
+    // Verify match ID was resolved
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
+      "1-ff5e99c3-0765-4173-ba2a-398987b1b3ef",
+      14,
+      expect.any(Object)
+    );
+
+    // Verify substitute player was added with resolved match_id
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
+      [14, 1650, "76561198054765387", "substitute", 456],
+      expect.any(Object)
+    );
+
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Substitute player successfully added to the team",
+      steam_id: "76561198054765387",
+      team_id: 1650,
+      season_id: 14,
+      role: "substitute",
+      match_id: 456
+    });
+  });
+
+  it("should resolve Faceit URL to match ID when provided", async () => {
+    const requestWithFaceitUrl = {
+      ...mockRequest,
+      body: {
+        match_id: "https://www.faceit.com/en/cs2/room/1-abc123-def456-ghi789"
+      }
+    } as unknown as RequestWithParams<{
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    }>;
+
+    // Mock resolveMatchId to return internal match ID
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(789);
+    // Mock successful insertion
+    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
+
+    await addSubstitutePlayerController(
+      requestWithFaceitUrl,
+      mockResponse,
+      mockNext
+    );
+
+    // Verify match ID was resolved
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
+      "https://www.faceit.com/en/cs2/room/1-abc123-def456-ghi789",
+      14,
+      expect.any(Object)
+    );
+
+    // Verify substitute player was added with resolved match_id
+    expect(mockRunQuery).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
+      [14, 1650, "76561198054765387", "substitute", 789],
+      expect.any(Object)
+    );
+
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Substitute player successfully added to the team",
+      steam_id: "76561198054765387",
+      team_id: 1650,
+      season_id: 14,
+      role: "substitute",
+      match_id: 789
+    });
+  });
+
+  it("should handle match ID resolution errors", async () => {
+    const requestWithInvalidMatchId = {
+      ...mockRequest,
+      body: { match_id: "invalid-match-id" }
+    } as unknown as RequestWithParams<{
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    }>;
+
+    // Mock resolveMatchId to throw error
+    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(
+      new Error("Invalid match ID format: invalid-match-id")
+    );
+
+    await addSubstitutePlayerController(
+      requestWithInvalidMatchId,
+      mockResponse,
+      mockNext
+    );
+
+    // Verify match ID resolution was attempted
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
+      "invalid-match-id",
+      14,
+      expect.any(Object)
+    );
+
+    // Verify error was passed to next middleware
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Invalid match ID format: invalid-match-id"
+      })
+    );
+
+    // Verify no insertion was attempted
+    expect(mockRunQuery).not.toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
+      expect.any(Array),
+      expect.any(Object)
     );
   });
 });

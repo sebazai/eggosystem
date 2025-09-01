@@ -13,6 +13,7 @@ import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
 import { type RequestWithParams } from "@eggosystem/types";
+import { resolveMatchId } from "../../utils/matchUtils";
 import { getPlayerRankForPlatform } from "../../services/player-ranks.services";
 import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
 import { getPlayerDetailsForDashboardBySteamId } from "../../models/dashboard/player.models";
@@ -327,5 +328,79 @@ export const validatePlayerController = async (
     res.status(200).json(validationResult);
   } catch (error) {
     return next(error);
+  }
+};
+
+/**
+ * Controller to add a substitute player to a team
+ * This will:
+ * 1. Add the player to the SeasonTeamPlayers table as 'substitute'
+ * 2. Optionally set match_id if provided for single-match substitution
+ * Note: No eligibility check needed for substitutes, only validation should be done on frontend
+ */
+export const addSubstitutePlayerController = async (
+  req: RequestWithParams<{
+    season_id: string;
+    team_id: string;
+    steam_id: string;
+  }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const seasonId = Number(req.params.season_id);
+  const teamId = Number(req.params.team_id);
+  const steamId = req.params.steam_id;
+  const { match_id } = req.body;
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Resolve match_id if provided (can be numeric ID, Faceit room ID, or Faceit URL)
+    let resolvedMatchId: number | undefined;
+    if (match_id !== undefined && match_id !== null) {
+      try {
+        resolvedMatchId = await resolveMatchId(
+          match_id.toString(),
+          seasonId,
+          connection
+        );
+      } catch (error) {
+        await connection.rollback();
+        return next(error);
+      }
+    }
+
+    // Add the player to the team as substitute in SeasonTeamPlayers
+    const insertData: {
+      steam_id: string;
+      role: "substitute";
+      match_id?: number;
+    } = {
+      steam_id: steamId,
+      role: "substitute"
+    };
+
+    if (resolvedMatchId !== undefined) {
+      insertData.match_id = resolvedMatchId;
+    }
+
+    await insertSeasonTeamPlayer(seasonId, teamId, insertData, connection);
+
+    await connection.commit();
+
+    res.status(200).json({
+      message: "Substitute player successfully added to the team",
+      steam_id: steamId,
+      team_id: teamId,
+      season_id: seasonId,
+      role: "substitute",
+      match_id: resolvedMatchId || null
+    });
+  } catch (error) {
+    await connection.rollback();
+    return next(error);
+  } finally {
+    connection.release();
   }
 };
