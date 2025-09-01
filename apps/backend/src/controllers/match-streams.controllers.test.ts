@@ -7,17 +7,16 @@ import {
   createStreamReservation,
   deleteStreamReservation
 } from "../models/match-streams.models";
-import { getRolesForAccountId } from "../services/auth.services";
 import { ConflictError } from "../utils/errors";
 import type {
   RequestWithParams,
-  RequestWithBody,
+  RequestWithParamsAndBody,
   Reservation
 } from "@eggosystem/types";
+import { ZodError } from "zod";
 
 // Mock dependencies
 jest.mock("../models/match-streams.models");
-jest.mock("../services/auth.services");
 
 const mockCreateStreamReservation =
   createStreamReservation as jest.MockedFunction<
@@ -27,9 +26,6 @@ const mockDeleteStreamReservation =
   deleteStreamReservation as jest.MockedFunction<
     typeof deleteStreamReservation
   >;
-const mockGetRolesForAccountId = getRolesForAccountId as jest.MockedFunction<
-  typeof getRolesForAccountId
->;
 
 const mockReservation: Reservation = {
   id: 1,
@@ -70,16 +66,16 @@ describe("match-streams controllers", () => {
       },
       params: { match_id: "123" },
       body: { stream_url: "https://twitch.tv/testcaster" }
-    } as unknown as RequestWithParams<{ match_id: string }> &
-      RequestWithBody<{ stream_url: string }>;
+    } as unknown as RequestWithParamsAndBody<
+      { match_id: string },
+      { stream_url: string }
+    >;
 
     it("should successfully reserve a stream for a caster", async () => {
-      mockGetRolesForAccountId.mockResolvedValue(["caster"]);
       mockCreateStreamReservation.mockResolvedValue(mockReservation);
 
       await reserveStreamController(mockReq, res as Response, next);
 
-      expect(mockGetRolesForAccountId).toHaveBeenCalledWith(1);
       expect(mockCreateStreamReservation).toHaveBeenCalledWith({
         match_id: 123,
         account_id: 1,
@@ -90,86 +86,45 @@ describe("match-streams controllers", () => {
         message: "Stream reserved successfully",
         reservation: mockReservation
       });
-    });
-
-    it("should return 401 if user is not authenticated", async () => {
-      const unauthReq = { ...mockReq, auth: undefined };
-
-      await reserveStreamController(
-        unauthReq as unknown as RequestWithParams<{ match_id: string }> &
-          RequestWithBody<{ stream_url: string }>,
-        res as Response,
-        next
-      );
-
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Authentication required",
-          status: 401
-        })
-      );
-    });
-
-    it("should return 403 if user doesn't have caster role", async () => {
-      mockGetRolesForAccountId.mockResolvedValue(["player"]);
-
-      await reserveStreamController(mockReq, res as Response, next);
-
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Caster role required",
-          status: 403
-        })
-      );
-    });
-
-    it("should return 400 for invalid match ID", async () => {
-      const invalidReq = { ...mockReq, params: { match_id: "invalid" } };
-
-      await reserveStreamController(
-        invalidReq as unknown as RequestWithParams<{ match_id: string }> &
-          RequestWithBody<{ stream_url: string }>,
-        res as Response,
-        next
-      );
-
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Invalid match ID",
-          status: 400
-        })
-      );
+      expect(next).not.toHaveBeenCalled();
     });
 
     it("should return 400 for invalid stream URL", async () => {
-      const invalidUrlReq = { ...mockReq, body: { stream_url: "not-a-url" } };
-      mockGetRolesForAccountId.mockResolvedValue(["caster"]);
+      const invalidUrlReq = {
+        ...mockReq,
+        body: { stream_url: "not-a-url" }
+      } as unknown as RequestWithParamsAndBody<
+        { match_id: string },
+        { stream_url: string }
+      >;
 
-      await reserveStreamController(
-        invalidUrlReq as unknown as RequestWithParams<{ match_id: string }> &
-          RequestWithBody<{ stream_url: string }>,
-        res as Response,
-        next
-      );
+      // The controller now lets ZodError bubble up, so it should be thrown
+      await expect(
+        reserveStreamController(invalidUrlReq, res as Response, next)
+      ).rejects.toThrow(ZodError);
 
-      expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Invalid request data",
-          status: 400
-        })
-      );
+      expect(mockCreateStreamReservation).not.toHaveBeenCalled();
+      expect(statusMock).not.toHaveBeenCalled();
+      expect(jsonMock).not.toHaveBeenCalled();
     });
 
     it("should handle conflict when match already reserved", async () => {
-      mockGetRolesForAccountId.mockResolvedValue(["caster"]);
       const conflictError = new ConflictError(
         "You have already reserved this match for streaming"
       );
       mockCreateStreamReservation.mockRejectedValue(conflictError);
 
-      await reserveStreamController(mockReq, res as Response, next);
+      await expect(
+        reserveStreamController(mockReq, res as Response, next)
+      ).rejects.toThrow(ConflictError);
 
-      expect(next).toHaveBeenCalledWith(conflictError);
+      expect(mockCreateStreamReservation).toHaveBeenCalledWith({
+        match_id: 123,
+        account_id: 1,
+        stream_url: "https://twitch.tv/testcaster"
+      });
+      expect(statusMock).not.toHaveBeenCalled();
+      expect(jsonMock).not.toHaveBeenCalled();
     });
   });
 
@@ -187,7 +142,6 @@ describe("match-streams controllers", () => {
     } as unknown as RequestWithParams<{ match_id: string }>;
 
     it("should successfully unreserve a stream", async () => {
-      mockGetRolesForAccountId.mockResolvedValue(["caster"]);
       mockDeleteStreamReservation.mockResolvedValue(true);
 
       await unreserveStreamController(mockReq, res as Response, next);
@@ -196,10 +150,10 @@ describe("match-streams controllers", () => {
       expect(jsonMock).toHaveBeenCalledWith({
         message: "Stream reservation removed successfully"
       });
+      expect(next).not.toHaveBeenCalled();
     });
 
     it("should return 404 if no reservation found", async () => {
-      mockGetRolesForAccountId.mockResolvedValue(["caster"]);
       mockDeleteStreamReservation.mockResolvedValue(false);
 
       await unreserveStreamController(mockReq, res as Response, next);
@@ -210,6 +164,19 @@ describe("match-streams controllers", () => {
           status: 404
         })
       );
+      expect(jsonMock).not.toHaveBeenCalled();
+    });
+
+    it("should handle database errors", async () => {
+      const dbError = new Error("Database connection failed");
+      mockDeleteStreamReservation.mockRejectedValue(dbError);
+
+      await expect(
+        unreserveStreamController(mockReq, res as Response, next)
+      ).rejects.toThrow("Database connection failed");
+
+      expect(mockDeleteStreamReservation).toHaveBeenCalledWith(123, 1);
+      expect(jsonMock).not.toHaveBeenCalled();
     });
   });
 });
