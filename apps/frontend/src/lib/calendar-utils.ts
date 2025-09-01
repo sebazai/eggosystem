@@ -18,9 +18,9 @@ export const DIVISIONS: Record<number, { color: string; borderColor: string }> =
   };
 
 /**
- * Sorts matches by date/time first, then by league tier
- * This ensures chronological order with higher-tier matches taking precedence
- * when multiple matches occur at the same time.
+ * Sorts matches by date/time first, then by stream availability, then by league tier
+ * This ensures chronological order with streamed matches taking precedence,
+ * followed by higher-tier matches when multiple matches occur at the same time.
  */
 export const sortMatchesByDateAndTier = (
   matches: MatchWithStreamUrls[]
@@ -31,8 +31,17 @@ export const sortMatchesByDateAndTier = (
     const dateB = new Date(b.match_start);
     const dateComparison = dateA.getTime() - dateB.getTime();
 
-    // If dates are the same, sort by league tier
+    // If dates are the same, prioritize streamed matches
     if (dateComparison === 0) {
+      const hasStreamA = a.streamUrl && a.streamUrl.length > 0;
+      const hasStreamB = b.streamUrl && b.streamUrl.length > 0;
+
+      // If stream availability differs, prioritize streamed matches
+      if (hasStreamA !== hasStreamB) {
+        return hasStreamA ? -1 : 1; // Streamed matches first
+      }
+
+      // If both have same stream status, sort by league tier
       return a.league_tier - b.league_tier;
     }
 

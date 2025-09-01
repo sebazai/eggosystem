@@ -52,25 +52,74 @@ import { StreamReservation } from "./StreamReservation";
 
 // Add custom CSS for stream matches
 const streamMatchStyles = `
-  .fc .stream-match {
-    border-width: 3px !important;
+  .fc .fc-event.stream-match {
+    border-width: 5px !important;
     border-style: solid !important;
-    position: relative;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4) !important;
+    border-color: #f59e0b !important;
+    position: relative !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.8) !important;
+    animation: streamPulse 2s ease-in-out infinite !important;
+    z-index: 5 !important;
   }
 
-  .fc .stream-match::before {
+  .fc .fc-event.stream-match::before {
+    content: "📺" !important;
+    position: absolute !important;
+    top: -8px !important;
+    right: -8px !important;
+    font-size: 16px !important;
+    z-index: 100 !important;
+    opacity: 1 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    border-radius: 8px !important;
+    padding: 2px 4px !important;
+    line-height: 1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .fc .fc-event.stream-match .fc-event-title {
+    font-weight: bold !important;
+  }
+
+  @keyframes streamPulse {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.8) !important;
+      transform: scale(1) !important;
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(245, 158, 11, 1) !important;
+      transform: scale(1.02) !important;
+    }
+  }
+
+  /* Enhanced styling for streamed matches in popover "more" view */
+  .fc-more-popover-content .stream-match-popover {
+    border: 3px solid #f59e0b !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.6) !important;
+    position: relative;
+    animation: streamGlow 2s ease-in-out infinite alternate;
+  }
+
+  .fc-more-popover-content .stream-match-popover::before {
     content: "📺";
     position: absolute;
-    top: 1px;
-    right: 1px;
+    top: -6px;
+    right: -6px;
+    background: rgba(0, 0, 0, 0.7);
     font-size: 14px;
-    z-index: 10;
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 2px;
-    padding: 1px 2px;
-    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    z-index: 20;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  @keyframes streamGlow {
+    from {
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+    }
+    to {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.9);
+    }
   }
 `;
 
@@ -259,8 +308,20 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
           const timeB = new Date(b.start);
           const timeComparison = timeA.getTime() - timeB.getTime();
 
-          // If times are the same, sort by league tier
+          // If times are the same, prioritize streamed matches
           if (timeComparison === 0) {
+            const hasStreamA =
+              a.extendedProps?.streamUrl &&
+              a.extendedProps.streamUrl.length > 0;
+            const hasStreamB =
+              b.extendedProps?.streamUrl &&
+              b.extendedProps.streamUrl.length > 0;
+
+            if (hasStreamA !== hasStreamB) {
+              return hasStreamA ? -1 : 1; // Streamed matches first
+            }
+
+            // If both have same stream status, sort by league tier
             const tierA = a.extendedProps?.tier || 999;
             const tierB = b.extendedProps?.tier || 999;
             return tierA - tierB;
@@ -275,8 +336,10 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
 
         sortedEvents.forEach((event) => {
           const eventEl = document.createElement("div");
-          eventEl.className =
-            "fc-event fc-event-main mb-2 p-2 rounded cursor-pointer";
+          const hasStream =
+            event.extendedProps?.streamUrl &&
+            event.extendedProps.streamUrl.length > 0;
+          eventEl.className = `fc-event fc-event-main mb-2 p-2 rounded cursor-pointer ${hasStream ? "stream-match-popover" : ""}`;
           eventEl.style.backgroundColor = event.backgroundColor || "#6b7280";
           eventEl.style.borderColor = event.borderColor || "#4b5563";
           eventEl.style.color = "#ffffff";

@@ -40,7 +40,7 @@ export default function KanaRatingAnalysis() {
             <Link
               href="https://hub.kanaliiga.fi/matches/10987/games/105970"
               target="_blank"
-              className="text-blue-600 hover:text-kanaliiga-orange underline"
+              className="text-kanaliiga-orange hover:text-kanaliiga-light-brown underline font-medium"
             >
               View on Kanaliiga Hub
             </Link>
@@ -609,7 +609,7 @@ export default function KanaRatingAnalysis() {
               <Link
                 href="https://hub.kanaliiga.fi/matches/10982/games/105853"
                 target="_blank"
-                className="text-blue-600 hover:text-kanaliiga-orange underline"
+                className="text-kanaliiga-orange hover:text-kanaliiga-light-brown underline font-medium"
               >
                 Evitec Esports Academy vs Leap
               </Link>
@@ -637,7 +637,7 @@ export default function KanaRatingAnalysis() {
               <Link
                 href="https://hub.kanaliiga.fi/matches/10755/games/105340"
                 target="_blank"
-                className="text-blue-600 hover:text-kanaliiga-orange underline"
+                className="text-kanaliiga-orange hover:text-kanaliiga-light-brown underline font-medium"
               >
                 Visma CMD vs Reaktor Brown
               </Link>
@@ -665,7 +665,7 @@ export default function KanaRatingAnalysis() {
               <Link
                 href="https://hub.kanaliiga.fi/matches/10871/games/105589"
                 target="_blank"
-                className="text-blue-600 hover:text-kanaliiga-orange underline"
+                className="text-kanaliiga-orange hover:text-kanaliiga-light-brown underline font-medium"
               >
                 ALM Partners Tasetaikurit vs AzetsCS
               </Link>

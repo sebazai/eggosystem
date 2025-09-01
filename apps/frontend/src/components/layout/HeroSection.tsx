@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,11 +36,40 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
     useSeasonCalendarMatches(currentSeasonId, "all");
 
   // Get upcoming matches sorted by date/time first, then by tier
-  const upcomingMatches = getUpcomingMatchesSorted(
+  const allUpcomingMatches = getUpcomingMatchesSorted(
     calendarMatches || [],
     10,
     10
   );
+
+  // Filter state for matches
+  const [matchFilter, setMatchFilter] = useState<"all" | "streamed">("all");
+
+  // Check if there are any streamed matches
+  const hasStreamedMatches = useMemo(() => {
+    return allUpcomingMatches.some(
+      (match) => match.streamUrl && match.streamUrl.length > 0
+    );
+  }, [allUpcomingMatches]);
+
+  // Set smart default: streamed if available, otherwise all
+  useEffect(() => {
+    if (hasStreamedMatches) {
+      setMatchFilter("streamed");
+    } else {
+      setMatchFilter("all");
+    }
+  }, [hasStreamedMatches]);
+
+  // Filter matches based on selection
+  const upcomingMatches = useMemo(() => {
+    if (matchFilter === "streamed") {
+      return allUpcomingMatches.filter(
+        (match) => match.streamUrl && match.streamUrl.length > 0
+      );
+    }
+    return allUpcomingMatches;
+  }, [allUpcomingMatches, matchFilter]);
 
   const handleMatchClick = (match: MatchWithStreamUrls) => {
     router.push(`/matches/${match.match_id}`);
@@ -145,6 +175,41 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </Button>
             </div>
 
+            {/* Filter Buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={matchFilter === "all" ? "default" : "ghost"}
+                size="sm"
+                className={`text-sm ${
+                  matchFilter === "all"
+                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
+                onClick={() => setMatchFilter("all")}
+              >
+                All ({allUpcomingMatches.length})
+              </Button>
+              <Button
+                variant={matchFilter === "streamed" ? "default" : "ghost"}
+                size="sm"
+                className={`text-sm ${
+                  matchFilter === "streamed"
+                    ? "bg-orange-500 text-white hover:bg-orange-600"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                } ${!hasStreamedMatches ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => hasStreamedMatches && setMatchFilter("streamed")}
+                disabled={!hasStreamedMatches}
+              >
+                📺 Streamed (
+                {
+                  allUpcomingMatches.filter(
+                    (m) => m.streamUrl && m.streamUrl.length > 0
+                  ).length
+                }
+                )
+              </Button>
+            </div>
+
             {isLoadingMatches ? (
               <div className="space-y-4">
                 {[...Array(3)].map((_, i) => (
@@ -180,7 +245,14 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                       onClick={() => handleMatchClick(match)}
                     >
                       {hasStream && (
-                        <div className="absolute top-2 right-2 text-lg opacity-90 bg-orange-500/20 rounded px-1.5 py-0.5">
+                        <div
+                          className="absolute top-2 right-2 text-lg opacity-90 bg-orange-500/20 rounded px-1.5 py-0.5 cursor-pointer hover:bg-orange-500/30 hover:scale-110 transition-all duration-200 z-10"
+                          title="Click to watch stream"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStreamClick(match);
+                          }}
+                        >
                           📺
                         </div>
                       )}
@@ -248,10 +320,16 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                 <CardContent className="p-8 text-center">
                   <Calendar className="h-12 w-12 mx-auto mb-4 text-slate-400" />
                   <p className="text-lg text-white mb-2">
-                    No upcoming matches this week
+                    {matchFilter === "streamed"
+                      ? "No streamed matches found"
+                      : "No upcoming matches this week"}
                   </p>
                   <p className="text-sm text-slate-400">
-                    Check back later for new matches
+                    {matchFilter === "streamed"
+                      ? allUpcomingMatches.length > 0
+                        ? "Try viewing all matches instead"
+                        : "Check back later for new matches"
+                      : "Check back later for new matches"}
                   </p>
                 </CardContent>
               </Card>
