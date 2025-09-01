@@ -42,7 +42,7 @@ router.use(
 router.use(
   "/registration",
   checkPermissions({
-    fallbackRoles: ["admin"]
+    fallbackRoles: ["admin", "helpdesk"]
   }),
   registrationRouter
 );
