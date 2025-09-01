@@ -10,6 +10,7 @@ import seasonRouter from "./season.routes";
 import playerRouter from "./player.routes";
 import roleManagementRouter from "./role-management.routes";
 import redisRouter from "./redis.routes";
+import failedParseRouter from "./failed-parse.routes";
 
 const router = Router();
 
@@ -75,6 +76,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   redisRouter
+);
+router.use(
+  "/failed-parse",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  failedParseRouter
 );
 router.get(
   "/",

@@ -125,10 +125,11 @@ const data: { navMain: Array<MenuItem> } = {
       url: "#",
       requiredRoles: ["admin"],
       items: [
-        // {
-        //   title: "Problems",
-        //   url: "#"
-        // },
+        {
+          title: "Parse failed",
+          url: createDashboardNextUrl("failed-parse"),
+          requiredRoles: ["admin", "helpdesk"]
+        },
         {
           title: "Flagged matches",
           url: createDashboardNextUrl("matches/flagged")
