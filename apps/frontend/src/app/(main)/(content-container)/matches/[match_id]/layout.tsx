@@ -35,12 +35,14 @@ export async function generateMetadata({ params }: LayoutProps) {
       title: "Match not found"
     };
   }
+  // Use a simple date format for metadata (no timezone conversion needed for SEO)
   const date = new Date(result.match_date);
   const formattedDate = date
     .toLocaleDateString("en-US", {
       month: "short",
       day: "2-digit",
-      year: "2-digit"
+      year: "2-digit",
+      timeZone: "UTC"
     })
     .toUpperCase();
 

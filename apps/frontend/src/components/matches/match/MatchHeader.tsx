@@ -1,4 +1,6 @@
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
+import { MatchClientDate } from "@/components/date/MatchClientDate";
+import { MatchClientTime } from "@/components/date/MatchClientTime";
 import {
   cn,
   createNextUrl,
@@ -33,23 +35,6 @@ export function MatchHeader({
   leagueId,
   className
 }: MatchHeaderProps) {
-  const startDate = new Date(`${matchDate}T${matchStartTime}`);
-  const endDate = new Date(`${matchDate}T${matchEndTime}`);
-
-  const formatTime = (date: Date) => date.toTimeString().slice(0, 5); // HH:MM
-  const formatDate = (date: Date) =>
-    date
-      .toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "2-digit"
-      })
-      .toUpperCase(); // MMM DD, YY
-
-  const formattedStart = formatTime(startDate);
-  const formattedEnd = formatTime(endDate);
-  const formattedDate = formatDate(startDate);
-
   const getScoreTextColor = (score1: number, score2: number) => {
     if (score1 > score2) return "text-green-500";
     if (score1 < score2) return "text-red-400";
@@ -123,8 +108,15 @@ export function MatchHeader({
             </div>
             {/* Info */}
             <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground">
-              <span>{`${formattedStart}–${formattedEnd}`}</span>
-              <span>{formattedDate}</span>
+              <MatchClientTime
+                matchDate={matchDate}
+                startTime={matchStartTime}
+                endTime={matchEndTime}
+              />
+              <MatchClientDate
+                matchDate={matchDate}
+                startTime={matchStartTime}
+              />
               <span>
                 {seasonName} {leagueName}
               </span>
