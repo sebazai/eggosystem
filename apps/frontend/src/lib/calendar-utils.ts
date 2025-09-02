@@ -90,6 +90,14 @@ export const getUpcomingMatchesSorted = (
  * Returns times in HH:mm:ss format
  */
 export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
+  // Helper function to round to nearest 30 minutes
+  const roundToNearest30Min = (hours: number) => {
+    const totalMinutes = Math.round((hours * 60) / 30) * 30;
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return { hours: h, minutes: m };
+  };
+
   if (!matches.length) {
     return {
       minTime: "00:00:00",
@@ -185,31 +193,23 @@ export const findMinMaxTimes = (matches: MatchWithStreamUrls[]) => {
     const newMinHours = midPoint - 5; // 5 hours before midpoint
     const newMaxHours = midPoint + 5; // 5 hours after midpoint
 
-    // Convert hours back to HH:mm:ss format
-    const minH = Math.floor(newMinHours);
-    const minM = Math.floor((newMinHours - minH) * 60);
-    const minS = Math.floor(((newMinHours - minH) * 60 - minM) * 60);
-    minTime = `${minH.toString().padStart(2, "0")}:${minM.toString().padStart(2, "0")}:${minS.toString().padStart(2, "0")}`;
+    // Convert hours back to HH:mm:ss format, rounded to nearest 30 minutes
+    const minRounded = roundToNearest30Min(newMinHours);
+    const maxRounded = roundToNearest30Min(newMaxHours);
 
-    const maxH = Math.floor(newMaxHours);
-    const maxM = Math.floor((newMaxHours - maxH) * 60);
-    const maxS = Math.floor(((newMaxHours - maxH) * 60 - maxM) * 60);
-    maxTime = `${maxH.toString().padStart(2, "0")}:${maxM.toString().padStart(2, "0")}:${maxS.toString().padStart(2, "0")}`;
+    minTime = `${minRounded.hours.toString().padStart(2, "0")}:${minRounded.minutes.toString().padStart(2, "0")}:00`;
+    maxTime = `${maxRounded.hours.toString().padStart(2, "0")}:${maxRounded.minutes.toString().padStart(2, "0")}:00`;
   } else {
     // Add 30-minute buffer on both sides
     const newMinHours = minHours - 0.5;
     const newMaxHours = maxHours + 0.5;
 
-    // Convert hours back to HH:mm:ss format
-    const minH = Math.floor(newMinHours);
-    const minM = Math.floor((newMinHours - minH) * 60);
-    const minS = Math.floor(((newMinHours - minH) * 60 - minM) * 60);
-    minTime = `${minH.toString().padStart(2, "0")}:${minM.toString().padStart(2, "0")}:${minS.toString().padStart(2, "0")}`;
+    // Convert hours back to HH:mm:ss format, rounded to nearest 30 minutes
+    const minRounded = roundToNearest30Min(newMinHours);
+    const maxRounded = roundToNearest30Min(newMaxHours);
 
-    const maxH = Math.floor(newMaxHours);
-    const maxM = Math.floor((newMaxHours - maxH) * 60);
-    const maxS = Math.floor(((newMaxHours - maxH) * 60 - maxM) * 60);
-    maxTime = `${maxH.toString().padStart(2, "0")}:${maxM.toString().padStart(2, "0")}:${maxS.toString().padStart(2, "0")}`;
+    minTime = `${minRounded.hours.toString().padStart(2, "0")}:${minRounded.minutes.toString().padStart(2, "0")}:00`;
+    maxTime = `${maxRounded.hours.toString().padStart(2, "0")}:${maxRounded.minutes.toString().padStart(2, "0")}:00`;
   }
 
   // Cap minTime at day boundary

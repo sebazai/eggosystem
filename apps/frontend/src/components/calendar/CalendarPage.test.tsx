@@ -160,8 +160,9 @@ describe("findMinMaxTimes", () => {
 
     // 2.5-hour range crossing midnight should be centered in 10-hour window
     // Midpoint around 00:45 (24:45), so roughly 19:45 to 29:45
-    expect(minTime).toBe("19:15:00");
-    expect(maxTime).toBe("30:15:00"); // 6:15 AM as 30:15
+    // With 30-minute rounding: 19:30 to 30:30
+    expect(minTime).toBe("19:30:00");
+    expect(maxTime).toBe("30:30:00"); // 6:30 AM as 30:30
 
     // Verify it's approximately a 10-hour range
     const minHours =
@@ -205,8 +206,9 @@ describe("findMinMaxTimes", () => {
     const { minTime, maxTime } = findMinMaxTimes(matches);
 
     // 4.5-hour range (23:00 to 03:30) should be centered in 10-hour window
-    expect(minTime).toBe("19:45:00");
-    expect(maxTime).toBe("30:45:00"); // 6:45 AM as 30:45
+    // With 30-minute rounding: 20:00 to 31:00
+    expect(minTime).toBe("20:00:00");
+    expect(maxTime).toBe("31:00:00"); // 7:00 AM as 31:00
 
     // Verify it's approximately a 10-hour range
     const minHours =
@@ -296,9 +298,9 @@ describe("findMinMaxTimes", () => {
 
     const { minTime, maxTime } = findMinMaxTimes(matches);
     // Should handle precise timing and center in 10-hour window
-    // Actual result based on algorithm
-    expect(minTime).toBe("10:30:21");
-    expect(maxTime).toBe("21:30:21");
+    // With 30-minute rounding: 10:30 to 21:30
+    expect(minTime).toBe("10:30:00");
+    expect(maxTime).toBe("21:30:00");
   });
 
   it("should handle full day range without going negative", () => {
