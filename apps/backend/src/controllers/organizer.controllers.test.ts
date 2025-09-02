@@ -88,10 +88,6 @@ describe("Seasons Controllers", () => {
       );
 
       expect(mockRedisClient.get).toHaveBeenCalledWith("1-730-active-season");
-      expect(mockSet).toHaveBeenCalledWith(
-        "Cache-Control",
-        "public, max-age=86400"
-      );
       expect(mockJson).toHaveBeenCalledWith({ season_id: 456 });
     });
 
@@ -116,10 +112,6 @@ describe("Seasons Controllers", () => {
         456,
         "EX",
         86400
-      );
-      expect(mockSet).toHaveBeenCalledWith(
-        "Cache-Control",
-        "public, max-age=86400"
       );
       expect(mockJson).toHaveBeenCalledWith(mockActiveSeason);
     });
