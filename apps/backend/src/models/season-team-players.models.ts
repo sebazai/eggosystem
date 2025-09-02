@@ -49,11 +49,14 @@ export const isPlayerApprovedForSeasonManually = async (
   };
 };
 
-export const getSeasonTeamPlayersBySteamIds = async (steamIds: string[]) => {
+export const getSeasonTeamPlayersBySteamIds = async (
+  seasonId: number,
+  steamIds: string[]
+) => {
   const questionMarks = steamIds.map(() => "?").join(",");
   const result = await runQuery<Array<SeasonTeamPlayer>>(
-    `SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (${questionMarks})`,
-    steamIds
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (${questionMarks})`,
+    [seasonId, ...steamIds]
   );
   return result;
 };
@@ -83,8 +86,10 @@ export const validatePlayersInTeams = async (
     // get players from team.roster
     const playerSteamIds = team.roster.map((player) => player.game_player_id);
     // check if players are in SeasonTeamPlayers
-    const playersInSeasonTeamPlayers =
-      await getSeasonTeamPlayersBySteamIds(playerSteamIds);
+    const playersInSeasonTeamPlayers = await getSeasonTeamPlayersBySteamIds(
+      teamFromDb.season_id,
+      playerSteamIds
+    );
 
     // check if any player has match_id other then null, if it does, it should be in the matchIds array
     const playersWithMatchId = playersInSeasonTeamPlayers.filter(

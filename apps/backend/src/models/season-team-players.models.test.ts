@@ -167,12 +167,12 @@ describe("season-team-players.models", () => {
 
         expect(mockRunQuery).toHaveBeenCalledTimes(2);
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?,?)",
-          ["steam123", "steam456"]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?,?)",
+          [1, "steam123", "steam456"]
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-          ["steam789"]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?)",
+          [1, "steam789"]
         );
 
         // Should not call Redis set since all players have null match_id (no substitutes from other matches)
@@ -795,8 +795,8 @@ describe("season-team-players.models", () => {
           "match123"
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN ()",
-          []
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN ()",
+          [1]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled(); // No invalid players to flag
       });
@@ -851,8 +851,8 @@ describe("season-team-players.models", () => {
           "match123"
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?)",
-          ["steam123"]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?)",
+          [1, "steam123"]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled();
       });
@@ -862,6 +862,7 @@ describe("season-team-players.models", () => {
   describe("getSeasonTeamPlayersBySteamIds", () => {
     it("should query database with correct parameters", async () => {
       // Arrange
+      const seasonId = 1;
       const steamIds = ["steam123", "steam456", "steam789"];
       const mockSeasonTeamPlayers: SeasonTeamPlayer[] = [
         {
@@ -888,24 +889,25 @@ describe("season-team-players.models", () => {
       mockRunQuery.mockResolvedValue(mockSeasonTeamPlayers);
 
       // Act
-      const result = await getSeasonTeamPlayersBySteamIds(steamIds);
+      const result = await getSeasonTeamPlayersBySteamIds(seasonId, steamIds);
 
       // Assert
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM SeasonTeamPlayers WHERE steam_id IN (?,?,?)",
-        steamIds
+        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?,?,?)",
+        [seasonId, ...steamIds]
       );
       expect(result).toEqual(mockSeasonTeamPlayers);
     });
 
     it("should return empty array when no players found", async () => {
       // Arrange
+      const seasonId = 1;
       const steamIds = ["steam123"];
       const mockRunQuery = jest.requireMock("../db/mysqlRunQuery").runQuery;
       mockRunQuery.mockResolvedValue([]);
 
       // Act
-      const result = await getSeasonTeamPlayersBySteamIds(steamIds);
+      const result = await getSeasonTeamPlayersBySteamIds(seasonId, steamIds);
 
       // Assert
       expect(result).toEqual([]);
