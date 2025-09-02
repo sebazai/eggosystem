@@ -116,11 +116,10 @@ export const sendDemoForAllStarPOTGClip = async (
       message: "Clip request submitted successfully"
     };
   } catch (error) {
-    logger.error("Error sending demo to AllStar", {
-      error: error instanceof Error ? error.message : String(error),
-      gameId,
-      demoUrl
-    });
+    logger.error(
+      `Error sending demo to AllStar for game ${gameId} with demoUrl ${demoUrl}`,
+      error
+    );
 
     return {
       success: false,
