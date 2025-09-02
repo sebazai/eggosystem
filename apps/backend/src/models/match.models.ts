@@ -693,8 +693,8 @@ export const updateMatchFinished = async (
     return;
   }
 
-  const startTime = convertISOToTime(convertISOToFinnishTime(startedAt));
-  const endTime = convertISOToTime(convertISOToFinnishTime(finishedAt));
+  const startTime = convertISOToTime(startedAt);
+  const endTime = convertISOToTime(finishedAt);
 
   await runQuery(
     "UPDATE Matches SET start_time = ?, end_time = ?, status = ? WHERE external_match_room_id = ?",
