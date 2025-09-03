@@ -23,6 +23,13 @@ import {
   faceitCs2EmptyMetadataSteamId
 } from "./faceit/test-ids";
 
+import {
+  csrankkerValidSteamId,
+  csrankkerNotFoundSteamId,
+  csrankkerNetworkErrorSteamId,
+  csrankkerInvalidJsonSteamId
+} from "./csrankker/test-ids";
+
 export const mswServer: SetupServerApi = setupServer(...handlers);
 export {
   leetifyValidSteamId,
@@ -41,7 +48,11 @@ export {
   faceitInvalidGameDataSteamId,
   faceitRateLimitSteamId,
   faceitMultipleGamesSteamId,
-  faceitCs2EmptyMetadataSteamId
+  faceitCs2EmptyMetadataSteamId,
+  csrankkerValidSteamId,
+  csrankkerNotFoundSteamId,
+  csrankkerNetworkErrorSteamId,
+  csrankkerInvalidJsonSteamId
 };
 
 export { validSignupData, invalidSignupData } from "./fixtures";

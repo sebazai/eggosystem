@@ -7,6 +7,7 @@ import { faceitTeamHandlers } from "./faceit/Teams-handlers";
 import { faceitMatchDetailsHandlers } from "./faceit/MatchDetails-handlers";
 import { faceitDemoHandlers } from "./faceit/Demo-handlers";
 import { faceitChampionshipHandlers } from "./faceit/ChampionshipDetails-handlers";
+import { csrankkerHandlers } from "./csrankker/handlers";
 
 const handlers = [
   ...getPlayerSummariesHandlers,
@@ -17,7 +18,8 @@ const handlers = [
   ...faceitTeamHandlers,
   ...faceitMatchDetailsHandlers,
   ...faceitDemoHandlers,
-  ...faceitChampionshipHandlers
+  ...faceitChampionshipHandlers,
+  ...csrankkerHandlers
 ];
 
 export { handlers };

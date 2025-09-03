@@ -93,19 +93,15 @@ export const checkPlayerAdditionEligibility = async (
 ): Promise<TeamEligibilityResult> => {
   // First, get the league for the selected team
   const leagueQuery = `
-      SELECT COALESCE(l.name, 'Unassigned') AS league_name
-      FROM Teams t
-      JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
-      JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
-      LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
-      LEFT JOIN Leagues l ON l.id = slt.league_id
-      WHERE strp.season_id = ? AND strp.team_id = ?
+      SELECT slt.league_id
+      FROM SeasonLeagueTeams slt
+      WHERE slt.team_id = ? AND slt.season_id = ?
       LIMIT 1
     `;
 
-  const leagueResults = await runQuery<Array<{ league_name: string }>>(
+  const leagueResults = await runQuery<Array<{ league_id: number | null }>>(
     leagueQuery,
-    [seasonId, teamId],
+    [teamId, seasonId],
     options?.connection
   );
 
@@ -113,7 +109,7 @@ export const checkPlayerAdditionEligibility = async (
     throw new Error(`Team ${teamId} not found in season ${seasonId}`);
   }
 
-  const leagueName = leagueResults[0].league_name;
+  const leagueId = leagueResults[0].league_id;
 
   // Get stabilized kana_elo from CSRankker service
   const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
@@ -175,12 +171,10 @@ export const checkPlayerAdditionEligibility = async (
           spr.kana_elo,
           ROW_NUMBER() OVER (PARTITION BY t.id ORDER BY spr.kana_elo DESC) AS player_rank
         FROM Teams t
-        JOIN SeasonLeagueTeams slt ON slt.team_id = t.id
+        JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = ?
         JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = slt.season_id AND strp.role = 'primary'
-        JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
         JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = slt.season_id
-        JOIN Leagues l ON l.id = slt.league_id
-        WHERE slt.season_id = ? AND l.name = ?
+        WHERE slt.league_id = ? AND slt.team_id != ?
           AND spr.kana_elo IS NOT NULL
         ORDER BY t.id, spr.kana_elo DESC
       ),
@@ -210,11 +204,24 @@ export const checkPlayerAdditionEligibility = async (
       avg4: number;
       rank: number;
     }>
-  >(topTeamsQuery, [seasonId, leagueName], options?.connection);
+  >(topTeamsQuery, [seasonId, leagueId, teamId], options?.connection);
 
   // Check if the selected team's new average would be lower than the top team's avg4
   const topTeamAvg4 = topTeams[0]?.avg4 || 0;
   const canAddPlayer = newAvgWithPlayer <= topTeamAvg4;
+
+  // Get league name for display purposes only
+  const leagueNameQuery = `
+      SELECT l.name AS league_name
+      FROM Leagues l
+      WHERE l.id = ?
+  `;
+
+  const [leagueNameResult] = await runQuery<Array<{ league_name: string }>>(
+    leagueNameQuery,
+    [leagueId],
+    options?.connection
+  );
 
   return {
     selectedTeam: {
@@ -228,6 +235,6 @@ export const checkPlayerAdditionEligibility = async (
     },
     topTeamsInLeague: topTeams,
     canAddPlayer,
-    league_name: leagueName
+    league_name: leagueNameResult.league_name
   };
 };
