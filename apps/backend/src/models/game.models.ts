@@ -32,7 +32,6 @@ import { upsertPlayerStatsForGame } from "./player-stats.models";
 import { upsertPlayerTradesForGame } from "./player-trades.models";
 import { upsertMapRoundStats } from "./map-round-stat.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
-import { getDemoDownloadUrl } from "../services/faceit.services";
 
 export const getGameTeamRoundBreakdown = async (game_id: number) => {
   const query = `
@@ -178,7 +177,7 @@ const publishDemoProcessingRequest = async (
       gameId,
       demoUrl,
       5, // Medium priority for demo processing
-      "game-processor",
+      "faceit",
       reparse
     );
 
@@ -221,7 +220,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
     throw new Error(`Invalid demo url: ${demo_url}`);
   }
 
-  const demoDownloadUrl = await getDemoDownloadUrl(demo_url);
+  const demoDownloadUrl = demo_url;
 
   const { match_id } = matchDetails;
 
