@@ -94,7 +94,7 @@
     "@typescript-eslint/eslint-plugin": "8.39.0",
     "@typescript-eslint/parser": "8.39.0",
     "babel-jest": "30.0.5",
-    "eslint": "9.32.0",
+    "eslint": "9.34.0",
     "ioredis-mock": "8.9.0",
     "jest": "30.0.5",
     "jest-junit": "16.0.0",
