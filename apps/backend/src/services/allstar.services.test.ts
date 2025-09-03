@@ -160,7 +160,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
       });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Error sending demo to AllStar",
+        "Error sending demo to AllStar for game 123 with demoUrl https://demo.url",
         {
           error: "Network error",
           gameId: 123,
