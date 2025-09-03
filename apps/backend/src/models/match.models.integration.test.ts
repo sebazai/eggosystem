@@ -19,7 +19,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(firstMatch).toHaveProperty("match_end");
       expect(firstMatch).toHaveProperty("league_name");
       expect(firstMatch).toHaveProperty("league_tier");
-      expect(firstMatch).toHaveProperty("streamUrl");
+      expect(firstMatch).toHaveProperty("stream_urls");
+      expect(firstMatch).toHaveProperty("match_status");
       expect(firstMatch).toHaveProperty("match_team1");
       expect(firstMatch).toHaveProperty("match_team2");
       expect(firstMatch).toHaveProperty("external_match_room_id");
@@ -30,6 +31,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof firstMatch.title).toBe("string");
       expect(typeof firstMatch.match_start).toBe("string");
       expect(typeof firstMatch.match_end).toBe("string");
+      expect(typeof firstMatch.match_status).toBe("string");
       expect(typeof firstMatch.league_name).toBe("string");
       expect(typeof firstMatch.league_tier).toBe("number");
       expect(Array.isArray(firstMatch.stream_urls)).toBe(true);
@@ -134,7 +136,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(match).toHaveProperty("match_end");
       expect(match).toHaveProperty("league_name");
       expect(match).toHaveProperty("league_tier");
-      expect(match).toHaveProperty("streamUrl");
+      expect(match).toHaveProperty("stream_urls");
+      expect(match).toHaveProperty("match_status");
       expect(match).toHaveProperty("match_team1");
       expect(match).toHaveProperty("match_team2");
       expect(match).toHaveProperty("external_match_room_id");
@@ -145,6 +148,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof match.title).toBe("string");
       expect(typeof match.match_start).toBe("string");
       expect(typeof match.match_end).toBe("string");
+      expect(typeof match.match_status).toBe("string");
       expect(typeof match.league_name).toBe("string");
       expect(typeof match.league_tier).toBe("number");
       expect(Array.isArray(match.stream_urls)).toBe(true);
@@ -179,7 +183,8 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(match).toHaveProperty("match_end");
       expect(match).toHaveProperty("league_name");
       expect(match).toHaveProperty("league_tier");
-      expect(match).toHaveProperty("streamUrl");
+      expect(match).toHaveProperty("stream_urls");
+      expect(match).toHaveProperty("match_status");
       expect(match).toHaveProperty("match_team1");
       expect(match).toHaveProperty("match_team2");
       expect(match).toHaveProperty("external_match_room_id");
@@ -193,6 +198,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof match.league_name).toBe("string");
       expect(typeof match.league_tier).toBe("number");
       expect(Array.isArray(match.stream_urls)).toBe(true);
+      expect(typeof match.match_status).toBe("string");
       expect(typeof match.match_team1).toBe("string");
       expect(typeof match.match_team2).toBe("string");
       expect(typeof match.season_platform).toBe("string");

@@ -1858,9 +1858,9 @@ describe("FaceIT Routes - Webhook", () => {
           "5227a49c-f172-485e-a19b-a666ddeb3140"
         );
 
-        // Note: updateMatchStatus is NOT called for championship match_status_ready
+        // Note: updateMatchStatus is called for championship match_status_ready
         // Only addMatchTeamMapVetoes is called
-        expect(mockUpdateMatchStatus).not.toHaveBeenCalled();
+        expect(mockUpdateMatchStatus).toHaveBeenCalled();
       });
     });
   });
