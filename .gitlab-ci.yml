@@ -217,7 +217,7 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: bitnami/mariadb:11.7.2
+    - name: bitnamilegacy/mariadb:11.7.2
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
@@ -305,7 +305,7 @@ test-e2e:frontend:
     - build:frontend
     - build:types
   services:
-    - name: bitnami/mariadb:11.7.2
+    - name: bitnamilegacy/mariadb:11.7.2
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis
