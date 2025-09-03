@@ -57,6 +57,30 @@ export const filterUpcomingMatches = (
   daysAhead: number = 10
 ): MatchWithStreamUrls[] => {
   const now = new Date();
+
+  // If daysAhead is 0, we want matches on the same day
+  if (daysAhead === 0) {
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const endOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+
+    return matches.filter((match) => {
+      const matchDate = new Date(match.match_start);
+      return matchDate >= startOfDay && matchDate <= endOfDay;
+    });
+  }
+
   const futureDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 
   return matches.filter((match) => {
@@ -82,6 +106,22 @@ export const getUpcomingMatchesSorted = (
   }
 
   return sorted;
+};
+
+export const getUpcomingStreamedMatchesSorted = (
+  matches: MatchWithStreamUrls[],
+  daysAhead: number = 0,
+  maxCount?: number
+): MatchWithStreamUrls[] => {
+  const filtered = filterUpcomingMatches(matches, daysAhead);
+  const sorted = sortMatchesByDateAndTier(filtered);
+  const streamedMatches = sorted.filter(
+    (match) => match.stream_urls && match.stream_urls.length > 0
+  );
+  if (maxCount) {
+    return streamedMatches.slice(0, maxCount);
+  }
+  return streamedMatches;
 };
 
 /**
