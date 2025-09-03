@@ -102,7 +102,8 @@ export const getRegisteredTeams = async (seasonId: number) => {
           'steam_id', sp.steam_id,
           'nickname', sp.nickname,
           'work_email', a.work_email,
-          'is_work_email_personal_email', a.is_work_email_personal_email
+          'is_work_email_personal_email', a.is_work_email_personal_email,
+          'work_email_verified', a.work_email_verified
         )
       ) as players
     FROM SeasonTeamRegistrations str 

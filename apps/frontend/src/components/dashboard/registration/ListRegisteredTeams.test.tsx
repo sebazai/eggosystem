@@ -45,7 +45,8 @@ describe("ListRegisteredTeams", () => {
           steam_id: "76561198012345678",
           nickname: "Player1",
           work_email: "player1@company.com",
-          is_work_email_personal_email: false
+          is_work_email_personal_email: false,
+          work_email_verified: true
         }
       ]
     },
@@ -68,7 +69,8 @@ describe("ListRegisteredTeams", () => {
           steam_id: "76561198087654321",
           nickname: "Player2",
           work_email: "player2@gmail.com",
-          is_work_email_personal_email: true
+          is_work_email_personal_email: true,
+          work_email_verified: true
         }
       ],
       players: [
@@ -76,7 +78,8 @@ describe("ListRegisteredTeams", () => {
           steam_id: "76561198087654321",
           nickname: "Player2",
           work_email: "player2@gmail.com",
-          is_work_email_personal_email: true
+          is_work_email_personal_email: true,
+          work_email_verified: true
         }
       ]
     }

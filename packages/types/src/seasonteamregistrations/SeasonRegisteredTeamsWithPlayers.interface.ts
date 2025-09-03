@@ -7,6 +7,7 @@ export interface RegisteredTeamPlayer {
   nickname: SteamPlayer["nickname"];
   work_email: string;
   is_work_email_personal_email: Account["is_work_email_personal_email"];
+  work_email_verified: Account["work_email_verified"];
 }
 
 export interface SeasonRegisteredTeamsWithPlayers

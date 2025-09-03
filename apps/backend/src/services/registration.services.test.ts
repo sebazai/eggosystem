@@ -22,11 +22,13 @@ describe("getTeamsSignupApprovalState", () => {
   const createMockPlayer = (
     steam_id: string,
     work_email: string,
-    is_work_email_personal_email: boolean = false
+    is_work_email_personal_email: boolean = false,
+    work_email_verified: boolean = true
   ): RegisteredTeamPlayer => ({
     steam_id,
     work_email,
     is_work_email_personal_email,
+    work_email_verified,
     nickname: "Test Player"
   });
 
@@ -70,6 +72,77 @@ describe("getTeamsSignupApprovalState", () => {
       });
 
       // Should not call getSeasonPlayerApproval since all emails are the same
+      expect(mockGetSeasonPlayerApproval).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("when players have unverified emails", () => {
+    it("should return team as invalid when any player has unverified email", async () => {
+      const players = [
+        createMockPlayer("steam1", "player1@company.com", false, true), // verified
+        createMockPlayer("steam2", "player2@company.com", false, false), // unverified
+        createMockPlayer("steam3", "player3@company.com", false, true) // verified
+      ];
+
+      const team = createMockTeam(1, 1, players);
+      const teams = [team];
+
+      const result = await getTeamsSignupApprovalState(teams);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        team_id: 1,
+        is_valid: false,
+        invalid_players: [players[1]] // steam2 player with unverified email
+      });
+
+      // Should not call getSeasonPlayerApproval since team is invalid due to unverified emails
+      expect(mockGetSeasonPlayerApproval).not.toHaveBeenCalled();
+    });
+
+    it("should return team as invalid when all players have unverified emails", async () => {
+      const players = [
+        createMockPlayer("steam1", "player1@company.com", false, false), // unverified
+        createMockPlayer("steam2", "player2@company.com", false, false), // unverified
+        createMockPlayer("steam3", "player3@company.com", false, false) // unverified
+      ];
+
+      const team = createMockTeam(1, 1, players);
+      const teams = [team];
+
+      const result = await getTeamsSignupApprovalState(teams);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        team_id: 1,
+        is_valid: false,
+        invalid_players: players // all players are invalid
+      });
+
+      // Should not call getSeasonPlayerApproval since team is invalid due to unverified emails
+      expect(mockGetSeasonPlayerApproval).not.toHaveBeenCalled();
+    });
+
+    it("should return team as valid when all players have verified emails", async () => {
+      const players = [
+        createMockPlayer("steam1", "player1@company.com", false, true), // verified
+        createMockPlayer("steam2", "player2@company.com", false, true), // verified
+        createMockPlayer("steam3", "player3@company.com", false, true) // verified
+      ];
+
+      const team = createMockTeam(1, 1, players);
+      const teams = [team];
+
+      const result = await getTeamsSignupApprovalState(teams);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        team_id: 1,
+        is_valid: true,
+        invalid_players: []
+      });
+
+      // Should not call getSeasonPlayerApproval since all emails are the same and verified
       expect(mockGetSeasonPlayerApproval).not.toHaveBeenCalled();
     });
   });
