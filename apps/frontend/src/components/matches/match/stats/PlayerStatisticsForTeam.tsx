@@ -83,9 +83,10 @@ export const PlayerStatisticsForTeam = ({
               </Link>
             </div>
 
-            <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(5,1fr)] lg:grid-cols-[2fr_repeat(7,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30">
+            <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30">
               <div className="text-left">PLAYER</div>
               <div className="text-center">K</div>
+              <div className="text-center hidden md:block">A(f)</div>
               <div className="text-center">D</div>
               <div className="text-center">+/-</div>
               <div className="text-center">ADR</div>
@@ -112,9 +113,12 @@ export const PlayerStatisticsForTeam = ({
                     query: playerSearchParams
                   }}
                 >
-                  <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(5,1fr)] lg:grid-cols-[2fr_repeat(7,1fr)] p-2 border-b border-gray-800 items-center">
+                  <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] p-2 border-b border-gray-800 items-center">
                     <div className="text-left font-bold">{player.nickname}</div>
                     <div className="text-center">{player.kills}</div>
+                    <div className="text-center hidden md:block">
+                      {player.assists}({player.flash_assists})
+                    </div>
                     <div className="text-center">{player.deaths}</div>
                     <div
                       className={`text-center ${player.kills - player.deaths >= 0 ? "text-green-500" : "text-red-500"}`}
