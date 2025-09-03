@@ -330,6 +330,8 @@ router.post(
           validatedWebhook.payload.entity.id
         );
 
+        await updateMatchStatus(validatedWebhook.payload.id, "ONGOING");
+
         res.status(200).send("Webhook received");
         return;
       }

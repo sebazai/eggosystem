@@ -139,7 +139,7 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
   const sortedMatches = sortMatchesByDateAndTier(matches);
 
   return sortedMatches.map((match, index) => {
-    const hasStream = match.streamUrl && match.streamUrl.length > 0;
+    const hasStream = match.stream_urls && match.stream_urls.length > 0;
 
     return {
       id: match.match_id,
@@ -156,7 +156,7 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
       classNames: hasStream ? "stream-match" : "",
       extendedProps: {
         league: match.league_name,
-        streamUrl: match.streamUrl,
+        streamUrl: match.stream_urls,
         team1: match.match_team1,
         team2: match.match_team2,
         tier: match.league_tier,
@@ -620,7 +620,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                           start: match.match_start,
                           end: match.match_end,
                           league: match.league_name,
-                          streamUrl: match.streamUrl,
+                          streamUrl: match.stream_urls,
                           team1: match.match_team1,
                           team2: match.match_team2
                         });

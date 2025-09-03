@@ -16,7 +16,11 @@ import {
   type MatchesWithTeamDataQuery,
   type ChampionshipDetailsObjectCreated,
   FaceitMatchStatus,
-  type MatchGamesByTeam
+  type MatchGamesByTeam,
+  type MatchWithStreamUrls,
+  type Season,
+  type League,
+  type SeasonLeague
 } from "@eggosystem/types";
 import {
   fetchPlayerStatsForMatchOrGame,
@@ -785,18 +789,18 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       id: number;
       league_id: number;
       season_id: number;
-      platform: string;
+      platform: Season["platform"];
       stage: number;
       match_date: string;
       start_time: string;
       end_time: string;
       best_of: number;
       external_match_room_id: string | null;
-      status: string;
+      status: Match["status"];
       round: number;
       group: number;
-      league_name: string;
-      league_tier: number;
+      league_name: League["name"];
+      league_tier: SeasonLeague["tier"];
       team_names: string | null;
       stream_urls: string | null;
     }>
@@ -832,9 +836,10 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       title: teamNames,
       match_start: `${match.match_date}T${match.start_time}Z`,
       match_end: `${match.match_date}T${endTime}Z`,
+      match_status: match.status,
       league_name: match.league_name,
       league_tier: match.league_tier,
-      streamUrl: match.stream_urls
+      stream_urls: match.stream_urls
         ? JSON.parse(match.stream_urls).filter(
             (url: string | null) => url !== null
           )
@@ -843,6 +848,6 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
       match_team2: teams[1] || "Unknown",
       external_match_room_id: match.external_match_room_id,
       season_platform: match.platform
-    };
+    } satisfies MatchWithStreamUrls;
   });
 };

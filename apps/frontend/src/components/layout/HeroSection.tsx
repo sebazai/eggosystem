@@ -42,15 +42,21 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
     10
   );
 
+  const allUpcomingStreamedMatches = getUpcomingStreamedMatchesSorted(
+    calendarMatches || []
+  );
+
   // Filter state for matches
   const [matchFilter, setMatchFilter] = useState<"all" | "streamed">("all");
 
   // Check if there are any streamed matches
   const hasStreamedMatches = useMemo(() => {
-    return allUpcomingMatches.some(
-      (match) => match.streamUrl && match.streamUrl.length > 0
+    return allUpcomingStreamedMatches.some(
+      (match) =>
+        (match.stream_urls && match.stream_urls.length > 0) ||
+        match.match_status === "ONGOING"
     );
-  }, [allUpcomingMatches]);
+  }, [allUpcomingStreamedMatches]);
 
   // Set smart default: streamed if available, otherwise all
   useEffect(() => {
@@ -64,20 +70,22 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   // Filter matches based on selection
   const upcomingMatches = useMemo(() => {
     if (matchFilter === "streamed") {
-      return allUpcomingMatches.filter(
-        (match) => match.streamUrl && match.streamUrl.length > 0
+      return allUpcomingStreamedMatches.filter(
+        (match) =>
+          (match.stream_urls && match.stream_urls.length > 0) ||
+          match.match_status === "ONGOING"
       );
     }
     return allUpcomingMatches;
-  }, [allUpcomingMatches, matchFilter]);
+  }, [allUpcomingMatches, allUpcomingStreamedMatches, matchFilter]);
 
   const handleMatchClick = (match: MatchWithStreamUrls) => {
     router.push(`/matches/${match.match_id}`);
   };
 
   const handleStreamClick = (match: MatchWithStreamUrls) => {
-    if (match.streamUrl && match.streamUrl.length > 0) {
-      window.open(match.streamUrl[0], "_blank");
+    if (match.stream_urls && match.stream_urls.length > 0) {
+      window.open(match.stream_urls[0], "_blank");
     }
   };
 

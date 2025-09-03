@@ -33,8 +33,8 @@ export const sortMatchesByDateAndTier = (
 
     // If dates are the same, prioritize streamed matches
     if (dateComparison === 0) {
-      const hasStreamA = a.streamUrl && a.streamUrl.length > 0;
-      const hasStreamB = b.streamUrl && b.streamUrl.length > 0;
+      const hasStreamA = a.stream_urls && a.stream_urls.length > 0;
+      const hasStreamB = b.stream_urls && b.stream_urls.length > 0;
 
       // If stream availability differs, prioritize streamed matches
       if (hasStreamA !== hasStreamB) {

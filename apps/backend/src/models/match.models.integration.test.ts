@@ -32,7 +32,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof firstMatch.match_end).toBe("string");
       expect(typeof firstMatch.league_name).toBe("string");
       expect(typeof firstMatch.league_tier).toBe("number");
-      expect(Array.isArray(firstMatch.streamUrl)).toBe(true);
+      expect(Array.isArray(firstMatch.stream_urls)).toBe(true);
       expect(typeof firstMatch.match_team1).toBe("string");
       expect(typeof firstMatch.match_team2).toBe("string");
       // external_match_room_id can be string or null
@@ -74,7 +74,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(firstMatch.match_end).toMatch(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/
       );
-      expect(Array.isArray(firstMatch.streamUrl)).toBe(true);
+      expect(Array.isArray(firstMatch.stream_urls)).toBe(true);
       expect(typeof firstMatch.title).toBe("string");
       expect(typeof firstMatch.season_platform).toBe("string");
 
@@ -147,7 +147,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof match.match_end).toBe("string");
       expect(typeof match.league_name).toBe("string");
       expect(typeof match.league_tier).toBe("number");
-      expect(Array.isArray(match.streamUrl)).toBe(true);
+      expect(Array.isArray(match.stream_urls)).toBe(true);
       expect(typeof match.match_team1).toBe("string");
       expect(typeof match.match_team2).toBe("string");
       // external_match_room_id can be string or null
@@ -192,7 +192,7 @@ describe("getMatchesBySeasonAndLeagueWithStreamUrls - Integration Tests", () => 
       expect(typeof match.match_end).toBe("string");
       expect(typeof match.league_name).toBe("string");
       expect(typeof match.league_tier).toBe("number");
-      expect(Array.isArray(match.streamUrl)).toBe(true);
+      expect(Array.isArray(match.stream_urls)).toBe(true);
       expect(typeof match.match_team1).toBe("string");
       expect(typeof match.match_team2).toBe("string");
       expect(typeof match.season_platform).toBe("string");

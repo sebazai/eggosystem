@@ -1,5 +1,5 @@
 import { findMinMaxTimes } from "@/lib/calendar-utils";
-import type { MatchWithStreamUrls } from "@eggosystem/types";
+import { SeasonPlatform, type MatchWithStreamUrls } from "@eggosystem/types";
 
 describe("findMinMaxTimes", () => {
   it("should return default times when no matches provided", () => {
@@ -16,12 +16,13 @@ describe("findMinMaxTimes", () => {
         match_end: "2024-03-20T18:00:00Z", // 6:00 PM
         title: "Match 1",
         league_name: "League 1",
+        match_status: "ONGOING",
         league_tier: 1,
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -45,12 +46,13 @@ describe("findMinMaxTimes", () => {
         match_end: "2024-03-20T12:00:00Z", // 12:00 PM
         title: "Match 1",
         league_name: "League 1",
+        match_status: "ONGOING",
         league_tier: 1,
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       },
       {
         match_id: "2",
@@ -59,11 +61,12 @@ describe("findMinMaxTimes", () => {
         title: "Match 2",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 3",
         match_team2: "Team 4",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -82,24 +85,26 @@ describe("findMinMaxTimes", () => {
         title: "Match 1",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       },
       {
         match_id: "2",
         match_start: "2024-03-20T16:00:00Z", // 4:00 PM
         match_end: "2024-03-20T17:00:00Z", // 5:00 PM
         title: "Match 2",
+        match_status: "ONGOING",
         league_name: "League 1",
         league_tier: 1,
         match_team1: "Team 3",
         match_team2: "Team 4",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -124,11 +129,12 @@ describe("findMinMaxTimes", () => {
         title: "Match 1",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -148,11 +154,12 @@ describe("findMinMaxTimes", () => {
         title: "Late Match",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team A",
         match_team2: "Team B",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -182,11 +189,12 @@ describe("findMinMaxTimes", () => {
         title: "Match 1",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team A",
         match_team2: "Team B",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       },
       {
         match_id: "2",
@@ -195,11 +203,12 @@ describe("findMinMaxTimes", () => {
         title: "Match 2",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team C",
         match_team2: "Team D",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -228,11 +237,12 @@ describe("findMinMaxTimes", () => {
         title: "Midnight Match",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -252,11 +262,12 @@ describe("findMinMaxTimes", () => {
         title: "Morning Match",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       },
       {
         match_id: "2",
@@ -265,11 +276,12 @@ describe("findMinMaxTimes", () => {
         title: "Night Match",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 3",
         match_team2: "Team 4",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -288,11 +300,12 @@ describe("findMinMaxTimes", () => {
         title: "Precise Match",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
@@ -314,9 +327,10 @@ describe("findMinMaxTimes", () => {
         league_tier: 1,
         match_team1: "Team 1",
         match_team2: "Team 2",
-        streamUrl: [],
+        match_status: "ONGOING",
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       },
       {
         match_id: "2",
@@ -325,11 +339,12 @@ describe("findMinMaxTimes", () => {
         title: "Late Match",
         league_name: "League 1",
         league_tier: 1,
+        match_status: "ONGOING",
         match_team1: "Team 3",
         match_team2: "Team 4",
-        streamUrl: [],
+        stream_urls: [],
         external_match_room_id: null,
-        season_platform: "faceit"
+        season_platform: SeasonPlatform.FACEIT
       }
     ];
 
