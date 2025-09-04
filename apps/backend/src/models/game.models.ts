@@ -113,21 +113,70 @@ export const getGameTeamStats = async (game_id: number) => {
   return runQuery<GameTeamStats[]>(query, [game_id]);
 };
 
-export const getGamePlayerStats = async (game_id: number) => {
+export const getGamePlayerStats = async (
+  game_id: number,
+  stat?: "CT" | "T"
+) => {
+  // Base fields that are always included
+  const baseFields = `
+    p.steam_id,
+    p.nickname,
+    stp.team_id
+  `;
+
+  // Fields that change based on stat parameter
+  let statFields = "";
+  if (stat === "CT") {
+    statFields = `
+      ps.kills_ct as kills,
+      ps.headshots,
+      ps.assists_ct as assists,
+      ps.flash_assists_ct as flash_assists,
+      ps.deaths_ct as deaths,
+      ps.kast as kast_percentage,
+      ps.adr_ct as adr,
+      ps.enemies_flashed_ct as enemies_flashed,
+      ps.hs_percent,
+      ps.first_kills_ct as first_kills,
+      ps.first_deaths_ct as first_deaths,
+      ps.utility_damage_ct as utility_damage
+    `;
+  } else if (stat === "T") {
+    statFields = `
+      ps.kills_t as kills,
+      ps.headshots,
+      ps.assists_t as assists,
+      ps.flash_assists_t as flash_assists,
+      ps.deaths_t as deaths,
+      ps.kast as kast_percentage,
+      ps.adr_t as adr,
+      ps.enemies_flashed_t as enemies_flashed,
+      ps.hs_percent,
+      ps.first_kills_t as first_kills,
+      ps.first_deaths_t as first_deaths,
+      ps.utility_damage_t as utility_damage
+    `;
+  } else {
+    // Default: all stats combined
+    statFields = `
+      ps.kills,
+      ps.headshots,
+      ps.assists,
+      ps.flash_assists,
+      ps.deaths,
+      ps.kast as kast_percentage,
+      ps.adr,
+      ps.enemies_flashed,
+      ps.hs_percent,
+      ps.kana_rating,
+      ps.first_kills,
+      ps.first_deaths
+    `;
+  }
+
   const query = `SELECT
-        p.steam_id,
-        p.nickname,
-        stp.team_id,
-        ps.kills,
-        ps.headshots,
-        ps.assists,
-        ps.flash_assists,
-        ps.deaths,
-        ps.kast as kast_percentage,
-        ps.adr,
-        ps.enemies_flashed,
-        ps.hs_percent,
-        ps.kana_rating
+        ${baseFields},
+        ${statFields}
       FROM PlayerStats ps
       INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       INNER JOIN MatchGames mg ON mg.id = ps.game_id
@@ -135,7 +184,7 @@ export const getGamePlayerStats = async (game_id: number) => {
       INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
       INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
       WHERE ps.game_id = ?
-      ORDER BY stp.team_id, ps.kills DESC, ps.deaths ASC`;
+      ORDER BY stp.team_id, kills DESC, deaths ASC`;
 
   return runQuery<GamePlayerStats[]>(query, [game_id]);
 };

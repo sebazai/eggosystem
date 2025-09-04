@@ -106,21 +106,70 @@ export const getMatchGame = (matchId: number, gameId: number) => {
   );
 };
 
-export const getMatchPlayerStats = async (match_id: number) => {
+export const getMatchPlayerStats = async (
+  match_id: number,
+  stat?: "CT" | "T"
+) => {
+  // Base fields that are always included
+  const baseFields = `
+    p.steam_id,
+    p.nickname,
+    stp.team_id as team_id
+  `;
+
+  // Fields that change based on stat parameter
+  let statFields = "";
+  if (stat === "CT") {
+    statFields = `
+      SUM(ps.kills_ct) as kills,
+      SUM(ps.headshots) as headshots,
+      SUM(ps.assists_ct) as assists,
+      SUM(ps.flash_assists_ct) as flash_assists,
+      SUM(ps.deaths_ct) as deaths,
+      Round(AVG(ps.kast),0) as kast_percentage,
+      Round(AVG(ps.adr_ct),1) as adr,
+      SUM(ps.enemies_flashed_ct) as enemies_flashed,
+      Round(AVG(ps.hs_percent),0) as hs_percent,
+      SUM(ps.first_kills_ct) as first_kills,
+      SUM(ps.first_deaths_ct) as first_deaths,
+      SUM(ps.utility_damage_ct) as utility_damage
+    `;
+  } else if (stat === "T") {
+    statFields = `
+      SUM(ps.kills_t) as kills,
+      SUM(ps.headshots) as headshots,
+      SUM(ps.assists_t) as assists,
+      SUM(ps.flash_assists_t) as flash_assists,
+      SUM(ps.deaths_t) as deaths,
+      Round(AVG(ps.kast),0) as kast_percentage,
+      Round(AVG(ps.adr_t),1) as adr,
+      SUM(ps.enemies_flashed_t) as enemies_flashed,
+      Round(AVG(ps.hs_percent),0) as hs_percent,
+      SUM(ps.first_kills_t) as first_kills,
+      SUM(ps.first_deaths_t) as first_deaths,
+      SUM(ps.utility_damage_t) as utility_damage
+    `;
+  } else {
+    // Default: all stats combined
+    statFields = `
+      SUM(ps.kills) as kills,
+      SUM(ps.headshots) as headshots,
+      SUM(ps.assists) as assists,
+      SUM(ps.flash_assists) as flash_assists,
+      SUM(ps.deaths) as deaths,
+      Round(AVG(ps.kast),0) as kast_percentage,
+      Round(AVG(ps.adr),1) as adr,
+      SUM(ps.enemies_flashed) as enemies_flashed,
+      Round(AVG(ps.hs_percent),0) as hs_percent,
+      Round(AVG(ps.kana_rating),2) as kana_rating,
+      SUM(ps.first_kills) as first_kills,
+      SUM(ps.first_deaths) as first_deaths
+    `;
+  }
+
   const query = `SELECT
-        p.steam_id,
-        p.nickname,
-        stp.team_id as team_id,
-        SUM(ps.kills) as kills,
-        SUM(ps.headshots) as headshots,
-        SUM(ps.assists) as assists,
-        SUM(ps.flash_assists) as flash_assists,
-        SUM(ps.deaths) as deaths,
-        Round(AVG(ps.kast),0) as kast_percentage,
-        Round(AVG(ps.adr),1) as adr,
-        SUM(ps.enemies_flashed) as enemies_flashed,
-        Round(AVG(ps.hs_percent),0) as hs_percent,
-        Round(AVG(ps.kana_rating),2) as kana_rating
+        ${baseFields},
+        ${statFields}
       FROM PlayerStats ps
       INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
       INNER JOIN MatchGames mg ON mg.id = ps.game_id

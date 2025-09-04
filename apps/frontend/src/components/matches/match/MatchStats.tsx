@@ -27,6 +27,9 @@ export const MatchStats = ({
   externalMatchRoomUrl
 }: MatchStatsProps) => {
   const router = useRouter();
+  const [selectedStat, setSelectedStat] = React.useState<
+    "CT" | "T" | undefined
+  >(undefined);
 
   const handleMapSelect = (gameId: number | undefined) => {
     // Generate the new URL based on the selected gameId
@@ -39,7 +42,7 @@ export const MatchStats = ({
   };
 
   const { teamStats } = useMatchTeamStats(matchId);
-  const { playerStats } = useMatchPlayerStats(matchId);
+  const { playerStats } = useMatchPlayerStats(matchId, selectedStat);
   const { topPlayers } = useMatchTopPlayers(matchId);
 
   const baseFilters = {
@@ -67,6 +70,8 @@ export const MatchStats = ({
           playerStats={playerStats}
           teams={matchInfo.teams}
           playerStatsFilters={baseFilters}
+          selectedStat={selectedStat}
+          onStatChange={setSelectedStat}
         />
       )}
       {/* Top Players */}

@@ -348,15 +348,6 @@ describe("Season Eligibility Integration Tests", () => {
       // Top team avg4: 950 (Team Beta)
       // 1725 <= 950 is false, so canAddPlayer should be false
 
-      console.log("Debug - Team Alpha eligibility:", {
-        current_top3_avg: result.selectedTeam.current_top3_avg,
-        current_top4_avg: result.selectedTeam.current_top4_avg,
-        new_player_kana_elo: result.selectedTeam.new_player_kana_elo,
-        new_avg_with_player: result.selectedTeam.new_avg_with_player,
-        top_team_avg4: result.topTeamsInLeague[0]?.avg4,
-        canAddPlayer: result.canAddPlayer
-      });
-
       expect(result.selectedTeam.current_top3_avg).toBe(1700);
       expect(result.selectedTeam.current_top4_avg).toBe(1650);
       expect(result.selectedTeam.new_player_kana_elo).toBe(1800);

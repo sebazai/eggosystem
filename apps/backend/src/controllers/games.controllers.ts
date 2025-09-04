@@ -45,8 +45,9 @@ export const getGamePlayerStatsController = async (
   res: Response
 ) => {
   const game_id = parseInt(req.params.game_id, 10);
+  const stat = req.query.stat as "CT" | "T" | undefined;
 
-  const playerstats = await getGamePlayerStats(game_id);
+  const playerstats = await getGamePlayerStats(game_id, stat);
 
   res.json(playerstats);
 };

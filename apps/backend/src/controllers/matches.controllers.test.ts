@@ -753,6 +753,8 @@ describe("Matches Controllers", () => {
   describe("getMatchPlayerStatsController", () => {
     it("should return player stats for valid match ID", async () => {
       mockRequest.params = { match_id: "123" };
+      mockRequest.query = {};
+      const mockNext = jest.fn();
       const mockPlayerStats: MatchPlayerStats[] = [
         {
           steam_id: "123456789",
@@ -767,29 +769,35 @@ describe("Matches Controllers", () => {
           adr: 95.5,
           enemies_flashed: 5,
           hs_percent: 60,
-          kana_rating: 1.25
+          kana_rating: 1.25,
+          first_kills: 3,
+          first_deaths: 2
         }
       ];
       mockGetMatchPlayerStats.mockResolvedValue(mockPlayerStats);
 
       await getMatchPlayerStatsController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockGetMatchPlayerStats).toHaveBeenCalledWith(123);
+      expect(mockGetMatchPlayerStats).toHaveBeenCalledWith(123, undefined);
       expect(mockJson).toHaveBeenCalledWith(mockPlayerStats);
     });
 
     it("should handle invalid match player stats ID", async () => {
       mockRequest.params = { match_id: "invalid" };
+      mockRequest.query = {};
+      const mockNext = jest.fn();
 
       await getMatchPlayerStatsController(
         mockRequest as TestRequestWithParams<{ match_id: string }>,
-        mockResponse as Response
+        mockResponse as Response,
+        mockNext
       );
 
-      expect(mockGetMatchPlayerStats).toHaveBeenCalledWith(NaN);
+      expect(mockGetMatchPlayerStats).toHaveBeenCalledWith(NaN, undefined);
     });
   });
 

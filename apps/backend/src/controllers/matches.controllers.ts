@@ -158,11 +158,13 @@ export const getMatchTopPlayersController = async (
 
 export const getMatchPlayerStatsController = async (
   req: RequestWithParams<{ match_id: string }>,
-  res: Response
+  res: Response,
+  _next: NextFunction
 ) => {
   const match_id = parseInt(req.params.match_id, 10);
+  const stat = req.query.stat as "CT" | "T" | undefined;
 
-  const playerstats = await getMatchPlayerStats(match_id);
+  const playerstats = await getMatchPlayerStats(match_id, stat);
 
   res.json(playerstats);
 };

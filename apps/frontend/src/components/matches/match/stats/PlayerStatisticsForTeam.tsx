@@ -18,12 +18,16 @@ interface PlayerStatisticsForTeamProps {
   playerStats: MatchPlayerStats[];
   teams: MatchInfo["teams"];
   playerStatsFilters?: PlayerStatsForTeamFilters;
+  selectedStat?: "CT" | "T";
+  onStatChange?: (stat: "CT" | "T" | undefined) => void;
 }
 
 export const PlayerStatisticsForTeam = ({
   playerStats,
   teams,
-  playerStatsFilters
+  playerStatsFilters,
+  selectedStat,
+  onStatChange
 }: PlayerStatisticsForTeamProps) => {
   const search = useSearchParams();
 
@@ -52,6 +56,11 @@ export const PlayerStatisticsForTeam = ({
 
     return Array.from(statsMap.values());
   }, [playerStats, teams]);
+
+  const handleStatClick = (stat: "CT" | "T" | undefined) => {
+    onStatChange?.(stat === selectedStat ? undefined : stat);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
       {groupedPlayerStats.map(({ team, players }) => {
@@ -63,8 +72,8 @@ export const PlayerStatisticsForTeam = ({
               }).toString();
         return (
           <div key={team.id} className="flex flex-col">
-            {/* Team name bar */}
-            <div className="flex items-center gap-2 p-2 mb-[1px] bg-kanaliiga-light-brown/30">
+            {/* Team name bar with CT/T buttons */}
+            <div className="flex items-center justify-between p-2 mb-[1px] bg-kanaliiga-light-brown/30">
               <Link
                 href={{
                   pathname: `/teams/${team.id}`,
@@ -81,6 +90,30 @@ export const PlayerStatisticsForTeam = ({
                 />
                 <h2 className="text-base font-bold">{team.name}</h2>
               </Link>
+
+              {/* CT/T buttons */}
+              <div className="flex gap-1">
+                <button
+                  onClick={() => handleStatClick("CT")}
+                  className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    selectedStat === "CT"
+                      ? "bg-blue-600 text-white"
+                      : "bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+                  }`}
+                >
+                  CT
+                </button>
+                <button
+                  onClick={() => handleStatClick("T")}
+                  className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+                    selectedStat === "T"
+                      ? "bg-orange-600 text-white"
+                      : "bg-kanaliiga-light-brown/50 text-gray-300 hover:bg-kanaliiga-light-brown/70"
+                  }`}
+                >
+                  T
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-[2fr_repeat(4,1fr)] md:grid-cols-[2fr_repeat(6,1fr)] lg:grid-cols-[2fr_repeat(8,1fr)] items-center text-muted-foreground p-2 bg-kanaliiga-light-brown/30">
@@ -90,9 +123,15 @@ export const PlayerStatisticsForTeam = ({
               <div className="text-center">D</div>
               <div className="text-center">+/-</div>
               <div className="text-center">ADR</div>
-              <div className="text-center hidden md:block">KAST</div>
-              <div className="text-center hidden lg:block">HS%</div>
-              <div className="text-center hidden lg:block">RATING</div>
+              <div className="text-center hidden md:block">
+                {selectedStat ? "FK" : "KAST"}
+              </div>
+              <div className="text-center hidden lg:block">
+                {selectedStat ? "FD" : "HS%"}
+              </div>
+              <div className="text-center hidden lg:block">
+                {selectedStat ? "UD" : "RATING"}
+              </div>
             </div>
 
             {players.map((player) => {
@@ -133,16 +172,21 @@ export const PlayerStatisticsForTeam = ({
                         : player.adr}
                     </div>
                     <div className="text-center hidden md:block">
-                      {player.kast_percentage}
-                      {"%"}
+                      {selectedStat
+                        ? player.first_kills || 0
+                        : `${player.kast_percentage}%`}
                     </div>
                     <div className="text-center hidden lg:block">
-                      {player.hs_percent}%
+                      {selectedStat
+                        ? player.first_deaths || 0
+                        : `${player.hs_percent}%`}
                     </div>
                     <div className="text-center hidden lg:block">
-                      {typeof player.kana_rating === "number"
-                        ? player.kana_rating.toFixed(2)
-                        : player.kana_rating}
+                      {selectedStat
+                        ? player.utility_damage || 0
+                        : typeof player.kana_rating === "number"
+                          ? player.kana_rating.toFixed(2)
+                          : player.kana_rating}
                     </div>
                   </div>
                 </Link>
