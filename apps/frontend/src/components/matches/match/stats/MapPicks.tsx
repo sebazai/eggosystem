@@ -88,7 +88,7 @@ export const MatchMapPicks = ({
                   <div className="relative z-10 flex flex-row md:flex-col items-center w-full h-full">
                     {/* Map name and logo */}
                     <div className="flex flex-row md:flex-col items-center md:mb-2 flex-1 min-w-0">
-                      <div className="truncate text-xs sm:text-sm md:text-base text-white font-bold drop-shadow-lg text-center mr-3 md:mr-0 md:mb-2 order-2 md:order-1">
+                      <div className="truncate text-xxs sm:text-sm md:text-base text-white font-bold drop-shadow-lg text-center mr-3 ml-2 md:ml-0 md:mr-0 md:mb-2 order-2 md:order-1">
                         {mapToReadableName(veto.map_name)}
                       </div>
                       {team?.logo && (
@@ -103,7 +103,7 @@ export const MatchMapPicks = ({
                     </div>
                     {/* Action label */}
                     <span
-                      className={`ml-auto md:ml-0 text-xs sm:text-xs md:text-sm font-black px-2 py-1 rounded-lg backdrop-blur-sm shadow-lg tracking-wider transition-all duration-300 group-hover:scale-105
+                      className={`ml-auto md:ml-0 text-xs sm:text-xs md:text-sm font-black px-1 py-1 rounded-lg backdrop-blur-sm shadow-lg tracking-wider transition-all duration-300
                         ${veto.action === "pick" ? "bg-emerald-600/90 text-emerald-100 ring-2 ring-emerald-400/30" : ""}
                         ${veto.action === "drop" ? "bg-red-600/90 text-red-100 ring-2 ring-red-400/30" : ""}
                         ${veto.action === "decider" ? "bg-blue-600/90 text-blue-100 ring-2 ring-blue-400/30" : ""}
