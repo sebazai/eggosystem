@@ -5,12 +5,10 @@ import {
   getMatchGamesByTeamController,
   getTeamsByLeagueController,
   getTeamKeyPlayersController,
-  getTeamPlayersController
+  getTeamPlayersController,
+  getFilteredPlayerCasterStatisticsController
 } from "../../controllers/caster.controllers";
-import {
-  getFilteredPlayerStatisticsController,
-  getPlayerBySteamIdController
-} from "../../controllers/players.controllers";
+import { getPlayerBySteamIdController } from "../../controllers/players.controllers";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 import { getFilteredTeamIdDetailsController } from "../../controllers/teams.controllers";
 import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-stats.controllers";
@@ -51,7 +49,7 @@ router.get("/players/:steam_id", getPlayerBySteamIdController);
 router.get(
   "/players/:steam_id/statistics",
   parseQueryFilterParams,
-  getFilteredPlayerStatisticsController
+  getFilteredPlayerCasterStatisticsController
 );
 router.get(
   "/teams/:team_id/details",

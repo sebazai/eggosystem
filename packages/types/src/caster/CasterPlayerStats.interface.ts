@@ -1,9 +1,10 @@
-import type { SteamPlayer, MatchGame, Nullable } from "@eggosystem/types";
+import type { SteamPlayer, Nullable } from "@eggosystem/types";
 
-export interface PlayerStats {
-  id: number;
+export interface CasterPlayerStats {
   steam_id: SteamPlayer["steam_id"];
-  game_id: MatchGame["id"];
+  nickname: SteamPlayer["nickname"];
+  maps_played: number;
+  rounds_played: number;
   kills: number;
   kills_t: Nullable<number>;
   kills_ct: Nullable<number>;
@@ -21,10 +22,10 @@ export interface PlayerStats {
   flash_assists: number;
   flash_assists_t: number;
   flash_assists_ct: number;
-  adr: number;
-  adr_t: Nullable<number>;
-  adr_ct: Nullable<number>;
-  hs_percent: number;
+  avg_adr: number;
+  avg_adr_t: Nullable<number>;
+  avg_adr_ct: Nullable<number>;
+  avg_hs_percent: number;
   plants: number;
   explodes: number;
   defuses: number;
@@ -98,12 +99,12 @@ export interface PlayerStats {
   first_death_traded: number;
   first_death_traded_t: number;
   first_death_traded_ct: number;
-  kast: number;
-  kana_rating: number;
-  ttd: Nullable<number>;
-  ttf: Nullable<number>;
-  rws: number;
-  crosshair_placement: Nullable<number>;
+  avg_kast: number;
+  avg_kana_rating: number;
+  avg_ttd: Nullable<number>;
+  avg_ttf: Nullable<number>;
+  avg_rws: number;
+  avg_crosshair_placement: Nullable<number>;
   shots: Nullable<number>;
   shots_hit: Nullable<number>;
   total_strafing_shots: Nullable<number>;

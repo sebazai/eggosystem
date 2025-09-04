@@ -13,7 +13,8 @@ import {
   type PlayerTeamDetailsByFilters,
   type PlayerStatsTable,
   type PlayerStatsForLatestSeason,
-  type PlayerMapStats
+  type PlayerMapStats,
+  type CasterPlayerStats
 } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 
@@ -436,10 +437,10 @@ export const getPlayerStatsWithFilters = async (
         SUM(ps.flashes_thrown) as flashes_thrown,
         SUM(ps.total_ef_duration) as total_ef_duration,
         ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd,
-        SUM(CASE WHEN ps.kills = 2 THEN 1 ELSE 0 END) as multikill_2k,
-        SUM(CASE WHEN ps.kills = 3 THEN 1 ELSE 0 END) as multikill_3k,
-        SUM(CASE WHEN ps.kills = 4 THEN 1 ELSE 0 END) as multikill_4k,
-        SUM(CASE WHEN ps.kills = 5 THEN 1 ELSE 0 END) as multikill_5k,
+        SUM(ps.kills_2) as multikill_2k,
+        SUM(ps.kills_3) as multikill_3k,
+        SUM(ps.kills_4) as multikill_4k,
+        SUM(ps.kills_5) as multikill_5k,
         SUM(ps.kills_t) as kills_t,
         SUM(ps.kills_ct) as kills_ct
       FROM player_games pg
@@ -462,6 +463,176 @@ export const getPlayerStatsWithFilters = async (
   `;
 
   const [playerStats] = await runQuery<Array<PlayerStatsResult | undefined>>(
+    statsQuery,
+    queryParams
+  );
+
+  return playerStats;
+};
+
+export const getPlayerStatsWithFiltersForCasters = async (
+  steam_id: string,
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "mt.team_id",
+      value: team_ids
+    },
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "m.league_id",
+      value: league_ids
+    },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids },
+    { column: "p.steam_id", value: [steam_id] }
+  ]);
+
+  const teamIdsJoin = team_ids && team_ids.length > 0;
+
+  const statsQuery = `
+    WITH player_games AS (
+      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id
+      FROM SteamPlayers p
+      INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
+      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN Matches m ON m.id = mg.match_id
+      ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
+      WHERE ${query}
+    ),
+    player_stats AS (
+      SELECT 
+        pg.steam_id,
+        pg.nickname,
+        COUNT(DISTINCT pg.game_id) as maps_played,
+        SUM(ps.kills) as kills,
+        SUM(ps.kills_t) as kills_t,
+        SUM(ps.kills_ct) as kills_ct,
+        SUM(ps.deaths) as deaths,
+        SUM(ps.deaths_t) as deaths_t,
+        SUM(ps.deaths_ct) as deaths_ct,
+        SUM(ps.assists) as assists,
+        SUM(ps.assists_ct) as assists_ct,
+        SUM(ps.assists_t) as assists_t,
+        SUM(ps.mvps) as mvps,
+        SUM(ps.total_damage) as total_damage,
+        SUM(ps.total_damage_t) as total_damage_t,
+        SUM(ps.total_damage_ct) as total_damage_ct,
+        SUM(ps.headshots) as headshots,
+        SUM(ps.flash_assists) as flash_assists,
+        SUM(ps.flash_assists_t) as flash_assists_t,
+        SUM(ps.flash_assists_ct) as flash_assists_ct,
+        AVG(ps.adr) as avg_adr,
+        AVG(ps.adr_t) as avg_adr_t,
+        AVG(ps.adr_ct) as avg_adr_ct,
+        AVG(ps.hs_percent) as avg_hs_percent,
+        SUM(ps.plants) as plants,
+        SUM(ps.explodes) as explodes,
+        SUM(ps.defuses) as defuses,
+        SUM(ps.kills_1) as kills_1,
+        SUM(ps.kills_2) as kills_2,
+        SUM(ps.kills_3) as kills_3,
+        SUM(ps.kills_4) as kills_4,
+        SUM(ps.kills_5) as kills_5,
+        SUM(ps.trades) as trades,
+        SUM(ps.trades_t) as trades_t,
+        SUM(ps.trades_ct) as trades_ct,
+        SUM(ps.traded) as traded,
+        SUM(ps.traded_t) as traded_t,
+        SUM(ps.traded_ct) as traded_ct,
+        SUM(ps.clutches) as clutches,
+        SUM(ps.clutches_won) as clutches_won,
+        SUM(ps.awp_kills) as awp_kills,
+        SUM(ps.utility_damage) as utility_damage,
+        SUM(ps.utility_damage_t) as utility_damage_t,
+        SUM(ps.utility_damage_ct) as utility_damage_ct,
+        SUM(ps.molotov_damage) as molotov_damage,
+        SUM(ps.molotov_damage_t) as molotov_damage_t,
+        SUM(ps.molotov_damage_ct) as molotov_damage_ct,
+        SUM(ps.he_damage) as he_damage,
+        SUM(ps.he_damage_t) as he_damage_t,
+        SUM(ps.he_damage_ct) as he_damage_ct,
+        SUM(ps.trade_attempts) as trade_attempts,
+        SUM(ps.trade_attempts_t) as trade_attempts_t,
+        SUM(ps.trade_attempts_ct) as trade_attempts_ct,
+        SUM(ps.kills_through_walls) as kills_through_walls,
+        SUM(ps.first_death_trade_attempts) as first_death_trade_attempts,
+        SUM(ps.first_death_trade_attempts_t) as first_death_trade_attempts_t,
+        SUM(ps.first_death_trade_attempts_ct) as first_death_trade_attempts_ct,
+        SUM(ps.first_death_trade_opportunities) as first_death_trade_opportunities,
+        SUM(ps.first_death_trade_opportunities_t) as first_death_trade_opportunities_t,
+        SUM(ps.first_death_trade_opportunities_ct) as first_death_trade_opportunities_ct,
+        SUM(ps.trade_opportunities) as trade_opportunities,
+        SUM(ps.trade_opportunities_t) as trade_opportunities_t,
+        SUM(ps.trade_opportunities_ct) as trade_opportunities_ct,
+        SUM(ps.flashes_thrown) as flashes_thrown,
+        SUM(ps.flashes_thrown_t) as flashes_thrown_t,
+        SUM(ps.flashes_thrown_ct) as flashes_thrown_ct,
+        SUM(ps.enemies_flashed) as enemies_flashed,
+        SUM(ps.enemies_flashed_t) as enemies_flashed_t,
+        SUM(ps.enemies_flashed_ct) as enemies_flashed_ct,
+        SUM(ps.mates_flashed) as mates_flashed,
+        SUM(ps.mates_flashed_t) as mates_flashed_t,
+        SUM(ps.mates_flashed_ct) as mates_flashed_ct,
+        SUM(ps.self_flashes) as self_flashes,
+        SUM(ps.total_mf_duration) as total_mf_duration,
+        SUM(ps.total_mf_duration_t) as total_mf_duration_t,
+        SUM(ps.total_mf_duration_ct) as total_mf_duration_ct,
+        SUM(ps.total_ef_duration) as total_ef_duration,
+        SUM(ps.total_ef_duration_t) as total_ef_duration_t,
+        SUM(ps.total_ef_duration_ct) as total_ef_duration_ct,
+        SUM(ps.one_v_one_won) as one_v_one_won,
+        SUM(ps.one_v_one_won_t) as one_v_one_won_t,
+        SUM(ps.one_v_one_won_ct) as one_v_one_won_ct,
+        SUM(ps.one_v_one_lost) as one_v_one_lost,
+        SUM(ps.one_v_one_lost_t) as one_v_one_lost_t,
+        SUM(ps.one_v_one_lost_ct) as one_v_one_lost_ct,
+        SUM(ps.first_kills) as first_kills,
+        SUM(ps.first_kills_t) as first_kills_t,
+        SUM(ps.first_kills_ct) as first_kills_ct,
+        SUM(ps.first_deaths) as first_deaths,
+        SUM(ps.first_deaths_t) as first_deaths_t,
+        SUM(ps.first_deaths_ct) as first_deaths_ct,
+        SUM(ps.first_death_trades) as first_death_trades,
+        SUM(ps.first_death_trades_t) as first_death_trades_t,
+        SUM(ps.first_death_trades_ct) as first_death_trades_ct,
+        SUM(ps.first_death_traded) as first_death_traded,
+        SUM(ps.first_death_traded_t) as first_death_traded_t,
+        SUM(ps.first_death_traded_ct) as first_death_traded_ct,
+        AVG(ps.kast) as avg_kast,
+        ROUND(AVG(ps.kana_rating), 2) as avg_kana_rating,
+        AVG(ps.ttd) as avg_ttd,
+        AVG(ps.ttf) as avg_ttf,
+        ROUND(AVG(ps.rws), 2) as avg_rws,
+        AVG(ps.crosshair_placement) as avg_crosshair_placement,
+        SUM(ps.shots) as shots,
+        SUM(ps.shots_hit) as shots_hit,
+        SUM(ps.total_strafing_shots) as total_strafing_shots,
+        SUM(ps.good_strafing_shots) as good_strafing_shots
+      FROM player_games pg
+      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
+      GROUP BY pg.steam_id, pg.nickname
+    ),
+    player_rounds AS (
+      SELECT 
+        pg.steam_id,
+        COUNT(DISTINCT mrs.id) as rounds_played
+      FROM player_games pg
+      INNER JOIN MapRoundStats mrs ON mrs.game_id = pg.game_id
+      GROUP BY pg.steam_id
+    )
+    SELECT 
+      ps.*,
+      pr.rounds_played
+    FROM player_stats ps
+    INNER JOIN player_rounds pr ON pr.steam_id = ps.steam_id
+  `;
+
+  const [playerStats] = await runQuery<Array<CasterPlayerStats | undefined>>(
     statsQuery,
     queryParams
   );

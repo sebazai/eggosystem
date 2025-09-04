@@ -7,6 +7,7 @@ import {
   getTeamPlayers,
   getTeamsByLeague
 } from "../models/team.models";
+import { getPlayerStatsWithFiltersForCasters } from "../models/player.models";
 
 export const getMatchGamesByTeamController = async (
   req: RequestWithParams<{ team_id: string; season_id: string }>,
@@ -55,4 +56,19 @@ export const getTeamPlayersController = async (
   const seasonId = Number(req.params.season_id);
   const players = await getTeamPlayers(teamIdNumber, seasonId);
   res.json(players);
+};
+
+export const getFilteredPlayerCasterStatisticsController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response
+): Promise<void> => {
+  const { steam_id } = req.params;
+  const { parsedParams } = req;
+
+  const playerStats = await getPlayerStatsWithFiltersForCasters(
+    steam_id,
+    parsedParams
+  );
+
+  res.status(200).json(playerStats);
 };
