@@ -104,8 +104,10 @@ export const expressErrorHandler = (
       return;
     }
 
-    const problem = buildProblem(400, err.message, req.originalUrl);
-    res.status(400).type("application/problem+json").json(problem);
+    // Check if the error has a status property
+    const status = (err as Error & { status?: number }).status || 400;
+    const problem = buildProblem(status, err.message, req.originalUrl);
+    res.status(status).type("application/problem+json").json(problem);
     return;
   }
 

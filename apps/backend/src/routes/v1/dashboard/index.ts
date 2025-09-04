@@ -8,6 +8,7 @@ import sortterRouter from "./sortter.routes";
 import matchRouter from "./match.routes";
 import seasonRouter from "./season.routes";
 import playerRouter from "./player.routes";
+import roleManagementRouter from "./role-management.routes";
 
 const router = Router();
 
@@ -59,6 +60,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   matchRouter
+);
+router.use(
+  "/role-management",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  roleManagementRouter
 );
 router.get(
   "/",
