@@ -1,4 +1,5 @@
 import {
+  type Match,
   type StandingsFaceitTeamStats,
   type StandingsLeagues
 } from "@eggosystem/types";
@@ -38,8 +39,30 @@ interface FaceitMatchStatsResponse {
 
 const FACEIT_API_TOKEN = process.env.FACEIT_API_KEY;
 
+const getFaceitMatchesFromDbForFaceitLeague = async (
+  externalLeagueId: string,
+  group?: string
+) => {
+  let query = `
+    SELECT m.* FROM Matches m
+    JOIN SeasonLeagueExternalIds slei ON m.season_id = slei.season_id 
+      AND m.league_id = slei.league_id
+      AND (m.group = slei.group OR (m.group IS NULL AND slei.group IS NULL))
+    WHERE slei.external_id = ? AND m.status IN ('FINISHED', 'FORFEIT')
+  `;
+  const params: string[] = [externalLeagueId];
+
+  if (group) {
+    query += ` AND slei.group = ?`;
+    params.push(group);
+  }
+
+  const matches = await runQuery<Match[]>(query, params);
+  return matches;
+};
+
 // Get matches from a Faceit championship/league
-const getFaceitMatchesForFaceitLeague = async (
+const _getFaceitMatchesForFaceitLeague = async (
   leagueId: string
 ): Promise<FaceitMatchData[]> => {
   if (!FACEIT_API_TOKEN) {
@@ -120,6 +143,9 @@ const getFaceitMatchInfo = async (
   const response = await fetch(webURL, { headers });
 
   if (!response.ok) {
+    // TODO: Div 10 S4 Lohko A, https://www.faceit.com/en/cs2/room/1-c88006a8-c4d2-4e3c-9270-750e3802ec29
+    // const webURL = `https://open.faceit.com/data/v4/matches/${faceitMatchId}`;
+    // This endpoint works, should we add +3 points or just fail silently? :)
     throw new Error(
       `Faceit API returned ${response.status}: ${response.statusText}`
     );
@@ -180,8 +206,11 @@ export const getDivStandings = async (
   faceitLeagueId: string
 ): Promise<StandingsFaceitTeamStats[]> => {
   // Get matches from league
-  const matchesRaw = await getFaceitMatchesForFaceitLeague(faceitLeagueId);
-  const matches = matchesRaw.map((match) => match.match_id);
+  const matchesRaw =
+    await getFaceitMatchesFromDbForFaceitLeague(faceitLeagueId);
+  const matches = matchesRaw
+    .map((match) => match.external_match_room_id)
+    .filter((id): id is string => id !== null);
 
   // Get stats for each match
   const teamStatsArray: StandingsFaceitTeamStats[][] = [];

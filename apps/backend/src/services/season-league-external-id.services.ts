@@ -26,6 +26,10 @@ export const addChampionshipToDatabase = async (
   // get league from name 11 DIV S3 Playoffs
   const nameSplit = externalChampionshipName.split(" ");
   const leagueName = nameSplit[0];
+  // Add manual_group if name contains Lohko A, Lohko B, etc.
+  const manualGroup = externalChampionshipName.match(/Lohko (\w+)/)?.[1];
+  const manualGroupNumber =
+    manualGroup === "A" ? 1 : manualGroup === "B" ? 2 : null;
 
   const seasonLeague = await getSeasonLeagueBySeasonAndFaceitName(
     activeOrganizerSeason.id,
@@ -43,6 +47,7 @@ export const addChampionshipToDatabase = async (
     seasonLeague.league_id,
     stage,
     championshipType,
+    manualGroupNumber,
     isBO2PlayedAs2xBO1
   );
 };

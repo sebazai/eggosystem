@@ -1,4 +1,4 @@
-import { type SeasonLeagueExternalId } from "@eggosystem/types";
+import { type Nullable, type SeasonLeagueExternalId } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
@@ -20,10 +20,14 @@ export const insertSeasonLeagueExternalId = async (
   leagueId: number,
   stage: number,
   type: string,
+  manualGroup: Nullable<number>,
   isBO2PlayedAs2xBO1: boolean,
   connection?: PoolConnection
 ) => {
-  const query = `INSERT INTO SeasonLeagueExternalIds (external_id, external_league_name, season_id, league_id, stage_id, type, isBO2PlayedAs2xBO1) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  const query = `
+    INSERT INTO SeasonLeagueExternalIds 
+      (external_id, external_league_name, season_id, league_id, stage_id, type, isBO2PlayedAs2xBO1, manual_group) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
   const seasonLeagueExternaMatchRoomResult = await runQuery<{
     insertId: number;
   }>(
@@ -35,7 +39,8 @@ export const insertSeasonLeagueExternalId = async (
       leagueId,
       stage,
       type,
-      isBO2PlayedAs2xBO1
+      isBO2PlayedAs2xBO1,
+      manualGroup
     ],
     connection
   );

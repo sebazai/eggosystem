@@ -41,6 +41,7 @@ config: # https://mermaid.js.org/schemas/config.schema.json
 erDiagram
   direction BT # TB, BT, LR, RL
 
+"AccountCasterUrls" |o--|| "Accounts" : ""
 "AccountPermissionScopes" }o--|| "Accounts" : ""
 "AccountPermissionScopes" }o--|| "Permissions" : ""
 "AccountPermissionScopes" }o--|| "Seasons" : ""
@@ -76,6 +77,7 @@ erDiagram
 "PlayerTrades" }o--|| "SteamPlayers" : ""
 "PlayerTrades" }o--|| "SteamPlayers" : ""
 "PlayerTrades" }o--|| "SteamPlayers" : ""
+"Reservations" }o--o| "Accounts" : ""
 "Reservations" }o--|| "Matches" : ""
 "RolePermissions" }o--|| "Permissions" : ""
 "RolePermissions" }o--|| "Roles" : ""
@@ -112,6 +114,10 @@ erDiagram
 "Teams" }o--o| "Organizations" : ""
 "UserPolicyAcceptances" }o--|| "Accounts" : ""
 
+"AccountCasterUrls" {
+  int_10__unsigned id PK
+  int_10__unsigned account_id FK
+}
 "AccountPermissionScopes" {
   int_10__unsigned id PK
   int_10__unsigned account_id FK
@@ -233,6 +239,7 @@ erDiagram
 "Reservations" {
   int_10__unsigned id PK
   int_10__unsigned match_id FK
+  int_10__unsigned account_id FK
 }
 "RolePermissions" {
   int_10__unsigned role_id PK
