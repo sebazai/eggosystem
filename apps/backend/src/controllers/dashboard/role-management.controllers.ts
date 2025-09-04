@@ -1,5 +1,11 @@
 import { type Request, type Response, type NextFunction } from "express";
 import type { JwtPayload } from "jsonwebtoken";
+import type {
+  ManageableRolesResponse,
+  RoleActionResponse,
+  RoleResponse,
+  RoleUser
+} from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 import {
   setRoleForAccount,
@@ -35,7 +41,7 @@ interface UserInfo {
  */
 export const addRole = async (
   req: RoleManagementRequest,
-  res: Response,
+  res: Response<RoleActionResponse>,
   next: NextFunction
 ) => {
   const { steam_id, role } = req.body;
@@ -112,7 +118,7 @@ export const addRole = async (
  */
 export const removeRole = async (
   req: RoleManagementRequest,
-  res: Response,
+  res: Response<RoleActionResponse>,
   next: NextFunction
 ) => {
   const { steam_id, role } = req.body;
@@ -189,7 +195,7 @@ export const removeRole = async (
  */
 export const listUsersWithRole = async (
   req: Request,
-  res: Response,
+  res: Response<RoleResponse>,
   next: NextFunction
 ) => {
   const { role } = req.params;
@@ -214,7 +220,7 @@ export const listUsersWithRole = async (
   }
 
   try {
-    const users = await runQuery<UserInfo[]>(
+    const users = await runQuery<RoleUser[]>(
       `SELECT 
         ar.account_id,
         sp.nickname,
@@ -242,7 +248,7 @@ export const listUsersWithRole = async (
  */
 export const getManageableRoles = async (
   req: Request,
-  res: Response,
+  res: Response<ManageableRolesResponse>,
   next: NextFunction
 ) => {
   const userRoles = req.auth?.roles || [];

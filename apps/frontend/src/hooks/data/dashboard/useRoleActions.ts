@@ -2,17 +2,7 @@
 
 import { useState } from "react";
 import { clientApiFetch } from "@/lib/apiClient";
-
-export interface RoleActionResponse {
-  success: boolean;
-  message: string;
-  data: {
-    account_id: number;
-    nickname: string;
-    steam_id: string;
-    role: string;
-  };
-}
+import type { RoleActionResponse } from "@eggosystem/types";
 
 export function useRoleActions() {
   const [isLoading, setIsLoading] = useState(false);

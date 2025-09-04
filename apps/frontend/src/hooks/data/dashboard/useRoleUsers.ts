@@ -2,17 +2,7 @@
 
 import { clientApiFetch } from "@/lib/apiClient";
 import useSWR from "swr";
-
-export interface RoleUser {
-  account_id: number;
-  nickname: string;
-  steam_id: string;
-}
-
-export interface RoleResponse {
-  success: boolean;
-  data: RoleUser[];
-}
+import type { RoleResponse } from "@eggosystem/types";
 
 export function useUsersWithRole(role: string) {
   const { data, error, isValidating, mutate } = useSWR<RoleResponse>(
