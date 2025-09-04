@@ -628,10 +628,10 @@ describe("getPlayerStatsByFilters", () => {
       flashes_thrown: 195,
       total_ef_duration: 566.6,
       kd: 1.22,
-      multikill_2k: 0,
-      multikill_3k: 0,
-      multikill_4k: 0,
-      multikill_5k: 0,
+      multikill_2k: 85,
+      multikill_3k: 36,
+      multikill_4k: 7,
+      multikill_5k: 3,
       rounds_played: 551
     });
   });
@@ -671,10 +671,10 @@ describe("getPlayerStatsByFilters", () => {
       flashes_thrown: 167,
       total_ef_duration: 494.8,
       kd: 1.38,
-      multikill_2k: 0,
-      multikill_3k: 0,
-      multikill_4k: 0,
-      multikill_5k: 0,
+      multikill_2k: 77,
+      multikill_3k: 33,
+      multikill_4k: 7,
+      multikill_5k: 3,
       rounds_played: 446
     });
   });
@@ -714,9 +714,9 @@ describe("getPlayerStatsByFilters", () => {
       flashes_thrown: 883,
       total_ef_duration: 2330.5,
       kd: 0.95,
-      multikill_2k: 1,
-      multikill_3k: 0,
-      multikill_4k: 0,
+      multikill_2k: 118,
+      multikill_3k: 37,
+      multikill_4k: 6,
       multikill_5k: 0,
       rounds_played: 978
     });
@@ -784,9 +784,9 @@ describe("getPlayerStatsByFilters", () => {
       flashes_thrown: 612,
       total_ef_duration: 1597.8,
       kd: 0.97,
-      multikill_2k: 0,
-      multikill_3k: 0,
-      multikill_4k: 0,
+      multikill_2k: 81,
+      multikill_3k: 23,
+      multikill_4k: 5,
       multikill_5k: 0,
       rounds_played: 645
     });
@@ -827,8 +827,8 @@ describe("getPlayerStatsByFilters", () => {
       flashes_thrown: 28,
       total_ef_duration: 88.6,
       kd: 0.79,
-      multikill_2k: 1,
-      multikill_3k: 0,
+      multikill_2k: 3,
+      multikill_3k: 2,
       multikill_4k: 0,
       multikill_5k: 0,
       rounds_played: 35

@@ -44,7 +44,7 @@ export const getTeamPistolWins = async (
             THEN mrs.id 
         END) AS pistol_rounds_won,
         ROUND(
-            100.0 * COUNT(DISTINCT CASE 
+            100 * COUNT(DISTINCT CASE 
                 WHEN (mrs.round_number = 1 OR mrs.round_number = CASE 
                     WHEN mg.regulation_rounds = 30 THEN 16 
                     ELSE 13 
@@ -60,26 +60,15 @@ export const getTeamPistolWins = async (
                 THEN mrs.id 
             END), 0), 1
         ) AS pistol_win_percentage
-    FROM
-        MapRoundStats mrs
-    JOIN
-        MatchGames mg ON mrs.game_id = mg.id
-    JOIN
-        Matches m ON mg.match_id = m.id
-    JOIN
-        Maps maps ON mg.map_id = maps.id
-    JOIN
-        Seasons s ON m.season_id = s.id
-    JOIN
-        Teams t ON t.id IN (mrs.ct_team_id, mrs.t_team_id)
-    WHERE
-        (mrs.round_number = 1 OR mrs.round_number = CASE WHEN mg.regulation_rounds = 30 THEN 16 ELSE 13 END)
-        AND ${query}
-    GROUP BY
-        maps.id,
-        maps.name,
-        t.id,
-        t.name
+    FROM MapRoundStats mrs
+    JOIN MatchGames mg ON mrs.game_id = mg.id
+    JOIN Matches m ON mg.match_id = m.id
+    JOIN Maps maps ON mg.map_id = maps.id
+    JOIN Seasons s ON m.season_id = s.id
+    JOIN Teams t ON t.id IN (mrs.ct_team_id, mrs.t_team_id)
+    WHERE (mrs.round_number = 1 OR mrs.round_number = CASE WHEN mg.regulation_rounds = 30 THEN 16 ELSE 13 END)
+      AND ${query}
+    GROUP BY maps.id, maps.name, t.id, t.name
     ORDER BY pistol_win_percentage DESC, pistol_rounds_won DESC
   `;
 
