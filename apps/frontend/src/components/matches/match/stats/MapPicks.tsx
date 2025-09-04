@@ -77,14 +77,14 @@ export const MatchMapPicks = ({
               return (
                 <div
                   key={index}
-                  className="group relative rounded-xl overflow-hidden flex flex-row md:flex-col items-center min-h-[60px] h-[60px] md:h-auto md:min-h-[140px] bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] px-3 py-2 md:p-3 w-full"
+                  className="group relative rounded-xl overflow-hidden flex flex-row md:flex-col items-center min-h-[60px] h-[60px] md:h-auto md:min-h-[140px] bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm shadow-lg px-3 py-2 md:p-3 w-full"
                   style={{
                     backgroundImage: `url(${createNextUrl(`/images/maps/${veto.map_name}.png`)})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center"
                   }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/90 group-hover:via-black/50 group-hover:to-black/30 transition-all duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
                   <div className="relative z-10 flex flex-row md:flex-col items-center w-full h-full">
                     {/* Map name and logo */}
                     <div className="flex flex-row md:flex-col items-center md:mb-2 flex-1 min-w-0">
@@ -123,19 +123,19 @@ export const MatchMapPicks = ({
             {maps?.map((mapInfo, index) => (
               <div
                 key={index}
-                className="group relative rounded-xl overflow-hidden bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] p-4 min-h-[140px] flex flex-col items-center justify-center"
+                className="group relative rounded-xl overflow-hidden bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm shadow-lg p-4 min-h-[140px] flex flex-col items-center justify-center"
                 style={{
                   backgroundImage: `url(${createNextUrl(`/images/maps/${mapInfo.map_name}.png`)})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center"
                 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 group-hover:from-black/90 group-hover:via-black/50 group-hover:to-black/30 transition-all duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
                 <div className="relative z-10 text-center">
                   <div className="text-sm md:text-base text-white font-bold drop-shadow-lg mb-2">
                     {mapToReadableName(mapInfo.map_name)}
                   </div>
-                  <span className="inline-block text-xs sm:text-xs font-black px-2 py-1 rounded-lg bg-emerald-600/90 text-emerald-100 ring-2 ring-emerald-400/30 backdrop-blur-sm shadow-lg tracking-wider transition-all duration-300 group-hover:scale-105">
+                  <span className="inline-block text-xs sm:text-xs font-black px-2 py-1 rounded-lg bg-emerald-600/90 text-emerald-100 ring-2 ring-emerald-400/30 backdrop-blur-sm shadow-lg tracking-wider">
                     PICK
                   </span>
                 </div>
