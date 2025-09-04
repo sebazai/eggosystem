@@ -470,7 +470,19 @@ export const getPlayerStatsWithFilters = async (
         SUM(ps.kills_4) as multikill_4k,
         SUM(ps.kills_5) as multikill_5k,
         SUM(ps.kills_t) as kills_t,
-        SUM(ps.kills_ct) as kills_ct
+        SUM(ps.kills_ct) as kills_ct,
+        SUM(ps.trades) as trades,
+        SUM(ps.trade_attempts) as trade_attempts,
+        SUM(ps.trade_opportunities) as trade_opportunities,
+        ROUND(SUM(ps.good_strafing_shots) / NULLIF(SUM(ps.total_strafing_shots), 0) * 100, 1) as counter_strafing_percentage,
+        SUM(ps.first_kills_ct) as first_kills_ct,
+        SUM(ps.first_deaths_ct) as first_deaths_ct,
+        SUM(ps.first_kills_t) as first_kills_t,
+        SUM(ps.first_deaths_t) as first_deaths_t,
+        ROUND(SUM(ps.total_ef_duration) / NULLIF(SUM(ps.flashes_thrown), 0), 1) as avg_enemy_flash_duration,
+        ROUND(SUM(ps.total_mf_duration) / NULLIF(SUM(ps.flashes_thrown), 0), 1) as avg_teammate_flash_duration,
+        AVG(ps.crosshair_placement) as crosshair_placement,
+        AVG(ps.ttd) as time_to_damage
       FROM player_games pg
       INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
       GROUP BY pg.steam_id, pg.nickname
@@ -785,7 +797,21 @@ export const getPlayerMapStatsWithFilters = async (
             ? (details.wins / details.matches_played) * 100
             : 0,
         kills_t: playerStats.kills_t || 0,
-        kills_ct: playerStats.kills_ct || 0
+        kills_ct: playerStats.kills_ct || 0,
+        trades: playerStats.trades || 0,
+        trade_attempts: playerStats.trade_attempts || 0,
+        trade_opportunities: playerStats.trade_opportunities || 0,
+        counter_strafing_percentage:
+          playerStats.counter_strafing_percentage || 0,
+        first_kills_ct: playerStats.first_kills_ct || 0,
+        first_deaths_ct: playerStats.first_deaths_ct || 0,
+        first_kills_t: playerStats.first_kills_t || 0,
+        first_deaths_t: playerStats.first_deaths_t || 0,
+        avg_enemy_flash_duration: playerStats.avg_enemy_flash_duration || 0,
+        avg_teammate_flash_duration:
+          playerStats.avg_teammate_flash_duration || 0,
+        crosshair_placement: playerStats.crosshair_placement || 0,
+        time_to_damage: playerStats.time_to_damage || 0
       };
 
       return mapStats;

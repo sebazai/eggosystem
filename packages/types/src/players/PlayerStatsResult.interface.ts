@@ -31,4 +31,21 @@ export type PlayerStatsResult = {
   multikill_4k: number;
   multikill_5k: number;
   rounds_played: number;
+  // Trade statistics
+  trades: number;
+  trade_attempts: number;
+  trade_opportunities: number;
+  // Counter-strafing statistics
+  counter_strafing_percentage: number;
+  // First kill/death statistics
+  first_kills_ct: number;
+  first_deaths_ct: number;
+  first_kills_t: number;
+  first_deaths_t: number;
+  // Flash quality statistics
+  avg_enemy_flash_duration: number;
+  avg_teammate_flash_duration: number;
+  // Aim statistics
+  crosshair_placement: number;
+  time_to_damage: number;
 };

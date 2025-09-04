@@ -32,6 +32,44 @@ const getAdrColor = (adr: number) => {
   return "bg-green-400/50";
 };
 
+// Function to determine color based on counter-strafing percentage
+const getCounterStrafingColor = (percentage: number) => {
+  if (percentage < 65) return "bg-red-400/50";
+  if (percentage < 80) return "bg-amber-400/50";
+  return "bg-green-400/50";
+};
+
+// Function to determine color based on crosshair placement (angle)
+const getCrosshairPlacementColor = (value: number) => {
+  if (value <= 4) return "bg-green-400/50";
+  if (value <= 8) return "bg-yellow-400/50";
+  if (value <= 12) return "bg-orange-400/50";
+  return "bg-red-400/50";
+};
+
+// Function to determine color based on headshot percentage
+const getHeadshotColor = (percentage: number) => {
+  if (percentage < 10) return "bg-red-400/50";
+  if (percentage < 20) return "bg-orange-400/50";
+  if (percentage < 40) return "bg-yellow-400/50";
+  return "bg-green-400/50";
+};
+
+// Function to determine color based on time to damage
+const getTtdColor = (ttd: number) => {
+  if (ttd > 800) return "bg-red-400/50";
+  if (ttd > 600) return "bg-amber-400/50";
+  return "bg-green-400/50";
+};
+
+// Color function for trade statistics based on percentage ranges
+const getTradeColor = (percentage: number) => {
+  if (percentage >= 0 && percentage < 40) return "bg-red-500/50";
+  if (percentage >= 40 && percentage < 70) return "bg-yellow-500/50";
+  if (percentage >= 70 && percentage <= 100) return "bg-green-500/50";
+  return "bg-gray-500/50"; // fallback
+};
+
 export const PlayerMapStatsCards = ({ steamId }: PlayerMapStatsCardsProps) => {
   const { filterParams } = useFilters();
   const { playerMapStats, isLoading } = useFilteredPlayerMapStats({
@@ -206,11 +244,339 @@ export const PlayerMapStatsCards = ({ steamId }: PlayerMapStatsCardsProps) => {
                     {mapStat.kills} / {mapStat.deaths}
                   </span>
                 </div>
-                <div className="flex justify-between text-xs mt-2">
-                  <span>Headshot %</span>
-                  <span className="font-medium">
-                    {mapStat.hs_percent.toFixed(1)}%
-                  </span>
+              </div>
+
+              {/* Trade Statistics */}
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Trade Statistics
+                </h4>
+
+                {/* Trade Opportunities Slider */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Trade Opportunities</span>
+                    <span>{mapStat.trade_opportunities}</span>
+                  </div>
+
+                  {/* Legends on top */}
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-green-400">Trades</span>
+                    <span className="text-red-400">Missed</span>
+                    <span className="text-yellow-400">Attempted</span>
+                  </div>
+
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden relative">
+                    {/* Green: successful trades */}
+                    {mapStat.trades > 0 && (
+                      <div
+                        className="h-full bg-green-500/50 absolute left-0"
+                        style={{
+                          width: `${(mapStat.trades / mapStat.trade_opportunities) * 100}%`
+                        }}
+                      />
+                    )}
+                    {/* Red: missed opportunities (opportunities - attempts) */}
+                    {mapStat.trade_opportunities > mapStat.trade_attempts && (
+                      <div
+                        className="h-full bg-red-500/50 absolute"
+                        style={{
+                          left: `${(mapStat.trades / mapStat.trade_opportunities) * 100}%`,
+                          width: `${((mapStat.trade_opportunities - mapStat.trade_attempts) / mapStat.trade_opportunities) * 100}%`
+                        }}
+                      />
+                    )}
+                    {/* Yellow: attempted but failed trades (attempts - trades) */}
+                    {mapStat.trade_attempts > mapStat.trades && (
+                      <div
+                        className="h-full bg-yellow-500/50 absolute"
+                        style={{
+                          left: `${((mapStat.trades + (mapStat.trade_opportunities - mapStat.trade_attempts)) / mapStat.trade_opportunities) * 100}%`,
+                          width: `${((mapStat.trade_attempts - mapStat.trades) / mapStat.trade_opportunities) * 100}%`
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Numbers below */}
+                  <div className="flex justify-between text-xs mt-1">
+                    <span className="text-green-400">{mapStat.trades}</span>
+                    <span className="text-red-400">
+                      {mapStat.trade_opportunities - mapStat.trade_attempts}
+                    </span>
+                    <span className="text-yellow-400">
+                      {mapStat.trade_attempts - mapStat.trades}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Trades Tried Slider */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Trades Tried</span>
+                    <span>
+                      {mapStat.trade_attempts} / {mapStat.trade_opportunities}(
+                      {mapStat.trade_opportunities > 0
+                        ? (
+                            (mapStat.trade_attempts /
+                              mapStat.trade_opportunities) *
+                            100
+                          ).toFixed(1)
+                        : 0}
+                      %)
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getTradeColor(mapStat.trade_opportunities > 0 ? (mapStat.trade_attempts / mapStat.trade_opportunities) * 100 : 0)}`}
+                      style={{
+                        width: `${mapStat.trade_opportunities > 0 ? (mapStat.trade_attempts / mapStat.trade_opportunities) * 100 : 0}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Successful Trades Slider */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Successful Trades</span>
+                    <span>
+                      {mapStat.trades} / {mapStat.trade_attempts}(
+                      {mapStat.trade_attempts > 0
+                        ? (
+                            (mapStat.trades / mapStat.trade_attempts) *
+                            100
+                          ).toFixed(1)
+                        : 0}
+                      %)
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getTradeColor(mapStat.trade_attempts > 0 ? (mapStat.trades / mapStat.trade_attempts) * 100 : 0)}`}
+                      style={{
+                        width: `${mapStat.trade_attempts > 0 ? (mapStat.trades / mapStat.trade_attempts) * 100 : 0}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Counter-strafing Statistics */}
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Aim & Movement
+                </h4>
+
+                {/* Counter-strafing */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Counter-strafing</span>
+                    <span>
+                      {mapStat.counter_strafing_percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getCounterStrafingColor(mapStat.counter_strafing_percentage)}`}
+                      style={{
+                        width: `${Math.min(100, mapStat.counter_strafing_percentage)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Crosshair Placement */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Crosshair Placement</span>
+                    <span>{mapStat.crosshair_placement.toFixed(1)}°</span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getCrosshairPlacementColor(mapStat.crosshair_placement)}`}
+                      style={{
+                        width: `${Math.min(100, (mapStat.crosshair_placement / 15) * 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Headshot Percentage */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Headshot %</span>
+                    <span>{mapStat.hs_percent.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getHeadshotColor(mapStat.hs_percent)}`}
+                      style={{
+                        width: `${Math.min(100, mapStat.hs_percent)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Time to Damage */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">Time to Damage</span>
+                    <span>{mapStat.time_to_damage.toFixed(0)}ms</span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${getTtdColor(mapStat.time_to_damage)}`}
+                      style={{
+                        width: `${Math.min(100, (mapStat.time_to_damage / 1000) * 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* First Kill/Death Statistics */}
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  First Kill/Death
+                </h4>
+
+                {/* Overall First Kills/Deaths */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">First Kills/Deaths</span>
+                    <span>
+                      {mapStat.first_kills} / {mapStat.first_deaths}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden relative">
+                    {/* Green: first kills */}
+                    {mapStat.first_kills > 0 && (
+                      <div
+                        className="h-full bg-green-500/50 absolute left-0"
+                        style={{
+                          width: `${(mapStat.first_kills / (mapStat.first_kills + mapStat.first_deaths)) * 100}%`
+                        }}
+                      />
+                    )}
+                    {/* Red: first deaths */}
+                    {mapStat.first_deaths > 0 && (
+                      <div
+                        className="h-full bg-red-500/50 absolute"
+                        style={{
+                          left: `${(mapStat.first_kills / (mapStat.first_kills + mapStat.first_deaths)) * 100}%`,
+                          width: `${(mapStat.first_deaths / (mapStat.first_kills + mapStat.first_deaths)) * 100}%`
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* CT Side First Kills/Deaths */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">CT First Kills/Deaths</span>
+                    <span>
+                      {mapStat.first_kills_ct} / {mapStat.first_deaths_ct}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden relative">
+                    {/* Green: first kills */}
+                    {mapStat.first_kills_ct > 0 && (
+                      <div
+                        className="h-full bg-green-500/50 absolute left-0"
+                        style={{
+                          width: `${(mapStat.first_kills_ct / (mapStat.first_kills_ct + mapStat.first_deaths_ct)) * 100}%`
+                        }}
+                      />
+                    )}
+                    {/* Red: first deaths */}
+                    {mapStat.first_deaths_ct > 0 && (
+                      <div
+                        className="h-full bg-red-500/50 absolute"
+                        style={{
+                          left: `${(mapStat.first_kills_ct / (mapStat.first_kills_ct + mapStat.first_deaths_ct)) * 100}%`,
+                          width: `${(mapStat.first_deaths_ct / (mapStat.first_kills_ct + mapStat.first_deaths_ct)) * 100}%`
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* T Side First Kills/Deaths */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">T First Kills/Deaths</span>
+                    <span>
+                      {mapStat.first_kills_t} / {mapStat.first_deaths_t}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden relative">
+                    {/* Green: first kills */}
+                    {mapStat.first_kills_t > 0 && (
+                      <div
+                        className="h-full bg-green-500/50 absolute left-0"
+                        style={{
+                          width: `${(mapStat.first_kills_t / (mapStat.first_kills_t + mapStat.first_deaths_t)) * 100}%`
+                        }}
+                      />
+                    )}
+                    {/* Red: first deaths */}
+                    {mapStat.first_deaths_t > 0 && (
+                      <div
+                        className="h-full bg-red-500/50 absolute"
+                        style={{
+                          left: `${(mapStat.first_kills_t / (mapStat.first_kills_t + mapStat.first_deaths_t)) * 100}%`,
+                          width: `${(mapStat.first_deaths_t / (mapStat.first_kills_t + mapStat.first_deaths_t)) * 100}%`
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Flash Quality Statistics */}
+              <div className="mt-4 space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Flash Quality
+                </h4>
+
+                {/* Enemy Flash Duration */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">
+                      Avg Enemy Flash Duration
+                    </span>
+                    <span>{mapStat.avg_enemy_flash_duration.toFixed(1)}s</span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500/50"
+                      style={{
+                        width: `${Math.min(100, (mapStat.avg_enemy_flash_duration / 3) * 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Teammate Flash Duration */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium">
+                      Avg Teammate Flash Duration
+                    </span>
+                    <span>
+                      {mapStat.avg_teammate_flash_duration.toFixed(1)}s
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-orange-500/50"
+                      style={{
+                        width: `${Math.min(100, (mapStat.avg_teammate_flash_duration / 3) * 100)}%`
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
