@@ -379,8 +379,8 @@ router.post(
               matchDetails,
               manualReprocess
             );
-            // TODO: Is MatchStatus.FINISHED the correct status?
-            await updateMatchStatus(externalMatchRoomId, "ABORTED");
+            // TODO: Set to FORFEIT, set score to be 7-0 for the winning team for each match
+            await updateMatchStatus(externalMatchRoomId, "FORFEIT");
             res.status(200).send("Webhook received");
             return;
           }
