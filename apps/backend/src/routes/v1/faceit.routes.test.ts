@@ -1985,7 +1985,7 @@ describe("FaceIT Routes - Webhook", () => {
         // Verify match status was updated to FINISHED
         expect(mockUpdateMatchStatus).toHaveBeenCalledWith(
           "1-afk-abort-match-id",
-          "ABORTED"
+          "FORFEIT"
         );
 
         // Verify updateMatchFinished was NOT called (AFK abort case)
