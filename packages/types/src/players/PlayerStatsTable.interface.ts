@@ -1,4 +1,5 @@
 import { SteamPlayer } from "../db";
+import { Nullable } from "../utils";
 
 export interface PlayerStatsTable {
   steam_id: SteamPlayer["steam_id"];
@@ -13,8 +14,8 @@ export interface PlayerStatsTable {
   headshots: number;
   first_kills: number;
   first_deaths: number;
-  adr: number;
-  kana_rating: number;
-  hs_percent: number;
-  kd: number;
+  adr: Nullable<number>;
+  kana_rating: Nullable<number>;
+  hs_percent: Nullable<number>;
+  kd: Nullable<number>;
 }

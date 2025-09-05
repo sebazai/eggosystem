@@ -51,7 +51,7 @@ export const PlayerCards = ({
 
   // Sort players by kana_rating and get top 5
   const top5Players = [...players]
-    .sort((a, b) => b.kana_rating - a.kana_rating)
+    .sort((a, b) => (b.kana_rating || 0) - (a.kana_rating || 0))
     .slice(0, 5);
 
   return (
@@ -80,7 +80,7 @@ export const PlayerCards = ({
           <div className="space-y-1 mt-1">
             <StatRow label="Kills" value={player.kills} />
             <StatRow label="Deaths" value={player.deaths} />
-            <StatRow label="K/D" value={player.kd.toFixed(2)} />
+            <StatRow label="K/D" value={player.kd?.toFixed(2) || "0"} />
             <StatRow label="ADR" value={player.adr?.toFixed(1) || "0"} />
             <StatRow
               label="Rating"

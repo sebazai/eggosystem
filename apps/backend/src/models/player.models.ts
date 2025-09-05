@@ -59,64 +59,73 @@ export const getMultiplePlayerStatsByFilters = async ({
   map_ids,
   playerName
 }: ParsedParams) => {
-  const { query, queryParams } = generateQueryWithFilters([
-    {
-      column: "mt.team_id",
-      value: team_ids
-    },
-    {
-      column: "m.season_id",
-      value: season_ids
-    },
-    {
-      column: "m.league_id",
-      value: league_ids
-    },
-    { column: "m.stage", value: stages },
-    { column: "mg.map_id", value: map_ids }
-  ]);
+  // Build filters for SeasonTeamPlayers only
+  const stpFilters = [];
+  if (team_ids && team_ids.length > 0) {
+    stpFilters.push({ column: "stp.team_id", value: team_ids });
+  }
+  if (season_ids && season_ids.length > 0) {
+    stpFilters.push({ column: "stp.season_id", value: season_ids });
+  }
 
-  const whereClause = playerName
-    ? `WHERE ${query} AND p.nickname LIKE ?`
-    : `WHERE ${query}`;
+  // Build filters for match-related conditions (applied in LEFT JOIN ON clauses)
+  const matchFilters = [];
+  if (league_ids && league_ids.length > 0) {
+    matchFilters.push({ column: "m.league_id", value: league_ids });
+  }
+  if (stages && stages.length > 0) {
+    matchFilters.push({ column: "m.stage", value: stages });
+  }
+  if (map_ids && map_ids.length > 0) {
+    matchFilters.push({ column: "mg.map_id", value: map_ids });
+  }
+
+  const { query: stpQuery, queryParams: stpParams } =
+    generateQueryWithFilters(stpFilters);
+  const { query: matchQuery, queryParams: matchParams } =
+    generateQueryWithFilters(matchFilters);
+
+  let whereClause = `WHERE ${stpQuery}`;
+  const queryParams = [...stpParams];
 
   if (playerName) {
+    whereClause += ` AND p.nickname LIKE ?`;
     queryParams.push(`%${playerName}%`);
   }
 
-  const teamIdsJoin = team_ids && team_ids.length > 0;
+  // Build the match conditions for LEFT JOINs
+  let matchConditions = "";
+  if (matchQuery !== "1=1") {
+    matchConditions = ` AND ${matchQuery}`;
+    queryParams.push(...matchParams);
+  }
 
   const baseQuery = `
     SELECT 
       p.steam_id,
       p.nickname, 
-      COUNT(DISTINCT ps.game_id) as maps_played,
-      SUM(ps.kills) as kills,
-      SUM(ps.assists) as assists,
-      SUM(ps.deaths) as deaths,
-      SUM(ps.flash_assists) as flash_assists,
-      SUM(ps.awp_kills) as awp_kills,
-      SUM(ps.utility_damage) as utility_damage,
-      SUM(ps.headshots) as headshots,
-      SUM(ps.first_kills) as first_kills,
-      SUM(ps.first_deaths) as first_deaths,
+      COALESCE(COUNT(DISTINCT ps.game_id), 0) as maps_played,
+      COALESCE(SUM(ps.kills), 0) as kills,
+      COALESCE(SUM(ps.assists), 0) as assists,
+      COALESCE(SUM(ps.deaths), 0) as deaths,
+      COALESCE(SUM(ps.flash_assists), 0) as flash_assists,
+      COALESCE(SUM(ps.awp_kills), 0) as awp_kills,
+      COALESCE(SUM(ps.utility_damage), 0) as utility_damage,
+      COALESCE(SUM(ps.headshots), 0) as headshots,
+      COALESCE(SUM(ps.first_kills), 0) as first_kills,
+      COALESCE(SUM(ps.first_deaths), 0) as first_deaths,
       AVG(ps.adr) as adr,
       AVG(ps.kana_rating) as kana_rating,
       AVG(ps.hs_percent) as hs_percent,
       ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd
-    FROM PlayerStats ps
-    INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
-    INNER JOIN Matches m ON m.id = mg.match_id
-    ${
-      teamIdsJoin
-        ? `
-        INNER JOIN MatchTeams mt ON mt.match_id = m.id 
-        INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id`
-        : ""
-    }
+    FROM SeasonTeamPlayers stp
+    INNER JOIN SteamPlayers p ON p.steam_id = stp.steam_id
+    LEFT JOIN MatchTeams mt ON mt.team_id = stp.team_id
+    LEFT JOIN Matches m ON m.id = mt.match_id AND m.season_id = stp.season_id${matchConditions}
+    LEFT JOIN MatchGames mg ON mg.match_id = m.id
+    LEFT JOIN PlayerStats ps ON ps.game_id = mg.id AND ps.steam_id = stp.steam_id
     ${whereClause}
-    GROUP BY p.steam_id, p.nickname
+    GROUP BY p.steam_id, p.nickname, stp.team_id
     ORDER BY kana_rating DESC
   `;
 
