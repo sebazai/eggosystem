@@ -24,6 +24,7 @@ export const TopTeamsPage = () => {
         stages={filterParams.stages}
         teams={null}
         maps={filterParams.maps}
+        hideFilters={{ teams: true }}
       />
 
       <CardContainer classNames="p-2 md:p-4">
