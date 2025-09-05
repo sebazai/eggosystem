@@ -24,6 +24,7 @@ export default function TeamsPage() {
         teams={filterParams.teams}
         stages={null}
         maps={null}
+        hideFilters={{ stages: true, maps: true }}
         sortOrder={["teams", "seasons", "leagues"]}
       />
 

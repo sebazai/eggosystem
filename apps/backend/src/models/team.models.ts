@@ -71,25 +71,43 @@ export const getTeamsByFilters = async ({
   map_ids,
   stages
 }: ParsedParams) => {
-  const { query: season, queryParams: querySeason } = generateQueryWithFilters([
-    { column: "s.id", value: season_ids },
-    { column: "l.id", value: league_ids },
-    { column: "slt.team_id", value: team_ids }
-  ]);
-  const { query, queryParams } = generateQueryWithFilters([
-    { column: "m.season_id", value: season_ids },
-    { column: "m.league_id", value: league_ids },
-    {
+  // Build filters for SeasonLeagueTeams
+  const sltFilters = [];
+  if (season_ids && season_ids.length > 0) {
+    sltFilters.push({ column: "slt.season_id", value: season_ids });
+  }
+  if (league_ids && league_ids.length > 0) {
+    sltFilters.push({ column: "slt.league_id", value: league_ids });
+  }
+  if (team_ids && team_ids.length > 0) {
+    sltFilters.push({ column: "slt.team_id", value: team_ids });
+  }
+
+  // Build filters for match conditions
+  const matchFilters = [];
+  if (season_ids && season_ids.length > 0) {
+    matchFilters.push({ column: "m.season_id", value: season_ids });
+  }
+  if (league_ids && league_ids.length > 0) {
+    matchFilters.push({ column: "m.league_id", value: league_ids });
+  }
+  if (team_ids && team_ids.length > 0) {
+    matchFilters.push({
       column: [{ column: "team1.team_id" }, { column: "team2.team_id" }],
       value: team_ids
-    },
-    { column: "mg.map_id", value: map_ids },
-    { column: "m.stage", value: stages }
-  ]);
+    });
+  }
+  if (map_ids && map_ids.length > 0) {
+    matchFilters.push({ column: "mg.map_id", value: map_ids });
+  }
+  if (stages && stages.length > 0) {
+    matchFilters.push({ column: "m.stage", value: stages });
+  }
 
-  // If we filter by any filter, we only want those teams in result,
-  // otherwise we also want teams that have not played any matches to be present matches.
-  const filtersPresent = queryParams.length > 0;
+  const { query: sltQuery, queryParams: sltParams } =
+    generateQueryWithFilters(sltFilters);
+  const { query: matchQuery, queryParams: matchParams } =
+    generateQueryWithFilters(matchFilters);
 
   const mapFilterPresent = map_ids && map_ids.length > 0;
 
@@ -105,7 +123,7 @@ export const getTeamsByFilters = async ({
       FROM SeasonLeagueTeams slt
       JOIN Seasons s ON s.id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id
-      WHERE ${season}
+      WHERE ${sltQuery}
     ),
     match_results AS (
       SELECT 
@@ -135,16 +153,16 @@ export const getTeamsByFilters = async ({
       LEFT JOIN MatchGames mg ON m.id = mg.match_id
       LEFT JOIN TeamGameScores team1_score ON mg.id = team1_score.game_id AND team1_score.team_id = team1.team_id
       LEFT JOIN TeamGameScores team2_score ON mg.id = team2_score.game_id AND team2_score.team_id = team2.team_id
-      WHERE ${query}
+      WHERE ${matchQuery}
       ${!mapFilterPresent ? "GROUP BY m.id, team1.team_id, team2.team_id, m.best_of, m.league_id, m.season_id" : "GROUP BY mg.id, team1.team_id, team2.team_id"}
     )
     SELECT
       t.id,
       t.name,
       t.team_logo,
-      COUNT(CASE WHEN mr.winning_team_id = t.id THEN 1 END) AS wins,
-      COUNT(CASE WHEN mr.losing_team_id = t.id THEN 1 END) AS losses,
-      COUNT(*) AS matches_played,
+      COALESCE(COUNT(CASE WHEN mr.winning_team_id = t.id THEN 1 END), 0) AS wins,
+      COALESCE(COUNT(CASE WHEN mr.losing_team_id = t.id THEN 1 END), 0) AS losses,
+      COALESCE(COUNT(CASE WHEN mr.winning_team_id = t.id OR mr.losing_team_id = t.id THEN 1 END), 0) AS matches_played,
       ROUND(
         100.0 * COUNT(CASE WHEN mr.winning_team_id = t.id THEN 1 END) /
         NULLIF(COUNT(CASE WHEN mr.winning_team_id = t.id OR mr.losing_team_id = t.id THEN 1 END), 0), 1
@@ -152,13 +170,15 @@ export const getTeamsByFilters = async ({
       lts.season_name AS latest_season_name,
       lts.league_name AS latest_league_name
     FROM Teams t
-    ${filtersPresent ? "INNER" : "LEFT"} JOIN match_results mr ON t.id = mr.winning_team_id OR t.id = mr.losing_team_id
-    ${filtersPresent ? "INNER" : "LEFT"} JOIN latest_team_season lts ON t.id = lts.team_id AND lts.rn = 1
+    LEFT JOIN match_results mr ON t.id = mr.team1_id OR t.id = mr.team2_id
+    LEFT JOIN latest_team_season lts ON t.id = lts.team_id AND lts.rn = 1
+    WHERE t.id IN (SELECT DISTINCT slt.team_id FROM SeasonLeagueTeams slt WHERE ${sltQuery})
     GROUP BY t.id
     ORDER BY win_percentage DESC, wins DESC, t.name ASC;
   `;
 
-  return runQuery<TeamStats[]>(baseQuery, [...querySeason, ...queryParams]);
+  const allParams = [...sltParams, ...matchParams, ...sltParams];
+  return runQuery<TeamStats[]>(baseQuery, allParams);
 };
 
 // Get match history for a team
