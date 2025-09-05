@@ -90,31 +90,34 @@ export const getMultiplePlayerStatsByFilters = async ({
   const { query: mapQuery, queryParams: mapParams } =
     generateQueryWithFilters(mapFilters);
 
-  // Determine join types - use INNER JOIN when map_ids are present
+  // Determine join types - use LEFT JOIN to include all players, then filter in WHERE
   const hasMapFilter = map_ids && map_ids.length > 0;
-  const joinType = hasMapFilter ? "INNER JOIN" : "LEFT JOIN";
+  const joinType = "LEFT JOIN";
 
   let whereClause = `WHERE ${stpQuery}`;
   const queryParams = [...stpParams];
 
+  // Add playerName parameter (used in WHERE clause)
   if (playerName) {
     whereClause += ` AND p.nickname LIKE ?`;
     queryParams.push(`%${playerName}%`);
   }
 
-  // Build match conditions for Matches LEFT JOIN
-  let matchConditions = "";
+  // Add match conditions to WHERE clause for LEFT JOIN
   if (matchQuery !== "1=1") {
-    matchConditions = ` AND ${matchQuery}`;
+    whereClause += ` AND ${matchQuery}`;
     queryParams.push(...matchParams);
   }
 
-  // Build map conditions for MatchGames LEFT JOIN
-  let mapConditions = "";
+  // Add map conditions to WHERE clause for LEFT JOIN
   if (mapQuery !== "1=1") {
-    mapConditions = ` AND ${mapQuery}`;
+    whereClause += ` AND ${mapQuery}`;
     queryParams.push(...mapParams);
   }
+
+  // Build empty conditions for JOIN clauses since we're using WHERE
+  const matchConditions = "";
+  const mapConditions = "";
 
   const baseQuery = `
     SELECT 
