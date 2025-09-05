@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { checkPermissions } from "../../../middlewares/auth.middleware";
 import {
   addRole,
   removeRole,
@@ -8,13 +7,6 @@ import {
 } from "../../../controllers/dashboard/role-management.controllers";
 
 const router = Router();
-
-// All routes require helpdesk or admin permissions
-router.use(
-  checkPermissions({
-    fallbackRoles: ["admin", "helpdesk"]
-  })
-);
 
 /**
  * @route GET /api/v1/dashboard/role-management/manageable-roles
