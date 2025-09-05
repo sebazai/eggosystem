@@ -150,7 +150,7 @@ describe("addChampionshipToDatabase", () => {
     const webhook = buildWebhook({
       payload: {
         id: "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
-        name: "5 Div S4 Lohko A",
+        name: "5 Div S4 Lohko B",
         type: "roundRobin"
       }
     });
@@ -164,6 +164,7 @@ describe("addChampionshipToDatabase", () => {
       5,
       1,
       "roundRobin",
+      2,
       true
     );
   });
@@ -209,6 +210,7 @@ describe("addChampionshipToDatabase", () => {
       99,
       2,
       "singleElimination",
+      null,
       false
     );
   });
