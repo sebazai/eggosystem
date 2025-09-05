@@ -141,6 +141,10 @@ export default function StandingsPage({ seasonId }: { seasonId: string }) {
               points for overtime win, 1 point for overtime loss, 0 points for
               regular loss
             </p>
+            <p>
+              <strong>Forfeit:</strong> 3 points for winner, 0 points for loser,
+              7 rounds for winner, 0 rounds for loser
+            </p>
             <p className="mt-1">
               Teams are sorted by points first, then by round difference
             </p>

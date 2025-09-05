@@ -1,4 +1,5 @@
 import {
+  type ChampionshipDetailsFinished,
   type Match,
   type StandingsFaceitTeamStats,
   type StandingsLeagues
@@ -7,6 +8,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
 import { generateYMD } from "../utils/date-utils";
 import { redisClient, expireInOneDay } from "../utils/redisClient";
+import { getFaceITMatchDetails } from "./faceit.services";
 
 interface FaceitMatchData {
   date: string;
@@ -47,15 +49,25 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
     SELECT m.* FROM Matches m
     JOIN SeasonLeagueExternalIds slei ON m.season_id = slei.season_id 
       AND m.league_id = slei.league_id
-      AND (m.group = slei.group OR (m.group IS NULL AND slei.group IS NULL))
+      AND (m.group = slei.manual_group OR (m.group IS NULL AND slei.manual_group IS NULL))
     WHERE slei.external_id = ? AND m.status IN ('FINISHED', 'FORFEIT')
   `;
   const params: string[] = [externalLeagueId];
 
   if (group) {
-    query += ` AND slei.group = ?`;
+    query += ` AND slei.manual_group = ?`;
     params.push(group);
   }
+
+  // Group by external_match_room_id when best_of = 1 and isBO2PlayedAs2xBO1 is true
+  query += `
+    GROUP BY 
+      CASE 
+        WHEN m.best_of = 1 AND slei.isBO2PlayedAs2xBO1 = true AND m.status = 'FINISHED'
+        THEN m.external_match_room_id 
+        ELSE m.id 
+      END
+  `;
 
   const matches = await runQuery<Match[]>(query, params);
   return matches;
@@ -116,6 +128,30 @@ export const getFaceitMatchesForFaceitLeague = async (
   }
 };
 
+const getFaceitMatchInfoForForfeit = async (
+  faceitMatchId: string
+): Promise<StandingsFaceitTeamStats[]> => {
+  const matchDetails =
+    await getFaceITMatchDetails<ChampionshipDetailsFinished>(faceitMatchId);
+  const winnerFaction = matchDetails.results.winner;
+  const winnerTeamName = matchDetails.teams[winnerFaction].name;
+  const data: StandingsFaceitTeamStats[] = Object.values(
+    matchDetails.teams
+  ).map((team) => ({
+    team_name: team.name,
+    games_played: 0,
+    maps_won: winnerTeamName === team.name ? 1 : 0,
+    maps_won_ot: 0,
+    maps_lost: 0,
+    maps_lost_ot: 0,
+    points: winnerTeamName === team.name ? 3 : 0,
+    rounds_won: winnerTeamName === team.name ? 7 : 0,
+    rounds_lost: 0,
+    rounds_diff: winnerTeamName === team.name ? 7 : 0
+  }));
+  return data;
+};
+
 // Get match statistics from Faceit
 const getFaceitMatchInfo = async (
   faceitMatchId: string
@@ -148,9 +184,6 @@ const getFaceitMatchInfo = async (
   const response = await fetch(webURL, { headers });
 
   if (!response.ok) {
-    // TODO: Div 10 S4 Lohko A, https://www.faceit.com/en/cs2/room/1-c88006a8-c4d2-4e3c-9270-750e3802ec29
-    // const webURL = `https://open.faceit.com/data/v4/matches/${faceitMatchId}`;
-    // This endpoint works, should we add +3 points or just fail silently? :)
     throw new Error(
       `Faceit API returned ${response.status}: ${response.statusText}`
     );
@@ -213,14 +246,22 @@ export const getDivStandings = async (
   // Get matches from league
   const matchesRaw =
     await getFaceitMatchesFromDbForFaceitLeague(faceitLeagueId);
-  const matches = matchesRaw
-    .map((match) => match.external_match_room_id)
-    .filter((id): id is string => id !== null);
+  const matches = matchesRaw.filter(
+    (match): match is Match & { external_match_room_id: string } =>
+      match.external_match_room_id !== null
+  );
 
   // Get stats for each match
   const teamStatsArray: StandingsFaceitTeamStats[][] = [];
-  for (const matchId of matches) {
-    const stats = await getFaceitMatchInfo(matchId);
+  for (const match of matches) {
+    if (match.status === "FORFEIT") {
+      const stats = await getFaceitMatchInfoForForfeit(
+        match.external_match_room_id
+      );
+      teamStatsArray.push(stats);
+      continue;
+    }
+    const stats = await getFaceitMatchInfo(match.external_match_room_id);
     teamStatsArray.push(stats);
   }
 

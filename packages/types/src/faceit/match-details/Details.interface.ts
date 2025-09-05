@@ -104,7 +104,7 @@ export interface FaceitDetailedResultsAbortedAndCancelled {
 
 // Match results interface for finished matches (with actual data)
 export interface FaceitMatchResultsFinished {
-  winner: string;
+  winner: "faction1" | "faction2";
   score: FaceitFactionScores;
 }
 
@@ -192,7 +192,7 @@ export const FaceitDetailedResultsAbortedAndCancelledSchema = z.object({
 });
 
 export const FaceitMatchResultsFinishedSchema = z.object({
-  winner: z.string(),
+  winner: z.union([z.literal("faction1"), z.literal("faction2")]),
   score: FaceitFactionScoresSchema
 });
 
