@@ -525,6 +525,21 @@ describe("getMultiplePlayerStatsByFilters", () => {
       ]);
     });
   });
+
+  it("should return empty array for team 415, season 14, map 7 (no data) because the team has not played this map in this season", async () => {
+    const result = await getMultiplePlayerStatsByFilters({
+      season_ids: [14],
+      team_ids: [415],
+      league_ids: null,
+      stages: null,
+      map_ids: [7],
+      playerName: undefined
+    });
+
+    expect(result).toBeDefined();
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBe(0);
+  });
 });
 
 describe("getPlayerTeamDetailsWithFilters", () => {
