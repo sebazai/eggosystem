@@ -10,4 +10,5 @@ export type SeasonLeagueExternalId = {
   season_id: SeasonLeague["season_id"];
   league_id: SeasonLeague["league_id"];
   type: "roundRobin" | "doubleElimination" | "singleElimination";
+  manual_group?: number;
 };

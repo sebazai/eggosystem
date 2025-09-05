@@ -62,8 +62,11 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
 };
 
 // Get matches from a Faceit championship/league
-const _getFaceitMatchesForFaceitLeague = async (
-  leagueId: string
+export const getFaceitMatchesForFaceitLeague = async (
+  leagueId: string,
+  type: string = "all",
+  limit: number = 100,
+  offset: number = 0
 ): Promise<FaceitMatchData[]> => {
   if (!FACEIT_API_TOKEN) {
     throw new Error("FACEIT_API_KEY environment variable is required");
@@ -77,11 +80,13 @@ const _getFaceitMatchesForFaceitLeague = async (
     "User-Agent": "Kanaliiga-Eggosystem/1.0"
   };
 
-  logger.info(`[Standings] Querying matches for league ${leagueId}`);
+  logger.info(
+    `[Standings] Querying matches for league ${leagueId} with type ${type} and limit ${limit} and offset ${offset}`
+  );
 
   try {
     // Manual URL construction with params since fetch doesn't support params directly
-    const urlWithParams = `${webURL}?type=past&limit=100`;
+    const urlWithParams = `${webURL}?type=${type}&limit=${limit}&offset=${offset}`;
     const finalResponse = await fetch(urlWithParams, { headers });
 
     if (!finalResponse.ok) {
@@ -94,11 +99,11 @@ const _getFaceitMatchesForFaceitLeague = async (
 
     // Filter finished matches and map to required format
     const matches = data.items;
-    const finishedMatches = matches.filter(
-      (match) => match.status === "FINISHED"
+    logger.info(
+      `[Standings] Found ${matches.length} matches for league ${leagueId} with type ${type} and limit ${limit} and offset ${offset}`
     );
 
-    const matchData: FaceitMatchData[] = finishedMatches.map((match) => ({
+    const matchData: FaceitMatchData[] = matches.map((match) => ({
       date: generateYMD(match.scheduled_at),
       match_id: match.match_id,
       demo_url: match.demo_url || []
