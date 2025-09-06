@@ -5,7 +5,8 @@ import {
   type ChampionshipSubscription,
   type FaceitMatchesResponse,
   type FaceitMatch,
-  type ChampionshipSubscriptionItem
+  type ChampionshipSubscriptionItem,
+  type FaceitMatchStatsResponse
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -625,4 +626,31 @@ export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
   }
 
   logger.info(`FACEIT championship match sync completed.`);
+};
+
+export const getFaceitMatchStats = async (match_id: string) => {
+  if (!process.env.FACEIT_API_KEY) {
+    throw new Error("FACEIT_API_KEY environment variable is required");
+  }
+
+  const redisKey = `faceit-match-stats-${match_id}`;
+  const cached = await redisClient.get(redisKey);
+  if (cached) {
+    return JSON.parse(cached) as FaceitMatchStatsResponse;
+  }
+
+  const webURL = `https://open.faceit.com/data/v4/matches/${match_id}/stats`;
+  const headers = {
+    Accept: "application/json",
+    Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+  };
+  const response = await fetch(webURL, { headers });
+  if (!response.ok) {
+    throw new Error(
+      `Faceit API returned ${response.status}: ${response.statusText}`
+    );
+  }
+  const data: FaceitMatchStatsResponse = await response.json();
+  await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn30Days);
+  return response.json() as Promise<FaceitMatchStatsResponse>;
 };

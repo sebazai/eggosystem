@@ -1,4 +1,5 @@
 import {
+  type FaceitMatchStatsResponse,
   type ChampionshipDetailsFinished,
   type Match,
   type StandingsFaceitTeamStats,
@@ -7,8 +8,7 @@ import {
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
 import { generateYMD } from "../utils/date-utils";
-import { redisClient, expireInOneDay } from "../utils/redisClient";
-import { getFaceITMatchDetails } from "./faceit.services";
+import { getFaceITMatchDetails, getFaceitMatchStats } from "./faceit.services";
 
 interface FaceitMatchData {
   date: string;
@@ -22,20 +22,6 @@ interface FaceitMatchResponse {
     status: string;
     scheduled_at: number;
     demo_url: string[];
-  }>;
-}
-
-interface FaceitMatchStatsResponse {
-  rounds: Array<{
-    round_stats: {
-      Rounds: string;
-    };
-    teams: Array<{
-      team_stats: {
-        Team: string;
-        "Final Score": string;
-      };
-    }>;
   }>;
 }
 
@@ -153,46 +139,14 @@ const getFaceitMatchInfoForForfeit = async (
 };
 
 // Get match statistics from Faceit
-const getFaceitMatchInfo = async (
-  faceitMatchId: string
+const extractPointsFromFaceitMatchStatsResponse = async (
+  faceitMatchStats: FaceitMatchStatsResponse
 ): Promise<StandingsFaceitTeamStats[]> => {
-  if (!FACEIT_API_TOKEN) {
-    throw new Error("FACEIT_API_KEY environment variable is required");
-  }
-
-  const webURL = `https://open.faceit.com/data/v4/matches/${faceitMatchId}/stats`;
-
-  const headers = {
-    Accept: "application/json",
-    Authorization: `Bearer ${FACEIT_API_TOKEN}`,
-    "User-Agent": "Kanaliiga-Eggosystem/1.0"
-  };
-
-  logger.info(`[Standings] Querying match info for match ${faceitMatchId}`);
-
-  // Check Redis cache first
-  const redisKey = `match:${faceitMatchId}`;
-  const cached = await redisClient.get(redisKey);
-  if (cached) {
-    logger.info(`[Standings] Returning cached match data for ${faceitMatchId}`);
-    return JSON.parse(cached);
-  }
-
   // Initialize team statistics object
   const teamStats: Record<string, StandingsFaceitTeamStats> = {};
 
-  const response = await fetch(webURL, { headers });
-
-  if (!response.ok) {
-    throw new Error(
-      `Faceit API returned ${response.status}: ${response.statusText}`
-    );
-  }
-
-  const data: FaceitMatchStatsResponse = await response.json();
-
   // Process each round and calculate team statistics
-  data.rounds.forEach((round) => {
+  faceitMatchStats.rounds.forEach((round) => {
     const overtime = Number(round.round_stats.Rounds) > 24 ? 1 : 0;
 
     round.teams.forEach((team, index) => {
@@ -232,10 +186,7 @@ const getFaceitMatchInfo = async (
     });
   });
 
-  // Convert to array
   const teams = Object.values(teamStats);
-
-  await redisClient.set(redisKey, JSON.stringify(teams), "EX", expireInOneDay);
 
   return teams;
 };
@@ -261,7 +212,11 @@ export const getDivStandings = async (
       teamStatsArray.push(stats);
       continue;
     }
-    const stats = await getFaceitMatchInfo(match.external_match_room_id);
+    const faceitMatchStats = await getFaceitMatchStats(
+      match.external_match_room_id
+    );
+    const stats =
+      await extractPointsFromFaceitMatchStatsResponse(faceitMatchStats);
     teamStatsArray.push(stats);
   }
 
