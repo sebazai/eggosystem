@@ -87,7 +87,7 @@ fetch_webhook_from_db() {
     print_status "mysql command found: $(which mysql)" >&2
     
     # Build query with optional event filter
-    local query="SELECT data FROM FaceitWebhooks WHERE id = $id AND retry_count = 0 AND error_details IS NOT NULL AND manual_reprocess = 0"
+    local query="SELECT data FROM FaceitWebhooks WHERE id = $id AND retry_count = 0 AND manual_reprocess = 0"
     
     # Add event filter if provided
     if [[ -n "$event_filter" ]]; then

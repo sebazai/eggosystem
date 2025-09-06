@@ -9,7 +9,8 @@ export const FaceitMatchStatus = {
   ONGOING: "ONGOING",
   FINISHED: "FINISHED",
   ABORTED: "ABORTED",
-  CANCELLED: "CANCELLED"
+  CANCELLED: "CANCELLED",
+  PAUSED: "PAUSED"
 } as const;
 
 // Player roster member interface
