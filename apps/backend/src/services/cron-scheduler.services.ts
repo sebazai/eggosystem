@@ -93,5 +93,7 @@ export const startFaceitMatchSyncCron = (): void => {
 
 export const triggerManualFaceitSync = async (): Promise<void> => {
   logger.info("Manual FACEIT match sync triggered...");
+  await syncMatchesManualGroup("past");
+  await syncMatchesManualGroup("upcoming");
   await syncAllFaceitChampionshipMatches();
 };
