@@ -92,29 +92,35 @@ export const sendDemoForAllStarPOTGClip = async (
       };
     }
 
-    const responseData = await response.json();
-
-    logger.info(
-      `AllStar clip request successful for game ${gameId} with response: ${JSON.stringify(
-        responseData
-      )}`
-    );
-
-    // Insert processing record
     try {
-      await insertClipProcessing(gameId, "potg");
-    } catch (dbError) {
-      logger.error(
-        `Failed to insert clip processing record for game ${gameId}`,
-        dbError
-      );
-    }
+      const responseData = await response.json();
 
-    return {
-      success: true,
-      requestId: responseData.requestId,
-      message: "Clip request submitted successfully"
-    };
+      logger.info(
+        `AllStar clip request successful for game ${gameId} with response: ${JSON.stringify(
+          responseData
+        )}`
+      );
+
+      await insertClipProcessing(gameId, "potg");
+
+      return {
+        success: true,
+        requestId: responseData.requestId,
+        message: "Clip request submitted successfully"
+      };
+    } catch (error) {
+      const resposeText = await response.text();
+      logger.error(
+        `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`,
+        error
+      );
+
+      return {
+        success: false,
+        error: `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`,
+        message: `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`
+      };
+    }
   } catch (error) {
     logger.error(
       `Error sending demo to AllStar for game ${gameId} with demoUrl ${demoUrl}`,

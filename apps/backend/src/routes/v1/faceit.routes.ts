@@ -212,7 +212,8 @@ router.post(
       webhookData.payload.organizer_id,
       appId
     );
-    const manualReprocess = req.query.reprocess === "true";
+    const manualReprocess = !!req.query.reprocess;
+    logger.info(`[FaceIT Webhook] Reprocess: ${manualReprocess}`);
 
     if (!organizer || organizer.length === 0) {
       logger.error(
