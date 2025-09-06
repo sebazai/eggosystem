@@ -652,5 +652,5 @@ export const getFaceitMatchStats = async (match_id: string) => {
   }
   const data: FaceitMatchStatsResponse = await response.json();
   await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn30Days);
-  return response.json() as Promise<FaceitMatchStatsResponse>;
+  return data;
 };
