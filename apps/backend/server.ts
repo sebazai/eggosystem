@@ -5,6 +5,13 @@ import { startFaceitMatchSyncCron } from "./src/services/cron-scheduler.services
 
 const port = process.env.PORT || 3001;
 
+if (process.env.NODE_ENV === "e2e") {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { mswServer } = require("@eggosystem/shared-msw");
+  logger.info("Starting MSW for E2E tests...");
+  mswServer.listen({ onUnhandledRequest: "bypass" });
+}
+
 const server = app.listen(port, () => {
   logger.info(`Server started at ${process.env.BACKEND_URL}`);
 });

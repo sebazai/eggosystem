@@ -3,7 +3,7 @@ import {
   faceitValidSteamId,
   faceitValidSteamIdDecayed,
   faceitCs2EmptyMetadataSteamId
-} from "./test-ids";
+} from "./test-ids.js";
 
 export const faceitMetadataHandlers = [
   http.get<{ faceit_player_id: string; game: string }>(

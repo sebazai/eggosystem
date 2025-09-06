@@ -7,7 +7,7 @@ import {
   faceitValidSteamId,
   faceitValidSteamIdDecayed,
   faceitCs2EmptyMetadataSteamId
-} from "./test-ids";
+} from "./test-ids.js";
 
 export const faceitPlayerGameRankHandlers = [
   http.get("https://open.faceit.com/data/v4/players", ({ request }) => {

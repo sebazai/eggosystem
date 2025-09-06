@@ -1,5 +1,5 @@
 import { setupServer, type SetupServerApi } from "msw/node";
-import { handlers } from "./handlers";
+import { handlers } from "./handlers.js";
 import {
   leetifyValidSteamId,
   leetifyNotFoundSteamId,
@@ -9,7 +9,7 @@ import {
   leetifyInvalidGameDataSteamId,
   leetifyRateLimitSteamId,
   leetifyMultipleGamesSteamId
-} from "./leetify/handlers";
+} from "./leetify/handlers.js";
 
 import {
   faceitValidSteamId,
@@ -21,14 +21,14 @@ import {
   faceitMultipleGamesSteamId,
   faceitValidSteamIdDecayed,
   faceitCs2EmptyMetadataSteamId
-} from "./faceit/test-ids";
+} from "./faceit/test-ids.js";
 
 import {
   csrankkerValidSteamId,
   csrankkerNotFoundSteamId,
   csrankkerNetworkErrorSteamId,
   csrankkerInvalidJsonSteamId
-} from "./csrankker/test-ids";
+} from "./csrankker/test-ids.js";
 
 export const mswServer: SetupServerApi = setupServer(...handlers);
 export {
@@ -55,12 +55,12 @@ export {
   csrankkerInvalidJsonSteamId
 };
 
-export { validSignupData, invalidSignupData } from "./fixtures";
+export { validSignupData, invalidSignupData } from "./fixtures/index.js";
 export {
   validMatchDetailsMatchCreated,
   validMatchDetailsMatchDemoReady,
   validMatchDetailsMatchStatusReadyMatchmaking,
   validMatchDetailsMatchStatusFinished
-} from "./faceit/MatchDetails-handlers";
+} from "./faceit/MatchDetails-handlers.js";
 
 export { http, HttpResponse } from "msw";

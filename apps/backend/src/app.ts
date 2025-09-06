@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { logger } from "./utils/app-logger";
 
-if (process.env.TEST_TYPE_ENV === "local-e2e") {
+if (process.env.NODE_ENV === "e2e") {
   logger.info("Loading .env.local.test file");
   dotenv.config({ path: ".env.local.test" });
 }

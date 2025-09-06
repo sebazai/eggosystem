@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 import { ISteamUserResponse } from "@eggosystem/types";
-import { validSignupData } from "../fixtures";
+import { validSignupData } from "../fixtures/index.js";
 
 export const getPlayerSummariesHandlers = [
   http.get(

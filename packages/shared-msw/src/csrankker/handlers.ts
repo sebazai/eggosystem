@@ -4,7 +4,7 @@ import {
   csrankkerNotFoundSteamId,
   csrankkerNetworkErrorSteamId,
   csrankkerInvalidJsonSteamId
-} from "./test-ids";
+} from "./test-ids.js";
 
 export const csrankkerHandlers = [
   http.get(
