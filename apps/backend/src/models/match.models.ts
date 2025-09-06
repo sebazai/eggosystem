@@ -552,7 +552,7 @@ export const addMatchToDatabase = async (
       matchDetails.match_id,
       matchDetails.status,
       matchDetails.round,
-      matchDetails.group
+      seasonLeagueExternalRoom.manual_group ?? matchDetails.group
     ];
 
     const matchQuery = `
@@ -596,7 +596,7 @@ export const addMatchToDatabase = async (
         matchDetails.match_id,
         matchDetails.status,
         matchDetails.round,
-        matchDetails.group
+        seasonLeagueExternalRoom.manual_group ?? matchDetails.group
       ];
 
       const secondMatch = await runQuery<{ insertId: number }>(

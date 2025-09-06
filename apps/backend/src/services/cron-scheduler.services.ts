@@ -5,7 +5,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { getFaceitMatchesForFaceitLeague } from "./standings.services";
 import { type SeasonLeagueExternalId } from "@eggosystem/types";
 
-const syncMatchesManualGroup = async (type: string): Promise<void> => {
+const _syncMatchesManualGroup = async (type: string): Promise<void> => {
   const seasonLeagueExternalIds = await runQuery<SeasonLeagueExternalId[]>(
     "SELECT * FROM SeasonLeagueExternalIds"
   );
@@ -70,8 +70,8 @@ export const startFaceitMatchSyncCron = (): void => {
 
       try {
         await syncAllFaceitChampionshipMatches();
-        await syncMatchesManualGroup("past");
-        await syncMatchesManualGroup("upcoming");
+        // await syncMatchesManualGroup("past");
+        // await syncMatchesManualGroup("upcoming");
         const endTime = new Date();
         const duration = endTime.getTime() - startTime.getTime();
         logger.info(
@@ -93,7 +93,7 @@ export const startFaceitMatchSyncCron = (): void => {
 
 export const triggerManualFaceitSync = async (): Promise<void> => {
   logger.info("Manual FACEIT match sync triggered...");
-  await syncMatchesManualGroup("past");
-  await syncMatchesManualGroup("upcoming");
+  // await syncMatchesManualGroup("past");
+  // await syncMatchesManualGroup("upcoming");
   await syncAllFaceitChampionshipMatches();
 };
