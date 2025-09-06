@@ -143,7 +143,7 @@ export default function StandingsPage({ seasonId }: { seasonId: string }) {
             </p>
             <p>
               <strong>Forfeit:</strong> 3 points for winner, 0 points for loser,
-              7 rounds for winner, 0 rounds for loser
+              6 round won for winner, 6 rounds lost for loser
             </p>
             <p className="mt-1">
               Teams are sorted by points first, then by round difference

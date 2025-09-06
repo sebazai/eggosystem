@@ -139,15 +139,15 @@ const getFaceitMatchInfoForForfeit = async (
     matchDetails.teams
   ).map((team) => ({
     team_name: team.name,
-    games_played: 0,
+    games_played: 0, // or matchDetails.best_of?
     maps_won: winnerTeamName === team.name ? 1 : 0,
     maps_won_ot: 0,
-    maps_lost: 0,
+    maps_lost: winnerTeamName === team.name ? 0 : 1,
     maps_lost_ot: 0,
     points: winnerTeamName === team.name ? 3 : 0,
-    rounds_won: winnerTeamName === team.name ? 7 : 0,
+    rounds_won: winnerTeamName === team.name ? 6 : -6,
     rounds_lost: 0,
-    rounds_diff: winnerTeamName === team.name ? 7 : 0
+    rounds_diff: winnerTeamName === team.name ? 6 : -6
   }));
   return data;
 };
