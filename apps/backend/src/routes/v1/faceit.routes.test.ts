@@ -1906,7 +1906,8 @@ describe("FaceIT Routes - Webhook", () => {
         expect(mockAddMatchGamesForMatch).toHaveBeenCalledWith(
           validWebhookMatchDemoReady,
           validMatchDetailsMatchDemoReady,
-          validWebhookMatchDemoReady.payload.entity.id
+          validWebhookMatchDemoReady.payload.entity.id,
+          false
         );
       });
     });

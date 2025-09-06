@@ -170,10 +170,11 @@ describe("sendDemoForAllStarPOTGClip", () => {
   });
 
   describe("database insertion handling", () => {
-    it("should continue with success even if database insert fails", async () => {
+    it("should not continue with success even if database insert fails", async () => {
       const mockResponse = createMockResponse({
         ok: true,
-        json: jest.fn().mockResolvedValue({ requestId: "test-request-id" })
+        json: jest.fn().mockResolvedValue(new Error("Test")),
+        text: jest.fn().mockResolvedValue("Errorer")
       });
       mockFetch.mockResolvedValue(mockResponse);
       mockInsertClipProcessing.mockRejectedValue(
@@ -183,13 +184,15 @@ describe("sendDemoForAllStarPOTGClip", () => {
       const result = await sendDemoForAllStarPOTGClip(123, "https://demo.url");
 
       expect(result).toEqual({
-        success: true,
-        requestId: "test-request-id",
-        message: "Clip request submitted successfully"
+        success: false,
+        error:
+          "Error parsing AllStar clip response for game 123 with response: Errorer",
+        message:
+          "Error parsing AllStar clip response for game 123 with response: Errorer"
       });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
-        "Failed to insert clip processing record for game 123",
+        "Error parsing AllStar clip response for game 123 with response: Errorer",
         new Error("Database connection failed")
       );
     });

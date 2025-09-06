@@ -110,7 +110,7 @@ export const sendDemoForAllStarPOTGClip = async (
       };
     } catch (error) {
       logger.info(response);
-      const resposeText = response.text();
+      const resposeText = await response.text();
       logger.error(
         `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`,
         error
