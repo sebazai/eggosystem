@@ -21,13 +21,16 @@ interface AllStarClipResponse {
 export const sendDemoForAllStarPOTGClip = async (
   gameId: number,
   demoUrl: string
-): Promise<AllStarClipResponse | undefined> => {
+): Promise<AllStarClipResponse> => {
   const isAllStarDemoRequested = await getMatchGameClipForGameId(gameId);
   if (isAllStarDemoRequested.length > 0) {
     logger.info(
       `Demo processing request already exists for game ${gameId} with demo url ${demoUrl}`
     );
-    return undefined;
+    return {
+      success: true,
+      message: "Demo processing request already exists for game"
+    };
   }
   const apiKey = process.env.ALLSTAR_API_KEY;
   if (!apiKey) {
