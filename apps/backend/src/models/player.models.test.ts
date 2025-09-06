@@ -647,7 +647,19 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 36,
       multikill_4k: 7,
       multikill_5k: 3,
-      rounds_played: 551
+      rounds_played: 551,
+      avg_enemy_flash_duration: 2.9,
+      avg_teammate_flash_duration: 1,
+      counter_strafing_percentage: 85.6,
+      crosshair_placement: 7.95833,
+      first_deaths_ct: 36,
+      first_deaths_t: 34,
+      first_kills_ct: 38,
+      first_kills_t: 35,
+      time_to_damage: 403.2083,
+      trade_attempts: 112,
+      trade_opportunities: 124,
+      trades: 79
     });
   });
   it("should return team specific stats when player has played in two teams during one season", async () => {
@@ -690,7 +702,19 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 33,
       multikill_4k: 7,
       multikill_5k: 3,
-      rounds_played: 446
+      rounds_played: 446,
+      avg_enemy_flash_duration: 3,
+      avg_teammate_flash_duration: 1.1,
+      counter_strafing_percentage: 84.3,
+      crosshair_placement: 8.36842,
+      first_deaths_ct: 27,
+      first_deaths_t: 30,
+      first_kills_ct: 34,
+      first_kills_t: 30,
+      time_to_damage: 391,
+      trade_attempts: 94,
+      trade_opportunities: 105,
+      trades: 69
     });
   });
   it("player with two different teams in two different season using double season filter aggregates scores", async () => {
@@ -733,7 +757,19 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 37,
       multikill_4k: 6,
       multikill_5k: 0,
-      rounds_played: 978
+      rounds_played: 978,
+      avg_enemy_flash_duration: 2.6,
+      avg_teammate_flash_duration: 1.2,
+      counter_strafing_percentage: 83.4,
+      crosshair_placement: 5.81463,
+      first_deaths_ct: 68,
+      first_deaths_t: 63,
+      first_kills_ct: 60,
+      first_kills_t: 56,
+      time_to_damage: 347.2683,
+      trade_attempts: 52,
+      trade_opportunities: 57,
+      trades: 96
     });
   });
   it("should match when season 11,14 and league 7 vs only league 7", async () => {
@@ -803,7 +839,19 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 23,
       multikill_4k: 5,
       multikill_5k: 0,
-      rounds_played: 645
+      rounds_played: 645,
+      avg_enemy_flash_duration: 2.6,
+      avg_teammate_flash_duration: 1,
+      counter_strafing_percentage: 87.4,
+      crosshair_placement: 4.975,
+      first_deaths_ct: 37,
+      first_deaths_t: 39,
+      first_kills_ct: 41,
+      first_kills_t: 30,
+      time_to_damage: 279.75,
+      trade_attempts: 0,
+      trade_opportunities: 0,
+      trades: 69
     });
   });
   it("with season, stage and mapid filters", async () => {
@@ -846,7 +894,19 @@ describe("getPlayerStatsByFilters", () => {
       multikill_3k: 2,
       multikill_4k: 0,
       multikill_5k: 0,
-      rounds_played: 35
+      rounds_played: 35,
+      avg_enemy_flash_duration: 3.2,
+      avg_teammate_flash_duration: 0.8,
+      counter_strafing_percentage: 80.8,
+      crosshair_placement: 7.85,
+      first_deaths_ct: 4,
+      first_deaths_t: 2,
+      first_kills_ct: 1,
+      first_kills_t: 2,
+      time_to_damage: 338,
+      trade_attempts: 1,
+      trade_opportunities: 1,
+      trades: 5
     });
   });
   it("with wrong team filter", async () => {
