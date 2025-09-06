@@ -89,7 +89,7 @@ services:
       - dev
 
   eggo-devdb:
-    image: bitnamilegacy/mariadb:11.7.2
+    image: bitnamilegacy/mariadb:11.8.3
     restart: always
     ports:
       - 3306:3306

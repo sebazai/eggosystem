@@ -82,7 +82,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-devdb-${ENV_ID}:
-    image: bitnamilegacy/mariadb:11.7.2
+    image: bitnamilegacy/mariadb:11.8.3
     restart: always
     container_name: eggo-devdb-${ENV_ID}
     environment:
