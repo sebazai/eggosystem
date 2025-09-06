@@ -46,7 +46,7 @@ const syncMatchesManualGroup = async (type: string): Promise<void> => {
 
     for (const match of allMatches) {
       await runQuery(
-        "UPDATE Matches SET group = ? WHERE external_match_room_id = ?",
+        `UPDATE Matches SET \`group\` = ? WHERE external_match_room_id = ?`,
         [seasonLeagueExternalId.manual_group, match.match_id]
       );
     }
