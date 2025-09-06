@@ -140,6 +140,11 @@ variables:
   <<: *docker-build-base
   rules:
     - if: $CI_MERGE_REQUEST_ID && $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "apps/backend/Dockerfile*"
+        - "apps/frontend/Dockerfile*"
+        - "apps/backend/Dockerfile.migrations*"
+    - if: $CI_COMMIT_BRANCH == "main"
       <<: *all-app-changes
     - if: $CI_PIPELINE_SOURCE == "web"
       when: manual
@@ -217,22 +222,24 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: bitnamilegacy/mariadb:11.7.2
+    - name: bitnamilegacy/mariadb:11.8.3
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
   variables:
     <<: *overwrite-variables
+  parallel: 4
   before_script:
     - corepack enable
     - corepack prepare pnpm@10.8.1 --activate
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
+    - npx turbo run build --filter='@eggosystem/shared-msw'
     - export $(grep -v '^#' .env.development | xargs)
     - pnpm --filter=backend seed
     - pnpm migrate
   script:
-    - npx turbo run test --filter=backend
+    - cd apps/backend && NODE_ENV=test npx jest --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL --coverage --ci --detectOpenHandles
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
@@ -305,7 +312,7 @@ test-e2e:frontend:
     - build:frontend
     - build:types
   services:
-    - name: bitnamilegacy/mariadb:11.7.2
+    - name: bitnamilegacy/mariadb:11.8.3
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis
