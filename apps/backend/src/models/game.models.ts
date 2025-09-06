@@ -209,7 +209,8 @@ const getMatchGameByDemoUrl = async (demoUrl: string) => {
 export const addMatchGameToDatabaseAndProcessDemo = async (
   webhookData: MatchDemoReadyWebhook,
   matchDetails: ChampionshipDetailsDemoReady,
-  externalLeagueId: string
+  externalLeagueId: string,
+  manualReprocess: boolean = false
 ) => {
   const { demo_url } = webhookData.payload;
 
@@ -287,7 +288,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         publishDemoProcessingRequest(
           gameWithDemo?.id ?? insertedRow.insertId,
           demoDownloadUrl,
-          !gameWithDemo
+          manualReprocess
         )
       ]);
     } else {

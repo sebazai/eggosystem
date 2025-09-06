@@ -443,7 +443,8 @@ router.post(
         await addMatchGameToDatabaseAndProcessDemo(
           validatedWebhook,
           validatedMatchDetails,
-          webhookData.payload.entity.id
+          webhookData.payload.entity.id,
+          manualReprocess
         );
 
         res.status(200).send("Webhook received");
