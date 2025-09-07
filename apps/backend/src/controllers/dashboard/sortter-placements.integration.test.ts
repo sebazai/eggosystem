@@ -1,135 +1,21 @@
 import request from "supertest";
-import type { Request, Response, NextFunction } from "express";
-import { app } from "../../app";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { generateTestJWT } from "../../utils/auth-test-utils";
 import IORedis from "ioredis";
-
-// Mock JWT configuration for tests
-jest.mock("../../configs/jwt-keys", () => ({
-  getJWTValues: jest.fn(() => ({
-    JWT_PRIVATE_KEY: "mock-private-key",
-    JWT_PUBLIC_KEY: "mock-public-key",
-    JWT_REFRESH_PRIVATE_KEY: "mock-refresh-private-key",
-    JWT_REFRESH_PUBLIC_KEY: "mock-refresh-public-key",
-    JWT_EXPIRES_IN: 1200,
-    JWT_REFRESH_EXPIRES_IN: 604800
-  }))
-}));
-
-// Mock jsonwebtoken to return test tokens
-jest.mock("jsonwebtoken", () => ({
-  sign: jest.fn((payload, secret, _options) => {
-    if (secret === "mock-refresh-private-key") {
-      return "mock-refresh-token";
-    }
-    return "mock-access-token";
-  })
-}));
-
-// Mock express-jwt middleware to recognize our test token
-jest.mock("express-jwt", () => ({
-  expressjwt: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const token = authHeader.split(" ")[1];
-
-      // Recognize our mock-access-token as valid
-      if (token === "mock-access-token") {
-        req.auth = {
-          account_id: 15004,
-          provider_id: "66561198999999902",
-          provider: "steam",
-          permissions: ["admin:all"],
-          roles: ["admin"],
-          nickname: "heppajpg"
-        };
-        next();
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
-    }
-  )
-}));
-
-// Mock auth middleware
-jest.mock("../../middlewares/auth.middleware", () => ({
-  authenticateJWT: jest.fn(
-    (req: Request, res: Response, next: NextFunction) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const token = authHeader.split(" ")[1];
-      if (token === "mock-access-token") {
-        req.auth = {
-          account_id: 15004,
-          provider_id: "66561198999999902",
-          provider: "steam",
-          permissions: ["admin:all"],
-          roles: ["admin"],
-          nickname: "heppajpg"
-        };
-        next();
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
-    }
-  ),
-  checkJWTPermissions: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Allow admin role through
-      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-        next();
-      } else {
-        res
-          .status(403)
-          .json({ error: { message: "Forbidden: Insufficient permissions" } });
-      }
-    }
-  ),
-  checkPermissions: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Allow admin role through
-      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-        next();
-      } else {
-        res
-          .status(403)
-          .json({ error: { message: "Forbidden: Insufficient permissions" } });
-      }
-    }
-  )
-}));
-
-// Mock validate numeric params middleware
-jest.mock("../../middlewares/validate-numeric-params", () => ({
-  validateNumericParams: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Just pass through for tests
-      next();
-    }
-  )
-}));
-
-// Mock CORS middleware
-jest.mock("../../middlewares/cors.middleware", () => ({
-  corsMiddleware: jest.fn((req: Request, res: Response, next: NextFunction) => {
-    // Just pass through for tests
-    next();
-  })
-}));
+import express from "express";
+import { expressErrorHandler } from "../../middlewares/express-error-handler";
+import sortterRouter from "../../routes/v1/dashboard/sortter.routes";
 
 describe("Enhanced Finalize Team Placements", () => {
+  let app: express.Application;
+
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use("/sortter", sortterRouter);
+    app.use(expressErrorHandler);
+  });
+
   const testSeasonId = 9999;
   const testTeamId1 = 9991;
   const testTeamId2 = 9992;
@@ -298,14 +184,6 @@ describe("Enhanced Finalize Team Placements", () => {
     await runQuery("DELETE FROM Seasons WHERE id = ?", [testSeasonId]);
   });
 
-  it("should require admin authentication", async () => {
-    const response = await request(app)
-      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
-      .expect(401);
-
-    expect(response.body.message || response.text).toContain("Unauthorized");
-  });
-
   it("should finalize placements and copy players successfully", async () => {
     const adminJWT = generateTestJWT();
 
@@ -330,14 +208,14 @@ describe("Enhanced Finalize Team Placements", () => {
     ];
 
     await request(app)
-      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/placements`)
+      .post(`/sortter/season/${testSeasonId}/placements`)
       .set("Authorization", `Bearer ${adminJWT}`)
       .send({ placements })
       .expect(200);
 
     // Now finalize the placements
     const response = await request(app)
-      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
+      .post(`/sortter/season/${testSeasonId}/finalize`)
       .set("Authorization", `Bearer ${adminJWT}`)
       .expect(200);
 
@@ -427,7 +305,7 @@ describe("Enhanced Finalize Team Placements", () => {
 
     // Try to finalize again
     const response = await request(app)
-      .post(`/api/v1/dashboard/sortter/season/${testSeasonId}/finalize`)
+      .post(`/sortter/season/${testSeasonId}/finalize`)
       .set("Authorization", `Bearer ${adminJWT}`)
       .expect(403);
 

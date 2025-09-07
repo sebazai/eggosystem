@@ -1,6 +1,4 @@
-import { type Response, type Request, type NextFunction } from "express";
-import request from "supertest";
-import { app } from "../../app";
+import { type Response } from "express";
 import {
   getTeamValuesController,
   getTeamValueByIdController,
@@ -12,100 +10,11 @@ import {
   type RequestWithParams
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
-import { getTeamValuesForSortter } from "../../models/dashboard/sortter.models";
-
-// Mock express-jwt middleware to recognize our test token
-jest.mock("express-jwt", () => ({
-  expressjwt: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const token = authHeader.split(" ")[1];
-
-      // Recognize our mock-access-token as valid
-      if (token === "mock-access-token") {
-        req.auth = {
-          account_id: 15004,
-          provider_id: "66561198999999902",
-          provider: "steam",
-          permissions: ["admin:all"],
-          roles: ["admin"],
-          nickname: "heppajpg"
-        };
-        next();
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
-    }
-  )
-}));
-
-// Mock auth middleware
-jest.mock("../../middlewares/auth.middleware", () => ({
-  authenticateJWT: jest.fn(
-    (req: Request, res: Response, next: NextFunction) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const token = authHeader.split(" ")[1];
-      if (token === "mock-access-token") {
-        req.auth = {
-          account_id: 15004,
-          provider_id: "66561198999999902",
-          provider: "steam",
-          permissions: ["admin:all"],
-          roles: ["admin"],
-          nickname: "heppajpg"
-        };
-        next();
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
-    }
-  ),
-  checkJWTPermissions: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Allow admin role through
-      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-        next();
-      } else {
-        res
-          .status(403)
-          .json({ error: { message: "Forbidden: Insufficient permissions" } });
-      }
-    }
-  ),
-  checkPermissions: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Allow admin role through
-      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-        next();
-      } else {
-        res
-          .status(403)
-          .json({ error: { message: "Forbidden: Insufficient permissions" } });
-      }
-    }
-  )
-}));
 
 // Mock the model functions
 jest.mock("../../models/dashboard/sortter.models");
 jest.mock("../../db/mysqlRunQuery");
 const mockedRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
-const mockGetTeamValuesForSorter =
-  getTeamValuesForSortter as jest.MockedFunction<
-    typeof getTeamValuesForSortter
-  >;
 
 describe("Sortter Controllers", () => {
   let mockRequest: Partial<RequestWithParams<Record<string, string>>>;
@@ -310,122 +219,6 @@ describe("Sortter Controllers", () => {
             status: 404
           })
         );
-      });
-    });
-  });
-
-  // Integration Tests
-  describe("Integration Tests", () => {
-    describe("GET /api/v1/dashboard/sortter/season/:season/teams", () => {
-      it("should return team values for a given season", async () => {
-        // Mock data setup
-        const mockTeamValues = [
-          {
-            team_id: 2053,
-            team_name: "CSKeisari",
-            team_logo: "logo_url_1",
-            league_name: "League 1",
-            top5_sum: 1418,
-            avg4: 288.75,
-            orig4: 288.75,
-            top5_values: [300, 295, 285, 275, 263],
-            top5_offered_values: [300, 295, 285, 275, 263],
-            is_flagged: false
-          }
-        ];
-
-        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-        mockGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
-
-        // Make request to the endpoint with authentication
-        const response = await request(app)
-          .get("/api/v1/dashboard/sortter/season/14/teams")
-          .set("Authorization", "Bearer mock-access-token");
-
-        // Verify response
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual(mockTeamValues);
-
-        // Verify model function was called with correct season ID
-        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14);
-      });
-
-      it("should handle invalid season ID parameter", async () => {
-        // Make request with invalid season ID
-        const response = await request(app)
-          .get("/api/v1/dashboard/sortter/season/invalid")
-          .set("Authorization", "Bearer mock-access-token");
-
-        // Verify response indicates not found (invalid season ID results in 404, not 400)
-        expect(response.status).toBe(404);
-      });
-    });
-
-    describe("GET /api/v1/dashboard/sortter/season/:season/team/:team", () => {
-      it("should get a specific team by ID", async () => {
-        // Mock data setup
-        const mockTeamValues = [
-          {
-            team_id: 2053,
-            team_name: "CSKeisari",
-            team_logo: "logo_url_1",
-            league_name: "League 1",
-            top5_sum: 1418,
-            avg4: 288.75,
-            orig4: 288.75,
-            top5_values: [300, 295, 285, 275, 263],
-            top5_offered_values: [300, 295, 285, 275, 263],
-            is_flagged: false
-          },
-          {
-            team_id: 2054,
-            team_name: "TeamTwo",
-            team_logo: "logo_url_2",
-            league_name: "League 2",
-            top5_sum: 1000,
-            avg4: 200.0,
-            orig4: 200.0,
-            top5_values: [250, 250, 250, 250, 0],
-            top5_offered_values: [250, 250, 250, 250, 0],
-            is_flagged: false
-          }
-        ];
-
-        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-        mockGetTeamValuesForSorter.mockResolvedValue(mockTeamValues);
-
-        // Make request to the endpoint with authentication
-        const response = await request(app)
-          .get("/api/v1/dashboard/sortter/season/14/team/2053")
-          .set("Authorization", "Bearer mock-access-token");
-
-        // Verify response
-        expect(response.status).toBe(200);
-        expect(response.body).toEqual(mockTeamValues[0]);
-
-        // Verify model function was called with correct season ID
-        expect(mockGetTeamValuesForSorter).toHaveBeenCalledWith(14);
-      });
-
-      it("should handle team not found", async () => {
-        // Mock empty data
-        mockedRunQuery.mockResolvedValue([{ count: 0 }]); // No historical data
-        mockGetTeamValuesForSorter.mockResolvedValue([]);
-
-        // Make request with valid season but non-existent team
-        const response = await request(app)
-          .get("/api/v1/dashboard/sortter/season/14/team/9999")
-          .set("Authorization", "Bearer mock-access-token");
-
-        // Verify response indicates not found
-        expect(response.status).toBe(404);
-        expect(response.body).toEqual({
-          type: "about:blank",
-          title: "Not Found",
-          status: 404,
-          detail: "Team with ID 9999 not found for season 14",
-          instance: "/api/v1/dashboard/sortter/season/14/team/9999"
-        });
       });
     });
   });

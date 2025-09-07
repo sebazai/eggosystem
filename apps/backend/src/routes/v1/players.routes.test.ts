@@ -1,21 +1,35 @@
-// Set environment variables before any imports
+// Set environment variables before importing modules that depend on them
 process.env.FRONTEND_URL = "http://localhost:3000";
 process.env.PRIVACY_POLICY_VERSION = "1";
 
 import request from "supertest";
-import express from "express";
+import type express from "express";
+import { createExpressTestApp } from "../../test-utils";
 import playerRouter from "./player.routes";
 import _ from "lodash";
-import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 describe("GET /players", () => {
-  const app = express();
-  app.use(express.json());
-  app.use(playerRouter);
-  app.use(expressErrorHandler);
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Use the utility to set up the app with FRONTEND_URL
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      playerRouter,
+      "/api/v1/players"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
 
   it("/:steam_id/details", async () => {
-    const response = await request(app).get("/76561198049745649/details");
+    const response = await request(app).get(
+      "/api/v1/players/76561198049745649/details"
+    );
     expect(response.status).toBe(200);
     expect(_.omit(response.body, "discord")).toStrictEqual({
       account_id: 2925,
@@ -28,14 +42,16 @@ describe("GET /players", () => {
   });
 
   it("should return 404 when steam_id not found", async () => {
-    const response = await request(app).get(`/123123123/details`);
+    const response = await request(app).get(
+      `/api/v1/players/123123123/details`
+    );
     expect(response.status).toBe(404);
     expect(response.body).toStrictEqual({
       type: "about:blank",
       title: "Not Found",
       status: 404,
       detail: "User not found",
-      instance: "/123123123/details"
+      instance: "/api/v1/players/123123123/details"
     });
   });
 });

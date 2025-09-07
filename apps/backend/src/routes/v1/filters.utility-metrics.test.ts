@@ -1,7 +1,27 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import { app } from "../app";
+import type express from "express";
+import { createExpressTestApp } from "../../test-utils";
+import filterRouter from "./filter.routes";
 
 describe("Utility Metrics Tests", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      filterRouter,
+      "/api/v1/filters"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
   it("should calculate correct utility metrics for player with good utility usage", async () => {
     const response = await request(app)
       .get("/api/v1/filters/players/76561198100952924/skill-diagram")

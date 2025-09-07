@@ -1,7 +1,35 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import { app } from "../app";
+import express from "express";
+import { createExpressTestApp } from "../../test-utils";
+import filterRouter from "./filter.routes";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 
 describe("Leaderboards Integration Tests", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Create a custom router that includes the parseQueryFilterParams middleware
+    const customRouter = express.Router();
+    customRouter.use(parseQueryFilterParams);
+    customRouter.use(filterRouter);
+
+    // Use the utility to set up the app with FRONTEND_URL
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      customRouter,
+      "/api/v1/filters"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   // Test for multiple leaderboards endpoint (returns all stats)
   test("GET /api/v1/filters/leaderboards/multiple - should return all leaderboards", async () => {
     const response = await request(app)

@@ -1,34 +1,51 @@
-// Mock API key - set before importing app since middleware is created at require time
-const TEST_API_KEY = "test-api-key";
-process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
+// Set environment variables before importing modules that depend on them
 process.env.FRONTEND_URL = "http://localhost:3000";
+process.env.BACKEND_SERVICE_API_KEY = "test-api-key";
 
 import request from "supertest";
-import express from "express";
+import type express from "express";
+import { createExpressTestApp, setupEnvironment } from "../../test-utils";
 import playerRouter from "./player.routes";
-import { setPlayerKanaElo } from "../../models/player.models";
-import { expressErrorHandler } from "../../middlewares/express-error-handler";
+import {
+  setPlayerKanaElo,
+  getPlayerStatsForLatestSeason
+} from "../../models/player.models";
 
 // Mock the model module
 jest.mock("../../models/player.models");
 const mockSetPlayerKanaElo = setPlayerKanaElo as jest.MockedFunction<
   typeof setPlayerKanaElo
 >;
+const mockGetPlayerStatsForLatestSeason =
+  getPlayerStatsForLatestSeason as jest.MockedFunction<
+    typeof getPlayerStatsForLatestSeason
+  >;
 
-// Create test app
-const app = express();
-app.use(express.json());
-app.use("/api/v1/players", playerRouter);
-app.use(expressErrorHandler);
+const TEST_API_KEY = "test-api-key";
 
-describe("Player Routes - set-kanaelo", () => {
+describe("Player Routes", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
   beforeEach(() => {
+    // Set up environment variables
+    cleanup = setupEnvironment({
+      FRONTEND_URL: "http://localhost:3000",
+      BACKEND_SERVICE_API_KEY: TEST_API_KEY
+    });
+
+    // Create test app with player router using the utility
+    const { app: testApp } = createExpressTestApp(
+      playerRouter,
+      "/api/v1/players"
+    );
+    app = testApp;
+
     jest.clearAllMocks();
   });
 
-  afterAll(() => {
-    // Clean up environment variables
-    delete process.env.BACKEND_SERVICE_API_KEY;
+  afterEach(() => {
+    cleanup();
   });
 
   describe("POST /:steam_id/set-kanaelo", () => {
@@ -179,6 +196,58 @@ describe("Player Routes - set-kanaelo", () => {
         detail: "Failed to update Kana ELO",
         instance: "/api/v1/players/76561198123456789/set-kanaelo"
       });
+    });
+  });
+
+  describe("GET /:steam_id/latest-season-stats", () => {
+    it("should return player stats from latest season", async () => {
+      mockGetPlayerStatsForLatestSeason.mockResolvedValueOnce({
+        steam_id: "76561197967885016",
+        nickname: "enzoj",
+        latest_season_id: 14,
+        avg_kana_rating: 0.82,
+        kpd: 0.92,
+        adr: 80.0,
+        level: 4
+      });
+
+      const response = await request(app)
+        .get("/api/v1/players/76561197967885016/latest-season-stats")
+        .expect(200);
+
+      expect(response.body).toEqual({
+        steam_id: "76561197967885016",
+        nickname: "enzoj",
+        latest_season_id: 14,
+        avg_kana_rating: 0.82,
+        kpd: 0.92,
+        adr: 80.0,
+        level: 4
+      });
+
+      expect(mockGetPlayerStatsForLatestSeason).toHaveBeenCalledWith(
+        "76561197967885016"
+      );
+    });
+
+    it("should return 404 for non-existent player", async () => {
+      mockGetPlayerStatsForLatestSeason.mockResolvedValueOnce(null);
+
+      const response = await request(app)
+        .get("/api/v1/players/12345678901234567/latest-season-stats")
+        .expect(404);
+
+      expect(response.body).toEqual({
+        type: "about:blank",
+        title: "Not Found",
+        status: 404,
+        detail: "Player stats not found for latest season",
+        instance: "/api/v1/players/12345678901234567/latest-season-stats"
+      });
+
+      expect(mockGetPlayerStatsForLatestSeason).toHaveBeenCalledWith(
+        "12345678901234567"
+      );
     });
   });
 });

@@ -1,11 +1,21 @@
 import request from "supertest";
-import { app } from "../app";
+import express from "express";
+import filterRoutes from "../routes/v1/filter.routes";
 import { type TeamMapStats } from "@eggosystem/types";
+import { expressErrorHandler } from "../middlewares/express-error-handler";
+import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
 
 describe("Team Map Stats Integration Tests", () => {
+  let app: express.Application;
+  beforeEach(() => {
+    app = express();
+    app.use(express.json());
+    app.use("/filters", parseQueryFilterParams, filterRoutes);
+    app.use(expressErrorHandler);
+  });
   it("should return enhanced map stats for a team with proper CT/T side data", async () => {
     const response = await request(app)
-      .get("/api/v1/filters/teams/1650/enhanced-map-stats?season_ids=14")
+      .get("/filters/teams/1650/enhanced-map-stats?season_ids=14")
       .expect("Content-Type", /json/)
       .expect(200);
 
@@ -59,9 +69,7 @@ describe("Team Map Stats Integration Tests", () => {
   it("should apply query filters properly", async () => {
     // Test with multiple filters
     const response = await request(app)
-      .get(
-        "/api/v1/filters/teams/1650/enhanced-map-stats?season_ids=14&map_ids=1"
-      )
+      .get("/filters/teams/1650/enhanced-map-stats?season_ids=14&map_ids=1")
       .expect("Content-Type", /json/)
       .expect(200);
 
@@ -74,15 +82,13 @@ describe("Team Map Stats Integration Tests", () => {
 
   it("should return 400 with invalid team_id", async () => {
     await request(app)
-      .get("/api/v1/filters/teams/invalid/enhanced-map-stats?season_ids=14")
+      .get("/filters/teams/invalid/enhanced-map-stats?season_ids=14")
       .expect(400);
   });
 
   it("should return accurate K/D and kill/death stats for team 66 on map 3", async () => {
     const response = await request(app)
-      .get(
-        "/api/v1/filters/teams/66/enhanced-map-stats?season_ids=14&map_ids=3"
-      )
+      .get("/filters/teams/66/enhanced-map-stats?season_ids=14&map_ids=3")
       .expect("Content-Type", /json/)
       .expect(200);
 

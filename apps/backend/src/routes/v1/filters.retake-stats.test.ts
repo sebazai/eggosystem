@@ -1,8 +1,35 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import { app } from "../app";
+import express from "express";
+import { createExpressTestApp } from "../../test-utils";
 import { type TeamRetakeStats } from "@eggosystem/types";
+import filterRouter from "./filter.routes";
+import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 
 describe("Retake Stats Integration Tests", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Create a custom router that includes the parseQueryFilterParams middleware
+    const customRouter = express.Router();
+    customRouter.use(parseQueryFilterParams);
+    customRouter.use(filterRouter);
+
+    // Use the utility to set up the app with FRONTEND_URL
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      customRouter,
+      "/api/v1/filters"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
   it("should return correct retake stats for team 1650", async () => {
     const expectedResponse = {
       success: true,
@@ -120,9 +147,9 @@ describe("Retake Stats Integration Tests", () => {
       ]
     };
 
-    // Make the API request
+    // Make the API request with required query parameters
     const response = await request(app)
-      .get("/api/v1/filters/stats/teams/1650/retake-stats")
+      .get("/api/v1/filters/stats/teams/1650/retake-stats?season_ids=14")
       .expect("Content-Type", /json/)
       .expect(200);
 

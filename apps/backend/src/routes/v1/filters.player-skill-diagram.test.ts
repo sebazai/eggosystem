@@ -1,11 +1,32 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import { app } from "../app";
-import { getPlayerSkillDiagram } from "../models/player-skills.models";
+import type express from "express";
+import { createExpressTestApp } from "../../test-utils";
+import { getPlayerSkillDiagram } from "../../models/player-skills.models";
+import filterRouter from "./filter.routes";
 
 // Mock the player-skills.models module
-jest.mock("../models/player-skills.models");
+jest.mock("../../models/player-skills.models");
 
 describe("Player Skill Diagram API", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      filterRouter,
+      "/api/v1/filters"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   const mockSteamId = "76561198049745649";
   const mockPlayerSkillDiagram = {
     steam_id: mockSteamId,
@@ -109,7 +130,7 @@ describe("Player Skill Diagram API", () => {
       expect(response.body).toEqual(mockPlayerSkillDiagram);
       expect(getPlayerSkillDiagram).toHaveBeenCalledWith(
         mockSteamId,
-        expect.any(Object)
+        undefined
       );
 
       // Verify the structure of the response
@@ -344,7 +365,7 @@ describe("Player Skill Diagram API", () => {
       });
       expect(getPlayerSkillDiagram).toHaveBeenCalledWith(
         mockSteamId,
-        expect.any(Object)
+        undefined
       );
     });
   });

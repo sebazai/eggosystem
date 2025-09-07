@@ -1,90 +1,10 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import { app } from "../app";
-import { type Request, type Response, type NextFunction } from "express";
-
-// Mock express-jwt middleware to recognize our test token
-jest.mock("express-jwt", () => ({
-  expressjwt: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const token = authHeader.split(" ")[1];
-
-      // Recognize our mock-access-token as valid
-      if (token === "mock-access-token") {
-        req.auth = {
-          account_id: 15004,
-          provider_id: "66561198999999902",
-          provider: "steam",
-          permissions: ["admin:all"],
-          roles: ["admin"],
-          nickname: "heppajpg"
-        };
-        next();
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
-    }
-  )
-}));
-
-// Mock auth middleware
-jest.mock("../middlewares/auth.middleware", () => ({
-  authenticateJWT: jest.fn(
-    (req: Request, res: Response, next: NextFunction) => {
-      const authHeader = req.headers.authorization;
-
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        res.status(401).json({ message: "Unauthorized" });
-        return;
-      }
-
-      const token = authHeader.split(" ")[1];
-      if (token === "mock-access-token") {
-        req.auth = {
-          account_id: 15004,
-          provider_id: "66561198999999902",
-          provider: "steam",
-          permissions: ["admin:all"],
-          roles: ["admin"],
-          nickname: "heppajpg"
-        };
-        next();
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
-    }
-  ),
-  checkJWTPermissions: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Allow admin role through
-      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-        next();
-      } else {
-        res
-          .status(403)
-          .json({ error: { message: "Forbidden: Insufficient permissions" } });
-      }
-    }
-  ),
-  checkPermissions: jest.fn(
-    () => (req: Request, res: Response, next: NextFunction) => {
-      // Allow admin role through
-      if (req.auth && req.auth.roles && req.auth.roles.includes("admin")) {
-        next();
-      } else {
-        res
-          .status(403)
-          .json({ error: { message: "Forbidden: Insufficient permissions" } });
-      }
-    }
-  )
-}));
+import type express from "express";
+import { createExpressTestApp } from "../../../test-utils";
+import sortterRouter from "./sortter.routes";
 
 // Define a type that matches our expected player data
 interface PlayerValues {
@@ -99,6 +19,22 @@ interface PlayerValues {
 }
 
 describe("Sortter API Integration Tests", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      sortterRouter,
+      "/api/v1/dashboard/sortter"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   describe("GET /api/v1/dashboard/sortter/season/:season/team/:team/playervalues", () => {
     it("should return player values for season 14 team 2021 including player 76561197960383236", async () => {
       const response = await request(app)

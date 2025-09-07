@@ -1,22 +1,43 @@
-import request from "supertest";
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
 
+import request from "supertest";
 import express from "express";
-import filtered from "./filter.routes";
+import { createExpressTestApp } from "../../test-utils";
+import filterRouter from "./filter.routes";
 import {
   type TopTeamsByFilters,
   type TopTeamsByFiltersRaw
 } from "@eggosystem/types";
 import parseQueryFilterParams from "../../middlewares/parse-query-filter-params.middleware";
 
-describe("GET /api/v1/filters/teams/topteams", () => {
-  const app = express();
-  app.use(express.json());
-  app.use("/filters", parseQueryFilterParams, filtered);
+describe("GET /api/v1/api/v1/filters/teams/topteams", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Create a custom router that includes the parseQueryFilterParams middleware
+    const customRouter = express.Router();
+    customRouter.use(parseQueryFilterParams);
+    customRouter.use(filterRouter);
+
+    // Use the utility to set up the app with FRONTEND_URL
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      customRouter,
+      "/api/v1/filters"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
 
   // Test successful responses
   it("should return top teams for Masters league in season 11", async () => {
     const response = await request(app).get(
-      "/filters/teams/topteams?league_ids=1&season_ids=11"
+      "/api/v1/filters/teams/topteams?league_ids=1&season_ids=11"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -55,7 +76,7 @@ describe("GET /api/v1/filters/teams/topteams", () => {
 
   it("should return top teams for Masters league playoffs in season 11", async () => {
     const response = await request(app).get(
-      "/filters/teams/topteams?league_ids=1&season_ids=11&stages=2"
+      "/api/v1/filters/teams/topteams?league_ids=1&season_ids=11&stages=2"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -64,7 +85,7 @@ describe("GET /api/v1/filters/teams/topteams", () => {
 
   it("should return top teams for specific map in Masters league", async () => {
     const response = await request(app).get(
-      "/filters/teams/topteams?league_ids=1&season_ids=11&map_ids=1"
+      "/api/v1/filters/teams/topteams?league_ids=1&season_ids=11&map_ids=1"
     );
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
@@ -74,7 +95,7 @@ describe("GET /api/v1/filters/teams/topteams", () => {
   // Test sorting and ranking
   it("should return teams sorted by kana rating in descending order", async () => {
     const response = await request(app).get(
-      "/filters/teams/topteams?league_ids=1&season_ids=11"
+      "/api/v1/filters/teams/topteams?league_ids=1&season_ids=11"
     );
     expect(response.status).toBe(200);
 
@@ -97,7 +118,7 @@ describe("GET /api/v1/filters/teams/topteams", () => {
 
   it("should assign ranks correctly from 1 to 5", async () => {
     const response = await request(app).get(
-      "/filters/teams/topteams?league_ids=1&season_ids=11"
+      "/api/v1/filters/teams/topteams?league_ids=1&season_ids=11"
     );
     expect(response.status).toBe(200);
 

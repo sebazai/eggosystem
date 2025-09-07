@@ -1,13 +1,15 @@
 import request from "supertest";
-import { app } from "../app";
+import express from "express";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { expressErrorHandler } from "../middlewares/express-error-handler";
-
-// Add error handler to app for RFC 7807 responses
-app.use(expressErrorHandler);
+import { verifyEmailController } from "./account.controllers";
 
 describe("Email Verification Token Mismatch", () => {
+  let app: express.Application;
+
+  beforeEach(() => {});
+
   afterAll(async () => {
     await redisClient.quit();
   });
@@ -15,6 +17,10 @@ describe("Email Verification Token Mismatch", () => {
   beforeEach(async () => {
     // Clear Redis before each test
     await redisClient.flushall();
+    app = express();
+    app.use(express.json());
+    app.use("/verify-email", verifyEmailController);
+    app.use(expressErrorHandler);
   });
 
   it("should reject old token when email has been changed", async () => {
@@ -43,7 +49,7 @@ describe("Email Verification Token Mismatch", () => {
 
     // Attempt to verify with old token
     const response = await request(app)
-      .post("/api/v1/verify-email")
+      .post("/verify-email")
       .send({ token: oldToken })
       .expect(400)
       .expect("Content-Type", /application\/problem\+json/);
@@ -91,7 +97,7 @@ describe("Email Verification Token Mismatch", () => {
 
     // Attempt to verify with valid token
     const response = await request(app)
-      .post("/api/v1/verify-email")
+      .post("/verify-email")
       .send({ token })
       .expect(200);
 

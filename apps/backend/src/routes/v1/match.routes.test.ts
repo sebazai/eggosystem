@@ -1,17 +1,36 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import { app } from "../../app";
-import { expressErrorHandler } from "../../middlewares/express-error-handler";
+import type express from "express";
+import { createExpressTestApp } from "../../test-utils";
+import matchRouter from "./match.routes";
 import type {
   MatchMapsPlayed,
   MatchTeamLineup,
   MatchTeamStats
 } from "@eggosystem/types";
 
-// Add error handler for tests
-app.use(expressErrorHandler);
-
 describe("Match Routes", () => {
-  describe("GET /matches/:game_id/teamstats", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Use the utility to set up the app with FRONTEND_URL
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      matchRouter,
+      "/api/v1/matches"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(async () => {
+    cleanup();
+    // Ensure all pending operations are completed
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  });
+  describe("GET /api/v1/matches/:game_id/teamstats", () => {
     it("should return team stats for game id 10154", async () => {
       const expectedStats = [
         {
