@@ -1,24 +1,31 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
-import express from "express";
+import type express from "express";
+import { createExpressTestApp } from "../../test-utils";
 import gameRouter from "./game.routes";
 import {
   type MatchOrGameTopPlayerAwards,
   type GameTeamStats,
   type MatchTeamStats
 } from "@eggosystem/types";
-import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 describe("Game Routes", () => {
   let app: express.Application;
+  let cleanup: () => void;
 
   beforeEach(() => {
-    app = express();
-    app.use(express.json());
-    app.use(gameRouter);
-    app.use(expressErrorHandler);
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      gameRouter,
+      "/" // Mount at root, so internal router paths are used directly
+    );
+    app = testApp;
+    cleanup = appCleanup;
   });
 
   afterEach(async () => {
+    cleanup();
     // Ensure all pending operations are completed
     await new Promise((resolve) => setTimeout(resolve, 100));
   });
@@ -81,7 +88,7 @@ describe("Game Routes", () => {
     });
   });
 
-  describe("GET /games/:game_id/topplayers", () => {
+  describe("GET /:game_id/topplayers", () => {
     it("should return top players for match 7750 and game id 10340", async () => {
       const expectedTopPlayers = {
         most_kills: {

@@ -2,13 +2,17 @@ import { type Response } from "express";
 import {
   getSeasonsController,
   getSeasonByIdController,
-  getSeasonDetailsByIdController
+  getSeasonDetailsByIdController,
+  getTeamCaptainsBySeasonIdController
 } from "./seasons.controllers";
 import {
   getSeasons,
   getSeasonById,
   getSeasonDetailsById
 } from "../models/season.models";
+import { runQuery } from "../db/mysqlRunQuery";
+import { getActiveOrPassedSeasonId } from "../services/season.services";
+import { getTeamCaptainsBySeasonId } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import type { Season, SeasonDetails } from "@eggosystem/types";
 import { SeasonPlatform } from "@eggosystem/types";
@@ -16,6 +20,19 @@ import { SeasonPlatform } from "@eggosystem/types";
 // Mock the models and Redis
 jest.mock("../models/season.models");
 jest.mock("../utils/redisClient");
+jest.mock("../db/mysqlRunQuery");
+jest.mock("../services/season.services");
+jest.mock("../models/team.models");
+
+const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
+const mockGetActiveOrPassedSeasonId =
+  getActiveOrPassedSeasonId as jest.MockedFunction<
+    typeof getActiveOrPassedSeasonId
+  >;
+const mockGetTeamCaptainsBySeasonId =
+  getTeamCaptainsBySeasonId as jest.MockedFunction<
+    typeof getTeamCaptainsBySeasonId
+  >;
 
 const mockGetSeasons = getSeasons as jest.MockedFunction<typeof getSeasons>;
 const mockGetSeasonById = getSeasonById as jest.MockedFunction<
@@ -280,6 +297,97 @@ describe("Seasons Controllers", () => {
           status: 404
         })
       );
+    });
+  });
+
+  describe("getTeamCaptainsBySeasonIdController", () => {
+    it("should return captains for specific season ID", async () => {
+      const mockCaptains = [
+        {
+          team_id: 1650,
+          team_name: "Team Alpha",
+          captain_discord: "enzoj#1234",
+          co_captain_discord: "co1#5678"
+        },
+        {
+          team_id: 1651,
+          team_name: "Team Beta",
+          captain_discord: "captain2#1234",
+          co_captain_discord: null
+        }
+      ];
+
+      mockRequest.params = { season_id: "14" };
+      mockGetActiveOrPassedSeasonId.mockResolvedValue(14);
+      mockGetTeamCaptainsBySeasonId.mockResolvedValue(mockCaptains);
+
+      await getTeamCaptainsBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response
+      );
+
+      expect(mockGetActiveOrPassedSeasonId).toHaveBeenCalledWith("14");
+      expect(mockGetTeamCaptainsBySeasonId).toHaveBeenCalledWith(14);
+      expect(mockJson).toHaveBeenCalledWith(mockCaptains);
+
+      // Specific test: team 1650 captain should be enzoj
+      const team1650 = mockCaptains.find((captain) => captain.team_id === 1650);
+      expect(team1650).toBeDefined();
+      expect(team1650?.team_name).toBe("Team Alpha");
+      expect(team1650?.captain_discord).toBe("enzoj#1234");
+    });
+
+    it("should return captains for active season", async () => {
+      const mockCaptains = [
+        {
+          team_id: 1650,
+          team_name: "Team Alpha",
+          captain_discord: "enzoj#1234",
+          co_captain_discord: "co1#5678"
+        }
+      ];
+
+      mockRequest.params = { season_id: "active" };
+      mockGetActiveOrPassedSeasonId.mockResolvedValue(14);
+      mockGetTeamCaptainsBySeasonId.mockResolvedValue(mockCaptains);
+
+      await getTeamCaptainsBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response
+      );
+
+      expect(mockGetActiveOrPassedSeasonId).toHaveBeenCalledWith("active");
+      expect(mockGetTeamCaptainsBySeasonId).toHaveBeenCalledWith(14);
+      expect(mockJson).toHaveBeenCalledWith(mockCaptains);
+    });
+
+    it("should return empty array for season with no captains", async () => {
+      mockRequest.params = { season_id: "999" };
+      mockGetActiveOrPassedSeasonId.mockResolvedValue(999);
+      mockGetTeamCaptainsBySeasonId.mockResolvedValue([]);
+
+      await getTeamCaptainsBySeasonIdController(
+        mockRequest as TestRequestWithParams<{ season_id: string }>,
+        mockResponse as Response
+      );
+
+      expect(mockGetActiveOrPassedSeasonId).toHaveBeenCalledWith("999");
+      expect(mockGetTeamCaptainsBySeasonId).toHaveBeenCalledWith(999);
+      expect(mockJson).toHaveBeenCalledWith([]);
+    });
+
+    it("should handle service errors gracefully", async () => {
+      mockRequest.params = { season_id: "14" };
+      mockGetActiveOrPassedSeasonId.mockRejectedValue(
+        new Error("Service error")
+      );
+
+      await expect(
+        getTeamCaptainsBySeasonIdController(
+          mockRequest as TestRequestWithParams<{ season_id: string }>,
+          mockResponse as Response
+        )
+      ).rejects.toThrow("Service error");
     });
   });
 });

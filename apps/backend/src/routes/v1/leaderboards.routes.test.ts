@@ -1,5 +1,9 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
 import express from "express";
+import { createExpressTestApp } from "../../test-utils";
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import type { ParsedParams } from "@eggosystem/types";
 
@@ -27,22 +31,35 @@ const mockMultipleLeaderboardsMiddleware = (
   next();
 };
 
-// Mock Express app
-const app = express();
-app.use(express.json());
-
-// Set up the multiple leaderboards endpoint
-app.use(
-  "/multiple",
-  mockMultipleLeaderboardsMiddleware as RequestHandler,
-  (req, res) =>
-    getFilteredMultipleLeaderboardsController(
-      req as RequestWithParsedParams,
-      res
-    )
-);
-
 describe("Leaderboards Routes", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Create a custom router for the leaderboards endpoint
+    const customRouter = express.Router();
+    customRouter.use(
+      "/multiple",
+      mockMultipleLeaderboardsMiddleware as RequestHandler,
+      (req, res) =>
+        getFilteredMultipleLeaderboardsController(
+          req as RequestWithParsedParams,
+          res
+        )
+    );
+
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      customRouter,
+      "/" // Mount at root, so internal router paths are used directly
+    );
+    app = testApp;
+    cleanup = appCleanup;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
   describe("GET /multiple", () => {
     it("should contain correct KAST values for Season 14", async () => {
       const response = await request(app)

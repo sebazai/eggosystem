@@ -1,11 +1,16 @@
-// Mock API key - set before importing app since middleware is created at require time
+// Set environment variables before importing modules that depend on them
 const TEST_API_KEY = "test-api-key-for-unit-tests";
 process.env.BACKEND_SERVICE_API_KEY = TEST_API_KEY;
+process.env.FRONTEND_URL = "http://localhost:3000";
 
 import request from "supertest";
-import { app } from "../../app";
+import type express from "express";
+import { createExpressTestApp } from "../../test-utils";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { redisClient } from "../../utils/redisClient";
+
+// Import the router AFTER setting environment variables
+import eloRouter from "./elo.routes";
 
 // Mock the database
 jest.mock("../../db/mysqlRunQuery");
@@ -19,7 +24,17 @@ const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
 jest.mock("../../utils/app-logger");
 
 describe("POST /api/v1/elo/stabilize", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
   beforeEach(() => {
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      eloRouter,
+      "/"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+
     jest.clearAllMocks();
 
     // Mock Redis operations
@@ -27,6 +42,10 @@ describe("POST /api/v1/elo/stabilize", () => {
     mockRedisClient.get.mockResolvedValue(null);
     mockRedisClient.keys.mockResolvedValue([]);
     mockRedisClient.mget.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   afterAll(() => {
@@ -59,7 +78,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       .mockResolvedValueOnce([{ team_id: 123 }]); // Team lookup query
 
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
@@ -88,7 +107,7 @@ describe("POST /api/v1/elo/stabilize", () => {
     mockRunQuery.mockResolvedValueOnce([{ kana_elo: null }]);
 
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
@@ -115,7 +134,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       .mockResolvedValueOnce([]); // No season/league data
 
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
@@ -159,7 +178,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       ]);
 
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000", // Valid 17-digit Steam ID
@@ -182,7 +201,7 @@ describe("POST /api/v1/elo/stabilize", () => {
 
   it("should validate required fields", async () => {
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
@@ -196,13 +215,13 @@ describe("POST /api/v1/elo/stabilize", () => {
       title: "Bad Request",
       status: 400,
       detail: "currentValue is required",
-      instance: "/api/v1/elo/stabilize"
+      instance: "/stabilize"
     });
   });
 
   it("should validate playerId format", async () => {
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "invalid",
@@ -216,7 +235,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       title: "Bad Request",
       status: 400,
       detail: "playerId must be a valid 17-digit Steam ID",
-      instance: "/api/v1/elo/stabilize"
+      instance: "/stabilize"
     });
   });
 
@@ -245,7 +264,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       .mockResolvedValueOnce([{ team_id: 123 }]); // Team lookup query
 
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", TEST_API_KEY)
       .send({
         playerId: "76561198000000000",
@@ -263,7 +282,7 @@ describe("POST /api/v1/elo/stabilize", () => {
 
   it("should reject requests with invalid API key", async () => {
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .set("X-API-KEY", "invalid-api-key")
       .send({
         playerId: "76561198000000000",
@@ -277,13 +296,13 @@ describe("POST /api/v1/elo/stabilize", () => {
       title: "Unauthorized",
       status: 401,
       detail: "Invalid API key",
-      instance: "/api/v1/elo/stabilize"
+      instance: "/stabilize"
     });
   });
 
   it("should reject requests with missing API key", async () => {
     const response = await request(app)
-      .post("/api/v1/elo/stabilize")
+      .post("/stabilize")
       .send({
         playerId: "76561198000000000",
         currentValue: 280,
@@ -296,7 +315,7 @@ describe("POST /api/v1/elo/stabilize", () => {
       title: "Unauthorized",
       status: 401,
       detail: "API key required",
-      instance: "/api/v1/elo/stabilize"
+      instance: "/stabilize"
     });
   });
 });

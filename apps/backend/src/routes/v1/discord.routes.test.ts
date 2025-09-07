@@ -1,12 +1,15 @@
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+
 import request from "supertest";
 import express from "express";
+import { createExpressTestApp } from "../../test-utils";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
 import discordRouter from "./discord.routes";
 import { getUserDiscordStatus } from "../../controllers/discord.controllers";
 import type { Request, Response, NextFunction } from "express";
 import type { UserPayload } from "@eggosystem/types";
 import { UnauthorizedError } from "../../utils/errors";
-import { expressErrorHandler } from "../../middlewares/express-error-handler";
 
 // Mock dependencies
 jest.mock("../../middlewares/auth.middleware");
@@ -21,17 +24,29 @@ const mockGetUserDiscordStatus = getUserDiscordStatus as jest.MockedFunction<
 
 describe("Discord Routes", () => {
   let app: express.Application;
+  let cleanup: () => void;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
-    app = express();
-    app.use(express.json());
-    app.use("/api/v1/discord", discordRouter);
-    app.use(expressErrorHandler);
+    // Create a custom router that includes the mocked authenticateJWT middleware
+    const customRouter = express.Router();
+    customRouter.use(authenticateJWT);
+    customRouter.use(discordRouter);
+
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      customRouter,
+      "/" // Mount at root, so internal router paths are used directly
+    );
+    app = testApp;
+    cleanup = appCleanup;
   });
 
-  describe("GET /api/v1/discord/user/status", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe("GET /user/status", () => {
     it("should require authentication", async () => {
       mockAuthenticateJWT.mockImplementation(
         async (req: Request, res: Response, next: NextFunction) => {
@@ -39,16 +54,14 @@ describe("Discord Routes", () => {
         }
       );
 
-      const response = await request(app)
-        .get("/api/v1/discord/user/status")
-        .expect(401);
+      const response = await request(app).get("/user/status").expect(401);
 
       expect(response.body).toEqual({
         type: "about:blank",
         title: "Unauthorized",
         status: 401,
         detail: "Unauthorized",
-        instance: "/api/v1/discord/user/status"
+        instance: "/user/status"
       });
       expect(mockAuthenticateJWT).toHaveBeenCalled();
     });
@@ -78,9 +91,7 @@ describe("Discord Routes", () => {
         }
       );
 
-      const response = await request(app)
-        .get("/api/v1/discord/user/status")
-        .expect(200);
+      const response = await request(app).get("/user/status").expect(200);
 
       expect(response.body).toEqual({
         hasDiscordUsername: true,
@@ -111,9 +122,7 @@ describe("Discord Routes", () => {
         }
       );
 
-      const response = await request(app)
-        .get("/api/v1/discord/user/status")
-        .expect(500);
+      const response = await request(app).get("/user/status").expect(500);
 
       expect(response.body).toEqual({ error: "Internal server error" });
     });
