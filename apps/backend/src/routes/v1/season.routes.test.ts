@@ -4,12 +4,7 @@ process.env.FRONTEND_URL = "http://localhost:3000";
 import request from "supertest";
 import type express from "express";
 import { createExpressTestApp } from "../../test-utils";
-import { runQuery } from "../../db/mysqlRunQuery";
 import seasonRouter from "./season.routes";
-
-// Mock the database
-jest.mock("../../db/mysqlRunQuery");
-const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 
 // Mock the logger
 jest.mock("../../utils/app-logger");

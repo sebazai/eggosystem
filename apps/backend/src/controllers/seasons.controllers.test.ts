@@ -10,7 +10,6 @@ import {
   getSeasonById,
   getSeasonDetailsById
 } from "../models/season.models";
-import { runQuery } from "../db/mysqlRunQuery";
 import { getActiveOrPassedSeasonId } from "../services/season.services";
 import { getTeamCaptainsBySeasonId } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
@@ -24,7 +23,6 @@ jest.mock("../db/mysqlRunQuery");
 jest.mock("../services/season.services");
 jest.mock("../models/team.models");
 
-const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetActiveOrPassedSeasonId =
   getActiveOrPassedSeasonId as jest.MockedFunction<
     typeof getActiveOrPassedSeasonId

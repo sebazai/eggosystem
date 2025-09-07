@@ -27,6 +27,7 @@ export function createExpressTestApp(
  * Handles FRONTEND_URL setup automatically
  */
 export function createExpressTestAppWithRouters(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   routers: Array<{ path: string; router: any }>
 ): { app: express.Application; cleanup: () => void } {
   // Set up FRONTEND_URL environment variable
