@@ -31,6 +31,7 @@ router.get("/:season_id/faceit-links", getFaceitLinksForSeasonController);
 
 router.get(
   "/:season_id/captains",
+  validateNumericParams(),
   authenticateJWT,
   checkJWTPermissions({
     fallbackRoles: ["admin", "captain", "helpdesk", "caster"]

@@ -13,7 +13,7 @@ export function validateNumericParams(keys?: string[]): RequestHandler {
       const value = req.params[key];
       const parsed = parseInt(value, 10);
 
-      if (isNaN(parsed)) {
+      if (isNaN(parsed) || parsed < 0) {
         return next(new BadRequestError(`Invalid numeric param: ${key}`));
       }
     }
