@@ -87,7 +87,7 @@ describe("match-streams controllers", () => {
       expect(statusMock).toHaveBeenCalledWith(201);
       expect(jsonMock).toHaveBeenCalledWith({
         message: "Stream reserved successfully",
-        reservation: mockReservation
+        reservations: [mockReservation]
       });
       expect(next).not.toHaveBeenCalled();
     });
