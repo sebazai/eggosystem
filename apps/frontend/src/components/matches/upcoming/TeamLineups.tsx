@@ -18,8 +18,6 @@ export const TeamLineups = ({
   matchId,
   baseFilters
 }: TeamLineupsProps) => {
-  // ALL HOOKS MUST BE DECLARED AT THE TOP BEFORE ANY CONDITIONAL LOGIC
-
   // Fetch real lineup data
   const { lineups, isLoading } = useMatchTeamLineups(matchId);
 
@@ -49,18 +47,6 @@ export const TeamLineups = ({
     apiPlayers: MatchTeamLineup["players"]
   ): Player[] => {
     return apiPlayers.map((player, index) => {
-      // Note: Detailed match statistics (rating, kd, adr, hs) are not available in lineup data
-      // These would require individual player stats API calls for each player
-
-      // Determine hot/cold streaks based on kana_rating (average rating)
-      // Hot streak: kana_rating > 1.0
-      // Cold streak: kana_rating < 0.7
-      // Normal: kana_rating between 0.7 and 1.0
-      const kana_rating = player.kana_rating || 0;
-
-      const isHotstreak = kana_rating > 1.0;
-      const isColdstreak = kana_rating < 0.7;
-
       return {
         id: index + 1,
         steamId: player.steam_id,
@@ -79,9 +65,7 @@ export const TeamLineups = ({
           faceit_elo: player.faceit_elo || 0,
           cs2_rank: player.cs2_rank || 0,
           cs_hours: player.cs_hours || 0
-        },
-        isHotstreak,
-        isColdstreak: isColdstreak && !isHotstreak // Can't be both hot and cold
+        }
       };
     });
   };

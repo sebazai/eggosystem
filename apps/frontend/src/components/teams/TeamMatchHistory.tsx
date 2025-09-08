@@ -4,12 +4,11 @@ import {
   mapToReadableNameCapitalFirst,
   type FilterParamsQuery
 } from "@/lib/utils";
-import type { TeamMatchHistory as TeamMatchHistoryType } from "@eggosystem/types";
 
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { TablePagination } from "../tables/TablePagination";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 import { NextImageFallback } from "../layout/NextImageFallback";
@@ -27,41 +26,6 @@ export const TeamMatchHistory = ({
     teamId,
     filterQueryParams
   });
-
-  const router = useRouter();
-
-  // Helper functions to avoid DRY violations
-  const isMatchUpcoming = (matchDate: string): boolean => {
-    const date = new Date(matchDate);
-    const now = new Date();
-    // Set the match date to end of day for comparison since we only have date, not time
-    date.setHours(23, 59, 59, 999);
-    return date > now;
-  };
-
-  const getMatchUrl = (
-    matchId: number,
-    matchDate: string,
-    gameId?: number
-  ): string => {
-    const isUpcoming = isMatchUpcoming(matchDate);
-    const baseUrl = isUpcoming ? "/matches/upcoming" : "/matches";
-    return gameId
-      ? `${baseUrl}/${matchId}/games/${gameId}`
-      : `${baseUrl}/${matchId}`;
-  };
-
-  const handleMatchNavigation = (
-    match: TeamMatchHistoryType,
-    openInNewTab = false
-  ) => {
-    const url = getMatchUrl(match.match_id, match.date, match.game_id);
-    if (openInNewTab) {
-      window.open(url, "_blank");
-    } else {
-      router.push(url);
-    }
-  };
 
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -173,65 +137,71 @@ export const TeamMatchHistory = ({
                   <tr
                     key={match.match_id}
                     className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                    onClick={() => handleMatchNavigation(match)}
-                    onMouseDown={(e) => {
-                      // Handle middle mouse button (wheel) click
-                      if (e.button === 1) {
-                        e.preventDefault(); // Prevent scroll behavior
-                        handleMatchNavigation(match, true);
-                      }
-                    }}
                   >
-                    <td className="px-3 py-2 text-left">
-                      <div className="flex items-center gap-2">
-                        <NextImageFallback
-                          src={createTeamLogoUrl(match.opponent_logo)}
-                          alt={match.opponent_name}
-                          width={20}
-                          height={20}
-                          className="rounded-full"
-                        />
-                        {match.opponent_name}
-                      </div>
-                    </td>
-                    <td className="hidden xs:table-cell px-3 py-2 text-left">
-                      {convertSeasonToS(match.season_name)} {match.league_name}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <span
-                        className={teamWon ? "text-green-500" : "text-red-500"}
-                      >
-                        {match.team_score}
-                      </span>
-                      -
-                      <span
-                        className={!teamWon ? "text-green-500" : "text-red-500"}
-                      >
-                        {match.opponent_score}
-                      </span>
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.maps
-                        .split(", ")
-                        .map((name) => mapToReadableNameCapitalFirst(name))
-                        .join(", ")}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {formattedDate}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      <span
-                        className={
-                          match.result === "win"
-                            ? "text-green-500"
-                            : match.result === "loss"
-                              ? "text-red-500"
-                              : "text-yellow-500"
-                        }
-                      >
-                        {match.result.toUpperCase()}
-                      </span>
-                    </td>
+                    <Link
+                      href={
+                        match.game_id
+                          ? `/matches/${match.match_id}/games/${match.game_id}`
+                          : `/matches/${match.match_id}`
+                      }
+                      className="contents block"
+                    >
+                      <td className="px-3 py-2 text-left">
+                        <div className="flex items-center gap-2">
+                          <NextImageFallback
+                            src={createTeamLogoUrl(match.opponent_logo)}
+                            alt={match.opponent_name}
+                            width={20}
+                            height={20}
+                            className="rounded-full"
+                          />
+                          {match.opponent_name}
+                        </div>
+                      </td>
+                      <td className="hidden xs:table-cell px-3 py-2 text-left">
+                        {convertSeasonToS(match.season_name)}{" "}
+                        {match.league_name}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span
+                          className={
+                            teamWon ? "text-green-500" : "text-red-500"
+                          }
+                        >
+                          {match.team_score}
+                        </span>
+                        -
+                        <span
+                          className={
+                            !teamWon ? "text-green-500" : "text-red-500"
+                          }
+                        >
+                          {match.opponent_score}
+                        </span>
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.maps
+                          .split(", ")
+                          .map((name) => mapToReadableNameCapitalFirst(name))
+                          .join(", ")}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {formattedDate}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        <span
+                          className={
+                            match.result === "win"
+                              ? "text-green-500"
+                              : match.result === "loss"
+                                ? "text-red-500"
+                                : "text-yellow-500"
+                          }
+                        >
+                          {match.result.toUpperCase()}
+                        </span>
+                      </td>
+                    </Link>
                   </tr>
                 );
               })

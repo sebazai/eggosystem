@@ -3,7 +3,7 @@
 import React from "react";
 import { type FilterParamsQuery } from "@/lib/utils";
 import type { MatchTeamInfo, MatchHistoryItem } from "@eggosystem/types";
-import { TeamRecentForm, RecentMatchCard } from "./components";
+import { TeamRecentForm } from "./components";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
 
 interface TeamFormComparisonProps {
@@ -141,31 +141,19 @@ export const TeamFormComparison = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {hasTeam1Data ? (
-            <TeamRecentForm
-              teamName={team1Name}
-              matches={team1LastFive}
-              RecentMatchCard={RecentMatchCard}
-            />
+            <TeamRecentForm teamName={team1Name} matches={team1LastFive} />
           ) : (
             <div className="text-center py-8">
               <h3 className="text-lg font-semibold mb-2">{team1Name}</h3>
-              <p className="text-muted-foreground">
-                No match history available
-              </p>
+              <p>No match history available</p>
             </div>
           )}
           {hasTeam2Data ? (
-            <TeamRecentForm
-              teamName={team2Name}
-              matches={team2LastFive}
-              RecentMatchCard={RecentMatchCard}
-            />
+            <TeamRecentForm teamName={team2Name} matches={team2LastFive} />
           ) : (
             <div className="text-center py-8">
               <h3 className="text-lg font-semibold mb-2">{team2Name}</h3>
-              <p className="text-muted-foreground">
-                No match history available
-              </p>
+              <p>No match history available</p>
             </div>
           )}
         </div>

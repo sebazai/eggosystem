@@ -13,7 +13,7 @@ export const MapPerformanceRadarSection: React.FC<
   MapPerformanceRadarSectionProps
 > = ({ team1MapStats, team2MapStats, team1Name, team2Name }) => {
   return (
-    <div className="mb-6 bg-gray-900/50 rounded-lg p-4 shadow-sm">
+    <div className="mb-6 rounded-lg p-4 shadow-sm">
       <h3 className="text-lg font-medium mb-4 text-center text-kanaliiga-orange uppercase">
         Map Win Rate Comparison
       </h3>

@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import {
   cn,
   convertSeasonToS,
   mapToReadableNameCapitalFirst
 } from "@/lib/utils";
-import type { MatchHistoryResult } from "@eggosystem/types";
 import { format } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -42,45 +41,6 @@ const PlayerMatchHistoryTableWrapper = ({
 };
 
 export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
-  const router = useRouter();
-
-  // Helper functions to avoid DRY violations
-  const isMatchUpcoming = (matchDate: string): boolean => {
-    const date = new Date(matchDate);
-    const now = new Date();
-    // Set the match date to end of day for comparison since we only have date, not time
-    date.setHours(23, 59, 59, 999);
-    return date > now;
-  };
-
-  const getMatchUrl = (
-    matchId: number,
-    matchDate: string,
-    gameId?: number
-  ): string => {
-    const isUpcoming = isMatchUpcoming(matchDate);
-    const baseUrl = isUpcoming ? "/matches/upcoming" : "/matches";
-    return gameId
-      ? `${baseUrl}/${matchId}/games/${gameId}`
-      : `${baseUrl}/${matchId}`;
-  };
-
-  const handleMatchNavigation = (
-    match: MatchHistoryResult,
-    openInNewTab = false
-  ) => {
-    const url = getMatchUrl(
-      match.match_id,
-      match.match_date,
-      match.game_id ?? undefined
-    );
-    if (openInNewTab) {
-      window.open(url, "_blank");
-    } else {
-      router.push(url);
-    }
-  };
-
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: SortDirection;
@@ -369,19 +329,69 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
                   <tr
                     key={`${match.match_id}`}
                     className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                    onClick={() => handleMatchNavigation(match)}
                     onMouseDown={(e) => {
                       // Handle middle mouse button (wheel) click
                       if (e.button === 1) {
                         e.preventDefault(); // Prevent scroll behavior
-                        handleMatchNavigation(match, true);
+                        const url = match.game_id
+                          ? `/matches/${match.match_id}/games/${match.game_id}`
+                          : `/matches/${match.match_id}`;
+                        window.open(url, "_blank");
                       }
                     }}
                   >
-                    <td className="px-3 py-2 text-left">
-                      <span>{match.opponent_name}</span>
-                      {/* Score on mobile - hidden on desktop */}
-                      <div className="sm:hidden text-xs mt-1">
+                    <Link
+                      href={
+                        match.game_id
+                          ? `/matches/${match.match_id}/games/${match.game_id}`
+                          : `/matches/${match.match_id}`
+                      }
+                      className="contents block"
+                    >
+                      <td className="px-3 py-2 text-left">
+                        <span>{match.opponent_name}</span>
+                        {/* Score on mobile - hidden on desktop */}
+                        <div className="sm:hidden text-xs mt-1">
+                          <span
+                            className={
+                              teamWon ? "text-green-500" : "text-red-500"
+                            }
+                          >
+                            {match.score}
+                          </span>
+                          -
+                          <span
+                            className={
+                              !teamWon ? "text-green-500" : "text-red-500"
+                            }
+                          >
+                            {match.opponent_score}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Date - hidden on mobile */}
+                      <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
+                        {match.match_date
+                          ? format(new Date(match.match_date), "dd.MM.yyyy")
+                          : "N/A"}
+                      </td>
+
+                      <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
+                        {convertSeasonToS(match.season_name)}
+                      </td>
+
+                      {/* Map & League - hidden on mobile */}
+                      <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
+                        {match.map_name
+                          .split(", ")
+                          .map((name) => mapToReadableNameCapitalFirst(name))
+                          .join(", ")}{" "}
+                        • {match.league_name}
+                      </td>
+
+                      {/* Score - hidden on mobile, shown on desktop */}
+                      <td className="hidden sm:table-cell px-3 py-2 text-center">
                         <span
                           className={
                             teamWon ? "text-green-500" : "text-red-500"
@@ -397,76 +407,41 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
                         >
                           {match.opponent_score}
                         </span>
-                      </div>
-                    </td>
-
-                    {/* Date - hidden on mobile */}
-                    <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                      {match.match_date
-                        ? format(new Date(match.match_date), "dd.MM.yyyy")
-                        : "N/A"}
-                    </td>
-
-                    <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                      {convertSeasonToS(match.season_name)}
-                    </td>
-
-                    {/* Map & League - hidden on mobile */}
-                    <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                      {match.map_name
-                        .split(", ")
-                        .map((name) => mapToReadableNameCapitalFirst(name))
-                        .join(", ")}{" "}
-                      • {match.league_name}
-                    </td>
-
-                    {/* Score - hidden on mobile, shown on desktop */}
-                    <td className="hidden sm:table-cell px-3 py-2 text-center">
-                      <span
-                        className={teamWon ? "text-green-500" : "text-red-500"}
-                      >
-                        {match.score}
-                      </span>
-                      -
-                      <span
-                        className={!teamWon ? "text-green-500" : "text-red-500"}
-                      >
-                        {match.opponent_score}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-center">{match.kills}</td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.assists} (
-                      <span className="text-xs">{match.flash_assists}</span>)
-                    </td>
-                    <td className="px-3 py-2 text-center">{match.deaths}</td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.awp_kills}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.utility_damage}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.headshots}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.first_kills}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.first_deaths}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {match.adr?.toFixed(1)}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.hs_percent?.toFixed(1)}%
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {match.kd?.toFixed(2)}
-                    </td>
-                    <td className="px-3 py-2 text-center font-bold">
-                      {match.kana_rating?.toFixed(2)}
-                    </td>
+                      </td>
+                      <td className="px-3 py-2 text-center">{match.kills}</td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.assists} (
+                        <span className="text-xs">{match.flash_assists}</span>)
+                      </td>
+                      <td className="px-3 py-2 text-center">{match.deaths}</td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.awp_kills}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.utility_damage}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.headshots}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.first_kills}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.first_deaths}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {match.adr?.toFixed(1)}
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.hs_percent?.toFixed(1)}%
+                      </td>
+                      <td className="hidden md:table-cell px-3 py-2 text-center">
+                        {match.kd?.toFixed(2)}
+                      </td>
+                      <td className="px-3 py-2 text-center font-bold">
+                        {match.kana_rating?.toFixed(2)}
+                      </td>
+                    </Link>
                   </tr>
                 );
               })}

@@ -18,7 +18,7 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
   const formattedDate = format(new Date(match.date), "dd.MM.yyyy");
 
   return (
-    <div className="bg-card rounded-lg p-4 border border-gray-800 hover:border-kanaliiga-orange/50 transition-all duration-200 hover:shadow-lg">
+    <div className="bg-card rounded-lg p-4 border">
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <NextImageFallback
@@ -30,15 +30,13 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
             alt={match.opponent_name}
             width={32}
             height={32}
-            className="rounded-full mr-3 bg-white/10 p-1"
+            className="rounded-full mr-3 p-1"
           />
           <div>
-            <span className="text-sm font-medium text-white block">
+            <span className="text-sm font-medium block">
               {match.opponent_name}
             </span>
-            <span className="text-xs text-muted-foreground">
-              vs {formattedDate}
-            </span>
+            <span className="text-xs">vs {formattedDate}</span>
           </div>
         </div>
 
@@ -48,7 +46,7 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
               <span className={isWin ? "text-green-400" : "text-red-400"}>
                 {match.team_score}
               </span>
-              <span className="text-gray-400 mx-1">-</span>
+              <span className="mx-1">-</span>
               <span className={!isWin ? "text-green-400" : "text-red-400"}>
                 {match.opponent_score}
               </span>
@@ -69,7 +67,7 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground border-t border-gray-800 pt-2">
+      <div className="text-xs border-t pt-2">
         <span className="text-kanaliiga-orange/80">
           {convertSeasonToS(match.season_name)} {match.league_name}
         </span>

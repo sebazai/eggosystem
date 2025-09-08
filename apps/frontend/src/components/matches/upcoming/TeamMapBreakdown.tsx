@@ -174,7 +174,7 @@ export const TeamMapBreakdown = ({
           </>
         ) : (
           <div className="text-center py-12">
-            <div className="text-muted-foreground mb-2">
+            <div className="mb-2">
               <svg
                 className="w-16 h-16 mx-auto mb-4 opacity-50"
                 fill="none"
@@ -191,7 +191,7 @@ export const TeamMapBreakdown = ({
               <h3 className="text-lg font-semibold mb-2">
                 No Map Statistics Available
               </h3>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              <p className="text-sm max-w-md mx-auto">
                 Map performance data is not available for these teams in the
                 selected time period. Try adjusting your filters or check back
                 later.

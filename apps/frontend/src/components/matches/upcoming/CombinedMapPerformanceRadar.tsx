@@ -177,9 +177,7 @@ export const CombinedMapPerformanceRadar: React.FC<
   if (chartData.length === 0) {
     return (
       <div className="h-[350px] w-full flex items-center justify-center">
-        <p className="text-muted-foreground">
-          No map performance data available
-        </p>
+        <p>No map performance data available</p>
       </div>
     );
   }

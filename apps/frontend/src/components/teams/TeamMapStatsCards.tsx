@@ -301,9 +301,7 @@ export const TeamMapStatsCards = ({
                       {/* Combine title, No plant label, and total */}
                       <div className="grid grid-cols-3 text-xs mb-0.5 leading-tight">
                         <div className="text-left">Bomb plants (T)</div>
-                        <div className="text-center text-gray-400/70">
-                          No plant
-                        </div>
+                        <div className="text-center">No plant</div>
                         <div className="text-right font-medium">
                           {plantStat.planted_a_site + plantStat.planted_b_site}{" "}
                           /{" "}
@@ -377,7 +375,7 @@ export const TeamMapStatsCards = ({
                       {/* Combine title, Lost label, and total */}
                       <div className="grid grid-cols-3 text-xs mb-0.5 leading-tight mt-1">
                         <div className="text-left">Afterplants (T)</div>
-                        <div className="text-center text-gray-400/70">Lost</div>
+                        <div className="text-center">Lost</div>
                         <div className="text-right font-medium">
                           {retakeStat.afterplant_won} /{" "}
                           {retakeStat.afterplant_total}
@@ -446,9 +444,7 @@ export const TeamMapStatsCards = ({
                       {/* Combine title, No plant label, and total */}
                       <div className="grid grid-cols-3 text-xs mb-0.5 leading-tight mt-1">
                         <div className="text-left">Enemy plants (CT)</div>
-                        <div className="text-center text-gray-400/70">
-                          No plant
-                        </div>
+                        <div className="text-center">No plant</div>
                         <div className="text-right font-medium">
                           {plantStat.enemy_planted_a_site +
                             plantStat.enemy_planted_b_site}{" "}
@@ -523,7 +519,7 @@ export const TeamMapStatsCards = ({
                       {/* Combine title, Lost label, and total */}
                       <div className="grid grid-cols-3 text-xs mb-0.5 leading-tight mt-1">
                         <div className="text-left">Retakes (CT)</div>
-                        <div className="text-center text-gray-400/70">Lost</div>
+                        <div className="text-center">Lost</div>
                         <div className="text-right font-medium">
                           {retakeStat.retake_won} / {retakeStat.retake_total}
                         </div>

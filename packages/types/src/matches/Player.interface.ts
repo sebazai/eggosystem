@@ -3,11 +3,8 @@ import { SteamPlayer, SeasonPlayerRank } from "../db";
 export interface Player {
   id: number;
   steamId: SteamPlayer["steam_id"];
-  name: SteamPlayer["nickname"];
   nickname: SteamPlayer["nickname"];
   avatar?: string;
-  isHotstreak?: boolean;
-  isColdstreak?: boolean;
   stats?: {
     rating?: number; // Calculated field, no direct mapping - may not be available
     kd?: number; // Calculated field, no direct mapping - may not be available

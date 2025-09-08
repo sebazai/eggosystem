@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Flag, Flame, Snowflake } from "lucide-react";
+import { User, Flag } from "lucide-react";
 import type { Player, TeamColor } from "@eggosystem/types";
 
 interface PlayerCardProps {
@@ -17,12 +17,12 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
 }) => {
   const colorClasses = {
     orange: {
-      selected: "bg-kanaliiga-orange/10 shadow-lg shadow-kanaliiga-orange/20",
+      selected: "bg-kanaliiga-orange/10 shadow-lg shadow-kanaliiga-orange/30",
       hover: "hover:bg-kanaliiga-orange/5",
       border: ""
     },
     blue: {
-      selected: "bg-blue-500/10 shadow-lg shadow-blue-400/20",
+      selected: "bg-blue-500/10 shadow-lg shadow-blue-400/30",
       hover: "hover:bg-blue-500/5",
       border: ""
     }
@@ -46,24 +46,10 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           <Flag className="h-3 w-3 text-gray-300" />
         </div>
 
-        {/* Hot streak indicator */}
-        {player.isHotstreak && (
-          <div className="absolute -top-1 -right-1">
-            <Flame className="h-6 w-6 text-orange-500 fill-orange-500" />
-          </div>
-        )}
-
-        {/* Cold streak indicator */}
-        {player.isColdstreak && (
-          <div className="absolute -top-1 -right-1">
-            <Snowflake className="h-6 w-6 text-blue-400 fill-blue-400" />
-          </div>
-        )}
-
         <div
           className={`${
             teamColor === "orange" ? "bg-kanaliiga-orange/80" : "bg-blue-500/80"
-          } text-white text-center py-1 text-xs font-medium rounded-b-lg`}
+          } text-center py-1 text-xs font-medium rounded-b-lg`}
         >
           {player.nickname}
         </div>
