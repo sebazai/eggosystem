@@ -5,15 +5,6 @@ import { createNextUrl } from "@/lib/utils";
 export const CsSupportingOrgs = () => {
   return (
     <>
-      {/* <Link href={"https://atflow.fi/"} target="_blank">
-        <Image
-          src={createNextUrl("/images/sponsors/atflow-black.png")}
-          className="w-[100px] h-[30px] mobile-landscape:w-[100px] mobile-landscape:h-[30px] sm:w-[200px] sm:h-[59px]"
-          alt="Atflow"
-          width={200}
-          height={59}
-        />
-      </Link> */}
       <Link href={"https://supermetrics.com/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/supermetrics.png")}
@@ -41,13 +32,30 @@ export const CsSupportingOrgs = () => {
           height={60}
         />
       </Link>
+      <Link href={"https://caveentertainment.fi/"} target="_blank">
+        <Image
+          src={createNextUrl("/images/sponsors/cave.webp")}
+          className="w-[100px] h-[27px] sm:w-[200px] sm:h-[54px] mobile-landscape:w-[100px] mobile-landscape:h-[27px]"
+          alt="Cave Entertainment"
+          width={100}
+          height={27}
+        />
+      </Link>
+      <Link href={"https://autoklinikka.fi/"} target="_blank">
+        <Image
+          src={createNextUrl("/images/sponsors/autoklinikka.png")}
+          className="w-[75px] h-[35px] sm:w-[150px] sm:h-[70px] mobile-landscape:w-[75px] mobile-landscape:h-[35px]"
+          alt="Autoklinikka"
+          width={75}
+          height={35}
+        />
+      </Link>
       <Link href={"https://tnnet.fi/"} target="_blank">
         <Image
           src={createNextUrl("/images/sponsors/tnnet.webp")}
-          className="w-[75px] h-[50px] sm:w-[150px] sm:h-[100px]"
           alt="TNNet"
-          width={150}
-          height={100}
+          width={100}
+          height={19}
         />
       </Link>
     </>

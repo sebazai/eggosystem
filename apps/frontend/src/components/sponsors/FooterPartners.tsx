@@ -25,12 +25,12 @@ export const FooterPartners = () => {
           />
         </Link>
 
-        <Link href={"https://tnnet.fi/"} target="_blank">
+        <Link href={"https://atflow.fi/"} target="_blank">
           <Image
-            src={createNextUrl("/images/sponsors/tnnet-footer.png")}
-            alt="TNNet"
-            width={100}
-            height={19}
+            src={createNextUrl("/images/sponsors/atflow-footer.png")}
+            alt="Atflow"
+            width={175}
+            height={44}
           />
         </Link>
       </div>
