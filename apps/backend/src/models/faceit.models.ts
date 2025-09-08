@@ -10,7 +10,7 @@ export const saveWebhookData = async (
   details: object | unknown | null,
   manualProcessed: boolean = false,
   errorType: FaceitValidationError | null = null,
-  errorDetails: string | null = null
+  errorDetails: unknown | null = null
 ) => {
   return runQuery<{ insertId: number }>(
     "INSERT INTO FaceitWebhooks (external_payload_id, retry_count, manual_reprocess, event, data, details, error_type, error_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

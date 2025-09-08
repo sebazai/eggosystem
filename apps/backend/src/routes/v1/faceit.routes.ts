@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Router } from "express";
 import {
@@ -14,7 +13,6 @@ import {
 } from "../../middlewares/auth.middleware";
 import { saveWebhookData } from "../../models/faceit.models";
 import { logger } from "../../utils/app-logger";
-import { ZodError } from "zod";
 import {
   type MatchStatusReadyWebhook,
   type MatchStatusConfiguringWebhook,
@@ -143,7 +141,9 @@ const processWebhookWithDetails = async <
   manualReprocess: boolean
 ) => {
   let matchDetails: MD | null = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let externalMatchRoomId = (webhookData as any)?.payload?.id as string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const retryCount = (webhookData as any)?.retry_count || 0;
   try {
     // Validate webhook data
@@ -168,18 +168,20 @@ const processWebhookWithDetails = async <
       webhookData: validatedWebhook,
       matchDetails: validatedMatchDetails
     };
-  } catch (error) {
-    if (error instanceof ZodError) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error?.name === "ZodError") {
       logger.error("Zod validation error", error);
       await saveWebhookData(
         externalMatchRoomId,
         retryCount,
-        String((webhookData as any).event),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        String((webhookData as any)?.event),
         webhookData,
         matchDetails,
         manualReprocess,
         "ZOD_VALIDATION_ERROR",
-        JSON.stringify(error)
+        error
       );
       throw error;
     }
@@ -187,12 +189,13 @@ const processWebhookWithDetails = async <
     await saveWebhookData(
       externalMatchRoomId,
       retryCount,
-      String((webhookData as any).event),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      String((webhookData as any)?.event),
       webhookData,
       matchDetails,
       manualReprocess,
       "UNKNOWN_ERROR",
-      JSON.stringify(error)
+      error
     );
     throw error;
   }

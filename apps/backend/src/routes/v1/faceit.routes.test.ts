@@ -1490,7 +1490,7 @@ describe("FaceIT Routes - Webhook", () => {
           expect.any(Object),
           false, // manualProcessed
           "ZOD_VALIDATION_ERROR",
-          expect.any(String)
+          expect.any(Object)
         );
       });
 
@@ -1518,7 +1518,7 @@ describe("FaceIT Routes - Webhook", () => {
           null,
           false, // manualProcessed
           "UNKNOWN_ERROR",
-          expect.any(String)
+          expect.any(Object)
         );
       });
 
@@ -1692,7 +1692,7 @@ describe("FaceIT Routes - Webhook", () => {
           null,
           false, // manualProcessed
           "UNKNOWN_ERROR",
-          expect.any(String)
+          expect.any(Object)
         );
       });
 
@@ -1719,7 +1719,7 @@ describe("FaceIT Routes - Webhook", () => {
           expect.any(Object),
           false, // manualProcessed
           "ZOD_VALIDATION_ERROR",
-          expect.any(String)
+          expect.any(Object)
         );
       });
 
@@ -1746,7 +1746,7 @@ describe("FaceIT Routes - Webhook", () => {
           expect.any(Object),
           false, // manualProcessed
           "ZOD_VALIDATION_ERROR",
-          expect.any(String)
+          expect.any(Object)
         );
       });
 
