@@ -1,30 +1,27 @@
+"use client";
+
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { cn, createNextUrl, createTeamLogoUrl } from "@/lib/utils";
-import type { MatchInfo, MatchTeamInfo } from "@eggosystem/types";
+import type { MatchInfo } from "@eggosystem/types";
 
-// Local interface with teams as array instead of object
-interface ProcessedMatchInfo extends Omit<MatchInfo, "teams"> {
-  teams: MatchTeamInfo[];
-}
 import Link from "next/link";
 import { Tv } from "lucide-react";
+import { useMatchStreamUrls } from "@/hooks/data/useMatchStreamUrls";
 
 interface UpcomingMatchHeaderProps {
   matchId: number;
-  matchInfo: ProcessedMatchInfo;
-  platform: string;
-  externalMatchRoomUrl: string | null;
-  streamUrls?: string[]; // Optional array of stream URLs
-  className?: string;
+  matchInfo: MatchInfo;
 }
 
 export function UpcomingMatchHeader({
-  matchInfo,
-  streamUrls,
-  className
+  matchId,
+  matchInfo
 }: UpcomingMatchHeaderProps) {
   // Get teams data safely (teams is now an array)
-  const team1 = matchInfo.teams[0] ?? {
+  // Fetch stream URLs for this match
+  const { streamUrls } = useMatchStreamUrls(matchId);
+  const teams = Object.values(matchInfo.teams);
+  const team1 = teams?.[0] ?? {
     id: 0,
     name: "Team 1",
     logo: "",
@@ -32,7 +29,7 @@ export function UpcomingMatchHeader({
     organization_name: ""
   };
 
-  const team2 = matchInfo.teams[1] ?? {
+  const team2 = teams?.[1] ?? {
     id: 0,
     name: "Team 2",
     logo: "",
@@ -70,8 +67,7 @@ export function UpcomingMatchHeader({
   return (
     <div
       className={cn(
-        "w-full dark:bg-kanaliiga-orange/30 bg-kanaliiga-orange/50",
-        className
+        "w-full dark:bg-kanaliiga-orange/30 bg-kanaliiga-orange/50"
       )}
     >
       <div className="mx-auto px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 md:gap-4">

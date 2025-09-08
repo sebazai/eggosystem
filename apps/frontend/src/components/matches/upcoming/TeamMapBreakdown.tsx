@@ -1,18 +1,14 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { MatchInfo, MatchTeamInfo, Team } from "@eggosystem/types";
+import type { MatchInfo, Team } from "@eggosystem/types";
 
-// Local interface with teams as array instead of object
-interface ProcessedMatchInfo extends Omit<MatchInfo, "teams"> {
-  teams: MatchTeamInfo[];
-}
 import { type FilterParamsQuery } from "@/lib/utils";
 import { MapPerformanceRadarSection, MapComparisonCard } from "./components";
 import { useTeamMapStats } from "@/hooks/data/useTeamMapStats";
 
 interface TeamMapBreakdownProps {
-  matchInfo: ProcessedMatchInfo;
+  matchInfo: MatchInfo;
   baseFilters: FilterParamsQuery;
 }
 
@@ -21,8 +17,9 @@ export const TeamMapBreakdown = ({
   baseFilters
 }: TeamMapBreakdownProps) => {
   // Get team IDs from matchInfo (typed with indexed access)
-  const team1Id: Team["id"] | undefined = matchInfo.teams?.[0]?.id;
-  const team2Id: Team["id"] | undefined = matchInfo.teams?.[1]?.id;
+  const teams = Object.values(matchInfo.teams);
+  const team1Id = teams[0]?.id;
+  const team2Id = teams[1]?.id;
 
   // Fetch real data from APIs - first try with filters, then without filters as fallback
   const { mapStats: team1MapStats, isLoading: isLoadingTeam1 } =

@@ -1,11 +1,12 @@
 import { MatchHeader } from "@/components/matches/match/MatchHeader";
-import type { MatchInfo } from "@eggosystem/types";
+import { MatchStatus, type MatchInfo } from "@eggosystem/types";
 import type React from "react";
 import { getMatchInfo } from "./utils";
 import { CardContainer } from "@/components/layout/CardContainer";
 import { ContentContainer } from "@/components/layout/ContentContainer";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
 import { createPageMetadata } from "@/lib/metadata";
+import { UpcomingMatchHeader } from "@/components/matches/upcoming/UpcomingMatchHeader";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -69,12 +70,25 @@ export default async function Layout({ children, params }: LayoutProps) {
     );
   }
 
+  if (matchInfo.status === MatchStatus.SCHEDULED) {
+    return (
+      <>
+        <div className="px-4 pt-4">
+          <AutoBreadcrumbs />
+        </div>
+        <UpcomingMatchHeader matchId={matchIdNumber} matchInfo={matchInfo} />
+        <CardContainer classNames="rounded-none">
+          <div className="p-2">{children}</div>
+        </CardContainer>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="px-4 pt-4">
         <AutoBreadcrumbs />
       </div>
-
       <MatchHeader
         team1={teams[0]!}
         team2={teams[1]!}

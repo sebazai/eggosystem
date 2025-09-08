@@ -331,7 +331,8 @@ export const getMatchInfo = async (
               t.team_logo,
               mg.id AS game_id,
               tgs1.score AS team_score,
-              tgs2.score AS opponent_score
+              tgs2.score AS opponent_score,
+              m.status
           FROM Matches m
           JOIN MatchTeams mt ON m.id = mt.match_id
           JOIN Teams t ON mt.team_id = t.id
@@ -391,6 +392,7 @@ export const getMatchInfo = async (
           m.best_of,
           m.stage,
           g.game_ids,
+          m.status,
           JSON_OBJECTAGG(
               a.team_id, 
               JSON_OBJECT(

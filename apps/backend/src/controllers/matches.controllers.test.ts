@@ -609,7 +609,8 @@ describe("Matches Controllers", () => {
           team1: { id: 1, name: "Team A", logo: "logo1.png", score: 16 },
           team2: { id: 2, name: "Team B", logo: "logo2.png", score: 13 }
         }),
-        game_ids: JSON.stringify([1, 2, 3])
+        game_ids: JSON.stringify([1, 2, 3]),
+        status: "SCHEDULED"
       };
       mockGetMatchInfo.mockResolvedValue(mockMatchInfo);
 

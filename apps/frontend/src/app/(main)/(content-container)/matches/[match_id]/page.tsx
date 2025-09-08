@@ -1,8 +1,9 @@
-import type { MatchInfo } from "@eggosystem/types";
+import { MatchStatus, type MatchInfo } from "@eggosystem/types";
 import { getMatchInfo } from "./utils";
 import { MatchStats } from "@/components/matches/match/MatchStats";
 import { GameStats } from "@/components/matches/match/game/GameStats";
 import { createExternalMatchRoomUrl } from "@/components/matches/match/utils";
+import { UpcomingMatchStats } from "@/components/matches/upcoming/UpcomingMatchStats";
 
 interface PageProps {
   params: Promise<{ match_id: string }>;
@@ -30,6 +31,9 @@ export default async function MatchPage({ params }: PageProps) {
         )}
       />
     );
+  }
+  if (result.status === MatchStatus.SCHEDULED) {
+    return <UpcomingMatchStats matchId={matchId} matchInfo={result} />;
   }
   return (
     <MatchStats
