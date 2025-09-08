@@ -245,6 +245,16 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     text-decoration: underline;
   }
 
+  .kanaliiga-link {
+    color: hsl(var(--foreground));
+    text-decoration: none;
+  }
+
+  .kanaliiga-link:hover {
+    color: var(--kanaliiga-orange);
+    text-decoration: underline;
+  }
+
   footer a {
     color: #f29209;
     text-decoration: none;
@@ -747,6 +757,77 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     font-size: 0.75rem;
     font-weight: 500;
     text-decoration: none;
+  }
+
+  .fc .fc-event.stream-match {
+    border-width: 5px !important;
+    border-style: solid !important;
+    border-color: #f59e0b !important;
+    position: relative !important;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.8) !important;
+    animation: streamPulse 2s ease-in-out infinite !important;
+    z-index: 5 !important;
+  }
+
+  .fc .fc-event.stream-match::before {
+    content: "📺" !important;
+    position: absolute !important;
+    top: -8px !important;
+    right: -8px !important;
+    font-size: 16px !important;
+    z-index: 100 !important;
+    opacity: 1 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    border-radius: 8px !important;
+    padding: 2px 4px !important;
+    line-height: 1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .fc .fc-event.stream-match .fc-event-title {
+    font-weight: bold !important;
+  }
+
+  @keyframes streamPulse {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.8) !important;
+      transform: scale(1) !important;
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(245, 158, 11, 1) !important;
+      transform: scale(1.02) !important;
+    }
+  }
+
+  /* Enhanced styling for streamed matches in popover "more" view */
+  .fc-more-popover-content .stream-match-popover {
+    border: 3px solid #f59e0b !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.6) !important;
+    position: relative;
+    animation: streamGlow 2s ease-in-out infinite alternate;
+  }
+
+  .fc-more-popover-content .stream-match-popover::before {
+    content: "📺";
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: rgba(0, 0, 0, 0.7);
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    z-index: 20;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  @keyframes streamGlow {
+    from {
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+    }
+    to {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.9);
+    }
   }
 
   .fc-daygrid-more-link:hover {

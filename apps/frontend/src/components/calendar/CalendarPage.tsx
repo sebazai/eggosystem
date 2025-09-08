@@ -49,79 +49,7 @@ import {
   findMinMaxTimes
 } from "@/lib/calendar-utils";
 import { StreamReservation } from "./StreamReservation";
-
-// Add custom CSS for stream matches
-const streamMatchStyles = `
-  .fc .fc-event.stream-match {
-    border-width: 5px !important;
-    border-style: solid !important;
-    border-color: #f59e0b !important;
-    position: relative !important;
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.8) !important;
-    animation: streamPulse 2s ease-in-out infinite !important;
-    z-index: 5 !important;
-  }
-
-  .fc .fc-event.stream-match::before {
-    content: "📺" !important;
-    position: absolute !important;
-    top: -8px !important;
-    right: -8px !important;
-    font-size: 16px !important;
-    z-index: 100 !important;
-    opacity: 1 !important;
-    background: rgba(0, 0, 0, 0.7) !important;
-    border-radius: 8px !important;
-    padding: 2px 4px !important;
-    line-height: 1 !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  .fc .fc-event.stream-match .fc-event-title {
-    font-weight: bold !important;
-  }
-
-  @keyframes streamPulse {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.8) !important;
-      transform: scale(1) !important;
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(245, 158, 11, 1) !important;
-      transform: scale(1.02) !important;
-    }
-  }
-
-  /* Enhanced styling for streamed matches in popover "more" view */
-  .fc-more-popover-content .stream-match-popover {
-    border: 3px solid #f59e0b !important;
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.6) !important;
-    position: relative;
-    animation: streamGlow 2s ease-in-out infinite alternate;
-  }
-
-  .fc-more-popover-content .stream-match-popover::before {
-    content: "📺";
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: rgba(0, 0, 0, 0.7);
-    font-size: 14px;
-    padding: 2px 4px;
-    border-radius: 6px;
-    z-index: 20;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  @keyframes streamGlow {
-    from {
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
-    }
-    to {
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.9);
-    }
-  }
-`;
+import Link from "next/link";
 
 interface EventDetails {
   id: string;
@@ -135,28 +63,25 @@ interface EventDetails {
   status: string;
 }
 
-const RenderStreamLinks = ({
-  streamUrl,
-  handleStreamClick
-}: {
-  streamUrl?: string[];
-  handleStreamClick: () => void;
-}) => {
+const RenderStreamLinks = ({ streamUrl }: { streamUrl?: string[] }) => {
   if (!streamUrl || streamUrl.length === 0) {
     return null;
   }
 
-  if (streamUrl && streamUrl.length === 1) {
+  const firstStreamUrl = streamUrl[0];
+  if (firstStreamUrl) {
     return (
-      <>
-        <Button
-          onClick={() => handleStreamClick()}
-          className="flex items-center gap-2 w-full"
+      <Button variant="outline" asChild>
+        <Link
+          href={firstStreamUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 kanaliiga-link"
         >
           <ExternalLink className="h-4 w-4" />
           Watch Stream
-        </Button>
-      </>
+        </Link>
+      </Button>
     );
   }
 
@@ -165,16 +90,16 @@ const RenderStreamLinks = ({
       <h4 className="text-sm font-medium">Available Streams:</h4>
       <div className="flex flex-col gap-1">
         {streamUrl.map((url, index) => (
-          <a
+          <Link
             key={index}
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-primary hover:underline"
+            className="flex items-center gap-2 text-sm kanaliiga-link"
           >
             <ExternalLink className="h-3 w-3" />
             {url}
-          </a>
+          </Link>
         ))}
       </div>
     </div>
@@ -188,17 +113,15 @@ const RenderStreamButton = ({
 }: {
   matchId: string;
   onReservationSuccess: () => void;
-  handleStreamClick: () => void;
+
   status: string;
 }) => {
   if (status === MatchStatus.SCHEDULED) {
     return (
-      <>
-        <StreamReservation
-          matchId={matchId}
-          onReservationSuccess={onReservationSuccess}
-        />
-      </>
+      <StreamReservation
+        matchId={matchId}
+        onReservationSuccess={onReservationSuccess}
+      />
     );
   }
 
@@ -270,35 +193,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const { calendarMatches, isLoading: _isLoadingCalendarMatches } =
     useSeasonCalendarMatches(seasonId, selectedDivision);
 
-  // Helper functions
-  const isMatchUpcoming = (matchStart: string): boolean => {
-    const matchDate = new Date(matchStart);
-    const now = new Date();
-    return matchDate > now;
-  };
-
-  const getMatchButtonText = (matchStart: string, isDialog = false): string => {
-    const isUpcoming = isMatchUpcoming(matchStart);
-    if (isDialog) {
-      return isUpcoming ? "View Upcoming Match" : "View Match Details";
-    }
-    return isUpcoming ? "View Upcoming" : "View Details";
-  };
-
-  const openMatchUrl = (matchId: string, matchStart: string) => {
-    const matchUrl = isMatchUpcoming(matchStart)
-      ? `/matches/upcoming/${matchId}`
-      : `/matches/${matchId}`;
-
-    window.open(matchUrl, "_blank");
-  };
-
-  const handleMatchButtonClick = (
-    e: React.MouseEvent,
-    match: MatchWithStreamUrls
-  ) => {
-    e.stopPropagation(); // Prevent triggering the parent onClick
-    openMatchUrl(match.match_id, match.match_start);
+  const getMatchButtonText = (matchStatus: string): string => {
+    const isUpcoming = matchStatus === MatchStatus.SCHEDULED;
+    return isUpcoming ? "View Upcoming Match" : "View Match Details";
   };
 
   const createEventDetails = (
@@ -326,12 +223,6 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const handleEventSelect = (eventDetails: EventDetails) => {
     setSelectedEvent(eventDetails);
     setIsDialogOpen(true);
-  };
-
-  const handleDialogMatchClick = () => {
-    if (selectedEvent) {
-      openMatchUrl(selectedEvent.id, selectedEvent.start);
-    }
   };
 
   // Update URL parameters without page reload
@@ -584,17 +475,6 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     updateUrlParams(undefined, newDivision);
   };
 
-  const handleStreamClick = (url?: string) => {
-    if (url) {
-      window.open(url, "_blank");
-    } else if (
-      selectedEvent?.streamUrl &&
-      selectedEvent.streamUrl.length === 1
-    ) {
-      window.open(selectedEvent.streamUrl[0], "_blank");
-    }
-  };
-
   const handleStreamReservation = () => {
     // Refresh calendar data to show the new stream
     mutate(
@@ -605,9 +485,6 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
 
   return (
     <div className="mx-auto py-4 sm:py-8 px-2 sm:px-4">
-      {/* Inject stream match styles */}
-      <style dangerouslySetInnerHTML={{ __html: streamMatchStyles }} />
-
       <div className="mb-6 sm:mb-8">
         <h1 className="text-2xl sm:text-3xl font-heading font-bold mb-2">
           Match Calendar
@@ -649,7 +526,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     value={selectedDivision.toString()}
                     onValueChange={handleDivisionChange}
                   >
-                    <SelectTrigger className="w-full sm:w-32">
+                    <SelectTrigger className="w-full sm:min-w-48">
                       <SelectValue placeholder="Division" />
                     </SelectTrigger>
                     <SelectContent>
@@ -726,7 +603,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                     value={selectedDivision.toString()}
                     onValueChange={handleDivisionChange}
                   >
-                    <SelectTrigger className="w-full sm:w-32">
+                    <SelectTrigger className="w-full sm:min-w-48">
                       <SelectValue placeholder="Division" />
                     </SelectTrigger>
                     <SelectContent>
@@ -750,8 +627,11 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
             </CardHeader>
             <CardContent className="pt-0 sm:pt-6">
               <div className="space-y-3 sm:space-y-4">
-                {sortMatchesByDateAndTier(calendarMatches || []).map(
-                  (match) => (
+                {sortMatchesByDateAndTier(calendarMatches || [])
+                  .filter(
+                    (match) => match.match_status === MatchStatus.SCHEDULED
+                  )
+                  .map((match) => (
                     <div
                       key={match.match_id}
                       className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
@@ -793,17 +673,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                           </div>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full sm:w-auto text-xs sm:text-sm"
-                        onClick={(e) => handleMatchButtonClick(e, match)}
-                      >
-                        {getMatchButtonText(match.match_start)}
-                      </Button>
                     </div>
-                  )
-                )}
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -851,19 +722,13 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                 <RenderStreamButton
                   matchId={selectedEvent.id}
                   onReservationSuccess={handleStreamReservation}
-                  handleStreamClick={handleStreamClick}
                   status={selectedEvent.status}
                 />
-                <RenderStreamLinks
-                  streamUrl={selectedEvent.streamUrl}
-                  handleStreamClick={handleStreamClick}
-                />
-                <Button
-                  onClick={handleDialogMatchClick}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {getMatchButtonText(selectedEvent.start, true)}
+                <RenderStreamLinks streamUrl={selectedEvent.streamUrl} />
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href={`/matches/${selectedEvent.id}`} target="_blank">
+                    {getMatchButtonText(selectedEvent.status)}
+                  </Link>
                 </Button>
               </div>
             </div>
