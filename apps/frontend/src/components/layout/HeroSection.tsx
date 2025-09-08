@@ -5,7 +5,14 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Play, TrendingUp, Users } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  ExternalLink,
+  Play,
+  TrendingUp,
+  Users
+} from "lucide-react";
 import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
@@ -22,58 +29,45 @@ type HeroSectionProps = {
 };
 
 // Component for displaying a single match card (non-streamed)
-function MatchCard({
-  match,
-  onMatchClick
-}: {
-  match: MatchWithStreamUrls;
-  onMatchClick: (match: MatchWithStreamUrls) => void;
-}) {
+export const MatchCard = ({ match }: { match: MatchWithStreamUrls }) => {
   return (
-    <Card
-      className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group relative"
-      onClick={() => onMatchClick(match)}
-    >
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex items-start gap-2 sm:gap-3">
-          <div
-            className="w-3 h-3 rounded-full flex-shrink-0 mt-1 flex-shrink-0"
-            style={{
-              backgroundColor: DIVISIONS[match.league_tier]?.color
-            }}
-          />
-          <div className="flex-1 min-w-0 overflow-hidden">
-            <h3 className="font-semibold text-sm lg:text-base mb-1 group-hover:text-orange-400 transition-colors break-words leading-tight text-white">
-              {match.title}
-            </h3>
-            <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
-              <Clock className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate">
-                {formatInTimezone(match.match_start, "MMM d 'at' HH:mm")}
-              </span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <Badge
-                variant="secondary"
-                className="text-xs bg-white/10 text-slate-300 border-white/20 flex-shrink-0"
-              >
-                {match.league_name}
-              </Badge>
+    <Link href={`/matches/${match.match_id}`} className="block">
+      <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group relative">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div
+              className="w-3 h-3 rounded-full flex-shrink-0 mt-1 flex-shrink-0"
+              style={{
+                backgroundColor: DIVISIONS[match.league_tier]?.color
+              }}
+            />
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <h3 className="font-semibold text-sm lg:text-base mb-1 group-hover:text-orange-400 transition-colors break-words leading-tight text-white">
+                {match.title}
+              </h3>
+              <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
+                <Clock className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">
+                  {formatInTimezone(match.match_start, "MMM d 'at' HH:mm")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <Badge
+                  variant="secondary"
+                  className="text-xs bg-white/10 text-slate-300 border-white/20 flex-shrink-0"
+                >
+                  {match.league_name}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
   );
-}
+};
 
-const StreamButtons = ({
-  match,
-  onStreamClick
-}: {
-  match: MatchWithStreamUrls;
-  onStreamClick: (match: MatchWithStreamUrls) => void;
-}) => {
+const StreamButtons = ({ match }: { match: MatchWithStreamUrls }) => {
   if (match.stream_urls.length === 0) {
     return null;
   }
@@ -83,17 +77,15 @@ const StreamButtons = ({
       <Button
         size="sm"
         className="bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-700 hover:to-red-700 text-white px-3 py-2 h-auto font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-0 text-sm min-h-[36px] w-full"
-        onClick={(e) => {
-          e.stopPropagation();
-          onStreamClick(match);
-        }}
+        asChild
       >
-        <div className="flex items-center gap-2">
+        <Link className="flex items-center gap-2" href={""}>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
           </svg>
           <span>Watch</span>
-        </div>
+          <ExternalLink className="h-4 w-4" />
+        </Link>
       </Button>
     );
   }
@@ -105,31 +97,26 @@ const StreamButtons = ({
           key={url}
           size="sm"
           className="bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-700 hover:to-red-700 text-white px-3 py-2 h-auto font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-0 text-sm min-h-[36px] w-full"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(url, "_blank");
-          }}
+          asChild
         >
-          <div className="flex items-center gap-2">
+          <Link className="flex items-center gap-2" href={url}>
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
             </svg>
             <span>Stream {index + 1}</span>
-          </div>
+            <ExternalLink className="h-4 w-4" />
+          </Link>
         </Button>
       ))}
     </div>
   );
 };
 
-// Component for displaying all upcoming matches
-function AllMatchesTab({
-  matches,
-  onMatchClick
+export const AllMatchesTab = ({
+  matches
 }: {
   matches: MatchWithStreamUrls[];
-  onMatchClick: (match: MatchWithStreamUrls) => void;
-}) {
+}) => {
   if (matches.length === 0) {
     return (
       <Card className="bg-white/5 border-white/10">
@@ -149,26 +136,17 @@ function AllMatchesTab({
   return (
     <div className="space-y-3 sm:space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-500">
       {matches.map((match) => (
-        <MatchCard
-          key={match.match_id}
-          match={match}
-          onMatchClick={onMatchClick}
-        />
+        <MatchCard key={match.match_id} match={match} />
       ))}
     </div>
   );
-}
+};
 
-// Component for displaying only streamed matches
-function StreamedMatchesTab({
-  matches,
-  onMatchClick,
-  onStreamClick
+export const StreamedMatchesTab = ({
+  matches
 }: {
   matches: MatchWithStreamUrls[];
-  onMatchClick: (match: MatchWithStreamUrls) => void;
-  onStreamClick: (match: MatchWithStreamUrls) => void;
-}) {
+}) => {
   if (matches.length === 0) {
     return (
       <Card className="bg-white/5 border-white/10">
@@ -187,75 +165,77 @@ function StreamedMatchesTab({
     <div className="space-y-3 sm:space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-500">
       {matches.map((match) => {
         return (
-          <Card
+          <Link
             key={match.match_id}
-            className="bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-red-500/10 border-purple-500/30 hover:from-purple-500/15 hover:via-orange-500/15 hover:to-red-500/15 ring-1 ring-purple-500/20 transition-all duration-300 cursor-pointer group relative overflow-hidden"
-            onClick={() => onMatchClick(match)}
+            href={`/matches/${match.match_id}`}
+            className="block"
           >
-            {/* Twitch-style gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-orange-600/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <Card className="bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-red-500/10 border-purple-500/30 hover:from-purple-500/15 hover:via-orange-500/15 hover:to-red-500/15 ring-1 ring-purple-500/20 transition-all duration-300 cursor-pointer group relative overflow-hidden">
+              {/* Twitch-style gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-orange-600/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-            {/* Stream indicator badge - only show when match is ongoing */}
-            {match.match_status === MatchStatus.ONGOING && (
-              <div className="absolute top-3 left-3 z-10">
-                <div className="flex items-center gap-1.5 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
-                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                  LIVE
+              {/* Stream indicator badge - only show when match is ongoing */}
+              {match.match_status === MatchStatus.ONGOING && (
+                <div className="absolute top-3 left-3 z-10">
+                  <div className="flex items-center gap-1.5 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
+                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+                    LIVE
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <CardContent className="p-3 sm:p-4 relative z-0">
-              {/* Two-column layout: content on left, buttons on right */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                {/* Left column: Match info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-2 sm:gap-3">
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-                      style={{
-                        backgroundColor: DIVISIONS[match.league_tier]?.color
-                      }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm lg:text-base mb-1 sm:mb-2 group-hover:text-purple-300 transition-colors break-words leading-tight text-white line-clamp-2">
-                        {match.title}
-                      </h3>
+              <CardContent className="p-3 sm:p-4 relative z-0">
+                {/* Two-column layout: content on left, buttons on right */}
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                  {/* Left column: Match info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                        style={{
+                          backgroundColor: DIVISIONS[match.league_tier]?.color
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm lg:text-base mb-1 sm:mb-2 group-hover:text-purple-300 transition-colors break-words leading-tight text-white line-clamp-2">
+                          {match.title}
+                        </h3>
 
-                      <div className="flex items-center gap-2 text-slate-300 text-xs mb-2 sm:mb-3">
-                        <Clock className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">
-                          {formatInTimezone(
-                            match.match_start,
-                            "MMM d 'at' HH:mm"
-                          )}
-                        </span>
-                      </div>
+                        <div className="flex items-center gap-2 text-slate-300 text-xs mb-2 sm:mb-3">
+                          <Clock className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">
+                            {formatInTimezone(
+                              match.match_start,
+                              "MMM d 'at' HH:mm"
+                            )}
+                          </span>
+                        </div>
 
-                      <div className="flex items-center justify-between gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="text-xs bg-white/20 text-white border-white/30 flex-shrink-0"
-                        >
-                          {match.league_name}
-                        </Badge>
+                        <div className="flex items-center justify-between gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="text-xs bg-white/20 text-white border-white/30 flex-shrink-0"
+                          >
+                            {match.league_name}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Right column: Stream buttons */}
-                <div className="flex-shrink-0 w-full sm:w-auto sm:min-w-[120px]">
-                  <StreamButtons match={match} onStreamClick={onStreamClick} />
+                  {/* Right column: Stream buttons */}
+                  <div className="flex-shrink-0 w-full sm:w-auto sm:min-w-[120px]">
+                    <StreamButtons match={match} />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         );
       })}
     </div>
   );
-}
+};
 
 // Loading skeleton component
 function MatchesLoadingSkeleton() {
@@ -332,26 +312,6 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
     }
     return allUpcomingMatches;
   }, [allUpcomingMatches, allUpcomingStreamedMatches, matchFilter]);
-
-  const handleMatchClick = (match: MatchWithStreamUrls) => {
-    // Check if match is in the future (upcoming) based on match_start
-    const matchDate = new Date(match.match_start);
-    const now = new Date();
-
-    if (matchDate > now) {
-      // Navigate to upcoming match page
-      router.push(`/matches/upcoming/${match.match_id}`);
-    } else {
-      // Navigate to completed/past match page
-      router.push(`/matches/${match.match_id}`);
-    }
-  };
-
-  const handleStreamClick = (match: MatchWithStreamUrls) => {
-    if (match.stream_urls && match.stream_urls.length > 0) {
-      window.open(match.stream_urls[0], "_blank");
-    }
-  };
 
   return (
     <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-[800px] lg:min-h-[900px] 2xl:min-h-[1000px]">
@@ -480,16 +440,9 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             {isLoadingMatches ? (
               <MatchesLoadingSkeleton />
             ) : matchFilter === "streamed" ? (
-              <StreamedMatchesTab
-                matches={upcomingMatches}
-                onMatchClick={handleMatchClick}
-                onStreamClick={handleStreamClick}
-              />
+              <StreamedMatchesTab matches={upcomingMatches} />
             ) : (
-              <AllMatchesTab
-                matches={upcomingMatches}
-                onMatchClick={handleMatchClick}
-              />
+              <AllMatchesTab matches={upcomingMatches} />
             )}
           </div>
         </div>
