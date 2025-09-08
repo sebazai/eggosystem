@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import { clientApiFetch } from "@/lib/apiClient";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { hasCasterAccess } from "@/lib/roleUtils";
+import { useIsMatch2xBO1StreamReservation } from "@/hooks/data/useIsMatch2xBO1StreamReservation";
 
 interface StreamReservationProps {
   matchId: string;
@@ -36,6 +38,9 @@ export function StreamReservation({
   const [streamUrl, setStreamUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingDefault, setIsLoadingDefault] = useState(false);
+  const [reserveBothGames, setReserveBothGames] = useState(true);
+  const { is2xBO1, isLoading: _isLoadingIs2xBO1 } =
+    useIsMatch2xBO1StreamReservation(matchId);
 
   const canReserve = hasCasterAccess(user);
 
@@ -75,12 +80,16 @@ export function StreamReservation({
     try {
       await clientApiFetch(`/api/v1/matches/${matchId}/reserve-cast`, {
         method: "POST",
-        body: JSON.stringify({ stream_url: streamUrl })
+        body: JSON.stringify({
+          stream_url: streamUrl,
+          reserve_both_games: is2xBO1 ? reserveBothGames : undefined
+        })
       });
 
       toast.success("Stream reserved successfully!");
       setIsOpen(false);
       setStreamUrl("");
+      setReserveBothGames(true); // Reset to default
       onReservationSuccess();
     } catch (error: unknown) {
       toast.error(
@@ -127,6 +136,24 @@ export function StreamReservation({
               </p>
             )}
           </div>
+          {is2xBO1 && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="reserveBothGames"
+                checked={reserveBothGames}
+                onCheckedChange={(checked) =>
+                  setReserveBothGames(checked === true)
+                }
+                disabled={isLoading}
+              />
+              <Label
+                htmlFor="reserveBothGames"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Reserve both BO1 games for same day
+              </Label>
+            </div>
+          )}
           <div className="flex gap-2">
             <Button
               onClick={handleReserve}

@@ -11,7 +11,8 @@ import {
   getMatchGame,
   getMatchMapVetoes,
   getMatchWithBreadcrumbInfo,
-  getMatchesWithTeamDataBySeasonId
+  getMatchesWithTeamDataBySeasonId,
+  getMatchIs2xBO1
 } from "../models/match.models";
 import type {
   MatchGame,
@@ -27,6 +28,15 @@ import { getActiveOrPassedSeasonId } from "../services/season.services";
 export const getMatchesController = async (req: Request, res: Response) => {
   const matches = await getMatches(); // Wait for the promise to resolve
   res.status(200).json({ matches });
+};
+
+export const getMatchIs2xBO1Controller = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response
+) => {
+  const matchId = parseInt(req.params.match_id, 10);
+  const is2xBO1 = await getMatchIs2xBO1(matchId);
+  res.status(200).json({ is2xBO1 });
 };
 
 // Used externally by grmrpr

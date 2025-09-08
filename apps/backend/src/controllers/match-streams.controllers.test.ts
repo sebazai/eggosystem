@@ -65,10 +65,13 @@ describe("match-streams controllers", () => {
         provider: "steam"
       },
       params: { match_id: "123" },
-      body: { stream_url: "https://twitch.tv/testcaster" }
+      body: {
+        stream_url: "https://twitch.tv/testcaster",
+        reserve_both_games: false
+      }
     } as unknown as RequestWithParamsAndBody<
       { match_id: string },
-      { stream_url: string }
+      { stream_url: string; reserve_both_games: boolean }
     >;
 
     it("should successfully reserve a stream for a caster", async () => {
@@ -95,7 +98,7 @@ describe("match-streams controllers", () => {
         body: { stream_url: "not-a-url" }
       } as unknown as RequestWithParamsAndBody<
         { match_id: string },
-        { stream_url: string }
+        { stream_url: string; reserve_both_games: boolean }
       >;
 
       // The controller now lets ZodError bubble up, so it should be thrown

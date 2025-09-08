@@ -144,7 +144,7 @@ export const getMultiplePlayerStatsByFilters = async ({
     ${joinType} MatchGames mg ON mg.match_id = m.id${mapConditions}
     ${joinType} PlayerStats ps ON ps.game_id = mg.id AND ps.steam_id = stp.steam_id
     ${whereClause}
-    GROUP BY p.steam_id, p.nickname, stp.team_id
+    GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC
   `;
 

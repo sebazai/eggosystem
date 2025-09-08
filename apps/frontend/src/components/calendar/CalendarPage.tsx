@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
-import type { MatchWithStreamUrls } from "@eggosystem/types";
+import { MatchStatus, type MatchWithStreamUrls } from "@eggosystem/types";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
 import {
   sortMatchesByDateAndTier,
@@ -132,7 +132,78 @@ interface EventDetails {
   streamUrl?: string[];
   team1: string;
   team2: string;
+  status: string;
 }
+
+const RenderStreamLinks = ({
+  streamUrl,
+  handleStreamClick
+}: {
+  streamUrl?: string[];
+  handleStreamClick: () => void;
+}) => {
+  if (!streamUrl || streamUrl.length === 0) {
+    return null;
+  }
+
+  if (streamUrl && streamUrl.length === 1) {
+    return (
+      <>
+        <Button
+          onClick={() => handleStreamClick()}
+          className="flex items-center gap-2 w-full"
+        >
+          <ExternalLink className="h-4 w-4" />
+          Watch Stream
+        </Button>
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Available Streams:</h4>
+      <div className="flex flex-col gap-1">
+        {streamUrl.map((url, index) => (
+          <a
+            key={index}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-primary hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" />
+            {url}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const RenderStreamButton = ({
+  matchId,
+  onReservationSuccess,
+  status
+}: {
+  matchId: string;
+  onReservationSuccess: () => void;
+  handleStreamClick: () => void;
+  status: string;
+}) => {
+  if (status === MatchStatus.SCHEDULED) {
+    return (
+      <>
+        <StreamReservation
+          matchId={matchId}
+          onReservationSuccess={onReservationSuccess}
+        />
+      </>
+    );
+  }
+
+  return null;
+};
 
 const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
   // Sort matches by date/time first, then by tier
@@ -161,6 +232,7 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
         team2: match.match_team2,
         tier: match.league_tier,
         hasStream: hasStream,
+        status: match.match_status,
         // Store the original sort order for popover sorting
         sortOrder: index
       }
@@ -250,7 +322,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
           league: event.extendedProps?.league || "",
           streamUrl: event.extendedProps?.streamUrl,
           team1: event.extendedProps?.team1 || "",
-          team2: event.extendedProps?.team2 || ""
+          team2: event.extendedProps?.team2 || "",
+          status: event.extendedProps?.status || ""
         } satisfies EventDetails);
         setIsDialogOpen(true);
       },
@@ -298,6 +371,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
             team1?: string;
             team2?: string;
             tier?: number;
+            status?: string;
           };
         }>;
       }) => {
@@ -366,7 +440,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
               league: event.extendedProps?.league || "",
               streamUrl: event.extendedProps?.streamUrl,
               team1: event.extendedProps?.team1 || "",
-              team2: event.extendedProps?.team2 || ""
+              team2: event.extendedProps?.team2 || "",
+              status: event.extendedProps?.status || ""
             } satisfies EventDetails);
             setIsDialogOpen(true);
 
@@ -459,6 +534,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     mutate(
       `/api/v1/calendar/seasons/${seasonId}/leagues/${selectedDivision}/matches`
     );
+    setIsDialogOpen(false);
   };
 
   return (
@@ -622,7 +698,8 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                           league: match.league_name,
                           streamUrl: match.stream_urls,
                           team1: match.match_team1,
-                          team2: match.match_team2
+                          team2: match.match_team2,
+                          status: match.match_status
                         });
                         setIsDialogOpen(true);
                       }}
@@ -703,50 +780,16 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
               </div>
 
               <div className="flex flex-col gap-4 pt-2">
-                {/* Stream Section */}
-                {selectedEvent.streamUrl &&
-                selectedEvent.streamUrl.length > 0 ? (
-                  <>
-                    {selectedEvent.streamUrl.length === 1 ? (
-                      // Single stream - show as button
-                      <Button
-                        onClick={() => handleStreamClick()}
-                        className="flex items-center gap-2 w-full"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                        Watch Stream
-                      </Button>
-                    ) : (
-                      // Multiple streams - show as links
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">
-                          Available Streams:
-                        </h4>
-                        <div className="flex flex-col gap-1">
-                          {selectedEvent.streamUrl.map((url, index) => (
-                            <a
-                              key={index}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-primary hover:underline"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                              Stream {index + 1}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  // No streams - show reserve button for casters
-                  <StreamReservation
-                    matchId={selectedEvent.id}
-                    onReservationSuccess={handleStreamReservation}
-                  />
-                )}
-
+                <RenderStreamButton
+                  matchId={selectedEvent.id}
+                  onReservationSuccess={handleStreamReservation}
+                  handleStreamClick={handleStreamClick}
+                  status={selectedEvent.status}
+                />
+                <RenderStreamLinks
+                  streamUrl={selectedEvent.streamUrl}
+                  handleStreamClick={handleStreamClick}
+                />
                 <Button
                   onClick={() => {
                     window.open(`/matches/${selectedEvent.id}`, "_blank");

@@ -9,7 +9,8 @@ import {
   getMatchController,
   getMatchGameController,
   getMatchMapVetoesController,
-  getMatchBreadcrumbController
+  getMatchBreadcrumbController,
+  getMatchIs2xBO1Controller
 } from "../../controllers/matches.controllers";
 import {
   reserveStreamController,
@@ -63,6 +64,12 @@ router.get(
   "/:match_id/vetoes",
   validateNumericParams(),
   getMatchMapVetoesController
+);
+
+router.get(
+  "/:match_id/is-2xbo1",
+  validateNumericParams(),
+  getMatchIs2xBO1Controller
 );
 
 router.get("/", getMatchesController);
