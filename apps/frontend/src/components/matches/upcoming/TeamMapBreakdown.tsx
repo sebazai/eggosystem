@@ -6,6 +6,7 @@ import type { MatchInfo } from "@eggosystem/types";
 import { type FilterParamsQuery } from "@/lib/utils";
 import { MapPerformanceRadarSection, MapComparisonCard } from "./components";
 import { useTeamMapStats } from "@/hooks/data/useTeamMapStats";
+import { getTeamDataWithFallback } from "./data-utils";
 
 interface TeamMapBreakdownProps {
   matchInfo: MatchInfo;
@@ -45,15 +46,14 @@ export const TeamMapBreakdown = ({
       maps: null
     });
 
-  // Use fallback data if filtered data is empty
-  const finalTeam1MapStats =
-    team1MapStats && team1MapStats.length > 0
-      ? team1MapStats
-      : team1MapStatsFallback;
-  const finalTeam2MapStats =
-    team2MapStats && team2MapStats.length > 0
-      ? team2MapStats
-      : team2MapStatsFallback;
+  // Get the final stats using the fallback logic
+  const { team1Data: finalTeam1MapStats, team2Data: finalTeam2MapStats } =
+    getTeamDataWithFallback(
+      team1MapStats,
+      team1MapStatsFallback,
+      team2MapStats,
+      team2MapStatsFallback
+    );
 
   // Check if we have real data for both teams
   const hasTeam1Data = finalTeam1MapStats && finalTeam1MapStats.length > 0;

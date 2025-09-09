@@ -5,6 +5,7 @@ import { type FilterParamsQuery } from "@/lib/utils";
 import type { MatchTeamInfo, MatchHistoryItem } from "@eggosystem/types";
 import { TeamRecentForm } from "./components";
 import { useFilteredTeamMatchHistory } from "@/hooks/data/filtered/useFilteredTeamMatchHistory";
+import { getTeamDataWithFallback } from "./data-utils";
 
 interface TeamFormComparisonProps {
   teams: MatchTeamInfo[];
@@ -71,15 +72,14 @@ export const TeamFormComparison = ({
       !isLoadingTeam2
   });
 
-  // Use fallback data if primary data is empty
-  const finalTeam1History =
-    team1History && team1History.length > 0
-      ? team1History
-      : team1HistoryFallback;
-  const finalTeam2History =
-    team2History && team2History.length > 0
-      ? team2History
-      : team2HistoryFallback;
+  // Get the final history using the fallback logic
+  const { team1Data: finalTeam1History, team2Data: finalTeam2History } =
+    getTeamDataWithFallback(
+      team1History,
+      team1HistoryFallback,
+      team2History,
+      team2HistoryFallback
+    );
 
   // Show loading state (including fallback loading)
   const isLoading =
