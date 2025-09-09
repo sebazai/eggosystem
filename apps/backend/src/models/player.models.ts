@@ -474,7 +474,7 @@ export const getPlayerStatsWithFilters = async (
         SUM(ps.trades) as trades,
         SUM(ps.trade_attempts) as trade_attempts,
         SUM(ps.trade_opportunities) as trade_opportunities,
-        ROUND(SUM(ps.good_strafing_shots) / NULLIF(SUM(ps.total_strafing_shots), 0) * 100, 1) as counter_strafing_percentage,
+        COALESCE(ROUND(SUM(ps.good_strafing_shots) / NULLIF(SUM(ps.total_strafing_shots), 0) * 100, 1), 0) as counter_strafing_percentage,
         SUM(ps.first_kills_ct) as first_kills_ct,
         SUM(ps.first_deaths_ct) as first_deaths_ct,
         SUM(ps.first_kills_t) as first_kills_t,
@@ -796,22 +796,22 @@ export const getPlayerMapStatsWithFilters = async (
           details.matches_played > 0
             ? (details.wins / details.matches_played) * 100
             : 0,
-        kills_t: playerStats.kills_t || 0,
-        kills_ct: playerStats.kills_ct || 0,
-        trades: playerStats.trades || 0,
-        trade_attempts: playerStats.trade_attempts || 0,
-        trade_opportunities: playerStats.trade_opportunities || 0,
+        kills_t: playerStats?.kills_t || 0,
+        kills_ct: playerStats?.kills_ct || 0,
+        trades: playerStats?.trades || 0,
+        trade_attempts: playerStats?.trade_attempts || 0,
+        trade_opportunities: playerStats?.trade_opportunities || 0,
         counter_strafing_percentage:
-          playerStats.counter_strafing_percentage || 0,
-        first_kills_ct: playerStats.first_kills_ct || 0,
-        first_deaths_ct: playerStats.first_deaths_ct || 0,
-        first_kills_t: playerStats.first_kills_t || 0,
-        first_deaths_t: playerStats.first_deaths_t || 0,
-        avg_enemy_flash_duration: playerStats.avg_enemy_flash_duration || 0,
+          playerStats?.counter_strafing_percentage || 0,
+        first_kills_ct: playerStats?.first_kills_ct || 0,
+        first_deaths_ct: playerStats?.first_deaths_ct || 0,
+        first_kills_t: playerStats?.first_kills_t || 0,
+        first_deaths_t: playerStats?.first_deaths_t || 0,
+        avg_enemy_flash_duration: playerStats?.avg_enemy_flash_duration || 0,
         avg_teammate_flash_duration:
-          playerStats.avg_teammate_flash_duration || 0,
-        crosshair_placement: playerStats.crosshair_placement || 0,
-        time_to_damage: playerStats.time_to_damage || 0
+          playerStats?.avg_teammate_flash_duration || 0,
+        crosshair_placement: playerStats?.crosshair_placement || 0,
+        time_to_damage: playerStats?.time_to_damage || 0
       };
 
       return mapStats;
