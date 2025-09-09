@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { MatchInfo, Team } from "@eggosystem/types";
+import type { MatchInfo } from "@eggosystem/types";
 
 import { type FilterParamsQuery } from "@/lib/utils";
 import { MapPerformanceRadarSection, MapComparisonCard } from "./components";
@@ -102,9 +102,8 @@ export const TeamMapBreakdown = ({
     );
   }
 
-  // Get team names safely (teams is now an array, typed with indexed access)
-  const team1Name: Team["name"] = matchInfo.teams?.[0]?.name || "Team 1";
-  const team2Name: Team["name"] = matchInfo.teams?.[1]?.name || "Team 2";
+  const team1Name = teams[0]?.name || "Team 1";
+  const team2Name = teams[1]?.name || "Team 2";
 
   // Render map stats or empty state
   return (
