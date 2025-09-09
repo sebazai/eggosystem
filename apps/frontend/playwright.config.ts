@@ -27,6 +27,7 @@ export default defineConfig({
       mode: "only-on-failure",
       fullPage: true
     },
+    video: isCI ? "off" : "retain-on-failure",
     headless: true
   },
   projects: [

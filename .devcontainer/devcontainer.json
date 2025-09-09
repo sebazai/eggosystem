@@ -42,7 +42,8 @@
         "esbenp.prettier-vscode",
         "ms-vscode.vscode-typescript-next",
         "eamodio.gitlens",
-        "gruntfuggly.triggertaskonsave"
+        "gruntfuggly.triggertaskonsave",
+        "ms-playwright.playwright"
       ]
     }
   },
@@ -57,6 +58,11 @@
       "onAutoForward": "notify"
     }
   },
+  "runArgs": ["--ipc=host"],
+  "hostRequirements": {
+    "cli": ["xhost"]
+  },
+  "postStartCommand": "xhost + 127.0.0.1 || true",
   "runServices": [
     "devcontainer",
     "eggo-devdb",
