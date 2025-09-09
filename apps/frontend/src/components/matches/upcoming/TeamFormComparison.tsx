@@ -115,7 +115,12 @@ export const TeamFormComparison = ({
         maps: match.maps || "Unknown",
         team_score: match.team_score,
         opponent_score: match.opponent_score,
-        result: match.result as "win" | "loss" | "draw"
+        result:
+          match.team_score > match.opponent_score
+            ? "win"
+            : match.team_score < match.opponent_score
+              ? "loss"
+              : "draw"
       }))
     : [];
 
@@ -130,7 +135,12 @@ export const TeamFormComparison = ({
         maps: match.maps || "Unknown",
         team_score: match.team_score,
         opponent_score: match.opponent_score,
-        result: match.result as "win" | "loss" | "draw"
+        result:
+          match.team_score > match.opponent_score
+            ? "win"
+            : match.team_score < match.opponent_score
+              ? "loss"
+              : "draw"
       }))
     : [];
 
