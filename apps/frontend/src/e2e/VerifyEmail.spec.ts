@@ -8,7 +8,7 @@ async function navigateToPage(page: Page, url: string) {
 
 test.describe("Email Verification Page", () => {
   test.describe("Success Cases", () => {
-    test("should show success message and toast when token is valid", async ({
+    test("should verify email successfully and show proper UI", async ({
       page
     }) => {
       // E2E tests use real backend - use one of the valid tokens from seed
@@ -49,26 +49,50 @@ test.describe("Email Verification Page", () => {
       expect(page.url()).toContain("/");
     });
 
-    test("should handle successful verification without showing loading state for too long", async ({
+    test("should handle Redis token verification successfully", async ({
       page
     }) => {
-      // Use a different valid token to avoid conflict with first test
-      await navigateToPage(page, "/verify-email?token=valid-token-456");
+      // Use dedicated bug test token to avoid conflicts with original tests
+      await navigateToPage(page, "/verify-email?token=bug-test-redis-token");
 
-      // Should not show loading state for more than a few seconds
-      const loadingElement = page.locator("text=Verifying your email...");
-
-      // Wait for either success message or timeout
-      await Promise.race([
-        page
-          .locator('[data-testid="verify-email-success-card"] h1')
-          .first()
-          .waitFor({ timeout: 10000 }),
-        loadingElement.waitFor({ state: "hidden", timeout: 10000 })
-      ]);
+      // Should show success message (not "verification failed")
+      await expect(
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
+      ).toBeVisible({ timeout: 10000 });
 
       await expect(
         page.locator('[data-testid="verify-email-success-card"] h1').first()
+      ).toContainText("Email verified!");
+
+      // Check for success icon
+      await expect(
+        page.locator('[data-testid="check-circle-icon"]').first()
+      ).toBeVisible();
+
+      // Verify success toast appears (confirms the backend returned 200, not error)
+      await expect(
+        page.locator("text=Email verified successfully!")
+      ).toBeVisible();
+    });
+
+    test("should handle database fallback verification successfully", async ({
+      page
+    }) => {
+      // Use dedicated token for database fallback testing
+      await navigateToPage(page, "/verify-email?token=bug-test-db-token");
+
+      // Should show success message (validates database fallback doesn't throw error)
+      await expect(
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
+      ).toBeVisible({ timeout: 10000 });
+
+      await expect(
+        page.locator('[data-testid="verify-email-success-card"] h1').first()
+      ).toContainText("Email verified!");
+
+      // Verify success toast appears
+      await expect(
+        page.locator("text=Email verified successfully!")
       ).toBeVisible();
     });
   });
@@ -144,12 +168,43 @@ test.describe("Email Verification Page", () => {
       ).toBeVisible();
     });
 
-    test("should handle expired tokens", async ({ page }) => {
+    test("should handle expired tokens correctly", async ({ page }) => {
+      // Use existing expired token from seed
       await navigateToPage(page, "/verify-email?token=expired-token-123");
 
+      // Should show error message (not crash)
       await expect(
         page.locator("h1").filter({ hasText: "Verification failed" }).first()
+      ).toBeVisible({ timeout: 10000 });
+
+      // Should NOT show success toast
+      await expect(
+        page.locator("text=Email verified successfully!")
+      ).not.toBeVisible();
+    });
+
+    test("should fail gracefully with invalid token", async ({ page }) => {
+      // Test with invalid token
+      await navigateToPage(
+        page,
+        "/verify-email?token=definitely-invalid-token"
+      );
+
+      // Should show error message (not crash)
+      await expect(
+        page.locator("h1").filter({ hasText: "Verification failed" }).first()
+      ).toBeVisible({ timeout: 10000 });
+
+      await expect(
+        page
+          .locator("text=Your verification link is invalid or has expired")
+          .first()
       ).toBeVisible();
+
+      // Should NOT show success toast
+      await expect(
+        page.locator("text=Email verified successfully!")
+      ).not.toBeVisible();
     });
   });
 
@@ -173,6 +228,31 @@ test.describe("Email Verification Page", () => {
 
       // Either loading was visible briefly or success is already visible
       expect(loadingVisible || successVisible).toBe(true);
+    });
+  });
+
+  test.describe("Multiple Token Test (Prevents Token Consumption Issues)", () => {
+    test("should handle multiple valid tokens without conflicts", async ({
+      page
+    }) => {
+      const tokens = [
+        "bug-test-multiple-1",
+        "bug-test-multiple-2",
+        "bug-test-multiple-3"
+      ];
+
+      for (const token of tokens) {
+        await navigateToPage(page, `/verify-email?token=${token}`);
+
+        // Each should show success
+        await expect(
+          page.locator('[data-testid="verify-email-success-card"] h1').first()
+        ).toBeVisible({ timeout: 10000 });
+
+        await expect(
+          page.locator("text=Email verified successfully!")
+        ).toBeVisible();
+      }
     });
   });
 
