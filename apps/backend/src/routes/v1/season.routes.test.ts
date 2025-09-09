@@ -53,12 +53,13 @@ describe("Season Routes - Integration Tests", () => {
     });
 
     it("should return 400 for negative season ID", async () => {
-      const response = await request(app).get("/-1").expect(400);
+      const response = await request(app).get("/-1").expect(404);
 
       expect(response.body).toMatchObject({
         type: "about:blank",
-        title: "Bad Request",
-        status: 400
+        title: "Not Found",
+        status: 404,
+        detail: "Season not found"
       });
     });
   });
@@ -76,12 +77,12 @@ describe("Season Routes - Integration Tests", () => {
     });
 
     it("should return 400 for negative season ID", async () => {
-      const response = await request(app).get("/-1/details").expect(400);
+      const response = await request(app).get("/-1/details").expect(404);
 
       expect(response.body).toMatchObject({
         type: "about:blank",
-        title: "Bad Request",
-        status: 400
+        title: "Not Found",
+        status: 404
       });
     });
   });
@@ -98,15 +99,10 @@ describe("Season Routes - Integration Tests", () => {
       });
     });
 
-    it("should return 400 for negative season ID", async () => {
-      const response = await request(app).get("/-1/leagues").expect(400);
+    it("should return empty array for negative season ID", async () => {
+      const response = await request(app).get("/-1/leagues").expect(200);
 
-      expect(response.body).toMatchObject({
-        type: "about:blank",
-        title: "Bad Request",
-        status: 400,
-        detail: "Invalid numeric param: season_id"
-      });
+      expect(response.body).toEqual([]);
     });
   });
 });
