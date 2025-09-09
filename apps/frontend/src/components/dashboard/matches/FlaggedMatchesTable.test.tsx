@@ -9,6 +9,46 @@ const mockUseFlaggedMatches = useFlaggedMatches as jest.MockedFunction<
   typeof useFlaggedMatches
 >;
 
+// Mock the badge components
+jest.mock("./TeamBadge", () => ({
+  TeamBadge: ({ teamId }: { teamId: number }) => (
+    <span data-testid={`team-badge-${teamId}`}>Team {teamId}</span>
+  )
+}));
+
+jest.mock("./PlayerBadge", () => ({
+  PlayerBadge: ({
+    steamId,
+    variant
+  }: {
+    steamId: string;
+    variant?: string;
+  }) => (
+    <span
+      data-testid={`player-badge-${steamId}`}
+      className={variant === "destructive" ? "bg-destructive" : "bg-secondary"}
+    >
+      {steamId}
+    </span>
+  )
+}));
+
+jest.mock("./MatchIdBadge", () => ({
+  MatchIdBadge: ({ matchId }: { matchId: number }) => (
+    <span data-testid={`match-badge-${matchId}`} className="bg-secondary">
+      {matchId}
+    </span>
+  )
+}));
+
+jest.mock("./ExternalMatchIdBadge", () => ({
+  ExternalMatchIdBadge: ({ externalMatchId }: { externalMatchId: string }) => (
+    <span data-testid={`external-match-badge-${externalMatchId}`}>
+      {externalMatchId}
+    </span>
+  )
+}));
+
 const mockFlaggedMatchesData: FlaggedMatches[] = [
   {
     external_match_id: "match_12345",
@@ -152,9 +192,9 @@ describe("FlaggedMatchesTable", () => {
     it("displays all column headers", () => {
       render(<FlaggedMatchesTable />);
 
-      expect(screen.getByText("Match ID")).toBeInTheDocument();
-      expect(screen.getByText("Team ID")).toBeInTheDocument();
-      expect(screen.getByText("Steam IDs")).toBeInTheDocument();
+      expect(screen.getByText("External Match ID")).toBeInTheDocument();
+      expect(screen.getByText("Team")).toBeInTheDocument();
+      expect(screen.getByText("Players")).toBeInTheDocument();
       expect(screen.getByText("Match IDs")).toBeInTheDocument();
       expect(screen.getByText("Added Players")).toBeInTheDocument();
     });
@@ -162,61 +202,78 @@ describe("FlaggedMatchesTable", () => {
     it("displays match data in table rows", () => {
       render(<FlaggedMatchesTable />);
 
-      // Check first match data
-      expect(screen.getByText("match_12345")).toBeInTheDocument();
-      expect(screen.getByText("42")).toBeInTheDocument();
-      expect(screen.getByText("84")).toBeInTheDocument();
-      expect(screen.getByText("123")).toBeInTheDocument();
+      // Check first match data using mocked badge components
+      expect(
+        screen.getByTestId("external-match-badge-match_12345")
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("team-badge-42")).toBeInTheDocument();
+      expect(screen.getByTestId("team-badge-84")).toBeInTheDocument();
+      expect(screen.getByTestId("team-badge-123")).toBeInTheDocument();
     });
 
-    it("displays Steam IDs as badges with truncation", () => {
+    it("displays Steam IDs as badges", () => {
       render(<FlaggedMatchesTable />);
 
-      // First match should show 3 steam IDs
-      expect(screen.getByText("76561198123456789")).toBeInTheDocument();
-      expect(screen.getByText("76561198987654321")).toBeInTheDocument();
-      expect(screen.getByText("76561198555444333")).toBeInTheDocument();
+      // First match should show all 3 steam IDs using mocked badge components
+      expect(
+        screen.getByTestId("player-badge-76561198123456789")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198987654321")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198555444333")
+      ).toBeInTheDocument();
 
-      // Third match should show first 3 + "more" indicator
-      expect(screen.getByText("76561198000000001")).toBeInTheDocument();
-      expect(screen.getByText("76561198000000002")).toBeInTheDocument();
-      expect(screen.getByText("76561198000000003")).toBeInTheDocument();
-
-      // Check for "more" badges (there will be multiple, so use getAllByText)
-      const moreBadges = screen.getAllByText(/\+\d+ more/);
-      expect(moreBadges.length).toBeGreaterThan(0);
+      // Third match should show all 5 steam IDs
+      expect(
+        screen.getByTestId("player-badge-76561198000000001")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198000000002")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198000000003")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198000000004")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198000000005")
+      ).toBeInTheDocument();
     });
 
-    it("displays Match IDs as badges with truncation", () => {
+    it("displays Match IDs as badges", () => {
       render(<FlaggedMatchesTable />);
 
-      // First match should show first 2 match IDs
-      expect(screen.getByText("101")).toBeInTheDocument();
-      expect(screen.getByText("102")).toBeInTheDocument();
+      // First match should show all 3 match IDs using mocked badge components
+      expect(screen.getByTestId("match-badge-101")).toBeInTheDocument();
+      expect(screen.getByTestId("match-badge-102")).toBeInTheDocument();
+      expect(screen.getByTestId("match-badge-103")).toBeInTheDocument();
 
-      // Third match should show first 2 match IDs
-      expect(screen.getByText("301")).toBeInTheDocument();
-      expect(screen.getByText("302")).toBeInTheDocument();
-
-      // Check for truncation indicators
-      const moreBadges = screen.getAllByText(/\+\d+ more/);
-      expect(moreBadges.length).toBeGreaterThan(0);
+      // Third match should show all 4 match IDs
+      expect(screen.getByTestId("match-badge-301")).toBeInTheDocument();
+      expect(screen.getByTestId("match-badge-302")).toBeInTheDocument();
+      expect(screen.getByTestId("match-badge-303")).toBeInTheDocument();
+      expect(screen.getByTestId("match-badge-304")).toBeInTheDocument();
     });
 
-    it("displays Added Players as destructive badges with truncation", () => {
+    it("displays Added Players as destructive badges", () => {
       render(<FlaggedMatchesTable />);
 
-      // First match should show first 2 added players
-      expect(screen.getByText("suspicious_player_1")).toBeInTheDocument();
-      expect(screen.getByText("suspicious_player_2")).toBeInTheDocument();
+      // First match should show all 2 added players using mocked badge components
+      expect(
+        screen.getByTestId("player-badge-suspicious_player_1")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-suspicious_player_2")
+      ).toBeInTheDocument();
 
-      // Third match should show first 2 players
-      expect(screen.getByText("player1")).toBeInTheDocument();
-      expect(screen.getByText("player2")).toBeInTheDocument();
-
-      // Check for truncation indicators
-      const moreBadges = screen.getAllByText(/\+\d+ more/);
-      expect(moreBadges.length).toBeGreaterThan(0);
+      // Third match should show all 4 players
+      expect(screen.getByTestId("player-badge-player1")).toBeInTheDocument();
+      expect(screen.getByTestId("player-badge-player2")).toBeInTheDocument();
+      expect(screen.getByTestId("player-badge-player3")).toBeInTheDocument();
+      expect(screen.getByTestId("player-badge-player4")).toBeInTheDocument();
     });
 
     it("displays 'None' for matches with no added players", () => {
@@ -229,15 +286,13 @@ describe("FlaggedMatchesTable", () => {
       render(<FlaggedMatchesTable />);
 
       // Steam IDs and Match IDs should use secondary variant
-      const steamIdBadge = screen
-        .getByText("76561198123456789")
-        .closest("span");
-      const matchIdBadge = screen.getByText("101").closest("span");
+      const steamIdBadge = screen.getByTestId("player-badge-76561198123456789");
+      const matchIdBadge = screen.getByTestId("match-badge-101");
 
       // Added players should use destructive variant
-      const addedPlayerBadge = screen
-        .getByText("suspicious_player_1")
-        .closest("span");
+      const addedPlayerBadge = screen.getByTestId(
+        "player-badge-suspicious_player_1"
+      );
 
       expect(steamIdBadge).toHaveClass("bg-secondary");
       expect(matchIdBadge).toHaveClass("bg-secondary");
@@ -258,15 +313,17 @@ describe("FlaggedMatchesTable", () => {
     it("displays sortable column headers with sort icons", () => {
       render(<FlaggedMatchesTable />);
 
-      const matchIdHeaderDiv = screen.getByText("Match ID").closest("div");
-      const teamIdHeaderDiv = screen.getByText("Team ID").closest("div");
+      const externalMatchIdHeaderDiv = screen
+        .getByText("External Match ID")
+        .closest("div");
+      const teamHeaderDiv = screen.getByText("Team").closest("div");
 
-      expect(matchIdHeaderDiv).toHaveClass("cursor-pointer");
-      expect(teamIdHeaderDiv).toHaveClass("cursor-pointer");
+      expect(externalMatchIdHeaderDiv).toHaveClass("cursor-pointer");
+      expect(teamHeaderDiv).toHaveClass("cursor-pointer");
 
-      // Steam IDs, Match IDs, and Added Players should not be sortable
-      const steamIdsHeaderDiv = screen.getByText("Steam IDs").closest("div");
-      expect(steamIdsHeaderDiv).not.toHaveClass("cursor-pointer");
+      // Players, Match IDs, and Added Players should not be sortable
+      const playersHeaderDiv = screen.getByText("Players").closest("div");
+      expect(playersHeaderDiv).not.toHaveClass("cursor-pointer");
     });
 
     it("handles row hover effects", () => {
@@ -303,32 +360,33 @@ describe("FlaggedMatchesTable", () => {
       });
     });
 
-    it("allows sorting by Match ID", async () => {
+    it("allows sorting by External Match ID", async () => {
       render(<FlaggedMatchesTable />);
 
-      const matchIdHeader = screen.getByText("Match ID");
+      const externalMatchIdHeader = screen.getByText("External Match ID");
 
       // Click to sort
-      fireEvent.click(matchIdHeader);
+      fireEvent.click(externalMatchIdHeader);
 
       await waitFor(() => {
         // Verify sorting icons appear
-        const sortIcons = matchIdHeader.parentElement?.querySelectorAll("svg");
+        const sortIcons =
+          externalMatchIdHeader.parentElement?.querySelectorAll("svg");
         expect(sortIcons).toHaveLength(2); // ChevronUp and ChevronDown
       });
     });
 
-    it("allows sorting by Team ID", async () => {
+    it("allows sorting by Team", async () => {
       render(<FlaggedMatchesTable />);
 
-      const teamIdHeader = screen.getByText("Team ID");
+      const teamHeader = screen.getByText("Team");
 
       // Click to sort
-      fireEvent.click(teamIdHeader);
+      fireEvent.click(teamHeader);
 
       await waitFor(() => {
         // Verify sorting icons appear
-        const sortIcons = teamIdHeader.parentElement?.querySelectorAll("svg");
+        const sortIcons = teamHeader.parentElement?.querySelectorAll("svg");
         expect(sortIcons).toHaveLength(2); // ChevronUp and ChevronDown
       });
     });
@@ -336,14 +394,14 @@ describe("FlaggedMatchesTable", () => {
     it("does not allow sorting on non-sortable columns", () => {
       render(<FlaggedMatchesTable />);
 
-      const steamIdsHeaderDiv = screen.getByText("Steam IDs").closest("div");
+      const playersHeaderDiv = screen.getByText("Players").closest("div");
       const matchIdsHeaderDiv = screen.getByText("Match IDs").closest("div");
       const addedPlayersHeaderDiv = screen
         .getByText("Added Players")
         .closest("div");
 
       // These should not have click handlers
-      expect(steamIdsHeaderDiv).not.toHaveClass("cursor-pointer");
+      expect(playersHeaderDiv).not.toHaveClass("cursor-pointer");
       expect(matchIdsHeaderDiv).not.toHaveClass("cursor-pointer");
       expect(addedPlayersHeaderDiv).not.toHaveClass("cursor-pointer");
     });
@@ -373,7 +431,9 @@ describe("FlaggedMatchesTable", () => {
       // Should show "None" instead of crashing
       const noneElements = screen.getAllByText("None");
       expect(noneElements.length).toBeGreaterThan(0);
-      expect(screen.getByText("match_undefined")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("external-match-badge-match_undefined")
+      ).toBeInTheDocument();
     });
 
     it("handles undefined match_ids array", () => {
@@ -399,7 +459,9 @@ describe("FlaggedMatchesTable", () => {
       // Should show "None" for match_ids instead of crashing
       const noneElements = screen.getAllByText("None");
       expect(noneElements.length).toBeGreaterThan(0);
-      expect(screen.getByText("match_undefined_match_ids")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("external-match-badge-match_undefined_match_ids")
+      ).toBeInTheDocument();
     });
 
     it("handles undefined players_added_for_this_match array", () => {
@@ -425,7 +487,9 @@ describe("FlaggedMatchesTable", () => {
       // Should show "None" for added players instead of crashing
       const noneElements = screen.getAllByText("None");
       expect(noneElements.length).toBeGreaterThan(0);
-      expect(screen.getByText("match_undefined_players")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("external-match-badge-match_undefined_players")
+      ).toBeInTheDocument();
     });
 
     it("handles empty arrays gracefully", () => {
@@ -451,7 +515,9 @@ describe("FlaggedMatchesTable", () => {
       // Should show "None" for all empty arrays
       const noneElements = screen.getAllByText("None");
       expect(noneElements.length).toBe(3); // Steam IDs, Match IDs, and Added Players
-      expect(screen.getByText("match_empty_arrays")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("external-match-badge-match_empty_arrays")
+      ).toBeInTheDocument();
     });
 
     it("handles mixed undefined and valid data", () => {
@@ -482,11 +548,17 @@ describe("FlaggedMatchesTable", () => {
       render(<FlaggedMatchesTable />);
 
       // Should handle mixed data gracefully
-      expect(screen.getByText("match_mixed_1")).toBeInTheDocument();
-      expect(screen.getByText("match_mixed_2")).toBeInTheDocument();
-      expect(screen.getByText("76561198123456789")).toBeInTheDocument();
-      expect(screen.getByText("701")).toBeInTheDocument();
-      expect(screen.getByText("player1")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("external-match-badge-match_mixed_1")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("external-match-badge-match_mixed_2")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("player-badge-76561198123456789")
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("match-badge-701")).toBeInTheDocument();
+      expect(screen.getByTestId("player-badge-player1")).toBeInTheDocument();
 
       const noneElements = screen.getAllByText("None");
       expect(noneElements.length).toBeGreaterThan(0);
