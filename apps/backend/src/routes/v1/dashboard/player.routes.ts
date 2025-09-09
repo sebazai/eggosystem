@@ -5,6 +5,7 @@ import {
   validatePlayerController
 } from "../../../controllers/dashboard/player.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
+import { getPlayerBySteamIdController } from "../../../controllers/players.controllers";
 
 const router = Router();
 
@@ -24,5 +25,7 @@ router.post(
   validateNumericParams(["season_id", "team_id"]),
   addSubstitutePlayerController
 );
+
+router.get("/:steam_id", getPlayerBySteamIdController);
 
 export default router;

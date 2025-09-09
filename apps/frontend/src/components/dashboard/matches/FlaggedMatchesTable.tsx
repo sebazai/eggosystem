@@ -15,6 +15,10 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FlaggedMatches } from "@eggosystem/types";
 import { useFlaggedMatches } from "@/hooks/data/dashboard/useFlaggedMatches";
+import { TeamBadge } from "./TeamBadge";
+import { PlayerBadge } from "./PlayerBadge";
+import { MatchIdBadge } from "./MatchIdBadge";
+import { ExternalMatchIdBadge } from "./ExternalMatchIdBadge";
 
 export const FlaggedMatchesTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -25,21 +29,26 @@ export const FlaggedMatchesTable = () => {
   const columns = useMemo(
     () => [
       columnHelper.accessor("external_match_id", {
-        header: "Match ID",
-        cell: ({ getValue }) => (
-          <span className="font-mono text-sm">{getValue()}</span>
-        ),
+        header: "External Match ID",
+        cell: ({ getValue }) => {
+          const externalMatchId = getValue();
+          return externalMatchId ? (
+            <ExternalMatchIdBadge externalMatchId={externalMatchId} />
+          ) : (
+            <span className="text-muted-foreground text-xs">None</span>
+          );
+        },
         meta: { className: "text-left" }
       }),
       columnHelper.accessor("team_id", {
-        header: "Team ID",
-        cell: ({ getValue }) => (
-          <span className="font-medium">{getValue()}</span>
-        ),
-        meta: { className: "text-center" }
+        header: "Team",
+        cell: ({ getValue }) => {
+          const teamId = getValue();
+          return <TeamBadge teamId={teamId} />;
+        }
       }),
       columnHelper.accessor("steam_ids", {
-        header: "Steam IDs",
+        header: "Players",
         cell: ({ getValue }) => {
           const steamIds = getValue();
 
@@ -50,16 +59,13 @@ export const FlaggedMatchesTable = () => {
 
           return (
             <div className="flex flex-wrap gap-1">
-              {steamIds.slice(0, 3).map((steamId) => (
-                <Badge key={steamId} variant="secondary" className="text-xs">
-                  {steamId}
-                </Badge>
+              {steamIds.map((steamId) => (
+                <PlayerBadge
+                  key={steamId}
+                  steamId={steamId}
+                  className="text-xs"
+                />
               ))}
-              {steamIds.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{steamIds.length - 3} more
-                </Badge>
-              )}
             </div>
           );
         },
@@ -78,16 +84,13 @@ export const FlaggedMatchesTable = () => {
 
           return (
             <div className="flex flex-wrap gap-1">
-              {matchIds.slice(0, 2).map((matchId) => (
-                <Badge key={matchId} variant="secondary" className="text-xs">
-                  {matchId}
-                </Badge>
+              {matchIds.map((matchId) => (
+                <MatchIdBadge
+                  key={matchId}
+                  matchId={matchId}
+                  className="text-xs"
+                />
               ))}
-              {matchIds.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{matchIds.length - 2} more
-                </Badge>
-              )}
             </div>
           );
         },
@@ -106,16 +109,14 @@ export const FlaggedMatchesTable = () => {
 
           return (
             <div className="flex flex-wrap gap-1">
-              {addedPlayers.slice(0, 2).map((player) => (
-                <Badge key={player} variant="destructive" className="text-xs">
-                  {player}
-                </Badge>
+              {addedPlayers.map((player) => (
+                <PlayerBadge
+                  key={player}
+                  steamId={player}
+                  variant="destructive"
+                  className="text-xs"
+                />
               ))}
-              {addedPlayers.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{addedPlayers.length - 2} more
-                </Badge>
-              )}
             </div>
           );
         },

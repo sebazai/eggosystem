@@ -32,7 +32,6 @@ import { getConnection } from "../db/mysqlConnection";
 import { logger } from "../utils/app-logger";
 import {
   adjustMatchDateTime,
-  convertISOToFinnishTime,
   convertISOToTime,
   getMatchDateTime
 } from "../utils/date-utils";
@@ -778,7 +777,7 @@ export const updateMatchEndTime = async (
     return;
   }
 
-  const endTime = convertISOToTime(convertISOToFinnishTime(finishedAt));
+  const endTime = convertISOToTime(finishedAt);
 
   await runQuery(
     "UPDATE Matches SET end_time = ? WHERE external_match_room_id = ?",
