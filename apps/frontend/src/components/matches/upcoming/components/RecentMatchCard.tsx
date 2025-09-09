@@ -7,6 +7,7 @@ import {
   mapToReadableNameCapitalFirst
 } from "@/lib/utils";
 import type { MatchHistoryItem } from "@eggosystem/types";
+import Link from "next/link";
 
 interface RecentMatchCardProps {
   match: MatchHistoryItem;
@@ -18,7 +19,11 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
   const formattedDate = format(new Date(match.date), "dd.MM.yyyy");
 
   return (
-    <div className="bg-card rounded-lg p-4 border">
+    <Link
+      href={`/matches/${match.match_id}`}
+      target="_blank"
+      className="bg-card rounded-lg p-4 border hover:border-kanaliiga-orange/50 transition-colors block"
+    >
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center">
           <NextImageFallback
@@ -79,6 +84,6 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
             .join(", ")}
         </span>
       </div>
-    </div>
+    </Link>
   );
 };
