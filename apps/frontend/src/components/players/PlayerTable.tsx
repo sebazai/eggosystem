@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { cn, type FilterParamsQuery } from "@/lib/utils";
-import { useMultiplePlayersStats } from "@/hooks/data/filtered/useMultiplePlayersStats";
+import { useAllMultiplePlayersStats } from "@/hooks/data/filtered/useAllMultiplePlayersStats";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Tooltip,
@@ -59,7 +59,7 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   const [pageSize, setPageSize] = useState(initialPageSize || 10);
 
   const { players, isLoading, isError, isValidating } =
-    useMultiplePlayersStats(filterQueryParams);
+    useAllMultiplePlayersStats(filterQueryParams);
 
   // Get player name from URL params
   const playerName = searchParams.get("playerName") || "";

@@ -51,6 +51,78 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   return results.length > 0 ? results[0] : undefined;
 };
 
+export const getAllPlayerStatsByFilters = async ({
+  season_ids,
+  league_ids,
+  team_ids,
+  stages,
+  map_ids,
+  playerName
+}: ParsedParams) => {
+  const { query, queryParams } = generateQueryWithFilters([
+    {
+      column: "mt.team_id",
+      value: team_ids
+    },
+    {
+      column: "m.season_id",
+      value: season_ids
+    },
+    {
+      column: "m.league_id",
+      value: league_ids
+    },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids }
+  ]);
+
+  const whereClause = playerName
+    ? `WHERE ${query} AND p.nickname LIKE ?`
+    : `WHERE ${query}`;
+
+  if (playerName) {
+    queryParams.push(`%${playerName}%`);
+  }
+
+  const teamIdsJoin = team_ids && team_ids.length > 0;
+
+  const baseQuery = `
+    SELECT 
+      p.steam_id,
+      p.nickname, 
+      COUNT(DISTINCT ps.game_id) as maps_played,
+      SUM(ps.kills) as kills,
+      SUM(ps.assists) as assists,
+      SUM(ps.deaths) as deaths,
+      SUM(ps.flash_assists) as flash_assists,
+      SUM(ps.awp_kills) as awp_kills,
+      SUM(ps.utility_damage) as utility_damage,
+      SUM(ps.headshots) as headshots,
+      SUM(ps.first_kills) as first_kills,
+      SUM(ps.first_deaths) as first_deaths,
+      AVG(ps.adr) as adr,
+      AVG(ps.kana_rating) as kana_rating,
+      AVG(ps.hs_percent) as hs_percent,
+      ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd
+    FROM PlayerStats ps
+    INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
+    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN Matches m ON m.id = mg.match_id
+    ${
+      teamIdsJoin
+        ? `
+        INNER JOIN MatchTeams mt ON mt.match_id = m.id 
+        INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id`
+        : ""
+    }
+    ${whereClause}
+    GROUP BY p.steam_id, p.nickname
+    ORDER BY kana_rating DESC
+  `;
+
+  return runQuery<Array<PlayerStatsTable>>(baseQuery, queryParams);
+};
+
 export const getMultiplePlayerStatsByFilters = async ({
   season_ids,
   league_ids,

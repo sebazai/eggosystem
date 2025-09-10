@@ -21,7 +21,8 @@ import {
   getFilteredPlayersStatsController,
   getPlayerSkillDiagramController,
   getMultiplePlayersSkillDiagramController,
-  getFilteredPlayerMapStatsController
+  getFilteredPlayerMapStatsController,
+  getFilteredAllPlayersStatsController
 } from "../../controllers/players.controllers";
 import { getFilteredMatchesController } from "../../controllers/matches.controllers";
 import { getTeamPistolWinsController } from "../../controllers/pistol-wins.controllers";
@@ -117,6 +118,7 @@ router.get("/", async (req, res) => {
 
 // Player
 router.get("/players/stats", getFilteredPlayersStatsController);
+router.get("/players/all/stats", getFilteredAllPlayersStatsController);
 router.get(
   "/players/:steam_id/statistics",
   getFilteredPlayerStatisticsController

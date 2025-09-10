@@ -10,7 +10,8 @@ import {
   getPlayerStatsForLatestSeason,
   getPlayerOldKanaElo,
   getPlayerMapStatsWithFilters,
-  setPlayerKanaElo
+  setPlayerKanaElo,
+  getAllPlayerStatsByFilters
 } from "../models/player.models";
 
 import {
@@ -130,6 +131,15 @@ export const getPlayerPlatformRank = async (
     return;
   }
   return next(new BadRequestError("Unknown platform enum"));
+};
+
+export const getFilteredAllPlayersStatsController = async (
+  req: Request,
+  res: Response
+) => {
+  const { parsedParams } = req;
+  const playerStats = await getAllPlayerStatsByFilters(parsedParams);
+  res.status(200).json(playerStats);
 };
 
 export const getFilteredPlayersStatsController = async (
