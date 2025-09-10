@@ -72,6 +72,10 @@ const StreamButtons = ({ match }: { match: MatchWithStreamUrls }) => {
     return null;
   }
 
+  const handleStreamClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   const firstStreamUrl = match.stream_urls[0];
   if (match.stream_urls.length === 1 && firstStreamUrl) {
     return (
@@ -80,7 +84,11 @@ const StreamButtons = ({ match }: { match: MatchWithStreamUrls }) => {
         className="bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-700 hover:to-red-700 text-white px-3 py-2 h-auto font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-0 text-sm min-h-[36px] w-full"
         asChild
       >
-        <Link className="flex items-center gap-2" href={firstStreamUrl}>
+        <Link
+          className="flex items-center gap-2"
+          href={firstStreamUrl}
+          onClick={handleStreamClick}
+        >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
           </svg>
@@ -100,7 +108,11 @@ const StreamButtons = ({ match }: { match: MatchWithStreamUrls }) => {
           className="bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-700 hover:to-red-700 text-white px-3 py-2 h-auto font-medium shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 border-0 text-sm min-h-[36px] w-full"
           asChild
         >
-          <Link className="flex items-center gap-2" href={url}>
+          <Link
+            className="flex items-center gap-2"
+            href={url}
+            onClick={handleStreamClick}
+          >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
             </svg>
