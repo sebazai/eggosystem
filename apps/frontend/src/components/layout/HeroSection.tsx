@@ -178,72 +178,70 @@ export const StreamedMatchesTab = ({
     <div className="space-y-3 sm:space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-600 hover:scrollbar-thumb-slate-500">
       {matches.map((match) => {
         return (
-          <Link
+          <Card
             key={match.match_id}
-            href={`/matches/${match.match_id}`}
-            className="block"
+            className="bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-red-500/10 border-purple-500/30 hover:from-purple-500/15 hover:via-orange-500/15 hover:to-red-500/15 ring-1 ring-purple-500/20 transition-all duration-300 cursor-pointer group relative overflow-hidden"
+            onClick={() => window.open(`/matches/${match.match_id}`, "_blank")}
           >
-            <Card className="bg-gradient-to-r from-purple-500/10 via-orange-500/10 to-red-500/10 border-purple-500/30 hover:from-purple-500/15 hover:via-orange-500/15 hover:to-red-500/15 ring-1 ring-purple-500/20 transition-all duration-300 cursor-pointer group relative overflow-hidden">
-              {/* Twitch-style gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-orange-600/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Twitch-style gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-orange-600/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-              {/* Stream indicator badge - only show when match is ongoing */}
-              {match.match_status === MatchStatus.ONGOING && (
-                <div className="absolute top-3 left-3 z-10">
-                  <div className="flex items-center gap-1.5 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
-                    <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                    LIVE
-                  </div>
+            {/* Stream indicator badge - only show when match is ongoing */}
+            {match.match_status === MatchStatus.ONGOING && (
+              <div className="absolute top-3 left-3 z-10">
+                <div className="flex items-center gap-1.5 bg-red-500/90 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
+                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+                  LIVE
                 </div>
-              )}
+              </div>
+            )}
 
-              <CardContent className="p-3 sm:p-4 relative z-0">
-                {/* Two-column layout: content on left, buttons on right */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  {/* Left column: Match info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2 sm:gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-                        style={{
-                          backgroundColor: DIVISIONS[match.league_tier]?.color
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm lg:text-base mb-1 sm:mb-2 group-hover:text-purple-300 transition-colors break-words leading-tight text-white line-clamp-2">
-                          {match.title}
-                        </h3>
+            <CardContent className="p-3 sm:p-4 relative z-0">
+              {/* Two-column layout: content on left, buttons on right */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                {/* Left column: Match info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                      style={{
+                        backgroundColor: DIVISIONS[match.league_tier]?.color
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm lg:text-base mb-1 sm:mb-2 group-hover:text-purple-300 transition-colors break-words leading-tight text-white line-clamp-2">
+                        {match.title}
+                      </h3>
 
-                        <div className="flex items-center gap-2 text-slate-300 text-xs mb-2 sm:mb-3">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">
-                            {formatInTimezone(
-                              match.match_start,
-                              "MMM d 'at' HH:mm"
-                            )}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2 text-slate-300 text-xs mb-2 sm:mb-3">
+                        <Clock className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">
+                          {formatInTimezone(
+                            match.match_start,
+                            "MMM d 'at' HH:mm"
+                          )}
+                        </span>
+                      </div>
 
-                        <div className="flex items-center justify-between gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="text-xs bg-white/20 text-white border-white/30 flex-shrink-0"
-                          >
-                            {match.league_name}
-                          </Badge>
-                        </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-white/20 text-white border-white/30 flex-shrink-0"
+                        >
+                          {match.league_name}
+                        </Badge>
                       </div>
                     </div>
                   </div>
-
-                  {/* Right column: Stream buttons */}
-                  <div className="flex-shrink-0 w-full sm:w-auto sm:min-w-[120px]">
-                    <StreamButtons match={match} />
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </Link>
+
+                {/* Right column: Stream buttons */}
+                <div className="flex-shrink-0 w-full sm:w-auto sm:min-w-[120px]">
+                  <StreamButtons match={match} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         );
       })}
     </div>
