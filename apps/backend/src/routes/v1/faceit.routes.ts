@@ -386,7 +386,6 @@ router.post(
               matchDetails,
               manualReprocess
             );
-            // TODO: Set to FORFEIT, set score to be 7-0 for the winning team for each match
             await updateMatchStatus(externalMatchRoomId, "FORFEIT");
             res.status(200).send("Webhook received");
             return;
