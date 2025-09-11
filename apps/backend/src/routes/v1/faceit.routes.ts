@@ -73,7 +73,8 @@ import { addChampionshipToDatabase } from "../../services/season-league-external
 import { removeSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
 import {
   triggerFaceitMatchSync,
-  validateChampionshipTeamsController
+  validateChampionshipTeamsController,
+  getFaceitPlayerController
 } from "../../controllers/faceit.controllers";
 
 const router = Router();
@@ -105,6 +106,8 @@ router.get(
   "/championship/:championship_id/validate",
   validateChampionshipTeamsController
 );
+
+router.get("/players/:steam_id/faceit", getFaceitPlayerController);
 
 // championship_cancelled, championship_checkin, championship_created, championship_finished, championship_seeding, championship_started,
 type FaceITWebhookData =

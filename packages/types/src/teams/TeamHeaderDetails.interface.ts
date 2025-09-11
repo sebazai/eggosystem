@@ -6,4 +6,5 @@ export interface TeamHeaderDetails {
   team_logo: Team["team_logo"];
   latest_league_name: League["name"];
   latest_season_name: Season["name"];
+  external_team_id?: string | null;
 }

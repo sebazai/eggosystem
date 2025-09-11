@@ -252,7 +252,8 @@ describe("getOneTeamByFilters", () => {
         team_logo: "S15_2184.png",
         id: 66,
         latest_season_name: "Season 2",
-        latest_league_name: "Masters"
+        latest_league_name: "Masters",
+        external_team_id: null
       }
     ]);
   });
@@ -264,7 +265,8 @@ describe("getOneTeamByFilters", () => {
         team_logo: "S15_2184.png",
         id: 66,
         latest_season_name: "Season 2",
-        latest_league_name: "Masters"
+        latest_league_name: "Masters",
+        external_team_id: null
       }
     ]);
   });
@@ -276,7 +278,8 @@ describe("getOneTeamByFilters", () => {
         team_logo: "S15_2184.png",
         id: 66,
         latest_season_name: "Season 11",
-        latest_league_name: "Masters"
+        latest_league_name: "Masters",
+        external_team_id: null
       }
     ]);
   });

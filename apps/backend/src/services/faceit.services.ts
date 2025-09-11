@@ -6,7 +6,8 @@ import {
   type FaceitMatchesResponse,
   type FaceitMatch,
   type ChampionshipSubscriptionItem,
-  type FaceitMatchStatsResponse
+  type FaceitMatchStatsResponse,
+  type FaceitPlayerDetails
 } from "@eggosystem/types";
 import {
   redisClient,
@@ -43,11 +44,17 @@ export const convertFaceitGameToAppId = (game: string) => {
 const isE2EMode =
   process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";
 
-export const getFaceITGameRank = async (
+/**
+ * Base function to fetch player data from Faceit API
+ * @param steam_id The Steam ID of the player
+ * @param game The game to fetch data for (cs2 or csgo)
+ * @returns The complete player data from Faceit API
+ */
+export const fetchFaceitPlayerData = async (
   steam_id: string,
   game: "cs2" | "csgo"
-) => {
-  // E2E Mock: Return mock FACEIT rank data
+): Promise<FaceitPlayerDetails | null> => {
+  // E2E Mock: Return mock FACEIT player data
   if (isE2EMode) {
     // Special case for our test player without FaceIT rank
     if (steam_id === "66561198999999913") {
@@ -55,14 +62,27 @@ export const getFaceITGameRank = async (
     }
 
     return {
-      elo: 1850,
-      rank: 7,
-      player_id: `faceit-player-${steam_id}`
+      player_id: `faceit-player-${steam_id}`,
+      games: {
+        [game]: {
+          skill_level: 7,
+          faceit_elo: 1850
+        }
+      },
+      faceit_url: `https://www.faceit.com/en/players/${steam_id}`
     };
   }
 
-  const { controller, clearAbortTimeout } =
-    createAbortController("getFaceITGameRank");
+  // Check Redis cache first
+  const redisKey = `faceit-player-${steam_id}-${game}`;
+  const redisData = await redisClient.get(redisKey);
+  if (redisData) {
+    return JSON.parse(redisData) as FaceitPlayerDetails;
+  }
+
+  const { controller, clearAbortTimeout } = createAbortController(
+    "fetchFaceitPlayerData"
+  );
 
   try {
     const webURL = `https://open.faceit.com/data/v4/players?game=${game}&game_player_id=${steam_id}`;
@@ -82,7 +102,8 @@ export const getFaceITGameRank = async (
       logger.warn(
         `[FaceIT] API returned ${response.status} ${response.statusText} for steam_id: ${steam_id} (${duration}ms)`
       );
-      // Player not found rank for CS2 nor csgo, we return null and fallback to default rank
+
+      // Player not found
       if (response.status === 404) {
         logger.warn(
           `[FaceIT] Player not found for steam_id: ${steam_id} (${duration}ms)`
@@ -90,18 +111,62 @@ export const getFaceITGameRank = async (
         return null;
       }
 
-      throw new Error("Failed to fetch FaceIT rank");
+      throw new Error(
+        `Failed to fetch Faceit player data: ${response.statusText}`
+      );
     }
 
-    const data = await response.json();
-    const elo = Number(data["games"][game]["faceit_elo"]);
-    const rank = Number(data["games"][game]["skill_level"]);
-    const player_id = data["player_id"];
-
+    const data: FaceitPlayerDetails = await response.json();
     clearAbortTimeout();
 
+    // Fix the faceit_url by replacing {lang} placeholder with 'en'
+    if (data.faceit_url) {
+      logger.info(`[FaceIT] Original faceit_url: ${data.faceit_url}`);
+      // Handle both {lang} and URL-encoded %7Blang%7D
+      data.faceit_url = data.faceit_url
+        .replace(/\{lang\}/g, "en")
+        .replace(/%7Blang%7D/g, "en");
+      logger.info(`[FaceIT] Fixed faceit_url: ${data.faceit_url}`);
+    }
+
+    // Cache the result in Redis
+    await redisClient.set(redisKey, JSON.stringify(data), "EX", expireInOneDay);
+    return data;
+  } catch (error) {
+    clearAbortTimeout();
+    logger.error(
+      `[FaceIT] Error fetching player data for steam_id: ${steam_id}:`,
+      error
+    );
+    throw error;
+  }
+};
+
+/**
+ * Get player's Faceit rank data for a specific game
+ */
+export const getFaceITGameRank = async (
+  steam_id: string,
+  game: "cs2" | "csgo"
+) => {
+  try {
+    const playerData = await fetchFaceitPlayerData(steam_id, game);
+
+    if (!playerData || !playerData.games || !playerData.games[game]) {
+      return null;
+    }
+
+    const gameData = playerData.games[game];
+    // gameData is guaranteed to exist at this point
+    const elo = Number(gameData?.faceit_elo || 0);
+    const rank = Number(gameData?.skill_level || 0);
+    const player_id = playerData.player_id;
+
     if (Number.isNaN(elo) || Number.isNaN(rank)) {
-      logger.warn(`[FaceIT] Invalid rank data for steam_id: ${steam_id}`, data);
+      logger.warn(
+        `[FaceIT] Invalid rank data for steam_id: ${steam_id}`,
+        playerData
+      );
       throw new Error("Invalid rank data");
     }
 
@@ -111,7 +176,47 @@ export const getFaceITGameRank = async (
       player_id
     };
   } catch (error) {
-    clearAbortTimeout();
+    logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
+    throw error;
+  }
+};
+
+/**
+ * Get player's Faceit rank data and URL for a specific game
+ */
+export const getFaceITGameRankWithUrl = async (
+  steam_id: string,
+  game: "cs2" | "csgo"
+) => {
+  try {
+    const playerData = await fetchFaceitPlayerData(steam_id, game);
+
+    if (!playerData || !playerData.games || !playerData.games[game]) {
+      return null;
+    }
+
+    const gameData = playerData.games[game];
+    // gameData is guaranteed to exist at this point
+    const elo = Number(gameData?.faceit_elo || 0);
+    const rank = Number(gameData?.skill_level || 0);
+    const player_id = playerData.player_id;
+    const faceit_url = playerData.faceit_url;
+
+    if (Number.isNaN(elo) || Number.isNaN(rank)) {
+      logger.warn(
+        `[FaceIT] Invalid rank data for steam_id: ${steam_id}`,
+        playerData
+      );
+      throw new Error("Invalid rank data");
+    }
+
+    return {
+      elo,
+      rank,
+      player_id,
+      faceit_url
+    };
+  } catch (error) {
     logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
     throw error;
   }
@@ -396,6 +501,18 @@ export const getFaceITMatchDetails = async <T>(match_id: string) => {
   };
   const response = await fetch(webURL, { headers });
   return response.json() as Promise<T>;
+};
+
+/**
+ * Gets player details from Faceit API by steam_id
+ * @param steam_id The Steam ID of the player
+ * @returns Player details from Faceit or null if not found
+ */
+export const getFaceitPlayerDetailsBySteamId = async (
+  steam_id: string
+): Promise<FaceitPlayerDetails | null> => {
+  // Simply delegate to the base function with cs2 as the game
+  return fetchFaceitPlayerData(steam_id, "cs2");
 };
 
 export const getFaceITChampionshipDetails = async <T>(

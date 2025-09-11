@@ -676,7 +676,7 @@ describe("Season team registration services", () => {
       expect(rankForSeason.faceit_level).toEqual(2);
       expect(rankForSeason.faceit_kd).toEqual(0.95);
       // 6 times for app id rank, 6 times for hours, 6 times for external rank
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(18);
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(20);
     });
     it("Should throw error if no rank and no external rank", async () => {
       const formData = _.cloneDeep(validSignupData);
@@ -809,7 +809,7 @@ describe("Season team registration services", () => {
       expect(rankForSeason.cs2_rank).toEqual(5000);
       expect(rankForSeason.cs_hours).toEqual(112);
       // 6 times for app id rank, 6 times for external rank, 6 times for hours, as there are 6 players
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(18);
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(20);
     });
     it("Should fall back to csgo faceit rank if cs2 faceit rank not present, and apply decay on csgo faceit rank", async () => {
       const faceitReturnEloCsGo = 2700;

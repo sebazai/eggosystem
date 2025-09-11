@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { envConfig } from "@/configs/env";
 import { SeasonPlatform } from "@eggosystem/types";
+import { createPlatformTeamUrl } from "@/lib/utils";
 import type { CellContext } from "@tanstack/react-table";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -132,16 +133,7 @@ export const ListRegisteredTeams = () => {
           const platform = row.season_platform;
           const id = info.getValue();
           if (!id) return <span className="text-muted-foreground">-</span>;
-          let url: string | null = null;
-          if (platform === SeasonPlatform.FACEIT) {
-            url = `https://www.faceit.com/en/teams/${id}`;
-          } else if (platform === SeasonPlatform.Esportal) {
-            url = `https://esportal.com/team/${id}`;
-          } else if (platform === SeasonPlatform.PopFlash) {
-            url = `https://popflash.site/team/${id}`;
-          } else if (platform === SeasonPlatform.Kanaliiga) {
-            url = `/teams/${id}`;
-          }
+          const url = createPlatformTeamUrl(id, platform);
           if (url?.startsWith("/")) {
             return (
               <Link

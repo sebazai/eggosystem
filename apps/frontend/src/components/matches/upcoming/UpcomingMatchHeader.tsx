@@ -1,11 +1,17 @@
 "use client";
 
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
-import { cn, createNextUrl, createTeamLogoUrl } from "@/lib/utils";
+import {
+  cn,
+  createExternalMatchRoomUrl,
+  createNextUrl,
+  createTeamLogoUrl
+} from "@/lib/utils";
 import type { MatchInfo } from "@eggosystem/types";
 
 import Link from "next/link";
-import { Tv } from "lucide-react";
+import Image from "next/image";
+import { ExternalLink, Tv } from "lucide-react";
 import { useMatchStreamUrls } from "@/hooks/data/useMatchStreamUrls";
 
 interface UpcomingMatchHeaderProps {
@@ -42,6 +48,13 @@ export function UpcomingMatchHeader({
   const seasonId = matchInfo.season_id;
   const leagueName = matchInfo.league_name;
   const leagueId = matchInfo.league_id;
+  const externalMatchRoomId = matchInfo.external_match_room_id;
+  const seasonPlatform = matchInfo.season_platform;
+
+  const faceitMatchRoomUrl = createExternalMatchRoomUrl(
+    externalMatchRoomId,
+    seasonPlatform
+  );
 
   // Parse date for formatting
   const date = matchDate ? new Date(matchDate) : new Date();
@@ -134,6 +147,23 @@ export function UpcomingMatchHeader({
                   <span>LIVE ON TWITCH</span>
                 </Link>
               )}
+              {faceitMatchRoomUrl && (
+                <Link
+                  href={faceitMatchRoomUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center mt-1 text-blue-400 hover:text-blue-300 transition-opacity hover:opacity-80"
+                >
+                  <Image
+                    src={createNextUrl("/images/faceit/icon-pheasant.png")}
+                    alt="Faceit"
+                    width={16}
+                    height={16}
+                    className="w-4 h-4 mr-1"
+                  />
+                  <span className="font-semibold">FACEIT MATCH ROOM</span>
+                </Link>
+              )}
             </div>
             <div className="xs:hidden">-</div>
             {/* Score 2 */}
@@ -156,6 +186,23 @@ export function UpcomingMatchHeader({
               >
                 <Tv className="w-3 h-3 mr-1" />
                 <span>LIVE ON TWITCH</span>
+              </Link>
+            )}
+            {faceitMatchRoomUrl && (
+              <Link
+                href={faceitMatchRoomUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center mt-1 text-blue-400 hover:text-blue-300 transition-opacity hover:opacity-80"
+              >
+                <Image
+                  src={createNextUrl("/images/faceit/icon-pheasant.png")}
+                  alt="Faceit"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4 mr-1"
+                />
+                <span className="font-semibold">FACEIT MATCH ROOM</span>
               </Link>
             )}
           </div>

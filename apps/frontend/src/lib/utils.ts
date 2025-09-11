@@ -221,3 +221,38 @@ export const convertSeasonToS = (season: string) => {
 export const isValidSteamId = (steamId: string) => {
   return /^[0-9]{17}$/.test(steamId);
 };
+
+import { SeasonPlatform } from "@eggosystem/types";
+
+export const createPlatformTeamUrl = (
+  externalPlatformId: string | null,
+  platform: SeasonPlatform = SeasonPlatform.FACEIT
+) => {
+  if (!externalPlatformId) return null;
+
+  switch (platform) {
+    case SeasonPlatform.FACEIT:
+      return `https://www.faceit.com/en/teams/${externalPlatformId}`;
+    case SeasonPlatform.Esportal:
+      return `https://esportal.com/team/${externalPlatformId}`;
+    case SeasonPlatform.PopFlash:
+      return `https://popflash.site/team/${externalPlatformId}`;
+    case SeasonPlatform.Kanaliiga:
+      return `/teams/${externalPlatformId}`;
+    default:
+      return null;
+  }
+};
+
+export const createExternalMatchRoomUrl = (
+  externalMatchId: string | null,
+  platform: SeasonPlatform
+) => {
+  if (!externalMatchId) return null;
+  switch (platform) {
+    case SeasonPlatform.FACEIT:
+      return `https://www.faceit.com/en/cs2/room/${externalMatchId}`;
+    default:
+      return null;
+  }
+};

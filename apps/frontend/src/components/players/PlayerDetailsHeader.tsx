@@ -8,12 +8,13 @@ import { FaceITLevelIcon } from "../profile/FaceITLevelIcon";
 import { CS2PremierRankBadge } from "../profile/CS2PremierRankBadge";
 import { useCS2PremierRank } from "@/hooks/data/useCS2PremierRank";
 import { useFaceITRank } from "@/hooks/data/useFaceITRank";
+import { useFaceitPlayerData } from "@/hooks/data/useFaceitPlayerData";
 import { usePlayerTeamDetails } from "@/hooks/data/filtered/usePlayerTeamDetails";
 import { ContentContainer } from "../layout/ContentContainer";
 import { useFilters } from "@/context/FilterContext";
 import { PlayerWinsLosses } from "./PlayerWinsLosses";
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { createTeamLogoUrl, createNextUrl } from "@/lib/utils";
 
 export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   const { filterParams, getFilteredQueryString } = useFilters();
@@ -24,6 +25,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   const { steamPlayer } = useSteamPlayer(steamId);
   const faceItRank = useFaceITRank(steamId);
   const cs2PremierRank = useCS2PremierRank(steamId);
+  const { faceitPlayerData } = useFaceitPlayerData(steamId);
 
   if (isLoading) {
     return (
@@ -61,9 +63,27 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
             {steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U"}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-kanaliiga-orange">
-              {steamPlayer?.nickname ?? "Unknown player"}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-kanaliiga-orange">
+                {steamPlayer?.nickname ?? "Unknown player"}
+              </h1>
+              {faceitPlayerData?.faceit_url && (
+                <Link
+                  href={faceitPlayerData.faceit_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <Image
+                    src={createNextUrl("/images/faceit/icon-pheasant.png")}
+                    alt="Faceit"
+                    width={25}
+                    height={20}
+                    className="w-[20px] h-[16px]"
+                  />
+                </Link>
+              )}
+            </div>
             <div className="flex items-center gap-2 mt-1">
               {/* Add rank indicators here */}
               <div className="flex items-center gap-2">

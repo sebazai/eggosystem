@@ -1,7 +1,8 @@
 import { type Request, type Response, type NextFunction } from "express";
 import {
   getFaceITChampionshipDetails,
-  getAllFaceITChampionshipSubscriptions
+  getAllFaceITChampionshipSubscriptions,
+  getFaceITGameRankWithUrl
 } from "../services/faceit.services";
 import { NotFoundError } from "../utils/errors";
 import { getSeasonLeagueExternalIdByExternalId } from "../models/season-league-external-id.models";
@@ -13,6 +14,7 @@ import {
 } from "@eggosystem/types";
 import { logger } from "../utils/app-logger";
 import { triggerManualFaceitSync } from "../services/cron-scheduler.services";
+import { isValidSteamId } from "../utils/steam-id-validator";
 
 export const validateChampionshipTeamsController = async (
   req: Request,
@@ -128,4 +130,30 @@ export const triggerFaceitMatchSync = async (
     message: "FACEIT match sync initiated successfully",
     note: "The sync process is running in the background. Check server logs for progress and results."
   });
+};
+
+/**
+ * Get Faceit player details by Steam ID
+ */
+export const getFaceitPlayerController = async (
+  req: Request<{ steam_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { steam_id } = req.params;
+
+  // Validate Steam ID format
+  if (!isValidSteamId(steam_id)) {
+    return next(new NotFoundError(`Invalid Steam ID format: ${steam_id}`));
+  }
+
+  const playerData = await getFaceITGameRankWithUrl(steam_id, "cs2");
+
+  if (!playerData) {
+    return next(
+      new NotFoundError(`No Faceit profile found for Steam ID: ${steam_id}`)
+    );
+  }
+
+  res.json(playerData);
 };

@@ -49,7 +49,8 @@ export const getOneTeamByFilters = async (
         t.team_logo,
         t.id,
         s.name AS latest_season_name,
-        l.name AS latest_league_name
+        l.name AS latest_league_name,
+        slt.external_team_id
       FROM SeasonLeagueTeams slt
       JOIN Seasons s ON s.id = slt.season_id
       JOIN Leagues l ON l.id = slt.league_id

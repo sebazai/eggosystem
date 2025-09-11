@@ -3,6 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useFaceitChampionshipTeamsValidations } from "@/hooks/data/useFaceitChampionshipTeamsValidations";
 import { useFaceitLinks } from "@/hooks/data/useFaceitLinks";
+import { createPlatformTeamUrl } from "@/lib/utils";
 import {
   Trophy,
   Users,
@@ -181,7 +182,7 @@ const FaceitLinkCard = ({ link }: FaceitLinkCardProps) => {
                       {getValidationText(team.isValid)}
                     </span>
                     <a
-                      href={`https://www.faceit.com/en/teams/${team.external_team_id}`}
+                      href={createPlatformTeamUrl(team.external_team_id) || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded transition-colors"
