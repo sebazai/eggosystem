@@ -102,6 +102,9 @@ export const addPlayersForTeamInSeason = async (
       },
       connection
     );
+
+    // TODO: https://gitlab.com/kanaliiga_public/kanahub/eggosystem/-/issues/238
+    // What if one of the ranks are in database, but the other is not? We do not want to fetch all rank data from DB
     const [rank, { hours }, externalRank] = await Promise.all([
       getPlayerAppIdRank(player.steam_id, appId, seasonId),
       getPlayerHoursForSteamAppId(player.steam_id, appId, seasonId),
