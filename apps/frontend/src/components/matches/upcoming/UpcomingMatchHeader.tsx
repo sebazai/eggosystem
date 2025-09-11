@@ -130,7 +130,7 @@ export function UpcomingMatchHeader({
               </span>
             </div>
             {/* Info */}
-            <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground">
+            <div className="hidden xs:flex flex-col items-center justify-center px-4 py-6 text-xxs md:text-xs text-muted-foreground space-y-0.5">
               <span>UPCOMING</span>
               <span>{formattedDate}</span>
               <span>
@@ -144,17 +144,14 @@ export function UpcomingMatchHeader({
                   className="flex items-center mt-1 text-purple-400 hover:text-purple-300 transition-colors"
                 >
                   <Tv className="w-3 h-3 mr-1" />
-                  <span>LIVE ON TWITCH</span>
+                  <span>ON TWITCH</span>
                 </Link>
               )}
               {faceitMatchRoomUrl && (
                 <div className="flex items-center mt-1 text-blue-400 hover:text-blue-300">
-                  <FaceitLink
-                    href={faceitMatchRoomUrl}
-                    className="mr-1"
-                    iconSize="sm"
-                  />
-                  <span className="font-semibold">FACEIT MATCH ROOM</span>
+                  <FaceitLink href={faceitMatchRoomUrl} iconSize="sm">
+                    <span className="font-semibold">MATCH ROOM</span>
+                  </FaceitLink>
                 </div>
               )}
             </div>
@@ -166,7 +163,7 @@ export function UpcomingMatchHeader({
               </span>
             </div>
           </div>
-          <div className="block xs:hidden text-xxs md:text-xs text-muted-foreground">
+          <div className="block xs:hidden text-xxs md:text-xs text-muted-foreground space-y-0.5">
             <div>
               {seasonName} {leagueName}
             </div>
@@ -178,17 +175,14 @@ export function UpcomingMatchHeader({
                 className="flex items-center justify-center mt-1 text-purple-400 hover:text-purple-300 transition-colors"
               >
                 <Tv className="w-3 h-3 mr-1" />
-                <span>LIVE ON TWITCH</span>
+                <span>ON TWITCH</span>
               </Link>
             )}
             {faceitMatchRoomUrl && (
               <div className="flex items-center justify-center mt-1 text-blue-400 hover:text-blue-300">
-                <FaceitLink
-                  href={faceitMatchRoomUrl}
-                  className="mr-1"
-                  iconSize="sm"
-                />
-                <span className="font-semibold">FACEIT MATCH ROOM</span>
+                <FaceitLink href={faceitMatchRoomUrl} iconSize="sm">
+                  <span className="font-semibold">MATCH ROOM</span>
+                </FaceitLink>
               </div>
             )}
           </div>

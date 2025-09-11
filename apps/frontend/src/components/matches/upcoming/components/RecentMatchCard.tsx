@@ -41,7 +41,7 @@ export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
             <span className="text-sm font-medium block">
               {match.opponent_name}
             </span>
-            <span className="text-xs">vs {formattedDate}</span>
+            <span className="text-xs">{formattedDate}</span>
           </div>
         </div>
 

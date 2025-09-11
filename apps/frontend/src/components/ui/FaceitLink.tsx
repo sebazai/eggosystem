@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
 
 interface FaceitLinkProps {
+  children?: React.ReactNode;
   href: string;
   className?: string;
   iconSize?: "sm" | "md" | "lg";
@@ -15,8 +16,9 @@ const iconSizes = {
 };
 
 export const FaceitLink = ({
+  children,
   href,
-  className = "hover:opacity-80 transition-opacity",
+  className = "hover:opacity-80 transition-opacity flex items-center gap-1",
   iconSize = "md"
 }: FaceitLinkProps) => {
   const size = iconSizes[iconSize];
@@ -35,6 +37,7 @@ export const FaceitLink = ({
         height={size.height}
         className={size.className}
       />
+      {children}
     </Link>
   );
 };
