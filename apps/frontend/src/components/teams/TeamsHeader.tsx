@@ -1,16 +1,11 @@
-import {
-  createPlatformTeamUrl,
-  createNextUrl,
-  createTeamLogoUrl
-} from "@/lib/utils";
+import { createPlatformTeamUrl, createTeamLogoUrl } from "@/lib/utils";
 import { NextImageFallback } from "../layout/NextImageFallback";
 import { TeamWinLossDetails } from "./TeamWinLossDetails";
 import { useFilteredTeamById } from "@/hooks/data/filtered/useFilteredTeamById";
 import { ContentContainer } from "../layout/ContentContainer";
 import { useParams } from "next/navigation";
 import { useFilters } from "@/context/FilterContext";
-import Link from "next/link";
-import Image from "next/image";
+import { FaceitLink } from "../ui/FaceitLink";
 
 export const TeamsHeader = () => {
   const params = useParams();
@@ -49,20 +44,11 @@ export const TeamsHeader = () => {
               {team.name}
             </h1>
             {team.external_team_id && (
-              <Link
+              <FaceitLink
                 href={createPlatformTeamUrl(team.external_team_id) || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-2 hover:opacity-80 transition-opacity"
-              >
-                <Image
-                  src={createNextUrl("/images/faceit/icon-pheasant.png")}
-                  alt="Faceit"
-                  width={25}
-                  height={20}
-                  className="w-[20px] h-[16px]"
-                />
-              </Link>
+                className="ml-2"
+                iconSize="md"
+              />
             )}
           </div>
           <div className="flex sm:flex-row flex-col sm:items-center gap-1 sm:gap-2 mt-1">

@@ -10,9 +10,9 @@ import {
 import type { MatchInfo } from "@eggosystem/types";
 
 import Link from "next/link";
-import Image from "next/image";
-import { ExternalLink, Tv } from "lucide-react";
+import { Tv } from "lucide-react";
 import { useMatchStreamUrls } from "@/hooks/data/useMatchStreamUrls";
+import { FaceitLink } from "../../ui/FaceitLink";
 
 interface UpcomingMatchHeaderProps {
   matchId: number;
@@ -148,21 +148,14 @@ export function UpcomingMatchHeader({
                 </Link>
               )}
               {faceitMatchRoomUrl && (
-                <Link
-                  href={faceitMatchRoomUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center mt-1 text-blue-400 hover:text-blue-300 transition-opacity hover:opacity-80"
-                >
-                  <Image
-                    src={createNextUrl("/images/faceit/icon-pheasant.png")}
-                    alt="Faceit"
-                    width={16}
-                    height={16}
-                    className="w-4 h-4 mr-1"
+                <div className="flex items-center mt-1 text-blue-400 hover:text-blue-300">
+                  <FaceitLink
+                    href={faceitMatchRoomUrl}
+                    className="mr-1"
+                    iconSize="sm"
                   />
                   <span className="font-semibold">FACEIT MATCH ROOM</span>
-                </Link>
+                </div>
               )}
             </div>
             <div className="xs:hidden">-</div>
@@ -189,21 +182,14 @@ export function UpcomingMatchHeader({
               </Link>
             )}
             {faceitMatchRoomUrl && (
-              <Link
-                href={faceitMatchRoomUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center mt-1 text-blue-400 hover:text-blue-300 transition-opacity hover:opacity-80"
-              >
-                <Image
-                  src={createNextUrl("/images/faceit/icon-pheasant.png")}
-                  alt="Faceit"
-                  width={16}
-                  height={16}
-                  className="w-4 h-4 mr-1"
+              <div className="flex items-center justify-center mt-1 text-blue-400 hover:text-blue-300">
+                <FaceitLink
+                  href={faceitMatchRoomUrl}
+                  className="mr-1"
+                  iconSize="sm"
                 />
                 <span className="font-semibold">FACEIT MATCH ROOM</span>
-              </Link>
+              </div>
             )}
           </div>
         </div>

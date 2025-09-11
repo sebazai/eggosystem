@@ -23,7 +23,6 @@ import {
   CheckCircle
 } from "lucide-react";
 import { envConfig } from "@/configs/env";
-import { SeasonPlatform } from "@eggosystem/types";
 import { createPlatformTeamUrl } from "@/lib/utils";
 import type { CellContext } from "@tanstack/react-table";
 import Link from "next/link";

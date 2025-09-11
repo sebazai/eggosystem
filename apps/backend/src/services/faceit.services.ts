@@ -149,36 +149,31 @@ export const getFaceITGameRank = async (
   steam_id: string,
   game: "cs2" | "csgo"
 ) => {
-  try {
-    const playerData = await fetchFaceitPlayerData(steam_id, game);
+  const playerData = await fetchFaceitPlayerData(steam_id, game);
 
-    if (!playerData || !playerData.games || !playerData.games[game]) {
-      return null;
-    }
-
-    const gameData = playerData.games[game];
-    // gameData is guaranteed to exist at this point
-    const elo = Number(gameData?.faceit_elo || 0);
-    const rank = Number(gameData?.skill_level || 0);
-    const player_id = playerData.player_id;
-
-    if (Number.isNaN(elo) || Number.isNaN(rank)) {
-      logger.warn(
-        `[FaceIT] Invalid rank data for steam_id: ${steam_id}`,
-        playerData
-      );
-      throw new Error("Invalid rank data");
-    }
-
-    return {
-      elo,
-      rank,
-      player_id
-    };
-  } catch (error) {
-    logger.error(`[FaceIT] Error for steam_id: ${steam_id}`, error);
-    throw error;
+  if (!playerData || !playerData.games || !playerData.games[game]) {
+    return null;
   }
+
+  const gameData = playerData.games[game];
+  // gameData is guaranteed to exist at this point
+  const elo = Number(gameData?.faceit_elo || 0);
+  const rank = Number(gameData?.skill_level || 0);
+  const player_id = playerData.player_id;
+
+  if (Number.isNaN(elo) || Number.isNaN(rank)) {
+    logger.warn(
+      `[FaceIT] Invalid rank data for steam_id: ${steam_id}`,
+      playerData
+    );
+    throw new Error("Invalid rank data");
+  }
+
+  return {
+    elo,
+    rank,
+    player_id
+  };
 };
 
 /**
