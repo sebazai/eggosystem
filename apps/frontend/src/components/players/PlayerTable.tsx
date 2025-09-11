@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import { cn, type FilterParamsQuery } from "@/lib/utils";
-import { useAllMultiplePlayersStats } from "@/hooks/data/filtered/useAllMultiplePlayersStats";
+import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Tooltip,
@@ -10,13 +9,12 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip";
-import { ContentContainer } from "@/components/layout/ContentContainer";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { PlayerStatsTable } from "@eggosystem/types";
 import { TablePagination } from "../tables/TablePagination";
 
 interface PlayerTableProps {
-  filterQueryParams: FilterParamsQuery;
+  players: PlayerStatsTable[];
   initialPageSize?: number;
 }
 
@@ -41,7 +39,7 @@ const COLUMN_TOOLTIPS: Record<string, string> = {
 };
 
 export const PlayerTable: React.FC<PlayerTableProps> = ({
-  filterQueryParams,
+  players,
   initialPageSize
 }) => {
   const searchParams = useSearchParams();
@@ -57,9 +55,6 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize || 10);
-
-  const { players, isLoading, isError, isValidating } =
-    useAllMultiplePlayersStats(filterQueryParams);
 
   // Get player name from URL params
   const playerName = searchParams.get("playerName") || "";
@@ -233,22 +228,10 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
     );
   };
 
-  // Reset pagination when filters change
+  // Reset pagination when players and playerName changers
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterQueryParams, playerName]);
-
-  if (isError) {
-    return <ContentContainer>Error loading players data</ContentContainer>;
-  }
-
-  if (isLoading || isValidating) {
-    return <ContentContainer>Loading player stats...</ContentContainer>;
-  }
-
-  if (!players) {
-    return <ContentContainer>No players stats data found</ContentContainer>;
-  }
+  }, [players, playerName]);
 
   return (
     <TooltipProvider>
@@ -296,108 +279,77 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                // Loading skeletons
-                Array.from({ length: 10 }).map((_, index) => (
-                  <tr key={index} className="border-b border-border">
-                    {columns.map((column) => (
-                      <td
-                        key={column.key}
-                        className={cn("px-3 py-2", column.responsive)}
-                      >
-                        <div className="h-4 w-full bg-gray-800 rounded animate-pulse"></div>
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              ) : players.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="text-center py-8 text-muted-foreground"
+              {getCurrentPageItems.map(
+                (player: PlayerStatsTable, index: number) => (
+                  <tr
+                    key={`${player.nickname}-${index}`}
+                    className="border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10 cursor-pointer"
+                    onClick={() => handleRowClick(player.steam_id)}
+                    onMouseDown={(e) => {
+                      // Handle middle mouse button (wheel) click
+                      if (e.button === 1) {
+                        e.preventDefault(); // Prevent scroll behavior
+                        const url = `/players/${encodeURIComponent(player.steam_id)}?${searchParams.toString()}`;
+                        window.open(url, "_blank");
+                      }
+                    }}
                   >
-                    No players found with the current filters
-                  </td>
-                </tr>
-              ) : (
-                getCurrentPageItems.map(
-                  (player: PlayerStatsTable, index: number) => (
-                    <tr
-                      key={`${player.nickname}-${index}`}
-                      className="border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                      onClick={() => handleRowClick(player.steam_id)}
-                      onMouseDown={(e) => {
-                        // Handle middle mouse button (wheel) click
-                        if (e.button === 1) {
-                          e.preventDefault(); // Prevent scroll behavior
-                          const url = `/players/${encodeURIComponent(player.steam_id)}?${searchParams.toString()}`;
-                          window.open(url, "_blank");
-                        }
-                      }}
+                    <td className={cn("px-3 py-2", columnResponsive.nickname)}>
+                      <div className="font-medium text-foreground">
+                        {player.nickname}
+                      </div>
+                    </td>
+                    <TableDataCell responsive={columnResponsive.matches_played}>
+                      {player.maps_played}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.kills}>
+                      {player.kills}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.assists}>
+                      {player.assists}(
+                      <span className="text-xs">
+                        {player.flash_assists || 0}
+                      </span>
+                      )
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.deaths}>
+                      {player.deaths}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.awp_kills}>
+                      {player.awp_kills}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.utility_damage}>
+                      {player.utility_damage}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.headshots}>
+                      {player.headshots}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.first_kills}>
+                      {player.first_kills}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.first_deaths}>
+                      {player.first_deaths}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.adr}>
+                      {player.adr?.toFixed(1) || 0}
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.hs_percent}>
+                      {player.hs_percent?.toFixed(1) || 0}%
+                    </TableDataCell>
+                    <TableDataCell responsive={columnResponsive.kd}>
+                      {typeof player.kd === "number"
+                        ? player.kd.toFixed(2)
+                        : (player.kills / Math.max(player.deaths, 1)).toFixed(
+                            2
+                          )}
+                    </TableDataCell>
+                    <TableDataCell
+                      classNames="px-3 py-2 text-center text-muted-foreground"
+                      responsive={columnResponsive.kana_rating}
                     >
-                      <td
-                        className={cn("px-3 py-2", columnResponsive.nickname)}
-                      >
-                        <div className="font-medium text-foreground">
-                          {player.nickname}
-                        </div>
-                      </td>
-                      <TableDataCell
-                        responsive={columnResponsive.matches_played}
-                      >
-                        {player.maps_played}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.kills}>
-                        {player.kills}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.assists}>
-                        {player.assists}(
-                        <span className="text-xs">
-                          {player.flash_assists || 0}
-                        </span>
-                        )
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.deaths}>
-                        {player.deaths}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.awp_kills}>
-                        {player.awp_kills}
-                      </TableDataCell>
-                      <TableDataCell
-                        responsive={columnResponsive.utility_damage}
-                      >
-                        {player.utility_damage}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.headshots}>
-                        {player.headshots}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.first_kills}>
-                        {player.first_kills}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.first_deaths}>
-                        {player.first_deaths}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.adr}>
-                        {player.adr?.toFixed(1) || 0}
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.hs_percent}>
-                        {player.hs_percent?.toFixed(1) || 0}%
-                      </TableDataCell>
-                      <TableDataCell responsive={columnResponsive.kd}>
-                        {typeof player.kd === "number"
-                          ? player.kd.toFixed(2)
-                          : (player.kills / Math.max(player.deaths, 1)).toFixed(
-                              2
-                            )}
-                      </TableDataCell>
-                      <TableDataCell
-                        classNames="px-3 py-2 text-center text-muted-foreground"
-                        responsive={columnResponsive.kana_rating}
-                      >
-                        {player.kana_rating?.toFixed(2) || 0}
-                      </TableDataCell>
-                    </tr>
-                  )
+                      {player.kana_rating?.toFixed(2) || 0}
+                    </TableDataCell>
+                  </tr>
                 )
               )}
             </tbody>
