@@ -17,7 +17,7 @@ export const PlayerWinsLosses = ({ steamId }: { steamId: string }) => {
 
   const winPercentage = (total.wins / Math.max(total.matches_played, 1)) * 100;
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 xs:gap-3">
       <div className="text-center">
         <div className="text-muted-foreground text-sm">W</div>
         <div className="text-lg font-semibold text-green-500">{total.wins}</div>
@@ -26,7 +26,11 @@ export const PlayerWinsLosses = ({ steamId }: { steamId: string }) => {
         <div className="text-muted-foreground text-sm">L</div>
         <div className="text-lg font-semibold text-red-500">{total.losses}</div>
       </div>
-      <div className="text-center">
+      <div className="block xs:hidden text-center">
+        <div className="text-muted-foreground text-sm">W%</div>
+        <div className="text-lg font-semibold">{winPercentage.toFixed(0)}%</div>
+      </div>
+      <div className="hidden xs:block text-center">
         <div className="text-muted-foreground text-sm">Win%</div>
         <div className="text-lg font-semibold">{winPercentage.toFixed(1)}%</div>
       </div>
