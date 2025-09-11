@@ -134,6 +134,12 @@ const data: { navMain: Array<MenuItem> } = {
           url: createDashboardNextUrl("matches/flagged")
         }
       ] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "Redis Management",
+      url: createDashboardNextUrl("redis"),
+      requiredRoles: ["admin", "helpdesk"],
+      items: [] satisfies Array<SubMenuItem>
     }
     // {
     //   title: "Helpdesk",

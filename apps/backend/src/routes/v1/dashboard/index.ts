@@ -9,6 +9,7 @@ import matchRouter from "./match.routes";
 import seasonRouter from "./season.routes";
 import playerRouter from "./player.routes";
 import roleManagementRouter from "./role-management.routes";
+import redisRouter from "./redis.routes";
 
 const router = Router();
 
@@ -67,6 +68,13 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   roleManagementRouter
+);
+router.use(
+  "/redis",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  redisRouter
 );
 router.get(
   "/",
