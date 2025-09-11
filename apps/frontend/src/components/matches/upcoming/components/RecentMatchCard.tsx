@@ -14,8 +14,8 @@ interface RecentMatchCardProps {
 }
 
 export const RecentMatchCard: React.FC<RecentMatchCardProps> = ({ match }) => {
-  const isWin = match.result === "win";
-  const isDraw = match.result === "draw";
+  const isWin = match.team_score > match.opponent_score;
+  const isDraw = match.team_score === match.opponent_score;
   const formattedDate = format(new Date(match.date), "dd.MM.yyyy");
 
   return (

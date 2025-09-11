@@ -127,7 +127,7 @@ export const TeamMatchHistory = ({
               </tr>
             ) : sortedMatches && sortedMatches.length > 0 ? (
               paginatedMatches.map((match) => {
-                const teamWon = match.result === "win";
+                const teamWon = match.team_score > match.opponent_score;
                 const formattedDate = format(
                   new Date(match.date),
                   "dd.MM.yyyy"
