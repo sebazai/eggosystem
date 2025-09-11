@@ -107,7 +107,7 @@ router.get(
   validateChampionshipTeamsController
 );
 
-router.get("/players/:steam_id/faceit", getFaceitPlayerController);
+router.get("/players/:steam_id", getFaceitPlayerController);
 
 // championship_cancelled, championship_checkin, championship_created, championship_finished, championship_seeding, championship_started,
 type FaceITWebhookData =

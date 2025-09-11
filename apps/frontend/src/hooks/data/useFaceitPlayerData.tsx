@@ -8,11 +8,9 @@ export const useFaceitPlayerData = (steamId?: string) => {
   const { data, error, isValidating, isLoading } = useSWR<
     FaceitPlayerRankWithUrl,
     Error
-  >(
-    steamId ? `/api/v1/faceit/players/${steamId}/faceit` : null,
-    expressFetcher,
-    { revalidateOnFocus: false }
-  );
+  >(steamId ? `/api/v1/faceit/players/${steamId}` : null, expressFetcher, {
+    revalidateOnFocus: false
+  });
 
   return {
     faceitPlayerData: data,

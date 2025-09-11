@@ -9,8 +9,9 @@ interface FaceitLinkProps {
   iconSize?: "sm" | "md" | "lg";
 }
 
+// 170 134
 const iconSizes = {
-  sm: { width: 16, height: 16, className: "w-4 h-4" },
+  sm: { width: 16, height: 13, className: "w-[16px] h-[13px]" },
   md: { width: 20, height: 16, className: "w-[20px] h-[16px]" },
   lg: { width: 25, height: 20, className: "w-[25px] h-[20px]" }
 };

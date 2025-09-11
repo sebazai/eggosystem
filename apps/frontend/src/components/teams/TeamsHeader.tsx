@@ -39,15 +39,15 @@ export const TeamsHeader = () => {
           className="rounded-full h-15 w-15 sm:h-25 sm:w-25"
         />
         <div>
-          <div className="flex items-center">
+          <div className="flex flex-col md:flex-row md:items-center">
             <h1 className="text-lg sm:text-2xl font-bold text-kanaliiga-orange">
               {team.name}
             </h1>
             {team.external_team_id && (
               <FaceitLink
                 href={createPlatformTeamUrl(team.external_team_id) || "#"}
-                className="ml-2"
-                iconSize="md"
+                className="mt-1 md:mt-0 md:ml-2"
+                iconSize="sm"
               />
             )}
           </div>
