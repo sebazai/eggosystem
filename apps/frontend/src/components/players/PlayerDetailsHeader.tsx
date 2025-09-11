@@ -14,6 +14,8 @@ import { useFilters } from "@/context/FilterContext";
 import { PlayerWinsLosses } from "./PlayerWinsLosses";
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
 import { createTeamLogoUrl } from "@/lib/utils";
+import { useFaceitPlayerData } from "@/hooks/data/useFaceitPlayerData";
+import { FaceitLink } from "../ui/FaceitLink";
 
 export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   const { filterParams, getFilteredQueryString } = useFilters();
@@ -24,6 +26,7 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   const { steamPlayer } = useSteamPlayer(steamId);
   const faceItRank = useFaceITRank(steamId);
   const cs2PremierRank = useCS2PremierRank(steamId);
+  const faceitPlayerData = useFaceitPlayerData(steamId);
 
   if (isLoading) {
     return (
@@ -62,7 +65,15 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-kanaliiga-orange">
-              {steamPlayer?.nickname ?? "Unknown player"}
+              <div className="flex gap-2">
+                {steamPlayer?.nickname ?? "Unknown player"}{" "}
+                {faceitPlayerData.faceitPlayerData?.faceit_url ? (
+                  <FaceitLink
+                    href={faceitPlayerData.faceitPlayerData.faceit_url}
+                    iconSize="sm"
+                  />
+                ) : null}
+              </div>
             </h1>
             <div className="flex items-center gap-2 mt-1">
               {/* Add rank indicators here */}

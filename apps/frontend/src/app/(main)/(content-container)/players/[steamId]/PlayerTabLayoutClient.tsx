@@ -79,12 +79,12 @@ function PlayerTabLayoutContent({
 
       {/* Sticky Tabs */}
       <div className="sticky top-0 z-10 bg-card rounded-b-md shadow-sm">
-        <div className="flex border-b border-kanaliiga-light-brown/40 gap-1">
+        <div className="grid grid-cols-2 sm:flex border-b border-kanaliiga-light-brown/40 gap-1">
           {tabs.map((tab) => (
             <Link
               key={tab.value}
               href={`${tab.pathname}?${searchParams.toString()}`}
-              className={`py-3 px-5 bg-transparent text-base font-semibold hover:bg-kanaliiga-light-brown/10 focus:outline-none cursor-pointer ${
+              className={`py-3 px-2 sm:px-5 bg-transparent text-sm sm:text-base font-semibold hover:bg-kanaliiga-light-brown/10 focus:outline-none cursor-pointer text-center ${
                 isActiveTab(tab.pathname)
                   ? "bg-kanaliiga-light-brown/20 border-b-2 border-kanaliiga-orange"
                   : ""
