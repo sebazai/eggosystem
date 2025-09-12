@@ -125,7 +125,7 @@ const getFaceitMatchInfoForForfeit = async (
     matchDetails.teams
   ).map((team) => ({
     team_name: team.name,
-    games_played: 0, // or matchDetails.best_of?
+    games_played: 1,
     maps_won: winnerTeamName === team.name ? 1 : 0,
     maps_won_ot: 0,
     maps_lost: winnerTeamName === team.name ? 0 : 1,
