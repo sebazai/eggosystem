@@ -40,10 +40,6 @@ export const convertFaceitGameToAppId = (game: string) => {
   }
 };
 
-// E2E Test mode mocking
-const isE2EMode =
-  process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e";
-
 /**
  * Base function to fetch player data from Faceit API
  *
@@ -56,25 +52,6 @@ export const fetchFaceitPlayerData = async (
   steam_id: string,
   game: "cs2" | "csgo"
 ): Promise<FaceitPlayerDetails | null> => {
-  // // E2E Mock: Return mock FACEIT player data
-  // if (isE2EMode) {
-  //   // Special case for our test player without FaceIT rank
-  //   if (steam_id === "66561198999999913") {
-  //     throw new Error("No FaceIT rank found");
-  //   }
-
-  //   return {
-  //     player_id: `faceit-player-${steam_id}`,
-  //     games: {
-  //       [game]: {
-  //         skill_level: 7,
-  //         faceit_elo: 1850
-  //       }
-  //     },
-  //     faceit_url: `https://www.faceit.com/en/players/${steam_id}`
-  //   };
-  // }
-
   // Check Redis cache first
   const redisKey = `faceit-player-${steam_id}-${game}`;
   const redisData = await redisClient.get(redisKey);
@@ -455,22 +432,6 @@ export const getFaceITCS2Rank = async (
 };
 
 export const getFaceITTeamDetails = async (faceit_team_id: string) => {
-  // E2E Mock: Return mock FACEIT team data
-  if (isE2EMode) {
-    return {
-      team_id: faceit_team_id,
-      name: "E2E Test FACEIT Team",
-      avatar: "https://example.com/avatar.jpg",
-      game: "cs2",
-      nickname: "",
-      team_type: "",
-      members: [],
-      leader: "",
-      chat_room_id: "",
-      faceit_url: `https://www.faceit.com/en/teams/${faceit_team_id}`
-    } as FaceITTeamDetails;
-  }
-
   const redisKey = `faceit-team-${faceit_team_id}`;
   const redisData = await redisClient.get(redisKey);
   if (redisData) {

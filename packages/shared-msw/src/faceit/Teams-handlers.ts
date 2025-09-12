@@ -13,12 +13,12 @@ export const faceitTeamHandlers = [
         name: "Test Team",
         avatar: "https://example.com/avatar.png",
         game: "cs2",
-        team_type: "",
+        team_type: "premade",
         members: [],
         leader: "",
         chat_room_id: "",
-        faceit_url: ""
-      } satisfies FaceITTeamDetails);
+        faceit_url: `https://www.faceit.com/en/teams/${faceit_team_id}`
+      } as FaceITTeamDetails);
     }
   )
 ];

@@ -82,8 +82,7 @@ if (
   process.env.DISCORD_BOT_TOKEN &&
   process.env.DISCORD_GUILD_ID &&
   process.env.NODE_ENV !== "test" &&
-  process.env.NODE_ENV !== "e2e" &&
-  process.env.TEST_TYPE !== "e2e"
+  process.env.NODE_ENV !== "e2e"
 ) {
   initializeDiscordClient()
     .then(() => {
@@ -93,11 +92,7 @@ if (
     .catch((error) => {
       logger.error("Failed to initialize Discord client:", error);
     });
-} else if (
-  process.env.NODE_ENV === "test" ||
-  process.env.NODE_ENV === "e2e" ||
-  process.env.TEST_TYPE === "e2e"
-) {
+} else if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
   logger.info("Test environment detected, skipping Discord initialization");
 } else {
   logger.info(
@@ -109,7 +104,6 @@ if (
 if (
   process.env.NODE_ENV !== "test" &&
   process.env.NODE_ENV !== "e2e" &&
-  process.env.TEST_TYPE !== "e2e" &&
   process.env.RABBITMQ_HOST &&
   process.env.RABBITMQ_USER &&
   process.env.RABBITMQ_PASSWORD
@@ -122,11 +116,7 @@ if (
     .catch((error) => {
       logger.error("Failed to initialize queue consumers:", error);
     });
-} else if (
-  process.env.NODE_ENV === "test" ||
-  process.env.NODE_ENV === "e2e" ||
-  process.env.TEST_TYPE === "e2e"
-) {
+} else if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
   logger.info(
     "Test environment detected, skipping queue consumer initialization"
   );

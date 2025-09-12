@@ -10,25 +10,6 @@ export const getSteamHoursForAppId = async (
   steam_id: string,
   app_id: number
 ) => {
-  // E2E Mode: Return mock data based on Steam ID
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
-    // InsufficientHoursPlayer - return null to simulate hours detection failure
-    if (steam_id === "66561198999999910") {
-      return null;
-    }
-
-    // RaceConditionPlayer - return null to simulate API failure
-    if (steam_id === "66561198999999912") {
-      return null;
-    }
-
-    // Default: Return sufficient hours for all other Steam IDs
-    return {
-      appid: 730, // CS2
-      playtime_forever: 90000 // 1500 hours in minutes
-    };
-  }
-
   const { controller, clearAbortTimeout } = createAbortController(
     "getSteamHoursForAppId"
   );

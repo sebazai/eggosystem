@@ -20,8 +20,7 @@ const server = app.listen(port, () => {
 if (
   process.env.FACEIT_API_KEY &&
   process.env.NODE_ENV !== "test" &&
-  process.env.NODE_ENV !== "e2e" &&
-  process.env.TEST_TYPE !== "e2e"
+  process.env.NODE_ENV !== "e2e"
 ) {
   try {
     startFaceitMatchSyncCron();
