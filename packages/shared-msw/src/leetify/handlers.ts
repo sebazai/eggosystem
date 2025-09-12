@@ -1,5 +1,38 @@
 import { LeetifyResponse } from "@eggosystem/types";
 import { http, HttpResponse } from "msw";
+import {
+  heppajpgSteamId,
+  HoolyzSteamId,
+  RealPlayer1SteamId,
+  RealPlayer2SteamId,
+  RealPlayer3SteamId,
+  AabeSteamId,
+  QuattraSteamId,
+  TrevSteamId,
+  PrivateProfilePlayerSteamId,
+  NoFaceitRankPlayerSteamId,
+  ValidWorkEmail1SteamId,
+  ValidWorkEmail2SteamId,
+  ValidWorkEmail3SteamId,
+  ValidWorkEmail4SteamId,
+  ValidWorkEmail5SteamId,
+  EligiblePlayerForValidationSteamId
+} from "@eggosystem/types";
+
+const createLeetifyResponse = (
+  skillLevel: number,
+  rankType: number | null = 11,
+  isCs2 = true,
+  gameFinishedAt = new Date().toISOString()
+) => {
+  return {
+    dataSource: "matchmaking" as const,
+    rankType,
+    skillLevel,
+    isCs2,
+    gameFinishedAt
+  } satisfies LeetifyResponse["games"][number];
+};
 
 export const leetifyValidSteamId = "76561198000000000";
 export const leetifyNotFoundSteamId = "76561198000000001";
@@ -19,15 +52,7 @@ export const getLeetifyHandlers = [
 
       if (steamId === leetifyValidSteamId) {
         return HttpResponse.json({
-          games: [
-            {
-              dataSource: "matchmaking",
-              rankType: 11,
-              skillLevel: 15000,
-              isCs2: true,
-              gameFinishedAt: new Date().toISOString()
-            }
-          ]
+          games: [createLeetifyResponse(15000, 11, true)]
         } satisfies LeetifyResponse);
       }
 
@@ -52,14 +77,7 @@ export const getLeetifyHandlers = [
       if (steamId === leetifyInvalidGameDataSteamId) {
         return HttpResponse.json({
           games: [
-            {
-              dataSource: "faceit",
-              rankType: null,
-              skillLevel: null,
-              elo: 1500,
-              isCs2: true,
-              gameFinishedAt: "2024-01-01T00:00:00Z"
-            }
+            createLeetifyResponse(1500, null, true, "2024-01-01T00:00:00Z")
           ]
         } satisfies LeetifyResponse);
       }
@@ -73,20 +91,8 @@ export const getLeetifyHandlers = [
 
         const multipleGamesResponse = {
           games: [
-            {
-              dataSource: "matchmaking" as const,
-              rankType: 11,
-              skillLevel: 15000,
-              isCs2: true,
-              gameFinishedAt: now.toISOString() // Latest
-            },
-            {
-              dataSource: "matchmaking" as const,
-              rankType: 11,
-              skillLevel: 17000,
-              isCs2: true,
-              gameFinishedAt: yesterday.toISOString()
-            }
+            createLeetifyResponse(15000, 11, true, now.toISOString()),
+            createLeetifyResponse(17000, 11, true, yesterday.toISOString())
           ]
         };
         return HttpResponse.json(multipleGamesResponse);
@@ -116,27 +122,19 @@ export const getLeetifyHandlers = [
         );
         return HttpResponse.json({
           games: [
-            {
-              isCs2: true,
-              dataSource: "matchmaking",
-              rankType: 11,
-              skillLevel: 23000,
-              gameFinishedAt: new Date().toISOString()
-            },
-            {
-              isCs2: true,
-              dataSource: "matchmaking",
-              rankType: 11,
-              skillLevel: 21000,
-              gameFinishedAt: oneAndHalfYearAgoAndADayBelow.toISOString()
-            },
-            {
-              isCs2: true,
-              dataSource: "matchmaking",
-              rankType: 11,
-              skillLevel: 21000,
-              gameFinishedAt: oneAndHalfYearAgoAndADayAbove.toISOString()
-            }
+            createLeetifyResponse(23000, 11, true, new Date().toISOString()),
+            createLeetifyResponse(
+              21000,
+              11,
+              true,
+              oneAndHalfYearAgoAndADayBelow.toISOString()
+            ),
+            createLeetifyResponse(
+              21000,
+              11,
+              true,
+              oneAndHalfYearAgoAndADayAbove.toISOString()
+            )
           ]
         } satisfies LeetifyResponse);
       }
@@ -151,35 +149,112 @@ export const getLeetifyHandlers = [
       if (steamId === "11111111111111114") {
         return HttpResponse.json({
           games: [
-            {
-              isCs2: true,
-              dataSource: "matchmaking",
-              rankType: 11,
-              skillLevel: 23000,
-              gameFinishedAt: new Date().toISOString()
-            }
+            createLeetifyResponse(23000, 11, true, new Date().toISOString())
           ]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === heppajpgSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(15, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === HoolyzSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(18, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === RealPlayer1SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(12, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === RealPlayer2SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(14, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === RealPlayer3SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(16, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === AabeSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(20, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === QuattraSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(17, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === TrevSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(11, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === PrivateProfilePlayerSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(15, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === NoFaceitRankPlayerSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(13, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === ValidWorkEmail1SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(15, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === ValidWorkEmail2SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(18, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === ValidWorkEmail3SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(14, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === ValidWorkEmail4SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(19, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === ValidWorkEmail5SteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(16, 11, true, new Date().toISOString())]
+        } satisfies LeetifyResponse);
+      }
+
+      if (steamId === EligiblePlayerForValidationSteamId) {
+        return HttpResponse.json({
+          games: [createLeetifyResponse(20, 11, true, new Date().toISOString())]
         } satisfies LeetifyResponse);
       }
 
       // Default success response
       return HttpResponse.json({
         games: [
-          {
-            isCs2: true,
-            dataSource: "matchmaking",
-            rankType: 11,
-            skillLevel: 23430,
-            gameFinishedAt: new Date().toISOString()
-          },
-          {
-            isCs2: true,
-            dataSource: "faceit",
-            elo: 2333,
-            rankType: null,
-            skillLevel: null,
-            gameFinishedAt: new Date().toISOString()
-          }
+          createLeetifyResponse(23430, 11, true, new Date().toISOString()),
+          createLeetifyResponse(2333, null, true, new Date().toISOString())
         ]
       } satisfies LeetifyResponse);
     }

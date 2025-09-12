@@ -1,5 +1,21 @@
+import {
+  heppajpgSteamId,
+  HoolyzSteamId,
+  AabeSteamId,
+  QuattraSteamId,
+  TrevSteamId,
+  RealPlayer1SteamId,
+  RealPlayer2SteamId,
+  RealPlayer3SteamId,
+  PrivateProfilePlayerSteamId,
+  InsufficientHoursPlayerSteamId,
+  IncompleteDetailsPlayerSteamId,
+  RaceConditionPlayerSteamId,
+  NoFaceitRankPlayerSteamId,
+  ValidationFailurePlayerSteamId,
+  EligiblePlayerForValidationSteamId
+} from "@eggosystem/types";
 import { type Knex } from "knex";
-import { type SeasonPlayerRank } from "@eggosystem/types";
 
 /**
  * E2E Test Seed
@@ -11,25 +27,23 @@ export async function seed(knex: Knex): Promise<void> {
   // Get privacy policy version from environment variable (same as backend uses)
   const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION || "1";
 
-  // Define NEW fake test Steam IDs that E2E tests will use (starting with 6)
   const testSteamIds = [
-    "66561198999999901", // account_id 15003 - Aabe
-    "66561198999999902", // account_id 15004 - heppajpg (JWT user)
-    "66561198999999903", // account_id 15005 - Quattra
-    "66561198999999904", // account_id 15006 - Trev
-    "66561198999999905", // account_id 15008 - Hoolyz
-    "66561198999999906", // account_id 15009 - RealPlayer1
-    "66561198999999907", // account_id 15010 - RealPlayer2
-    "66561198999999908", // account_id 15011 - RealPlayer3
-    "66561198999999909", // account_id 15001 - PrivateProfilePlayer
-    "66561198999999910", // account_id 15002 - InsufficientHoursPlayer
-    "66561198999999911", // account_id 15012 - IncompleteDetailsPlayer
-    "66561198999999912", // account_id 15013 - RaceConditionPlayer
-    "66561198999999913", // account_id 15014 - NoFaceitRankPlayer (for testing external rank error)
-    "76561198054765387", // account_id 15020 - EligiblePlayerForValidation
-    "66561198999999914" // account_id 15021 - ValidationFailurePlayer (multiple validation failures)
+    AabeSteamId, // account_id 15003 - Aabe
+    heppajpgSteamId, // account_id 15004 - heppajpg (JWT user)
+    QuattraSteamId, // account_id 15005 - Quattra
+    TrevSteamId, // account_id 15006 - Trev
+    HoolyzSteamId, // account_id 15008 - Hoolyz
+    RealPlayer1SteamId, // account_id 15009 - RealPlayer1
+    RealPlayer2SteamId, // account_id 15010 - RealPlayer2
+    RealPlayer3SteamId, // account_id 15011 - RealPlayer3
+    PrivateProfilePlayerSteamId, // account_id 15001 - PrivateProfilePlayer
+    InsufficientHoursPlayerSteamId, // account_id 15002 - InsufficientHoursPlayer
+    IncompleteDetailsPlayerSteamId, // account_id 15012 - IncompleteDetailsPlayer
+    RaceConditionPlayerSteamId, // account_id 15013 - RaceConditionPlayer
+    NoFaceitRankPlayerSteamId, // account_id 15014 - NoFaceitRankPlayer (for testing external rank error)
+    EligiblePlayerForValidationSteamId, // account_id 15020 - EligiblePlayerForValidation
+    ValidationFailurePlayerSteamId // account_id 15021 - ValidationFailurePlayer (multiple validation failures)
   ];
-
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
   await knex("SeasonTeamPlayers").where({ team_id: 2263 }).del();
   await knex("SeasonTeamRegistrations").where({ team_id: 2263 }).del();
@@ -569,195 +583,6 @@ export async function seed(knex: Knex): Promise<void> {
 
   for (const player of teamPlayers) {
     await knex("SeasonTeamRegistrationPlayers").insert(player);
-  }
-
-  // Captain permissions are now handled automatically by database triggers
-  // No need to manually insert AccountPermissionScopes or AccountRoles
-
-  // Add SeasonPlayerRanks data for our NEW test players
-  // This ensures backend validation passes during submission
-  const playerRanksData = [
-    {
-      steam_id: "66561198999999902", // heppajpg
-      season_id: 16,
-      cs_hours: 1500,
-      cs2_rank: 15,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999905", // Hoolyz
-      season_id: 16,
-      cs_hours: 2000,
-      cs2_rank: 18,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999906", // RealPlayer1
-      season_id: 16,
-      cs_hours: 1800,
-      cs2_rank: 12,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999907", // RealPlayer2
-      season_id: 16,
-      cs_hours: 1600,
-      cs2_rank: 14,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999908", // RealPlayer3
-      season_id: 16,
-      cs_hours: 1700,
-      cs2_rank: 16,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999901", // Aabe (auth user)
-      season_id: 16,
-      cs_hours: 2200,
-      cs2_rank: 20,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999903", // Quattra
-      season_id: 16,
-      cs_hours: 1900,
-      cs2_rank: 17,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999904", // Trev
-      season_id: 16,
-      cs_hours: 1400,
-      cs2_rank: 11,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999909", // PrivateProfilePlayer
-      season_id: 16,
-      cs_hours: 1500,
-      cs2_rank: 15,
-      faceit_elo: 1500,
-      faceit_level: 10,
-      faceit_kd: 1.5
-    },
-    {
-      steam_id: "66561198999999913", // NoFaceitRankPlayer - has CS2 rank but no FaceIT rank
-      season_id: 16,
-      cs_hours: 1200,
-      cs2_rank: 13,
-      faceit_elo: undefined, // No FaceIT ELO
-      faceit_level: undefined, // No FaceIT level - this will trigger external rank error
-      faceit_kd: undefined // No FaceIT KD
-    },
-    // New players with valid work emails and complete rank data
-    {
-      steam_id: "66561198999999920", // ValidWorkEmail1
-      season_id: 16,
-      cs_hours: 1800,
-      cs2_rank: 15,
-      faceit_elo: 1400,
-      faceit_level: 8,
-      faceit_kd: 1.3
-    },
-    {
-      steam_id: "66561198999999921", // ValidWorkEmail2
-      season_id: 16,
-      cs_hours: 2000,
-      cs2_rank: 18,
-      faceit_elo: 1600,
-      faceit_level: 9,
-      faceit_kd: 1.4
-    },
-    {
-      steam_id: "66561198999999922", // ValidWorkEmail3
-      season_id: 16,
-      cs_hours: 1600,
-      cs2_rank: 14,
-      faceit_elo: 1300,
-      faceit_level: 7,
-      faceit_kd: 1.2
-    },
-    {
-      steam_id: "66561198999999923", // ValidWorkEmail4
-      season_id: 16,
-      cs_hours: 2100,
-      cs2_rank: 19,
-      faceit_elo: 1700,
-      faceit_level: 10,
-      faceit_kd: 1.6
-    },
-    {
-      steam_id: "66561198999999924", // ValidWorkEmail5
-      season_id: 16,
-      cs_hours: 1750,
-      cs2_rank: 16,
-      faceit_elo: 1450,
-      faceit_level: 8,
-      faceit_kd: 1.35
-    },
-    // New players for add player validation tests
-    {
-      steam_id: "76561198054765387", // EligiblePlayerForValidation
-      season_id: 16,
-      cs_hours: 2500,
-      cs2_rank: 20,
-      faceit_elo: 1800,
-      faceit_level: 10,
-      faceit_kd: 1.8
-    }
-    // NOTE: Intentionally NOT adding SeasonPlayerRanks for:
-    // - 66561198999999910 (InsufficientHoursPlayer) - falls back to Steam API mock which returns null for hours detection failure
-    // - 66561198999999914 (ValidationFailurePlayer) - will have incomplete rank data for testing multiple validation failures
-  ] satisfies Partial<SeasonPlayerRank>[];
-
-  // Insert SeasonPlayerRanks data
-  for (const rankData of playerRanksData) {
-    const now = new Date();
-    await knex.raw(
-      `
-      INSERT INTO SeasonPlayerRanks 
-        (steam_id, season_id, cs_hours, cs2_rank, hours_updated_at, rank_updated_at, faceit_elo, faceit_level, faceit_kd)
-      VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
-        cs_hours = VALUES(cs_hours),
-        cs2_rank = VALUES(cs2_rank),
-        hours_updated_at = VALUES(hours_updated_at),
-        rank_updated_at = VALUES(rank_updated_at),
-        faceit_elo = VALUES(faceit_elo),
-        faceit_level = VALUES(faceit_level),
-        faceit_kd = VALUES(faceit_kd)
-    `,
-      [
-        rankData.steam_id,
-        rankData.season_id,
-        rankData.cs_hours,
-        rankData.cs2_rank,
-        now,
-        now,
-        rankData.faceit_elo ?? null,
-        rankData.faceit_level ?? null,
-        rankData.faceit_kd ?? null
-      ]
-    );
   }
 
   // Add SeasonTeamPlayers records for the sortter API

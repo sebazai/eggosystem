@@ -56,25 +56,24 @@ export const fetchFaceitPlayerData = async (
   steam_id: string,
   game: "cs2" | "csgo"
 ): Promise<FaceitPlayerDetails | null> => {
-  // E2E Mock: Return mock FACEIT player data
-  if (isE2EMode) {
-    // Special case for our test player without FaceIT rank
-    if (steam_id === "66561198999999913") {
-      throw new Error("No FaceIT rank found");
-    }
+  // // E2E Mock: Return mock FACEIT player data
+  // if (isE2EMode) {
+  //   // Special case for our test player without FaceIT rank
+  //   if (steam_id === "66561198999999913") {
+  //     throw new Error("No FaceIT rank found");
+  //   }
 
-    return {
-      player_id: `faceit-player-${steam_id}`,
-      nickname: "Test Player",
-      games: {
-        [game]: {
-          skill_level: 7,
-          faceit_elo: 1850
-        }
-      },
-      faceit_url: `https://www.faceit.com/en/players/${steam_id}`
-    };
-  }
+  //   return {
+  //     player_id: `faceit-player-${steam_id}`,
+  //     games: {
+  //       [game]: {
+  //         skill_level: 7,
+  //         faceit_elo: 1850
+  //       }
+  //     },
+  //     faceit_url: `https://www.faceit.com/en/players/${steam_id}`
+  //   };
+  // }
 
   // Check Redis cache first
   const redisKey = `faceit-player-${steam_id}-${game}`;
