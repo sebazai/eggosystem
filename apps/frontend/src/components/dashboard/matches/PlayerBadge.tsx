@@ -31,7 +31,7 @@ export const PlayerBadge = ({
   }
 
   return (
-    <Link href={`/dashboard/players/${steamId}`}>
+    <Link href={`/players/${steamId}`}>
       <Badge
         variant={variant}
         className={`cursor-pointer hover:opacity-80 transition-opacity ${className}`}

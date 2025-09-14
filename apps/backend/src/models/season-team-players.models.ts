@@ -19,8 +19,9 @@ export const insertSeasonTeamPlayer = async (
   connection?: PoolConnection
 ) => {
   const { columns, placeholders, values } = buildInsertQueryParts(data);
+  const query = `INSERT INTO SeasonTeamPlayers (season_id, team_id, ${columns.join(", ")}) VALUES (?, ?, ${placeholders})`;
   return runQuery<{ insertId: number }>(
-    `INSERT INTO SeasonTeamPlayers (season_id, team_id, ${columns.join(", ")}) VALUES (?, ?, ${placeholders})`,
+    query,
     [seasonId, teamId, ...values],
     connection
   );

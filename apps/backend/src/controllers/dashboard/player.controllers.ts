@@ -357,7 +357,7 @@ export const addSubstitutePlayerController = async (
     await connection.beginTransaction();
 
     // Resolve match_id if provided (can be numeric ID, Faceit room ID, or Faceit URL)
-    let resolvedMatchId: number | undefined;
+    let resolvedMatchId: number[] | undefined;
     if (match_id !== undefined && match_id !== null) {
       try {
         resolvedMatchId = await resolveMatchId(
@@ -371,21 +371,21 @@ export const addSubstitutePlayerController = async (
       }
     }
 
-    // Add the player to the team as substitute in SeasonTeamPlayers
-    const insertData: {
-      steam_id: string;
-      role: "substitute";
-      match_id?: number;
-    } = {
-      steam_id: steamId,
-      role: "substitute"
-    };
-
     if (resolvedMatchId !== undefined) {
-      insertData.match_id = resolvedMatchId;
+      resolvedMatchId.forEach(async (matchId) => {
+        // Add the player to the team as substitute in SeasonTeamPlayers
+        const insertData: {
+          steam_id: string;
+          role: "substitute";
+          match_id?: number;
+        } = {
+          steam_id: steamId,
+          role: "substitute"
+        };
+        insertData.match_id = matchId;
+        await insertSeasonTeamPlayer(seasonId, teamId, insertData, connection);
+      });
     }
-
-    await insertSeasonTeamPlayer(seasonId, teamId, insertData, connection);
 
     await connection.commit();
 
