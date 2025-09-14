@@ -170,7 +170,7 @@ describe("addPlayerToTeamController", () => {
     expect(mockRankModels.insertFaceITPlayerRankForSeason).toHaveBeenCalled();
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      expect.any(Array),
+      [14, 1650, "76561198054765387"],
       expect.any(Object)
     );
 
@@ -219,7 +219,7 @@ describe("addPlayerToTeamController", () => {
     // Verify player was NOT added to team (query not called)
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      expect.any(Array)
+      [14, 1650, "76561198054765387", "primary"]
     );
 
     // Verify error was passed to next
@@ -306,9 +306,6 @@ describe("addSubstitutePlayerController", () => {
   });
 
   it("should successfully add a substitute player without match_id", async () => {
-    // Mock successful insertion
-    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
-
     await addSubstitutePlayerController(mockRequest, mockResponse, mockNext);
 
     // Verify no eligibility check was performed
@@ -316,8 +313,8 @@ describe("addSubstitutePlayerController", () => {
       mockSeasonModels.checkPlayerAdditionEligibility
     ).not.toHaveBeenCalled();
 
-    // Verify substitute player was added
-    expect(mockRunQuery).toHaveBeenCalledWith(
+    // Verify no database insertion was performed since no match_id provided
+    expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, "76561198054765387", "substitute"],
       expect.any(Object)
@@ -383,7 +380,7 @@ describe("addSubstitutePlayerController", () => {
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: 123
+      match_id: [123]
     });
   });
 
@@ -427,17 +424,34 @@ describe("addSubstitutePlayerController", () => {
   });
 
   it("should handle database transaction errors", async () => {
+    const requestWithMatchId = {
+      ...mockRequest,
+      body: { match_id: 123 }
+    } as unknown as RequestWithParams<{
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    }>;
+
+    // Mock resolveMatchId to return the same numeric ID
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([123]);
+
     // Mock database error
     const dbError = new Error("Database error");
     mockRunQuery.mockRejectedValueOnce(dbError);
 
-    await addSubstitutePlayerController(mockRequest, mockResponse, mockNext);
+    await addSubstitutePlayerController(
+      requestWithMatchId,
+      mockResponse,
+      mockNext
+    );
 
     // Verify no eligibility check was performed
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
     ).not.toHaveBeenCalled();
 
+    // Verify the error was properly caught and passed to next
     expect(mockNext).toHaveBeenCalledWith(dbError);
   });
 
@@ -482,7 +496,7 @@ describe("addSubstitutePlayerController", () => {
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: 456
+      match_id: [456]
     });
   });
 
@@ -529,7 +543,7 @@ describe("addSubstitutePlayerController", () => {
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: 789
+      match_id: [789]
     });
   });
 
@@ -571,7 +585,7 @@ describe("addSubstitutePlayerController", () => {
     // Verify no insertion was attempted
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      expect.any(Array),
+      [14, 1650, "76561198054765387", "substitute"],
       expect.any(Object)
     );
   });

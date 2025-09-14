@@ -372,7 +372,7 @@ export const addSubstitutePlayerController = async (
     }
 
     if (resolvedMatchId !== undefined) {
-      resolvedMatchId.forEach(async (matchId) => {
+      for (const matchId of resolvedMatchId) {
         // Add the player to the team as substitute in SeasonTeamPlayers
         const insertData: {
           steam_id: string;
@@ -380,11 +380,11 @@ export const addSubstitutePlayerController = async (
           match_id?: number;
         } = {
           steam_id: steamId,
-          role: "substitute"
+          role: "substitute",
+          match_id: matchId
         };
-        insertData.match_id = matchId;
         await insertSeasonTeamPlayer(seasonId, teamId, insertData, connection);
-      });
+      }
     }
 
     await connection.commit();

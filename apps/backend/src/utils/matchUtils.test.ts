@@ -59,7 +59,7 @@ describe("matchUtils", () => {
 
       const result = await resolveMatchId("123", 14);
 
-      expect(result).toBe(123);
+      expect(result).toEqual([123]);
       expect(mockRunQuery).toHaveBeenCalledWith(
         "SELECT id FROM Matches WHERE id = ? AND season_id = ?",
         [123, 14],
@@ -76,7 +76,7 @@ describe("matchUtils", () => {
         14
       );
 
-      expect(result).toBe(456);
+      expect(result).toEqual([456]);
       expect(mockRunQuery).toHaveBeenCalledWith(
         "SELECT id FROM Matches WHERE external_match_room_id = ? AND season_id = ?",
         ["1-ff5e99c3-0765-4173-ba2a-398987b1b3ef", 14],
@@ -93,7 +93,7 @@ describe("matchUtils", () => {
         14
       );
 
-      expect(result).toBe(789);
+      expect(result).toEqual([789]);
       expect(mockRunQuery).toHaveBeenCalledWith(
         "SELECT id FROM Matches WHERE external_match_room_id = ? AND season_id = ?",
         ["1-abc123-def456", 14],
@@ -129,7 +129,7 @@ describe("matchUtils", () => {
 
       const result = await resolveMatchId("123", 14, mockConnection);
 
-      expect(result).toBe(123);
+      expect(result).toEqual([123]);
       expect(mockRunQuery).toHaveBeenCalledWith(
         "SELECT id FROM Matches WHERE id = ? AND season_id = ?",
         [123, 14],
