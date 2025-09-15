@@ -1,5 +1,6 @@
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { Card, CardContent } from "@/components/ui/card";
+import { createNextUrl } from "@/lib/utils";
 import Link from "next/link";
 
 type TeamCardProps = {
@@ -10,7 +11,7 @@ type TeamCardProps = {
 
 export default function TeamCard({ id, name, logoUrl }: TeamCardProps) {
   return (
-    <Link href={`/teams/${id}`} className="w-full sm:w-80">
+    <Link href={createNextUrl(`/teams/${id}`)} className="w-full sm:w-80">
       <Card className="hover:shadow-xl dark:hover:shadow-white/10 transition-shadow duration-300 h-full">
         <CardContent className="p-4 flex flex-col items-center text-center gap-3">
           <NextImageFallback

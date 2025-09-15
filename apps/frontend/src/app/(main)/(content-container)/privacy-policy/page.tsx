@@ -1,5 +1,5 @@
 import { createPageMetadata } from "@/lib/metadata";
-import { createBaseUrl } from "@/lib/utils";
+import { createNextUrl } from "@/lib/utils";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -84,7 +84,7 @@ export default function PrivacyPolicy() {
         <li>
           <strong>Correction:</strong> If any information is incorrect, you can
           request a correction. You can also edit your personal data in{" "}
-          <Link href={createBaseUrl()}>your profile</Link>
+          <Link href={createNextUrl("/profile")}>your profile</Link>
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}

@@ -23,6 +23,7 @@ import {
   getUpcomingStreamedMatchesSorted
 } from "@/lib/calendar-utils";
 import Link from "next/link";
+import { createNextUrl } from "@/lib/utils";
 
 type HeroSectionProps = {
   device?: string;
@@ -31,7 +32,7 @@ type HeroSectionProps = {
 // Component for displaying a single match card (non-streamed)
 export const MatchCard = ({ match }: { match: MatchWithStreamUrls }) => {
   return (
-    <Link href={`/matches/${match.match_id}`} className="block">
+    <Link href={createNextUrl(`/matches/${match.match_id}`)} className="block">
       <Card className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 cursor-pointer group relative">
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start gap-2 sm:gap-3">
@@ -461,7 +462,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
         {/* Bottom Section - Quick Links */}
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="grid md:grid-cols-4 gap-6">
-            <Link href="/teams" className="group">
+            <Link href={createNextUrl("/teams")} className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">
@@ -476,7 +477,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
             </Link>
 
             <Link
-              href={`/seasons/${currentSeasonId}/standings`}
+              href={createNextUrl(`/seasons/${currentSeasonId}/standings`)}
               className="group"
             >
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
@@ -492,7 +493,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
             </Link>
 
-            <Link href="/matches" className="group">
+            <Link href={createNextUrl("/matches")} className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <Play className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">
@@ -506,7 +507,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               </div>
             </Link>
 
-            <Link href="/organizations" className="group">
+            <Link href={createNextUrl("/organizations")} className="group">
               <div className="p-6 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-all duration-300 min-h-[120px] md:min-h-[140px] lg:min-h-[160px] 2xl:min-h-[180px] flex flex-col">
                 <Users className="h-8 w-8 lg:h-10 lg:w-10 2xl:h-12 2xl:w-12 text-orange-400 mb-3 flex-shrink-0" />
                 <div className="flex flex-col flex-grow">

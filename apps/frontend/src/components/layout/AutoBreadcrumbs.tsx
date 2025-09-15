@@ -18,6 +18,7 @@ import type {
   SteamPlayer
 } from "@eggosystem/types";
 import { envConfig } from "@/configs/env";
+import { createNextUrl } from "@/lib/utils";
 
 const matchBreadcrumbLabel = (bestOf: number, stage: string) => {
   return `BO${bestOf} - ${stage}`;
@@ -128,7 +129,7 @@ export const AutoBreadcrumbs = () => {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link className="text-xxs sm:text-xs" href="/">
+            <Link className="text-xxs sm:text-xs" href={createNextUrl("/")}>
               Home
             </Link>
           </BreadcrumbLink>
@@ -138,7 +139,10 @@ export const AutoBreadcrumbs = () => {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link className="text-xxs sm:text-xs" href={crumb.href}>
+                <Link
+                  className="text-xxs sm:text-xs"
+                  href={createNextUrl(crumb.href)}
+                >
                   {crumb.label}
                 </Link>
               </BreadcrumbLink>

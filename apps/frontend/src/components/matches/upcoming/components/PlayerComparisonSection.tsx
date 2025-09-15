@@ -2,7 +2,7 @@ import React from "react";
 import { User } from "lucide-react";
 import type { Player, PlayerStatsResult } from "@eggosystem/types";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, createNextUrl } from "@/lib/utils";
 
 interface PlayerStatsDisplayProps {
   playerStats: PlayerStatsResult | null;
@@ -107,7 +107,10 @@ const PlayerComparisonPlayerCard = ({
 }) => {
   return (
     <div className="text-center">
-      <Link href={`/players/${player.steamId}`} className="block">
+      <Link
+        href={createNextUrl(`/players/${player.steamId}`)}
+        className="block"
+      >
         <div
           className={cn(
             `rounded-lg p-4 border cursor-pointer transition-all duration-200 group`,

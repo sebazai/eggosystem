@@ -50,6 +50,7 @@ import {
 } from "@/lib/calendar-utils";
 import { StreamReservation } from "./StreamReservation";
 import Link from "next/link";
+import { createNextUrl } from "@/lib/utils";
 
 interface EventDetails {
   id: string;
@@ -726,7 +727,10 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
                 />
                 <RenderStreamLinks streamUrl={selectedEvent.streamUrl} />
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href={`/matches/${selectedEvent.id}`} target="_blank">
+                  <Link
+                    href={createNextUrl(`/matches/${selectedEvent.id}`)}
+                    target="_blank"
+                  >
                     {getMatchButtonText(selectedEvent.status)}
                   </Link>
                 </Button>

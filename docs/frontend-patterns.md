@@ -322,7 +322,9 @@ page.on("requestfailed", (request) => {
 ```tsx
 // Internal navigation - ALWAYS use Link
 import Link from 'next/link';
-<Link href="/internal/path">Internal Page</Link>
+import { createNextUrl } from "@/lib/utils";
+
+<Link href={createNextUrl("/internal/path")}>Internal Page</Link>
 
 // External links - use anchor tags
 <a

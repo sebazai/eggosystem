@@ -10,6 +10,7 @@ import Link from "next/link";
 import HeroSection from "@/components/layout/HeroSection";
 import { SeasonButtons } from "@/components/landing/SeasonButtons";
 import { Navigation } from "@/components/layout/Navigation";
+import { createNextUrl } from "@/lib/utils";
 
 interface LandingPageStats {
   unique_players: number;
@@ -65,7 +66,7 @@ export default async function Home() {
               📊 All-Time Highlights For Counter-Strike
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-              <Link href={"/organizations"}>
+              <Link href={createNextUrl("/organizations")}>
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
@@ -77,7 +78,7 @@ export default async function Home() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href={"/teams"}>
+              <Link href={createNextUrl("/teams")}>
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
@@ -89,7 +90,7 @@ export default async function Home() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href={"/players"}>
+              <Link href={createNextUrl("/players")}>
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">
@@ -101,7 +102,7 @@ export default async function Home() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link href={"/matches"}>
+              <Link href={createNextUrl("/matches")}>
                 <Card className="shadow-md dark:shadow-white/20 hover:bg-kanaliiga-light-brown/30">
                   <CardContent className="p-2 sm:p-4 text-center">
                     <p className="text-2xl sm:text-3xl font-bold text-kanaliiga-orange">

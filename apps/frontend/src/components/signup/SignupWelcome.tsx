@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
 import { convertTimeToLocalTimeWithoutSeconds } from "@/lib/date-utils";
+import { createNextUrl } from "@/lib/utils";
 import Link from "next/link";
 
 interface SignupWelcomeProps {
@@ -132,7 +133,9 @@ export const SignupWelcome = ({ seasonId }: SignupWelcomeProps) => {
             </SteamLoginButton>
           </div>
         ) : (
-          <Link href={`/seasons/${seasonId}/signup/registration`}>
+          <Link
+            href={createNextUrl(`/seasons/${seasonId}/signup/registration`)}
+          >
             <Button
               variant="outline"
               className="h-22 w-52 text-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"

@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { SettingsIcon } from "lucide-react";
 import Link from "next/link";
 import { ModeToggle } from "../ThemeToggle";
+import { createNextUrl } from "@/lib/utils";
 
 interface MobileUserMenuProps {
   setIsSheetOpen: (isOpen: boolean) => void;
@@ -21,7 +22,10 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
       {user ? (
         <div className="flex items-center gap-2">
           <SettingsIcon className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
-          <Link href="/profile" onClick={() => setIsSheetOpen(false)}>
+          <Link
+            href={createNextUrl("/profile")}
+            onClick={() => setIsSheetOpen(false)}
+          >
             Profile
           </Link>
         </div>

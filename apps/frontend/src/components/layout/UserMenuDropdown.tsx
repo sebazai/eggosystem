@@ -15,6 +15,7 @@ import Link from "next/link";
 import { DesktopLogOut } from "../profile/DesktopLogOut";
 import { SteamLoginButton } from "../profile/SteamLoginButton";
 import { ModeToggle } from "./ThemeToggle";
+import { createNextUrl } from "@/lib/utils";
 
 export default function UserDropdown() {
   const { user, logout } = useAuth();
@@ -32,7 +33,7 @@ export default function UserDropdown() {
             Account <ModeToggle />
           </DropdownMenuLabel>
           <DropdownMenuItem className="cursor-pointer" asChild>
-            <Link href="/profile">
+            <Link href={createNextUrl("/profile")}>
               <UserIcon /> <span>Profile</span>
             </Link>
           </DropdownMenuItem>

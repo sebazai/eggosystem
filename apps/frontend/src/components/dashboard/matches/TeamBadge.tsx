@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useTeam } from "@/hooks/data/dashboard/useTeam";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createNextUrl } from "@/lib/utils";
 
 interface TeamBadgeProps {
   teamId: number;
@@ -26,7 +27,7 @@ export const TeamBadge = ({ teamId, className }: TeamBadgeProps) => {
   }
 
   return (
-    <Link href={`/dashboard/teams/${teamId}`}>
+    <Link href={createNextUrl(`/teams/${teamId}`)}>
       <Badge
         variant="secondary"
         className={`cursor-pointer hover:bg-secondary/80 transition-colors ${className}`}

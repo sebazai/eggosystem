@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useSteamPlayer } from "@/hooks/data/dashboard/useSteamPlayer";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createNextUrl } from "@/lib/utils";
 
 interface PlayerBadgeProps {
   steamId: string;
@@ -31,7 +32,7 @@ export const PlayerBadge = ({
   }
 
   return (
-    <Link href={`/players/${steamId}`}>
+    <Link href={createNextUrl(`/players/${steamId}`)}>
       <Badge
         variant={variant}
         className={`cursor-pointer hover:opacity-80 transition-opacity ${className}`}
