@@ -184,7 +184,9 @@ export const getGamePlayerStats = async (
       INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id
       INNER JOIN MatchTeams mt ON mt.match_id = m.id AND mt.team_id = stp.team_id
       WHERE ps.game_id = ?
-      ORDER BY stp.team_id, kills DESC, deaths ASC`;
+      GROUP BY p.steam_id
+      ORDER BY stp.team_id, kills DESC, deaths ASC
+      `;
 
   return runQuery<GamePlayerStats[]>(query, [game_id]);
 };
