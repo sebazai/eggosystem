@@ -52,12 +52,13 @@ export const isPlayerApprovedForSeasonManually = async (
 
 export const getSeasonTeamPlayersBySteamIds = async (
   seasonId: number,
+  teamId: number,
   steamIds: string[]
 ) => {
   const questionMarks = steamIds.map(() => "?").join(",");
   const result = await runQuery<Array<SeasonTeamPlayer>>(
-    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (${questionMarks})`,
-    [seasonId, ...steamIds]
+    `SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (${questionMarks})`,
+    [seasonId, teamId, ...steamIds]
   );
   return result;
 };
@@ -89,6 +90,7 @@ export const validatePlayersInTeams = async (
     // check if players are in SeasonTeamPlayers
     const playersInSeasonTeamPlayers = await getSeasonTeamPlayersBySteamIds(
       teamFromDb.season_id,
+      teamFromDb.team_id,
       playerSteamIds
     );
 

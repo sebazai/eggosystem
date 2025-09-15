@@ -167,12 +167,12 @@ describe("season-team-players.models", () => {
 
         expect(mockRunQuery).toHaveBeenCalledTimes(2);
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?,?)",
-          [1, "steam123", "steam456"]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?,?)",
+          [1, 101, "steam123", "steam456"]
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?)",
-          [1, "steam789"]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?)",
+          [1, 102, "steam789"]
         );
 
         // Should not call Redis set since all players have null match_id (no substitutes from other matches)
@@ -795,8 +795,8 @@ describe("season-team-players.models", () => {
           "match123"
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN ()",
-          [1]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN ()",
+          [1, 101]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled(); // No invalid players to flag
       });
@@ -851,8 +851,8 @@ describe("season-team-players.models", () => {
           "match123"
         );
         expect(mockRunQuery).toHaveBeenCalledWith(
-          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?)",
-          [1, "steam123"]
+          "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?)",
+          [1, 101, "steam123"]
         );
         expect(mockRedisClient.set).not.toHaveBeenCalled();
       });
@@ -889,12 +889,16 @@ describe("season-team-players.models", () => {
       mockRunQuery.mockResolvedValue(mockSeasonTeamPlayers);
 
       // Act
-      const result = await getSeasonTeamPlayersBySteamIds(seasonId, steamIds);
+      const result = await getSeasonTeamPlayersBySteamIds(
+        seasonId,
+        101,
+        steamIds
+      );
 
       // Assert
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND steam_id IN (?,?,?)",
-        [seasonId, ...steamIds]
+        "SELECT * FROM SeasonTeamPlayers WHERE season_id = ? AND team_id = ? AND steam_id IN (?,?,?)",
+        [seasonId, 101, ...steamIds]
       );
       expect(result).toEqual(mockSeasonTeamPlayers);
     });
@@ -907,7 +911,11 @@ describe("season-team-players.models", () => {
       mockRunQuery.mockResolvedValue([]);
 
       // Act
-      const result = await getSeasonTeamPlayersBySteamIds(seasonId, steamIds);
+      const result = await getSeasonTeamPlayersBySteamIds(
+        seasonId,
+        101,
+        steamIds
+      );
 
       // Assert
       expect(result).toEqual([]);
