@@ -274,10 +274,10 @@ erDiagram
   int_10__unsigned organizer_id FK
 }
 "SeasonTeamPlayers" {
-  int_10__unsigned season_id PK
-  int_10__unsigned team_id PK
-  bigint_20_ steam_id PK
+  int_10__unsigned team_id FK
+  bigint_20_ steam_id FK
   int_10__unsigned match_id FK
+  int_10__unsigned id PK
 }
 "SeasonTeamRegistrationPlayers" {
   int_10__unsigned season_id PK
