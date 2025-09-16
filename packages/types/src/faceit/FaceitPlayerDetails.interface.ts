@@ -4,6 +4,7 @@
  */
 export interface FaceitPlayerDetails {
   player_id: string;
+  nickname: string;
   games: {
     [key: string]: {
       skill_level: number;

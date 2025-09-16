@@ -63,6 +63,7 @@ export const fetchFaceitPlayerData = async (
 
     return {
       player_id: `faceit-player-${steam_id}`,
+      nickname: "Test Player",
       games: {
         [game]: {
           skill_level: 7,
