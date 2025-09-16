@@ -239,7 +239,8 @@ describe("getTeamKeyPlayersController", () => {
         kdr: 1.25,
         kdiff: 15,
         adr: 85.5,
-        kana_rating: 1.15
+        kana_rating: 1.15,
+        faceit_nickname: "Player1"
       },
       {
         steam_id: "76561198087654321",
@@ -248,7 +249,8 @@ describe("getTeamKeyPlayersController", () => {
         kdr: 1.1,
         kdiff: 8,
         adr: 78.2,
-        kana_rating: 1.05
+        kana_rating: 1.05,
+        faceit_nickname: "Player2"
       }
     ];
 
@@ -273,7 +275,8 @@ describe("getTeamKeyPlayersController", () => {
         kdr: 1.2,
         kdiff: 10,
         adr: 80.0,
-        kana_rating: 1.1
+        kana_rating: 1.1,
+        faceit_nickname: "Player1"
       }
     ];
 
@@ -383,19 +386,22 @@ describe("getTeamPlayersController", () => {
         steam_id: "76561198012345678",
         nickname: "Player1",
         is_captain: true,
-        is_co_captain: false
+        is_co_captain: false,
+        faceit_nickname: "Player1"
       },
       {
         steam_id: "76561198087654321",
         nickname: "Player2",
         is_captain: false,
-        is_co_captain: true
+        is_co_captain: true,
+        faceit_nickname: "Player2"
       },
       {
         steam_id: "76561198111111111",
         nickname: "Player3",
         is_captain: false,
-        is_co_captain: false
+        is_co_captain: false,
+        faceit_nickname: "Player3"
       }
     ];
 
@@ -416,13 +422,15 @@ describe("getTeamPlayersController", () => {
         steam_id: "76561198012345678",
         nickname: "Player1",
         is_captain: true,
-        is_co_captain: false
+        is_co_captain: false,
+        faceit_nickname: "Player1"
       },
       {
         steam_id: "76561198087654321",
         nickname: "Player2",
         is_captain: false,
-        is_co_captain: false
+        is_co_captain: false,
+        faceit_nickname: "Player2"
       }
     ];
 
@@ -444,7 +452,8 @@ describe("getTeamPlayersController", () => {
         steam_id: "76561198012345678",
         nickname: "Player1",
         is_captain: true,
-        is_co_captain: false
+        is_co_captain: false,
+        faceit_nickname: "Player1"
       }
     ];
 
@@ -526,7 +535,8 @@ describe("getTeamPlayersController", () => {
         steam_id: "76561198012345678",
         nickname: "Captain",
         is_captain: true,
-        is_co_captain: false
+        is_co_captain: false,
+        faceit_nickname: "Captain"
       }
     ];
 

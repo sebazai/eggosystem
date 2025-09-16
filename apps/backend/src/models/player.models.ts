@@ -19,8 +19,12 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 
 export const getPlayerBySteamId = async (steam_id: string) => {
-  return runQuery<Array<SteamPlayer | undefined>>(
-    "SELECT nickname, steam_id FROM SteamPlayers WHERE steam_id = ?",
+  return runQuery<
+    Array<
+      Pick<SteamPlayer, "nickname" | "steam_id" | "faceit_nickname"> | undefined
+    >
+  >(
+    "SELECT nickname, steam_id, faceit_nickname FROM SteamPlayers WHERE steam_id = ?",
     [steam_id]
   );
 };
@@ -608,7 +612,7 @@ export const getPlayerStatsWithFiltersForCasters = async (
 
   const statsQuery = `
     WITH player_games AS (
-      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id
+      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id, p.faceit_nickname
       FROM SteamPlayers p
       INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
       INNER JOIN MatchGames mg ON mg.id = ps.game_id
@@ -620,6 +624,7 @@ export const getPlayerStatsWithFiltersForCasters = async (
       SELECT 
         pg.steam_id,
         pg.nickname,
+        pg.faceit_nickname,
         COUNT(DISTINCT pg.game_id) as maps_played,
         SUM(ps.kills) as kills,
         SUM(ps.kills_t) as kills_t,

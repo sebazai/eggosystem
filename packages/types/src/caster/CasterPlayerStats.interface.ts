@@ -3,6 +3,7 @@ import type { SteamPlayer, Nullable } from "@eggosystem/types";
 export interface CasterPlayerStats {
   steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
+  faceit_nickname: SteamPlayer["faceit_nickname"];
   maps_played: number;
   rounds_played: number;
   kills: number;

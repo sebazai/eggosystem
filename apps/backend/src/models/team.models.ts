@@ -532,6 +532,7 @@ export const getTeamKeyPlayers = async (
     SELECT 
       sp.steam_id,
       sp.nickname,
+      sp.faceit_nickname,
       COUNT(ps.id) as games_played,
       ROUND(SUM(ps.kills)/SUM(ps.deaths), 2) as kdr,
       SUM(ps.kills) - SUM(ps.deaths) as kdiff,
@@ -573,7 +574,8 @@ export const getTeamPlayers = async (
       sp.steam_id,
       sp.nickname,
       stp.is_captain,
-      stp.is_co_captain
+      stp.is_co_captain,
+      sp.faceit_nickname,
     FROM SteamPlayers sp
     JOIN SeasonTeamPlayers stp ON sp.steam_id = stp.steam_id
     WHERE stp.team_id = ? 

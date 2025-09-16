@@ -46,6 +46,8 @@ const isE2EMode =
 
 /**
  * Base function to fetch player data from Faceit API
+ *
+ * FACEIT_API_KEY="KEY-HERE" pnpm --filter=backend exec ts-node src/scripts/backfillFaceitPlayerData.ts
  * @param steam_id The Steam ID of the player
  * @param game The game to fetch data for (cs2 or csgo)
  * @returns The complete player data from Faceit API

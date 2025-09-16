@@ -5,4 +5,5 @@ export interface TeamPlayers {
   nickname: SteamPlayer["nickname"];
   is_captain: SeasonTeamPlayer["is_captain"];
   is_co_captain: SeasonTeamPlayer["is_co_captain"];
+  faceit_nickname: SteamPlayer["faceit_nickname"];
 }
