@@ -575,7 +575,7 @@ export const getTeamPlayers = async (
       sp.nickname,
       stp.is_captain,
       stp.is_co_captain,
-      sp.faceit_nickname,
+      sp.faceit_nickname
     FROM SteamPlayers sp
     JOIN SeasonTeamPlayers stp ON sp.steam_id = stp.steam_id
     WHERE stp.team_id = ? 
