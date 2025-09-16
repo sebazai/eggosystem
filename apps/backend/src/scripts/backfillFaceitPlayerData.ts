@@ -66,7 +66,11 @@ const updatePlayerFaceitData = async (
     WHERE steam_id = ?
   `;
 
-  await runQuery(query, [faceitNickname, faceitId, steamId]);
+  // Ensure steamId is a string to match database format
+  const steamIdString = String(steamId);
+
+  await runQuery(query, [faceitNickname, faceitId, steamIdString]);
+
   logger.info(
     `Updated FaceIT data for player ${steamId}: ${faceitNickname} (${faceitId})`
   );
