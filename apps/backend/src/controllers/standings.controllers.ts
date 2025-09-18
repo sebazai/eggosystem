@@ -4,7 +4,7 @@ import {
   getStandingsLeagues,
   getStandingsTeamsExternalId
 } from "../services/standings.services";
-import { BadRequestError } from "../utils/errors";
+import { BadRequestError, NotFoundError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
 import { getActiveSeasonForAppId } from "../models/season.models";
 
@@ -61,5 +61,8 @@ export const getStandingsTeamsExternalIdController = async (
     throw new BadRequestError("Season ID is required");
   }
   const teams = await getStandingsTeamsExternalId(team_id, seasonId);
+  if (!teams) {
+    throw new NotFoundError("Championship not found for team");
+  }
   res.json(teams);
 };

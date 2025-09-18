@@ -286,11 +286,14 @@ export const getStandingsTeamsExternalId = async (
     WHERE t.id = ? AND m.season_id = ?
   `;
   const [teams] = await runQuery<
-    Array<{
-      id: number;
-      name: string;
-      external_id: string;
-    }>
+    Array<
+      | {
+          id: number;
+          name: string;
+          external_id: string;
+        }
+      | undefined
+    >
   >(query, [teamId, seasonId]);
   return teams;
 };
