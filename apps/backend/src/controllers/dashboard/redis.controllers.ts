@@ -13,7 +13,7 @@ import type {
 export const getRedisKeys = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   const pattern = (req.query.pattern as string) || "*";
   const keys = await redisClient.keys(pattern);

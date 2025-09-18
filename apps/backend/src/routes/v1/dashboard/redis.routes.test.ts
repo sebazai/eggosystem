@@ -1,5 +1,4 @@
-import request from "supertest";
-import express from "express";
+import type express from "express";
 import { createExpressTestApp } from "../../../test-utils";
 import redisRouter from "./redis.routes";
 

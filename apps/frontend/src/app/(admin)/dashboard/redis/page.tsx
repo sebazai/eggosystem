@@ -17,7 +17,6 @@ import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { useRedisKeys } from "@/hooks/data/dashboard/useRedisKeys";
 import { useRedisKeyData } from "@/hooks/data/dashboard/useRedisKeyData";
 import { useDeleteRedisKey } from "@/hooks/data/dashboard/useDeleteRedisKey";
-import type { RedisKey } from "@eggosystem/types";
 
 export default function RedisManagementPage() {
   const { user } = useAuth();

@@ -26,7 +26,7 @@ export function useDeleteRedisKey() {
         setError("Failed to delete key");
         return false;
       }
-    } catch (err) {
+    } catch (_err) {
       setError("Failed to delete key");
       return false;
     } finally {
