@@ -9,19 +9,50 @@ import type {
 } from "@eggosystem/types";
 
 /**
- * Get all Redis keys with optional pattern filtering
+ * Get Redis keys with pattern filtering and pagination
  */
 export const getRedisKeys = async (
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ) => {
-  const pattern = (req.query.pattern as string) || "*";
-  const keys = await redisClient.keys(pattern);
+  const pattern = req.query.pattern as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 50;
+
+  // Validate search pattern - require a non-empty pattern that's not just "*"
+  if (!pattern || pattern.trim() === "" || pattern.trim() === "*") {
+    return next(
+      new BadRequestError(
+        "Search pattern is required and cannot be empty or '*'"
+      )
+    );
+  }
+
+  if (page < 1) {
+    return next(new BadRequestError("Page must be greater than 0"));
+  }
+  if (limit < 1 || limit > 1000) {
+    return next(new BadRequestError("Limit must be between 1 and 1000"));
+  }
+
+  const allKeys = await redisClient.keys(pattern);
+  const total = allKeys.length;
+  const totalPages = Math.ceil(total / limit);
+
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedKeys = allKeys.slice(startIndex, endIndex);
 
   const response: RedisKeysResponse = {
     success: true,
-    data: keys
+    data: paginatedKeys,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages
+    }
   };
 
   res.json(response);

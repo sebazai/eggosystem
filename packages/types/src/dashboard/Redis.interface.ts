@@ -8,6 +8,12 @@ export interface RedisKey {
 export interface RedisKeysResponse {
   success: boolean;
   data: string[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface RedisKeyDataResponse {

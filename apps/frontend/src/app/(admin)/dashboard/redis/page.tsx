@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,28 +11,61 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Database, Key, Trash2, Eye } from "lucide-react";
+import {
+  Database,
+  Key,
+  Trash2,
+  Eye,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { useRedisKeys } from "@/hooks/data/dashboard/useRedisKeys";
 import { useRedisKeyData } from "@/hooks/data/dashboard/useRedisKeyData";
 import { useDeleteRedisKey } from "@/hooks/data/dashboard/useDeleteRedisKey";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export default function RedisManagementPage() {
   const { user } = useAuth();
-  const [searchPattern, setSearchPattern] = useState("*");
+  const [searchPattern, setSearchPattern] = useState("");
+  const [debouncedSearchPattern, setDebouncedSearchPattern] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [selectedKeyName, setSelectedKeyName] = useState<string | null>(null);
+
+  // Debounce the search pattern with 500ms delay
+  const debouncedPattern = useDebounce(searchPattern, 500);
 
   // Check if user has admin role for delete operations
   const canDelete = user?.roles.includes("admin") || false;
 
+  // Update debounced search pattern when debounced value changes
+  useEffect(() => {
+    if (
+      debouncedPattern &&
+      debouncedPattern.trim() !== "" &&
+      debouncedPattern.trim() !== "*"
+    ) {
+      setDebouncedSearchPattern(debouncedPattern);
+      setCurrentPage(1); // Reset to first page when search changes
+    } else {
+      setDebouncedSearchPattern("");
+    }
+  }, [debouncedPattern]);
+
   // Use data hooks
   const {
     keys,
+    pagination,
     isLoading: keysLoading,
     isError: keysError,
     mutate: refetchKeys
-  } = useRedisKeys(searchPattern);
+  } = useRedisKeys({
+    pattern: debouncedSearchPattern,
+    page: currentPage,
+    limit: pageSize
+  });
   const {
     keyData: selectedKey,
     isLoading: keyDataLoading,
@@ -57,9 +90,17 @@ export default function RedisManagementPage() {
     }
   };
 
-  const handleSearch = () => {
-    const pattern = searchPattern.trim() || "*";
-    setSearchPattern(pattern);
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchPattern(e.target.value);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   const handleKeyClick = (key: string) => {
@@ -172,26 +213,64 @@ export default function RedisManagementPage() {
                 Redis Keys
               </CardTitle>
               <CardDescription>
-                {keys.length} key{keys.length !== 1 ? "s" : ""} found
+                {debouncedSearchPattern ? (
+                  <>
+                    {pagination.total} key{pagination.total !== 1 ? "s" : ""}{" "}
+                    found
+                    {pagination.totalPages > 1 && (
+                      <>
+                        {" "}
+                        (page {pagination.page} of {pagination.totalPages})
+                      </>
+                    )}
+                  </>
+                ) : (
+                  "Enter a search pattern to find keys"
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col flex-1">
-              <div className="flex gap-2 mb-4">
+              <div className="mb-4">
                 <Input
                   placeholder="Search pattern (e.g., user:*, session:*)"
                   value={searchPattern}
-                  onChange={(e) => setSearchPattern(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  onChange={handleSearchInputChange}
                 />
-                <Button onClick={handleSearch}>
-                  <Search className="h-4 w-4" />
-                </Button>
               </div>
 
+              {/* Page Size Selector */}
+              {debouncedSearchPattern && (
+                <div className="flex items-center gap-2 mb-4">
+                  <label className="text-sm text-muted-foreground">
+                    Page size:
+                  </label>
+                  <select
+                    value={pageSize}
+                    onChange={(e) =>
+                      handlePageSizeChange(parseInt(e.target.value))
+                    }
+                    className="px-2 py-1 border rounded text-sm"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={200}>200</option>
+                  </select>
+                </div>
+              )}
+
               <div className="flex-1 overflow-y-auto space-y-1">
-                {keys.length === 0 ? (
+                {!debouncedSearchPattern ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Enter a search pattern to find Redis keys</p>
+                    <p className="text-xs mt-2">
+                      Examples: user:*, session:*, cache:*
+                    </p>
+                  </div>
+                ) : keys.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground">
-                    No keys found
+                    No keys found for pattern: {debouncedSearchPattern}
                   </div>
                 ) : (
                   keys.map((key) => (
@@ -235,6 +314,41 @@ export default function RedisManagementPage() {
                   ))
                 )}
               </div>
+
+              {/* Pagination Controls */}
+              {debouncedSearchPattern && pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+                    {Math.min(
+                      pagination.page * pagination.limit,
+                      pagination.total
+                    )}{" "}
+                    of {pagination.total} keys
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={pagination.page <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      Page {pagination.page} of {pagination.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={pagination.page >= pagination.totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

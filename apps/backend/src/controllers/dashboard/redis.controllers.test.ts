@@ -35,22 +35,28 @@ describe("Redis Controllers", () => {
   });
 
   describe("getRedisKeys", () => {
-    it("should return all Redis keys when no pattern provided", async () => {
-      const mockKeys = ["key1", "key2", "key3"];
+    it("should return paginated Redis keys with valid pattern", async () => {
+      const mockKeys = Array.from({ length: 100 }, (_, i) => `user:${i}`);
       mockRedisClient.keys.mockResolvedValue(mockKeys);
-      mockReq.query = {};
+      mockReq.query = { pattern: "user:*", page: "2", limit: "25" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRedisClient.keys).toHaveBeenCalledWith("*");
+      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: mockKeys
+        data: mockKeys.slice(25, 50), // Page 2 with limit 25
+        pagination: {
+          page: 2,
+          limit: 25,
+          total: 100,
+          totalPages: 4
+        }
       });
     });
 
-    it("should return filtered keys when pattern provided", async () => {
-      const mockKeys = ["user:123", "user:456", "session:789"];
+    it("should return first page with default pagination", async () => {
+      const mockKeys = ["user:1", "user:2", "user:3"];
       mockRedisClient.keys.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*" };
 
@@ -59,18 +65,94 @@ describe("Redis Controllers", () => {
       expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
-        data: mockKeys
+        data: mockKeys,
+        pagination: {
+          page: 1,
+          limit: 50,
+          total: 3,
+          totalPages: 1
+        }
       });
+    });
+
+    it("should reject empty pattern", async () => {
+      mockReq.query = { pattern: "" };
+
+      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Search pattern is required and cannot be empty or '*'",
+          status: 400
+        })
+      );
+    });
+
+    it("should reject wildcard pattern", async () => {
+      mockReq.query = { pattern: "*" };
+
+      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Search pattern is required and cannot be empty or '*'",
+          status: 400
+        })
+      );
+    });
+
+    it("should reject invalid page number", async () => {
+      mockReq.query = { pattern: "user:*", page: "0" };
+
+      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Page must be greater than 0",
+          status: 400
+        })
+      );
+    });
+
+    it("should reject invalid limit", async () => {
+      mockReq.query = { pattern: "user:*", limit: "0" };
+
+      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Limit must be between 1 and 1000",
+          status: 400
+        })
+      );
+    });
+
+    it("should reject limit over 1000", async () => {
+      mockReq.query = { pattern: "user:*", limit: "1001" };
+
+      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Limit must be between 1 and 1000",
+          status: 400
+        })
+      );
     });
 
     it("should handle Redis errors", async () => {
       const error = new Error("Redis connection failed");
       mockRedisClient.keys.mockRejectedValue(error);
-      mockReq.query = {};
+      mockReq.query = { pattern: "user:*" };
 
-      await expect(
-        getRedisKeys(mockReq as Request, mockRes as Response, mockNext)
-      ).rejects.toThrow("Redis connection failed");
+      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: "Invalid search pattern",
+          status: 400
+        })
+      );
     });
   });
 
