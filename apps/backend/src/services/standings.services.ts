@@ -267,3 +267,30 @@ export const getStandingsLeagues = async (seasonId: number) => {
   const leagues = await runQuery<StandingsLeagues>(query, [seasonId]);
   return leagues;
 };
+
+export const getStandingsTeamsExternalId = async (
+  teamId: string,
+  seasonId: number
+) => {
+  const query = `
+    SELECT DISTINCT 
+      t.id,
+      t.name,
+      slei.external_id
+    FROM Teams t
+    JOIN MatchTeams mt ON t.id = mt.team_id
+    JOIN Matches m ON mt.match_id = m.id
+    JOIN SeasonLeagueExternalIds slei ON m.season_id = slei.season_id 
+      AND m.league_id = slei.league_id
+      AND (m.group = slei.manual_group OR (m.group IS NULL AND slei.manual_group IS NULL))
+    WHERE t.id = ? AND m.season_id = ?
+  `;
+  const [teams] = await runQuery<
+    Array<{
+      id: number;
+      name: string;
+      external_id: string;
+    }>
+  >(query, [teamId, seasonId]);
+  return teams;
+};

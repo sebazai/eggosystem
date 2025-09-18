@@ -1,7 +1,8 @@
 import { type Request, type Response } from "express";
 import {
   getDivStandings,
-  getStandingsLeagues
+  getStandingsLeagues,
+  getStandingsTeamsExternalId
 } from "../services/standings.services";
 import { BadRequestError } from "../utils/errors";
 import { logger } from "../utils/app-logger";
@@ -47,4 +48,18 @@ export const getFaceitLeaguesController = async (
   res.json({
     standingsLeagues
   });
+};
+
+export const getStandingsTeamsExternalIdController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { team_id } = req.params;
+  const { season_id } = req.query;
+  const seasonId = Number(season_id);
+  if (isNaN(seasonId)) {
+    throw new BadRequestError("Season ID is required");
+  }
+  const teams = await getStandingsTeamsExternalId(team_id, seasonId);
+  res.json(teams);
 };
