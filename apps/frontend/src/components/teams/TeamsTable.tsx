@@ -42,7 +42,7 @@ export const TeamsTable = () => {
       {/* Players Section */}
       <div className="bg-card rounded-md overflow-hidden mb-3">
         <h2 className="font-semibold mb-2">Team Players</h2>
-        <PlayerTable players={players} initialPageSize={10} />
+        <PlayerTable players={players} hideTeamName={true} />
       </div>
 
       <TeamMatchHistory teamId={teamId} filterQueryParams={filterParams} />

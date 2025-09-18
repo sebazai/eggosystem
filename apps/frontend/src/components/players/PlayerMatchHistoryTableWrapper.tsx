@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import Link from "next/link";
 
 import {
   cn,
@@ -9,19 +8,28 @@ import {
   mapToReadableNameCapitalFirst
 } from "@/lib/utils";
 import { format } from "date-fns";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider
-} from "@/components/ui/tooltip";
-import { TablePagination } from "../tables/TablePagination";
+import { BaseTable } from "../tables/BaseTable";
 import { usePlayerMatchHistory } from "@/hooks/data/filtered/usePlayerMatchHistory";
 
 import { useFilters } from "@/context/FilterContext";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  flexRender,
+  type ColumnDef,
+  type SortingState,
+  type PaginationState,
+  type Cell
+} from "@tanstack/react-table";
+import type { MatchHistoryResult } from "@eggosystem/types";
 
-type SortDirection = "asc" | "desc";
+interface CustomColumnMeta {
+  responsive?: string;
+  tooltip?: string;
+  sortable?: boolean;
+}
 
 interface PlayerDetailsProps {
   steamId: string;
@@ -41,189 +49,318 @@ const PlayerMatchHistoryTableWrapper = ({
 };
 
 export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: SortDirection;
-  }>({
-    key: "match_date",
-    direction: "desc"
-  });
-
   const { filterParams } = useFilters();
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "match_date", desc: true }
+  ]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10
+  });
 
   const { matchHistory, isLoading, isError } = usePlayerMatchHistory({
     steamId,
     ...filterParams
   });
 
-  // Match column definitions with tooltips
-  const matchColumns = useMemo(
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<MatchHistoryResult>[]>(
     () => [
       {
-        key: "opponent_name",
-        label: "OPPONENT",
-        sortable: true,
-        tooltip: "Opponent Team"
+        accessorKey: "opponent_name",
+        header: "OPPONENT",
+        cell: ({ getValue }) => getValue<string>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Opponent Team",
+          sortable: true
+        }
       },
       {
-        key: "match_date",
-        label: "DATE",
-        sortable: true,
-        tooltip: "Match Date",
-        responsive: false
+        accessorKey: "match_date",
+        header: "DATE",
+        cell: ({ getValue }) => {
+          const date = getValue<string>();
+          return date ? format(new Date(date), "dd.MM.yyyy") : "N/A";
+        },
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Match Date",
+          sortable: true
+        }
       },
       {
-        key: "season",
-        label: "SEASON",
-        sortable: true,
-        tooltip: "Season",
-        responsive: false
+        accessorKey: "season_name",
+        header: "SEASON",
+        cell: ({ getValue }) => convertSeasonToS(getValue<string>()),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Season",
+          sortable: true
+        }
       },
       {
-        key: "map_league",
-        label: "MAPS/LEAGUE",
-        sortable: false,
-        tooltip: "Map and League",
-        responsive: false
+        id: "map_league",
+        header: "MAPS/LEAGUE",
+        cell: ({ row }) => {
+          const mapName = row.original.map_name
+            .split(", ")
+            .map((name) => mapToReadableNameCapitalFirst(name))
+            .join(", ");
+          return `${mapName} • ${row.original.league_name}`;
+        },
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Map and League",
+          sortable: false
+        }
       },
       {
-        key: "score",
-        label: "SCORE",
-        sortable: true,
-        tooltip: "Match Score (Opponent score on right)"
-      },
-      { key: "kills", label: "K", sortable: true, tooltip: "Kills" },
-      {
-        key: "assists",
-        label: "A (f)",
-        sortable: true,
-        tooltip: "Assists (Flash Assists)",
-        responsive: false
-      },
-      { key: "deaths", label: "D", sortable: true, tooltip: "Deaths" },
-      {
-        key: "awp_kills",
-        label: "AWP",
-        sortable: true,
-        tooltip: "AWP Kills",
-        responsive: false
-      },
-      {
-        key: "utility_damage",
-        label: "UD",
-        sortable: true,
-        tooltip: "Utility Damage",
-        responsive: false
+        id: "score",
+        header: "SCORE",
+        cell: ({ row }) => {
+          const teamWon = row.original.score > row.original.opponent_score;
+          return (
+            <>
+              <span className={teamWon ? "text-green-500" : "text-red-500"}>
+                {row.original.score}
+              </span>
+              -
+              <span className={!teamWon ? "text-green-500" : "text-red-500"}>
+                {row.original.opponent_score}
+              </span>
+            </>
+          );
+        },
+        meta: {
+          responsive: "hidden sm:table-cell",
+          tooltip: "Match Score (Opponent score on right)",
+          sortable: true
+        }
       },
       {
-        key: "headshots",
-        label: "HS",
-        sortable: true,
-        tooltip: "Headshots",
-        responsive: false
+        accessorKey: "kana_rating",
+        header: "RATING",
+        cell: ({ getValue }) => getValue<number>()?.toFixed(2),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Kanaliiga Rating",
+          sortable: true
+        }
       },
       {
-        key: "first_kills",
-        label: "FK",
-        sortable: true,
-        tooltip: "First Kills",
-        responsive: false
+        accessorKey: "kills",
+        header: "K",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Kills",
+          sortable: true
+        }
       },
       {
-        key: "first_deaths",
-        label: "FD",
-        sortable: true,
-        tooltip: "First Deaths",
-        responsive: false
+        accessorKey: "assists",
+        header: "A (f)",
+        cell: ({ row }) => (
+          <>
+            {row.original.assists} (
+            <span className="text-xs">{row.original.flash_assists}</span>)
+          </>
+        ),
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Assists (Flash Assists)",
+          sortable: true
+        }
       },
       {
-        key: "adr",
-        label: "ADR",
-        sortable: true,
-        tooltip: "Average Damage per Round"
+        accessorKey: "deaths",
+        header: "D",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Deaths",
+          sortable: true
+        }
       },
       {
-        key: "hs_percent",
-        label: "HS%",
-        sortable: true,
-        tooltip: "Headshot Percentage",
-        responsive: false
+        accessorKey: "kd",
+        header: "K/D",
+        cell: ({ getValue }) => getValue<number>()?.toFixed(2),
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Kill/Death Ratio",
+          sortable: true
+        }
       },
       {
-        key: "kd",
-        label: "K/D",
-        sortable: true,
-        tooltip: "Kill/Death Ratio",
-        responsive: false
+        accessorKey: "awp_kills",
+        header: "AWP",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "AWP Kills",
+          sortable: true
+        }
       },
       {
-        key: "kana_rating",
-        label: "RATING",
-        sortable: true,
-        tooltip: "Kanaliiga Rating"
+        accessorKey: "utility_damage",
+        header: "UD",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Utility Damage",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "headshots",
+        header: "HS",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Headshots",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "first_kills",
+        header: "FK",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "First Kills",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "first_deaths",
+        header: "FD",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "First Deaths",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "adr",
+        header: "ADR",
+        cell: ({ getValue }) => getValue<number>()?.toFixed(1),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Average Damage per Round",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "hs_percent",
+        header: "HS%",
+        cell: ({ getValue }) => `${getValue<number>()?.toFixed(1)}%`,
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Headshot Percentage",
+          sortable: true
+        }
       }
     ],
     []
   );
 
-  const handleSortClick = (key: string) => {
-    let direction: SortDirection = "desc";
-    if (sortConfig.key === key && sortConfig.direction === "desc") {
-      direction = "asc";
+  // TanStack Table configuration
+  const table = useReactTable({
+    data: matchHistory || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    state: {
+      sorting,
+      pagination
+    },
+    initialState: {
+      sorting: [{ id: "match_date", desc: true }],
+      pagination: {
+        pageIndex: 0,
+        pageSize: 10
+      }
     }
-    setSortConfig({ key, direction });
+  });
+
+  const handleRowClick = (match: MatchHistoryResult) => {
+    const url = match.game_id
+      ? `/matches/${match.match_id}/games/${match.game_id}`
+      : `/matches/${match.match_id}`;
+    window.open(url, "_blank");
   };
 
-  const getSortedMatchHistory = useMemo(() => {
-    if (!matchHistory || matchHistory.length === 0) return [];
+  const handleRowMiddleClick = (match: MatchHistoryResult) => {
+    const url = match.game_id
+      ? `/matches/${match.match_id}/games/${match.game_id}`
+      : `/matches/${match.match_id}`;
+    window.open(url, "_blank");
+  };
 
-    const sortableItems = [...matchHistory];
-    sortableItems.sort((a, b) => {
-      // Special case for match date
-      if (sortConfig.key === "match_date") {
-        const aDate = a.match_date ? new Date(a.match_date).getTime() : 0;
-        const bDate = b.match_date ? new Date(b.match_date).getTime() : 0;
-        return sortConfig.direction === "asc" ? aDate - bDate : bDate - aDate;
-      }
+  const customCellClassName = (
+    cell: Cell<MatchHistoryResult, unknown>,
+    _row: MatchHistoryResult
+  ) => {
+    return cn(
+      "px-3 py-2 text-center",
+      (cell.column.columnDef.meta as CustomColumnMeta)?.responsive,
+      cell.column.id === "opponent_name" && "text-left",
+      cell.column.id === "kana_rating" && "font-bold"
+    );
+  };
 
-      // Get values for the sort key
-      const aValue = a[sortConfig.key as keyof typeof a];
-      const bValue = b[sortConfig.key as keyof typeof b];
+  const customCellContent = (
+    cell: Cell<MatchHistoryResult, unknown>,
+    row: MatchHistoryResult
+  ) => {
+    if (cell.column.id === "opponent_name") {
+      const teamWon = row.score > row.opponent_score;
+      return (
+        <>
+          <span>{row.opponent_name}</span>
+          {/* Score on mobile - hidden on desktop */}
+          <div className="sm:hidden text-xs mt-1">
+            <span className={teamWon ? "text-green-500" : "text-red-500"}>
+              {row.score}
+            </span>
+            -
+            <span className={!teamWon ? "text-green-500" : "text-red-500"}>
+              {row.opponent_score}
+            </span>
+          </div>
+        </>
+      );
+    }
 
-      // Handle special cases for strings and nulls
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortConfig.direction === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
+    return flexRender(cell.column.columnDef.cell, cell.getContext());
+  };
 
-      // Convert to numbers for comparison
-      const aNum = aValue === null || aValue === undefined ? 0 : Number(aValue);
-      const bNum = bValue === null || bValue === undefined ? 0 : Number(bValue);
-
-      return sortConfig.direction === "asc" ? aNum - bNum : bNum - aNum;
-    });
-
-    return sortableItems;
-  }, [matchHistory, sortConfig]);
-
-  // Calculate pagination
-  const totalMatches = getSortedMatchHistory.length;
-  const totalPages = Math.ceil(totalMatches / itemsPerPage);
-  const paginatedMatches = getSortedMatchHistory.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const mobileHeaders = (
+    <tr className="sm:hidden bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
+      <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-kanaliiga-orange">
+        OPPONENT
+      </th>
+      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+        RATING
+      </th>
+      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+        K
+      </th>
+      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+        D
+      </th>
+      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
+        ADR
+      </th>
+    </tr>
   );
-
-  // Handle page size change - state only (no URL updates)
-  const handlePageSizeChange = (newPageSize: number) => {
-    setItemsPerPage(newPageSize);
-    setCurrentPage(1); // Reset to first page
-  };
 
   if (isError) {
     return (
@@ -259,207 +396,17 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
 
   return (
     <PlayerMatchHistoryTableWrapper>
-      <div className="overflow-x-auto">
-        <TooltipProvider>
-          <table className="w-full">
-            <thead>
-              {/* Desktop headers */}
-              <tr className="hidden bg-kanaliiga-light-brown/30 sm:table-row uppercase text-kanaliiga-orange">
-                {matchColumns.map((column) => (
-                  <th
-                    key={column.key}
-                    className={cn(
-                      "px-3 py-2 text-center whitespace-nowrap font-semibold",
-                      column.key === "opponent_name" && "text-left",
-                      column.responsive === false && "hidden md:table-cell",
-                      column.sortable &&
-                        "cursor-pointer hover:bg-kanaliiga-orange/50"
-                    )}
-                    onClick={() =>
-                      column.sortable && handleSortClick(column.key)
-                    }
-                  >
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center justify-center">
-                          <span>{column.label}</span>
-                          {column.sortable && sortConfig.key === column.key && (
-                            <span className="inline-block ml-1">
-                              {sortConfig.direction === "asc" ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="px-2 py-1 text-xs">
-                        {column.tooltip}
-                      </TooltipContent>
-                    </Tooltip>
-                  </th>
-                ))}
-              </tr>
-
-              {/* Mobile headers */}
-              <tr className="sm:hidden bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
-                <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-kanaliiga-orange">
-                  OPPONENT
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-                  K
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-                  D
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-                  ADR
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-                  RATING
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-kanaliiga-light-brown/10">
-              {paginatedMatches.map((match) => {
-                const teamWon = match.score > match.opponent_score;
-
-                return (
-                  <tr
-                    key={`${match.match_id}`}
-                    className="hover:bg-kanaliiga-light-brown/10 cursor-pointer"
-                    onMouseDown={(e) => {
-                      // Handle middle mouse button (wheel) click
-                      if (e.button === 1) {
-                        e.preventDefault(); // Prevent scroll behavior
-                        const url = match.game_id
-                          ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`;
-                        window.open(url, "_blank");
-                      }
-                    }}
-                  >
-                    <Link
-                      href={
-                        match.game_id
-                          ? `/matches/${match.match_id}/games/${match.game_id}`
-                          : `/matches/${match.match_id}`
-                      }
-                      className="contents block"
-                    >
-                      <td className="px-3 py-2 text-left">
-                        <span>{match.opponent_name}</span>
-                        {/* Score on mobile - hidden on desktop */}
-                        <div className="sm:hidden text-xs mt-1">
-                          <span
-                            className={
-                              teamWon ? "text-green-500" : "text-red-500"
-                            }
-                          >
-                            {match.score}
-                          </span>
-                          -
-                          <span
-                            className={
-                              !teamWon ? "text-green-500" : "text-red-500"
-                            }
-                          >
-                            {match.opponent_score}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Date - hidden on mobile */}
-                      <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                        {match.match_date
-                          ? format(new Date(match.match_date), "dd.MM.yyyy")
-                          : "N/A"}
-                      </td>
-
-                      <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                        {convertSeasonToS(match.season_name)}
-                      </td>
-
-                      {/* Map & League - hidden on mobile */}
-                      <td className="hidden md:table-cell px-3 py-2 text-center text-xs text-muted-foreground">
-                        {match.map_name
-                          .split(", ")
-                          .map((name) => mapToReadableNameCapitalFirst(name))
-                          .join(", ")}{" "}
-                        • {match.league_name}
-                      </td>
-
-                      {/* Score - hidden on mobile, shown on desktop */}
-                      <td className="hidden sm:table-cell px-3 py-2 text-center">
-                        <span
-                          className={
-                            teamWon ? "text-green-500" : "text-red-500"
-                          }
-                        >
-                          {match.score}
-                        </span>
-                        -
-                        <span
-                          className={
-                            !teamWon ? "text-green-500" : "text-red-500"
-                          }
-                        >
-                          {match.opponent_score}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-center">{match.kills}</td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.assists} (
-                        <span className="text-xs">{match.flash_assists}</span>)
-                      </td>
-                      <td className="px-3 py-2 text-center">{match.deaths}</td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.awp_kills}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.utility_damage}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.headshots}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.first_kills}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.first_deaths}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {match.adr?.toFixed(1)}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.hs_percent?.toFixed(1)}%
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-center">
-                        {match.kd?.toFixed(2)}
-                      </td>
-                      <td className="px-3 py-2 text-center font-bold">
-                        {match.kana_rating?.toFixed(2)}
-                      </td>
-                    </Link>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </TooltipProvider>
-      </div>
-      {totalMatches > 0 && (
-        <TablePagination
-          totalRows={totalMatches}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          handlePageChange={setCurrentPage}
-          handlePageSizeChange={handlePageSizeChange}
-          pageSize={itemsPerPage}
-          type="matches"
-        />
-      )}
+      <BaseTable
+        table={table}
+        columns={columns}
+        onRowClick={handleRowClick}
+        onRowMiddleClick={handleRowMiddleClick}
+        showPagination={table.getFilteredRowModel().rows.length > 0}
+        paginationType="matches"
+        customCellClassName={customCellClassName}
+        customCellContent={customCellContent}
+        mobileHeaders={mobileHeaders}
+      />
     </PlayerMatchHistoryTableWrapper>
   );
 };

@@ -1,9 +1,10 @@
-import { SteamPlayer } from "../db";
+import { SteamPlayer, Team } from "../db";
 import { Nullable } from "../utils";
 
 export interface PlayerStatsTable {
   steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
+  team_name?: Team["name"];
   maps_played: number;
   kills: number;
   assists: number;

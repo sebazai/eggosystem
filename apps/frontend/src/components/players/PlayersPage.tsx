@@ -50,7 +50,10 @@ export const PlayersPage = () => {
       </div>
 
       <CardContainer classNames="p-2 md:p-4">
-        <PlayerTable players={players} />
+        <PlayerTable
+          players={players}
+          hideTeamName={filterParams.seasons?.length !== 1}
+        />
       </CardContainer>
     </div>
   );
