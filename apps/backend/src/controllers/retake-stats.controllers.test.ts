@@ -32,7 +32,7 @@ describe("getTeamRetakeStatsController", () => {
         team_ids: null,
         stages: null,
         map_ids: null,
-        playerName: null
+        player_name: null
       }
     };
   });

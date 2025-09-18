@@ -12,7 +12,7 @@ export interface ParsedParams {
   team_ids: Nullable<number[]>;
   stages: Nullable<number[]>;
   map_ids: Nullable<number[]>;
-  playerName?: Nullable<string>;
+  player_name?: Nullable<string>;
   faceit_level?: Nullable<number>;
   cs2_rank_min?: Nullable<number>;
   cs2_rank_max?: Nullable<number>;

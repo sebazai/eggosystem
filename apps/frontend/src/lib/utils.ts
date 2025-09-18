@@ -38,6 +38,7 @@ export interface FilterParamsQuery {
   stages: Nullable<number[]>;
   teams: Nullable<number[]>;
   maps: Nullable<number[]>;
+  player_name?: Nullable<string>;
   steamId?: string;
 }
 
@@ -46,7 +47,8 @@ export const generateFiltersParamQuery = ({
   leagues,
   stages,
   teams,
-  maps
+  maps,
+  player_name
 }: FilterParamsQuery) => {
   const params = new URLSearchParams();
 
@@ -60,6 +62,7 @@ export const generateFiltersParamQuery = ({
     teams.forEach((team) => params.append("team_ids", String(team)));
   if (maps?.length)
     maps.forEach((map) => params.append("map_ids", String(map)));
+  if (player_name) params.append("player_name", player_name);
 
   const sortedQuery = Array.from(params.entries())
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))

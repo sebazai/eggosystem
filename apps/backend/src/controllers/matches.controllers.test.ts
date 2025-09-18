@@ -663,7 +663,7 @@ describe("Matches Controllers", () => {
         team_ids: null,
         stages: null,
         map_ids: null,
-        playerName: "test"
+        player_name: "test"
       };
 
       await getFilteredMatchesController(
@@ -677,7 +677,7 @@ describe("Matches Controllers", () => {
         team_ids: null,
         stages: null,
         map_ids: null,
-        playerName: "test"
+        player_name: "test"
       });
     });
 

@@ -25,7 +25,7 @@ export function cacheResponseMiddleware({
       return;
     }
 
-    if (searchParams.playerName) {
+    if (searchParams.player_name) {
       next();
       return;
     }

@@ -19,7 +19,8 @@ export const PlayersPage = () => {
     isError,
     isValidating: isValidatingPlayers
   } = useAllMultiplePlayersStats({
-    ...filterParams
+    ...filterParams,
+    player_name: searchParams.get("playerName") ?? ""
   });
 
   if (isLoading || !filterParams || isValidating)

@@ -61,7 +61,7 @@ export const getAllPlayerStatsByFilters = async ({
   team_ids,
   stages,
   map_ids,
-  playerName
+  player_name
 }: ParsedParams) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
@@ -80,20 +80,24 @@ export const getAllPlayerStatsByFilters = async ({
     { column: "mg.map_id", value: map_ids }
   ]);
 
-  const whereClause = playerName
-    ? `WHERE ${query} AND p.nickname LIKE ?`
+  const whereClause = player_name
+    ? `WHERE ${query} AND (p.nickname LIKE ? OR p.faceit_nickname LIKE ?)`
     : `WHERE ${query}`;
 
-  if (playerName) {
-    queryParams.push(`%${playerName}%`);
+  if (player_name) {
+    queryParams.push(`%${player_name}%`);
+    queryParams.push(`%${player_name}%`);
   }
 
-  const teamIdsJoin = team_ids && team_ids.length > 0;
+  const teamIdsJoin =
+    (team_ids && team_ids.length > 0) ||
+    (season_ids && season_ids.length === 1);
 
   const baseQuery = `
     SELECT 
       p.steam_id,
-      p.nickname, 
+      p.nickname,
+      ${season_ids && season_ids.length === 1 ? "t.name AS team_name," : ""}
       COUNT(DISTINCT ps.game_id) as maps_played,
       SUM(ps.kills) as kills,
       SUM(ps.assists) as assists,
@@ -116,7 +120,9 @@ export const getAllPlayerStatsByFilters = async ({
       teamIdsJoin
         ? `
         INNER JOIN MatchTeams mt ON mt.match_id = m.id 
-        INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id`
+        INNER JOIN SeasonTeamPlayers stp ON stp.season_id = m.season_id AND stp.steam_id = p.steam_id AND stp.team_id = mt.team_id
+        INNER JOIN Teams t ON t.id = stp.team_id
+        `
         : ""
     }
     ${whereClause}
@@ -133,7 +139,7 @@ export const getMultiplePlayerStatsByFilters = async ({
   team_ids,
   stages,
   map_ids,
-  playerName
+  player_name
 }: ParsedParams) => {
   // Build filters for SeasonTeamPlayers only
   const stpFilters = [];
@@ -174,9 +180,10 @@ export const getMultiplePlayerStatsByFilters = async ({
   const queryParams = [...stpParams];
 
   // Add playerName parameter (used in WHERE clause)
-  if (playerName) {
-    whereClause += ` AND p.nickname LIKE ?`;
-    queryParams.push(`%${playerName}%`);
+  if (player_name) {
+    whereClause += ` AND (p.nickname LIKE ? OR p.faceit_nickname LIKE ?)`;
+    queryParams.push(`%${player_name}%`);
+    queryParams.push(`%${player_name}%`);
   }
 
   // Add match conditions to WHERE clause for LEFT JOIN

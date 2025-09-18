@@ -12,19 +12,11 @@ interface UsePlayersProps extends FilterParamsQuery {
   player_name?: Nullable<string>;
 }
 
-export const useAllMultiplePlayersStats = ({
-  player_name,
-  ...params
-}: UsePlayersProps) => {
+export const useAllMultiplePlayersStats = (params: UsePlayersProps) => {
   const sortedQuery = generateFiltersParamQuery(params);
 
-  // Add player name search parameter if provided
-  const playerNameQuery = player_name
-    ? `&playerName=${encodeURIComponent(player_name)}`
-    : "";
-
   const { data, error, isValidating, isLoading } = useSWR<PlayerStatsTable[]>(
-    `/api/v1/filters/players/all/stats?${sortedQuery}${playerNameQuery}`,
+    `/api/v1/filters/players/all/stats?${sortedQuery}`,
     expressFetcher,
     {
       revalidateOnFocus: false,

@@ -16,7 +16,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { FilterParamsQuery } from "@/lib/utils";
 import { Button } from "../ui/button";
 
-type FilterParamQueryKeys = Exclude<keyof FilterParamsQuery, "steamId">;
+type FilterParamQueryKeys = Exclude<
+  keyof FilterParamsQuery,
+  "steamId" | "player_name"
+>;
 
 interface MultiFiltersProps extends FilterParamsQuery {
   hideFilters?: {

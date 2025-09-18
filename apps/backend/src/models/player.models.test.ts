@@ -16,7 +16,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       league_ids: null,
       stages: null,
       map_ids: null,
-      playerName: undefined
+      player_name: undefined
     });
     const result2 = await getMultiplePlayerStatsByFilters({
       season_ids: null,
@@ -24,7 +24,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       league_ids: null,
       stages: null,
       map_ids: null,
-      playerName: undefined
+      player_name: undefined
     });
     expect(result).toEqual(result2);
   });
@@ -35,7 +35,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       league_ids: null,
       stages: null,
       map_ids: null,
-      playerName: undefined
+      player_name: undefined
     });
 
     expect(result).toEqual([
@@ -156,7 +156,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       league_ids: null,
       stages: null,
       map_ids: null,
-      playerName: undefined
+      player_name: undefined
     });
 
     expect(result).toEqual([
@@ -367,7 +367,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       league_ids: null,
       stages: [1],
       map_ids: [5],
-      playerName: undefined
+      player_name: undefined
     });
 
     expect(result).toEqual([
@@ -471,7 +471,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         league_ids: null,
         stages: [2],
         map_ids: [2, 8],
-        playerName: "nzoj"
+        player_name: "nzoj"
       });
       expect(result).toEqual([
         {
@@ -501,7 +501,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         league_ids: null,
         stages: [2],
         map_ids: [2, 8],
-        playerName: "nzoj"
+        player_name: "nzoj"
       });
       expect(result).toEqual([
         {
@@ -533,7 +533,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       league_ids: null,
       stages: null,
       map_ids: [7],
-      playerName: undefined
+      player_name: undefined
     });
 
     expect(result).toBeDefined();

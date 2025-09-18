@@ -59,7 +59,7 @@ const parseQueryFilterParams = (
     team_ids: parseArray(req.query.team_ids?.toString()),
     stages: parseArray(req.query.stages?.toString()),
     map_ids: parseArray(req.query.map_ids?.toString()),
-    playerName: req.query.playerName?.toString() || null,
+    player_name: req.query.player_name?.toString() || null,
     // New filter parameters
     faceit_level: parseNumber(req.query.faceit_level?.toString()),
     cs2_rank_min: parseNumber(req.query.cs2_rank_min?.toString()),
