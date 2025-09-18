@@ -43,6 +43,7 @@ import { formatInTimezone } from "@/lib/timezone";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import { MatchStatus, type MatchWithStreamUrls } from "@eggosystem/types";
 import { useSeasonCalendarMatches } from "@/hooks/data/useSeasonCalendarMatches";
+import { useCalendarRefreshTimes } from "@/hooks/data/useCalendarRefreshTimes";
 import {
   sortMatchesByDateAndTier,
   DIVISIONS,
@@ -193,6 +194,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
 
   const { calendarMatches, isLoading: _isLoadingCalendarMatches } =
     useSeasonCalendarMatches(seasonId, selectedDivision);
+
+  const { refreshTimes, isLoading: isLoadingRefreshTimes } =
+    useCalendarRefreshTimes();
 
   const getMatchButtonText = (matchStatus: string): string => {
     const isUpcoming = matchStatus === MatchStatus.SCHEDULED;
@@ -493,6 +497,16 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
         <p className="text-sm sm:text-base text-muted-foreground">
           View and manage upcoming matches and events
         </p>
+
+        {/* Calendar Refresh Information */}
+        {refreshTimes && !isLoadingRefreshTimes && (
+          <div className="mt-3 text-xs text-muted-foreground">
+            <span>
+              Calendar refreshes every 3 hours • Next refresh in{" "}
+              {refreshTimes.timeUntilNextRefresh}
+            </span>
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="calendar" className="w-full">
