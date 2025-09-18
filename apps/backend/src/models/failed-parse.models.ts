@@ -252,13 +252,16 @@ export const reparseFailedMessages = async (
           try {
             const messageContent = JSON.parse(msg.content.toString());
 
-            // Extract game_id and download_url based on queue type
+            // Extract game_id, download_url, and original source based on queue type
             let gameId: string;
             let downloadUrl: string;
+            let originalSource: string;
 
             if (queueName === "parse_queue_failed") {
               gameId = messageContent.original_message?.game_id;
               downloadUrl = messageContent.original_message?.download_url;
+              originalSource =
+                messageContent.original_message?.source || "faceit";
             } else if (queueName === "parsed_save_failed") {
               gameId =
                 messageContent.game_id ||
@@ -267,10 +270,15 @@ export const reparseFailedMessages = async (
                 messageContent.originalMessage?.download_url ||
                 messageContent.originalMessage?.demo_file ||
                 "";
+              originalSource =
+                messageContent.source ||
+                messageContent.originalMessage?.source ||
+                "faceit";
             } else {
               gameId = messageContent.game_id;
               downloadUrl =
                 messageContent.download_url || messageContent.demo_file || "";
+              originalSource = messageContent.source || "faceit";
             }
 
             if (!gameId || !downloadUrl) {
@@ -283,12 +291,12 @@ export const reparseFailedMessages = async (
               continue;
             }
 
-            // Create a new parse request
+            // Create a new parse request with original source preserved
             const parseRequest = createDemoProcessingRequest(
               parseInt(gameId),
               downloadUrl,
               priority,
-              source,
+              originalSource, // Use original source from failed message
               true // Set reparse flag
             );
 
@@ -304,7 +312,9 @@ export const reparseFailedMessages = async (
             logger.info("Successfully requeued failed message from RabbitMQ", {
               queueName,
               gameId,
-              downloadUrl: downloadUrl.substring(0, 50) + "..."
+              downloadUrl: downloadUrl.substring(0, 50) + "...",
+              originalSource,
+              reparse: true
             });
           } catch (processingError) {
             failedCount++;
