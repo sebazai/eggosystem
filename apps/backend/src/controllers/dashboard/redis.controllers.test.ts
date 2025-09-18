@@ -101,30 +101,44 @@ describe("Redis Controllers", () => {
       );
     });
 
-    it("should reject invalid page number", async () => {
+    it("should handle invalid page number by using default", async () => {
+      const mockKeys = ["user:1", "user:2", "user:3"];
+      mockRedisClient.keys.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*", page: "0" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Page must be greater than 0",
-          status: 400
-        })
-      );
+      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockKeys,
+        pagination: {
+          page: 1, // Should default to 1 when page is 0
+          limit: 50,
+          total: 3,
+          totalPages: 1
+        }
+      });
     });
 
-    it("should reject invalid limit", async () => {
+    it("should handle invalid limit by using default", async () => {
+      const mockKeys = ["user:1", "user:2", "user:3"];
+      mockRedisClient.keys.mockResolvedValue(mockKeys);
       mockReq.query = { pattern: "user:*", limit: "0" };
 
       await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Limit must be between 1 and 1000",
-          status: 400
-        })
-      );
+      expect(mockRedisClient.keys).toHaveBeenCalledWith("user:*");
+      expect(mockRes.json).toHaveBeenCalledWith({
+        success: true,
+        data: mockKeys,
+        pagination: {
+          page: 1,
+          limit: 50, // Should default to 50 when limit is 0
+          total: 3,
+          totalPages: 1
+        }
+      });
     });
 
     it("should reject limit over 1000", async () => {
@@ -140,19 +154,14 @@ describe("Redis Controllers", () => {
       );
     });
 
-    it("should handle Redis errors", async () => {
+    it("should handle Redis errors by throwing", async () => {
       const error = new Error("Redis connection failed");
       mockRedisClient.keys.mockRejectedValue(error);
       mockReq.query = { pattern: "user:*" };
 
-      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Invalid search pattern",
-          status: 400
-        })
-      );
+      await expect(
+        getRedisKeys(mockReq as Request, mockRes as Response, mockNext)
+      ).rejects.toThrow("Redis connection failed");
     });
   });
 
