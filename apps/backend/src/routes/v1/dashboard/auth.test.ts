@@ -189,6 +189,19 @@ describe("Dashboard Routes Authentication Tests", () => {
         detail: "Forbidden: Requires authentication"
       });
     });
+
+    it("should return 401 for redis routes without authentication", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/redis/keys")
+        .expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Forbidden: Requires authentication"
+      });
+    });
   });
 
   describe("Authenticated but Insufficient Permissions", () => {
@@ -323,6 +336,20 @@ describe("Dashboard Routes Authentication Tests", () => {
         detail: "Forbidden: Insufficient permissions"
       });
     });
+
+    it("should return 403 for redis routes with no admin/helpdesk role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/redis/keys")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Forbidden",
+        status: 403,
+        detail: "Forbidden: Insufficient permissions"
+      });
+    });
   });
 
   describe("Authenticated with Admin Role", () => {
@@ -401,6 +428,14 @@ describe("Dashboard Routes Authentication Tests", () => {
     it("should allow access to role-management routes with admin role", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/role-management")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
+
+    it("should allow access to redis routes with admin role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/redis/keys")
         .set("Authorization", "Bearer valid-token");
 
       expect(response.status).not.toBe(403);
@@ -497,6 +532,14 @@ describe("Dashboard Routes Authentication Tests", () => {
 
       expect(response.status).not.toBe(403);
     });
+
+    it("should allow access to redis routes with helpdesk role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/redis/keys")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
   });
 
   describe("Authenticated with Static Permission", () => {
@@ -518,4 +561,42 @@ describe("Dashboard Routes Authentication Tests", () => {
 
   // Note: Dashboard routes use authenticateJWT directly, not checkApiKeyOrJWT
   // So API key authentication is not supported for dashboard routes
+
+  describe("Redis DELETE Operations (Admin Only)", () => {
+    beforeEach(() => {
+      // Mock authenticated user with helpdesk role (insufficient for DELETE)
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["helpdesk"]);
+    });
+
+    it("should deny DELETE access to redis routes with helpdesk role (requires admin)", async () => {
+      const response = await request(app)
+        .delete("/api/v1/dashboard/redis/keys/test-key")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Forbidden",
+        status: 403,
+        detail: "Forbidden: Insufficient permissions"
+      });
+    });
+  });
+
+  describe("Redis DELETE Operations (Admin Access)", () => {
+    beforeEach(() => {
+      // Mock authenticated user with admin role
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["admin"]);
+    });
+
+    it("should allow DELETE access to redis routes with admin role", async () => {
+      const response = await request(app)
+        .delete("/api/v1/dashboard/redis/keys/test-key")
+        .set("Authorization", "Bearer valid-token");
+
+      expect(response.status).not.toBe(403);
+    });
+  });
 });

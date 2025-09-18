@@ -15,19 +15,15 @@ export const getRedisKeys = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const pattern = (req.query.pattern as string) || "*";
-    const keys = await redisClient.keys(pattern);
+  const pattern = (req.query.pattern as string) || "*";
+  const keys = await redisClient.keys(pattern);
 
-    const response: RedisKeysResponse = {
-      success: true,
-      data: keys
-    };
+  const response: RedisKeysResponse = {
+    success: true,
+    data: keys
+  };
 
-    res.json(response);
-  } catch (error) {
-    next(error);
-  }
+  res.json(response);
 };
 
 /**
@@ -38,35 +34,31 @@ export const getRedisKeyData = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const { key } = req.params;
+  const { key } = req.params;
 
-    if (!key) {
-      return next(new Error("Key parameter is required"));
-    }
-
-    const [value, type, ttl] = await Promise.all([
-      redisClient.get(key),
-      redisClient.type(key),
-      redisClient.ttl(key)
-    ]);
-
-    const redisKey: RedisKey = {
-      key,
-      type,
-      value,
-      ttl
-    };
-
-    const response: RedisKeyDataResponse = {
-      success: true,
-      data: redisKey
-    };
-
-    res.json(response);
-  } catch (error) {
-    next(error);
+  if (!key) {
+    return next(new Error("Key parameter is required"));
   }
+
+  const [value, type, ttl] = await Promise.all([
+    redisClient.get(key),
+    redisClient.type(key),
+    redisClient.ttl(key)
+  ]);
+
+  const redisKey: RedisKey = {
+    key,
+    type,
+    value,
+    ttl
+  };
+
+  const response: RedisKeyDataResponse = {
+    success: true,
+    data: redisKey
+  };
+
+  res.json(response);
 };
 
 /**
@@ -77,25 +69,21 @@ export const deleteRedisKey = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const { key } = req.params;
+  const { key } = req.params;
 
-    if (!key) {
-      return next(new Error("Key parameter is required"));
-    }
-
-    const result = await redisClient.del(key);
-
-    const response: RedisDeleteResponse = {
-      success: true,
-      message:
-        result > 0
-          ? "Key deleted successfully"
-          : "Key not found or already deleted"
-    };
-
-    res.json(response);
-  } catch (error) {
-    next(error);
+  if (!key) {
+    return next(new Error("Key parameter is required"));
   }
+
+  const result = await redisClient.del(key);
+
+  const response: RedisDeleteResponse = {
+    success: true,
+    message:
+      result > 0
+        ? "Key deleted successfully"
+        : "Key not found or already deleted"
+  };
+
+  res.json(response);
 };
