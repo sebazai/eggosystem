@@ -109,6 +109,9 @@ export const validatePlayersInTeams = async (
       const objectToSave = {
         external_match_id: externalMatchId,
         steam_ids: playerSteamIds,
+        players_in_season_team_players: playersInSeasonTeamPlayers.map(
+          (stp) => stp.steam_id
+        ),
         team_id: teamFromDb.team_id,
         match_ids: matchIdsArray,
         players_added_for_this_match: playersWithMatchId.map(

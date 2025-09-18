@@ -294,6 +294,7 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam123", "steam456"],
+            players_in_season_team_players: ["steam123"],
             team_id: 101,
             match_ids: [1001, 1002],
             players_added_for_this_match: []
@@ -329,6 +330,7 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam123", "steam456"],
+            players_in_season_team_players: [],
             team_id: 101,
             match_ids: [1001, 1002],
             players_added_for_this_match: []
@@ -342,6 +344,7 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam789"],
+            players_in_season_team_players: [],
             team_id: 102,
             match_ids: [1001, 1002],
             players_added_for_this_match: []
@@ -485,6 +488,7 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam123", "steam456"],
+            players_in_season_team_players: ["steam123", "steam456"],
             team_id: 101,
             match_ids: [1001, 1002],
             players_added_for_this_match: ["steam123"]
@@ -533,6 +537,7 @@ describe("season-team-players.models", () => {
           JSON.stringify({
             external_match_id: "match123",
             steam_ids: ["steam123", "steam456"],
+            players_in_season_team_players: ["steam123"],
             team_id: 101,
             match_ids: [1001, 1002],
             players_added_for_this_match: ["steam123"]
