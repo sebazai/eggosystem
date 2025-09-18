@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { redisClient } from "../../utils/redisClient";
+import { BadRequestError } from "../../utils/errors";
 import type {
   RedisKey,
   RedisKeysResponse,
@@ -37,7 +38,7 @@ export const getRedisKeyData = async (
   const { key } = req.params;
 
   if (!key) {
-    return next(new Error("Key parameter is required"));
+    return next(new BadRequestError("Key parameter is required"));
   }
 
   const [value, type, ttl] = await Promise.all([
@@ -72,7 +73,7 @@ export const deleteRedisKey = async (
   const { key } = req.params;
 
   if (!key) {
-    return next(new Error("Key parameter is required"));
+    return next(new BadRequestError("Key parameter is required"));
   }
 
   const result = await redisClient.del(key);

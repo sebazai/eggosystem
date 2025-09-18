@@ -68,9 +68,9 @@ describe("Redis Controllers", () => {
       mockRedisClient.keys.mockRejectedValue(error);
       mockReq.query = {};
 
-      await getRedisKeys(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(error);
+      await expect(
+        getRedisKeys(mockReq as Request, mockRes as Response, mockNext)
+      ).rejects.toThrow("Redis connection failed");
     });
   });
 
@@ -122,9 +122,9 @@ describe("Redis Controllers", () => {
       mockRedisClient.get.mockRejectedValue(error);
       mockReq.params = { key: "test-key" };
 
-      await getRedisKeyData(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(error);
+      await expect(
+        getRedisKeyData(mockReq as Request, mockRes as Response, mockNext)
+      ).rejects.toThrow("Redis connection failed");
     });
   });
 
@@ -160,9 +160,9 @@ describe("Redis Controllers", () => {
       mockRedisClient.del.mockRejectedValue(error);
       mockReq.params = { key: "test-key" };
 
-      await deleteRedisKey(mockReq as Request, mockRes as Response, mockNext);
-
-      expect(mockNext).toHaveBeenCalledWith(error);
+      await expect(
+        deleteRedisKey(mockReq as Request, mockRes as Response, mockNext)
+      ).rejects.toThrow("Redis connection failed");
     });
   });
 });
