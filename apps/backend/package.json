@@ -62,7 +62,7 @@
     "nodemailer": "7.0.6",
     "passport": "0.7.0",
     "passport-steam": "1.0.18",
-    "uuid": "13.0.0",
+    "uuid": "11.1.0",
     "winston": "3.17.0",
     "winston-transport": "4.9.0",
     "zod": "4.1.9"
