@@ -662,17 +662,19 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
   const showComparison = compareOption !== "none" && comparisonStats;
 
   // Handle chart click to navigate to match
-  const handleChartClick = (data: {
-    activePayload?: { payload: { matchId?: number; gameId?: number } }[];
-  }) => {
-    if (data && data.activePayload && data.activePayload[0]) {
-      const payload = data.activePayload[0].payload;
-      if (payload.matchId && payload.gameId) {
-        // Navigate to match page with game ID
-        router.push(`/matches/${payload.matchId}/games/${payload.gameId}`);
+  const handleChartClick =
+    () =>
+    (data: {
+      activePayload?: { payload: { matchId?: number; gameId?: number } }[];
+    }) => {
+      if (data && data.activePayload && data.activePayload[0]) {
+        const payload = data.activePayload[0].payload;
+        if (payload.matchId && payload.gameId) {
+          // Navigate to match page with game ID
+          router.push(`/matches/${payload.matchId}/games/${payload.gameId}`);
+        }
       }
-    }
-  };
+    };
 
   if (error) {
     return (
