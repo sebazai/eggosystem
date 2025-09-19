@@ -10,7 +10,7 @@
     "clean": "rm -rf cache dist"
   },
   "dependencies": {
-    "msw": "2.10.4",
+    "msw": "2.11.2",
     "@eggosystem/types": "workspace:*"
   },
   "devDependencies": {
