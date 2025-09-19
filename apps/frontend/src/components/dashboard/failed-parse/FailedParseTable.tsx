@@ -218,8 +218,7 @@ export const FailedParseTable = ({
     try {
       const result = await submitReparse({
         message_ids: messageIds,
-        priority: 5,
-        source: "admin-dashboard"
+        priority: 5
       });
 
       if (result.success) {

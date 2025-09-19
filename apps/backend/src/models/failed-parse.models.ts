@@ -23,6 +23,67 @@ const getConnectionUri = () => {
 };
 
 /**
+ * Helper function to create AMQP connection and channel
+ * Returns both connection and channel for cleanup purposes
+ */
+const createAmqpConnection = async () => {
+  const connection = await amqp.connect(getConnectionUri());
+  const channel = await connection.createChannel();
+  return { connection, channel };
+};
+
+/**
+ * Helper function to get error queue names
+ * Returns filtered queue or default queues based on queueFilter parameter
+ */
+const getErrorQueues = (queueFilter?: string): string[] => {
+  return queueFilter
+    ? [queueFilter]
+    : ["parse_queue_failed", "parsed_save_failed"];
+};
+
+/**
+ * Helper function to process error queues with a custom processor function
+ * Handles AMQP connection, queue assertion, and error handling
+ */
+const processErrorQueues = async <T>(
+  queueFilter: string | undefined,
+  processor: (channel: amqp.Channel, queueName: string) => Promise<T>
+): Promise<T[]> => {
+  const { connection, channel } = await createAmqpConnection();
+  const errorQueues = getErrorQueues(queueFilter);
+  const results: T[] = [];
+
+  try {
+    for (const queueName of errorQueues) {
+      try {
+        await channel.assertQueue(queueName, { durable: true });
+        const result = await processor(channel, queueName);
+        results.push(result);
+      } catch (error) {
+        logger.error(`Error processing queue ${queueName}:`, error);
+        // Continue processing other queues even if one fails
+      }
+    }
+  } finally {
+    await channel.close();
+    await connection.close();
+  }
+
+  return results;
+};
+
+/**
+ * Helper function that returns AMQP channel and error queue names
+ * Useful for functions that need to manage their own connection lifecycle
+ */
+const getChannelAndQueues = async (queueFilter?: string) => {
+  const { connection, channel } = await createAmqpConnection();
+  const errorQueues = getErrorQueues(queueFilter);
+  return { connection, channel, errorQueues };
+};
+
+/**
  * Get all failed parse messages from RabbitMQ queues
  */
 export const getFailedParseMessages = async (
@@ -34,30 +95,21 @@ export const getFailedParseMessages = async (
   // For now, return empty array if RabbitMQ connection fails
   // This prevents the frontend from crashing when RabbitMQ is not available
   try {
-    const connection = await amqp.connect(getConnectionUri());
-    const channel = await connection.createChannel();
-
-    const errorQueues = queueFilter
-      ? [queueFilter]
-      : ["parse_queue_failed", "parsed_save_failed"];
-
-    const allMessages: FailedParseMessage[] = [];
-
-    for (const queueName of errorQueues) {
-      try {
-        await channel.assertQueue(queueName, { durable: true });
-
+    const queueMessages = await processErrorQueues(
+      queueFilter,
+      async (channel, queueName) => {
         // Get queue information first
         const queueInfo = await channel.checkQueue(queueName).catch(() => null);
         if (!queueInfo) {
           logger.warn(`Queue ${queueName} does not exist`);
-          continue;
+          return [];
         }
 
         // Read messages from the queue without consuming them
         // We'll peek at messages to display them in the admin interface
         let messageCount = 0;
         const maxMessages = limit + offset; // Get enough messages to handle pagination
+        const messages: FailedParseMessage[] = [];
 
         while (messageCount < maxMessages) {
           const msg = await channel.get(queueName, { noAck: false });
@@ -99,7 +151,7 @@ export const getFailedParseMessages = async (
               _rabbitMQMessage: msg // Store reference for later requeuing
             };
 
-            allMessages.push(failedMessage);
+            messages.push(failedMessage);
 
             // Important: Return the message back to the queue (nack without requeue=false would requeue)
             // We use nack with requeue=true to put the message back exactly where it was
@@ -116,15 +168,14 @@ export const getFailedParseMessages = async (
             messageCount++;
           }
         }
-      } catch (queueError) {
-        logger.error(`Failed to read from queue ${queueName}`, queueError);
+
+        return messages;
       }
-    }
+    );
 
-    await channel.close();
-    await connection.close();
-
+    const allMessages = queueMessages.flat();
     const result = allMessages.slice(offset, offset + limit);
+
     logger.info(
       "Generated message IDs for failed parse display",
       result.map((msg) => ({
@@ -152,32 +203,20 @@ export const getFailedParseMessagesCount = async (
   statusFilter?: string
 ): Promise<number> => {
   try {
-    const connection = await amqp.connect(getConnectionUri());
-    const channel = await connection.createChannel();
-
-    const errorQueues = queueFilter
-      ? [queueFilter]
-      : ["parse_queue_failed", "parsed_save_failed"];
-
-    let totalCount = 0;
-
-    for (const queueName of errorQueues) {
-      try {
+    const queueCounts = await processErrorQueues(
+      queueFilter,
+      async (channel, queueName) => {
         const queueInfo = await channel.assertQueue(queueName, {
           durable: true
         });
         if (!statusFilter || statusFilter === "failed") {
-          totalCount += queueInfo.messageCount;
+          return queueInfo.messageCount;
         }
-      } catch (queueError) {
-        logger.error(`Failed to get count from queue ${queueName}`, queueError);
+        return 0;
       }
-    }
+    );
 
-    await channel.close();
-    await connection.close();
-
-    return totalCount;
+    return queueCounts.reduce((total, count) => total + count, 0);
   } catch (error) {
     logger.error("Failed to connect to RabbitMQ for counting messages", error);
     return 0;
@@ -203,7 +242,7 @@ export const getFailedParseMessageById = async (
 export const reparseFailedMessages = async (
   request: ReparseRequest
 ): Promise<ReparseResponse> => {
-  const { message_ids, priority = 5, source = "admin-reparse" } = request;
+  const { message_ids, priority = 5 } = request;
   const messagesToProcess = message_ids.length;
 
   if (messagesToProcess === 0) {
@@ -216,15 +255,11 @@ export const reparseFailedMessages = async (
 
   logger.info("Starting reparse of failed messages from RabbitMQ", {
     messageCount: messagesToProcess,
-    priority,
-    source
+    priority
   });
 
   try {
-    const connection = await amqp.connect(getConnectionUri());
-    const channel = await connection.createChannel();
-
-    const errorQueues = ["parse_queue_failed", "parsed_save_failed"];
+    const { connection, channel, errorQueues } = await getChannelAndQueues();
     let requeuedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
@@ -366,59 +401,40 @@ export const reparseFailedMessages = async (
  */
 export const getFailedParseMessagesStats = async () => {
   try {
-    const connection = await amqp.connect(getConnectionUri());
-    const channel = await connection.createChannel();
-
-    const errorQueues = ["parse_queue_failed", "parsed_save_failed"];
-    const results: Array<{
-      total_count: number;
-      failed_count: number;
-      requeued_count: number;
-      resolved_count: number;
-      queue_name: string;
-    }> = [];
-
-    let totalMessages = 0;
-
-    for (const queueName of errorQueues) {
-      try {
+    const queueStats = await processErrorQueues(
+      undefined,
+      async (channel, queueName) => {
         const queueInfo = await channel.assertQueue(queueName, {
           durable: true
         });
         const messageCount = queueInfo.messageCount;
 
-        results.push({
+        return {
           total_count: messageCount,
           failed_count: messageCount,
           requeued_count: 0,
           resolved_count: 0,
           queue_name: queueName
-        });
-
-        totalMessages += messageCount;
-      } catch (queueError) {
-        logger.error(`Failed to get stats for queue ${queueName}`, queueError);
-        results.push({
-          total_count: 0,
-          failed_count: 0,
-          requeued_count: 0,
-          resolved_count: 0,
-          queue_name: queueName
-        });
+        };
       }
-    }
+    );
+
+    const totalMessages = queueStats.reduce(
+      (total, stat) => total + stat.total_count,
+      0
+    );
 
     // Add total row
-    results.push({
-      total_count: totalMessages,
-      failed_count: totalMessages,
-      requeued_count: 0,
-      resolved_count: 0,
-      queue_name: "TOTAL"
-    });
-
-    await channel.close();
-    await connection.close();
+    const results = [
+      ...queueStats,
+      {
+        total_count: totalMessages,
+        failed_count: totalMessages,
+        requeued_count: 0,
+        resolved_count: 0,
+        queue_name: "TOTAL"
+      }
+    ];
 
     return results;
   } catch (error) {

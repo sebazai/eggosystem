@@ -46,7 +46,6 @@ export interface FailedParseStatsResponse {
 export interface ReparseRequest {
   message_ids: number[];
   priority?: number;
-  source?: string;
 }
 
 export interface ReparseResponse {

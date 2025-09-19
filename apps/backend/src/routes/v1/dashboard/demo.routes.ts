@@ -25,23 +25,25 @@ const listQuerySchema = z.object({
 // Schema for reparse request
 const reparseRequestSchema = z.object({
   message_ids: z.array(z.number().int().positive()).min(1).max(50),
-  priority: z.number().int().min(1).max(10).optional().default(5),
-  source: z.string().optional().default("admin-reparse")
+  priority: z.number().int().min(1).max(10).optional().default(5)
 });
 
 /**
- * GET /v1/dashboard/failed-parse
+ * GET /v1/dashboard/demos/failed/parse
  * List failed parse messages with pagination and filtering
  */
-router.get("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    logger.info("GET /failed-parse request", { query: req.query });
+router.get(
+  "/failed/parse",
+  async (req: Request, res: Response, next: NextFunction) => {
+    logger.info("GET /demos/failed/parse request", { query: req.query });
 
     // Validate query parameters
     const validationResult = listQuerySchema.safeParse(req.query);
 
     if (!validationResult.success) {
-      logger.warn("Query validation failed", { error: validationResult.error });
+      logger.warn("Query validation failed", {
+        error: validationResult.error
+      });
       return next(
         new BadRequestError(
           "Invalid query parameters",
@@ -79,36 +81,31 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         status
       }
     });
-  } catch (error) {
-    return next(error);
-  }
-});
-
-/**
- * GET /v1/dashboard/failed-parse/stats
- * Get statistics about failed parse messages
- */
-router.get(
-  "/stats",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const stats = await getFailedParseMessagesStats();
-
-      res.json({
-        stats
-      });
-    } catch (error) {
-      return next(error);
-    }
   }
 );
 
 /**
- * GET /v1/dashboard/failed-parse/:id
+ * GET /v1/dashboard/demos/failed/parse/stats
+ * Get statistics about failed parse messages
+ */
+router.get(
+  "/failed/parse/stats",
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const stats = await getFailedParseMessagesStats();
+
+    res.json({
+      stats
+    });
+  }
+);
+
+/**
+ * GET /v1/dashboard/demos/failed/parse/:id
  * Get a specific failed parse message by ID
  */
-router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
+router.get(
+  "/failed/parse/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
     const id = parseInt(req.params.id);
 
     if (isNaN(id)) {
@@ -129,49 +126,39 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
     };
 
     res.json(formattedMessage);
-  } catch (error) {
-    return next(error);
   }
-});
+);
 
 /**
- * POST /v1/dashboard/failed-parse/reparse
+ * POST /v1/dashboard/demos/failed/parse/reparse
  * Reparse selected failed messages
  */
 router.post(
-  "/reparse",
+  "/failed/parse/reparse",
   async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      logger.info("Reparse request received", { body: req.body });
+    logger.info("Reparse request received", { body: req.body });
 
-      // Validate request body
-      const validationResult = reparseRequestSchema.safeParse(req.body);
+    // Validate request body
+    const validationResult = reparseRequestSchema.safeParse(req.body);
 
-      if (!validationResult.success) {
-        logger.warn("Reparse validation failed", {
-          error: validationResult.error
-        });
-        return next(
-          new BadRequestError(
-            "Invalid reparse request",
-            400,
-            "Validation Failed"
-          )
-        );
-      }
-
-      const reparseRequest: ReparseRequest = validationResult.data;
-
-      // Execute reparse
-      const result = await reparseFailedMessages(reparseRequest);
-
-      // Return appropriate status code based on result
-      const statusCode = result.success ? 200 : 400;
-
-      res.status(statusCode).json(result);
-    } catch (error) {
-      return next(error);
+    if (!validationResult.success) {
+      logger.warn("Reparse validation failed", {
+        error: validationResult.error
+      });
+      return next(
+        new BadRequestError("Invalid reparse request", 400, "Validation Failed")
+      );
     }
+
+    const reparseRequest: ReparseRequest = validationResult.data;
+
+    // Execute reparse
+    const result = await reparseFailedMessages(reparseRequest);
+
+    // Return appropriate status code based on result
+    const statusCode = result.success ? 200 : 400;
+
+    res.status(statusCode).json(result);
   }
 );
 
