@@ -140,10 +140,6 @@ export const getFaceITGameRank = async (
   const rank = Number(gameData?.skill_level || 0);
   const player_id = playerData.player_id;
 
-  if (elo === 0 || rank === 0) {
-    return null;
-  }
-
   if (Number.isNaN(elo) || Number.isNaN(rank)) {
     logger.warn(
       `[FaceIT] Invalid rank data for steam_id: ${steam_id}`,
