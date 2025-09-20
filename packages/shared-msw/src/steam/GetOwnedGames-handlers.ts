@@ -11,11 +11,7 @@ export const getOwnedGamesHandlers = [
     "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/",
     ({ request }) => {
       const url = new URL(request.url);
-
-      console.log("url", url);
       const steam_id = url.searchParams.get("steamid");
-
-      console.log("steam_id", steam_id);
 
       if (!steam_id) {
         return new HttpResponse("Bad Request MSW", { status: 400 });

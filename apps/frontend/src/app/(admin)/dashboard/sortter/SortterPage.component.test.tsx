@@ -1,16 +1,9 @@
 import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import SortterPage from "./page";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { clientApiFetch } from "@/lib/apiClient";
-import { toast } from "sonner";
 import type {
   TeamSortterValues,
   Season,
@@ -66,6 +59,51 @@ jest.mock("@/lib/apiClient", () => ({
 }));
 
 // Mock UI components
+interface ButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  variant?: string;
+  className?: string;
+  [key: string]: unknown;
+}
+
+interface SpinnerProps {
+  className?: string;
+  size?: string;
+}
+
+interface TextareaProps {
+  defaultValue?: string;
+  onBlur?: (event: React.FocusEvent<HTMLTextAreaElement>) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  [key: string]: unknown;
+}
+
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface CardContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface CardDescriptionProps {
+  children: React.ReactNode;
+}
+
+interface CardHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+interface CardTitleProps {
+  children: React.ReactNode;
+}
+
 jest.mock("@/components/ui/button", () => ({
   Button: ({
     children,
@@ -74,7 +112,7 @@ jest.mock("@/components/ui/button", () => ({
     variant,
     className,
     ...props
-  }: any) => (
+  }: ButtonProps) => (
     <button
       onClick={onClick}
       disabled={disabled}
@@ -88,7 +126,7 @@ jest.mock("@/components/ui/button", () => ({
 }));
 
 jest.mock("@/components/ui/spinner", () => ({
-  Spinner: ({ className, size }: any) => (
+  Spinner: ({ className, size }: SpinnerProps) => (
     <div data-testid="spinner" className={className} data-size={size}>
       Loading...
     </div>
@@ -102,7 +140,7 @@ jest.mock("@/components/ui/textarea", () => ({
     disabled,
     placeholder,
     ...props
-  }: any) => (
+  }: TextareaProps) => (
     <textarea
       defaultValue={defaultValue}
       onBlur={onBlur}
@@ -114,39 +152,57 @@ jest.mock("@/components/ui/textarea", () => ({
 }));
 
 jest.mock("@/components/ui/card", () => ({
-  Card: ({ children, className }: any) => (
+  Card: ({ children, className }: CardProps) => (
     <div className={className} data-testid="card">
       {children}
     </div>
   ),
-  CardContent: ({ children, className }: any) => (
+  CardContent: ({ children, className }: CardContentProps) => (
     <div className={className} data-testid="card-content">
       {children}
     </div>
   ),
-  CardDescription: ({ children }: any) => (
+  CardDescription: ({ children }: CardDescriptionProps) => (
     <div data-testid="card-description">{children}</div>
   ),
-  CardHeader: ({ children, className }: any) => (
+  CardHeader: ({ children, className }: CardHeaderProps) => (
     <div className={className} data-testid="card-header">
       {children}
     </div>
   ),
-  CardTitle: ({ children }: any) => (
+  CardTitle: ({ children }: CardTitleProps) => (
     <div data-testid="card-title">{children}</div>
   )
 }));
 
+interface ChartContainerProps {
+  children: React.ReactNode;
+  config?: Record<string, unknown>;
+}
+
+interface ChartTooltipProps {
+  children: React.ReactNode;
+}
+
+interface ChartTooltipContentProps {
+  children: React.ReactNode;
+}
+
+interface AreaChartProps {
+  children: React.ReactNode;
+  data?: unknown[];
+}
+
 jest.mock("@/components/ui/chart", () => ({
-  ChartContainer: ({ children, config }: any) => (
+  ChartContainer: ({ children, config }: ChartContainerProps) => (
     <div data-testid="chart-container" data-config={JSON.stringify(config)}>
       {children}
     </div>
   ),
-  ChartTooltip: ({ children }: any) => (
+  ChartTooltip: ({ children }: ChartTooltipProps) => (
     <div data-testid="chart-tooltip">{children}</div>
   ),
-  ChartTooltipContent: ({ children }: any) => (
+  ChartTooltipContent: ({ children }: ChartTooltipContentProps) => (
     <div data-testid="chart-tooltip-content">{children}</div>
   )
 }));
@@ -155,7 +211,7 @@ jest.mock("recharts", () => ({
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   Area: () => <div data-testid="area" />,
-  AreaChart: ({ children, data }: any) => (
+  AreaChart: ({ children, data }: AreaChartProps) => (
     <div data-testid="area-chart" data-chart-data={JSON.stringify(data)}>
       {children}
     </div>
@@ -163,8 +219,42 @@ jest.mock("recharts", () => ({
   CartesianGrid: () => <div data-testid="cartesian-grid" />
 }));
 
+interface SeasonSelectorProps {
+  seasons: Season[];
+  selectedSeason: number | null;
+  onChange: (seasonId: number) => void;
+  isLoading: boolean;
+}
+
+interface DivisionOption {
+  value: string;
+  label: string;
+}
+
+interface MemoizedDivisionDropdownProps {
+  teamId: number;
+  value: string;
+  options: DivisionOption[];
+  disabled: boolean;
+  onValueChange: (value: string) => void;
+  originalValue: string;
+}
+
+interface PlayerValuesFloatingWindowProps {
+  playerValues: PlayerSortterValues[] | null;
+  teamName: string;
+  position: { x: number; y: number } | null;
+  isLoading: boolean;
+  onClose: () => void;
+}
+
 jest.mock("@/components/sortter/SeasonSelector", () => ({
-  SeasonSelector: ({ seasons, selectedSeason, onChange, isLoading }: any) => (
+  SeasonSelector: ({
+    seasons,
+    selectedSeason,
+    onChange,
+    isLoading
+  }: SeasonSelectorProps) => (
     <select
       value={selectedSeason || ""}
       onChange={(e) => onChange(parseInt(e.target.value))}
@@ -190,7 +280,7 @@ jest.mock("@/components/sortter/MemoizedDivisionDropdown", () => ({
     disabled,
     onValueChange,
     originalValue
-  }: any) => (
+  }: MemoizedDivisionDropdownProps) => (
     <select
       value={value}
       onChange={(e) => onValueChange(e.target.value)}
@@ -198,7 +288,7 @@ jest.mock("@/components/sortter/MemoizedDivisionDropdown", () => ({
       data-testid={`division-dropdown-${teamId}`}
       data-original-value={originalValue}
     >
-      {options.map((option: any) => (
+      {options.map((option: DivisionOption) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>
@@ -214,7 +304,7 @@ jest.mock("@/components/dashboard/PlayerValuesFloatingWindow", () => ({
     position,
     isLoading,
     onClose
-  }: any) => (
+  }: PlayerValuesFloatingWindowProps) => (
     <div
       data-testid="player-values-window"
       data-team-name={teamName}
@@ -736,7 +826,6 @@ describe("SortterPage Component Tests", () => {
 
   describe("Player Values Window", () => {
     it("should show player values window on team double click", async () => {
-      const user = userEvent.setup();
       (useSortter as jest.Mock).mockReturnValue({
         ...defaultUseSortterReturn,
         selectedTeamId: 1,

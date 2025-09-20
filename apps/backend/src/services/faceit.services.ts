@@ -204,10 +204,6 @@ const getFaceITMetaData = async (
   faceit_matches_played: number;
   faceit_last_match: number;
 } | null> => {
-  logger.info(
-    `[FaceIT DEBUG] getFaceITMetaData called for faceit_player_id: ${faceit_player_id}, game: ${game}`
-  );
-
   const { controller, clearAbortTimeout } =
     createAbortController("getFaceITMetaData");
 
@@ -219,28 +215,21 @@ const getFaceITMetaData = async (
       "User-Agent": "Kanaliiga-Eggosystem/1.0"
     };
 
-    logger.info(`[FaceIT DEBUG] Fetching stats from: ${stats_url}`);
     const statsResponse = await fetch(stats_url, {
       headers,
       signal: controller.signal
     });
     const data = await statsResponse.json();
-    logger.info(`[FaceIT DEBUG] Stats response data:`, data);
 
     const kdr = data["lifetime"]["Average K/D Ratio"];
     const matches_played = data["lifetime"]["Matches"];
-    logger.info(
-      `[FaceIT DEBUG] Raw kdr: ${kdr}, matches_played: ${matches_played}`
-    );
 
     const game_url = `https://open.faceit.com/data/v4/players/${faceit_player_id}/games/${game}/stats`;
-    logger.info(`[FaceIT DEBUG] Fetching games from: ${game_url}`);
     const gameResponse = await fetch(game_url, {
       headers,
       signal: controller.signal
     });
     const gameData = await gameResponse.json();
-    logger.info(`[FaceIT DEBUG] Games response data:`, gameData);
 
     // In case we find a CS2 FaceIT rank, but no metadata, this means the player has a FaceIT CS2 rank,
     // but has not played any CS2 games. We check if there are CSGO games, get the latest match, and apply decay.
@@ -257,16 +246,10 @@ const getFaceITMetaData = async (
 
     const numKdr = Number(kdr);
     const numMatchesPlayed = Number(matches_played);
-    logger.info(
-      `[FaceIT DEBUG] Converted kdr: ${numKdr}, matches_played: ${numMatchesPlayed}`
-    );
-    logger.info(
-      `[FaceIT DEBUG] isNaN(kdr): ${isNaN(numKdr)}, isNaN(matches_played): ${isNaN(numMatchesPlayed)}`
-    );
 
     if (isNaN(numKdr) || isNaN(numMatchesPlayed)) {
       logger.warn(
-        `[FaceIT DEBUG] NaN detected - returning null for faceit_player_id: ${faceit_player_id}`
+        `[FaceIT] NaN detected - returning null for faceit_player_id: ${faceit_player_id}`
       );
       return null;
     }
@@ -276,7 +259,6 @@ const getFaceITMetaData = async (
       faceit_matches_played: Number(matches_played),
       faceit_last_match: last_match
     };
-    logger.info(`[FaceIT DEBUG] Returning metadata result:`, result);
     return result;
   } catch (error) {
     clearAbortTimeout();
@@ -314,12 +296,7 @@ const faceitErrorRank = {
 } satisfies FaceITCSRank;
 
 const getFaceITCSGORank = async (steam_id: string) => {
-  logger.info(
-    `[FaceIT DEBUG] getFaceITCSGORank called for steam_id: ${steam_id}`
-  );
-
   const data = await getFaceITGameRank(steam_id, "csgo");
-  logger.info(`[FaceIT DEBUG] CSGO game rank data:`, data);
 
   if (!data) {
     logger.warn(
@@ -329,7 +306,6 @@ const getFaceITCSGORank = async (steam_id: string) => {
   }
 
   const faceit_metadata = await getFaceITMetaData(data.player_id, "csgo");
-  logger.info(`[FaceIT DEBUG] CSGO metadata:`, faceit_metadata);
 
   const lastMatchThreeYearsAgo =
     new Date().getTime() - 3 * 365 * 24 * 60 * 60 * 1000;
@@ -356,7 +332,6 @@ const getFaceITCSGORank = async (steam_id: string) => {
     }
   } satisfies FaceITCSRank;
 
-  logger.info(`[FaceIT DEBUG] CSGO return data:`, returnData);
   return returnData;
 };
 
@@ -370,10 +345,6 @@ export const getFaceITCS2Rank = async (
   steam_id: string,
   season_id?: number
 ): Promise<FaceITCSRank> => {
-  logger.info(
-    `[FaceIT DEBUG] getFaceITCS2Rank called for steam_id: ${steam_id}, season_id: ${season_id}`
-  );
-
   // If someone added the rank to database for season, we use that one
   if (season_id) {
     const rankFromDb = await getPlayerExternalRankForSeason(
@@ -383,9 +354,6 @@ export const getFaceITCS2Rank = async (
     );
     // Ensure that the rank is in database
     if (rankFromDb && rankFromDb.faceit_level && rankFromDb.faceit_elo) {
-      logger.info(
-        `[FaceIT DEBUG] Using database rank for steam_id: ${steam_id}`
-      );
       return {
         faceit_level: rankFromDb.faceit_level,
         faceit_elo: rankFromDb.faceit_elo,
@@ -405,30 +373,16 @@ export const getFaceITCS2Rank = async (
   const redisKey = `730-${steam_id}-faceit-cs2-rank`;
   const fromRedis = await redisClient.get(redisKey);
   if (fromRedis) {
-    logger.info(`[FaceIT DEBUG] Using Redis cache for steam_id: ${steam_id}`);
+    logger.info(`[FaceIT] Using Redis cache for steam_id: ${steam_id}`);
     return JSON.parse(fromRedis) as FaceITCSRank;
   }
 
   try {
-    logger.info(
-      `[FaceIT DEBUG] Calling getFaceITGameRank for steam_id: ${steam_id}`
-    );
     const faceitRanks = await getFaceITGameRank(steam_id, "cs2");
-    logger.info(
-      `[FaceIT DEBUG] getFaceITGameRank result for steam_id: ${steam_id}:`,
-      faceitRanks
-    );
 
     if (!faceitRanks) {
-      logger.info(
-        `[FaceIT DEBUG] No CS2 rank found, falling back to CSGO for steam_id: ${steam_id}`
-      );
       // Fallback to CSGO rank
       const csgoFaceItRank = await getFaceITCSGORank(steam_id);
-      logger.info(
-        `[FaceIT DEBUG] CSGO fallback rank for steam_id: ${steam_id}:`,
-        csgoFaceItRank
-      );
 
       // Set non-fallback rank to redis
       if (!csgoFaceItRank.metadata.faceit_fallback) {
@@ -442,16 +396,9 @@ export const getFaceITCS2Rank = async (
       return csgoFaceItRank;
     }
 
-    logger.info(
-      `[FaceIT DEBUG] Calling getFaceITMetaData for player_id: ${faceitRanks.player_id}`
-    );
     const faceit_metadata = await getFaceITMetaData(
       faceitRanks.player_id,
       "cs2"
-    );
-    logger.info(
-      `[FaceIT DEBUG] getFaceITMetaData result for player_id: ${faceitRanks.player_id}:`,
-      faceit_metadata
     );
 
     if (!faceit_metadata) {
