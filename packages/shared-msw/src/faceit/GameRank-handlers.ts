@@ -32,7 +32,8 @@ const createFaceitRank = (
   player_id: string,
   game: string,
   elo: number | undefined,
-  level: number | undefined
+  level: number | undefined,
+  nickname?: string
 ): FaceitPlayerDetails => {
   return {
     player_id,
@@ -42,7 +43,8 @@ const createFaceitRank = (
         skill_level: Number(level)
       }
     },
-    faceit_url: `https://faceit.com/players/${player_id}`
+    faceit_url: `https://faceit.com/players/${player_id}`,
+    nickname: nickname ?? "Test Player"
   };
 };
 
