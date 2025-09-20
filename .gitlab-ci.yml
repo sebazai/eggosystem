@@ -337,7 +337,7 @@ test-e2e:frontend:
     - export PRIVACY_POLICY_VERSION=1
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
-    - NODE_ENV=e2e pnpm --filter=backend dev &
+    - pnpm --filter=backend dev:e2e &
     # - pnpm --filter=backend start &
   script:
     - unset NODE_ENV
