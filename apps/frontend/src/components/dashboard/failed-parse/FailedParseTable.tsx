@@ -56,7 +56,7 @@ export const FailedParseTable = ({
   // Debug logging for status changes
   const handleStatusChange = useCallback(
     (value: string) => {
-      console.log("Status filter changing from", statusFilter, "to", value);
+      console.log("Status filter changing to", value);
       try {
         const newStatus = value === "all" ? undefined : value;
         setStatusFilter(newStatus);
@@ -67,7 +67,7 @@ export const FailedParseTable = ({
         toast.error("Failed to change status filter");
       }
     },
-    [statusFilter]
+    [] // Remove statusFilter from dependencies to prevent infinite loop
   );
 
   const { failedMessages, pagination, isLoading, error, mutate } =

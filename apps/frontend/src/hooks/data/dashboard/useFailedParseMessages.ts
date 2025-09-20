@@ -31,7 +31,7 @@ export const useFailedParseMessages = (
   if (params.status) queryParams.set("status", params.status);
 
   const queryString = queryParams.toString();
-  const endpoint = `/api/v1/dashboard/failed-parse${queryString ? "?" + queryString : ""}`;
+  const endpoint = `/api/v1/dashboard/demos/failed/parse${queryString ? "?" + queryString : ""}`;
 
   const { data, error, isLoading, mutate } =
     useSWR<FailedParseMessagesResponse>(
@@ -57,7 +57,7 @@ export const useFailedParseStats = () => {
   const { user } = useAuth();
 
   const { data, error, isLoading, mutate } = useSWR<FailedParseStatsResponse>(
-    user ? "/api/v1/dashboard/failed-parse/stats" : null,
+    user ? "/api/v1/dashboard/demos/failed/parse/stats" : null,
     clientApiFetch,
     {
       revalidateOnFocus: false,
@@ -82,7 +82,7 @@ export const useReparseMessages = () => {
       setIsSubmitting(true);
       try {
         const result = await clientApiFetch<ReparseResponse>(
-          "/api/v1/dashboard/failed-parse/reparse",
+          "/api/v1/dashboard/demos/failed/parse/reparse",
           {
             method: "POST",
             body: JSON.stringify(request)
