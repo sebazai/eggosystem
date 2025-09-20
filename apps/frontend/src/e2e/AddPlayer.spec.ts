@@ -1,8 +1,13 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { generateTestJWTForUser } from "./utils";
+import {
+  EligiblePlayerForValidationSteamId,
+  heppajpgSteamId,
+  IneligiblePlayerForValidationSteamId
+} from "@eggosystem/types";
 
 // Define test data - use real Steam IDs that exist in season 14
-const eligiblePlayer = "76561198054765387"; // Real Steam ID for e2e testing
+const eligiblePlayer = EligiblePlayerForValidationSteamId; // Real Steam ID for e2e testing
 // Using team 1650 which should exist in season 14
 const testTeam = "1650";
 
@@ -39,7 +44,7 @@ async function setupAuthForUser(
 test.describe("Add Player Workflow", () => {
   test.beforeEach(async ({ page }) => {
     // Set up authentication using the same approach as SignupForm.spec.ts
-    await setupAuthForUser(page, 15004, "66561198999999902", "heppajpg");
+    await setupAuthForUser(page, 15004, heppajpgSteamId, "heppajpg");
 
     // Only mock external APIs that we don't control
     // Internal APIs should be tested end-to-end with real backend
@@ -339,7 +344,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Get the API base URL from environment or use default
     apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
     // Generate JWT token with admin role for API requests
-    jwtToken = generateTestJWTForUser(15004, "66561198999999902", "heppajpg");
+    jwtToken = generateTestJWTForUser(15004, heppajpgSteamId, "heppajpg");
   });
 
   test("API should check eligibility for eligible player", async ({
@@ -348,7 +353,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Player and team data
     const seasonId = 14;
     const teamId = 1650;
-    const steamId = "76561198054765387"; // Eligible player
+    const steamId = EligiblePlayerForValidationSteamId; // Eligible player
 
     // 1. Call the eligibility check API
     const _eligibilityResponse = await request.get(
@@ -391,7 +396,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Player and team data
     const seasonId = 14;
     const teamId = 1650;
-    const steamId = "76561197960383236"; // Ineligible player
+    const steamId = IneligiblePlayerForValidationSteamId; // Ineligible player
 
     // Call the eligibility check API
     const _eligibilityResponse = await request.get(
@@ -431,7 +436,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Player and team data
     const seasonId = 14;
     const teamId = 1650;
-    const steamId = "76561198054765387"; // Eligible player
+    const steamId = EligiblePlayerForValidationSteamId; // Eligible player
 
     // Mock the eligibility data
     const mockEligibilityData = {
@@ -487,7 +492,7 @@ test.describe("Backend Integration Tests for Add Player", () => {
     // Player and team data
     const seasonId = 14;
     const teamId = 1650;
-    const steamId = "76561197960383236"; // Ineligible player
+    const steamId = IneligiblePlayerForValidationSteamId; // Ineligible player
 
     // Mock the eligibility data
     const mockEligibilityData = {

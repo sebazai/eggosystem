@@ -5,7 +5,24 @@ import {
   faceitCs2EmptyMetadataSteamId
 } from "./test-ids.js";
 
-import { NoFaceitRankPlayerSteamId } from "@eggosystem/types";
+import {
+  NoFaceitRankPlayerSteamId,
+  heppajpgSteamId,
+  HoolyzSteamId,
+  RealPlayer1SteamId,
+  RealPlayer2SteamId,
+  RealPlayer3SteamId,
+  AabeSteamId,
+  QuattraSteamId,
+  TrevSteamId,
+  PrivateProfilePlayerSteamId,
+  ValidWorkEmail1SteamId,
+  ValidWorkEmail2SteamId,
+  ValidWorkEmail3SteamId,
+  ValidWorkEmail4SteamId,
+  ValidWorkEmail5SteamId,
+  EligiblePlayerForValidationSteamId
+} from "@eggosystem/types";
 
 const createFaceitMetadataPlayerStatsGame = (
   kdr: string | undefined,
@@ -82,6 +99,82 @@ export const faceitMetadataHandlers = [
         return HttpResponse.json(createFaceitMetadataLastGame(1713542400000));
       }
 
+      // E2E test Steam IDs - provide recent match dates for all
+      const recentMatchTime = new Date().getTime() - 7 * 24 * 60 * 60 * 1000; // 7 days ago
+
+      // NoFaceitRankPlayer should get invalid data to trigger external rank error
+      if (faceit_player_id === NoFaceitRankPlayerSteamId) {
+        return HttpResponse.json({
+          items: [
+            {
+              stats: {
+                "Created At": "invalid-date-string" // This will cause NaN when converted to number
+              }
+            }
+          ]
+        });
+      }
+
+      if (faceit_player_id === heppajpgSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === HoolyzSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === RealPlayer1SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === RealPlayer2SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === RealPlayer3SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === AabeSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === QuattraSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === TrevSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === PrivateProfilePlayerSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === ValidWorkEmail1SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === ValidWorkEmail2SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === ValidWorkEmail3SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === ValidWorkEmail4SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === ValidWorkEmail5SteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      if (faceit_player_id === EligiblePlayerForValidationSteamId) {
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
       // Default success response
       return HttpResponse.json(
         createFaceitMetadataLastGame(new Date().getTime())
@@ -95,9 +188,12 @@ export const faceitMetadataHandlers = [
       const { faceit_player_id, game } = params;
 
       if (faceit_player_id === NoFaceitRankPlayerSteamId) {
-        return HttpResponse.json(
-          createFaceitMetadataPlayerStatsGame(undefined, undefined)
-        );
+        return HttpResponse.json({
+          lifetime: {
+            "Average K/D Ratio": "invalid-kdr-string", // This will cause NaN when converted to number
+            Matches: "invalid-matches-string" // This will cause NaN when converted to number
+          }
+        });
       }
 
       if (
@@ -123,6 +219,97 @@ export const faceitMetadataHandlers = [
       if (faceit_player_id === "11111111111111112" && game === "cs2") {
         return HttpResponse.json(
           createFaceitMetadataPlayerStatsGame("1.35", "453")
+        );
+      }
+
+      // E2E test Steam IDs - provide valid metadata for all
+      if (faceit_player_id === heppajpgSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.2", "150")
+        );
+      }
+
+      if (faceit_player_id === HoolyzSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.1", "120")
+        );
+      }
+
+      if (faceit_player_id === RealPlayer1SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.3", "200")
+        );
+      }
+
+      if (faceit_player_id === RealPlayer2SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.25", "180")
+        );
+      }
+
+      if (faceit_player_id === RealPlayer3SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.15", "160")
+        );
+      }
+
+      if (faceit_player_id === AabeSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.4", "250")
+        );
+      }
+
+      if (faceit_player_id === QuattraSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.35", "220")
+        );
+      }
+
+      if (faceit_player_id === TrevSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.1", "100")
+        );
+      }
+
+      if (faceit_player_id === PrivateProfilePlayerSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.2", "140")
+        );
+      }
+
+      if (faceit_player_id === ValidWorkEmail1SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.3", "190")
+        );
+      }
+
+      if (faceit_player_id === ValidWorkEmail2SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.4", "210")
+        );
+      }
+
+      if (faceit_player_id === ValidWorkEmail3SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.25", "170")
+        );
+      }
+
+      if (faceit_player_id === ValidWorkEmail4SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.45", "230")
+        );
+      }
+
+      if (faceit_player_id === ValidWorkEmail5SteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.3", "200")
+        );
+      }
+
+      if (faceit_player_id === EligiblePlayerForValidationSteamId) {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.5", "300")
         );
       }
 

@@ -155,9 +155,7 @@ export const faceitPlayerGameRankHandlers = [
     }
 
     if (gamePlayerId === NoFaceitRankPlayerSteamId) {
-      return HttpResponse.json(
-        createFaceitRank(gamePlayerId, "cs2", undefined, undefined)
-      );
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 10));
     }
 
     if (gamePlayerId === ValidWorkEmail1SteamId) {

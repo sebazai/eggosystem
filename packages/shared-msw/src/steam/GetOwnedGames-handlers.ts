@@ -2,7 +2,8 @@ import { http, HttpResponse } from "msw";
 import {
   IPlayerServiceResponse,
   InsufficientHoursPlayerSteamId,
-  RaceConditionPlayerSteamId
+  RaceConditionPlayerSteamId,
+  e2eSteamPlayerData
 } from "@eggosystem/types";
 
 export const getOwnedGamesHandlers = [
@@ -10,7 +11,17 @@ export const getOwnedGamesHandlers = [
     "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/",
     ({ request }) => {
       const url = new URL(request.url);
+
+      console.log("url", url);
       const steam_id = url.searchParams.get("steamid");
+
+      console.log("steam_id", steam_id);
+
+      if (!steam_id) {
+        return new HttpResponse("Bad Request MSW", { status: 400 });
+      }
+
+      // Players with insufficient hours (should return empty games array)
       if (
         steam_id === InsufficientHoursPlayerSteamId ||
         steam_id === RaceConditionPlayerSteamId
@@ -22,7 +33,26 @@ export const getOwnedGamesHandlers = [
         } satisfies IPlayerServiceResponse);
       }
 
-      // season-team-registration.services.test.ts
+      // Check if this Steam ID exists in our e2e data
+      const playerData = e2eSteamPlayerData.find(
+        (p) => p.steam_id === steam_id
+      );
+
+      if (playerData) {
+        // All e2e test players should have CS2 with sufficient hours
+        return HttpResponse.json({
+          response: {
+            games: [
+              {
+                appid: 730, // CS2 app ID
+                playtime_forever: 90000 // 90 hours - sufficient for validation
+              }
+            ]
+          }
+        } satisfies IPlayerServiceResponse);
+      }
+
+      // Legacy test data for season-team-registration.services.test.ts
       if (
         steam_id === "11111111111111111" ||
         steam_id === "11111111111111112" ||
@@ -42,6 +72,7 @@ export const getOwnedGamesHandlers = [
         } satisfies IPlayerServiceResponse);
       }
 
+      // Default response for any other Steam ID
       return HttpResponse.json({
         response: {
           games: [

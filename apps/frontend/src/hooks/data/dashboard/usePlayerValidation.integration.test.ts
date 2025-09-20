@@ -6,7 +6,12 @@
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { usePlayerValidation } from "./usePlayerValidation";
-import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
+import {
+  EligiblePlayerForValidationSteamId,
+  IneligiblePlayerForValidationSteamId,
+  SeasonPlatform,
+  type PlayerValidationResult
+} from "@eggosystem/types";
 
 // Mock clientApiFetch
 const mockClientApiFetch = jest.fn();
@@ -24,7 +29,7 @@ jest.mock("@/lib/utils", () => ({
 
 describe("usePlayerValidation Integration Tests", () => {
   const mockSuccessfulValidation: PlayerValidationResult = {
-    steam_id: "76561198054765387",
+    steam_id: EligiblePlayerForValidationSteamId,
     season_id: 14,
     app_id: 730,
     platform: SeasonPlatform.FACEIT,
@@ -62,7 +67,7 @@ describe("usePlayerValidation Integration Tests", () => {
   };
 
   const mockFailedValidation: PlayerValidationResult = {
-    steam_id: "76561198054765387",
+    steam_id: EligiblePlayerForValidationSteamId,
     season_id: 14,
     app_id: 730,
     platform: SeasonPlatform.FACEIT,
@@ -112,7 +117,10 @@ describe("usePlayerValidation Integration Tests", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       // Trigger validation
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       await waitFor(() => {
         expect(result.current.validationResult).toEqual(
@@ -133,7 +141,10 @@ describe("usePlayerValidation Integration Tests", () => {
 
       const { result } = renderHook(() => usePlayerValidation());
 
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       await waitFor(() => {
         expect(result.current.validationResult?.overall_success).toBe(true);
@@ -153,7 +164,10 @@ describe("usePlayerValidation Integration Tests", () => {
 
       const { result } = renderHook(() => usePlayerValidation());
 
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       await waitFor(() => {
         expect(result.current.validationResult).toEqual(mockFailedValidation);
@@ -167,7 +181,10 @@ describe("usePlayerValidation Integration Tests", () => {
 
       const { result } = renderHook(() => usePlayerValidation());
 
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       await waitFor(() => {
         expect(result.current.validationResult?.hours.success).toBe(false);
@@ -200,7 +217,7 @@ describe("usePlayerValidation Integration Tests", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       await expect(
-        result.current.validatePlayer("76561198054765387", "14")
+        result.current.validatePlayer(EligiblePlayerForValidationSteamId, "14")
       ).rejects.toThrow("Network error");
     });
 
@@ -225,7 +242,7 @@ describe("usePlayerValidation Integration Tests", () => {
 
       // Missing seasonId
       await expect(
-        result.current.validatePlayer("76561198054765387", "")
+        result.current.validatePlayer(EligiblePlayerForValidationSteamId, "")
       ).rejects.toThrow(
         "All fields are required. Please select a season first."
       );
@@ -242,7 +259,7 @@ describe("usePlayerValidation Integration Tests", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       await expect(
-        result.current.validatePlayer("76561198054765387", "14")
+        result.current.validatePlayer(EligiblePlayerForValidationSteamId, "14")
       ).rejects.toThrow("Player not found");
     });
   });
@@ -263,7 +280,7 @@ describe("usePlayerValidation Integration Tests", () => {
 
       // Start validation
       const validationCall = result.current.validatePlayer(
-        "76561198054765387",
+        EligiblePlayerForValidationSteamId,
         "14"
       );
 
@@ -290,7 +307,10 @@ describe("usePlayerValidation Integration Tests", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       // First validate
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       await waitFor(() => {
         expect(result.current.validationResult).toEqual(
@@ -313,7 +333,10 @@ describe("usePlayerValidation Integration Tests", () => {
 
       const { result } = renderHook(() => usePlayerValidation());
 
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       expect(mockClientApiFetch).toHaveBeenCalledWith(
         "/api/v1/dashboard/players/76561198054765387/validate?season_id=14"
@@ -325,7 +348,10 @@ describe("usePlayerValidation Integration Tests", () => {
 
       const { result } = renderHook(() => usePlayerValidation());
 
-      await result.current.validatePlayer("76561197960383236", "13");
+      await result.current.validatePlayer(
+        IneligiblePlayerForValidationSteamId,
+        "13"
+      );
 
       expect(mockClientApiFetch).toHaveBeenCalledWith(
         "/api/v1/dashboard/players/76561197960383236/validate?season_id=13"
@@ -347,7 +373,10 @@ describe("usePlayerValidation Integration Tests", () => {
       const { result } = renderHook(() => usePlayerValidation());
 
       // Manual validation
-      await result.current.validatePlayer("76561198054765387", "14");
+      await result.current.validatePlayer(
+        EligiblePlayerForValidationSteamId,
+        "14"
+      );
 
       expect(mockClientApiFetch).toHaveBeenCalledTimes(1);
     });

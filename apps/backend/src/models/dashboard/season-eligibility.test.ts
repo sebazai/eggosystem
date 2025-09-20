@@ -1,3 +1,7 @@
+import {
+  EligiblePlayerForValidationSteamId,
+  IneligiblePlayerForValidationSteamId
+} from "@eggosystem/types";
 import { checkPlayerAdditionEligibility } from "./season.models";
 // We're not using runQuery directly anymore since we're mocking the entire function
 // import { runQuery } from "../db/mysqlRunQuery";
@@ -21,8 +25,8 @@ describe("checkPlayerAdditionEligibility", () => {
   // Test data
   const seasonId = 14;
   const teamId = 1650;
-  const eligibleSteamId = "76561198054765387";
-  const ineligibleSteamId = "76561197960383236";
+  const eligibleSteamId = EligiblePlayerForValidationSteamId;
+  const ineligibleSteamId = IneligiblePlayerForValidationSteamId;
 
   // Get the mock function for checkPlayerAdditionEligibility
   const mockCheckPlayerAdditionEligibility =

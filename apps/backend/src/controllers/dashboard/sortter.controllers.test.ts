@@ -7,7 +7,8 @@ import {
 import * as sortterModels from "../../models/dashboard/sortter.models";
 import {
   type TeamSortterValues,
-  type RequestWithParams
+  type RequestWithParams,
+  IneligiblePlayerForValidationSteamId
 } from "@eggosystem/types";
 import { runQuery } from "../../db/mysqlRunQuery";
 
@@ -159,7 +160,7 @@ describe("Sortter Controllers", () => {
         const mockPlayerValues = [
           {
             name: "toNppa",
-            steamid: "76561197960383236",
+            steamid: IneligiblePlayerForValidationSteamId,
             cs2_rank: 17690,
             faceit_level: 9,
             faceit_elo: 1954,

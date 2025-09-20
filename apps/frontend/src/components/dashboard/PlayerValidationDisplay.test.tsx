@@ -2,7 +2,11 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PlayerValidationDisplay } from "./PlayerValidationDisplay";
-import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
+import {
+  EligiblePlayerForValidationSteamId,
+  SeasonPlatform,
+  type PlayerValidationResult
+} from "@eggosystem/types";
 
 // Mock the icon components
 jest.mock("lucide-react", () => ({
@@ -38,7 +42,7 @@ jest.mock("@/components/profile/CS2PremierRankBadge", () => ({
 
 describe("PlayerValidationDisplay", () => {
   const mockSuccessfulValidation: PlayerValidationResult = {
-    steam_id: "76561198054765387",
+    steam_id: EligiblePlayerForValidationSteamId,
     season_id: 14,
     app_id: 730,
     platform: SeasonPlatform.FACEIT,
@@ -76,7 +80,7 @@ describe("PlayerValidationDisplay", () => {
   };
 
   const mockFailedValidation: PlayerValidationResult = {
-    steam_id: "76561198054765387",
+    steam_id: EligiblePlayerForValidationSteamId,
     season_id: 14,
     app_id: 730,
     platform: SeasonPlatform.FACEIT,

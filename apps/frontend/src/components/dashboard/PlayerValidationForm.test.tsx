@@ -2,7 +2,10 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { PlayerValidationForm } from "./PlayerValidationForm";
-import { SeasonPlatform } from "@eggosystem/types";
+import {
+  EligiblePlayerForValidationSteamId,
+  SeasonPlatform
+} from "@eggosystem/types";
 
 // Mock the UI components
 jest.mock("@/components/ui/button", () => ({
@@ -251,10 +254,12 @@ describe("PlayerValidationForm", () => {
 
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
 
-      expect(mockSetSteamId).toHaveBeenCalledWith("76561198054765387");
+      expect(mockSetSteamId).toHaveBeenCalledWith(
+        EligiblePlayerForValidationSteamId
+      );
     });
 
     it("should call setSeasonId when season selection changes", () => {
@@ -277,7 +282,7 @@ describe("PlayerValidationForm", () => {
       render(
         <PlayerValidationForm
           {...defaultProps}
-          steamId="76561198054765387"
+          steamId={EligiblePlayerForValidationSteamId}
           seasonId="14"
           onValidate={mockOnValidate}
         />
@@ -300,7 +305,10 @@ describe("PlayerValidationForm", () => {
 
     it("should disable validate button when only Steam ID is provided", () => {
       render(
-        <PlayerValidationForm {...defaultProps} steamId="76561198054765387" />
+        <PlayerValidationForm
+          {...defaultProps}
+          steamId={EligiblePlayerForValidationSteamId}
+        />
       );
 
       const validateButton = screen.getByText("Validate Player");
@@ -318,7 +326,7 @@ describe("PlayerValidationForm", () => {
       render(
         <PlayerValidationForm
           {...defaultProps}
-          steamId="76561198054765387"
+          steamId={EligiblePlayerForValidationSteamId}
           seasonId="14"
         />
       );
@@ -331,7 +339,7 @@ describe("PlayerValidationForm", () => {
       render(
         <PlayerValidationForm
           {...defaultProps}
-          steamId="76561198054765387"
+          steamId={EligiblePlayerForValidationSteamId}
           seasonId="14"
           isValidating={true}
         />
@@ -345,7 +353,7 @@ describe("PlayerValidationForm", () => {
       render(
         <PlayerValidationForm
           {...defaultProps}
-          steamId="76561198054765387"
+          steamId={EligiblePlayerForValidationSteamId}
           seasonId="14"
           disabled={true}
         />

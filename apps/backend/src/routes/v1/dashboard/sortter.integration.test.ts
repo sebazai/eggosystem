@@ -5,6 +5,7 @@ import request from "supertest";
 import type express from "express";
 import { createExpressTestApp } from "../../../test-utils";
 import sortterRouter from "./sortter.routes";
+import { IneligiblePlayerForValidationSteamId } from "@eggosystem/types";
 
 // Define a type that matches our expected player data
 interface PlayerValues {
@@ -48,14 +49,15 @@ describe("Sortter API Integration Tests", () => {
 
       // Find the specific player we want to test
       const testPlayer = response.body.find(
-        (player: PlayerValues) => player.steamid === "76561197960383236"
+        (player: PlayerValues) =>
+          player.steamid === IneligiblePlayerForValidationSteamId
       );
 
       // Verify the player exists and has the expected values
       expect(testPlayer).toBeDefined();
       expect(testPlayer).toMatchObject({
         name: "toNppa",
-        steamid: "76561197960383236",
+        steamid: IneligiblePlayerForValidationSteamId,
         cs2_rank: 17690,
         faceit_level: 9,
         faceit_elo: 1954,

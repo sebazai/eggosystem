@@ -13,7 +13,8 @@ import {
   RaceConditionPlayerSteamId,
   NoFaceitRankPlayerSteamId,
   ValidationFailurePlayerSteamId,
-  EligiblePlayerForValidationSteamId
+  EligiblePlayerForValidationSteamId,
+  e2eSteamPlayerData
 } from "@eggosystem/types";
 import { type Knex } from "knex";
 
@@ -309,150 +310,8 @@ export async function seed(knex: Knex): Promise<void> {
     );
   }
 
-  // Ensure we have SteamPlayers for the NEW accounts we need
-  // This creates the missing accounts and steam players with NEW fake Steam IDs
-  const steamPlayerData = [
-    {
-      account_id: 15003,
-      steam_id: "66561198999999901",
-      nickname: "Aabe",
-      discord: "aabe#1234"
-    },
-    {
-      account_id: 15004,
-      steam_id: "66561198999999902",
-      nickname: "heppajpg",
-      discord: "heppajpg#1234"
-    },
-    {
-      account_id: 15005,
-      steam_id: "66561198999999903",
-      nickname: "Quattra",
-      work_email: "test+15005@kanaliiga.fi",
-      work_email_verified: 1,
-      is_work_email_personal_email: true,
-      discord: "quattra#1234"
-    },
-    {
-      account_id: 15006,
-      steam_id: "66561198999999904",
-      nickname: "Trev",
-      work_email_verified: 0,
-      discord: "trev#1234"
-    },
-    {
-      account_id: 15008,
-      steam_id: "66561198999999905",
-      nickname: "Hoolyz",
-      discord: "hoolyz#1234"
-    },
-    {
-      account_id: 15009,
-      steam_id: "66561198999999906",
-      nickname: "RealPlayer1",
-      discord: "realplayer1#1234"
-    },
-    {
-      account_id: 15010,
-      steam_id: "66561198999999907",
-      nickname: "RealPlayer2",
-      discord: "realplayer2#1234"
-    },
-    {
-      account_id: 15011,
-      steam_id: "66561198999999908",
-      nickname: "RealPlayer3",
-      discord: "realplayer3#1234"
-    },
-    {
-      account_id: 15001,
-      steam_id: "66561198999999909",
-      nickname: "PrivateProfilePlayer",
-      discord: "privateprofileplayer#1234"
-    },
-    {
-      account_id: 15002,
-      steam_id: "66561198999999910",
-      nickname: "InsufficientHoursPlayer"
-    },
-    {
-      account_id: 15012,
-      steam_id: "66561198999999911",
-      nickname: "IncompleteDetailsPlayer"
-    },
-    {
-      account_id: 15013,
-      steam_id: "66561198999999912",
-      nickname: "RaceConditionPlayer"
-    },
-    {
-      account_id: 15014,
-      steam_id: "66561198999999913",
-      nickname: "NoFaceitRankPlayer"
-    },
-    // New players with valid work emails for signup form tests
-    {
-      account_id: 15007,
-      steam_id: "66561198999999920",
-      nickname: "ValidWorkEmail1",
-      work_email: "test+15007@kanaliiga.fi",
-      work_email_verified: 1,
-      is_work_email_personal_email: false,
-      discord: "validworkemail1#1234"
-    },
-    {
-      account_id: 15015,
-      steam_id: "66561198999999921",
-      nickname: "ValidWorkEmail2",
-      work_email: "test+15015@kanaliiga.fi",
-      work_email_verified: 1,
-      is_work_email_personal_email: false,
-      discord: "validworkemail2#1234"
-    },
-    {
-      account_id: 15016,
-      steam_id: "66561198999999922",
-      nickname: "ValidWorkEmail3",
-      work_email: "test+15016@kanaliiga.fi",
-      work_email_verified: 1,
-      is_work_email_personal_email: false,
-      discord: "validworkemail3#1234"
-    },
-    {
-      account_id: 15017,
-      steam_id: "66561198999999923",
-      nickname: "ValidWorkEmail4",
-      work_email: "test+15017@kanaliiga.fi",
-      work_email_verified: 1,
-      is_work_email_personal_email: false,
-      discord: "validworkemail4#1234"
-    },
-    {
-      account_id: 15018,
-      steam_id: "66561198999999924",
-      nickname: "ValidWorkEmail5",
-      work_email: "test+15018@kanaliiga.fi",
-      work_email_verified: 1,
-      is_work_email_personal_email: false,
-      discord: "validworkemail5#1234"
-    },
-    // New players for add player validation tests
-    {
-      account_id: 15020,
-      steam_id: "76561198054765387",
-      nickname: "EligiblePlayerForValidation",
-      discord: "eligibleplayer#1234"
-    },
-    {
-      account_id: 15021,
-      steam_id: "66561198999999914",
-      nickname: "ValidationFailurePlayer",
-      // NOTE: This player will have intentionally incomplete/invalid data for testing multiple validation failures
-      work_email: null, // Missing work email
-      work_email_verified: 0, // Not verified
-      discord: null // Missing discord
-    }
-  ];
+  // Import Steam player data from types package
+  const steamPlayerData = e2eSteamPlayerData;
 
   for (const player of steamPlayerData) {
     // Insert account if it doesn't exist
@@ -516,11 +375,11 @@ export async function seed(knex: Knex): Promise<void> {
 
   // Set up SeasonTeamPlayers for employment approval testing
   const seasonTeamPlayers = [
-    // account_id 15005 (66561198999999903) - approve manually for testing organizer approval
+    // account_id 15005 (QuattraSteamId) - approve manually for testing organizer approval
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999903" // Updated to new Steam ID
+      steam_id: QuattraSteamId // Updated to use imported constant
     }
   ];
 
@@ -561,21 +420,21 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999901", // account_id 15003 - Aabe (captain)
+      steam_id: AabeSteamId, // account_id 15003 - Aabe (captain)
       is_captain: true,
       is_co_captain: false
     },
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999904", // account_id 15006 - Trev (co-captain)
+      steam_id: TrevSteamId, // account_id 15006 - Trev (co-captain)
       is_captain: false,
       is_co_captain: true
     },
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999903", // account_id 15005 - Quattra (co-captain)
+      steam_id: QuattraSteamId, // account_id 15005 - Quattra (co-captain)
       is_captain: false,
       is_co_captain: false
     }
@@ -591,7 +450,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999901", // Aabe
+      steam_id: AabeSteamId, // Aabe
       role: "primary",
       is_captain: true,
       is_co_captain: false
@@ -599,7 +458,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999902", // heppajpg
+      steam_id: heppajpgSteamId, // heppajpg
       role: "primary",
       is_captain: false,
       is_co_captain: true
@@ -607,7 +466,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999903", // Quattra
+      steam_id: QuattraSteamId, // Quattra
       role: "primary",
       is_captain: false,
       is_co_captain: false
@@ -615,7 +474,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999905", // Hoolyz
+      steam_id: HoolyzSteamId, // Hoolyz
       role: "primary",
       is_captain: false,
       is_co_captain: false
@@ -623,7 +482,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999906", // RealPlayer1
+      steam_id: RealPlayer1SteamId, // RealPlayer1
       role: "primary",
       is_captain: false,
       is_co_captain: false
@@ -631,7 +490,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999907", // RealPlayer2
+      steam_id: RealPlayer2SteamId, // RealPlayer2
       role: "primary",
       is_captain: false,
       is_co_captain: false
@@ -639,7 +498,7 @@ export async function seed(knex: Knex): Promise<void> {
     {
       season_id: 16,
       team_id: 999,
-      steam_id: "66561198999999908", // RealPlayer3
+      steam_id: RealPlayer3SteamId, // RealPlayer3
       role: "primary",
       is_captain: false,
       is_co_captain: false
@@ -661,13 +520,13 @@ export async function seed(knex: Knex): Promise<void> {
   // Add kana_elo values to SeasonPlayerRanks for the sortter API
   // The sortter API needs kana_elo values to calculate team rankings
   const kanaEloUpdates = [
-    { steam_id: "66561198999999901", kana_elo: 180 }, // Aabe
-    { steam_id: "66561198999999902", kana_elo: 175 }, // heppajpg
-    { steam_id: "66561198999999903", kana_elo: 170 }, // Quattra
-    { steam_id: "66561198999999905", kana_elo: 160 }, // Hoolyz
-    { steam_id: "66561198999999906", kana_elo: 160 }, // RealPlayer1
-    { steam_id: "66561198999999907", kana_elo: 150 }, // RealPlayer2
-    { steam_id: "66561198999999908", kana_elo: 150 } // RealPlayer3
+    { steam_id: AabeSteamId, kana_elo: 180 }, // Aabe
+    { steam_id: heppajpgSteamId, kana_elo: 175 }, // heppajpg
+    { steam_id: QuattraSteamId, kana_elo: 170 }, // Quattra
+    { steam_id: HoolyzSteamId, kana_elo: 160 }, // Hoolyz
+    { steam_id: RealPlayer1SteamId, kana_elo: 160 }, // RealPlayer1
+    { steam_id: RealPlayer2SteamId, kana_elo: 150 }, // RealPlayer2
+    { steam_id: RealPlayer3SteamId, kana_elo: 150 } // RealPlayer3
   ];
 
   for (const update of kanaEloUpdates) {

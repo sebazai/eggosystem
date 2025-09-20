@@ -1,7 +1,12 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { useForm, FormProvider } from "react-hook-form";
 import { TabPlayers } from "@/components/signup/TabPlayers";
-import { SeasonPlatform } from "@eggosystem/types";
+import {
+  AabeSteamId,
+  NoFaceitRankPlayerSteamId,
+  SeasonPlatform,
+  ValidationFailurePlayerSteamId
+} from "@eggosystem/types";
 import type { SignupFormValues } from "@eggosystem/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -144,7 +149,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer",
         discord: "",
         captain: false,
@@ -194,7 +199,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer",
         discord: "",
         captain: false,
@@ -226,7 +231,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer",
         discord: "",
         captain: false,
@@ -260,7 +265,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer1",
         discord: "",
         captain: false,
@@ -274,7 +279,7 @@ describe("External Rank Error", () => {
       },
       {
         accountId: 15015,
-        steamId: "66561198999999914",
+        steamId: ValidationFailurePlayerSteamId,
         nickname: "NoFaceitRankPlayer2",
         discord: "",
         captain: false,
@@ -319,7 +324,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15001,
-        steamId: "66561198999999901",
+        steamId: AabeSteamId,
         nickname: "ValidPlayer",
         discord: "",
         captain: false,
@@ -349,7 +354,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer",
         discord: "",
         captain: false,
@@ -379,7 +384,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer",
         discord: "",
         captain: false,
@@ -424,7 +429,7 @@ describe("External Rank Error", () => {
     const players = [
       {
         accountId: 15014,
-        steamId: "66561198999999913",
+        steamId: NoFaceitRankPlayerSteamId,
         nickname: "NoFaceitRankPlayer",
         discord: "",
         captain: false,

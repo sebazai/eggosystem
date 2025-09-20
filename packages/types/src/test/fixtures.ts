@@ -14,6 +14,7 @@ export const ValidWorkEmail3SteamId = "66561198999999922";
 export const ValidWorkEmail4SteamId = "66561198999999923";
 export const ValidWorkEmail5SteamId = "66561198999999924";
 export const EligiblePlayerForValidationSteamId = "76561198054765387";
+export const IneligiblePlayerForValidationSteamId = "76561197960383236";
 export const InsufficientHoursPlayerSteamId = "66561198999999910";
 export const ValidationFailurePlayerSteamId = "66561198999999914";
 export const IncompleteDetailsPlayerSteamId = "66561198999999911";

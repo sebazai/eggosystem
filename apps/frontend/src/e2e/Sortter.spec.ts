@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { generateTestJWT } from "./utils";
+import { heppajpgSteamId } from "@eggosystem/types";
 
 // Define the test suite for the sortter page
 test.describe("Sortter Page", () => {
@@ -29,7 +30,7 @@ test.describe("Sortter Page", () => {
         body: JSON.stringify({
           user: {
             account_id: 15004,
-            provider_id: "66561198999999902",
+            provider_id: heppajpgSteamId,
             nickname: "heppajpg",
             roles: ["admin"], // Ensure admin role is included
             permissions: [],

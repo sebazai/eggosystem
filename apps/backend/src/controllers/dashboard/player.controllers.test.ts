@@ -1,5 +1,8 @@
 import type { Response } from "express";
-import type { RequestWithParams } from "@eggosystem/types";
+import {
+  EligiblePlayerForValidationSteamId,
+  type RequestWithParams
+} from "@eggosystem/types";
 import {
   addPlayerToTeamController,
   addSubstitutePlayerController
@@ -29,7 +32,7 @@ describe("addPlayerToTeamController", () => {
     params: {
       season_id: "14",
       team_id: "1650",
-      steam_id: "76561198054765387"
+      steam_id: EligiblePlayerForValidationSteamId
     },
     body: {
       kana_elo: 200,
@@ -98,11 +101,16 @@ describe("addPlayerToTeamController", () => {
     // Verify eligibility was checked
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
-    ).toHaveBeenCalledWith(14, 1650, "76561198054765387", expect.any(Object));
+    ).toHaveBeenCalledWith(
+      14,
+      1650,
+      EligiblePlayerForValidationSteamId,
+      expect.any(Object)
+    );
 
     // Verify player kana_elo was set
     expect(mockPlayerModels.setPlayerKanaElo).toHaveBeenCalledWith(
-      "76561198054765387",
+      EligiblePlayerForValidationSteamId,
       200,
       expect.any(String),
       14,
@@ -113,7 +121,7 @@ describe("addPlayerToTeamController", () => {
     // Verify player was added to team
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387"],
+      [14, 1650, EligiblePlayerForValidationSteamId],
       expect.any(Object)
     );
 
@@ -121,7 +129,7 @@ describe("addPlayerToTeamController", () => {
     expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: expect.any(String),
-      steam_id: "76561198054765387",
+      steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       kana_elo: 200
@@ -170,7 +178,7 @@ describe("addPlayerToTeamController", () => {
     expect(mockRankModels.insertFaceITPlayerRankForSeason).toHaveBeenCalled();
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387"],
+      [14, 1650, EligiblePlayerForValidationSteamId],
       expect.any(Object)
     );
 
@@ -214,12 +222,17 @@ describe("addPlayerToTeamController", () => {
     // Verify eligibility was checked
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
-    ).toHaveBeenCalledWith(14, 1650, "76561198054765387", expect.any(Object));
+    ).toHaveBeenCalledWith(
+      14,
+      1650,
+      EligiblePlayerForValidationSteamId,
+      expect.any(Object)
+    );
 
     // Verify player was NOT added to team (query not called)
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "primary"]
+      [14, 1650, EligiblePlayerForValidationSteamId, "primary"]
     );
 
     // Verify error was passed to next
@@ -282,7 +295,7 @@ describe("addSubstitutePlayerController", () => {
     params: {
       season_id: "14",
       team_id: "1650",
-      steam_id: "76561198054765387"
+      steam_id: EligiblePlayerForValidationSteamId
     },
     body: {}
   } as unknown as RequestWithParams<{
@@ -316,7 +329,7 @@ describe("addSubstitutePlayerController", () => {
     // Verify no database insertion was performed since no match_id provided
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "substitute"],
+      [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
       expect.any(Object)
     );
 
@@ -324,7 +337,7 @@ describe("addSubstitutePlayerController", () => {
     expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
-      steam_id: "76561198054765387",
+      steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
@@ -370,13 +383,13 @@ describe("addSubstitutePlayerController", () => {
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "substitute", 123],
+      [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 123],
       expect.any(Object)
     );
 
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
-      steam_id: "76561198054765387",
+      steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
@@ -486,13 +499,13 @@ describe("addSubstitutePlayerController", () => {
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "substitute", 456],
+      [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 456],
       expect.any(Object)
     );
 
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
-      steam_id: "76561198054765387",
+      steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
@@ -533,13 +546,13 @@ describe("addSubstitutePlayerController", () => {
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "substitute", 789],
+      [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 789],
       expect.any(Object)
     );
 
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
-      steam_id: "76561198054765387",
+      steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
@@ -585,7 +598,7 @@ describe("addSubstitutePlayerController", () => {
     // Verify no insertion was attempted
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, "76561198054765387", "substitute"],
+      [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
       expect.any(Object)
     );
   });

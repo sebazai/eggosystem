@@ -2,7 +2,11 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { SWRConfig } from "swr";
-import { SeasonPlatform } from "@eggosystem/types";
+import {
+  EligiblePlayerForValidationSteamId,
+  IneligiblePlayerForValidationSteamId,
+  SeasonPlatform
+} from "@eggosystem/types";
 import AddPlayerPage from "./page";
 
 // Mock clientApiFetch
@@ -359,7 +363,7 @@ describe("AddPlayerPage", () => {
 
       // Enter a Steam ID but don't select a team
       fireEvent.change(screen.getByPlaceholderText("Enter Steam ID"), {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
 
       // The button should still be disabled without a team selected and validation
@@ -398,7 +402,7 @@ describe("AddPlayerPage", () => {
       // Enter Steam ID
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
 
       // Click check button
@@ -437,7 +441,7 @@ describe("AddPlayerPage", () => {
       // Enter Steam ID
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
       fireEvent.change(steamIdInput, {
-        target: { value: "76561197960383236" }
+        target: { value: IneligiblePlayerForValidationSteamId }
       });
 
       // Click check button
@@ -476,7 +480,7 @@ describe("AddPlayerPage", () => {
       // Enter Steam ID
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
 
       // Click check button
@@ -521,7 +525,7 @@ describe("AddPlayerPage", () => {
       // Enter Steam ID
       const steamIdInput = screen.getByPlaceholderText("Enter Steam ID");
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
 
       // Click check button

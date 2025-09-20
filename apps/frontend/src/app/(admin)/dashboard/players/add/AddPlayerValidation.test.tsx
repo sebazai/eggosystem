@@ -13,7 +13,11 @@ import {
   createSWRConfig
 } from "@/test-utils/test-utils";
 import AddPlayerPage from "./page";
-import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
+import {
+  EligiblePlayerForValidationSteamId,
+  SeasonPlatform,
+  type PlayerValidationResult
+} from "@eggosystem/types";
 
 // Mock the custom hooks
 const mockValidatePlayer = jest.fn();
@@ -166,7 +170,7 @@ describe("Add Player Validation Workflow (TDD)", () => {
   const mockAdminUser = createMockUser({ roles: ["admin"] });
 
   const mockSuccessfulValidation: PlayerValidationResult = {
-    steam_id: "76561198054765387",
+    steam_id: EligiblePlayerForValidationSteamId,
     season_id: 14,
     app_id: 730,
     platform: SeasonPlatform.FACEIT,
@@ -238,7 +242,7 @@ describe("Add Player Validation Workflow (TDD)", () => {
       const validateButton = screen.getByTestId("validate-button");
 
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
       fireEvent.change(seasonSelect, { target: { value: "14" } });
 
@@ -247,7 +251,7 @@ describe("Add Player Validation Workflow (TDD)", () => {
 
       // Verify validatePlayer was called
       expect(mockValidatePlayer).toHaveBeenCalledWith(
-        "76561198054765387",
+        EligiblePlayerForValidationSteamId,
         "14"
       );
 
@@ -277,7 +281,7 @@ describe("Add Player Validation Workflow (TDD)", () => {
         screen.getByTestId("validation-overall-success")
       ).toHaveTextContent("Success");
       expect(screen.getByTestId("validation-steam-id")).toHaveTextContent(
-        "76561198054765387"
+        EligiblePlayerForValidationSteamId
       );
       expect(screen.getByTestId("validation-profile-name")).toHaveTextContent(
         "TestPlayer"
@@ -305,7 +309,7 @@ describe("Add Player Validation Workflow (TDD)", () => {
       const teamSelect = screen.getByTestId("team-selector");
 
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
       fireEvent.change(seasonSelect, { target: { value: "14" } });
 
@@ -344,7 +348,7 @@ describe("Add Player Validation Workflow (TDD)", () => {
       const teamSelect = screen.getByTestId("team-selector");
 
       fireEvent.change(steamIdInput, {
-        target: { value: "76561198054765387" }
+        target: { value: EligiblePlayerForValidationSteamId }
       });
       fireEvent.change(seasonSelect, { target: { value: "14" } });
 

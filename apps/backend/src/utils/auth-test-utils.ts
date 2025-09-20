@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import { getJWTValues } from "../configs/jwt-keys";
+import { heppajpgSteamId } from "@eggosystem/types";
 
 export function generateTestJWT(): string {
-  return generateTestJWTForUser(15004, "66561198999999902", "heppajpg");
+  return generateTestJWTForUser(15004, heppajpgSteamId, "heppajpg");
 }
 
 export function generateTestJWTForUser(

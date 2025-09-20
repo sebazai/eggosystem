@@ -4,6 +4,22 @@ import {
   generateUniqueOrgCode,
   generateUniqueFaceitTeamId
 } from "./utils";
+import {
+  AabeSteamId,
+  heppajpgSteamId,
+  HoolyzSteamId,
+  InsufficientHoursPlayerSteamId,
+  NoFaceitRankPlayerSteamId,
+  QuattraSteamId,
+  RealPlayer1SteamId,
+  RealPlayer2SteamId,
+  TrevSteamId,
+  ValidWorkEmail1SteamId,
+  ValidWorkEmail2SteamId,
+  ValidWorkEmail3SteamId,
+  ValidWorkEmail4SteamId,
+  ValidWorkEmail5SteamId
+} from "@eggosystem/types";
 
 async function assignCaptain(page: Page) {
   // Try to expand accordions and assign captain/co-captain roles
@@ -165,11 +181,11 @@ async function setupCompleteRegistrationForm(
 // Helper function to fill 5 players with valid Steam IDs
 async function fillValidPlayers(page: Page, authenticatedUserId?: string) {
   const validPlayers = [
-    "66561198999999920", // account_id 15007 - ValidWorkEmail1 (has valid work email)
-    "66561198999999921", // account_id 15015 - ValidWorkEmail2 (has valid work email)
-    "66561198999999922", // account_id 15016 - ValidWorkEmail3 (has valid work email)
-    "66561198999999923", // account_id 15017 - ValidWorkEmail4 (has valid work email)
-    "66561198999999924" // account_id 15018 - ValidWorkEmail5 (has valid work email)
+    ValidWorkEmail1SteamId, // account_id 15007 - ValidWorkEmail1 (has valid work email)
+    ValidWorkEmail2SteamId, // account_id 15015 - ValidWorkEmail2 (has valid work email)
+    ValidWorkEmail3SteamId, // account_id 15016 - ValidWorkEmail3 (has valid work email)
+    ValidWorkEmail4SteamId, // account_id 15017 - ValidWorkEmail4 (has valid work email)
+    ValidWorkEmail5SteamId // account_id 15018 - ValidWorkEmail5 (has valid work email)
   ];
 
   // If an authenticated user ID is provided, ensure they are in the list
@@ -221,7 +237,7 @@ async function setupAuthForUser(
 test.describe("Signup Form", () => {
   test.beforeEach(async ({ page }) => {
     // Set up authentication cookie first (most important) - use heppajpg for most tests
-    await setupAuthForUser(page, 15004, "66561198999999902", "heppajpg");
+    await setupAuthForUser(page, 15004, heppajpgSteamId, "heppajpg");
 
     page.route("**/api/v1/faceit/teams/*", async (route) => {
       // Extract team ID from URL path
@@ -395,14 +411,39 @@ test.describe("Signup Form", () => {
     test("should validate Steam IDs with different approval states", async ({
       page
     }) => {
+      // Add debug logging for API requests
+      page.on("response", async (response) => {
+        const url = response.url();
+        if (
+          url.includes("/api/v1/players/") &&
+          (url.includes("/hours") ||
+            url.includes("/rank") ||
+            url.includes("/details"))
+        ) {
+          console.log(`\n🔍 API Response Debug:`);
+          console.log(`URL: ${url}`);
+          console.log(`Status: ${response.status()}`);
+          try {
+            const body = await response.json();
+            console.log(`Response Body:`, JSON.stringify(body, null, 2));
+          } catch (e) {
+            console.log(`Response Body: [Could not parse JSON]`);
+          }
+          console.log(`---\n`);
+        }
+      });
+
       // Set up form to players section using existing team_id 999
       await setupFormToPlayersSectionWithTeam999(page);
 
       // Test 1: Hours detection failure
       const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
-      await steamIdInput0.fill("66561198999999910"); // account_id 15002 - InsufficientHoursPlayer (triggers hours: null)
+      await steamIdInput0.fill(InsufficientHoursPlayerSteamId); // account_id 15002 - InsufficientHoursPlayer (triggers hours: null)
       await page.keyboard.press("Tab");
       await steamIdInput0.blur();
+
+      // Wait a bit for API calls to complete
+      await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates validation failure due to insufficient hours)
       await expect(steamIdInput0).toHaveClass(/border-red-500/);
@@ -410,8 +451,11 @@ test.describe("Signup Form", () => {
       // Test 2: Organizer approval success
       const steamIdInput1 = page.locator('[data-testid="steam-id-input-1"]');
       await steamIdInput1.focus();
-      await steamIdInput1.fill("66561198999999903"); // account_id 15005 - Quattra (approved by organizer)
+      await steamIdInput1.fill(QuattraSteamId); // account_id 15005 - Quattra (approved by organizer)
       await page.keyboard.press("Tab");
+
+      // Wait a bit for API calls to complete
+      await page.waitForTimeout(2000);
 
       // Verify green border appears (indicates successful validation including organizer approval)
       await expect(steamIdInput1).toHaveClass(/border-green-500/);
@@ -419,8 +463,11 @@ test.describe("Signup Form", () => {
       // Test 3: Organizer approval failure
       const steamIdInput2 = page.locator('[data-testid="steam-id-input-2"]');
       await steamIdInput2.focus();
-      await steamIdInput2.fill("66561198999999904"); // account_id 15006 - Trev (NOT approved by organizer)
+      await steamIdInput2.fill(TrevSteamId); // account_id 15006 - Trev (NOT approved by organizer)
       await page.keyboard.press("Tab");
+
+      // Wait a bit for API calls to complete
+      await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates validation failure due to lack of organizer approval)
       await expect(steamIdInput2).toHaveClass(/border-red-500/);
@@ -432,11 +479,33 @@ test.describe("Signup Form", () => {
     test("should complete full registration flow and successfully submit", async ({
       page
     }) => {
+      // Add debug logging for API requests
+      page.on("response", async (response) => {
+        const url = response.url();
+        if (
+          url.includes("/api/v1/players/") &&
+          (url.includes("/hours") ||
+            url.includes("/rank") ||
+            url.includes("/details"))
+        ) {
+          console.log(`\n🔍 API Response Debug:`);
+          console.log(`URL: ${url}`);
+          console.log(`Status: ${response.status()}`);
+          try {
+            const body = await response.json();
+            console.log(`Response Body:`, JSON.stringify(body, null, 2));
+          } catch (e) {
+            console.log(`Response Body: [Could not parse JSON]`);
+          }
+          console.log(`---\n`);
+        }
+      });
+
       // Use a different authenticated user for this test to avoid conflicts
       await setupAuthForUser(
         page,
         15007,
-        "66561198999999920",
+        ValidWorkEmail1SteamId,
         "ValidWorkEmail1"
       );
 
@@ -448,10 +517,10 @@ test.describe("Signup Form", () => {
       );
 
       // Fill in 5 players with valid Steam IDs (include authenticated user)
-      await fillValidPlayers(page, "66561198999999920");
+      await fillValidPlayers(page, ValidWorkEmail1SteamId);
 
       // Wait for nicknames to load after Steam IDs are entered
-      await page.waitForTimeout(2000); // Give time for async data loading
+      await page.waitForTimeout(3000); // Give time for async data loading
 
       // Verify all players have valid Steam IDs (green borders)
       for (let i = 0; i < 5; i++) {
@@ -540,7 +609,7 @@ test.describe("Signup Form", () => {
       await setupAuthForUser(
         page,
         15015,
-        "66561198999999921",
+        ValidWorkEmail2SteamId,
         "ValidWorkEmail2"
       );
 
@@ -552,7 +621,7 @@ test.describe("Signup Form", () => {
       );
 
       // Fill in 5 players with valid Steam IDs (include authenticated user)
-      await fillValidPlayers(page, "66561198999999921");
+      await fillValidPlayers(page, ValidWorkEmail2SteamId);
 
       // Test 1: Check that all captain and co-captain checkboxes exist and are visible
       // Note: These might only be visible after players are filled
@@ -651,6 +720,28 @@ test.describe("Signup Form", () => {
     test("should show external rank error for player without FaceIT rank", async ({
       page
     }) => {
+      // Add debug logging for API requests
+      page.on("response", async (response) => {
+        const url = response.url();
+        if (
+          url.includes("/api/v1/players/") &&
+          (url.includes("/hours") ||
+            url.includes("/rank") ||
+            url.includes("/details"))
+        ) {
+          console.log(`\n🔍 API Response Debug:`);
+          console.log(`URL: ${url}`);
+          console.log(`Status: ${response.status()}`);
+          try {
+            const body = await response.json();
+            console.log(`Response Body:`, JSON.stringify(body, null, 2));
+          } catch (e) {
+            console.log(`Response Body: [Could not parse JSON]`);
+          }
+          console.log(`---\n`);
+        }
+      });
+
       // Set up form to players section using existing team_id 999
       await setupFormToPlayersSectionWithTeam999(page);
 
@@ -659,9 +750,12 @@ test.describe("Signup Form", () => {
       await expect(steamIdInput).toBeVisible();
 
       await steamIdInput.focus();
-      await steamIdInput.fill("66561198999999913"); // NoFaceitRankPlayer - has CS2 rank but no FaceIT rank
+      await steamIdInput.fill(NoFaceitRankPlayerSteamId); // NoFaceitRankPlayer - has CS2 rank but no FaceIT rank
       await page.keyboard.press("Tab");
       await steamIdInput.blur();
+
+      // Wait a bit for API calls to complete
+      await page.waitForTimeout(2000);
 
       // Verify red border appears (indicates validation failure due to missing FaceIT rank)
       await expect(steamIdInput).toHaveClass(/border-red-500/);
@@ -689,7 +783,7 @@ test.describe("Signup Form", () => {
       page
     }) => {
       // Use a different authenticated user for this test to avoid conflicts
-      await setupAuthForUser(page, 15009, "66561198999999906", "RealPlayer1");
+      await setupAuthForUser(page, 15009, RealPlayer1SteamId, "RealPlayer1");
 
       // Set up complete registration form
       await setupCompleteRegistrationForm(
@@ -700,11 +794,11 @@ test.describe("Signup Form", () => {
 
       // Fill in 5 players - one without FaceIT rank, others with valid data
       const validPlayers = [
-        "66561198999999913", // NoFaceitRankPlayer (no FaceIT rank)
-        "66561198999999901", // Aabe (has E2E data)
-        "66561198999999905", // Hoolyz (has E2E data)
-        "66561198999999906", // RealPlayer1 (has E2E data) - authenticated user
-        "66561198999999907" // RealPlayer2 (has E2E data)
+        NoFaceitRankPlayerSteamId, // NoFaceitRankPlayer (no FaceIT rank)
+        AabeSteamId, // Aabe (has E2E data)
+        HoolyzSteamId, // Hoolyz (has E2E data)
+        RealPlayer1SteamId, // RealPlayer1 (has E2E data) - authenticated user
+        RealPlayer2SteamId // RealPlayer2 (has E2E data)
       ];
 
       for (let i = 0; i < 5; i++) {
@@ -767,8 +861,8 @@ test.describe("Signup Form", () => {
 
       // Test multiple players without FaceIT rank
       const playersWithoutFaceitRank = [
-        "66561198999999913", // NoFaceitRankPlayer
-        "66561198999999913" // Same player added twice to test multiple errors
+        NoFaceitRankPlayerSteamId, // NoFaceitRankPlayer
+        NoFaceitRankPlayerSteamId // Same player added twice to test multiple errors
       ];
 
       for (let i = 0; i < 2; i++) {

@@ -5,6 +5,7 @@ import { generateTestJWT } from "../../utils/auth-test-utils";
 import express from "express";
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import sortterRouter from "../../routes/v1/dashboard/sortter.routes";
+import { heppajpgSteamId } from "@eggosystem/types";
 
 // Type definitions for database query results
 interface RankData {
@@ -73,7 +74,7 @@ jest.mock("express-jwt", () => ({
       if (token === "mock-access-token") {
         req.auth = {
           account_id: 15004,
-          provider_id: "66561198999999902",
+          provider_id: heppajpgSteamId,
           provider: "steam",
           permissions: ["admin:all"],
           roles: ["admin"],
@@ -102,7 +103,7 @@ jest.mock("../../middlewares/auth.middleware", () => ({
       if (token === "mock-access-token") {
         req.auth = {
           account_id: 15004,
-          provider_id: "66561198999999902",
+          provider_id: heppajpgSteamId,
           provider: "steam",
           permissions: ["admin:all"],
           roles: ["admin"],

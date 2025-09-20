@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { heppajpgSteamId } from "@eggosystem/types";
 
 /**
  * Generate a valid JWT token for E2E testing
@@ -9,7 +10,7 @@ import { v4 as uuidv4 } from "uuid";
  * Returns a cached token for performance
  */
 export function generateTestJWT(): string {
-  return generateTestJWTForUser(15004, "66561198999999902", "heppajpg");
+  return generateTestJWTForUser(15004, heppajpgSteamId, "heppajpg");
 }
 
 /**
