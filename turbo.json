@@ -4,6 +4,7 @@
   "tasks": {
     "build": {
       "env": [
+        "CI",
         "DB_ROOT_USER",
         "DB_USER",
         "DB_PASSWORD",

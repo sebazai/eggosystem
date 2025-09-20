@@ -14,7 +14,13 @@ import {
   NoFaceitRankPlayerSteamId,
   ValidationFailurePlayerSteamId,
   EligiblePlayerForValidationSteamId,
-  e2eSteamPlayerData
+  e2eSteamPlayerData,
+  getE2ESteamPlayerBySteamId,
+  ValidWorkEmail2SteamId,
+  ValidWorkEmail3SteamId,
+  ValidWorkEmail4SteamId,
+  ValidWorkEmail5SteamId,
+  ValidWorkEmail1SteamId
 } from "@eggosystem/types";
 import { type Knex } from "knex";
 
@@ -28,23 +34,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Get privacy policy version from environment variable (same as backend uses)
   const privacyPolicyVersion = process.env.PRIVACY_POLICY_VERSION || "1";
 
-  const testSteamIds = [
-    AabeSteamId, // account_id 15003 - Aabe
-    heppajpgSteamId, // account_id 15004 - heppajpg (JWT user)
-    QuattraSteamId, // account_id 15005 - Quattra
-    TrevSteamId, // account_id 15006 - Trev
-    HoolyzSteamId, // account_id 15008 - Hoolyz
-    RealPlayer1SteamId, // account_id 15009 - RealPlayer1
-    RealPlayer2SteamId, // account_id 15010 - RealPlayer2
-    RealPlayer3SteamId, // account_id 15011 - RealPlayer3
-    PrivateProfilePlayerSteamId, // account_id 15001 - PrivateProfilePlayer
-    InsufficientHoursPlayerSteamId, // account_id 15002 - InsufficientHoursPlayer
-    IncompleteDetailsPlayerSteamId, // account_id 15012 - IncompleteDetailsPlayer
-    RaceConditionPlayerSteamId, // account_id 15013 - RaceConditionPlayer
-    NoFaceitRankPlayerSteamId, // account_id 15014 - NoFaceitRankPlayer (for testing external rank error)
-    EligiblePlayerForValidationSteamId, // account_id 15020 - EligiblePlayerForValidation
-    ValidationFailurePlayerSteamId // account_id 15021 - ValidationFailurePlayer (multiple validation failures)
-  ];
+  const testSteamIds = e2eSteamPlayerData.map((player) => player.steam_id);
   // Clean up team 2263 specifically - this team contains conflicting Steam IDs from regular seed
   await knex("SeasonTeamPlayers").where({ team_id: 2263 }).del();
   await knex("SeasonTeamRegistrations").where({ team_id: 2263 }).del();
@@ -76,10 +66,7 @@ export async function seed(knex: Knex): Promise<void> {
   await knex("Seasons").where({ id: 16 }).del();
 
   // Clean up NEW test accounts and related data if they exist
-  const testAccountIds = [
-    15001, 15002, 15003, 15004, 15005, 15006, 15008, 15009, 15010, 15011, 15012,
-    15013, 15014, 15020, 15021
-  ];
+  const testAccountIds = e2eSteamPlayerData.map((player) => player.account_id);
   for (const accountId of testAccountIds) {
     await knex("LinkedAccounts").where({ account_id: accountId }).del();
     await knex("UserPolicyAcceptances").where({ account_id: accountId }).del();
@@ -126,26 +113,35 @@ export async function seed(knex: Knex): Promise<void> {
 
   // Update user emails in the Accounts table for NEW account IDs
   const users = [
-    { id: 15001 },
-    { id: 15002 },
-    { id: 15003 },
-    { id: 15004 },
-    { id: 15005 },
-    { id: 15006 },
-    { id: 15007 }, // New player with valid work email
-    { id: 15008 },
-    { id: 15009 },
-    { id: 15010 },
-    { id: 15011 },
-    { id: 15012 },
-    { id: 15013 },
-    { id: 15014 },
-    { id: 15015 }, // New player with valid work email
-    { id: 15016 }, // New player with valid work email
-    { id: 15017 }, // New player with valid work email
-    { id: 15018 }, // New player with valid work email
-    { id: 15020 }, // EligiblePlayerForValidation
-    { id: 15021 } // ValidationFailurePlayer
+    { id: getE2ESteamPlayerBySteamId(PrivateProfilePlayerSteamId)?.account_id },
+    {
+      id: getE2ESteamPlayerBySteamId(InsufficientHoursPlayerSteamId)?.account_id
+    },
+    { id: getE2ESteamPlayerBySteamId(AabeSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(heppajpgSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(QuattraSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(TrevSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(ValidWorkEmail1SteamId)?.account_id }, // New player with valid work email
+    { id: getE2ESteamPlayerBySteamId(HoolyzSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(RealPlayer1SteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(RealPlayer2SteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(RealPlayer3SteamId)?.account_id },
+    {
+      id: getE2ESteamPlayerBySteamId(IncompleteDetailsPlayerSteamId)?.account_id
+    },
+    { id: getE2ESteamPlayerBySteamId(RaceConditionPlayerSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(NoFaceitRankPlayerSteamId)?.account_id },
+    { id: getE2ESteamPlayerBySteamId(ValidWorkEmail2SteamId)?.account_id }, // New player with valid work email
+    { id: getE2ESteamPlayerBySteamId(ValidWorkEmail3SteamId)?.account_id }, // New player with valid work email
+    { id: getE2ESteamPlayerBySteamId(ValidWorkEmail4SteamId)?.account_id }, // New player with valid work email
+    { id: getE2ESteamPlayerBySteamId(ValidWorkEmail5SteamId)?.account_id }, // New player with valid work email
+    {
+      id: getE2ESteamPlayerBySteamId(EligiblePlayerForValidationSteamId)
+        ?.account_id
+    }, // EligiblePlayerForValidation
+    {
+      id: getE2ESteamPlayerBySteamId(ValidationFailurePlayerSteamId)?.account_id
+    } // ValidationFailurePlayer
   ];
 
   for (const user of users) {
@@ -164,7 +160,10 @@ export async function seed(knex: Knex): Promise<void> {
     );
 
     // Special handling for IncompleteDetailsPlayer (account_id 15012)
-    if (user.id === 15012) {
+    if (
+      user.id ===
+      getE2ESteamPlayerBySteamId(IncompleteDetailsPlayerSteamId)?.account_id
+    ) {
       // Set up incomplete/invalid data for testing
       await knex("Accounts").where({ id: user.id }).update({
         work_email: null, // Missing work email
@@ -174,7 +173,10 @@ export async function seed(knex: Knex): Promise<void> {
     }
 
     // Special handling for ValidationFailurePlayer (account_id 15021)
-    if (user.id === 15021) {
+    if (
+      user.id ===
+      getE2ESteamPlayerBySteamId(ValidationFailurePlayerSteamId)?.account_id
+    ) {
       // Set up incomplete/invalid data for testing multiple validation failures
       await knex("Accounts").where({ id: user.id }).update({
         work_email: null, // Missing work email
@@ -186,7 +188,10 @@ export async function seed(knex: Knex): Promise<void> {
 
     // Insert or update UserPolicyAcceptances using raw query with ON DUPLICATE KEY UPDATE
     // Use the same privacy policy version that the backend expects
-    if (user.id === 15012) {
+    if (
+      user.id ===
+      getE2ESteamPlayerBySteamId(IncompleteDetailsPlayerSteamId)?.account_id
+    ) {
       // IncompleteDetailsPlayer - set up incomplete privacy policy acceptance
       await knex.raw(
         `
@@ -200,7 +205,10 @@ export async function seed(knex: Knex): Promise<void> {
       `,
         [user.id]
       );
-    } else if (user.id === 15021) {
+    } else if (
+      user.id ===
+      getE2ESteamPlayerBySteamId(ValidationFailurePlayerSteamId)?.account_id
+    ) {
       // ValidationFailurePlayer - set up incomplete privacy policy acceptance
       await knex.raw(
         `
@@ -444,71 +452,6 @@ export async function seed(knex: Knex): Promise<void> {
     await knex("SeasonTeamRegistrationPlayers").insert(player);
   }
 
-  // Add SeasonTeamPlayers records for the sortter API
-  // This is needed because the sortter API queries SeasonTeamPlayers table
-  const seasonTeamPlayersForSortter = [
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: AabeSteamId, // Aabe
-      role: "primary",
-      is_captain: true,
-      is_co_captain: false
-    },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: heppajpgSteamId, // heppajpg
-      role: "primary",
-      is_captain: false,
-      is_co_captain: true
-    },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: QuattraSteamId, // Quattra
-      role: "primary",
-      is_captain: false,
-      is_co_captain: false
-    },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: HoolyzSteamId, // Hoolyz
-      role: "primary",
-      is_captain: false,
-      is_co_captain: false
-    },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: RealPlayer1SteamId, // RealPlayer1
-      role: "primary",
-      is_captain: false,
-      is_co_captain: false
-    },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: RealPlayer2SteamId, // RealPlayer2
-      role: "primary",
-      is_captain: false,
-      is_co_captain: false
-    },
-    {
-      season_id: 16,
-      team_id: 999,
-      steam_id: RealPlayer3SteamId, // RealPlayer3
-      role: "primary",
-      is_captain: false,
-      is_co_captain: false
-    }
-  ];
-
-  for (const player of seasonTeamPlayersForSortter) {
-    await knex("SeasonTeamPlayers").insert(player);
-  }
-
   // Add admin role for heppajpg (account_id 15004) for e2e tests
   // This is needed because the sortter page requires admin role
   await knex.raw(`
@@ -516,22 +459,4 @@ export async function seed(knex: Knex): Promise<void> {
     SELECT 15004, id, 1 FROM Roles WHERE role_name = 'admin'
     ON DUPLICATE KEY UPDATE account_id = account_id
   `);
-
-  // Add kana_elo values to SeasonPlayerRanks for the sortter API
-  // The sortter API needs kana_elo values to calculate team rankings
-  const kanaEloUpdates = [
-    { steam_id: AabeSteamId, kana_elo: 180 }, // Aabe
-    { steam_id: heppajpgSteamId, kana_elo: 175 }, // heppajpg
-    { steam_id: QuattraSteamId, kana_elo: 170 }, // Quattra
-    { steam_id: HoolyzSteamId, kana_elo: 160 }, // Hoolyz
-    { steam_id: RealPlayer1SteamId, kana_elo: 160 }, // RealPlayer1
-    { steam_id: RealPlayer2SteamId, kana_elo: 150 }, // RealPlayer2
-    { steam_id: RealPlayer3SteamId, kana_elo: 150 } // RealPlayer3
-  ];
-
-  for (const update of kanaEloUpdates) {
-    await knex("SeasonPlayerRanks")
-      .where({ steam_id: update.steam_id, season_id: 16 })
-      .update({ kana_elo: update.kana_elo });
-  }
 }

@@ -2,7 +2,6 @@ import { app } from "./src/app";
 import { logger } from "./src/utils/app-logger";
 import { queueConsumerManager } from "./src/services/queue-consumer-manager";
 import { startFaceitMatchSyncCron } from "./src/services/cron-scheduler.services";
-import { redisClient } from "./src/utils/redisClient";
 
 const port = process.env.PORT || 3001;
 
@@ -12,12 +11,15 @@ if (process.env.NODE_ENV === "e2e") {
   logger.info("Starting MSW for E2E tests...");
   mswServer.listen({ onUnhandledRequest: "bypass" });
 
-  // Clear Redis cache for e2e tests
-  try {
-    void redisClient.flushall();
-    logger.info("Redis cache cleared for E2E tests");
-  } catch (error) {
-    logger.warn("Failed to clear Redis cache:", error);
+  if (!process.env.CI) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { redisClient } = require("./dist/src/utils/redisClient");
+      void redisClient.flushall();
+      logger.info("Redis cache cleared for E2E tests");
+    } catch (error) {
+      logger.warn("Failed to clear Redis cache:", error);
+    }
   }
 }
 

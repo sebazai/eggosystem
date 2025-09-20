@@ -33,8 +33,7 @@ if (!process.env.FRONTEND_URL) {
   throw new Error("FRONTEND_URL is not defined");
 }
 
-// Initialize profiling as early as possible (skip in e2e to avoid native dependency issues)
-if (process.env.NODE_ENV !== "e2e") {
+if (process.env.NODE_ENV === "production") {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { initializeProfiling } = require("./configs/profiling");
   initializeProfiling().catch((error: Error) => {
