@@ -286,6 +286,15 @@ build:types:
     paths:
       - packages/types/dist/
 
+build:shared-msw:
+  stage: build
+  extends: [.prepare-pnpm, .mr-all-app]
+  script:
+    - npx turbo run build --filter='@eggosystem/shared-msw'
+  artifacts:
+    paths:
+      - packages/shared-msw/dist/
+
 build:frontend:
   stage: build
   extends: [.prepare-pnpm, .mr-all-app]
@@ -311,6 +320,7 @@ test-e2e:frontend:
     - build:backend
     - build:frontend
     - build:types
+    - build:shared-msw
   services:
     - name: bitnamilegacy/mariadb:11.8.3
       alias: eggo-devdb
@@ -337,7 +347,7 @@ test-e2e:frontend:
     - export PRIVACY_POLICY_VERSION=1
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
-    - NODE_ENV=e2e pnpm --filter=backend dev &
+    - NODE_ENV=e2e pnpm --filter=backend start &
     # - pnpm --filter=backend start &
   script:
     - unset NODE_ENV
