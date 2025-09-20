@@ -22,6 +22,26 @@ export const getOwnedGamesHandlers = [
         } satisfies IPlayerServiceResponse);
       }
 
+      // season-team-registration.services.test.ts
+      if (
+        steam_id === "11111111111111111" ||
+        steam_id === "11111111111111112" ||
+        steam_id === "11111111111111113" ||
+        steam_id === "11111111111111114" ||
+        steam_id === "12345678901234570"
+      ) {
+        return HttpResponse.json({
+          response: {
+            games: [
+              {
+                appid: 730,
+                playtime_forever: 6720
+              }
+            ]
+          }
+        } satisfies IPlayerServiceResponse);
+      }
+
       return HttpResponse.json({
         response: {
           games: [

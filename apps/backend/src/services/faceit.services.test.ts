@@ -71,11 +71,11 @@ describe("FaceIT Services", () => {
           faceit_elo: 1500,
           faceit_level: 7,
           faceit_date: expect.any(Number),
-          faceit_kd: 1.2,
+          faceit_kd: 1.35,
           metadata: expect.objectContaining({
             faceit_decay: false,
             faceit_last_match: expect.any(Number),
-            faceit_matches_played: 100
+            faceit_matches_played: 453
           })
         })
       );
