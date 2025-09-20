@@ -411,28 +411,6 @@ test.describe("Signup Form", () => {
     test("should validate Steam IDs with different approval states", async ({
       page
     }) => {
-      // Add debug logging for API requests
-      page.on("response", async (response) => {
-        const url = response.url();
-        if (
-          url.includes("/api/v1/players/") &&
-          (url.includes("/hours") ||
-            url.includes("/rank") ||
-            url.includes("/details"))
-        ) {
-          console.log(`\n🔍 API Response Debug:`);
-          console.log(`URL: ${url}`);
-          console.log(`Status: ${response.status()}`);
-          try {
-            const body = await response.json();
-            console.log(`Response Body:`, JSON.stringify(body, null, 2));
-          } catch (e) {
-            console.log(`Response Body: [Could not parse JSON]`, e);
-          }
-          console.log(`---\n`);
-        }
-      });
-
       // Set up form to players section using existing team_id 999
       await setupFormToPlayersSectionWithTeam999(page);
 
@@ -479,28 +457,6 @@ test.describe("Signup Form", () => {
     test("should complete full registration flow and successfully submit", async ({
       page
     }) => {
-      // Add debug logging for API requests
-      page.on("response", async (response) => {
-        const url = response.url();
-        if (
-          url.includes("/api/v1/players/") &&
-          (url.includes("/hours") ||
-            url.includes("/rank") ||
-            url.includes("/details"))
-        ) {
-          console.log(`\n🔍 API Response Debug:`);
-          console.log(`URL: ${url}`);
-          console.log(`Status: ${response.status()}`);
-          try {
-            const body = await response.json();
-            console.log(`Response Body:`, JSON.stringify(body, null, 2));
-          } catch (e) {
-            console.log(`Response Body: [Could not parse JSON]`, e);
-          }
-          console.log(`---\n`);
-        }
-      });
-
       // Use a different authenticated user for this test to avoid conflicts
       await setupAuthForUser(
         page,
@@ -720,28 +676,6 @@ test.describe("Signup Form", () => {
     test("should show external rank error for player without FaceIT rank", async ({
       page
     }) => {
-      // Add debug logging for API requests
-      page.on("response", async (response) => {
-        const url = response.url();
-        if (
-          url.includes("/api/v1/players/") &&
-          (url.includes("/hours") ||
-            url.includes("/rank") ||
-            url.includes("/details"))
-        ) {
-          console.log(`\n🔍 API Response Debug:`);
-          console.log(`URL: ${url}`);
-          console.log(`Status: ${response.status()}`);
-          try {
-            const body = await response.json();
-            console.log(`Response Body:`, JSON.stringify(body, null, 2));
-          } catch (e) {
-            console.log(`Response Body: [Could not parse JSON]`, e);
-          }
-          console.log(`---\n`);
-        }
-      });
-
       // Set up form to players section using existing team_id 999
       await setupFormToPlayersSectionWithTeam999(page);
 
