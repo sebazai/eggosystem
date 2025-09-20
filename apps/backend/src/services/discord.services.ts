@@ -20,7 +20,7 @@ let eventHandlersSetup = false; // Flag to prevent duplicate event handler setup
 // Initialize Discord client
 export const initializeDiscordClient = async (): Promise<Client> => {
   // If in e2e test environment, return a mock client
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     logger.info("E2E test environment detected, using mock Discord client");
     // Manual stub functions for E2E
     const stub = () => {};
@@ -92,7 +92,7 @@ export const getDiscordGuild = async (): Promise<Guild> => {
   const client = await getDiscordClient();
 
   // If in e2e test environment, return mock guild
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     return {
       id: "mock-guild-id",
       name: "Mock Guild",
@@ -121,7 +121,7 @@ export const createOrGetOrganizationRole = async (
   organizationName: string
 ): Promise<string> => {
   // If in e2e test environment, return mock role ID
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     logger.info(`Mock: Creating organization role for ${organizationName}`);
     return "mock-role-id";
   }
@@ -198,7 +198,7 @@ const findOrCreateOrganizationCategory = async (
 // Create invite link for a channel
 export const createInviteLink = async (channelId: string): Promise<string> => {
   // If in e2e test environment, return mock invite link
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     logger.info(`Mock: Creating invite link for channel ${channelId}`);
     return "https://discord.gg/mock-invite";
   }
@@ -374,7 +374,7 @@ export const findOrCreateOrganizationGameChannel = async (
   gameType: { name: string; abbreviation: string; game_type_name: string }
 ): Promise<TextChannel> => {
   // If in e2e test environment, return mock channel
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     logger.info(
       `Mock: Creating game channel for ${organizationName} - ${gameType.abbreviation}`
     );
@@ -551,7 +551,7 @@ const assignRolesToMember = async (
 // Setup Discord event handlers for automatic role assignment
 export const setupDiscordEventHandlers = async (): Promise<void> => {
   // If in e2e test environment, skip event handler setup
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     logger.info(
       "E2E test environment detected, skipping Discord event handlers"
     );
@@ -606,7 +606,7 @@ export const findOrCreateOrganizationGeneralChannel = async (
   organizationName: string
 ): Promise<TextChannel> => {
   // If in e2e test environment, return mock channel
-  if (process.env.NODE_ENV === "e2e" || process.env.TEST_TYPE === "e2e") {
+  if (process.env.NODE_ENV === "e2e") {
     return {
       id: "mock-general-channel-id",
       name: "mock-general-channel"

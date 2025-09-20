@@ -427,7 +427,7 @@ test.describe("Signup Form", () => {
             const body = await response.json();
             console.log(`Response Body:`, JSON.stringify(body, null, 2));
           } catch (e) {
-            console.log(`Response Body: [Could not parse JSON]`);
+            console.log(`Response Body: [Could not parse JSON]`, e);
           }
           console.log(`---\n`);
         }
@@ -495,7 +495,7 @@ test.describe("Signup Form", () => {
             const body = await response.json();
             console.log(`Response Body:`, JSON.stringify(body, null, 2));
           } catch (e) {
-            console.log(`Response Body: [Could not parse JSON]`);
+            console.log(`Response Body: [Could not parse JSON]`, e);
           }
           console.log(`---\n`);
         }
@@ -736,7 +736,7 @@ test.describe("Signup Form", () => {
             const body = await response.json();
             console.log(`Response Body:`, JSON.stringify(body, null, 2));
           } catch (e) {
-            console.log(`Response Body: [Could not parse JSON]`);
+            console.log(`Response Body: [Could not parse JSON]`, e);
           }
           console.log(`---\n`);
         }
