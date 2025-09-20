@@ -7,9 +7,10 @@ import {
 
 export const getOwnedGamesHandlers = [
   http.get(
-    "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=:steam_key&steamid=:steam_id",
-    ({ params }) => {
-      const { steam_id } = params;
+    "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/",
+    ({ request }) => {
+      const url = new URL(request.url);
+      const steam_id = url.searchParams.get("steamid");
       if (
         steam_id === InsufficientHoursPlayerSteamId ||
         steam_id === RaceConditionPlayerSteamId

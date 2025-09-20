@@ -37,6 +37,7 @@ yarn.lock
 
 .next# next.js
 /.next/
+.swc/
 
 .DS_Store
 
