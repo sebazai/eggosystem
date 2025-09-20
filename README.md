@@ -61,9 +61,11 @@ Start the e2e stubbed backend dev:
 
 `pnpm --filter=backend dev:e2e`
 
-Run in monorepo root, this will setup seed and build frontend and run the e2e tests:
+Run in workspace root, this will setup seed and build frontend and run the e2e tests:
 
 `pnpm test:e2e`
+
+**NB!** To get headed mode to work in MacOS with devcontainer, install XQuartz and run in XQuartz terminal `xhost localhost`
 
 ### Migrating ebinstats prod
 
