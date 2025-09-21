@@ -184,17 +184,15 @@ export const MultiFilters = ({
     }
   });
 
-  // How many visible filters are there, + 1 for the clear filters button
-  const columns = Math.round(visibleFilters.length / 2) + 1;
   return (
     <div
       className={clsx(
         `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-2`,
         {
-          "xl:grid-cols-5": columns === 5,
-          "xl:grid-cols-4": columns === 3,
-          "xl:grid-cols-3": columns === 3,
-          "xl:grid-cols-2": columns === 2
+          "xl:grid-cols-3":
+            visibleFilters.length === 5 || visibleFilters.length === 4,
+          "xl:grid-cols-4": visibleFilters.length === 3,
+          "xl:grid-cols-2": visibleFilters.length === 2
         }
       )}
     >

@@ -276,7 +276,7 @@ describe("MultiFilters", () => {
 
       // 5 filters: Math.round(5/2) + 1 = 4, so xl:grid-cols-4
       const container = screen.getByTestId("item-filter-seasons").parentElement;
-      expect(container).toHaveClass("xl:grid-cols-4");
+      expect(container).toHaveClass("xl:grid-cols-3");
 
       // 3 filters: Math.round(3/2) + 1 = 2 + 1 = 3, so xl:grid-cols-3
       rerender(
@@ -293,7 +293,7 @@ describe("MultiFilters", () => {
       const container3 = screen.getByTestId(
         "item-filter-seasons"
       ).parentElement;
-      expect(container3).toHaveClass("xl:grid-cols-3");
+      expect(container3).toHaveClass("xl:grid-cols-4");
 
       // 1 filter: Math.round(1/2) + 1 = 1 + 1 = 2, so xl:grid-cols-2
       rerender(
@@ -310,7 +310,7 @@ describe("MultiFilters", () => {
       const container1 = screen.getByTestId(
         "item-filter-seasons"
       ).parentElement;
-      expect(container1).toHaveClass("xl:grid-cols-2");
+      expect(container1?.className).not.toContain("xl:");
     });
   });
 

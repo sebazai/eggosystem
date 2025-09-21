@@ -18,14 +18,16 @@ export const TopTeamsPage = () => {
   return (
     <div>
       <h1 className="text-3xl mb-4 md:mb-8">Top Teams</h1>
-      <MultiFilters
-        seasons={filterParams.seasons}
-        leagues={filterParams.leagues}
-        stages={filterParams.stages}
-        teams={null}
-        maps={filterParams.maps}
-        hideFilters={{ teams: true }}
-      />
+      <div className="pb-4">
+        <MultiFilters
+          seasons={filterParams.seasons}
+          leagues={filterParams.leagues}
+          stages={filterParams.stages}
+          teams={null}
+          maps={filterParams.maps}
+          hideFilters={{ teams: true }}
+        />
+      </div>
 
       <CardContainer classNames="p-2 md:p-4">
         <TopTeamsGrid filterQueryParams={filterParams} />
