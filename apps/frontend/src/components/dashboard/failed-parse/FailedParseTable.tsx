@@ -373,6 +373,7 @@ export const FailedParseTable = ({
                 <SelectItem value="all">All Queues</SelectItem>
                 <SelectItem value="parse_queue_failed">Parse Queue</SelectItem>
                 <SelectItem value="parsed_save_failed">Save Failed</SelectItem>
+                <SelectItem value="work_queue_failed">Work Queue</SelectItem>
               </SelectContent>
             </Select>
           </div>

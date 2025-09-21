@@ -39,7 +39,7 @@ const createAmqpConnection = async () => {
 const getErrorQueues = (queueFilter?: string): string[] => {
   return queueFilter
     ? [queueFilter]
-    : ["parse_queue_failed", "parsed_save_failed"];
+    : ["parse_queue_failed", "parsed_save_failed", "work_queue_failed"];
 };
 
 /**
@@ -84,6 +84,53 @@ const getChannelAndQueues = async (queueFilter?: string) => {
 };
 
 /**
+ * Helper function to extract game_id from different queue message formats
+ */
+const extractGameId = (
+  messageContent: Record<string, unknown>,
+  queueName: string
+): string => {
+  if (queueName === "parse_queue_failed") {
+    // For parse_queue_failed: game_id is in original_message.game_id
+    const originalMessage = messageContent.original_message as
+      | Record<string, unknown>
+      | undefined;
+    return (originalMessage?.game_id as string) || "unknown";
+  } else if (queueName === "parsed_save_failed") {
+    // For parsed_save_failed: game_id is directly in messageContent or in originalMessage.game_id
+    const originalMessage = messageContent.originalMessage as
+      | Record<string, unknown>
+      | undefined;
+    return (
+      (messageContent.game_id as string) ||
+      (originalMessage?.game_id as string) ||
+      "unknown"
+    );
+  } else if (queueName === "work_queue_failed") {
+    // For work_queue_failed: game_id might be in different locations depending on the message structure
+    const originalMessage = messageContent.original_message as
+      | Record<string, unknown>
+      | undefined;
+    return (
+      (messageContent.game_id as string) ||
+      (originalMessage?.game_id as string) ||
+      (messageContent.match_id as string) || // Some work queue messages might use match_id
+      "unknown"
+    );
+  } else {
+    // Fallback for other queue types
+    const originalMessage = messageContent.original_message as
+      | Record<string, unknown>
+      | undefined;
+    return (
+      (messageContent.game_id as string) ||
+      (originalMessage?.game_id as string) ||
+      "unknown"
+    );
+  }
+};
+
+/**
  * Get all failed parse messages from RabbitMQ queues
  */
 export const getFailedParseMessages = async (
@@ -105,13 +152,17 @@ export const getFailedParseMessages = async (
           return [];
         }
 
-        // Read messages from the queue without consuming them
-        // We'll peek at messages to display them in the admin interface
-        let messageCount = 0;
-        const maxMessages = limit + offset; // Get enough messages to handle pagination
+        // Read messages from the queue by consuming and requeuing them
+        // This ensures we get a proper sample from across the entire queue
         const messages: FailedParseMessage[] = [];
+        const tempMessages: Array<{
+          msg: amqp.Message;
+          content: Record<string, unknown> | null;
+        }> = []; // Store messages temporarily for requeuing
 
-        while (messageCount < maxMessages) {
+        // First pass: consume all messages to get a proper sample
+        let totalMessages = 0;
+        while (true) {
           const msg = await channel.get(queueName, { noAck: false });
           if (!msg) {
             break; // No more messages
@@ -119,54 +170,71 @@ export const getFailedParseMessages = async (
 
           try {
             const messageContent = JSON.parse(msg.content.toString());
-
-            // Create FailedParseMessage from the RabbitMQ message
-            const failedMessage: FailedParseMessage = {
-              id: messageCount + 1, // Sequential ID for display
-              queue_name: queueName,
-              game_id:
-                messageContent.original_message?.game_id ||
-                messageContent.game_id ||
-                "unknown",
-              failed_at:
-                messageContent.failed_at ||
-                messageContent.timestamp ||
-                new Date().toISOString(),
-              final_error:
-                messageContent.final_error ||
-                messageContent.error ||
-                "Unknown error",
-              original_message:
-                messageContent.original_message || messageContent,
-              error_details:
-                messageContent.error_details ||
-                messageContent.error_history ||
-                {},
-              worker_id: messageContent.worker_id,
-              message_type: messageContent.message_type || queueName,
-              source: messageContent.source,
-              status: "failed",
-              created_at: messageContent.created_at || new Date().toISOString(),
-              updated_at: messageContent.updated_at || new Date().toISOString(),
-              _rabbitMQMessage: msg // Store reference for later requeuing
-            };
-
-            messages.push(failedMessage);
-
-            // Important: Return the message back to the queue (nack without requeue=false would requeue)
-            // We use nack with requeue=true to put the message back exactly where it was
-            channel.nack(msg, false, true);
-
-            messageCount++;
+            tempMessages.push({ msg, content: messageContent });
+            totalMessages++;
           } catch (parseError) {
             logger.error(
               `Failed to parse message from ${queueName}:`,
               parseError
             );
-            // Still nack the message to put it back
-            channel.nack(msg, false, true);
-            messageCount++;
+            // Still store the message for requeuing
+            tempMessages.push({ msg, content: null });
+            totalMessages++;
           }
+        }
+
+        // Calculate sampling strategy for pagination
+        const startIndex = offset;
+        const endIndex = Math.min(offset + limit, totalMessages);
+
+        // Process the sampled messages
+        for (let i = startIndex; i < endIndex; i++) {
+          const { msg, content } = tempMessages[i];
+
+          if (content) {
+            const failedMessage: FailedParseMessage = {
+              id: parseInt(
+                `${queueName.charCodeAt(0)}${queueName.charCodeAt(queueName.length - 1)}${String(i + 1).padStart(3, "0")}`
+              ), // Unique ID combining queue and position
+              queue_name: queueName,
+              game_id: extractGameId(content, queueName),
+              failed_at:
+                (content.failed_at as string) ||
+                (content.timestamp as string) ||
+                new Date().toISOString(),
+              final_error:
+                (content.final_error as string) ||
+                (content.error as string) ||
+                "Unknown error",
+              original_message:
+                (content.original_message as Record<string, unknown>) ||
+                content,
+              error_details:
+                (content.error_details as Record<string, unknown>) ||
+                (content.error_history as Record<string, unknown>) ||
+                {},
+              worker_id: content.worker_id as string | undefined,
+              message_type: (content.message_type as string) || queueName,
+              source:
+                (content.source as string) ||
+                ((content.original_message as Record<string, unknown>)
+                  ?.source as string) ||
+                "unknown",
+              status: "failed",
+              created_at:
+                (content.created_at as string) || new Date().toISOString(),
+              updated_at:
+                (content.updated_at as string) || new Date().toISOString(),
+              _rabbitMQMessage: msg // Store reference for later requeuing
+            };
+
+            messages.push(failedMessage);
+          }
+        }
+
+        // Requeue all messages back to the queue
+        for (const { msg } of tempMessages) {
+          channel.nack(msg, false, true);
         }
 
         return messages;
