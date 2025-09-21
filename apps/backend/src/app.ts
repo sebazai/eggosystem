@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { logger } from "./utils/app-logger";
+import { initializeProfiling } from "./configs/profiling";
 
 if (process.env.NODE_ENV === "e2e") {
   logger.info("Loading .env.local.test file");
@@ -51,7 +52,6 @@ import {
 } from "./services/discord.services";
 import { queueConsumerManager } from "./services/queue-consumer-manager";
 import cors from "cors";
-import { initializeProfiling } from "./configs/profiling";
 
 const app = express();
 
