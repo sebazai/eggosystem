@@ -3,7 +3,6 @@ import type { Viewport } from "next";
 import localFont from "next/font/local";
 
 import { ThemeProvider } from "../../providers/ThemeProvider";
-import { ChickenAnnouncerProvider } from "@/providers/ChickenAnnouncerProvider";
 import { cn } from "@/lib/utils";
 import { ConditionalNavigation } from "@/components/layout/ConditionalNavigation";
 import Footer from "@/components/layout/LayoutFooter";
@@ -15,7 +14,6 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { createPageMetadata } from "@/lib/metadata";
-import { ChickenFeatureAnnouncer } from "@/components/layout/ChickenFeatureAnnouncer";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -127,29 +125,22 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <ChickenAnnouncerProvider>
-            <Suspense>
-              <SkipToContent />
-              <KfcRain />
-              <ScrollToTop />
-              <ChickenFeatureAnnouncer
-                showDelay={2000}
-                message="NEW FEATURE: Historical Player Data! Track your performance over time and compare to Kanaliiga Average."
-                featureDate="2025-08-17"
-              />
-              <div className="min-h-svh min-w-[320px] w-full">
-                <AuthProvider>
-                  <ConditionalNavigation />
-                  <AcceptPolicyProvider>
-                    <main className="w-full" id="main-content">
-                      {children}
-                    </main>
-                  </AcceptPolicyProvider>
-                </AuthProvider>
-                <Footer />
-              </div>
-            </Suspense>
-          </ChickenAnnouncerProvider>
+          <Suspense>
+            <SkipToContent />
+            <KfcRain />
+            <ScrollToTop />
+            <div className="min-h-svh min-w-[320px] w-full">
+              <AuthProvider>
+                <ConditionalNavigation />
+                <AcceptPolicyProvider>
+                  <main className="w-full" id="main-content">
+                    {children}
+                  </main>
+                </AcceptPolicyProvider>
+              </AuthProvider>
+              <Footer />
+            </div>
+          </Suspense>
         </ThemeProvider>
 
         <Toaster richColors />

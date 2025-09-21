@@ -111,9 +111,10 @@ const Footer = () => {
               </>
             )}
           </p>
-          <p>
-            <Link href={"/privacy-policy"}>Privacy Policy</Link>
-          </p>
+          <div className="flex flex-row gap-2 justify-center pb-2">
+            <Link href={"/privacy-policy"}>Privacy Policy</Link> |
+            <Link href={"/new-features"}>Changelog</Link>
+          </div>
         </div>
       </div>
     </footer>
