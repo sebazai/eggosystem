@@ -1,51 +1,9 @@
 "use client";
 
 import useSWR from "swr";
-import _ from "lodash";
 import { envConfig } from "@/configs/env";
 import type { MultiFilterSelectableIds } from "@eggosystem/types";
 import type { FilterParamsQuery } from "@/lib/utils";
-
-const fetchPossibleIdsWithIndividualParam = async (
-  ids: string[],
-  key: string,
-  steamId?: string
-) => {
-  const params = new URLSearchParams();
-  ids.forEach((id) => params.append(key, id));
-  if (steamId) {
-    params.append("steamId", steamId);
-  }
-  const queryString = params.toString();
-
-  const res = await fetch(`${envConfig.API_URL}/api/v1/filters?${queryString}`);
-  if (!res.ok) throw new Error("Failed to fetch filter data");
-
-  return res.json();
-};
-
-const fetchPossibleIdsWithCombinedParam = async (
-  queryParams: Array<{ key: string; values: string[] }>,
-  steamId?: string
-) => {
-  const params = new URLSearchParams();
-  queryParams.forEach((param) => {
-    param.values.forEach((value) => {
-      params.append(param.key, value);
-    });
-  });
-
-  if (steamId) {
-    params.append("steamId", steamId);
-  }
-
-  const queryString = params.toString();
-
-  const res = await fetch(`${envConfig.API_URL}/api/v1/filters?${queryString}`);
-  if (!res.ok) throw new Error("Failed to fetch filter data");
-
-  return res.json();
-};
 
 const fetchMultiFilterData = async (
   params: FilterParamsQuery
@@ -58,76 +16,38 @@ const fetchMultiFilterData = async (
     params.maps ?? []
   ].map((arr) => arr.map(String)); // stringify for URL usage
 
-  const [
-    withSeasonsParam,
-    withLeaguesParam,
-    withStagesParam,
-    withTeamsParam,
-    withMapsParam,
-    withCombinedParam
-  ] = await Promise.all([
-    fetchPossibleIdsWithIndividualParam(
-      seasons ?? [],
-      "season_ids",
-      params.steamId
-    ),
-    fetchPossibleIdsWithIndividualParam(
-      leagues ?? [],
-      "league_ids",
-      params.steamId
-    ),
-    fetchPossibleIdsWithIndividualParam(
-      stages ?? [],
-      "stage_ids",
-      params.steamId
-    ),
-    fetchPossibleIdsWithIndividualParam(
-      teams ?? [],
-      "team_ids",
-      params.steamId
-    ),
-    fetchPossibleIdsWithIndividualParam(maps ?? [], "map_ids", params.steamId),
-    fetchPossibleIdsWithCombinedParam(
-      [
-        { key: "season_ids", values: seasons ?? [] },
-        { key: "team_ids", values: teams ?? [] }
-      ],
-      params.steamId
-    )
-  ]);
+  // Build URL with all current filter parameters
+  const urlParams = new URLSearchParams();
 
+  // Add filter parameters
+  seasons?.forEach((id) => urlParams.append("season_ids", id));
+  leagues?.forEach((id) => urlParams.append("league_ids", id));
+  stages?.forEach((id) => urlParams.append("stages", id));
+  teams?.forEach((id) => urlParams.append("team_ids", id));
+  maps?.forEach((id) => urlParams.append("map_ids", id));
+
+  if (params.steamId) {
+    urlParams.append("steamId", params.steamId);
+  }
+
+  // Request all filter types in a single call
+  urlParams.append("types", "season_ids,team_ids,league_ids,stages,map_ids");
+
+  const queryString = urlParams.toString();
+  const res = await fetch(`${envConfig.API_URL}/api/v1/filters?${queryString}`);
+
+  if (!res.ok) throw new Error("Failed to fetch filter data");
+
+  const data = await res.json();
+
+  // Return the data directly - no need for complex intersections
+  // The backend now handles the filtering logic
   return {
-    season_ids: _.intersection(
-      withLeaguesParam.season_ids,
-      withStagesParam.season_ids,
-      withTeamsParam.season_ids,
-      withMapsParam.season_ids
-    ),
-    league_ids: _.intersection(
-      withSeasonsParam.league_ids,
-      withStagesParam.league_ids,
-      withTeamsParam.league_ids,
-      withMapsParam.league_ids,
-      withCombinedParam.league_ids
-    ),
-    stages: _.intersection(
-      withSeasonsParam.stages,
-      withLeaguesParam.stages,
-      withTeamsParam.stages,
-      withMapsParam.stages
-    ),
-    team_ids: _.intersection(
-      withSeasonsParam.team_ids,
-      withLeaguesParam.team_ids,
-      withStagesParam.team_ids,
-      withMapsParam.team_ids
-    ),
-    map_ids: _.intersection(
-      withSeasonsParam.map_ids,
-      withLeaguesParam.map_ids,
-      withStagesParam.map_ids,
-      withTeamsParam.map_ids
-    )
+    season_ids: data.season_ids ?? [],
+    league_ids: data.league_ids ?? [],
+    stages: data.stages ?? [],
+    team_ids: data.team_ids ?? [],
+    map_ids: data.map_ids ?? []
   };
 };
 
