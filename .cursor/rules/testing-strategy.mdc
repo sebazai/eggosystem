@@ -1,341 +1,47 @@
 ---
-description:
+description: Testing strategy constraints and patterns
 globs:
 alwaysApply: true
 ---
 
-# Testing Strategy Rule
+# Testing Strategy Constraints
 
 **Type:** Strict rule
 
-## Rule Description
+## Test Command Hierarchy
 
-This rule enforces the testing strategy for the Kanaliiga Eggosystem project, defining the available test commands and their appropriate usage for different testing scenarios.
+- **`pnpm test`**: Fast Jest-based unit tests only (NEVER include E2E tests)
+- **`pnpm test:e2e`**: E2E tests with database setup
+- **`pnpm test:all`**: Comprehensive testing suite (unit + E2E)
+- **`pnpm test:watch`**: TDD Watch mode for unit tests
 
-## Testing Command Hierarchy
-
-### Primary Commands
-
-**`pnpm test`** - Fast Jest-based tests for both frontend and backend
-
-- **Purpose**: Quick feedback during development
-- **Scope**: Unit tests (Jest + React Testing Library)
-- **Speed**: Fast execution (< 30 seconds)
-- **Database**: No database setup required
-- **Backend**: Run from `apps/backend/` - Backend unit tests (Jest with coverage)
-- **Frontend**: Run from `apps/frontend/` - Frontend unit tests (Jest + React Testing Library)
-- **Root**: Run from project root - Runs tests across all workspaces
-
-**`pnpm test:e2e`** - E2E tests only
-
-- **Purpose**: Test complete user workflows
-- **Scope**: Playwright e2e tests with real backend
-- **Speed**: Slower execution (requires database setup)
-- **Database**: Full reseed, seed, seed:e2e setup
-- **Backend**: Real backend with external API stubbing
-- **Run from**: `apps/frontend/` directory
-
-**`pnpm test:all`** - Comprehensive testing
-
-- **Purpose**: Complete testing suite
-- **Scope**: Both unit tests AND e2e tests
-- **Speed**: Slowest execution (runs everything)
-- **Database**: Full database setup for e2e tests
-- **Run from**: Project root - Runs all tests across workspaces
-
-**`pnpm test:watch`** - TDD Watch mode
-
-- **Purpose**: Automatic test execution on file changes
-- **Scope**: Unit tests only (Jest-based)
-- **Speed**: Fast execution with watch mode
-- **Database**: No database setup required
-- **Workflow**: Perfect for TDD development
-- **Run from**: `apps/backend/` or `apps/frontend/` for targeted watching
-
-## Test Setup Requirements
+## Required Test Patterns
 
 ### Controller Tests
 
-Controller tests MUST follow these patterns:
-
 - **Provide `next` function**: Always include `const mockNext = jest.fn()` and pass as third parameter
 - **Error assertions**: Use `expect(mockNext).toHaveBeenCalledWith(expect.objectContaining({message: "...", status: 404}))`
-- **Success assertions**: Test `res.status()` and `res.json()` calls for successful responses
 
 ### Route Tests
 
-Route tests MUST follow these standardized patterns:
-
-#### Environment Setup
-
-- **Set environment variables at top level**: Always set `FRONTEND_URL` and other required env vars before imports
 - **Use `createExpressTestApp` utility**: Centralized setup with automatic environment management
+- **Set environment variables at top level**: Before any imports that depend on them
 - **Import router objects directly**: Never use dynamic `require()` paths
+- **Always cleanup**: Call cleanup functions in `afterEach`
 
-```typescript
-// Set environment variables before importing modules that depend on them
-process.env.FRONTEND_URL = "http://localhost:3000";
-
-import request from "supertest";
-import express from "express";
-import { createExpressTestApp } from "../../test-utils";
-import router from "./router.routes";
-```
-
-#### Standard Route Test Pattern
-
-```typescript
-describe("Router API Tests", () => {
-  let app: express.Application;
-  let cleanup: () => void;
-
-  beforeEach(() => {
-    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
-      router,
-      "/api/v1/path"
-    );
-    app = testApp;
-    cleanup = appCleanup;
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
-});
-```
-
-#### Custom Middleware Pattern
-
-For routes requiring additional middleware (like `parseQueryFilterParams`):
-
-```typescript
-beforeEach(() => {
-  // Create a custom router that includes required middleware
-  const customRouter = express.Router();
-  customRouter.use(parseQueryFilterParams);
-  customRouter.use(filterRouter);
-
-  // Use the utility for environment setup
-  const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
-    customRouter,
-    "/api/v1/filters"
-  );
-  app = testApp;
-  cleanup = appCleanup;
-});
-```
-
-#### Error Handling Requirements
+### Error Handling
 
 - **RFC 7807 responses**: Expect error responses with `type`, `title`, `status`, `detail`, `instance` fields
 - **Validation errors**: Use `toMatchObject()` for ZodError responses that include `issues` array
-- **Automatic cleanup**: Environment variables are restored after each test
 
-## Test Utilities
+## Command Modification Policy
 
-### `createExpressTestApp` Utility
-
-The `createExpressTestApp` utility provides centralized test setup:
-
-- **Automatic environment setup**: Sets `FRONTEND_URL` automatically
-- **Express app configuration**: Includes JSON parsing and error handling
-- **Cleanup management**: Returns cleanup function for environment restoration
-- **Router mounting**: Mounts router at specified path
-
-```typescript
-import { createExpressTestApp } from "../../test-utils";
-
-const { app, cleanup } = createExpressTestApp(router, "/api/v1/path");
-```
-
-### Environment Setup Functions
-
-- **`setupFrontendUrl()`**: Sets up `FRONTEND_URL` environment variable
-- **`setupEnvironment(variables)`**: Sets up multiple environment variables
-- **Automatic cleanup**: All functions return cleanup functions for restoration
-
-### Best Practices
-
-1. **Always use the utility**: Don't manually set up Express apps in tests
-2. **Import routers directly**: Pass router objects, not path strings
-3. **Set env vars at top level**: Before any imports that depend on them
-4. **Use custom routers for middleware**: When additional middleware is needed
-5. **Clean up after tests**: Always call cleanup functions in `afterEach`
-
-## Required Behavior
-
-### When Colleagues Request Changes to `pnpm test`
-
-**If someone asks to make `pnpm test` run all tests:**
-
-1. **Explain the current strategy**: Fast unit tests for development feedback
-2. **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
-3. **Maintain separation**: Keep `pnpm test` fast and focused
-4. **Document the preference**: This separation provides better developer experience
-
-**Response template:**
-
-> "I've added `pnpm test:all` that runs both unit tests and e2e tests. This keeps `pnpm test` fast for development while providing a comprehensive testing option when needed. The separation gives us better developer experience - fast feedback for unit tests and comprehensive testing when you need it."
-
-### Implementation Requirements
-
-**NEVER modify `pnpm test` to include e2e tests**
+**NEVER modify `pnpm test` to include E2E tests**
 
 - Keep it focused on Jest-based unit tests only
 - Maintain fast execution for development feedback
-- Preserve the separation of concerns
 
 **ALWAYS offer `pnpm test:all` as the comprehensive alternative**
 
-- This provides the "run all tests" functionality
-- Maintains the fast development workflow
-- Gives flexibility for different testing needs
-
-## Rationale
-
-### Developer Experience Benefits
-
-1. **Fast Feedback**: Unit tests provide immediate feedback during development
-2. **Clear Intent**: Each command has a specific purpose
-3. **Flexible Workflow**: Choose the right testing level for your needs
-4. **CI/CD Optimization**: Different commands for different CI stages
-
-### Performance Benefits
-
-1. **Development Speed**: Fast unit tests don't slow down development
-2. **Resource Efficiency**: No database setup for unit tests
-3. **Parallel Execution**: Unit tests can run in parallel
-4. **Selective Testing**: Run only what you need
-
-## Examples
-
-### ✅ Correct Usage
-
-```bash
-# Fast development feedback
-pnpm test
-
-# E2E testing when needed
-pnpm test:e2e
-
-# Comprehensive testing
-pnpm test:all
-```
-
-### ✅ Correct Route Test Patterns
-
-```typescript
-// Standard route test
-describe("Player Routes", () => {
-  let app: express.Application;
-  let cleanup: () => void;
-
-  beforeEach(() => {
-    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
-      playerRouter,
-      "/api/v1/players"
-    );
-    app = testApp;
-    cleanup = appCleanup;
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("should return player data", async () => {
-    const response = await request(app).get("/api/v1/players/123").expect(200);
-
-    expect(response.body).toHaveProperty("id", 123);
-  });
-});
-```
-
-```typescript
-// Filter route with custom middleware
-describe("Filter Routes", () => {
-  let app: express.Application;
-  let cleanup: () => void;
-
-  beforeEach(() => {
-    const customRouter = express.Router();
-    customRouter.use(parseQueryFilterParams);
-    customRouter.use(filterRouter);
-
-    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
-      customRouter,
-      "/api/v1/filters"
-    );
-    app = testApp;
-    cleanup = appCleanup;
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("should filter data with query params", async () => {
-    const response = await request(app)
-      .get("/api/v1/filters/stats?season_ids=14")
-      .expect(200);
-
-    expect(response.body.success).toBe(true);
-  });
-});
-```
-
-### ❌ Incorrect Patterns
-
-```typescript
-// ❌ Wrong: Manual Express setup
-beforeEach(() => {
-  app = express();
-  app.use(express.json());
-  app.use("/api/v1/players", playerRouter);
-  // Missing environment setup and error handling
-});
-
-// ❌ Wrong: Dynamic require paths
-const router = require("./player.routes");
-
-// ❌ Wrong: No cleanup
-beforeEach(() => {
-  const { app: testApp } = createExpressTestApp(router, "/api/v1/players");
-  app = testApp;
-  // Missing cleanup assignment
-});
-```
-
-### ❌ Incorrect Command Modifications
-
-```bash
-# Never modify pnpm test to include e2e tests
-"test": "turbo test && pnpm test:e2e"  # ❌ Wrong
-
-# Never remove the separation
-"test": "pnpm test:all"  # ❌ Wrong - removes fast feedback option
-```
-
-## Summary
-
-### Test Commands
-
-- **`pnpm test`**: Fast Jest-based unit tests only
-- **`pnpm test:e2e`**: E2E tests with database setup
-- **`pnpm test:all`**: Comprehensive testing suite
-- **`pnpm test:watch`**: TDD Watch mode
-
-### Backend Route Testing
-
-- **Use `createExpressTestApp`**: Centralized setup with automatic environment management
-- **Import routers directly**: Pass router objects, never path strings
-- **Set environment variables at top level**: Before any imports that depend on them
-- **Use custom routers for middleware**: When additional middleware is required
-- **Always cleanup**: Call cleanup functions in `afterEach`
-
-### Key Principles
-
-- **Maintain separation**: Keep fast feedback for development
-- **Offer alternatives**: Use `pnpm test:all` for comprehensive testing
-- **Centralized utilities**: Use test utilities for consistent setup
-- **Environment management**: Automatic setup and cleanup of environment variables
+- Provides "run all tests" functionality
+- Maintains fast development workflow

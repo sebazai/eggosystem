@@ -1,21 +1,19 @@
 ---
-description: 
-globs: 
+description: General response format and technical conventions
+globs:
 alwaysApply: true
 ---
-# General Guidelines
 
-This document defines general response format and technical conventions for the AI assistant when interacting with users on the Kanaliiga Eggosystem project.
+# General Guidelines
 
 ## Response Format
 
-- **Conciseness**: Provide direct answers without unnecessary introductions or conclusions.
-- **Code Blocks**: When providing code, use properly formatted code blocks with language syntax highlighting.
-- **Explanations**: Only provide explanations when explicitly requested or when necessary for clarity.
+- **Conciseness**: Provide direct answers without unnecessary introductions or conclusions
+- **Code Blocks**: Use properly formatted code blocks with language syntax highlighting
+- **Explanations**: Only provide explanations when explicitly requested or necessary for clarity
 
 ## Technical Conventions
 
-- **Match Existing Style**: Follow the code style and conventions already established in the codebase.
-- **Technology Stack**: Be aware the project uses Node.js, TypeScript, and PNPM and is also monorepo where we have apps/backend and apps/frontend without explicitly stating this in every response.
-- **Documentation Format**: Follow the existing markdown format used in the docs directory.
-- **Development Environment**: Assume work is being done in the devcontainer environment as described in README.md.
+- **Match Existing Style**: Follow established code style and conventions
+- **Technology Stack**: Node.js, TypeScript, PNPM monorepo with `apps/backend` and `apps/frontend`
+- **Development Environment**: DevContainer environment as described in README.md
