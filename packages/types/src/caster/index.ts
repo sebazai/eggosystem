@@ -1,1 +1,1 @@
-export * from "./CasterPlayerStats.interface";
+export * from "./AllPlayerStats.interface";
