@@ -121,6 +121,160 @@ describe("API Routes", () => {
 });
 ```
 
+### Authentication Testing
+
+**CRITICAL**: Do not test authentication within individual router test files. Create dedicated `auth.test.ts` files for each router group to test authentication middleware comprehensively.
+
+**Location**: `apps/backend/src/routes/v1/{router-group}/auth.test.ts`
+
+**Pattern**:
+
+```typescript
+// Set environment variables before importing modules that depend on them
+process.env.FRONTEND_URL = "http://localhost:3000";
+process.env.BACKEND_SERVICE_API_KEY = "test-api-key";
+
+import request from "supertest";
+import express from "express";
+import { createExpressTestApp } from "../../../test-utils";
+import dashboardRouter from "./index";
+import { authenticateJWT } from "../../../middlewares/auth.middleware";
+
+// Mock the auth services
+jest.mock("../../../services/auth.services");
+import {
+  getPermissionsForAccountId,
+  getRolesForAccountId
+} from "../../../services/auth.services";
+
+const mockGetPermissionsForAccountId =
+  getPermissionsForAccountId as jest.MockedFunction<
+    typeof getPermissionsForAccountId
+  >;
+const mockGetRolesForAccountId = getRolesForAccountId as jest.MockedFunction<
+  typeof getRolesForAccountId
+>;
+
+// Mock JWT authentication
+jest.mock("../../../middlewares/auth.middleware", () => ({
+  authenticateJWT: (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return next();
+    }
+
+    // Mock authenticated user
+    req.auth = {
+      account_id: 1,
+      provider: "steam",
+      provider_id: "12345",
+      permissions: [],
+      roles: [],
+      nickname: "testuser",
+      jti: "test-jti"
+    };
+    next();
+  },
+  checkPermissions: jest.requireActual("../../../middlewares/auth.middleware")
+    .checkPermissions
+}));
+
+describe("Dashboard Routes Authentication Tests", () => {
+  let app: express.Application;
+  let cleanup: () => void;
+
+  beforeEach(() => {
+    // Create a custom router that includes JWT authentication middleware
+    const customRouter = express.Router();
+    customRouter.use(authenticateJWT);
+    customRouter.use(dashboardRouter);
+
+    const { app: testApp, cleanup: appCleanup } = createExpressTestApp(
+      customRouter,
+      "/api/v1/dashboard"
+    );
+    app = testApp;
+    cleanup = appCleanup;
+
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  describe("Unauthenticated Access", () => {
+    it("should return 401 for dashboard root without authentication", async () => {
+      const response = await request(app).get("/api/v1/dashboard/").expect(401);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Forbidden: Requires authentication"
+      });
+    });
+  });
+
+  describe("Authenticated but Insufficient Permissions", () => {
+    beforeEach(() => {
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue([]);
+    });
+
+    it("should return 403 for dashboard root with no permissions", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/")
+        .set("Authorization", "Bearer valid-token")
+        .expect(403);
+
+      expect(response.body).toMatchObject({
+        type: "about:blank",
+        title: "Forbidden",
+        status: 403,
+        detail: "Forbidden: Insufficient permissions"
+      });
+    });
+  });
+
+  describe("Authenticated with Admin Role", () => {
+    beforeEach(() => {
+      mockGetPermissionsForAccountId.mockResolvedValue([]);
+      mockGetRolesForAccountId.mockResolvedValue(["admin"]);
+    });
+
+    it("should allow access to dashboard root with admin role", async () => {
+      const response = await request(app)
+        .get("/api/v1/dashboard/")
+        .set("Authorization", "Bearer valid-token")
+        .expect(200);
+
+      expect(response.body).toEqual({ OK: 200 });
+    });
+  });
+});
+```
+
+**Authentication Test Requirements**:
+
+1. **Test all authentication scenarios**:
+   - Unauthenticated access (401 responses)
+   - Authenticated but insufficient permissions (403 responses)
+   - Authenticated with proper roles/permissions (200 responses)
+
+2. **Mock authentication middleware**:
+   - Mock `authenticateJWT` to simulate authenticated users
+   - Mock auth services (`getPermissionsForAccountId`, `getRolesForAccountId`)
+   - Test different role combinations (admin, helpdesk, user)
+
+3. **Test RFC 7807 error responses**:
+   - Verify proper error format with `type`, `title`, `status`, `detail`
+   - Test both 401 (Unauthorized) and 403 (Forbidden) responses
+
+4. **Cover all routes in the router group**:
+   - Test authentication for every route in the router
+   - Verify role-based access control for different endpoints
+
 ### Service Testing
 
 **Patterns**:
