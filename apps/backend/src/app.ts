@@ -34,11 +34,7 @@ if (!process.env.FRONTEND_URL) {
 }
 
 if (process.env.NODE_ENV === "production") {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { initializeProfiling } = require("./configs/profiling");
-  initializeProfiling().catch((error: Error) => {
-    console.error("Failed to initialize profiling:", error);
-  });
+  initializeProfiling();
 }
 
 import express from "express";
@@ -55,6 +51,7 @@ import {
 } from "./services/discord.services";
 import { queueConsumerManager } from "./services/queue-consumer-manager";
 import cors from "cors";
+import { initializeProfiling } from "./configs/profiling";
 
 const app = express();
 
