@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Aug 20, 2025 at 01:58 AM
--- Server version: 11.7.2-MariaDB
+-- Generation Time: Sep 21, 2025 at 09:06 AM
+-- Server version: 11.8.3-MariaDB
 -- PHP Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -38,6 +38,20 @@ CREATE DEFINER=`kanadbuser`@`%` FUNCTION `get_account_id_from_steam_id` (`steam_
     END$$
 
 DELIMITER ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `AccountCasterUrls`
+--
+
+CREATE TABLE `AccountCasterUrls` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `account_id` int(10) UNSIGNED NOT NULL,
+  `default_stream_url` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -205,7 +219,9 @@ CREATE TABLE `FaceitWebhooks` (
   `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`data`)),
   `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
   `error_type` varchar(255) DEFAULT NULL,
-  `error_details` text DEFAULT NULL
+  `error_details` text DEFAULT NULL,
+  `retry_count` int(11) DEFAULT 0,
+  `manual_reprocess` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
@@ -355,7 +371,7 @@ CREATE TABLE `Matches` (
   `external_match_room_id` varchar(255) DEFAULT NULL,
   `group` tinyint(4) DEFAULT NULL,
   `round` tinyint(4) DEFAULT NULL,
-  `status` enum('SCHEDULED','CHECK_IN','VOTING','CONFIGURING','READY','ONGOING','FINISHED','ABORTED','CANCELLED','FORFEIT') DEFAULT NULL
+  `status` enum('SCHEDULED','CHECK_IN','VOTING','CONFIGURING','READY','ONGOING','FINISHED','ABORTED','CANCELLED','FORFEIT','PAUSED') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -628,7 +644,8 @@ CREATE TABLE `Reservations` (
   `id` int(10) UNSIGNED NOT NULL,
   `stream_url` varchar(255) NOT NULL,
   `hash` varchar(255) NOT NULL,
-  `match_id` int(10) UNSIGNED NOT NULL
+  `match_id` int(10) UNSIGNED NOT NULL,
+  `account_id` int(10) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -671,7 +688,8 @@ CREATE TABLE `SeasonLeagueExternalIds` (
   `external_id` varchar(255) NOT NULL,
   `external_league_name` varchar(255) DEFAULT NULL,
   `type` varchar(255) NOT NULL,
-  `isBO2PlayedAs2xBO1` tinyint(1) NOT NULL
+  `isBO2PlayedAs2xBO1` tinyint(1) NOT NULL,
+  `manual_group` int(11) DEFAULT NULL COMMENT 'Manual group parsed from external_league_name'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------
@@ -768,7 +786,8 @@ CREATE TABLE `SeasonPlayerRanks` (
   `hours_updated_at` timestamp NULL DEFAULT '1970-01-01 10:00:00',
   `manual_external_rank` tinyint(1) NOT NULL DEFAULT 0,
   `manual_steam_rank` tinyint(1) NOT NULL DEFAULT 0,
-  `calculus` varchar(100) DEFAULT NULL
+  `calculus` varchar(100) DEFAULT NULL,
+  `offered_elo` int(11) DEFAULT NULL COMMENT 'Original offered ELO value before stabilization'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -804,7 +823,8 @@ CREATE TABLE `SeasonTeamPlayers` (
   `role` enum('primary','substitute') DEFAULT 'primary',
   `is_captain` tinyint(1) NOT NULL DEFAULT 0,
   `is_co_captain` tinyint(1) NOT NULL DEFAULT 0,
-  `match_id` int(10) UNSIGNED DEFAULT NULL
+  `match_id` int(10) UNSIGNED DEFAULT NULL,
+  `id` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1253,7 +1273,9 @@ CREATE TABLE `SteamPlayerKanaElo` (
 CREATE TABLE `SteamPlayers` (
   `steam_id` bigint(20) NOT NULL,
   `nickname` varchar(255) NOT NULL,
-  `account_id` int(10) UNSIGNED DEFAULT NULL
+  `account_id` int(10) UNSIGNED DEFAULT NULL,
+  `faceit_nickname` varchar(255) DEFAULT NULL,
+  `faceit_id` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -1326,6 +1348,13 @@ DELIMITER ;
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `AccountCasterUrls`
+--
+ALTER TABLE `AccountCasterUrls`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `accountcasterurls_account_id_unique` (`account_id`);
 
 --
 -- Indexes for table `AccountPermissionScopes`
@@ -1533,7 +1562,8 @@ ALTER TABLE `PlayerTrades`
 --
 ALTER TABLE `Reservations`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `reservations_match_id_foreign` (`match_id`);
+  ADD KEY `reservations_match_id_foreign` (`match_id`),
+  ADD KEY `reservations_account_id_foreign` (`account_id`);
 
 --
 -- Indexes for table `RolePermissions`
@@ -1603,10 +1633,12 @@ ALTER TABLE `Seasons`
 -- Indexes for table `SeasonTeamPlayers`
 --
 ALTER TABLE `SeasonTeamPlayers`
-  ADD PRIMARY KEY (`season_id`,`steam_id`,`team_id`),
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_season_team_player_match` (`season_id`,`team_id`,`steam_id`,`match_id`),
   ADD KEY `seasonteamplayers_season_id_team_id_foreign` (`season_id`,`team_id`),
   ADD KEY `seasonteamplayers_steam_id_foreign` (`steam_id`),
-  ADD KEY `seasonteamplayers_match_id_foreign` (`match_id`);
+  ADD KEY `seasonteamplayers_match_id_foreign` (`match_id`),
+  ADD KEY `seasonteamplayers_team_id_foreign` (`team_id`);
 
 --
 -- Indexes for table `SeasonTeamRegistrationPlayers`
@@ -1644,6 +1676,7 @@ ALTER TABLE `SteamPlayerKanaElo`
 --
 ALTER TABLE `SteamPlayers`
   ADD PRIMARY KEY (`steam_id`),
+  ADD UNIQUE KEY `steamplayers_faceit_id_unique` (`faceit_id`),
   ADD KEY `steamplayers_account_id_foreign` (`account_id`);
 
 --
@@ -1681,6 +1714,12 @@ ALTER TABLE `UserPolicyAcceptances`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `AccountCasterUrls`
+--
+ALTER TABLE `AccountCasterUrls`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `AccountPermissionScopes`
@@ -1851,6 +1890,12 @@ ALTER TABLE `Seasons`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `SeasonTeamPlayers`
+--
+ALTER TABLE `SeasonTeamPlayers`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `Stages`
 --
 ALTER TABLE `Stages`
@@ -1889,6 +1934,12 @@ ALTER TABLE `UserPolicyAcceptances`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `AccountCasterUrls`
+--
+ALTER TABLE `AccountCasterUrls`
+  ADD CONSTRAINT `accountcasterurls_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `AccountPermissionScopes`
@@ -2009,6 +2060,7 @@ ALTER TABLE `PlayerTrades`
 -- Constraints for table `Reservations`
 --
 ALTER TABLE `Reservations`
+  ADD CONSTRAINT `reservations_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `reservations_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
@@ -2068,7 +2120,8 @@ ALTER TABLE `Seasons`
 --
 ALTER TABLE `SeasonTeamPlayers`
   ADD CONSTRAINT `seasonteamplayers_match_id_foreign` FOREIGN KEY (`match_id`) REFERENCES `Matches` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `seasonteamplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `seasonteamplayers_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `seasonteamplayers_team_id_foreign` FOREIGN KEY (`team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `SeasonTeamRegistrationPlayers`
