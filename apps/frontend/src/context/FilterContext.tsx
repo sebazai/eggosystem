@@ -90,7 +90,8 @@ export const FilterProvider = ({
       leagues: getParamArray(searchParams, "leagues"),
       stages: getParamArray(searchParams, "stages"),
       teams: getParamArray(searchParams, "teams"),
-      maps: getParamArray(searchParams, "maps")
+      maps: getParamArray(searchParams, "maps"),
+      player_name: searchParams.get("playerName")
     } satisfies FilterParamsQuery;
   }, [ready, searchParams]);
 
@@ -131,9 +132,12 @@ export const FilterProvider = ({
     );
   }
 
-  const areFiltersEmpty = Object.values(filterParams).every(
-    (arr) => !arr || arr.length === 0
-  );
+  const areFiltersEmpty = Object.entries(filterParams).every(([key, value]) => {
+    if (key === "player_name") {
+      return !value || (typeof value === "string" && value.trim() === "");
+    }
+    return !value || (Array.isArray(value) && value.length === 0);
+  });
 
   return (
     <FilterContext.Provider

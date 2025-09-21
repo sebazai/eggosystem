@@ -33,10 +33,11 @@ import { getTeamEnhancedMapStatsController } from "../../controllers/team-map-st
 const router = Router();
 
 router.get("/", async (req, res) => {
-  const { season_ids, league_ids, team_ids, stages, map_ids } =
+  const { season_ids, league_ids, team_ids, stages, map_ids, player_name } =
     req.parsedParams;
 
   const filter_by_steam_id = req.query.steamId;
+  const filter_by_player_name = player_name;
 
   // Parse which data types the frontend wants (comma-separated list)
   const requestedTypes = req.query.types
@@ -47,6 +48,7 @@ router.get("/", async (req, res) => {
   // This is the initial state where users need to see all possible values
   const hasAnyFilters =
     filter_by_steam_id ||
+    filter_by_player_name ||
     season_ids?.length ||
     league_ids?.length ||
     team_ids?.length ||
@@ -59,6 +61,13 @@ router.get("/", async (req, res) => {
   // Apply steam_id filter early if present
   if (filter_by_steam_id) {
     baseQuery = baseQuery.where("STP.steam_id", filter_by_steam_id);
+  }
+
+  // Apply player name filter if present
+  if (filter_by_player_name) {
+    baseQuery = baseQuery
+      .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
+      .where("SP.nickname", "like", `%${filter_by_player_name}%`);
   }
 
   // Apply season and team filters early
@@ -77,7 +86,8 @@ router.get("/", async (req, res) => {
       !team_ids?.length &&
       !stages?.length &&
       !map_ids?.length &&
-      !filter_by_steam_id);
+      !filter_by_steam_id &&
+      !filter_by_player_name);
   const onlySeasonFilter =
     !hasAnyFilters ||
     (season_ids?.length &&
@@ -85,12 +95,23 @@ router.get("/", async (req, res) => {
       !team_ids?.length &&
       !stages?.length &&
       !map_ids?.length &&
-      !filter_by_steam_id);
+      !filter_by_steam_id &&
+      !filter_by_player_name);
   const onlyTeamFilter =
     !hasAnyFilters ||
     (team_ids?.length &&
       !season_ids?.length &&
       !league_ids?.length &&
+      !stages?.length &&
+      !map_ids?.length &&
+      !filter_by_steam_id &&
+      !filter_by_player_name);
+  const onlyPlayerNameFilter =
+    !hasAnyFilters ||
+    (filter_by_player_name &&
+      !season_ids?.length &&
+      !league_ids?.length &&
+      !team_ids?.length &&
       !stages?.length &&
       !map_ids?.length &&
       !filter_by_steam_id);
@@ -383,6 +404,126 @@ router.get("/", async (req, res) => {
           .join("Matches as M", "MT.match_id", "M.id")
           .join("MatchGames as MG", "M.id", "MG.match_id")
           .whereIn("MT.team_id", team_ids!)
+          .distinct()
+          .select("MG.map_id as id")
+          .whereNotNull("MG.map_id")
+          .orderBy("MG.map_id")
+      );
+    }
+
+    const results = await Promise.all(queries);
+
+    const grouped: Record<string, number[]> = {};
+    let resultIndex = 0;
+
+    if (requestedTypes.includes("season_ids")) {
+      grouped.season_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("team_ids")) {
+      grouped.team_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("league_ids")) {
+      grouped.league_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("stages")) {
+      grouped.stages = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("map_ids")) {
+      grouped.map_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+
+    res.json(grouped);
+    return;
+  }
+
+  if (onlyPlayerNameFilter) {
+    const queries: Promise<{ id: number }[]>[] = [];
+
+    if (requestedTypes.includes("season_ids")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
+          .join("Seasons as S", "STP.season_id", "S.id")
+          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .distinct()
+          .select("S.id")
+          .orderBy("S.id")
+      );
+    }
+
+    if (requestedTypes.includes("team_ids")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
+          .join("Teams as T", "STP.team_id", "T.id")
+          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .distinct()
+          .select("T.id")
+          .orderBy("T.name")
+      );
+    }
+
+    if (requestedTypes.includes("league_ids")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
+          .join("MatchTeams as MT", function () {
+            this.on("MT.team_id", "STP.team_id").andOn(
+              "MT.season_id",
+              "STP.season_id"
+            );
+          })
+          .join("Matches as M", "M.id", "MT.match_id")
+          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .distinct()
+          .select("M.league_id as id")
+          .whereNotNull("M.league_id")
+          .orderBy("M.league_id")
+      );
+    }
+
+    if (requestedTypes.includes("stages")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
+          .join("MatchTeams as MT", function () {
+            this.on("MT.team_id", "STP.team_id").andOn(
+              "MT.season_id",
+              "STP.season_id"
+            );
+          })
+          .join("Matches as M", "M.id", "MT.match_id")
+          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .distinct()
+          .select("M.stage as id")
+          .whereNotNull("M.stage")
+          .orderBy("M.stage")
+      );
+    }
+
+    if (requestedTypes.includes("map_ids")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
+          .join("MatchTeams as MT", function () {
+            this.on("MT.team_id", "STP.team_id").andOn(
+              "MT.season_id",
+              "STP.season_id"
+            );
+          })
+          .join("Matches as M", "M.id", "MT.match_id")
+          .join("MatchGames as MG", "M.id", "MG.match_id")
+          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
           .distinct()
           .select("MG.map_id as id")
           .whereNotNull("MG.map_id")

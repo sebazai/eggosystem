@@ -30,6 +30,10 @@ const fetchMultiFilterData = async (
     urlParams.append("steamId", params.steamId);
   }
 
+  if (params.player_name) {
+    urlParams.append("player_name", params.player_name);
+  }
+
   // Request all filter types in a single call
   urlParams.append("types", "season_ids,team_ids,league_ids,stages,map_ids");
 
