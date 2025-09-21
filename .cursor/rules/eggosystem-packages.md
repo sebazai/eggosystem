@@ -106,9 +106,76 @@ import { mswServer } from "@eggosystem/shared-msw";
 4. **Write tests**: Use MSW for external API mocking
 5. **Run tests**: Ensure MSW intercepts all external calls
 
+## Type Composition Rules
+
+### Database-Based Types
+
+**ALWAYS compose types from `@eggosystem/types/db` interfaces** when creating new types that represent database data.
+
+### Type Composition Patterns
+
+#### 1. Field Selection Pattern (Preferred)
+
+```typescript
+// ✅ GOOD: Compose from specific database fields
+export interface GamePlayerStats {
+  steam_id: SteamPlayer["steam_id"];
+  nickname: SteamPlayer["nickname"];
+  team_id: Team["id"];
+  kills: PlayerStats["kills"];
+  headshots: PlayerStats["headshots"];
+  // ... other specific fields
+}
+```
+
+#### 2. Extends Pattern (When Selecting All)
+
+```typescript
+// ✅ GOOD: When selecting all fields from a table
+export interface SeasonWithDetails extends Season {
+  // Additional computed fields
+  team_count: number;
+  is_active: boolean;
+}
+```
+
+#### 3. Avoid Raw Database Types
+
+```typescript
+// ❌ BAD: Don't use raw database types directly
+export interface UserResponse {
+  id: number;
+  name: string;
+  email: string;
+  // ... manually typed fields
+}
+
+// ✅ GOOD: Compose from database types
+export interface UserResponse {
+  id: User["id"];
+  name: User["name"];
+  email: User["email"];
+}
+```
+
+### SQL Query Guidelines
+
+- **Prefer specific field selection**: `SELECT id, name, email FROM users`
+- **Avoid SELECT \***: Only use when extending the full interface
+- **Compose types from database interfaces**: Ensures type safety and consistency
+
+### Benefits
+
+- **Type Safety**: Database changes automatically propagate to composed types
+- **Consistency**: Single source of truth for database field types
+- **Maintainability**: Changes to database schema update all dependent types
+- **Documentation**: Types serve as living documentation of database structure
+
 ## Summary
 
 - **Types package**: Always build before importing
 - **MSW package**: Use for all external API testing
 - **Prefer MSW**: Over Playwright route interception for external APIs
 - **Never depend**: On actual external services in tests
+- **Compose types**: From `@eggosystem/types/db` interfaces
+- **Avoid SELECT \***: Prefer specific field selection in SQL queries
