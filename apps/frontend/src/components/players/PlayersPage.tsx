@@ -39,14 +39,14 @@ export const PlayersPage = () => {
   return (
     <div>
       <h1 className="text-3xl mb-4 md:mb-8">Players</h1>
-      <div className="mb-4">
-        <MultiFilters {...filterParams} />
-
-        <div className="px-1">
-          <PlayerNameFilter
-            initialPlayerName={searchParams.get("playerName") ?? ""}
-          />
-        </div>
+      <div className="flex flex-col mb-4 gap-4">
+        <MultiFilters
+          {...filterParams}
+          hideFilters={{ stages: true, maps: true }}
+        />
+        <PlayerNameFilter
+          initialPlayerName={searchParams.get("playerName") ?? ""}
+        />
       </div>
 
       <CardContainer classNames="p-2 md:p-4">

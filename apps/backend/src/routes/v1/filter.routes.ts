@@ -14,7 +14,7 @@ import {
   getSingleLeaderboardController
 } from "../../controllers/leaderboards.controllers";
 import {
-  getFilteredPlayerStatisticsController,
+  getAllFilteredPlayerStatisticsController,
   getFilteredPlayerGameDetailsController,
   getFilteredPlayerTeamDetailsController,
   getFilteredPlayerMatchHistoryController,
@@ -121,7 +121,7 @@ router.get("/players/stats", getFilteredPlayersStatsController);
 router.get("/players/all/stats", getFilteredAllPlayersStatsController);
 router.get(
   "/players/:steam_id/statistics",
-  getFilteredPlayerStatisticsController
+  getAllFilteredPlayerStatisticsController
 );
 router.get(
   "/players/:steam_id/game-details",

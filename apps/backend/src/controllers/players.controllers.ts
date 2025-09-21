@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import {
   getPlayerDetailsBySteamId,
   getMultiplePlayerStatsByFilters,
-  getPlayerStatsWithFilters,
+  getAllPlayerStatsWithPartialFilters,
   getPlayerBySteamId,
   getPlayerMatchHistoryByFilters,
   getPlayerGameDetailsWithFilters,
@@ -208,14 +208,17 @@ export const getFilteredPlayerGameDetailsController = async (
   res.status(200).json(data);
 };
 
-export const getFilteredPlayerStatisticsController = async (
+export const getAllFilteredPlayerStatisticsController = async (
   req: RequestWithParams<{ steam_id: string }>,
   res: Response
 ): Promise<void> => {
   const { steam_id } = req.params;
   const { parsedParams } = req;
 
-  const playerStats = await getPlayerStatsWithFilters(steam_id, parsedParams);
+  const playerStats = await getAllPlayerStatsWithPartialFilters(
+    steam_id,
+    parsedParams
+  );
 
   res.status(200).json(playerStats);
 };

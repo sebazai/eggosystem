@@ -1,4 +1,4 @@
-import { getPlayerStatsWithFilters } from "./player.models";
+import { getAllPlayerStatsWithPartialFilters } from "./player.models";
 
 describe("Player Statistics Integration Tests", () => {
   it("should return correct stats for enzoj in season 14", async () => {
@@ -11,7 +11,7 @@ describe("Player Statistics Integration Tests", () => {
       map_ids: null
     };
 
-    const result = await getPlayerStatsWithFilters(steamId, filters);
+    const result = await getAllPlayerStatsWithPartialFilters(steamId, filters);
 
     expect(result).toBeDefined();
     if (result) {
@@ -34,7 +34,7 @@ describe("Player Statistics Integration Tests", () => {
       map_ids: null
     };
 
-    const result = await getPlayerStatsWithFilters(steamId, filters);
+    const result = await getAllPlayerStatsWithPartialFilters(steamId, filters);
     expect(result).toBeUndefined();
   });
 });

@@ -2,7 +2,7 @@ import {
   getMultiplePlayerStatsByFilters,
   getPlayerGameDetailsWithFilters,
   getPlayerMatchHistoryByFilters,
-  getPlayerStatsWithFilters,
+  getAllPlayerStatsWithPartialFilters,
   getPlayerTeamDetailsWithFilters,
   getPlayerStatsForLatestSeason,
   getPlayerMapStatsWithFilters
@@ -608,13 +608,16 @@ describe("getPlayerTeamDetailsWithFilters", () => {
 
 describe("getPlayerStatsByFilters", () => {
   it("should return aggregated stats when player has played as primary and substitute in one season", async () => {
-    const result = await getPlayerStatsWithFilters("76561198129692076", {
-      season_ids: [14],
-      league_ids: null,
-      map_ids: null,
-      stages: null,
-      team_ids: null
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561198129692076",
+      {
+        season_ids: [14],
+        league_ids: null,
+        map_ids: null,
+        stages: null,
+        team_ids: null
+      }
+    );
     expect(result).toEqual({
       steam_id: "76561198129692076",
       nickname: "Mixu",
@@ -663,13 +666,16 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("should return team specific stats when player has played in two teams during one season", async () => {
-    const result = await getPlayerStatsWithFilters("76561198129692076", {
-      season_ids: [14],
-      league_ids: null,
-      map_ids: null,
-      stages: null,
-      team_ids: [2008]
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561198129692076",
+      {
+        season_ids: [14],
+        league_ids: null,
+        map_ids: null,
+        stages: null,
+        team_ids: [2008]
+      }
+    );
     expect(result).toEqual({
       steam_id: "76561198129692076",
       nickname: "Mixu",
@@ -718,13 +724,16 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("player with two different teams in two different season using double season filter aggregates scores", async () => {
-    const result = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: [11, 14],
-      league_ids: null,
-      map_ids: null,
-      stages: null,
-      team_ids: null
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: [11, 14],
+        league_ids: null,
+        map_ids: null,
+        stages: null,
+        team_ids: null
+      }
+    );
     expect(result).toEqual({
       steam_id: "76561197967885016",
       nickname: "enzoj",
@@ -773,40 +782,52 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("should match when season 11,14 and league 7 vs only league 7", async () => {
-    const result = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: [11, 14],
-      league_ids: [7],
-      map_ids: null,
-      stages: null,
-      team_ids: null
-    });
-    const result2 = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: null,
-      league_ids: [7],
-      map_ids: null,
-      stages: null,
-      team_ids: null
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: [11, 14],
+        league_ids: [7],
+        map_ids: null,
+        stages: null,
+        team_ids: null
+      }
+    );
+    const result2 = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: null,
+        league_ids: [7],
+        map_ids: null,
+        stages: null,
+        team_ids: null
+      }
+    );
     expect(result).toEqual(result2);
   });
   it("bogus filters returns null and zero values", async () => {
-    const result2 = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: [14],
-      league_ids: [7],
-      map_ids: null,
-      stages: null,
-      team_ids: null
-    });
+    const result2 = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: [14],
+        league_ids: [7],
+        map_ids: null,
+        stages: null,
+        team_ids: null
+      }
+    );
     expect(result2).toEqual(undefined);
   });
   it("player with double season but league specific filter", async () => {
-    const result = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: [11, 14],
-      league_ids: [7],
-      map_ids: null,
-      stages: null,
-      team_ids: null
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: [11, 14],
+        league_ids: [7],
+        map_ids: null,
+        stages: null,
+        team_ids: null
+      }
+    );
     expect(result).toEqual({
       steam_id: "76561197967885016",
       nickname: "enzoj",
@@ -855,13 +876,16 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("with season, stage and mapid filters", async () => {
-    const result = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: [11, 14],
-      league_ids: null,
-      map_ids: [8],
-      stages: [2],
-      team_ids: null
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: [11, 14],
+        league_ids: null,
+        map_ids: [8],
+        stages: [2],
+        team_ids: null
+      }
+    );
     expect(result).toEqual({
       steam_id: "76561197967885016",
       nickname: "enzoj",
@@ -910,13 +934,16 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("with wrong team filter", async () => {
-    const result = await getPlayerStatsWithFilters("76561197967885016", {
-      season_ids: [11, 14],
-      league_ids: null,
-      map_ids: null,
-      stages: null,
-      team_ids: [2109]
-    });
+    const result = await getAllPlayerStatsWithPartialFilters(
+      "76561197967885016",
+      {
+        season_ids: [11, 14],
+        league_ids: null,
+        map_ids: null,
+        stages: null,
+        team_ids: [2109]
+      }
+    );
     expect(result).toEqual(undefined);
   });
 });

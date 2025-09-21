@@ -14,7 +14,7 @@ import {
   type PlayerStatsTable,
   type PlayerStatsForLatestSeason,
   type PlayerMapStats,
-  type CasterPlayerStats
+  type AllPlayerStats
 } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 
@@ -59,8 +59,6 @@ export const getAllPlayerStatsByFilters = async ({
   season_ids,
   league_ids,
   team_ids,
-  stages,
-  map_ids,
   player_name
 }: ParsedParams) => {
   const { query, queryParams } = generateQueryWithFilters([
@@ -75,9 +73,7 @@ export const getAllPlayerStatsByFilters = async ({
     {
       column: "m.league_id",
       value: league_ids
-    },
-    { column: "m.stage", value: stages },
-    { column: "mg.map_id", value: map_ids }
+    }
   ]);
 
   const whereClause = player_name
@@ -236,7 +232,7 @@ export const getMultiplePlayerStatsByFilters = async ({
 
 export const getPlayerMatchHistoryByFilters = async (
   steam_id: string,
-  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+  { season_ids, league_ids, team_ids, stages }: ParsedParams
 ) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
@@ -252,11 +248,8 @@ export const getPlayerMatchHistoryByFilters = async (
       value: league_ids
     },
     { column: "m.stage", value: stages },
-    { column: "mg.map_id", value: map_ids },
     { column: "sp.steam_id", value: [steam_id] }
   ]);
-
-  const mapFiltersPresent = map_ids && map_ids.length > 0;
 
   const matchHistoryQuery = `
       SELECT
@@ -288,12 +281,12 @@ export const getPlayerMatchHistoryByFilters = async (
         -- Score or Win Count
         CASE
           WHEN m.best_of = 1 THEN MAX(tgs.score)
-          ELSE  ${!mapFiltersPresent ? "COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)" : "MAX(tgs.score)"}
+          ELSE COUNT(CASE WHEN tgs.score > opp_tgs.score THEN 1 END)
         END AS score,
 
         CASE
           WHEN m.best_of = 1 THEN MAX(opp_tgs.score)
-          ELSE ${!mapFiltersPresent ? "COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)" : "MAX(opp_tgs.score)"}
+          ELSE COUNT(CASE WHEN opp_tgs.score > tgs.score THEN 1 END)
         END AS opponent_score,
 
         -- PlayerStats aggregates
@@ -329,9 +322,9 @@ export const getPlayerMatchHistoryByFilters = async (
       WHERE ${query}
 
       GROUP BY
-        ${!mapFiltersPresent ? "m.id," : ""}
+        m.id,
         CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END,
-        ${!mapFiltersPresent ? "m.best_of," : ""}
+        m.best_of,
         m.season_id,
         s.name,
         m.league_id,
@@ -487,9 +480,9 @@ export const getPlayerGameDetailsWithFilters = async (
   return playerDetails;
 };
 
-export const getPlayerStatsWithFilters = async (
+export const getAllPlayerStatsWithPartialFilters = async (
   steam_id: string,
-  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+  { season_ids, league_ids, team_ids }: ParsedParams
 ) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
@@ -504,8 +497,6 @@ export const getPlayerStatsWithFilters = async (
       column: "m.league_id",
       value: league_ids
     },
-    { column: "m.stage", value: stages },
-    { column: "mg.map_id", value: map_ids },
     { column: "p.steam_id", value: [steam_id] }
   ]);
 
@@ -593,7 +584,7 @@ export const getPlayerStatsWithFilters = async (
   return playerStats;
 };
 
-export const getPlayerStatsWithFiltersForCasters = async (
+export const getPlayerStatsWithAllFilters = async (
   steam_id: string,
   { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
 ) => {
@@ -736,7 +727,10 @@ export const getPlayerStatsWithFiltersForCasters = async (
         SUM(ps.shots) as shots,
         SUM(ps.shots_hit) as shots_hit,
         SUM(ps.total_strafing_shots) as total_strafing_shots,
-        SUM(ps.good_strafing_shots) as good_strafing_shots
+        SUM(ps.good_strafing_shots) as good_strafing_shots,
+        ROUND(SUM(ps.total_ef_duration) / NULLIF(SUM(ps.flashes_thrown), 0), 1) as avg_enemy_flash_duration,
+        ROUND(SUM(ps.total_mf_duration) / NULLIF(SUM(ps.flashes_thrown), 0), 1) as avg_teammate_flash_duration,
+        COALESCE(ROUND(SUM(ps.good_strafing_shots) / NULLIF(SUM(ps.total_strafing_shots), 0) * 100, 1), 0) as counter_strafing_percentage
       FROM player_games pg
       INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
       GROUP BY pg.steam_id, pg.nickname
@@ -756,7 +750,7 @@ export const getPlayerStatsWithFiltersForCasters = async (
     INNER JOIN player_rounds pr ON pr.steam_id = ps.steam_id
   `;
 
-  const [playerStats] = await runQuery<Array<CasterPlayerStats | undefined>>(
+  const [playerStats] = await runQuery<Array<AllPlayerStats | undefined>>(
     statsQuery,
     queryParams
   );
@@ -830,7 +824,7 @@ export const getPlayerOldKanaElo = async (steam_id: string) => {
 
 export const getPlayerMapStatsWithFilters = async (
   steam_id: string,
-  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
+  { season_ids, league_ids, team_ids, map_ids, stages }: ParsedParams
 ) => {
   // Fetch all maps once to get both IDs and names
   const allMaps = await runQuery<Array<{ id: number; name: string }>>(
@@ -861,7 +855,7 @@ export const getPlayerMapStatsWithFilters = async (
 
     // Get both player stats and game details in parallel
     const [playerStats, gameDetails] = await Promise.all([
-      getPlayerStatsWithFilters(steam_id, mapFilterParams),
+      getPlayerStatsWithAllFilters(steam_id, mapFilterParams),
       getPlayerGameDetailsWithFilters(steam_id, mapFilterParams)
     ]);
 
@@ -894,8 +888,18 @@ export const getPlayerMapStatsWithFilters = async (
         avg_enemy_flash_duration: playerStats?.avg_enemy_flash_duration || 0,
         avg_teammate_flash_duration:
           playerStats?.avg_teammate_flash_duration || 0,
-        crosshair_placement: playerStats?.crosshair_placement || 0,
-        time_to_damage: playerStats?.time_to_damage || 0
+        crosshair_placement: playerStats?.avg_crosshair_placement || 0,
+        time_to_damage: playerStats?.avg_ttd || 0,
+        adr: 0,
+        kana_rating: 0,
+        hs_percent: playerStats?.avg_hs_percent || 0,
+        clutches_lost: playerStats?.clutches - playerStats?.clutches_won || 0,
+        kast: playerStats?.avg_kast || 0,
+        kd: playerStats?.kills / playerStats?.deaths || 0,
+        multikill_2k: playerStats?.kills_2 || 0,
+        multikill_3k: playerStats?.kills_3 || 0,
+        multikill_4k: playerStats?.kills_4 || 0,
+        multikill_5k: playerStats?.kills_5 || 0
       };
 
       return mapStats;

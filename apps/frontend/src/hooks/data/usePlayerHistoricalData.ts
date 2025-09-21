@@ -9,13 +9,19 @@ import type {
 } from "@eggosystem/types";
 
 /**
+/**
  * Hook to fetch individual player's historical data
  */
 export function usePlayerHistoricalData(
   steamId: string,
   params?: HistoricalDataParams
-) {
-  // Build query string from parameters
+): {
+  data: PlayerHistoricalData[];
+  error: unknown;
+  isLoading: boolean;
+  isValidating: boolean;
+  mutate: () => void;
+} {
   const buildQueryString = (params?: HistoricalDataParams) => {
     if (!params) return "";
 

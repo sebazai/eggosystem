@@ -1,5 +1,6 @@
 "use client";
 import { MultiFilters } from "@/components/filters/MultiFilters";
+import { CardContainer } from "@/components/layout/CardContainer";
 import { PlayerDetailsHeader } from "@/components/players/PlayerDetailsHeader";
 import { useFilters } from "@/context/FilterContext";
 import { FilterProvider } from "@/context/FilterContext";
@@ -73,9 +74,16 @@ function PlayerTabLayoutContent({
 
   return (
     <>
-      <MultiFilters {...filterParams} steamId={steamId} />
-
       <PlayerDetailsHeader steamId={steamId} />
+      <CardContainer>
+        <div className="py-4">
+          <MultiFilters
+            {...filterParams}
+            steamId={steamId}
+            hideFilters={{ stages: true, maps: true }}
+          />
+        </div>
+      </CardContainer>
 
       {/* Sticky Tabs */}
       <div className="sticky top-0 z-10 bg-card rounded-b-md shadow-sm">

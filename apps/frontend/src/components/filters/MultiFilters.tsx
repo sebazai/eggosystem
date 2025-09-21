@@ -29,6 +29,7 @@ interface MultiFiltersProps extends FilterParamsQuery {
     teams?: boolean;
     maps?: boolean;
   };
+  hideClearFilters?: boolean;
   sortOrder?: FilterParamQueryKeys[];
 }
 
@@ -134,6 +135,7 @@ const getFilterComponent = (
 export const MultiFilters = ({
   sortOrder = ["seasons", "leagues", "stages", "teams", "maps"],
   hideFilters,
+  hideClearFilters,
   ...props
 }: MultiFiltersProps) => {
   const searchParams = useSearchParams();
@@ -187,10 +189,10 @@ export const MultiFilters = ({
   return (
     <div
       className={clsx(
-        `mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-2`,
+        `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 md:gap-2`,
         {
           "xl:grid-cols-5": columns === 5,
-          "xl:grid-cols-4": columns === 4,
+          "xl:grid-cols-4": columns === 3,
           "xl:grid-cols-3": columns === 3,
           "xl:grid-cols-2": columns === 2
         }
@@ -207,14 +209,16 @@ export const MultiFilters = ({
           handleOpen
         );
       })}
-      <Button
-        variant={"secondary"}
-        onClick={() => {
-          router.replace(pathname);
-        }}
-      >
-        Clear all filters
-      </Button>
+      {!hideClearFilters && (
+        <Button
+          variant={"secondary"}
+          onClick={() => {
+            router.replace(pathname);
+          }}
+        >
+          Clear all filters
+        </Button>
+      )}
     </div>
   );
 };

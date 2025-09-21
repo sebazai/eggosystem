@@ -1,6 +1,6 @@
 import type { SteamPlayer, Nullable } from "@eggosystem/types";
 
-export interface CasterPlayerStats {
+export interface AllPlayerStats {
   steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
   faceit_nickname: SteamPlayer["faceit_nickname"];
@@ -110,4 +110,7 @@ export interface CasterPlayerStats {
   shots_hit: Nullable<number>;
   total_strafing_shots: Nullable<number>;
   good_strafing_shots: Nullable<number>;
+  avg_enemy_flash_duration: Nullable<number>;
+  avg_teammate_flash_duration: Nullable<number>;
+  counter_strafing_percentage: Nullable<number>;
 }
