@@ -52,6 +52,7 @@ packages/*/dist.turbo
 **/playwright-report
 .turbo/
 
+Kanaliiga.session.sql
 
 **/coverage/
 **/test-results/

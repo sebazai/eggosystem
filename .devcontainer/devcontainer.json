@@ -43,7 +43,9 @@
         "ms-vscode.vscode-typescript-next",
         "eamodio.gitlens",
         "gruntfuggly.triggertaskonsave",
-        "ms-playwright.playwright"
+        "ms-playwright.playwright",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql"
       ]
     }
   },

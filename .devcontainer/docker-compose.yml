@@ -19,6 +19,8 @@ services:
       - eggo-dev
     volumes:
       - ../conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
+    ports:
+      - 3306:3306
 
   eggo-phpmyadmin:
     extends:
