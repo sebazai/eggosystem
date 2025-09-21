@@ -1,6 +1,6 @@
 {
   "name": "eggosystem",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "author": "Sebastian Sergelius",
   "license": "GPL-3.0",
   "description": "A unified monorepo for Kanahub's frontend and backend services.",
