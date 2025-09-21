@@ -1,6 +1,6 @@
 # Architecture Overview
 
-This document explains the system architecture, key design decisions, and patterns for the Kanaliiga Eggosystem.
+This document explains the system architecture, key design decisions, and patterns for the Kanaliiga Eggosystem - a comprehensive esports tournament management platform for corporate CS2 leagues.
 
 ## System Structure
 
@@ -27,25 +27,101 @@ This document explains the system architecture, key design decisions, and patter
 - **Package Manager**: PNPM with workspace support
 - **Testing**: Jest (unit) + Playwright (E2E)
 - **Development**: DevContainer + Docker Compose
+- **Monitoring**: Grafana Alloy with OpenTelemetry
+- **Partnerships**: Allstar (demo parsing), FaceIT (tournament platform)
+
+## Core Business Model
+
+### Tournament Structure
+
+Kanaliiga operates as a **corporate esports league** with the following key concepts:
+
+- **Seasons**: Primary organizational unit for tournaments (always required)
+- **Leagues**: Skill-based tiers within seasons (created by the "Sortter" algorithm)
+- **Teams**: Can be corporate teams (tied to organizations) or scramble/pick-up teams
+- **Players**: Must have work email OR employment verification for corporate teams
+
+### Registration-to-Competition Pipeline
+
+The system implements a sophisticated **dual-roster architecture**:
+
+1. **Registration Phase**: Teams register players in `SeasonTeamRegistrationPlayers`
+2. **Sorting Phase**: "Sortter" algorithm processes registrations to create balanced leagues
+3. **Competition Phase**: Final rosters copied to `SeasonTeamPlayers` for active tournament play
+4. **Runtime Flexibility**: Active rosters can be modified (add players, substitutes) without affecting original registration data
+
+This separation ensures data integrity for original registration decisions while allowing mid-season roster flexibility.
 
 ## Data Flow
 
 ### API Architecture
 
 - **RESTful APIs**: Standard HTTP methods with JSON responses
-- **Error Handling**: RFC 7807 Problem Details format
-- **Authentication**: JWT tokens (access + refresh)
+- **Error Handling**: RFC 7807 Problem Details format with database constraint propagation
+- **Authentication**: Steam-based login with JWT tokens (access + refresh)
 - **Validation**: Zod schemas for request/response validation
 
-### Database Design
+### Database Design Philosophy
 
 - **Schema Reference**: See [Database Schema](README.database.md) for complete schema documentation
 - **Migrations**: Knex.js migration system
 - **Seeds**: Development and E2E test data
 - **Relationships**: Foreign key constraints with proper indexing
-- **Triggers**: Business logic enforcement (captain permissions, unique constraints)
-- **Functions**: Utility functions like `get_account_id_from_steam_id`
+- **Business Logic in Database**: Triggers enforce critical business rules (captain permissions, unique constraints)
+- **Utility Functions**: Database functions like `get_account_id_from_steam_id` for Steam ID mapping
 - **Backups**: Automated daily backups with 7-day retention
+
+## Key Architectural Decisions
+
+### Identity Management: Steam ID as Primary
+
+**Decision**: Steam ID is the primary player identifier throughout the system.
+
+**Rationale**:
+
+- Steam is the primary authentication method
+- Creates natural 1:1 mapping between authentication and player identity
+- Eliminates complexity of maintaining separate internal IDs
+- Ensures authentication system and player data are always aligned
+
+**Implementation**: Database function `get_account_id_from_steam_id` bridges between Steam IDs and internal account system for permission management.
+
+### Business Logic in Database Triggers
+
+**Decision**: Critical business rules enforced via database triggers rather than application code.
+
+**Rationale**:
+
+- **Data Consistency**: Captain permissions automatically sync with captain status changes
+- **Simplicity**: Reduces application code complexity
+- **Reliability**: Works regardless of how data is modified (direct DB changes, admin tools, migrations)
+- **Low Risk**: Captain permissions don't have high security implications
+
+**Examples**: Captain permission management, unique constraints, primary player validation.
+
+### Multi-Platform Support Strategy
+
+**Decision**: Support multiple external platforms (FaceIT, Esportal, PopFlash) with platform-agnostic architecture.
+
+**Rationale**:
+
+- **Negotiating Power**: Not locked into single platform
+- **Resilience**: Can pivot if platform changes terms, pricing, or API
+- **Flexibility**: Different platforms for different tournament types
+
+**Implementation**: `platform` enum in Seasons, external ID tracking, webhook processing for platform-specific data.
+
+### Flexible Match System
+
+**Decision**: Support both season-based matches and standalone matches (nullable season_id/league_id).
+
+**Rationale**:
+
+- **Corporate Leagues**: Season-based matches for structured tournaments
+- **External Integration**: Standalone matches for FaceIT matchmaking, one-off tournaments
+- **Future Flexibility**: Can handle various tournament formats
+
+**Implementation**: Triggers validate data integrity when season/league context is provided.
 
 ## Key Patterns
 
@@ -55,6 +131,7 @@ This document explains the system architecture, key design decisions, and patter
 - **Services/Models**: Throw errors and let them bubble up
 - **Try/Catch**: Only for database transactions with cleanup
 - **RFC 7807**: All errors formatted as Problem Details
+- **Database Constraints**: Propagated to frontend via error handling middleware
 
 ### Type Safety
 
@@ -68,6 +145,40 @@ This document explains the system architecture, key design decisions, and patter
 - **E2E Tests**: Playwright tests with real backend
 - **TDD Workflow**: Write tests first, then implementation
 - **Test Utilities**: Centralized setup with `createExpressTestApp`
+
+## External Integrations
+
+### Allstar Partnership
+
+**Purpose**: Demo parsing and clip generation for CS2 matches.
+
+**Benefits**:
+
+- Offloads heavy processing (demo parsing, clip extraction) to specialized service
+- Reduces infrastructure costs for video processing and storage
+- Provides professional-quality clips and match analysis
+- Stores only metadata and links in database, keeping it lightweight
+
+### FaceIT Integration
+
+**Purpose**: Tournament platform integration for match management.
+
+**Features**:
+
+- Webhook processing for match status updates
+- Map veto data retrieval via API
+- Championship creation and management
+- External ID mapping for league structure
+
+### Kanahautomo Discord Service
+
+**Purpose**: Discord community management and role assignment.
+
+**Features**:
+
+- Automatic Discord role assignment based on registration
+- Discord server access management
+- Integration with organization Discord invite links
 
 ## Development Workflow
 
@@ -99,7 +210,7 @@ All code must pass:
 
 - **Migrations**: Version-controlled schema changes
 - **Seeds**: Environment-specific data setup
-- **Backups**: Automated daily backups with retention
+- **Backups**: Automated daily backups with 7-day retention
 
 ## Security Considerations
 
@@ -107,17 +218,19 @@ All code must pass:
 - **CORS**: Configured for frontend domain
 - **Input Validation**: Zod schemas for all API inputs
 - **SQL Injection**: Knex.js query builder prevents SQL injection
+- **GDPR Compliance**: Minimal audit logging for Account access only
+- **Policy Management**: Automatic re-consent when privacy policy versions change
 
 ## Performance
 
 - **Database Indexing**: Proper indexes on foreign keys and search columns
 - **Query Optimization**: Efficient database queries with proper joins
-- **Caching**: Redis for session management
+- **Monitoring**: Grafana Alloy with OpenTelemetry for performance tracking
 - **Frontend**: Next.js optimizations (SSR, code splitting)
 
 ## Monitoring
 
 - **Logging**: Structured logging with appropriate levels
 - **Error Tracking**: RFC 7807 error responses for debugging
-- **Database Monitoring**: Query performance and connection pooling
+- **Database Monitoring**: Query performance and connection pooling via Grafana Alloy
 - **Health Checks**: API endpoints for service health monitoring
