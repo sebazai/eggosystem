@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import {
   getPlayerDetailsBySteamId,
   getMultiplePlayerStatsByFilters,
-  getAllPlayerStatsWithPartialFilters,
+  getAllPlayerStatsWithPartialQueryFilters,
   getPlayerBySteamId,
   getPlayerMatchHistoryByFilters,
   getPlayerGameDetailsWithFilters,
@@ -215,7 +215,7 @@ export const getAllFilteredPlayerStatisticsController = async (
   const { steam_id } = req.params;
   const { parsedParams } = req;
 
-  const playerStats = await getAllPlayerStatsWithPartialFilters(
+  const playerStats = await getAllPlayerStatsWithPartialQueryFilters(
     steam_id,
     parsedParams
   );

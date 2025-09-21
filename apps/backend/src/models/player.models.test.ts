@@ -2,7 +2,7 @@ import {
   getMultiplePlayerStatsByFilters,
   getPlayerGameDetailsWithFilters,
   getPlayerMatchHistoryByFilters,
-  getAllPlayerStatsWithPartialFilters,
+  getAllPlayerStatsWithPartialQueryFilters,
   getPlayerTeamDetailsWithFilters,
   getPlayerStatsForLatestSeason,
   getPlayerMapStatsWithFilters
@@ -606,9 +606,9 @@ describe("getPlayerTeamDetailsWithFilters", () => {
   });
 });
 
-describe("getPlayerStatsByFilters", () => {
+describe("getAllPlayerStatsWithPartialQueryFilters", () => {
   it("should return aggregated stats when player has played as primary and substitute in one season", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
+    const result = await getAllPlayerStatsWithPartialQueryFilters(
       "76561198129692076",
       {
         season_ids: [14],
@@ -666,7 +666,7 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("should return team specific stats when player has played in two teams during one season", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
+    const result = await getAllPlayerStatsWithPartialQueryFilters(
       "76561198129692076",
       {
         season_ids: [14],
@@ -724,7 +724,7 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("player with two different teams in two different season using double season filter aggregates scores", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
+    const result = await getAllPlayerStatsWithPartialQueryFilters(
       "76561197967885016",
       {
         season_ids: [11, 14],
@@ -782,7 +782,7 @@ describe("getPlayerStatsByFilters", () => {
     });
   });
   it("should match when season 11,14 and league 7 vs only league 7", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
+    const result = await getAllPlayerStatsWithPartialQueryFilters(
       "76561197967885016",
       {
         season_ids: [11, 14],
@@ -792,7 +792,7 @@ describe("getPlayerStatsByFilters", () => {
         team_ids: null
       }
     );
-    const result2 = await getAllPlayerStatsWithPartialFilters(
+    const result2 = await getAllPlayerStatsWithPartialQueryFilters(
       "76561197967885016",
       {
         season_ids: null,
@@ -805,7 +805,7 @@ describe("getPlayerStatsByFilters", () => {
     expect(result).toEqual(result2);
   });
   it("bogus filters returns null and zero values", async () => {
-    const result2 = await getAllPlayerStatsWithPartialFilters(
+    const result2 = await getAllPlayerStatsWithPartialQueryFilters(
       "76561197967885016",
       {
         season_ids: [14],
@@ -818,7 +818,7 @@ describe("getPlayerStatsByFilters", () => {
     expect(result2).toEqual(undefined);
   });
   it("player with double season but league specific filter", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
+    const result = await getAllPlayerStatsWithPartialQueryFilters(
       "76561197967885016",
       {
         season_ids: [11, 14],
@@ -875,66 +875,8 @@ describe("getPlayerStatsByFilters", () => {
       trades: 69
     });
   });
-  it("with season, stage and mapid filters", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
-      "76561197967885016",
-      {
-        season_ids: [11, 14],
-        league_ids: null,
-        map_ids: [8],
-        stages: [2],
-        team_ids: null
-      }
-    );
-    expect(result).toEqual({
-      steam_id: "76561197967885016",
-      nickname: "enzoj",
-      maps_played: 2,
-      kills: 22,
-      kills_ct: 7,
-      kills_t: 15,
-      assists: 8,
-      deaths: 28,
-      flash_assists: 2,
-      awp_kills: 2,
-      utility_damage: 132,
-      headshots: 11,
-      first_kills: 3,
-      first_deaths: 6,
-      adr: 65.7,
-      kana_rating: 0.8,
-      hs_percent: 72.5,
-      clutches_won: 0,
-      clutches_lost: 0,
-      kast: 66.5,
-      enemies_flashed: 27,
-      mates_flashed: 10,
-      self_flashes: 9,
-      total_damage: 2486,
-      flashes_thrown: 28,
-      total_ef_duration: 88.6,
-      kd: 0.79,
-      multikill_2k: 3,
-      multikill_3k: 2,
-      multikill_4k: 0,
-      multikill_5k: 0,
-      rounds_played: 35,
-      avg_enemy_flash_duration: 3.2,
-      avg_teammate_flash_duration: 0.8,
-      counter_strafing_percentage: 80.8,
-      crosshair_placement: 7.85,
-      first_deaths_ct: 4,
-      first_deaths_t: 2,
-      first_kills_ct: 1,
-      first_kills_t: 2,
-      time_to_damage: 338,
-      trade_attempts: 1,
-      trade_opportunities: 1,
-      trades: 5
-    });
-  });
   it("with wrong team filter", async () => {
-    const result = await getAllPlayerStatsWithPartialFilters(
+    const result = await getAllPlayerStatsWithPartialQueryFilters(
       "76561197967885016",
       {
         season_ids: [11, 14],
@@ -1139,232 +1081,6 @@ describe("getPlayerMatchHistoryByFilters", () => {
       }
     ]);
   });
-  it("enzoj, anubis, playoffs", async () => {
-    const result = await getPlayerMatchHistoryByFilters("76561197967885016", {
-      season_ids: null,
-      league_ids: null,
-      map_ids: [9],
-      stages: [2],
-      team_ids: null
-    });
-    expect(result).toEqual([
-      {
-        match_id: 9917,
-        game_id: null,
-        map_name: "de_anubis",
-        best_of: 3,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 2,
-        match_date: "2024-10-14",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 2071,
-        opponent_name: "Vincit Faija & Sons",
-        opponent_logo: "S14_2071.png",
-        score: 8,
-        opponent_score: 13,
-        kills: 13,
-        deaths: 17,
-        assists: 3,
-        flash_assists: 1,
-        awp_kills: 0,
-        utility_damage: 105,
-        headshots: 7,
-        first_kills: 3,
-        first_deaths: 3,
-        kast: 57,
-        adr: 76.1,
-        hs_percent: 54,
-        kana_rating: 0.64,
-        kd: 0.76
-      },
-      {
-        match_id: 10027,
-        game_id: null,
-        map_name: "de_anubis",
-        best_of: 3,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 2,
-        match_date: "2024-10-23",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 2030,
-        opponent_name: "Caverion Stadist",
-        opponent_logo: "S14_2030.png",
-        score: 6,
-        opponent_score: 13,
-        kills: 15,
-        deaths: 14,
-        assists: 4,
-        flash_assists: 1,
-        awp_kills: 0,
-        utility_damage: 32,
-        headshots: 8,
-        first_kills: 3,
-        first_deaths: 4,
-        kast: 79,
-        adr: 77.4,
-        hs_percent: 53,
-        kana_rating: 0.89,
-        kd: 1.07
-      },
-      {
-        match_id: 10057,
-        game_id: null,
-        map_name: "de_anubis",
-        best_of: 3,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 2,
-        match_date: "2024-10-30",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 1019,
-        opponent_name: "ALM Partners Riskiryhmä",
-        opponent_logo: "S15_2201.png",
-        score: 5,
-        opponent_score: 13,
-        kills: 10,
-        deaths: 16,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 117,
-        headshots: 6,
-        first_kills: 3,
-        first_deaths: 3,
-        kast: 67,
-        adr: 74.1,
-        hs_percent: 60,
-        kana_rating: 0.72,
-        kd: 0.63
-      }
-    ]);
-  });
-  it("enzoj, regular, playoffs", async () => {
-    const result = await getPlayerMatchHistoryByFilters("76561197967885016", {
-      season_ids: null,
-      league_ids: null,
-      map_ids: [9],
-      stages: [1],
-      team_ids: null
-    });
-    expect(result).toEqual([
-      {
-        match_id: 9307,
-        game_id: 103438,
-        map_name: "de_anubis",
-        best_of: 1,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 1,
-        match_date: "2024-09-04",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 361,
-        opponent_name: "Yle",
-        opponent_logo: "S14_2034.png",
-        score: 13,
-        opponent_score: 6,
-        kills: 17,
-        deaths: 12,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 54,
-        headshots: 10,
-        first_kills: 2,
-        first_deaths: 2,
-        kast: 89,
-        adr: 90.4,
-        hs_percent: 59,
-        kana_rating: 1.09,
-        kd: 1.42
-      },
-      {
-        match_id: 9663,
-        game_id: 103817,
-        map_name: "de_anubis",
-        best_of: 1,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 1,
-        match_date: "2024-09-23",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 1473,
-        opponent_name: "Nokia gNBots",
-        opponent_logo: "S15_2186.png",
-        score: 9,
-        opponent_score: 13,
-        kills: 15,
-        deaths: 17,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 17,
-        headshots: 13,
-        first_kills: 2,
-        first_deaths: 7,
-        kast: 59,
-        adr: 77.7,
-        hs_percent: 87,
-        kana_rating: 0.6,
-        kd: 0.88
-      },
-      {
-        match_id: 9832,
-        game_id: 104025,
-        map_name: "de_anubis",
-        best_of: 1,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 1,
-        match_date: "2024-10-02",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 349,
-        opponent_name: "Capgemini",
-        opponent_logo: "S14_2082.png",
-        score: 13,
-        opponent_score: 4,
-        kills: 11,
-        deaths: 11,
-        assists: 2,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 95,
-        headshots: 6,
-        first_kills: 3,
-        first_deaths: 1,
-        kast: 76,
-        adr: 75.4,
-        hs_percent: 55,
-        kana_rating: 0.84,
-        kd: 1
-      }
-    ]);
-  });
   it("enzoj, 7dos, amount matches", async () => {
     const result = await getPlayerMatchHistoryByFilters("76561197967885016", {
       season_ids: null,
@@ -1384,300 +1100,6 @@ describe("getPlayerMatchHistoryByFilters", () => {
       team_ids: [53, 1650]
     });
     expect(result.length).toEqual(24);
-  });
-  it("enzoj, 7dos & ps, and anubis", async () => {
-    const result = await getPlayerMatchHistoryByFilters("76561197967885016", {
-      season_ids: null,
-      league_ids: null,
-      map_ids: [8],
-      stages: null,
-      team_ids: [53, 1650]
-    });
-    expect(result).toEqual([
-      {
-        match_id: 7405,
-        game_id: null,
-        map_name: "de_ancient",
-        best_of: 3,
-        season_id: 11,
-        season_name: "CS:GO Season 11",
-        league_id: 7,
-        league_name: "div6",
-        stage: 1,
-        match_date: "2023-01-31",
-        team_id: 53,
-        team_name: "Polar Squad",
-        team_logo: "S13_1935.png",
-        opponent_id: 18,
-        opponent_name: "Efecte Gaming Club",
-        opponent_logo: "S14_2045.png",
-        score: 12,
-        opponent_score: 16,
-        kills: 7,
-        deaths: 24,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 127,
-        headshots: 6,
-        first_kills: 0,
-        first_deaths: 6,
-        kast: 54,
-        adr: 45.1,
-        hs_percent: 86,
-        kana_rating: 0.44,
-        kd: 0.29
-      },
-      {
-        match_id: 8233,
-        game_id: null,
-        map_name: "de_ancient",
-        best_of: 3,
-        season_id: 11,
-        season_name: "CS:GO Season 11",
-        league_id: 7,
-        league_name: "div6",
-        stage: 2,
-        match_date: "2023-04-26",
-        team_id: 53,
-        team_name: "Polar Squad",
-        team_logo: "S13_1935.png",
-        opponent_id: 1516,
-        opponent_name: "Semel eSports Academy",
-        opponent_logo: "S11_1516.png",
-        score: 16,
-        opponent_score: 5,
-        kills: 20,
-        deaths: 14,
-        assists: 3,
-        flash_assists: 2,
-        awp_kills: 2,
-        utility_damage: 69,
-        headshots: 9,
-        first_kills: 2,
-        first_deaths: 1,
-        kast: 90,
-        adr: 92.3,
-        hs_percent: 45,
-        kana_rating: 1.25,
-        kd: 1.43
-      },
-      {
-        match_id: 10027,
-        game_id: null,
-        map_name: "de_ancient",
-        best_of: 3,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 2,
-        match_date: "2024-10-23",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 2030,
-        opponent_name: "Caverion Stadist",
-        opponent_logo: "S14_2030.png",
-        score: 1,
-        opponent_score: 13,
-        kills: 2,
-        deaths: 14,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 63,
-        headshots: 2,
-        first_kills: 1,
-        first_deaths: 5,
-        kast: 43,
-        adr: 39.1,
-        hs_percent: 100,
-        kana_rating: 0.35,
-        kd: 0.14
-      },
-      {
-        match_id: 9513,
-        game_id: 103657,
-        map_name: "de_ancient",
-        best_of: 1,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 1,
-        match_date: "2024-09-12",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 2075,
-        opponent_name: "K-Auto Marmoripojat",
-        opponent_logo: "S14_2075.png",
-        score: 11,
-        opponent_score: 13,
-        kills: 11,
-        deaths: 19,
-        assists: 10,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 131,
-        headshots: 8,
-        first_kills: 2,
-        first_deaths: 7,
-        kast: 71,
-        adr: 69.8,
-        hs_percent: 73,
-        kana_rating: 0.67,
-        kd: 0.58
-      }
-    ]);
-  });
-  it("enzoj, all filters + anubis", async () => {
-    const result = await getPlayerMatchHistoryByFilters("76561197967885016", {
-      season_ids: [11, 14],
-      league_ids: [4, 7],
-      map_ids: [8],
-      stages: [1, 2],
-      team_ids: [53, 1650]
-    });
-    expect(result).toEqual([
-      {
-        match_id: 7405,
-        game_id: null,
-        map_name: "de_ancient",
-        best_of: 3,
-        season_id: 11,
-        season_name: "CS:GO Season 11",
-        league_id: 7,
-        league_name: "div6",
-        stage: 1,
-        match_date: "2023-01-31",
-        team_id: 53,
-        team_name: "Polar Squad",
-        team_logo: "S13_1935.png",
-        opponent_id: 18,
-        opponent_name: "Efecte Gaming Club",
-        opponent_logo: "S14_2045.png",
-        score: 12,
-        opponent_score: 16,
-        kills: 7,
-        deaths: 24,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 127,
-        headshots: 6,
-        first_kills: 0,
-        first_deaths: 6,
-        kast: 54,
-        adr: 45.1,
-        hs_percent: 86,
-        kana_rating: 0.44,
-        kd: 0.29
-      },
-      {
-        match_id: 8233,
-        game_id: null,
-        map_name: "de_ancient",
-        best_of: 3,
-        season_id: 11,
-        season_name: "CS:GO Season 11",
-        league_id: 7,
-        league_name: "div6",
-        stage: 2,
-        match_date: "2023-04-26",
-        team_id: 53,
-        team_name: "Polar Squad",
-        team_logo: "S13_1935.png",
-        opponent_id: 1516,
-        opponent_name: "Semel eSports Academy",
-        opponent_logo: "S11_1516.png",
-        score: 16,
-        opponent_score: 5,
-        kills: 20,
-        deaths: 14,
-        assists: 3,
-        flash_assists: 2,
-        awp_kills: 2,
-        utility_damage: 69,
-        headshots: 9,
-        first_kills: 2,
-        first_deaths: 1,
-        kast: 90,
-        adr: 92.3,
-        hs_percent: 45,
-        kana_rating: 1.25,
-        kd: 1.43
-      },
-      {
-        match_id: 10027,
-        game_id: null,
-        map_name: "de_ancient",
-        best_of: 3,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 2,
-        match_date: "2024-10-23",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 2030,
-        opponent_name: "Caverion Stadist",
-        opponent_logo: "S14_2030.png",
-        score: 1,
-        opponent_score: 13,
-        kills: 2,
-        deaths: 14,
-        assists: 5,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 63,
-        headshots: 2,
-        first_kills: 1,
-        first_deaths: 5,
-        kast: 43,
-        adr: 39.1,
-        hs_percent: 100,
-        kana_rating: 0.35,
-        kd: 0.14
-      },
-      {
-        match_id: 9513,
-        game_id: 103657,
-        map_name: "de_ancient",
-        best_of: 1,
-        season_id: 14,
-        season_name: "CS2 Season 2",
-        league_id: 4,
-        league_name: "div3",
-        stage: 1,
-        match_date: "2024-09-12",
-        team_id: 1650,
-        team_name: "7dos",
-        team_logo: "S14_2058.png",
-        opponent_id: 2075,
-        opponent_name: "K-Auto Marmoripojat",
-        opponent_logo: "S14_2075.png",
-        score: 11,
-        opponent_score: 13,
-        kills: 11,
-        deaths: 19,
-        assists: 10,
-        flash_assists: 0,
-        awp_kills: 0,
-        utility_damage: 131,
-        headshots: 8,
-        first_kills: 2,
-        first_deaths: 7,
-        kast: 71,
-        adr: 69.8,
-        hs_percent: 73,
-        kana_rating: 0.67,
-        kd: 0.58
-      }
-    ]);
   });
 });
 

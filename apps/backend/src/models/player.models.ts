@@ -480,7 +480,7 @@ export const getPlayerGameDetailsWithFilters = async (
   return playerDetails;
 };
 
-export const getAllPlayerStatsWithPartialFilters = async (
+export const getAllPlayerStatsWithPartialQueryFilters = async (
   steam_id: string,
   { season_ids, league_ids, team_ids }: ParsedParams
 ) => {
