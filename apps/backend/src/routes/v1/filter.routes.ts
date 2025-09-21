@@ -67,7 +67,13 @@ router.get("/", async (req, res) => {
   if (filter_by_player_name) {
     baseQuery = baseQuery
       .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
-      .where("SP.nickname", "like", `%${filter_by_player_name}%`);
+      .where(function () {
+        this.where("SP.nickname", "like", `%${filter_by_player_name}%`).orWhere(
+          "SP.faceit_nickname",
+          "like",
+          `%${filter_by_player_name}%`
+        );
+      });
   }
 
   // Apply season and team filters early
@@ -115,6 +121,38 @@ router.get("/", async (req, res) => {
       !stages?.length &&
       !map_ids?.length &&
       !filter_by_steam_id);
+  const seasonAndLeagueFilter =
+    season_ids?.length &&
+    league_ids?.length &&
+    !team_ids?.length &&
+    !stages?.length &&
+    !map_ids?.length &&
+    !filter_by_steam_id &&
+    !filter_by_player_name;
+  const teamAndLeagueFilter =
+    team_ids?.length &&
+    league_ids?.length &&
+    !season_ids?.length &&
+    !stages?.length &&
+    !map_ids?.length &&
+    !filter_by_steam_id &&
+    !filter_by_player_name;
+  const teamAndSeasonFilter =
+    team_ids?.length &&
+    season_ids?.length &&
+    !league_ids?.length &&
+    !stages?.length &&
+    !map_ids?.length &&
+    !filter_by_steam_id &&
+    !filter_by_player_name;
+  const seasonLeagueStageFilter =
+    season_ids?.length &&
+    league_ids?.length &&
+    stages?.length &&
+    !team_ids?.length &&
+    !map_ids?.length &&
+    !filter_by_steam_id &&
+    !filter_by_player_name;
 
   // When no filters are applied, query source tables directly for better performance
   if (!hasAnyFilters) {
@@ -454,7 +492,17 @@ router.get("/", async (req, res) => {
         knex("SeasonTeamPlayers as STP")
           .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
           .join("Seasons as S", "STP.season_id", "S.id")
-          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .where(function () {
+            this.where(
+              "SP.nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            ).orWhere(
+              "SP.faceit_nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            );
+          })
           .distinct()
           .select("S.id")
           .orderBy("S.id")
@@ -466,7 +514,17 @@ router.get("/", async (req, res) => {
         knex("SeasonTeamPlayers as STP")
           .join("SteamPlayers as SP", "STP.steam_id", "SP.steam_id")
           .join("Teams as T", "STP.team_id", "T.id")
-          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .where(function () {
+            this.where(
+              "SP.nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            ).orWhere(
+              "SP.faceit_nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            );
+          })
           .distinct()
           .select("T.id")
           .orderBy("T.name")
@@ -484,7 +542,17 @@ router.get("/", async (req, res) => {
             );
           })
           .join("Matches as M", "M.id", "MT.match_id")
-          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .where(function () {
+            this.where(
+              "SP.nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            ).orWhere(
+              "SP.faceit_nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            );
+          })
           .distinct()
           .select("M.league_id as id")
           .whereNotNull("M.league_id")
@@ -503,7 +571,17 @@ router.get("/", async (req, res) => {
             );
           })
           .join("Matches as M", "M.id", "MT.match_id")
-          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .where(function () {
+            this.where(
+              "SP.nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            ).orWhere(
+              "SP.faceit_nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            );
+          })
           .distinct()
           .select("M.stage as id")
           .whereNotNull("M.stage")
@@ -523,7 +601,400 @@ router.get("/", async (req, res) => {
           })
           .join("Matches as M", "M.id", "MT.match_id")
           .join("MatchGames as MG", "M.id", "MG.match_id")
-          .where("SP.nickname", "like", `%${filter_by_player_name}%`)
+          .where(function () {
+            this.where(
+              "SP.nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            ).orWhere(
+              "SP.faceit_nickname",
+              "like",
+              `%${filter_by_player_name}%`
+            );
+          })
+          .distinct()
+          .select("MG.map_id as id")
+          .whereNotNull("MG.map_id")
+          .orderBy("MG.map_id")
+      );
+    }
+
+    const results = await Promise.all(queries);
+
+    const grouped: Record<string, number[]> = {};
+    let resultIndex = 0;
+
+    if (requestedTypes.includes("season_ids")) {
+      grouped.season_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("team_ids")) {
+      grouped.team_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("league_ids")) {
+      grouped.league_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("stages")) {
+      grouped.stages = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("map_ids")) {
+      grouped.map_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+
+    res.json(grouped);
+    return;
+  }
+
+  if (seasonAndLeagueFilter) {
+    const queries: Promise<{ id: number }[]>[] = [];
+
+    if (requestedTypes.includes("season_ids")) {
+      queries.push(
+        knex("Seasons").whereIn("id", season_ids!).select("id").orderBy("id")
+      );
+    }
+
+    if (requestedTypes.includes("team_ids")) {
+      queries.push(
+        knex("SeasonLeagueTeams as SLT")
+          .join("Teams as T", "SLT.team_id", "T.id")
+          .whereIn("SLT.season_id", season_ids!)
+          .whereIn("SLT.league_id", league_ids!)
+          .select("T.id")
+          .orderBy("T.name")
+      );
+    }
+
+    if (requestedTypes.includes("league_ids")) {
+      queries.push(
+        knex("Leagues")
+          .whereIn("id", league_ids!)
+          .select("id")
+          .orderBy("sort_priority")
+      );
+    }
+
+    if (requestedTypes.includes("stages")) {
+      queries.push(
+        knex("Matches as M")
+          .whereIn("M.season_id", season_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .distinct()
+          .select("M.stage as id")
+          .whereNotNull("M.stage")
+          .orderBy("M.stage")
+      );
+    }
+
+    if (requestedTypes.includes("map_ids")) {
+      queries.push(
+        knex("Matches as M")
+          .join("MatchGames as MG", "M.id", "MG.match_id")
+          .whereIn("M.season_id", season_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .distinct()
+          .select("MG.map_id as id")
+          .whereNotNull("MG.map_id")
+          .orderBy("MG.map_id")
+      );
+    }
+
+    const results = await Promise.all(queries);
+
+    const grouped: Record<string, number[]> = {};
+    let resultIndex = 0;
+
+    if (requestedTypes.includes("season_ids")) {
+      grouped.season_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("team_ids")) {
+      grouped.team_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("league_ids")) {
+      grouped.league_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("stages")) {
+      grouped.stages = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("map_ids")) {
+      grouped.map_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+
+    res.json(grouped);
+    return;
+  }
+
+  if (teamAndLeagueFilter) {
+    const queries: Promise<{ id: number }[]>[] = [];
+
+    if (requestedTypes.includes("season_ids")) {
+      queries.push(
+        knex("SeasonLeagueTeams as SLT")
+          .join("Seasons as S", "SLT.season_id", "S.id")
+          .whereIn("SLT.team_id", team_ids!)
+          .whereIn("SLT.league_id", league_ids!)
+          .distinct()
+          .select("S.id")
+          .orderBy("S.id")
+      );
+    }
+
+    if (requestedTypes.includes("team_ids")) {
+      queries.push(
+        knex("Teams").whereIn("id", team_ids!).select("id").orderBy("name")
+      );
+    }
+
+    if (requestedTypes.includes("league_ids")) {
+      queries.push(
+        knex("Leagues")
+          .whereIn("id", league_ids!)
+          .select("id")
+          .orderBy("sort_priority")
+      );
+    }
+
+    if (requestedTypes.includes("stages")) {
+      queries.push(
+        knex("MatchTeams as MT")
+          .join("Matches as M", "MT.match_id", "M.id")
+          .whereIn("MT.team_id", team_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .distinct()
+          .select("M.stage as id")
+          .whereNotNull("M.stage")
+          .orderBy("M.stage")
+      );
+    }
+
+    if (requestedTypes.includes("map_ids")) {
+      queries.push(
+        knex("MatchTeams as MT")
+          .join("Matches as M", "MT.match_id", "M.id")
+          .join("MatchGames as MG", "M.id", "MG.match_id")
+          .whereIn("MT.team_id", team_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .distinct()
+          .select("MG.map_id as id")
+          .whereNotNull("MG.map_id")
+          .orderBy("MG.map_id")
+      );
+    }
+
+    const results = await Promise.all(queries);
+
+    const grouped: Record<string, number[]> = {};
+    let resultIndex = 0;
+
+    if (requestedTypes.includes("season_ids")) {
+      grouped.season_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("team_ids")) {
+      grouped.team_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("league_ids")) {
+      grouped.league_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("stages")) {
+      grouped.stages = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("map_ids")) {
+      grouped.map_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+
+    res.json(grouped);
+    return;
+  }
+
+  if (teamAndSeasonFilter) {
+    const queries: Promise<{ id: number }[]>[] = [];
+
+    if (requestedTypes.includes("season_ids")) {
+      queries.push(
+        knex("Seasons").whereIn("id", season_ids!).select("id").orderBy("id")
+      );
+    }
+
+    if (requestedTypes.includes("team_ids")) {
+      queries.push(
+        knex("Teams").whereIn("id", team_ids!).select("id").orderBy("name")
+      );
+    }
+
+    if (requestedTypes.includes("league_ids")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("MatchTeams as MT", function () {
+            this.on("MT.team_id", "STP.team_id").andOn(
+              "MT.season_id",
+              "STP.season_id"
+            );
+          })
+          .join("Matches as M", "M.id", "MT.match_id")
+          .whereIn("STP.team_id", team_ids!)
+          .whereIn("STP.season_id", season_ids!)
+          .distinct()
+          .select("M.league_id as id")
+          .whereNotNull("M.league_id")
+          .orderBy("M.league_id")
+      );
+    }
+
+    if (requestedTypes.includes("stages")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("MatchTeams as MT", function () {
+            this.on("MT.team_id", "STP.team_id").andOn(
+              "MT.season_id",
+              "STP.season_id"
+            );
+          })
+          .join("Matches as M", "M.id", "MT.match_id")
+          .whereIn("STP.team_id", team_ids!)
+          .whereIn("STP.season_id", season_ids!)
+          .distinct()
+          .select("M.stage as id")
+          .whereNotNull("M.stage")
+          .orderBy("M.stage")
+      );
+    }
+
+    if (requestedTypes.includes("map_ids")) {
+      queries.push(
+        knex("SeasonTeamPlayers as STP")
+          .join("MatchTeams as MT", function () {
+            this.on("MT.team_id", "STP.team_id").andOn(
+              "MT.season_id",
+              "STP.season_id"
+            );
+          })
+          .join("Matches as M", "M.id", "MT.match_id")
+          .join("MatchGames as MG", "M.id", "MG.match_id")
+          .whereIn("STP.team_id", team_ids!)
+          .whereIn("STP.season_id", season_ids!)
+          .distinct()
+          .select("MG.map_id as id")
+          .whereNotNull("MG.map_id")
+          .orderBy("MG.map_id")
+      );
+    }
+
+    const results = await Promise.all(queries);
+
+    const grouped: Record<string, number[]> = {};
+    let resultIndex = 0;
+
+    if (requestedTypes.includes("season_ids")) {
+      grouped.season_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("team_ids")) {
+      grouped.team_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("league_ids")) {
+      grouped.league_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("stages")) {
+      grouped.stages = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+    if (requestedTypes.includes("map_ids")) {
+      grouped.map_ids = results[resultIndex++].map(
+        (row: { id: number }) => row.id
+      );
+    }
+
+    res.json(grouped);
+    return;
+  }
+
+  if (seasonLeagueStageFilter) {
+    const queries: Promise<{ id: number }[]>[] = [];
+
+    if (requestedTypes.includes("season_ids")) {
+      queries.push(
+        knex("Seasons").whereIn("id", season_ids!).select("id").orderBy("id")
+      );
+    }
+
+    if (requestedTypes.includes("team_ids")) {
+      queries.push(
+        knex("MatchTeams as MT")
+          .join("Matches as M", "MT.match_id", "M.id")
+          .join("Teams as T", "MT.team_id", "T.id")
+          .whereIn("M.season_id", season_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .whereIn("M.stage", stages!)
+          .distinct()
+          .select("T.id")
+          .orderBy("T.name")
+      );
+    }
+
+    if (requestedTypes.includes("league_ids")) {
+      queries.push(
+        knex("Leagues")
+          .whereIn("id", league_ids!)
+          .select("id")
+          .orderBy("sort_priority")
+      );
+    }
+
+    if (requestedTypes.includes("stages")) {
+      queries.push(
+        knex("Matches as M")
+          .whereIn("M.season_id", season_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .whereIn("M.stage", stages!)
+          .distinct()
+          .select("M.stage as id")
+          .whereNotNull("M.stage")
+          .orderBy("M.stage")
+      );
+    }
+
+    if (requestedTypes.includes("map_ids")) {
+      queries.push(
+        knex("Matches as M")
+          .join("MatchGames as MG", "M.id", "MG.match_id")
+          .whereIn("M.season_id", season_ids!)
+          .whereIn("M.league_id", league_ids!)
+          .whereIn("M.stage", stages!)
           .distinct()
           .select("MG.map_id as id")
           .whereNotNull("MG.map_id")
