@@ -57,7 +57,7 @@ export function BaseTable<TData>({
           <table className="text-sm sm:text-base w-full">
             <thead>
               {/* Desktop headers */}
-              <tr className="hidden bg-kanaliiga-light-brown/30 sm:table-row uppercase text-kanaliiga-orange">
+              <tr className="hidden bg-kanaliiga-light-brown/30 xxs:table-row uppercase text-kanaliiga-orange">
                 {table.getHeaderGroups().map((headerGroup) =>
                   headerGroup.headers.map((header) => (
                     <th

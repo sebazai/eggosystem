@@ -49,7 +49,7 @@ export const PlayersPage = () => {
         />
       </div>
 
-      <CardContainer classNames="p-2 md:p-4">
+      <CardContainer classNames="my-2 md:my-4">
         <PlayerTable
           players={players}
           hideTeamName={filterParams.seasons?.length !== 1}
