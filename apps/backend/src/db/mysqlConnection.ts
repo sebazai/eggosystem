@@ -1,10 +1,9 @@
-import { createPool } from "mysql2/promise";
+import { createPool, type PoolOptions } from "mysql2/promise";
 import { dbEnvConfig } from "../configs/db-env";
 
 const dbPool = createPool({
   ...dbEnvConfig,
-  connectionLimit: 50,
-  queueLimit: 500,
+  connectionLimit: 100,
   dateStrings: true,
   // debug: process.env.NODE_ENV !== "production",
   decimalNumbers: true,
@@ -18,7 +17,7 @@ const dbPool = createPool({
 
     return next();
   }
-});
+} satisfies PoolOptions);
 
 export const getConnection = () => {
   return dbPool.getConnection();
