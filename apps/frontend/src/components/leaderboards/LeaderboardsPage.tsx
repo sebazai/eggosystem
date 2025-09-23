@@ -20,7 +20,9 @@ export const LeaderboardsPage = () => {
   return (
     <div>
       <h1 className="text-3xl mb-4 md:mb-8">Leaderboards</h1>
-      <MultiFilters {...filterParams} />
+      <div className="pb-2">
+        <MultiFilters {...filterParams} />
+      </div>
       <CardContainer classNames="p-2 md:p-4">
         {areFiltersEmpty ? (
           <ContentContainer classNames="min-h-[30vh]">

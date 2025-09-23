@@ -18,15 +18,17 @@ export default function TeamsPage() {
   return (
     <div>
       <h1 className="text-3xl mb-4 md:mb-8">Teams</h1>
-      <MultiFilters
-        seasons={filterParams.seasons}
-        leagues={filterParams.leagues}
-        teams={filterParams.teams}
-        stages={null}
-        maps={null}
-        hideFilters={{ stages: true, maps: true }}
-        sortOrder={["teams", "seasons", "leagues"]}
-      />
+      <div className="pb-2">
+        <MultiFilters
+          seasons={filterParams.seasons}
+          leagues={filterParams.leagues}
+          teams={filterParams.teams}
+          stages={null}
+          maps={null}
+          hideFilters={{ stages: true, maps: true }}
+          sortOrder={["teams", "seasons", "leagues"]}
+        />
+      </div>
 
       <CardContainer classNames="p-2 md:p-4">
         {areFiltersEmpty ? (

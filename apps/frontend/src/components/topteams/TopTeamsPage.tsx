@@ -18,7 +18,7 @@ export const TopTeamsPage = () => {
   return (
     <div>
       <h1 className="text-3xl mb-4 md:mb-8">Top Teams</h1>
-      <div className="pb-4">
+      <div className="pb-2">
         <MultiFilters
           seasons={filterParams.seasons}
           leagues={filterParams.leagues}

@@ -17,7 +17,7 @@ export const RecentMatches = () => {
   return (
     <div>
       <h1 className="text-3xl mb-4 md:mb-8">Recent matches</h1>
-      <div className="py-2">
+      <div className="pb-2">
         <MultiFilters
           seasons={filterParams.seasons}
           leagues={filterParams.leagues}
