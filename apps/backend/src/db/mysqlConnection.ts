@@ -4,6 +4,8 @@ import { dbEnvConfig } from "../configs/db-env";
 const dbPool = createPool({
   ...dbEnvConfig,
   connectionLimit: 100,
+  queueLimit: 300,
+  idleTimeout: 20000,
   dateStrings: true,
   // debug: process.env.NODE_ENV !== "production",
   decimalNumbers: true,
