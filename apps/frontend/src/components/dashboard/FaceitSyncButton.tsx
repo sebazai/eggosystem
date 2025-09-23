@@ -26,7 +26,7 @@ export function FaceitSyncButton() {
 
   return (
     <Button onClick={handleSync} disabled={isLoading} className="w-full">
-      {isLoading ? "Syncing..." : "Sync FACEIT Data"}
+      {isLoading ? "Syncing..." : "Sync FACEIT Match schedules"}
     </Button>
   );
 }
