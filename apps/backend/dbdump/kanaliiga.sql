@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Sep 27, 2025 at 01:32 PM
+-- Generation Time: Sep 27, 2025 at 04:30 PM
 -- Server version: 11.8.3-MariaDB
 -- PHP Version: 8.2.27
 
@@ -332,7 +332,7 @@ CREATE TABLE `LinkedAccounts` (
 
 CREATE TABLE `MapRoundStats` (
   `id` int(10) UNSIGNED NOT NULL,
-  `game_id` int(10) UNSIGNED NOT NULL,
+  `match_game_id` int(10) UNSIGNED NOT NULL,
   `ct_team_id` int(10) UNSIGNED NOT NULL,
   `t_team_id` int(10) UNSIGNED NOT NULL,
   `round_number` tinyint(3) UNSIGNED NOT NULL,
@@ -382,7 +382,7 @@ CREATE TABLE `Matches` (
 
 CREATE TABLE `MatchGameClips` (
   `id` int(10) UNSIGNED NOT NULL,
-  `game_id` int(10) UNSIGNED NOT NULL,
+  `match_game_id` int(10) UNSIGNED NOT NULL,
   `clip_steam_id` bigint(20) DEFAULT NULL,
   `clip_status` varchar(255) NOT NULL,
   `clip_type` varchar(255) NOT NULL,
@@ -506,7 +506,7 @@ CREATE TABLE `Permissions` (
 CREATE TABLE `PlayerStats` (
   `id` int(10) UNSIGNED NOT NULL,
   `steam_id` bigint(20) NOT NULL,
-  `game_id` int(10) UNSIGNED NOT NULL,
+  `match_game_id` int(10) UNSIGNED NOT NULL,
   `kills` tinyint(3) UNSIGNED NOT NULL,
   `deaths` tinyint(3) UNSIGNED NOT NULL,
   `assists` tinyint(3) UNSIGNED NOT NULL,
@@ -621,7 +621,7 @@ CREATE TABLE `PlayerStats` (
 
 CREATE TABLE `PlayerTrades` (
   `id` int(10) UNSIGNED NOT NULL,
-  `game_id` int(10) UNSIGNED NOT NULL,
+  `match_game_id` int(10) UNSIGNED NOT NULL,
   `trader_steam_id` bigint(20) NOT NULL,
   `killer_steam_id` bigint(20) NOT NULL,
   `victim_steam_id` bigint(20) NOT NULL,
@@ -1288,7 +1288,7 @@ CREATE TABLE `TeamGameScores` (
   `id` int(10) UNSIGNED NOT NULL,
   `match_id` int(10) UNSIGNED NOT NULL,
   `team_id` int(10) UNSIGNED NOT NULL,
-  `game_id` int(10) UNSIGNED NOT NULL,
+  `match_game_id` int(10) UNSIGNED NOT NULL,
   `starting_side` enum('CT','T') NOT NULL,
   `score` tinyint(3) UNSIGNED NOT NULL,
   `halftime_score` tinyint(3) UNSIGNED NOT NULL,
@@ -1455,7 +1455,7 @@ ALTER TABLE `LinkedAccounts`
 --
 ALTER TABLE `MapRoundStats`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `maproundstats_game_id_round_number_unique` (`game_id`,`round_number`),
+  ADD UNIQUE KEY `maproundstats_game_id_round_number_unique` (`match_game_id`,`round_number`),
   ADD KEY `maproundstats_ct_team_id_foreign` (`ct_team_id`),
   ADD KEY `maproundstats_t_team_id_foreign` (`t_team_id`);
 
@@ -1479,7 +1479,7 @@ ALTER TABLE `Matches`
 --
 ALTER TABLE `MatchGameClips`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `match_game_clips_game_id_clip_type_unique` (`game_id`,`clip_type`),
+  ADD UNIQUE KEY `match_game_clips_game_id_clip_type_unique` (`match_game_id`,`clip_type`),
   ADD KEY `matchgameclips_clip_steam_id_foreign` (`clip_steam_id`);
 
 --
@@ -1542,20 +1542,20 @@ ALTER TABLE `Permissions`
 --
 ALTER TABLE `PlayerStats`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `playerstats_game_id_steam_id_unique` (`game_id`,`steam_id`),
+  ADD UNIQUE KEY `playerstats_game_id_steam_id_unique` (`match_game_id`,`steam_id`),
   ADD KEY `playerstats_steam_id_foreign` (`steam_id`),
-  ADD KEY `playerstats_game_id_foreign` (`game_id`);
+  ADD KEY `playerstats_game_id_foreign` (`match_game_id`);
 
 --
 -- Indexes for table `PlayerTrades`
 --
 ALTER TABLE `PlayerTrades`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `playertrades_unique` (`game_id`,`trader_steam_id`,`killer_steam_id`,`victim_steam_id`,`round_number`),
+  ADD UNIQUE KEY `playertrades_unique` (`match_game_id`,`trader_steam_id`,`killer_steam_id`,`victim_steam_id`,`round_number`),
   ADD KEY `playertrades_trader_steam_id_foreign` (`trader_steam_id`),
   ADD KEY `playertrades_killer_steam_id_foreign` (`killer_steam_id`),
   ADD KEY `playertrades_victim_steam_id_foreign` (`victim_steam_id`),
-  ADD KEY `playertrades_game_id_foreign` (`game_id`);
+  ADD KEY `playertrades_game_id_foreign` (`match_game_id`);
 
 --
 -- Indexes for table `Reservations`
@@ -1684,9 +1684,9 @@ ALTER TABLE `SteamPlayers`
 --
 ALTER TABLE `TeamGameScores`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `teamgamescores_game_id_team_id_unique` (`game_id`,`team_id`),
+  ADD UNIQUE KEY `teamgamescores_game_id_team_id_unique` (`match_game_id`,`team_id`),
   ADD KEY `teamgamescores_match_id_team_id_foreign` (`match_id`,`team_id`),
-  ADD KEY `teamgamescores_game_id_foreign` (`game_id`);
+  ADD KEY `teamgamescores_game_id_foreign` (`match_game_id`);
 
 --
 -- Indexes for table `TeamRosters`
@@ -1995,7 +1995,7 @@ ALTER TABLE `LinkedAccounts`
 --
 ALTER TABLE `MapRoundStats`
   ADD CONSTRAINT `maproundstats_ct_team_id_foreign` FOREIGN KEY (`ct_team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `maproundstats_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `maproundstats_game_id_foreign` FOREIGN KEY (`match_game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `maproundstats_t_team_id_foreign` FOREIGN KEY (`t_team_id`) REFERENCES `Teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
@@ -2010,7 +2010,7 @@ ALTER TABLE `Matches`
 --
 ALTER TABLE `MatchGameClips`
   ADD CONSTRAINT `matchgameclips_clip_steam_id_foreign` FOREIGN KEY (`clip_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `matchgameclips_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `matchgameclips_game_id_foreign` FOREIGN KEY (`match_game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `MatchGames`
@@ -2044,14 +2044,14 @@ ALTER TABLE `OrganizerGames`
 -- Constraints for table `PlayerStats`
 --
 ALTER TABLE `PlayerStats`
-  ADD CONSTRAINT `playerstats_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `playerstats_game_id_foreign` FOREIGN KEY (`match_game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `playerstats_steam_id_foreign` FOREIGN KEY (`steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `PlayerTrades`
 --
 ALTER TABLE `PlayerTrades`
-  ADD CONSTRAINT `playertrades_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `playertrades_game_id_foreign` FOREIGN KEY (`match_game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `playertrades_killer_steam_id_foreign` FOREIGN KEY (`killer_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `playertrades_trader_steam_id_foreign` FOREIGN KEY (`trader_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `playertrades_victim_steam_id_foreign` FOREIGN KEY (`victim_steam_id`) REFERENCES `SteamPlayers` (`steam_id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -2155,7 +2155,7 @@ ALTER TABLE `SteamPlayers`
 -- Constraints for table `TeamGameScores`
 --
 ALTER TABLE `TeamGameScores`
-  ADD CONSTRAINT `teamgamescores_game_id_foreign` FOREIGN KEY (`game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `teamgamescores_game_id_foreign` FOREIGN KEY (`match_game_id`) REFERENCES `MatchGames` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `teamgamescores_match_id_team_id_foreign` FOREIGN KEY (`match_id`,`team_id`) REFERENCES `MatchTeams` (`match_id`, `team_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
