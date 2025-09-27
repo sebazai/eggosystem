@@ -8,7 +8,6 @@ import {
   type TeamSortterValues,
   type Season,
   type PlayerSortterValues,
-  SeasonPlatform,
   createMockSeason
 } from "@eggosystem/types";
 

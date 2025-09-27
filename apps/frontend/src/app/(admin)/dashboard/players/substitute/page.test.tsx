@@ -88,7 +88,6 @@ import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignu
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddSubstitutePlayer } from "@/hooks/data/useAddSubstitutePlayer";
-import { create } from "lodash";
 
 const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
   typeof useAllSeasons
