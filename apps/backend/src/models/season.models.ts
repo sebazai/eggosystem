@@ -2,7 +2,8 @@ import type {
   SeasonDetails,
   Season,
   ActiveSeasonSignupForAppId,
-  ActiveSignupOrSeasonForAppId
+  ActiveSignupOrSeasonForAppId,
+  SeasonFormRaw
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
@@ -117,4 +118,45 @@ export const getActiveSignupOrActiveSeasonForAppId = async (
     [app_id, organizer_id]
   );
   return activeSignupOrActiveSeason;
+};
+
+export const createSeason = async (
+  seasonData: SeasonFormRaw,
+  connection?: PoolConnection
+): Promise<{ insertId: number }> => {
+  const query = `
+    INSERT INTO Seasons (
+      game_id,
+      game_type_id,
+      organizer_id,
+      name,
+      full_name,
+      signup_start_date,
+      signup_end_date,
+      start_date,
+      end_date,
+      platform,
+      is_round_robin_bo2_as_2xbo1
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  const result = await runQuery<{ insertId: number }>(
+    query,
+    [
+      seasonData.game_id,
+      seasonData.game_type_id,
+      seasonData.organizer_id,
+      seasonData.name,
+      seasonData.full_name,
+      seasonData.signup_start_date,
+      seasonData.signup_end_date,
+      seasonData.start_date,
+      seasonData.end_date,
+      seasonData.platform,
+      seasonData.is_round_robin_bo2_as_2xbo1
+    ],
+    connection
+  );
+
+  return result;
 };

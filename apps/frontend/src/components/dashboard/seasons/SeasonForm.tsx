@@ -96,10 +96,9 @@ export function SeasonForm({
       };
 
       await onSubmit(rawData);
-      toast.success("Season created successfully!");
+      form.reset();
     } catch (error) {
       console.error("Error submitting season form:", error);
-      toast.error("Failed to create season. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

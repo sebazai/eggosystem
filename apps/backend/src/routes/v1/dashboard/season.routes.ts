@@ -1,9 +1,15 @@
 import { Router } from "express";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
-import { getTeamsForSeasonController } from "../../../controllers/dashboard/season.controllers";
-import { checkPlayerAdditionEligibilityController } from "../../../controllers/dashboard/season.controllers";
+import {
+  getTeamsForSeasonController,
+  checkPlayerAdditionEligibilityController,
+  createSeasonController
+} from "../../../controllers/dashboard/season.controllers";
 
 const router = Router();
+
+// POST /api/v1/dashboard/seasons
+router.post("/", createSeasonController);
 
 // GET /api/v1/dashboard/seasons/:season_id/teams
 router.get(

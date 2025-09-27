@@ -1,16 +1,16 @@
-import { type Response } from "express";
+import { type Response, type Request } from "express";
 import {
   getGames,
   getGameTypes,
   getGameTypesByGameId
 } from "../models/game.models";
 
-export const getGamesController = async (res: Response) => {
+export const getGamesController = async (req: Request, res: Response) => {
   const games = await getGames();
   res.json(games);
 };
 
-export const getGameTypesController = async (res: Response) => {
+export const getGameTypesController = async (req: Request, res: Response) => {
   const gameTypes = await getGameTypes();
   res.json(gameTypes);
 };

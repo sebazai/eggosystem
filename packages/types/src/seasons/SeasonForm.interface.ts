@@ -17,12 +17,18 @@ export const seasonFormSchema = z
       .max(255, "Full season name must be 255 characters or less"),
     signup_start_date: z
       .string()
-      .datetime("Invalid signup start date format")
+      .refine(
+        (val) => !val || !isNaN(Date.parse(val)),
+        "Invalid signup start date format"
+      )
       .optional()
       .nullable(),
     signup_end_date: z
       .string()
-      .datetime("Invalid signup end date format")
+      .refine(
+        (val) => !val || !isNaN(Date.parse(val)),
+        "Invalid signup end date format"
+      )
       .optional()
       .nullable(),
     start_date: z
@@ -39,7 +45,8 @@ export const seasonFormSchema = z
         message: "Invalid platform selection"
       }
     ),
-    is_round_robin_bo2_as_2xbo1: z.boolean()
+    is_round_robin_bo2_as_2xbo1: z.boolean(),
+    timezone: z.string().optional()
   })
   .refine(
     (data) => {
