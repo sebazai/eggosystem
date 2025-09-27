@@ -11,6 +11,7 @@ jest.mock("../../models/organizer.models");
 jest.mock("../../models/match.models");
 jest.mock("../../models/faceit.models");
 jest.mock("../../models/match-team-map-veto.models");
+jest.mock("../../models/match-game.models");
 jest.mock("../../models/game.models");
 jest.mock("../../models/season-team-players.models");
 jest.mock("../../models/season-league.models");
