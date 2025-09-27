@@ -46,8 +46,8 @@ export const FilteredMatchesList = ({
                 className="no-underline"
                 href="/matches/[id]"
                 as={
-                  match.game_id
-                    ? `/matches/${match.match_id}/games/${match.game_id}`
+                  match.match_game_id
+                    ? `/matches/${match.match_id}/games/${match.match_game_id}`
                     : `/matches/${match.match_id}`
                 }
               >

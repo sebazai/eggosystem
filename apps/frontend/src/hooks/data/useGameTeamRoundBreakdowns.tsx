@@ -2,12 +2,16 @@ import { expressFetcher } from "@/lib/utils";
 import type { GameTeamRoundBreakdown } from "@eggosystem/types";
 import useSWR from "swr";
 
-export const useGameTeamRoundBreakdowns = (gameId?: number) => {
+export const useGameTeamRoundBreakdowns = (matchGameId?: number) => {
   const { data, error, isLoading, isValidating } = useSWR<
     GameTeamRoundBreakdown[]
-  >(gameId ? `/api/v1/games/${gameId}/breakdown` : null, expressFetcher, {
-    revalidateOnFocus: false
-  });
+  >(
+    matchGameId ? `/api/v1/match-games/${matchGameId}/breakdown` : null,
+    expressFetcher,
+    {
+      revalidateOnFocus: false
+    }
+  );
 
   return {
     teamsRoundBreakdown: data,

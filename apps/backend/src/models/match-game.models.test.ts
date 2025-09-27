@@ -1,4 +1,4 @@
-import { addMatchGameToDatabaseAndProcessDemo } from "../models/game.models";
+import { addMatchGameToDatabaseAndProcessDemo } from "./match-game.models";
 import { validWebhookMatchDemoReady } from "../utils/test-data";
 import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
 
@@ -9,9 +9,9 @@ jest.mock("../models/match-team-map-veto.models");
 jest.mock("../db/mysqlConnection");
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../services/faceit.services");
-import { getHubMatchesByExternalMatchRoomId } from "../models/match.models";
-import { getMatchTeamMapVetoPicksAndDeciders } from "../models/match-team-map-veto.models";
-import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "../models/season-league-external-id.models";
+import { getHubMatchesByExternalMatchRoomId } from "./match.models";
+import { getMatchTeamMapVetoPicksAndDeciders } from "./match-team-map-veto.models";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getDemoDownloadUrl } from "../services/faceit.services";

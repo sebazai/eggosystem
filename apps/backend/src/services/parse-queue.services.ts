@@ -65,7 +65,7 @@ export const publishToParseQueue = async (
       persistent: true,
       contentType: "application/json",
       priority: request.priority,
-      messageId: `parse-${request.game_id}-${Date.now()}`,
+      messageId: `parse-${request.match_game_id}-${Date.now()}`,
       timestamp: Date.now()
     });
 
@@ -74,13 +74,13 @@ export const publishToParseQueue = async (
     }
 
     logger.info(
-      `Published demo processing request to parse_queue for game_id: ${request.game_id}`
+      `Published demo processing request to parse_queue for match_game_id: ${request.match_game_id}`
     );
 
     return;
   } catch (error) {
     logger.error("Error publishing demo processing request to parse_queue", {
-      gameId: request.game_id,
+      matchGameId: request.match_game_id,
       downloadUrl: request.download_url,
       error
     });
@@ -94,21 +94,21 @@ export const publishToParseQueue = async (
 
 /**
  * Create a demo processing request object
- * @param gameId The game ID
+ * @param matchGameId The game ID
  * @param downloadUrl The demo download URL
  * @param priority The priority level (1-10, default 5)
  * @param source The source of the request
  * @returns A ParseQueueMessage object
  */
 export const createDemoProcessingRequest = (
-  gameId: number,
+  matchGameId: number,
   downloadUrl: string,
   priority: number = 5,
   source: string = "game-processor",
   reparse: boolean = false
 ): ParseQueueMessage => {
   return {
-    game_id: gameId.toString(),
+    match_game_id: matchGameId.toString(),
     download_url: downloadUrl,
     priority,
     created_at: new Date().toISOString(),

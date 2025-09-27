@@ -291,15 +291,15 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
   });
 
   const handleRowClick = (match: MatchHistoryResult) => {
-    const url = match.game_id
-      ? `/matches/${match.match_id}/games/${match.game_id}`
+    const url = match.match_game_id
+      ? `/matches/${match.match_id}/games/${match.match_game_id}`
       : `/matches/${match.match_id}`;
     window.open(url, "_blank");
   };
 
   const handleRowMiddleClick = (match: MatchHistoryResult) => {
-    const url = match.game_id
-      ? `/matches/${match.match_id}/games/${match.game_id}`
+    const url = match.match_game_id
+      ? `/matches/${match.match_id}/games/${match.match_game_id}`
       : `/matches/${match.match_id}`;
     window.open(url, "_blank");
   };

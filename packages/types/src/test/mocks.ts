@@ -12,12 +12,14 @@ export const createMockSeason = (
   end_date?: string | null,
   game_id?: number,
   game_type_id?: number,
+  organizer_id?: number,
   is_round_robin_bo2_as_2xbo1?: boolean
 ): Season => {
   return {
     id,
     game_id: game_id ?? 1,
     game_type_id: game_type_id ?? 1,
+    organizer_id: organizer_id ?? 1,
     name,
     full_name,
     signup_start_date,
@@ -40,12 +42,14 @@ export const createMockInsertSeason = (
   end_date?: string | null,
   game_id?: number,
   game_type_id?: number,
+  organizer_id?: number,
   is_round_robin_bo2_as_2xbo1?: boolean
 ): InsertSeason => {
   return {
     id,
     game_id: game_id ?? 1,
     game_type_id: game_type_id ?? 1,
+    organizer_id: organizer_id ?? 1,
     name,
     full_name,
     signup_start_date: new Date(signup_start_date),

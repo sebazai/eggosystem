@@ -56,13 +56,8 @@ describe("Captain Permission Triggers", () => {
       []
     );
 
-    // Setup
     await runQuery(
-      "INSERT INTO Games (id, name, abbreviation, app_id) VALUES (999, 'Counter-Strike 2', 'CS2', 730)",
-      []
-    );
-    await runQuery(
-      "INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date, platform) VALUES (999, 999, 'Test Season', 'Test Season Full Name', NOW(), NOW(), 'kanaliiga')",
+      "INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date, platform) VALUES (999, 1, 'Test Season', 'Test Season Full Name', NOW(), NOW(), 'kanaliiga')",
       []
     );
     await runQuery(
@@ -382,7 +377,7 @@ describe("Captain Permission Triggers", () => {
       []
     );
     await runQuery(
-      "INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date, platform) VALUES (998, 998, 'Test Season 2', 'Test Season 2 Full Name', NOW(), NOW(), 'kanaliiga')",
+      "INSERT INTO Seasons (id, game_id, name, full_name, start_date, end_date, platform) VALUES (998, 1, 'Test Season 2', 'Test Season 2 Full Name', NOW(), NOW(), 'kanaliiga')",
       []
     );
     await runQuery(

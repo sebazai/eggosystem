@@ -77,7 +77,7 @@ export const getTeamPlantStats = async (
     FROM
       MapRoundStats mrs
     JOIN
-      MatchGames mg ON mrs.game_id = mg.id
+      MatchGames mg ON mrs.match_game_id = mg.id
     JOIN
       Matches m ON mg.match_id = m.id
     JOIN

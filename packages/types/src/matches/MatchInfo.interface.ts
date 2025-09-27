@@ -21,12 +21,13 @@ export interface MatchInfo {
   season_platform: Season["platform"];
   stage: Match["stage"];
   teams: Record<string, MatchTeamInfo>;
-  game_ids: Nullable<MatchGame["id"] | MatchGame["id"][]>;
+  match_game_ids: Nullable<MatchGame["id"] | MatchGame["id"][]>;
   status: Match["status"];
 }
 
-export interface MatchInfoQuery extends Omit<MatchInfo, "teams" | "game_ids"> {
+export interface MatchInfoQuery
+  extends Omit<MatchInfo, "teams" | "match_game_ids"> {
   teams: string; // JSON stringified array of MatchTeamInfo
-  game_ids: string; // JSON stringified array of MatchGame["id"] | MatchGame["id"][]
+  match_game_ids: string; // JSON stringified array of MatchGame["id"] | MatchGame["id"][]
   status: Match["status"];
 }

@@ -10,7 +10,7 @@ import type {
 
 export interface MatchesByFilters {
   match_id: Match["id"];
-  game_id: Nullable<MatchGame["id"]>;
+  match_game_id: Nullable<MatchGame["id"]>;
   match_date: Match["match_date"];
   stage: Match["stage"];
   league_name: League["name"];

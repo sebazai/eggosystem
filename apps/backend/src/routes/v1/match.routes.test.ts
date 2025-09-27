@@ -30,7 +30,7 @@ describe("Match Routes", () => {
     // Ensure all pending operations are completed
     await new Promise((resolve) => setTimeout(resolve, 100));
   });
-  describe("GET /api/v1/matches/:game_id/teamstats", () => {
+  describe("GET /api/v1/matches/:match_game_id/teamstats", () => {
     it("should return team stats for game id 10154", async () => {
       const expectedStats = [
         {

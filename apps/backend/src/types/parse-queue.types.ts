@@ -4,7 +4,7 @@
  * Message format for parse_queue (HUB → Demo Parser)
  */
 export interface ParseQueueMessage {
-  game_id: string;
+  match_game_id: string;
   download_url: string;
   priority: number;
   created_at: string;
@@ -16,7 +16,7 @@ export interface ParseQueueMessage {
  * Message format for parse result queue (Demo Parser → HUB)
  */
 export interface ParseResultMessage {
-  game_id: string;
+  match_game_id: string;
   demo_file: string;
   json_file: string;
   processed_at: string;

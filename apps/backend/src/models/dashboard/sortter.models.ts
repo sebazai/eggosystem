@@ -199,7 +199,7 @@ export const getTeamPlayerValuesForSortter = async (
     JOIN SteamPlayers sp ON sp.steam_id = strp.steam_id
     JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
     LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
-    LEFT JOIN MatchGames mg ON mg.id = ps.game_id
+    LEFT JOIN MatchGames mg ON mg.id = ps.match_game_id
     LEFT JOIN Matches m ON m.id = mg.match_id AND m.season_id = strp.season_id
     WHERE strp.season_id = ?
       AND strp.team_id = ?

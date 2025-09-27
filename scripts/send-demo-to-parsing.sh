@@ -155,7 +155,7 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 # Create JSON message
 TEST_MESSAGE=$(cat <<EOF
 {
-  "game_id": "$TEST_GAME_ID",
+  "match_game_id": "$TEST_GAME_ID",
   "download_url": "$TEST_DOWNLOAD_URL",
   "priority": $TEST_PRIORITY,
   "created_at": "$TIMESTAMP",

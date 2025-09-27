@@ -9,7 +9,7 @@ export interface MatchGamesByTeam {
   match_date: string; // YYYY-MM-DD
   league_id: Match["league_id"];
   season_id: Match["season_id"];
-  game_id: MatchGame["id"];
+  match_game_id: MatchGame["id"];
   map_name: Map["name"];
   map_id: Map["id"];
   map_order: MatchGame["map_order"];

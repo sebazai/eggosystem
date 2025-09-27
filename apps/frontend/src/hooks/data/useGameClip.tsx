@@ -4,9 +4,9 @@ import { expressFetcher } from "@/lib/utils";
 import type { GameClip } from "@eggosystem/types";
 import useSWR from "swr";
 
-export function useGameClip(gameId: number) {
+export function useGameClip(matchGameId: number) {
   const { data, error, isValidating, isLoading } = useSWR<GameClip | undefined>(
-    `/api/v1/games/${gameId}/clip`,
+    `/api/v1/match-games/${matchGameId}/clip`,
     expressFetcher,
     {
       refreshInterval: (data) => {

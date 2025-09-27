@@ -53,37 +53,39 @@ router.post(
         );
         const status = await fetchStatus.json();
 
-        const gameId = status.clip.metadata.find(
-          (item: { key: string; value: string }) => item.key === "game_id"
+        const matchGameId = status.clip.metadata.find(
+          (item: { key: string; value: string }) => item.key === "match_game_id"
         )?.value;
 
-        if (!gameId) {
+        if (!matchGameId) {
           return next(
-            new BadRequestError("Game id not found in Allstar error handling")
+            new BadRequestError(
+              "Match game id not found in Allstar error handling"
+            )
           );
         }
 
-        await updateClipError(gameId, "potg", webhookData);
+        await updateClipError(matchGameId, "potg", webhookData);
         res.status(200).send("Allstar clip error");
         return;
       }
 
-      const gameId: string | undefined = webhookData.additionalData.find(
-        (item: { key: string; value: string }) => item.key === "game_id"
+      const matchGameId: string | undefined = webhookData.additionalData.find(
+        (item: { key: string; value: string }) => item.key === "match_game_id"
       )?.value;
 
-      if (!gameId) {
+      if (!matchGameId) {
         return next(
-          new BadRequestError("Game id not found from Allstar webhook")
+          new BadRequestError("Match game id not found from Allstar webhook")
         );
       }
 
-      const gameIdNumber = parseInt(gameId);
-      if (isNaN(gameIdNumber)) {
-        return next(new BadRequestError("Game id is not a number"));
+      const matchGameIdNumber = parseInt(matchGameId);
+      if (isNaN(matchGameIdNumber)) {
+        return next(new BadRequestError("Match game id is not a number"));
       }
 
-      await updateProcessedClip(gameIdNumber, "potg", webhookData);
+      await updateProcessedClip(matchGameIdNumber, "potg", webhookData);
 
       res.status(200).send("Webhook received and processed");
     } catch (error) {

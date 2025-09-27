@@ -2,7 +2,7 @@ import * as amqp from "amqplib";
 import JSONBig from "json-bigint";
 import { logger } from "../utils/app-logger";
 import type { ParseResultMessage } from "../types/parse-queue.types";
-import { saveParsedDemoDataForGame } from "../models/game.models";
+import { saveParsedDemoDataForGame } from "../models/match-game.models";
 // import * as fs from "fs";
 // import * as path from "path";
 
@@ -132,7 +132,7 @@ export class ParsedQueueConsumer {
   private isConnected = false;
   private consumerTag: string | null = null;
   private maxRetryAttempts: number;
-  private retryCounts = new Map<string, number>(); // Track retries by game_id
+  private retryCounts = new Map<string, number>(); // Track retries by match_game_id
 
   constructor(config: Partial<ParseQueueConfig> = {}) {
     this.config = { ...DEFAULT_PARSE_QUEUE_CONFIG, ...config };
@@ -272,9 +272,9 @@ export class ParsedQueueConsumer {
     const errors: string[] = [];
     let message: ParseResultMessage | undefined;
 
-    // Get retry count for this game_id
-    const gameId = message?.game_id || "unknown";
-    const retryCount = this.retryCounts.get(gameId) || 0;
+    // Get retry count for this match_game_id
+    const matchGameId = message?.match_game_id || "unknown";
+    const retryCount = this.retryCounts.get(matchGameId) || 0;
 
     try {
       // Parse message
@@ -283,7 +283,7 @@ export class ParsedQueueConsumer {
       ) as ParseResultMessage;
 
       logger.info("Processing parsed demo data", {
-        gameId: message.game_id,
+        matchGameId: message.match_game_id,
         status: message.status,
         processedAt: message.processed_at,
         workerId: message.worker_id,
@@ -296,9 +296,9 @@ export class ParsedQueueConsumer {
         throw new Error("Invalid parsed data structure");
       }
 
-      if (!message.game_id) {
-        errors.push("Missing game_id in message");
-        throw new Error("Invalid game_id");
+      if (!message.match_game_id) {
+        errors.push("Missing match_game_id in message");
+        throw new Error("Invalid match_game_id");
       }
 
       // Step 2: Process the parsed demo data
@@ -308,7 +308,7 @@ export class ParsedQueueConsumer {
       const processingTime = Date.now() - startTime;
 
       logger.info("Successfully processed parsed demo data", {
-        gameId: message.game_id,
+        matchGameId: message.match_game_id,
         status,
         processingTime,
         totalProcessed: this.processedCount
@@ -317,8 +317,8 @@ export class ParsedQueueConsumer {
       // Acknowledge message and clear retry count for this game
       this.channel.ack(msg);
       this.processedCount++;
-      if (message?.game_id) {
-        this.retryCounts.delete(message.game_id);
+      if (message?.match_game_id) {
+        this.retryCounts.delete(message.match_game_id);
       }
     } catch (error) {
       const processingTime = Date.now() - startTime;
@@ -327,7 +327,7 @@ export class ParsedQueueConsumer {
       errors.push(errorMessage);
 
       logger.error("Failed to process parsed demo data", {
-        gameId: message?.game_id,
+        matchGameId: message?.match_game_id,
         status,
         processingTime,
         error: errorMessage,
@@ -338,7 +338,7 @@ export class ParsedQueueConsumer {
         logger.error(
           "Message exceeded max retry attempts, sending to error queue",
           {
-            gameId: message?.game_id,
+            matchGameId: message?.match_game_id,
             retryCount,
             maxRetryAttempts: this.maxRetryAttempts,
             error: error instanceof Error ? error.message : String(error)
@@ -404,13 +404,13 @@ export class ParsedQueueConsumer {
 
           // Increment retry count and requeue at the back of the queue
           const newRetryCount = retryCount + 1;
-          this.retryCounts.set(gameId, newRetryCount);
+          this.retryCounts.set(matchGameId, newRetryCount);
 
           this.channel.nack(msg, false, true);
           this.errorCount++;
 
           logger.info("Message requeued at back of queue", {
-            gameId: message?.game_id,
+            matchGameId: message?.match_game_id,
             retryCount: newRetryCount,
             maxRetryAttempts: this.maxRetryAttempts
           });
@@ -425,38 +425,17 @@ export class ParsedQueueConsumer {
   private async processParsedDemoData(
     message: ParseResultMessage
   ): Promise<void> {
-    const { game_id, parsed_payload, processing_duration } = message;
-
-    // // Write the complete message as JSON to debug log file
-    // const debugLogDir = path.join(process.cwd(), "debug-logs");
-    // const debugLogFile = path.join(
-    //   debugLogDir,
-    //   `parsed-demo-${game_id}-${Date.now()}.json`
-    // );
-
-    // // Ensure debug logs directory exists
-    // if (!fs.existsSync(debugLogDir)) {
-    //   fs.mkdirSync(debugLogDir, { recursive: true });
-    // }
-
-    // // Write message to file
-    // fs.writeFileSync(debugLogFile, JSONBig.stringify(message, null, 2));
-
-    // logger.debug("Processing parsed demo data message", {
-    //   debugLogFile,
-    //   gameId: game_id,
-    //   processingDuration: processing_duration
-    // });
+    const { match_game_id, parsed_payload, processing_duration } = message;
 
     if (!parsed_payload) {
       throw new Error("Missing parsed payload");
     }
 
     try {
-      await saveParsedDemoDataForGame(game_id, parsed_payload);
+      await saveParsedDemoDataForGame(match_game_id, parsed_payload);
     } catch (error) {
       logger.info("Failed to save parsed demo data for game", {
-        gameId: game_id,
+        matchGameId: match_game_id,
         parsedPayloadKeys: Object.keys(parsed_payload),
         processingDuration: processing_duration,
         error: error instanceof Error ? error.message : String(error)
@@ -478,7 +457,7 @@ export class ParsedQueueConsumer {
     }
 
     const errorMessage = {
-      game_id: originalMessage?.game_id || "unknown",
+      match_game_id: originalMessage?.match_game_id || "unknown",
       timestamp: new Date().toISOString(),
       errors,
       details,
@@ -497,7 +476,7 @@ export class ParsedQueueConsumer {
     });
 
     logger.debug("Error sent to error queue", {
-      gameId: originalMessage?.game_id,
+      matchGameId: originalMessage?.match_game_id,
       errorCount: errors.length,
       queue: this.config.errorQueueName
     });

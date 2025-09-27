@@ -106,7 +106,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
         webhookUrl: "https://test-backend.com/api/v1/allstar/webhook",
         metadata: [
           {
-            key: "game_id",
+            key: "match_game_id",
             value: "123"
           }
         ]
@@ -114,7 +114,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
 
       expect(mockInsertClipProcessing).toHaveBeenCalledWith(123, "potg");
       expect(mockLogger.info).toHaveBeenCalledWith(
-        "Sending clip request to AllStar.gg for gameId 123 with demoUrl https://demo.url and webhookUrl https://test-backend.com/api/v1/allstar/webhook"
+        "Sending clip request to AllStar.gg for matchGameId 123 with demoUrl https://demo.url and webhookUrl https://test-backend.com/api/v1/allstar/webhook"
       );
     });
 
@@ -141,7 +141,7 @@ describe("sendDemoForAllStarPOTGClip", () => {
           status: 400,
           statusText: "Bad Request",
           error: "Invalid demo URL",
-          gameId: 123
+          matchGameId: 123
         }
       );
 

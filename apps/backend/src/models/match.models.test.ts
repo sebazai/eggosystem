@@ -25,7 +25,7 @@ describe("getMatchesByFilters", () => {
         team1_logo: "S15_2196.png",
         team2_name: "Gigantti",
         team2_logo: "S14_2065.png",
-        game_id: null,
+        match_game_id: null,
         team1_score: 13,
         team2_score: 8
       },
@@ -39,7 +39,7 @@ describe("getMatchesByFilters", () => {
         team1_logo: "S15_2196.png",
         team2_name: "Gigantti",
         team2_logo: "S14_2065.png",
-        game_id: null,
+        match_game_id: null,
         team1_score: 13,
         team2_score: 3
       }
@@ -266,10 +266,10 @@ describe("getMatchGamesByTeam", () => {
       expect(game.team1_id).not.toBe(game.team2_id);
     });
 
-    // Verify each game has a unique game_id
-    const gameIds = result.map((game) => game.game_id);
-    const uniqueGameIds = [...new Set(gameIds)];
-    expect(uniqueGameIds.length).toBe(gameIds.length);
+    // Verify each game has a unique match_game_id
+    const matchGameIds = result.map((game) => game.match_game_id);
+    const uniqueGameIds = [...new Set(matchGameIds)];
+    expect(uniqueGameIds.length).toBe(matchGameIds.length);
 
     // Verify each game has map information
     result.forEach((game) => {

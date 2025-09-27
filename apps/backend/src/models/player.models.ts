@@ -94,7 +94,7 @@ export const getAllPlayerStatsByFilters = async ({
       p.steam_id,
       p.nickname,
       ${season_ids && season_ids.length === 1 ? "t.name AS team_name," : ""}
-      COUNT(DISTINCT ps.game_id) as maps_played,
+      COUNT(DISTINCT ps.match_game_id) as maps_played,
       SUM(ps.kills) as kills,
       SUM(ps.assists) as assists,
       SUM(ps.deaths) as deaths,
@@ -110,7 +110,7 @@ export const getAllPlayerStatsByFilters = async ({
       ROUND(SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0), 2) as kd
     FROM PlayerStats ps
     INNER JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
     INNER JOIN Matches m ON m.id = mg.match_id
     ${
       teamIdsJoin
@@ -202,7 +202,7 @@ export const getMultiplePlayerStatsByFilters = async ({
     SELECT 
       p.steam_id,
       p.nickname, 
-      ${hasMapFilter ? "COUNT(DISTINCT ps.game_id)" : "COALESCE(COUNT(DISTINCT ps.game_id), 0)"} as maps_played,
+      ${hasMapFilter ? "COUNT(DISTINCT ps.match_game_id)" : "COALESCE(COUNT(DISTINCT ps.match_game_id), 0)"} as maps_played,
       ${hasMapFilter ? "SUM(ps.kills)" : "COALESCE(SUM(ps.kills), 0)"} as kills,
       ${hasMapFilter ? "SUM(ps.assists)" : "COALESCE(SUM(ps.assists), 0)"} as assists,
       ${hasMapFilter ? "SUM(ps.deaths)" : "COALESCE(SUM(ps.deaths), 0)"} as deaths,
@@ -221,7 +221,7 @@ export const getMultiplePlayerStatsByFilters = async ({
     ${joinType} MatchTeams mt ON mt.team_id = stp.team_id
     ${joinType} Matches m ON m.id = mt.match_id AND m.season_id = stp.season_id${matchConditions}
     ${joinType} MatchGames mg ON mg.match_id = m.id${mapConditions}
-    ${joinType} PlayerStats ps ON ps.game_id = mg.id AND ps.steam_id = stp.steam_id
+    ${joinType} PlayerStats ps ON ps.match_game_id = mg.id AND ps.steam_id = stp.steam_id
     ${whereClause}
     GROUP BY p.steam_id, p.nickname
     ORDER BY kana_rating DESC
@@ -254,7 +254,7 @@ export const getPlayerMatchHistoryByFilters = async (
   const matchHistoryQuery = `
       SELECT
         m.id AS match_id,
-        CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END AS game_id,
+        CASE WHEN m.best_of = 1 THEN mg.id ELSE NULL END AS match_game_id,
 
         -- Map logic: single name or concatenated
         CASE
@@ -311,11 +311,11 @@ export const getPlayerMatchHistoryByFilters = async (
       JOIN Matches m ON m.id = mt.match_id
       JOIN MatchGames mg ON mg.match_id = m.id
       JOIN Maps mp ON mp.id = mg.map_id
-      JOIN TeamGameScores tgs ON tgs.team_id = stp.team_id AND tgs.game_id = mg.id
+      JOIN TeamGameScores tgs ON tgs.team_id = stp.team_id AND tgs.match_game_id = mg.id
       JOIN Teams t ON t.id = tgs.team_id
-      JOIN TeamGameScores opp_tgs ON opp_tgs.game_id = mg.id AND opp_tgs.team_id != tgs.team_id
+      JOIN TeamGameScores opp_tgs ON opp_tgs.match_game_id = mg.id AND opp_tgs.team_id != tgs.team_id
       JOIN Teams opp_t ON opp_t.id = opp_tgs.team_id
-      LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id AND ps.game_id = mg.id
+      LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id AND ps.match_game_id = mg.id
       JOIN Seasons s ON s.id = m.season_id
       JOIN Leagues l ON l.id = m.league_id
 
@@ -427,7 +427,7 @@ export const getPlayerGameDetailsWithFilters = async (
         m.best_of,
         slt.team_id AS player_team_id,
         opp_tgs.team_id AS opponent_team_id,
-        mg.id AS game_id,
+        mg.id AS match_game_id,
         CASE 
           WHEN tgs.score > opp_tgs.score THEN 1 
           ELSE 0 
@@ -438,9 +438,9 @@ export const getPlayerGameDetailsWithFilters = async (
       JOIN MatchTeams mt ON mt.team_id = slt.team_id AND mt.season_id = slt.season_id AND mt.league_id = slt.league_id
       JOIN Matches m ON m.id = mt.match_id
       JOIN MatchGames mg ON mg.match_id = m.id
-      JOIN PlayerStats ps ON ps.steam_id = p.steam_id AND ps.game_id = mg.id
-      JOIN TeamGameScores tgs ON tgs.match_id = m.id AND tgs.team_id = slt.team_id AND mg.id = tgs.game_id
-      JOIN TeamGameScores opp_tgs ON opp_tgs.match_id = m.id AND opp_tgs.team_id != slt.team_id AND mg.id = opp_tgs.game_id
+      JOIN PlayerStats ps ON ps.steam_id = p.steam_id AND ps.match_game_id = mg.id
+      JOIN TeamGameScores tgs ON tgs.match_id = m.id AND tgs.team_id = slt.team_id AND mg.id = tgs.match_game_id
+      JOIN TeamGameScores opp_tgs ON opp_tgs.match_id = m.id AND opp_tgs.team_id != slt.team_id AND mg.id = opp_tgs.match_game_id
       WHERE ${query}
     ),
     GameWinsPerMatch AS (
@@ -504,10 +504,10 @@ export const getAllPlayerStatsWithPartialQueryFilters = async (
 
   const statsQuery = `
     WITH player_games AS (
-      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id
+      SELECT DISTINCT p.steam_id, p.nickname, mg.id as match_game_id
       FROM SteamPlayers p
       INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
       INNER JOIN Matches m ON m.id = mg.match_id
       ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
       WHERE ${query}
@@ -516,7 +516,7 @@ export const getAllPlayerStatsWithPartialQueryFilters = async (
       SELECT 
         pg.steam_id,
         pg.nickname,
-        COUNT(DISTINCT pg.game_id) as maps_played,
+        COUNT(DISTINCT pg.match_game_id) as maps_played,
         SUM(ps.kills) as kills,
         SUM(ps.assists) as assists,
         SUM(ps.deaths) as deaths,
@@ -558,7 +558,7 @@ export const getAllPlayerStatsWithPartialQueryFilters = async (
         AVG(ps.crosshair_placement) as crosshair_placement,
         AVG(ps.ttd) as time_to_damage
       FROM player_games pg
-      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
+      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.match_game_id = pg.match_game_id
       GROUP BY pg.steam_id, pg.nickname
     ),
     player_rounds AS (
@@ -566,7 +566,7 @@ export const getAllPlayerStatsWithPartialQueryFilters = async (
         pg.steam_id,
         COUNT(DISTINCT mrs.id) as rounds_played
       FROM player_games pg
-      INNER JOIN MapRoundStats mrs ON mrs.game_id = pg.game_id
+      INNER JOIN MapRoundStats mrs ON mrs.match_game_id = pg.match_game_id
       GROUP BY pg.steam_id
     )
     SELECT 
@@ -610,10 +610,10 @@ export const getPlayerStatsWithAllFilters = async (
 
   const statsQuery = `
     WITH player_games AS (
-      SELECT DISTINCT p.steam_id, p.nickname, mg.id as game_id, p.faceit_nickname
+      SELECT DISTINCT p.steam_id, p.nickname, mg.id as match_game_id, p.faceit_nickname
       FROM SteamPlayers p
       INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-      INNER JOIN MatchGames mg ON mg.id = ps.game_id
+      INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
       INNER JOIN Matches m ON m.id = mg.match_id
       ${teamIdsJoin ? "INNER JOIN MatchTeams mt ON mt.match_id = m.id" : ""}
       WHERE ${query}
@@ -623,7 +623,7 @@ export const getPlayerStatsWithAllFilters = async (
         pg.steam_id,
         pg.nickname,
         pg.faceit_nickname,
-        COUNT(DISTINCT pg.game_id) as maps_played,
+        COUNT(DISTINCT pg.match_game_id) as maps_played,
         SUM(ps.kills) as kills,
         SUM(ps.kills_t) as kills_t,
         SUM(ps.kills_ct) as kills_ct,
@@ -732,7 +732,7 @@ export const getPlayerStatsWithAllFilters = async (
         ROUND(SUM(ps.total_mf_duration) / NULLIF(SUM(ps.flashes_thrown), 0), 1) as avg_teammate_flash_duration,
         COALESCE(ROUND(SUM(ps.good_strafing_shots) / NULLIF(SUM(ps.total_strafing_shots), 0) * 100, 1), 0) as counter_strafing_percentage
       FROM player_games pg
-      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.game_id = pg.game_id
+      INNER JOIN PlayerStats ps ON ps.steam_id = pg.steam_id AND ps.match_game_id = pg.match_game_id
       GROUP BY pg.steam_id, pg.nickname
     ),
     player_rounds AS (
@@ -740,7 +740,7 @@ export const getPlayerStatsWithAllFilters = async (
         pg.steam_id,
         COUNT(DISTINCT mrs.id) as rounds_played
       FROM player_games pg
-      INNER JOIN MapRoundStats mrs ON mrs.game_id = pg.game_id
+      INNER JOIN MapRoundStats mrs ON mrs.match_game_id = pg.match_game_id
       GROUP BY pg.steam_id
     )
     SELECT 
@@ -770,14 +770,14 @@ export const getPlayerStatsForLatestSeason = async (steam_id: string) => {
       sl.tier as level
     FROM SteamPlayers p
     INNER JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
     INNER JOIN Matches m ON m.id = mg.match_id
     INNER JOIN SeasonLeagues sl ON sl.season_id = m.season_id AND sl.league_id = m.league_id
     WHERE p.steam_id = ? 
       AND m.season_id = (
         SELECT MAX(m2.season_id)
         FROM PlayerStats ps2
-        INNER JOIN MatchGames mg2 ON mg2.id = ps2.game_id
+        INNER JOIN MatchGames mg2 ON mg2.id = ps2.match_game_id
         INNER JOIN Matches m2 ON m2.id = mg2.match_id
         WHERE ps2.steam_id = ?
       )
@@ -799,7 +799,7 @@ export const getPlayerOldKanaElo = async (steam_id: string) => {
       m.season_id as last_played_season_id,
       spr.kana_elo
     FROM PlayerStats ps 
-    JOIN MatchGames mg ON ps.game_id = mg.id 
+    JOIN MatchGames mg ON ps.match_game_id = mg.id 
     LEFT JOIN Matches m ON m.id = mg.match_id 
     LEFT JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id 
     WHERE ps.steam_id = ? 

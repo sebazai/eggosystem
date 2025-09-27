@@ -3,7 +3,7 @@ import { type ParsedPayload } from "../types/parse-queue.types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 interface MapRoundStatsParams {
-  gameId: number;
+  matchGameId: number;
   tTeamIdTeam1: number;
   ctTeamIdTeam2: number;
   mapRoundStats: ParsedPayload["NewRoundInfo"]["Rounds"];
@@ -11,13 +11,13 @@ interface MapRoundStatsParams {
 }
 
 export const upsertMapRoundStats = async ({
-  gameId,
+  matchGameId,
   tTeamIdTeam1,
   ctTeamIdTeam2,
   mapRoundStats,
   connection
 }: MapRoundStatsParams) => {
-  const query = `INSERT INTO MapRoundStats (game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  const query = `INSERT INTO MapRoundStats (match_game_id, ct_team_id, t_team_id, round_number, round_end_reason_info, ct_t, first_kill, plant_site) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       ct_team_id = VALUES(ct_team_id),
       t_team_id = VALUES(t_team_id),
@@ -28,7 +28,7 @@ export const upsertMapRoundStats = async ({
   await Promise.all(
     mapRoundStats.map(async (round) => {
       const values = [
-        gameId,
+        matchGameId,
         round.CT_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2, // First half CT_Team is 2, second half is 1
         round.T_Team === 1 ? tTeamIdTeam1 : ctTeamIdTeam2, // First half T_Team is 1, second half is 2
         round.RoundNumber,

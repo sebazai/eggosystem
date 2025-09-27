@@ -56,7 +56,7 @@ const data: { navMain: Array<MenuItem> } = {
         {
           title: "Seasons",
           url: `${createDashboardNextUrl("seasons")}`,
-          requiredRoles: ["helpdesk"]
+          requiredRoles: ["helpdesk", "admin"]
         }
       ] satisfies Array<SubMenuItem>
     },

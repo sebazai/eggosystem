@@ -19,20 +19,20 @@ interface TeamStatisticsProps {
   teamStats: (MatchTeamStats | GameTeamStats)[];
   teamStatsFilters: TeamStatsFilters;
   clip?: GameClip;
-  gameId?: number;
+  matchGameId?: number;
 }
 
 export const TeamStatistics = ({
   teamStats,
   teamStatsFilters,
   clip,
-  gameId
+  matchGameId
 }: TeamStatisticsProps) => {
   const auth = useAuth();
   const [teamOneStats, teamTwoStats] = teamStats;
   const teamOneId = teamOneStats?.team_id;
   const teamTwoId = teamTwoStats?.team_id;
-  const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(gameId);
+  const { teamsRoundBreakdown } = useGameTeamRoundBreakdowns(matchGameId);
   const clipAndClipStatusNotError = clip && clip.clip_status !== "Error";
   return (
     <div

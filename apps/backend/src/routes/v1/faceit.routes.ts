@@ -67,7 +67,7 @@ import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware
 import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
 import { NotFoundError } from "../../utils/errors";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
-import { addMatchGameToDatabaseAndProcessDemo } from "../../models/game.models";
+import { addMatchGameToDatabaseAndProcessDemo } from "../../models/match-game.models";
 import { validatePlayersInTeams } from "../../models/season-team-players.models";
 import { addChampionshipToDatabase } from "../../services/season-league-external-id.services";
 import { removeSeasonLeagueExternalId } from "../../models/season-league-external-id.models";

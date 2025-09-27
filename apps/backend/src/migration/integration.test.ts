@@ -4,7 +4,7 @@ describe("Migration tests", () => {
   it("Find enzoj maps played on season 11", async () => {
     const query = `SELECT COUNT(DISTINCT mmp.id) AS total_maps_played
       FROM PlayerStats ps
-      JOIN MatchGames mmp ON ps.game_id = mmp.id
+      JOIN MatchGames mmp ON ps.match_game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN MatchTeams mt ON m.id = mt.match_id
       JOIN SeasonTeamPlayers stp ON mt.team_id = stp.team_id AND m.season_id = stp.season_id
@@ -16,7 +16,7 @@ describe("Migration tests", () => {
   it("Test enzoj Kills on Season 11", async () => {
     const query = `SELECT SUM(ps.kills) AS total_kills
       FROM PlayerStats ps
-      JOIN MatchGames mmp ON ps.game_id = mmp.id
+      JOIN MatchGames mmp ON ps.match_game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561197967885016'
       AND m.season_id = 11;`;
@@ -26,7 +26,7 @@ describe("Migration tests", () => {
   it("Test meppi Assists on Season 14", async () => {
     const query = `SELECT SUM(ps.assists) AS total_assists
       FROM PlayerStats ps
-      JOIN MatchGames mmp ON ps.game_id = mmp.id
+      JOIN MatchGames mmp ON ps.match_game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561198001857963'
       AND m.season_id = 14;`;
@@ -36,7 +36,7 @@ describe("Migration tests", () => {
   it("Test enzoj flashAssists on Season 14 in de_mirage", async () => {
     const query = `SELECT SUM(ps.flash_assists) as total_flash_assists
       FROM PlayerStats ps
-      JOIN MatchGames mmp ON ps.game_id = mmp.id
+      JOIN MatchGames mmp ON ps.match_game_id = mmp.id
       JOIN Maps mp ON mmp.map_id = mp.id
       JOIN Matches m ON mmp.match_id = m.id
       WHERE ps.steam_id = '76561197967885016'
@@ -83,7 +83,7 @@ describe("Migration tests", () => {
     const query = `select p.nickname, t.name as team_name, sum(ps.mates_flashed) as mates_flashed
       from PlayerStats ps 
       JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-      JOIN MatchGames mmp ON ps.game_id = mmp.id
+      JOIN MatchGames mmp ON ps.match_game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id AND role = 'primary'
       JOIN Teams t ON stp.team_id = t.id
@@ -116,7 +116,7 @@ describe("Migration tests", () => {
     const query = `select p.nickname as nick, t.name as team_name, round(avg(ps.kana_rating),2) as kana_rating
       from PlayerStats ps
       JOIN SteamPlayers p ON p.steam_id = ps.steam_id
-      JOIN MatchGames mmp ON ps.game_id = mmp.id
+      JOIN MatchGames mmp ON ps.match_game_id = mmp.id
       JOIN Matches m ON mmp.match_id = m.id
       JOIN SeasonTeamPlayers stp ON p.steam_id = stp.steam_id AND m.season_id = stp.season_id
       JOIN Teams t ON stp.team_id = t.id

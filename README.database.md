@@ -337,7 +337,7 @@ The schema includes comprehensive indexing:
 
 #### Data Volume Considerations
 
-- **MapRoundStats**: ~24 rounds per game, indexed by game_id for fast queries
+- **MapRoundStats**: ~24 rounds per game, indexed by match_game_id for fast queries
 - **PlayerStats**: One row per player per game, comprehensive CS2 statistics
 - **PlayerTrades**: Detailed trade data for advanced analytics
 - **AuditLog**: Minimal logging for GDPR compliance only

@@ -134,8 +134,8 @@ export const TeamMatchHistory = ({
                   "dd.MM.yyyy"
                 );
 
-                const matchUrl = match.game_id
-                  ? `/matches/${match.match_id}/games/${match.game_id}`
+                const matchUrl = match.match_game_id
+                  ? `/matches/${match.match_id}/games/${match.match_game_id}`
                   : `/matches/${match.match_id}`;
 
                 const handleRowClick = () => {

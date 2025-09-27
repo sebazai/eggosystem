@@ -7,7 +7,7 @@ export interface PlayerHistoricalData {
   match_id: number;
 
   /** Game ID for linking to specific game within match */
-  game_id: number;
+  match_game_id: number;
 
   /** Match date in YYYY-MM-DD format */
   match_date: string;

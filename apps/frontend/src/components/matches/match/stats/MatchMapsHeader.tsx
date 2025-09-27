@@ -6,7 +6,7 @@ import Image from "next/image";
 
 interface MatchMapsHeaderProps {
   matchId: number;
-  gameId?: number;
+  matchGameId?: number;
   platform: SeasonPlatform;
   externalMatchRoomUrl: string | null;
   handleMapSelect: (mapId?: number) => void;
@@ -29,7 +29,7 @@ const platformIcon = (platform: SeasonPlatform) => {
 
 export const MatchMapsHeader = ({
   matchId,
-  gameId,
+  matchGameId,
   platform,
   externalMatchRoomUrl,
   handleMapSelect
@@ -57,7 +57,7 @@ export const MatchMapsHeader = ({
         {maps?.length !== 1 && (
           <div className="flex flex-wrap gap-2">
             <button
-              className={`px-3 py-1 ${!gameId ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
+              className={`px-3 py-1 ${!matchGameId ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
               onClick={() => handleMapSelect(undefined)}
             >
               ALL MAPS
@@ -66,7 +66,7 @@ export const MatchMapsHeader = ({
             {maps?.map((map) => (
               <button
                 key={map.id}
-                className={`px-3 py-1 ${gameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
+                className={`px-3 py-1 ${matchGameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
                 onClick={() => handleMapSelect(map.id)}
               >
                 {mapToReadableName(map.map_name)}

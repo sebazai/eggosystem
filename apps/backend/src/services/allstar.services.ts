@@ -19,13 +19,13 @@ interface AllStarClipResponse {
 }
 
 export const sendDemoForAllStarPOTGClip = async (
-  gameId: number,
+  matchGameId: number,
   demoUrl: string
 ): Promise<AllStarClipResponse> => {
-  const isAllStarDemoRequested = await getMatchGameClipForGameId(gameId);
+  const isAllStarDemoRequested = await getMatchGameClipForGameId(matchGameId);
   if (isAllStarDemoRequested.length > 0) {
     logger.info(
-      `Demo processing request already exists for game ${gameId} with demo url ${demoUrl}`
+      `Demo processing request already exists for game ${matchGameId} with demo url ${demoUrl}`
     );
     return {
       success: true,
@@ -60,14 +60,14 @@ export const sendDemoForAllStarPOTGClip = async (
 
   requestData.metadata = [
     {
-      key: "game_id",
-      value: gameId.toString()
+      key: "match_game_id",
+      value: matchGameId.toString()
     }
   ];
 
   try {
     logger.info(
-      `Sending clip request to AllStar.gg for gameId ${gameId} with demoUrl ${demoUrl} and webhookUrl ${webhookUrl}`
+      `Sending clip request to AllStar.gg for matchGameId ${matchGameId} with demoUrl ${demoUrl} and webhookUrl ${webhookUrl}`
     );
 
     const response = await fetch("https://prt.allstar.gg/cs/clip/potg", {
@@ -85,7 +85,7 @@ export const sendDemoForAllStarPOTGClip = async (
         status: response.status,
         statusText: response.statusText,
         error: errorText,
-        gameId
+        matchGameId
       });
 
       return {
@@ -99,12 +99,12 @@ export const sendDemoForAllStarPOTGClip = async (
       const responseData = await response.json();
 
       logger.info(
-        `AllStar clip request successful for game ${gameId} with response: ${JSON.stringify(
+        `AllStar clip request successful for game ${matchGameId} with response: ${JSON.stringify(
           responseData
         )}`
       );
 
-      await insertClipProcessing(gameId, "potg");
+      await insertClipProcessing(matchGameId, "potg");
 
       return {
         success: true,
@@ -115,19 +115,19 @@ export const sendDemoForAllStarPOTGClip = async (
       logger.info(response);
       const resposeText = await response.text();
       logger.error(
-        `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`,
+        `Error parsing AllStar clip response for game ${matchGameId} with response: ${resposeText}`,
         error
       );
 
       return {
         success: false,
-        error: `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`,
-        message: `Error parsing AllStar clip response for game ${gameId} with response: ${resposeText}`
+        error: `Error parsing AllStar clip response for game ${matchGameId} with response: ${resposeText}`,
+        message: `Error parsing AllStar clip response for game ${matchGameId} with response: ${resposeText}`
       };
     }
   } catch (error) {
     logger.error(
-      `Error sending demo to AllStar for game ${gameId} with demoUrl ${demoUrl}`,
+      `Error sending demo to AllStar for game ${matchGameId} with demoUrl ${demoUrl}`,
       error
     );
 

@@ -18,11 +18,11 @@ export default async function MatchPage({ params }: PageProps) {
     throw new Error("Invalid match_id");
   }
   const result = await getMatchInfo<MatchInfo>(matchId);
-  if (!Array.isArray(result.game_ids) && result.game_ids) {
+  if (!Array.isArray(result.match_game_ids) && result.match_game_ids) {
     return (
       <GameStats
         matchId={matchId}
-        gameId={result.game_ids}
+        matchGameId={result.match_game_ids}
         matchInfo={result}
         platform={result.season_platform}
         externalMatchRoomUrl={createExternalMatchRoomUrl(

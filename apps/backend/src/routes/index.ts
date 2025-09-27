@@ -16,7 +16,7 @@ import accountRouter from "./v1/account.routes";
 import faceitRouter from "./v1/faceit.routes";
 import allstarRouter from "./v1/allstar.routes";
 import registrationsRouter from "./v1/season-team-registration.routes";
-import gameRouter from "./v1/game.routes";
+import matchGameRouter from "./v1/match-game.routes";
 import discordRouter from "./v1/discord.routes";
 import eloRouter from "./v1/elo.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
@@ -29,6 +29,7 @@ import standingsRouter from "./v1/standings.routes";
 import casterRouter from "./v1/caster.routes";
 import organizerRouter from "./v1/organizer.routes";
 import calendarRouter from "./v1/calendar.routes";
+import gameRouter from "./v1/game.routes";
 
 // Create a new Router instance
 const v1Router = Router();
@@ -51,6 +52,7 @@ v1Router.use("/players", playerRouter);
 v1Router.use("/calendar", calendarRouter);
 v1Router.use("/organizers", organizerRouter);
 v1Router.use("/matches", matchRouter);
+v1Router.use("/match-games", matchGameRouter);
 v1Router.use("/games", gameRouter);
 v1Router.use("/organizations", organizationRouter);
 v1Router.use(

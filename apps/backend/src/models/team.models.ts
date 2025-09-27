@@ -152,8 +152,8 @@ export const getTeamsByFilters = async ({
       JOIN MatchTeams team1 ON m.id = team1.match_id
       JOIN MatchTeams team2 ON m.id = team2.match_id AND team2.team_id < team1.team_id
       LEFT JOIN MatchGames mg ON m.id = mg.match_id
-      LEFT JOIN TeamGameScores team1_score ON mg.id = team1_score.game_id AND team1_score.team_id = team1.team_id
-      LEFT JOIN TeamGameScores team2_score ON mg.id = team2_score.game_id AND team2_score.team_id = team2.team_id
+      LEFT JOIN TeamGameScores team1_score ON mg.id = team1_score.match_game_id AND team1_score.team_id = team1.team_id
+      LEFT JOIN TeamGameScores team2_score ON mg.id = team2_score.match_game_id AND team2_score.team_id = team2.team_id
       WHERE ${matchQuery}
       ${!mapFilterPresent ? "GROUP BY m.id, team1.team_id, team2.team_id, m.best_of, m.league_id, m.season_id" : "GROUP BY mg.id, team1.team_id, team2.team_id"}
     )
@@ -231,7 +231,7 @@ export const getTeamMatchesByFilters = async ({
       CASE
         WHEN m.best_of = 1 THEN mg.id
         ELSE NULL
-      END AS game_id,
+      END AS match_game_id,
       m.season_id,
       m.league_id,
       m.match_date,
@@ -254,8 +254,8 @@ export const getTeamMatchesByFilters = async ({
     JOIN Teams t1 ON team.team_id = t1.id
     JOIN Teams t2 ON opponent.team_id = t2.id
     JOIN MatchGames mg ON m.id = mg.match_id
-    JOIN TeamGameScores tgs1 ON mg.id = tgs1.game_id AND tgs1.team_id = team.team_id
-    JOIN TeamGameScores tgs2 ON mg.id = tgs2.game_id AND tgs2.team_id = opponent.team_id
+    JOIN TeamGameScores tgs1 ON mg.id = tgs1.match_game_id AND tgs1.team_id = team.team_id
+    JOIN TeamGameScores tgs2 ON mg.id = tgs2.match_game_id AND tgs2.team_id = opponent.team_id
     WHERE ${query}
     GROUP BY m.id, m.match_date, m.best_of, team.team_id, opponent.team_id, t1.name, t1.team_logo, t2.name, t2.team_logo
   )
@@ -265,9 +265,9 @@ export const getTeamMatchesByFilters = async ({
       l.name AS league_name,
       mgs.match_date AS date,
       CASE
-        WHEN mgs.best_of = 1 THEN mgs.game_id
+        WHEN mgs.best_of = 1 THEN mgs.match_game_id
         ELSE NULL
-      END AS game_id,
+      END AS match_game_id,
       mmn.maps, 
       mgs.team_id, 
       mgs.team_name, 
@@ -301,12 +301,12 @@ export const getTeamMatchesByFilters = async ({
     LEFT JOIN match_map_names mmn ON mgs.match_id = mmn.match_id
     JOIN Seasons s ON s.id = mgs.season_id
     JOIN Leagues l ON l.id = mgs.league_id
-    ORDER BY match_date DESC, mgs.match_id, mgs.game_id
+    ORDER BY match_date DESC, mgs.match_id, mgs.match_game_id
     `;
 
   const withMapFilters = `
     SELECT
-      mg.id AS game_id,
+      mg.id AS match_game_id,
       s.full_name AS season_name,
       l.name AS league_name,
       m.id AS match_id,
@@ -333,8 +333,8 @@ export const getTeamMatchesByFilters = async ({
     JOIN Teams t1 ON team.team_id = t1.id
     JOIN Teams t2 ON opponent.team_id = t2.id
     JOIN Maps maps ON mg.map_id = maps.id
-    JOIN TeamGameScores tgs1 ON mg.id = tgs1.game_id AND tgs1.team_id = team.team_id
-    JOIN TeamGameScores tgs2 ON mg.id = tgs2.game_id AND tgs2.team_id = opponent.team_id
+    JOIN TeamGameScores tgs1 ON mg.id = tgs1.match_game_id AND tgs1.team_id = team.team_id
+    JOIN TeamGameScores tgs2 ON mg.id = tgs2.match_game_id AND tgs2.team_id = opponent.team_id
     JOIN Seasons s ON s.id = m.season_id
     JOIN Leagues l ON l.id = m.league_id
     WHERE ${query}
@@ -401,11 +401,11 @@ export const getTeamMapStats = async (
       ) AS win_percentage
     FROM MatchGames mg
     JOIN Maps maps ON mg.map_id = maps.id
-    JOIN TeamGameScores tgs ON mg.id = tgs.game_id AND tgs.team_id = ?
+    JOIN TeamGameScores tgs ON mg.id = tgs.match_game_id AND tgs.team_id = ?
     JOIN Matches m ON mg.match_id = m.id
     JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = tgs.team_id
     JOIN MatchTeams opponent_mt ON m.id = opponent_mt.match_id AND opponent_mt.team_id != tgs.team_id
-    JOIN TeamGameScores opponent_score ON mg.id = opponent_score.game_id AND opponent_score.team_id = opponent_mt.team_id
+    JOIN TeamGameScores opponent_score ON mg.id = opponent_score.match_game_id AND opponent_score.team_id = opponent_mt.team_id
     WHERE ${query}
     GROUP BY mg.map_id, maps.name
   `;
@@ -446,7 +446,7 @@ export const getFilteredTopTeams = async ({
       JOIN Matches m ON m.id = mt.match_id
       JOIN Leagues l ON l.id = m.league_id
       JOIN MatchGames mmp ON mmp.match_id = m.id
-      JOIN PlayerStats ps ON ps.game_id = mmp.id
+      JOIN PlayerStats ps ON ps.match_game_id = mmp.id
       JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id 
         AND stp.team_id = t.id 
         AND stp.season_id = m.season_id
@@ -541,7 +541,7 @@ export const getTeamKeyPlayers = async (
     FROM SteamPlayers sp
     JOIN SeasonTeamPlayers stp ON sp.steam_id = stp.steam_id
     JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
-    JOIN MatchGames mg ON ps.game_id = mg.id
+    JOIN MatchGames mg ON ps.match_game_id = mg.id
     JOIN Matches m ON mg.match_id = m.id
     WHERE stp.team_id = ? 
       AND stp.season_id = ?

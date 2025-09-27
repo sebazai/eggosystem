@@ -4,7 +4,7 @@
 ALLSTAR_API_KEY=${ALLSTAR_API_KEY}
 DEMO_URL=${1:-"https://stats.kanaliiga.fi/testdata/1-eedc197e-5a7c-4b68-b02a-8f849bcedc34-2-1.dem"}
 WEBHOOK_URL="https://hub.kanaliiga.fi/api/v1/allstar/webhook"
-METADATA_KEY=${2:-"game_id"}
+METADATA_KEY=${2:-"match_game_id"}
 METADATA_VALUE=${3:-"105907"}
 
 # Show usage if help is requested

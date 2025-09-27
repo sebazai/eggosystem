@@ -115,8 +115,8 @@ export const getPlayerSkillDiagram = async (
     SELECT 
       p.steam_id,
       p.nickname,
-      COUNT(DISTINCT ps.game_id) as maps_played,
-      COUNT(DISTINCT mrs.game_id) as rounds_played,
+      COUNT(DISTINCT ps.match_game_id) as maps_played,
+      COUNT(DISTINCT mrs.match_game_id) as rounds_played,
       
       -- Aim metrics
       AVG(ps.hs_percent) as hs_percent,
@@ -189,15 +189,15 @@ export const getPlayerSkillDiagram = async (
       
     FROM SteamPlayers p
     JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    JOIN MatchGames mg ON mg.id = ps.game_id
-    JOIN MapRoundStats mrs ON mrs.game_id = mg.id
+    JOIN MatchGames mg ON mg.id = ps.match_game_id
+    JOIN MapRoundStats mrs ON mrs.match_game_id = mg.id
     JOIN Matches m ON m.id = mg.match_id
     -- Join with total rounds calculation like in leaderboards.models.ts
     INNER JOIN (
-      SELECT game_id, SUM(score + overtime_score) AS total_rounds
+      SELECT match_game_id, SUM(score + overtime_score) AS total_rounds
       FROM TeamGameScores
-      GROUP BY game_id
-    ) AS game_rounds ON game_rounds.game_id = mg.id
+      GROUP BY match_game_id
+    ) AS game_rounds ON game_rounds.match_game_id = mg.id
     WHERE p.steam_id = ? AND ${filterQuery}
     GROUP BY p.steam_id, p.nickname
   `,
@@ -218,7 +218,7 @@ export const getPlayerSkillDiagram = async (
       SUM(attempted) as attempted_trades,
       SUM(traded) as successful_trades
     FROM PlayerTrades pt
-    JOIN MatchGames mg ON mg.id = pt.game_id
+    JOIN MatchGames mg ON mg.id = pt.match_game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
     WHERE victim_steam_id = ? AND first_death = 1 AND ${filterQuery}
     `,
@@ -239,19 +239,19 @@ export const getPlayerSkillDiagram = async (
       COUNT(*) as total_opportunities,
       SUM(attempted) as attempted_trades,
       SUM(traded) as successful_trades,
-      (SELECT COUNT(DISTINCT mrs.game_id) FROM MapRoundStats mrs 
-       JOIN MatchGames mg2 ON mg2.id = mrs.game_id
+      (SELECT COUNT(DISTINCT mrs.match_game_id) FROM MapRoundStats mrs 
+       JOIN MatchGames mg2 ON mg2.id = mrs.match_game_id
        ${params ? "JOIN Matches m2 ON m2.id = mg2.match_id" : ""}
-       WHERE mrs.game_id IN (
-         SELECT DISTINCT pt2.game_id FROM PlayerTrades pt2 
+       WHERE mrs.match_game_id IN (
+         SELECT DISTINCT pt2.match_game_id FROM PlayerTrades pt2 
          WHERE pt2.trader_steam_id = ?
-         AND pt2.game_id IN (SELECT mg3.id FROM MatchGames mg3 
+         AND pt2.match_game_id IN (SELECT mg3.id FROM MatchGames mg3 
                             JOIN Matches m3 ON m3.id = mg3.match_id 
                             WHERE ${filterQueryM3})
        )
       ) as rounds_played
     FROM PlayerTrades pt
-    JOIN MatchGames mg ON mg.id = pt.game_id
+    JOIN MatchGames mg ON mg.id = pt.match_game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
     WHERE trader_steam_id = ? AND ${filterQuery}
     `,
@@ -284,30 +284,30 @@ export const getPlayerSkillDiagram = async (
     `
     SELECT
       (SELECT SUM(deaths) FROM PlayerStats ps2 
-       JOIN MatchGames mg2 ON mg2.id = ps2.game_id
+       JOIN MatchGames mg2 ON mg2.id = ps2.match_game_id
        ${params ? "JOIN Matches m2 ON m2.id = mg2.match_id" : ""}
        WHERE ps2.steam_id = ? AND ${filterQueryM2}
       ) as total_deaths,
       COUNT(DISTINCT CASE WHEN pt.attempted = 1 OR pt.traded = 1 THEN pt.id END) as tradeable_deaths,
       SUM(IF(pt.first_death = 1 AND (pt.attempted = 1 OR pt.traded = 1), 1, 0)) as tradeable_first_deaths,
       (SELECT SUM(first_deaths) FROM PlayerStats ps3 
-       JOIN MatchGames mg3 ON mg3.id = ps3.game_id
+       JOIN MatchGames mg3 ON mg3.id = ps3.match_game_id
        ${params ? "JOIN Matches m3 ON m3.id = mg3.match_id" : ""}
        WHERE ps3.steam_id = ? AND ${filterQueryM3}
       ) as total_first_deaths,
       (SELECT COUNT(*) FROM PlayerTrades pt2 
-       JOIN MatchGames mg4 ON mg4.id = pt2.game_id
+       JOIN MatchGames mg4 ON mg4.id = pt2.match_game_id
        ${params ? "JOIN Matches m4 ON m4.id = mg4.match_id" : ""}
        WHERE pt2.victim_steam_id = ? AND ${filterQueryM4}
       ) as total_trade_opportunities,
       (SELECT COUNT(DISTINCT mrs.round_number) FROM MapRoundStats mrs
-       JOIN MatchGames mg5 ON mrs.game_id = mg5.id
-       JOIN PlayerStats ps5 ON ps5.game_id = mg5.id
+       JOIN MatchGames mg5 ON mrs.match_game_id = mg5.id
+       JOIN PlayerStats ps5 ON ps5.match_game_id = mg5.id
        ${params ? "JOIN Matches m5 ON m5.id = mg5.match_id" : ""}
        WHERE ps5.steam_id = ? AND ${filterQueryM5}
       ) as rounds_played
     FROM PlayerTrades pt
-    JOIN MatchGames mg ON mg.id = pt.game_id
+    JOIN MatchGames mg ON mg.id = pt.match_game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
     WHERE pt.victim_steam_id = ? AND ${filterQuery}
     `,
@@ -341,7 +341,7 @@ export const getPlayerSkillDiagram = async (
       SUM(first_kills_ct) as ct_first_kills,
       SUM(first_deaths_ct) as ct_first_deaths
     FROM PlayerStats ps
-    JOIN MatchGames mg ON mg.id = ps.game_id
+    JOIN MatchGames mg ON mg.id = ps.match_game_id
     ${params ? "JOIN Matches m ON m.id = mg.match_id" : ""}
     WHERE ps.steam_id = ? AND ${filterQuery}
     `,
@@ -814,14 +814,14 @@ export const getMultiplePlayersSkillDiagrams = async (
     SELECT DISTINCT p.steam_id
     FROM SteamPlayers p
     JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    JOIN MatchGames mg ON mg.id = ps.game_id
-    JOIN MapRoundStats mrs ON mrs.game_id = mg.id
+    JOIN MatchGames mg ON mg.id = ps.match_game_id
+    JOIN MapRoundStats mrs ON mrs.match_game_id = mg.id
     JOIN Matches m ON m.id = mg.match_id
     LEFT JOIN SeasonTeamPlayers stp ON stp.steam_id = p.steam_id AND stp.season_id = m.season_id
     LEFT JOIN SeasonPlayerRanks spr ON spr.steam_id = p.steam_id AND spr.season_id = m.season_id
     WHERE ${filterQuery}
     GROUP BY p.steam_id
-    HAVING COUNT(DISTINCT ps.game_id) >= 3
+    HAVING COUNT(DISTINCT ps.match_game_id) >= 3
   `;
 
   const players = await runQuery<{ steam_id: string }[]>(

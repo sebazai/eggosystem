@@ -163,7 +163,7 @@ erDiagram
 }
 "MapRoundStats" {
   int_10__unsigned id PK
-  int_10__unsigned game_id FK
+  int_10__unsigned match_game_id FK
   int_10__unsigned ct_team_id FK
   int_10__unsigned t_team_id FK
 }
@@ -178,7 +178,7 @@ erDiagram
 }
 "MatchGameClips" {
   int_10__unsigned id PK
-  int_10__unsigned game_id FK
+  int_10__unsigned match_game_id FK
   bigint_20_ clip_steam_id FK
 }
 "MatchGames" {
@@ -215,11 +215,11 @@ erDiagram
 "PlayerStats" {
   int_10__unsigned id PK
   bigint_20_ steam_id FK
-  int_10__unsigned game_id FK
+  int_10__unsigned match_game_id FK
 }
 "PlayerTrades" {
   int_10__unsigned id PK
-  int_10__unsigned game_id FK
+  int_10__unsigned match_game_id FK
   bigint_20_ trader_steam_id FK
   bigint_20_ killer_steam_id FK
   bigint_20_ victim_steam_id FK
@@ -302,7 +302,7 @@ erDiagram
   int_10__unsigned id PK
   int_10__unsigned match_id FK
   int_10__unsigned team_id FK
-  int_10__unsigned game_id FK
+  int_10__unsigned match_game_id FK
 }
 "TeamRosters" {
   int_10__unsigned id PK

@@ -5,7 +5,7 @@ import {
 
 // Import the JSON data and extract the parsed_payload
 const demoData = {
-  game_id: "123123",
+  match_game_id: "123123",
   demo_file: "",
   json_file: "/app/json/parsed/1-94cbcea0-8389-4713-ac9d-e53d04514b29-1-1.json",
   processed_at: "2025-07-31T10:40:06Z",
@@ -7971,4 +7971,4 @@ const demoData = {
 } satisfies ParseResultMessage;
 
 export const MOCK_PARSED_DEMO_DATA: ParsedPayload = demoData.parsed_payload;
-export const MOCK_GAME_ID = "123123";
+export const MOCK_MATCH_GAME_ID = "123123";

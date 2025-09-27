@@ -84,36 +84,36 @@ const getChannelAndQueues = async (queueFilter?: string) => {
 };
 
 /**
- * Helper function to extract game_id from different queue message formats
+ * Helper function to extract match_game_id from different queue message formats
  */
 const extractGameId = (
   messageContent: Record<string, unknown>,
   queueName: string
 ): string => {
   if (queueName === "parse_queue_failed") {
-    // For parse_queue_failed: game_id is in original_message.game_id
+    // For parse_queue_failed: match_game_id is in original_message.match_game_id
     const originalMessage = messageContent.original_message as
       | Record<string, unknown>
       | undefined;
-    return (originalMessage?.game_id as string) || "unknown";
+    return (originalMessage?.match_game_id as string) || "unknown";
   } else if (queueName === "parsed_save_failed") {
-    // For parsed_save_failed: game_id is directly in messageContent or in originalMessage.game_id
+    // For parsed_save_failed: match_game_id is directly in messageContent or in originalMessage.match_game_id
     const originalMessage = messageContent.originalMessage as
       | Record<string, unknown>
       | undefined;
     return (
-      (messageContent.game_id as string) ||
-      (originalMessage?.game_id as string) ||
+      (messageContent.match_game_id as string) ||
+      (originalMessage?.match_game_id as string) ||
       "unknown"
     );
   } else if (queueName === "work_queue_failed") {
-    // For work_queue_failed: game_id might be in different locations depending on the message structure
+    // For work_queue_failed: match_game_id might be in different locations depending on the message structure
     const originalMessage = messageContent.original_message as
       | Record<string, unknown>
       | undefined;
     return (
-      (messageContent.game_id as string) ||
-      (originalMessage?.game_id as string) ||
+      (messageContent.match_game_id as string) ||
+      (originalMessage?.match_game_id as string) ||
       (messageContent.match_id as string) || // Some work queue messages might use match_id
       "unknown"
     );
@@ -123,8 +123,8 @@ const extractGameId = (
       | Record<string, unknown>
       | undefined;
     return (
-      (messageContent.game_id as string) ||
-      (originalMessage?.game_id as string) ||
+      (messageContent.match_game_id as string) ||
+      (originalMessage?.match_game_id as string) ||
       "unknown"
     );
   }
@@ -197,7 +197,7 @@ export const getFailedParseMessages = async (
                 `${queueName.charCodeAt(0)}${queueName.charCodeAt(queueName.length - 1)}${String(i + 1).padStart(3, "0")}`
               ), // Unique ID combining queue and position
               queue_name: queueName,
-              game_id: extractGameId(content, queueName),
+              match_game_id: extractGameId(content, queueName),
               failed_at:
                 (content.failed_at as string) ||
                 (content.timestamp as string) ||
@@ -248,7 +248,7 @@ export const getFailedParseMessages = async (
       "Generated message IDs for failed parse display",
       result.map((msg) => ({
         id: msg.id,
-        game_id: msg.game_id,
+        match_game_id: msg.match_game_id,
         queue_name: msg.queue_name
       }))
     );
@@ -355,20 +355,20 @@ export const reparseFailedMessages = async (
           try {
             const messageContent = JSON.parse(msg.content.toString());
 
-            // Extract game_id, download_url, and original source based on queue type
-            let gameId: string;
+            // Extract match_game_id, download_url, and original source based on queue type
+            let matchGameId: string;
             let downloadUrl: string;
             let originalSource: string;
 
             if (queueName === "parse_queue_failed") {
-              gameId = messageContent.original_message?.game_id;
+              matchGameId = messageContent.original_message?.match_game_id;
               downloadUrl = messageContent.original_message?.download_url;
               originalSource =
                 messageContent.original_message?.source || "faceit";
             } else if (queueName === "parsed_save_failed") {
-              gameId =
-                messageContent.game_id ||
-                messageContent.originalMessage?.game_id;
+              matchGameId =
+                messageContent.match_game_id ||
+                messageContent.originalMessage?.match_game_id;
               downloadUrl =
                 messageContent.originalMessage?.download_url ||
                 messageContent.originalMessage?.demo_file ||
@@ -378,16 +378,16 @@ export const reparseFailedMessages = async (
                 messageContent.originalMessage?.source ||
                 "faceit";
             } else {
-              gameId = messageContent.game_id;
+              matchGameId = messageContent.match_game_id;
               downloadUrl =
                 messageContent.download_url || messageContent.demo_file || "";
               originalSource = messageContent.source || "faceit";
             }
 
-            if (!gameId || !downloadUrl) {
+            if (!matchGameId || !downloadUrl) {
               failedCount++;
               errors.push(
-                `Message from ${queueName}: Missing game_id or download_url`
+                `Message from ${queueName}: Missing match_game_id or download_url`
               );
               channel.ack(msg);
               processedFromThisQueue++;
@@ -396,7 +396,7 @@ export const reparseFailedMessages = async (
 
             // Create a new parse request with original source preserved
             const parseRequest = createDemoProcessingRequest(
-              parseInt(gameId),
+              parseInt(matchGameId),
               downloadUrl,
               priority,
               originalSource, // Use original source from failed message
@@ -414,7 +414,7 @@ export const reparseFailedMessages = async (
 
             logger.info("Successfully requeued failed message from RabbitMQ", {
               queueName,
-              gameId,
+              matchGameId: matchGameId,
               downloadUrl: downloadUrl.substring(0, 50) + "...",
               originalSource,
               reparse: true

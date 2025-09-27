@@ -110,7 +110,7 @@ export const FailedParseTable = ({
         enableSorting: false,
         meta: { className: "w-12 text-center" }
       },
-      columnHelper.accessor("game_id", {
+      columnHelper.accessor("match_game_id", {
         header: "Game ID",
         cell: ({ getValue }) => (
           <span className="font-mono text-sm">{getValue()}</span>

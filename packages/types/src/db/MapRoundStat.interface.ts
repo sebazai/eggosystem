@@ -7,7 +7,7 @@ import type {
 
 export interface MapRoundStat {
   id: number;
-  game_id: MatchGame["id"];
+  match_game_id: MatchGame["id"];
   ct_team_id: Team["id"];
   t_team_id: Team["id"];
   round_number: number; // TINYINT UNSIGNED stored as number

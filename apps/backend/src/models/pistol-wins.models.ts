@@ -61,7 +61,7 @@ export const getTeamPistolWins = async (
             END), 0), 1
         ) AS pistol_win_percentage
     FROM MapRoundStats mrs
-    JOIN MatchGames mg ON mrs.game_id = mg.id
+    JOIN MatchGames mg ON mrs.match_game_id = mg.id
     JOIN Matches m ON mg.match_id = m.id
     JOIN Maps maps ON mg.map_id = maps.id
     JOIN Seasons s ON m.season_id = s.id

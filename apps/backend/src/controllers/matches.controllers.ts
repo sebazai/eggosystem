@@ -95,12 +95,12 @@ export const getMatchBreadcrumbController = async (
 };
 
 export const getMatchGameController = async (
-  req: RequestWithParams<{ match_id: string; game_id: string }>,
+  req: RequestWithParams<{ match_id: string; match_game_id: string }>,
   res: Response
 ) => {
   const matchId = parseInt(req.params.match_id, 10);
-  const gameId = parseInt(req.params.game_id, 10);
-  const [matchGame] = await getMatchGame(matchId, gameId);
+  const matchGameId = parseInt(req.params.match_game_id, 10);
+  const [matchGame] = await getMatchGame(matchId, matchGameId);
 
   if (!matchGame) {
     throw new NotFoundError("Match game not found");
@@ -122,7 +122,9 @@ export const getMatchInfoController = async (
 
   const matchInfo = {
     ...match,
-    game_ids: JSON.parse(match.game_ids) as MatchGame["id"] | MatchGame["id"][],
+    match_game_ids: JSON.parse(match.match_game_ids) as
+      | MatchGame["id"]
+      | MatchGame["id"][],
     teams: JSON.parse(match.teams) as Record<string, MatchTeamInfo>
   } satisfies MatchInfo;
 

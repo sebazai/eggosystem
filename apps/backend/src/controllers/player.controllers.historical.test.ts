@@ -14,7 +14,7 @@ describe("getPlayerHistoricalDataController", () => {
   const mockHistoricalData = [
     {
       match_id: 123,
-      game_id: 456,
+      match_game_id: 456,
       match_date: "2024-01-15",
       kana_rating: 1250.5,
       kd_ratio: 1.25,
@@ -26,7 +26,7 @@ describe("getPlayerHistoricalDataController", () => {
     },
     {
       match_id: 124,
-      game_id: 457,
+      match_game_id: 457,
       match_date: "2024-01-10",
       kana_rating: 1230.2,
       kd_ratio: 1.15,

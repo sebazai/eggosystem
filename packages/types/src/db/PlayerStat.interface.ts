@@ -3,7 +3,7 @@ import type { SteamPlayer, MatchGame, Nullable } from "@eggosystem/types";
 export interface PlayerStats {
   id: number;
   steam_id: SteamPlayer["steam_id"];
-  game_id: MatchGame["id"];
+  match_game_id: MatchGame["id"];
   kills: number;
   kills_t: Nullable<number>;
   kills_ct: Nullable<number>;

@@ -519,7 +519,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.kana_rating,
         avg: leagueAverages?.avg_kana_rating || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       })),
       kdData: sortedData.map((item, index) => ({
@@ -527,7 +527,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.kd_ratio,
         avg: leagueAverages?.avg_kd_ratio || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       })),
       adrData: sortedData.map((item, index) => ({
@@ -535,7 +535,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.adr,
         avg: leagueAverages?.avg_adr || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       })),
       timeToDamageData: sortedData.map((item, index) => ({
@@ -543,7 +543,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.ttd || 0,
         avg: leagueAverages?.avg_ttd || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       })),
       crosshairPlacementData: sortedData.map((item, index) => ({
@@ -551,7 +551,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.crosshair_placement || 0,
         avg: leagueAverages?.avg_crosshair_placement || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       })),
       counterStrafingData: sortedData.map((item, index) => ({
@@ -559,7 +559,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.counter_strafing_percent || 0,
         avg: leagueAverages?.avg_counter_strafing_percent || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       })),
       headshotData: sortedData.map((item, index) => ({
@@ -567,7 +567,7 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
         value: item.hs_percent,
         avg: leagueAverages?.avg_hs_percent || 0,
         matchId: item.match_id,
-        gameId: item.game_id,
+        matchGameId: item.match_game_id,
         date: item.match_date
       }))
     };
@@ -665,13 +665,15 @@ export const PlayerHistoricalTab = ({ steamId }: PlayerHistoricalTabProps) => {
   const handleChartClick =
     () =>
     (data: {
-      activePayload?: { payload: { matchId?: number; gameId?: number } }[];
+      activePayload?: { payload: { matchId?: number; matchGameId?: number } }[];
     }) => {
       if (data && data.activePayload && data.activePayload[0]) {
         const payload = data.activePayload[0].payload;
-        if (payload.matchId && payload.gameId) {
+        if (payload.matchId && payload.matchGameId) {
           // Navigate to match page with game ID
-          router.push(`/matches/${payload.matchId}/games/${payload.gameId}`);
+          router.push(
+            `/matches/${payload.matchId}/games/${payload.matchGameId}`
+          );
         }
       }
     };

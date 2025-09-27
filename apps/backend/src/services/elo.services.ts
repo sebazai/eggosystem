@@ -117,7 +117,7 @@ export const stabilizePlayerElo = async (
        mt.league_id,
        AVG(ps.kana_rating) as avg_kana_rating
      FROM PlayerStats ps
-     INNER JOIN MatchGames mg ON ps.game_id = mg.id
+     INNER JOIN MatchGames mg ON ps.match_game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
      INNER JOIN MatchTeams mt ON m.id = mt.match_id
      INNER JOIN SeasonPlayerRanks spr ON spr.season_id = m.season_id AND spr.steam_id = ps.steam_id
@@ -156,7 +156,7 @@ export const stabilizePlayerElo = async (
   const playerRatingResults = await runQuery<PlayerRatingRow[]>(
     `SELECT AVG(ps.kana_rating) as avg_player_rating
      FROM PlayerStats ps
-     INNER JOIN MatchGames mg ON ps.game_id = mg.id
+     INNER JOIN MatchGames mg ON ps.match_game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
      INNER JOIN MatchTeams mt ON m.id = mt.match_id
      WHERE ps.steam_id = ? AND mt.league_id = ?`,
@@ -184,7 +184,7 @@ export const stabilizePlayerElo = async (
        COUNT(DISTINCT ps.steam_id) as rowCount,
        AVG(ps.kana_rating) as leagueAvgRating
      FROM PlayerStats ps
-     INNER JOIN MatchGames mg ON ps.game_id = mg.id
+     INNER JOIN MatchGames mg ON ps.match_game_id = mg.id
      INNER JOIN Matches m ON mg.match_id = m.id
      INNER JOIN MatchTeams mt ON m.id = mt.match_id
      INNER JOIN SeasonPlayerRanks spr ON ps.steam_id = spr.steam_id AND spr.season_id = ?

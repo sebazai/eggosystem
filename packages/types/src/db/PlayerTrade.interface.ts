@@ -2,7 +2,7 @@ import type { MatchGame, SteamPlayer } from "@eggosystem/types";
 
 export interface PlayerTrade {
   id: number;
-  game_id: MatchGame["id"];
+  match_game_id: MatchGame["id"];
   trader_steam_id: SteamPlayer["steam_id"]; // steam_id as string
   killer_steam_id: SteamPlayer["steam_id"]; // steam_id as string
   victim_steam_id: SteamPlayer["steam_id"]; // steam_id as string

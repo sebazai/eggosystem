@@ -4,12 +4,12 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { type DemoPlayer } from "../types/parse-queue.types";
 
 const createDemoPlayerToPlayerStatQueryMapper = (
-  gameId: number,
+  matchGameId: number,
   playerStats: DemoPlayer
 ) => {
   return {
     steam_id: String(playerStats.SteamID),
-    game_id: gameId,
+    match_game_id: matchGameId,
     kills: playerStats.Kills,
     deaths: playerStats.Deaths,
     assists: playerStats.Assists,
@@ -128,16 +128,16 @@ const createDemoPlayerToPlayerStatQueryMapper = (
 };
 
 export const upsertPlayerStatsForGame = async ({
-  gameId,
+  matchGameId,
   playerStats,
   connection
 }: {
-  gameId: number;
+  matchGameId: number;
   playerStats: DemoPlayer;
   connection?: PoolConnection;
 }) => {
   const playerStat = createDemoPlayerToPlayerStatQueryMapper(
-    gameId,
+    matchGameId,
     playerStats
   );
   // Build the keys and values strings properly
@@ -148,7 +148,7 @@ export const upsertPlayerStatsForGame = async ({
 
   // Build the ON DUPLICATE KEY UPDATE clause
   const updateClause = keys
-    .filter((key) => !["id", "steam_id", "game_id"].includes(key))
+    .filter((key) => !["id", "steam_id", "match_game_id"].includes(key))
     .map((key) => `${key} = VALUES(${key})`)
     .join(", ");
 

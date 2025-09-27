@@ -4,7 +4,7 @@ import { upsertTeamGameScore } from "./team-game-score.models";
 describe("upsertTeamGameScore Integration Tests", () => {
   const testMatchId = 7390; // Using existing match from database
   const testTeamId = 594; // Using existing team from database
-  const testGameId = 10308; // Using existing game from database - SAME game_id for upsert tests
+  const testGameId = 10308; // Using existing game from database - SAME match_game_id for upsert tests
   const testStartingSide = "CT" as const;
   const testScore = 16;
   const testHalftimeScore = 8;
@@ -32,7 +32,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const result = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId,
+        match_game_id: testGameId,
         starting_side: testStartingSide,
         score: testScore,
         halftime_score: testHalftimeScore,
@@ -45,7 +45,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
           id: number;
           match_id: number;
           team_id: number;
-          game_id: number;
+          match_game_id: number;
           starting_side: string;
           score: number;
           halftime_score: number;
@@ -66,7 +66,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       expect(dbRecord[0].id).toBeGreaterThan(0);
       expect(dbRecord[0].match_id).toBe(testMatchId);
       expect(dbRecord[0].team_id).toBe(testTeamId);
-      expect(dbRecord[0].game_id).toBe(testGameId);
+      expect(dbRecord[0].match_game_id).toBe(testGameId);
       expect(dbRecord[0].starting_side).toBe(testStartingSide);
       expect(dbRecord[0].score).toBe(testScore);
       expect(dbRecord[0].halftime_score).toBe(testHalftimeScore);
@@ -76,7 +76,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
     it("should UPDATE and return existing insertId when record already exists", async () => {
       // Arrange - Insert a record first
       const initialInsert = await runQuery<{ insertId: number }>(
-        "INSERT INTO TeamGameScores (match_id, team_id, game_id, starting_side, score, halftime_score, overtime_score) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO TeamGameScores (match_id, team_id, match_game_id, starting_side, score, halftime_score, overtime_score) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
           testMatchId,
           testTeamId,
@@ -90,11 +90,11 @@ describe("upsertTeamGameScore Integration Tests", () => {
 
       const existingId = initialInsert.insertId;
 
-      // Act - Try to upsert with the same game_id and team_id but different data
+      // Act - Try to upsert with the same match_game_id and team_id but different data
       const result = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId, // SAME game_id for upsert to work
+        match_game_id: testGameId, // SAME match_game_id for upsert to work
         starting_side: "T", // Different starting_side
         score: testScore + 5, // Different score
         halftime_score: testHalftimeScore + 2, // Different halftime_score
@@ -112,7 +112,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
           id: number;
           match_id: number;
           team_id: number;
-          game_id: number;
+          match_game_id: number;
           starting_side: string;
           score: number;
           halftime_score: number;
@@ -127,7 +127,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       expect(updatedRecord[0].id).toBe(existingId); // Same ID
       expect(updatedRecord[0].match_id).toBe(testMatchId); // Same
       expect(updatedRecord[0].team_id).toBe(testTeamId); // Same
-      expect(updatedRecord[0].game_id).toBe(testGameId); // Same game_id
+      expect(updatedRecord[0].match_game_id).toBe(testGameId); // Same match_game_id
       expect(updatedRecord[0].starting_side).toBe("T"); // Updated
       expect(updatedRecord[0].score).toBe(testScore + 5); // Updated
       expect(updatedRecord[0].halftime_score).toBe(testHalftimeScore + 2); // Updated
@@ -139,7 +139,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const firstResult = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId,
+        match_game_id: testGameId,
         starting_side: testStartingSide,
         score: testScore,
         halftime_score: testHalftimeScore,
@@ -152,7 +152,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const secondResult = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId, // SAME game_id for upsert to work
+        match_game_id: testGameId, // SAME match_game_id for upsert to work
         starting_side: "T",
         score: testScore + 5,
         halftime_score: testHalftimeScore + 2,
@@ -163,7 +163,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const thirdResult = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId, // SAME game_id for upsert to work
+        match_game_id: testGameId, // SAME match_game_id for upsert to work
         starting_side: "CT",
         score: testScore + 10,
         halftime_score: testHalftimeScore + 4,
@@ -181,7 +181,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
           id: number;
           match_id: number;
           team_id: number;
-          game_id: number;
+          match_game_id: number;
           starting_side: string;
           score: number;
           halftime_score: number;
@@ -194,7 +194,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
 
       expect(records).toHaveLength(1);
       expect(records[0].id).toBe(firstId);
-      expect(records[0].game_id).toBe(testGameId); // Same game_id since we're using upsert
+      expect(records[0].match_game_id).toBe(testGameId); // Same match_game_id since we're using upsert
       expect(records[0].starting_side).toBe("CT"); // Last update
       expect(records[0].score).toBe(testScore + 10); // Last update
       expect(records[0].halftime_score).toBe(testHalftimeScore + 4); // Last update
@@ -206,7 +206,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const result = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId,
+        match_game_id: testGameId,
         starting_side: testStartingSide,
         score: testScore,
         halftime_score: testHalftimeScore,
@@ -224,7 +224,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
           id: number;
           match_id: number;
           team_id: number;
-          game_id: number;
+          match_game_id: number;
           starting_side: string;
           score: number;
           halftime_score: number;
@@ -246,7 +246,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const result1 = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId,
-        game_id: testGameId,
+        match_game_id: testGameId,
         starting_side: "CT",
         score: 16,
         halftime_score: 8,
@@ -256,7 +256,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
       const result2 = await upsertTeamGameScore({
         match_id: testMatchId,
         team_id: testTeamId2,
-        game_id: testGameId,
+        match_game_id: testGameId,
         starting_side: "T",
         score: 14,
         halftime_score: 7,
@@ -278,7 +278,7 @@ describe("upsertTeamGameScore Integration Tests", () => {
           id: number;
           match_id: number;
           team_id: number;
-          game_id: number;
+          match_game_id: number;
           starting_side: string;
           score: number;
           halftime_score: number;

@@ -316,7 +316,7 @@ describe("getTeamMatchesByFilters", () => {
     });
     expect(result).toEqual([
       {
-        game_id: 104404,
+        match_game_id: 104404,
         match_id: 10014,
         date: "2024-10-23",
         maps: "de_ancient",
@@ -334,7 +334,7 @@ describe("getTeamMatchesByFilters", () => {
         result: "won"
       },
       {
-        game_id: 104039,
+        match_game_id: 104039,
         match_id: 9844,
         date: "2024-10-02",
         maps: "de_ancient",
@@ -363,7 +363,7 @@ describe("getTeamMatchesByFilters", () => {
     });
     expect(result.length).toEqual(21);
   });
-  it("returns game_id for best of ones, but not for best of > 1", async () => {
+  it("returns match_game_id for best of ones, but not for best of > 1", async () => {
     const result = await getTeamMatchesByFilters({
       team_ids: [1993],
       season_ids: [14],
@@ -375,7 +375,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 10007,
         date: "2024-10-24",
-        game_id: null,
+        match_game_id: null,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_mirage, de_ancient",
@@ -392,7 +392,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9978,
         date: "2024-10-15",
-        game_id: null,
+        match_game_id: null,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_dust2, de_mirage",
@@ -409,7 +409,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9745,
         date: "2024-09-25",
-        game_id: 103910,
+        match_game_id: 103910,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_mirage",
@@ -426,7 +426,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9746,
         date: "2024-09-25",
-        game_id: 103911,
+        match_game_id: 103911,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_vertigo",
@@ -443,7 +443,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9548,
         date: "2024-09-16",
-        game_id: 103692,
+        match_game_id: 103692,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_mirage",
@@ -460,7 +460,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9549,
         date: "2024-09-16",
-        game_id: 103693,
+        match_game_id: 103693,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_inferno",
@@ -477,7 +477,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9530,
         date: "2024-09-12",
-        game_id: 103674,
+        match_game_id: 103674,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_ancient",
@@ -494,7 +494,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9531,
         date: "2024-09-12",
-        game_id: 103675,
+        match_game_id: 103675,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_nuke",
@@ -511,7 +511,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9325,
         date: "2024-09-04",
-        game_id: 103458,
+        match_game_id: 103458,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_anubis",
@@ -528,7 +528,7 @@ describe("getTeamMatchesByFilters", () => {
       {
         match_id: 9326,
         date: "2024-09-04",
-        game_id: 103459,
+        match_game_id: 103459,
         league_name: "Challengers",
         season_name: "CS2 Season 2",
         maps: "de_mirage",

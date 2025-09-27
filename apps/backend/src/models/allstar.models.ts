@@ -6,24 +6,24 @@ import {
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const insertClipProcessing = async (
-  gameId: MatchGame["id"],
+  matchGameId: MatchGame["id"],
   clipType: "potg"
 ) => {
   await runQuery(
-    "INSERT INTO MatchGameClips (game_id, clip_status, clip_type) VALUES (?, ?, ?)",
-    [gameId, "Processing", clipType]
+    "INSERT INTO MatchGameClips (match_game_id, clip_status, clip_type) VALUES (?, ?, ?)",
+    [matchGameId, "Processing", clipType]
   );
 };
 
 export const updateClipError = async (
-  gameId: MatchGame["id"],
+  matchGameId: MatchGame["id"],
   clipType: "potg",
   data: AllstarClipError
 ) => {
   await runQuery(
     `
     INSERT INTO MatchGameClips (
-      game_id,
+      match_game_id,
       clip_status,
       clip_type,
       additional_data
@@ -32,19 +32,19 @@ export const updateClipError = async (
       clip_status = VALUES(clip_status),
       additional_data = VALUES(additional_data)
     `,
-    [gameId, data.status.trim(), clipType, JSON.stringify(data).trim()]
+    [matchGameId, data.status.trim(), clipType, JSON.stringify(data).trim()]
   );
 };
 
 export const updateProcessedClip = async (
-  gameId: MatchGame["id"],
+  matchGameId: MatchGame["id"],
   clipType: "potg",
   data: AllstarClip
 ) => {
   await runQuery(
     `
     INSERT INTO MatchGameClips (
-      game_id,
+      match_game_id,
       clip_steam_id,
       clip_status,
       clip_type,
@@ -71,7 +71,7 @@ export const updateProcessedClip = async (
       additional_data = VALUES(additional_data)
     `,
     [
-      gameId,
+      matchGameId,
       data.steamid.trim(),
       data.status.trim(),
       clipType,

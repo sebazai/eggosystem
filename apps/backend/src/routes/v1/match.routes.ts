@@ -36,7 +36,7 @@ router.get(
 );
 router.get("/:match_id/info", validateNumericParams(), getMatchInfoController);
 router.get(
-  "/:match_id/games/:game_id",
+  "/:match_id/games/:match_game_id",
   validateNumericParams(),
   getMatchGameController
 );

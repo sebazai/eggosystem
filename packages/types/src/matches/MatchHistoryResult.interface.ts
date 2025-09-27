@@ -11,7 +11,7 @@ import { Nullable } from "../utils";
 
 export type MatchHistoryResult = {
   match_id: Match["id"];
-  game_id: Nullable<MatchGame["id"]>;
+  match_game_id: Nullable<MatchGame["id"]>;
   map_name: string;
   best_of: Match["best_of"];
   season_id: Match["season_id"];

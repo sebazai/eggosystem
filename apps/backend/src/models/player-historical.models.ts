@@ -18,7 +18,7 @@ export const getPlayerHistoricalData = async (
     periodClause = `AND m.season_id = (
       SELECT s.id
       FROM Seasons s
-      JOIN Games g ON s.game_id = g.id
+      JOIN Games g ON s.match_game_id = g.id
       WHERE g.app_id = 730
         AND s.start_date <= NOW() 
         AND (s.end_date IS NULL OR s.end_date >= NOW())
@@ -29,7 +29,7 @@ export const getPlayerHistoricalData = async (
     periodClause = `AND m.season_id = (
       SELECT s.id
       FROM Seasons s
-      JOIN Games g ON s.game_id = g.id
+      JOIN Games g ON s.match_game_id = g.id
       WHERE g.app_id = 730
         AND s.end_date IS NOT NULL
         AND s.end_date < NOW()
@@ -44,7 +44,7 @@ export const getPlayerHistoricalData = async (
   const query = `
     SELECT 
       m.id as match_id,
-      mg.id as game_id,
+      mg.id as match_game_id,
       DATE(m.match_date) as match_date,
       ps.kana_rating,
       CASE 
@@ -60,7 +60,7 @@ export const getPlayerHistoricalData = async (
       END as counter_strafing_percent,
       ps.hs_percent
     FROM PlayerStats ps
-    INNER JOIN MatchGames mg ON mg.id = ps.game_id
+    INNER JOIN MatchGames mg ON mg.id = ps.match_game_id
     INNER JOIN Matches m ON m.id = mg.match_id
     WHERE ps.steam_id = ?
       ${periodClause}

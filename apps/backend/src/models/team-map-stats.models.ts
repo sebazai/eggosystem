@@ -72,25 +72,25 @@ const getMapStatsWithSides = async (
       SUM(side.game_deaths_t) as deaths_t
     FROM MatchGames mg
     JOIN Maps maps ON mg.map_id = maps.id
-    JOIN TeamGameScores tgs ON mg.id = tgs.game_id AND tgs.team_id = ?
+    JOIN TeamGameScores tgs ON mg.id = tgs.match_game_id AND tgs.team_id = ?
     JOIN Matches m ON mg.match_id = m.id
     JOIN MatchTeams mt ON m.id = mt.match_id AND mt.team_id = tgs.team_id
     JOIN MatchTeams opponent_mt ON m.id = opponent_mt.match_id AND opponent_mt.team_id != tgs.team_id
-    JOIN TeamGameScores opponent_score ON mg.id = opponent_score.game_id AND opponent_score.team_id = opponent_mt.team_id
+    JOIN TeamGameScores opponent_score ON mg.id = opponent_score.match_game_id AND opponent_score.team_id = opponent_mt.team_id
     -- Subquery for per-game side stats
     LEFT JOIN (
       SELECT 
-        ps.game_id,
+        ps.match_game_id,
         SUM(ps.kills_ct) as game_kills_ct,
         SUM(ps.deaths_ct) as game_deaths_ct,
         SUM(ps.kills_t) as game_kills_t,
         SUM(ps.deaths_t) as game_deaths_t
       FROM PlayerStats ps
       JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.team_id = ? AND stp.season_id = (
-        SELECT season_id FROM Matches mm WHERE mm.id = (SELECT match_id FROM MatchGames mgg WHERE mgg.id = ps.game_id)
+        SELECT season_id FROM Matches mm WHERE mm.id = (SELECT match_id FROM MatchGames mgg WHERE mgg.id = ps.match_game_id)
       )
-      GROUP BY ps.game_id
-    ) side ON side.game_id = mg.id
+      GROUP BY ps.match_game_id
+    ) side ON side.match_game_id = mg.id
     WHERE ${filterQuery}
     GROUP BY mg.map_id, maps.name
   `;

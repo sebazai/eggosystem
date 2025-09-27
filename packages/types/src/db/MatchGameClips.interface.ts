@@ -4,7 +4,7 @@ import { SteamPlayer } from "./SteamPlayer.interface";
 
 export interface MatchGameClip {
   id: number;
-  game_id: MatchGame["id"];
+  match_game_id: MatchGame["id"];
   clip_steam_id: Nullable<SteamPlayer["steam_id"]>;
   clip_status: "Processing" | "Submitted" | "Processed" | "Error";
   clip_type: "potg";

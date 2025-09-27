@@ -3,18 +3,18 @@ import {
   getGameTeamRoundBreakdown,
   upsertMatchGameForMatch,
   saveParsedDemoDataForGame
-} from "../models/game.models";
+} from "./match-game.models";
 import {
   MOCK_PARSED_DEMO_DATA,
-  MOCK_GAME_ID
+  MOCK_MATCH_GAME_ID
 } from "../__mocks__/demo-parsed-json/mock-parsed-demo";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 
 describe("getGameTeamRoundBreakdown - Integration Tests", () => {
   it("should return correct round breakdown for both teams in a 13-0 game", async () => {
-    const gameId = 104220;
-    const result = await getGameTeamRoundBreakdown(gameId);
+    const matchGameId = 104220;
+    const result = await getGameTeamRoundBreakdown(matchGameId);
 
     expect(result).toHaveLength(2);
 
@@ -52,8 +52,8 @@ describe("getGameTeamRoundBreakdown - Integration Tests", () => {
   });
 
   it("should return correct round breakdown for both teams in another 13-0 game", async () => {
-    const gameId = 103586;
-    const result = await getGameTeamRoundBreakdown(gameId);
+    const matchGameId = 103586;
+    const result = await getGameTeamRoundBreakdown(matchGameId);
 
     expect(result).toHaveLength(2);
 
@@ -91,8 +91,8 @@ describe("getGameTeamRoundBreakdown - Integration Tests", () => {
   });
 
   it("should return correct round breakdown for both teams in a 13-6 game", async () => {
-    const gameId = 104224;
-    const result = await getGameTeamRoundBreakdown(gameId);
+    const matchGameId = 104224;
+    const result = await getGameTeamRoundBreakdown(matchGameId);
 
     expect(result).toHaveLength(2);
 
@@ -133,7 +133,7 @@ describe("getGameTeamRoundBreakdown - Integration Tests", () => {
 // TypeScript interfaces for database query results
 interface TeamGameScore {
   id: number;
-  game_id: number;
+  match_game_id: number;
   team_id: number;
   starting_side: string;
   score: number;
@@ -143,7 +143,7 @@ interface TeamGameScore {
 
 interface PlayerStat {
   id: number;
-  game_id: number;
+  match_game_id: number;
   steam_id: string;
   kills: number;
   deaths: number;
@@ -158,7 +158,7 @@ interface PlayerStat {
 
 interface PlayerTrade {
   id: number;
-  game_id: number;
+  match_game_id: number;
   killer_steam_id: string;
   victim_steam_id: string;
   round_number: number;
@@ -168,7 +168,7 @@ interface PlayerTrade {
 
 interface MapRoundStat {
   id: number;
-  game_id: number;
+  match_game_id: number;
   round_number: number;
   t_team_id: number;
   ct_team_id: number;
@@ -191,25 +191,25 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
     // Clean up data after each test to prevent duplicate entry errors
     await runQuery(
       `
-      DELETE FROM MapRoundStats WHERE game_id = ?
+      DELETE FROM MapRoundStats WHERE match_game_id = ?
       `,
       [123123]
     );
     await runQuery(
       `
-      DELETE FROM PlayerTrades WHERE game_id = ?
+      DELETE FROM PlayerTrades WHERE match_game_id = ?
       `,
       [123123]
     );
     await runQuery(
       `
-      DELETE FROM PlayerStats WHERE game_id = ?
+      DELETE FROM PlayerStats WHERE match_game_id = ?
       `,
       [123123]
     );
     await runQuery(
       `
-      DELETE FROM TeamGameScores WHERE game_id = ?
+      DELETE FROM TeamGameScores WHERE match_game_id = ?
       `,
       [123123]
     );
@@ -393,19 +393,22 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
   describe("successful integration tests", () => {
     it("should successfully save parsed demo data to database", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert - Check that data was actually saved
       const teamGameScores = await runQuery<TeamGameScore[]>(
         `
-        SELECT * FROM TeamGameScores WHERE game_id = ?
+        SELECT * FROM TeamGameScores WHERE match_game_id = ?
       `,
         [123123]
       );
 
       expect(teamGameScores).toHaveLength(2);
       expect(teamGameScores[0]).toMatchObject({
-        game_id: 123123,
+        match_game_id: 123123,
         team_id: 20000,
         starting_side: "T",
         score: 13,
@@ -413,7 +416,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
         overtime_score: 0
       });
       expect(teamGameScores[1]).toMatchObject({
-        game_id: 123123,
+        match_game_id: 123123,
         team_id: 20001,
         starting_side: "CT",
         score: 9,
@@ -424,12 +427,15 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
     it("should save player stats correctly", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert - Check player stats
       const playerStats = await runQuery<PlayerStat[]>(
         `
-        SELECT * FROM PlayerStats WHERE game_id = ?
+        SELECT * FROM PlayerStats WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -441,7 +447,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
         (p: PlayerStat) => p.steam_id === "76561197979955992"
       );
       expect(player1).toMatchObject({
-        game_id: 123123,
+        match_game_id: 123123,
         steam_id: "76561197979955992",
         kills: 20,
         deaths: 14,
@@ -459,7 +465,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
         (p: PlayerStat) => p.steam_id === "76561198074105343"
       );
       expect(player2).toMatchObject({
-        game_id: 123123,
+        match_game_id: 123123,
         steam_id: "76561198074105343",
         kills: 7,
         deaths: 13,
@@ -475,12 +481,15 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
     it("should save player trades correctly", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert - Check player trades
       const playerTrades = await runQuery<PlayerTrade[]>(
         `
-        SELECT * FROM PlayerTrades WHERE game_id = ?
+        SELECT * FROM PlayerTrades WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -488,19 +497,22 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
       expect(playerTrades).toHaveLength(75); // All trades from the mock data
       // Just verify that trades were saved, don't check specific values since they depend on the mock data
       expect(playerTrades[0]).toMatchObject({
-        game_id: 123123,
+        match_game_id: 123123,
         round_number: 1
       });
     });
 
     it("should save map round stats correctly", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert - Check map round stats
       const mapRoundStats = await runQuery<MapRoundStat[]>(
         `
-        SELECT * FROM MapRoundStats WHERE game_id = ?
+        SELECT * FROM MapRoundStats WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -508,7 +520,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
       expect(mapRoundStats).toHaveLength(22); // All rounds from the mock data
       // Just verify that round stats were saved, don't check specific values since they depend on the mock data
       expect(mapRoundStats[0]).toMatchObject({
-        game_id: 123123,
+        match_game_id: 123123,
         round_number: 1,
         t_team_id: 20000,
         ct_team_id: 20001
@@ -539,7 +551,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, dataWithUnknownPlayers)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, dataWithUnknownPlayers)
       ).rejects.toThrow(/Could not find team for game 123123/);
     });
   });
@@ -565,7 +577,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, dataWithUnknownPlayers)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, dataWithUnknownPlayers)
       ).rejects.toThrow(/Could not find team for game 123123/);
     });
 
@@ -586,7 +598,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       // Act & Assert - This should actually succeed since the data is valid
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, dataWithoutScore)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, dataWithoutScore)
       ).resolves.not.toThrow();
     });
 
@@ -598,12 +610,12 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
       };
 
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, dataWithoutRounds);
+      await saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, dataWithoutRounds);
 
       // Assert - Should complete successfully with empty rounds
       const mapRoundStats = await runQuery<MapRoundStat[]>(
         `
-        SELECT * FROM MapRoundStats WHERE game_id = ?
+        SELECT * FROM MapRoundStats WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -633,13 +645,13 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, invalidData)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, invalidData)
       ).rejects.toThrow(/Could not find team for game 123123/);
 
       // Verify no data was saved
       const teamGameScores = await runQuery<TeamGameScore[]>(
         `
-        SELECT * FROM TeamGameScores WHERE game_id = ?
+        SELECT * FROM TeamGameScores WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -649,7 +661,10 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
     it("should maintain data consistency across all tables", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert - Verify data consistency across all related tables
       const gameCount = await runQuery<CountResult[]>(
@@ -662,7 +677,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       const teamScoresCount = await runQuery<TeamGameScore[]>(
         `
-        SELECT * FROM TeamGameScores WHERE game_id = ?
+        SELECT * FROM TeamGameScores WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -670,7 +685,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       const playerStatsCount = await runQuery<CountResult[]>(
         `
-        SELECT COUNT(*) as count FROM PlayerStats WHERE game_id = ?
+        SELECT COUNT(*) as count FROM PlayerStats WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -678,7 +693,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       const tradesCount = await runQuery<CountResult[]>(
         `
-        SELECT COUNT(*) as count FROM PlayerTrades WHERE game_id = ?
+        SELECT COUNT(*) as count FROM PlayerTrades WHERE match_game_id = ?
       `,
         [123123]
       );
@@ -693,7 +708,7 @@ describe("saveParsedDemoDataForGame Integration Tests", () => {
 
       const roundStatsCount = await runQuery<CountResult[]>(
         `
-        SELECT COUNT(*) as count FROM MapRoundStats WHERE game_id = ?
+        SELECT COUNT(*) as count FROM MapRoundStats WHERE match_game_id = ?
       `,
         [123123]
       );

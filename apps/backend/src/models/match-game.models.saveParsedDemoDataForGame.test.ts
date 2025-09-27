@@ -1,7 +1,7 @@
-import { saveParsedDemoDataForGame } from "./game.models";
+import { saveParsedDemoDataForGame } from "./match-game.models";
 import {
   MOCK_PARSED_DEMO_DATA,
-  MOCK_GAME_ID
+  MOCK_MATCH_GAME_ID
 } from "../__mocks__/demo-parsed-json/mock-parsed-demo";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
@@ -104,7 +104,10 @@ describe("saveParsedDemoDataForGame", () => {
 
     it("should successfully save parsed demo data for a game", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       expect(mockGetConnection).toHaveBeenCalledTimes(1);
@@ -123,7 +126,10 @@ describe("saveParsedDemoDataForGame", () => {
 
     it("should handle team identification correctly", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       // Verify team queries were called with correct steam IDs from mock data
@@ -145,7 +151,10 @@ describe("saveParsedDemoDataForGame", () => {
 
     it("should process all players from the parsed data", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       // Verify that the function was called with the correct number of queries
@@ -155,7 +164,10 @@ describe("saveParsedDemoDataForGame", () => {
 
     it("should handle score data correctly", async () => {
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       // The function should complete successfully with the mocked data
@@ -170,7 +182,7 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, MOCK_PARSED_DEMO_DATA)
       ).rejects.toThrow("Could not find parent match for game 123123");
 
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
@@ -186,7 +198,7 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, MOCK_PARSED_DEMO_DATA)
       ).rejects.toThrow(/Could not find team for game 123123/);
 
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
@@ -200,7 +212,7 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, MOCK_PARSED_DEMO_DATA)
       ).rejects.toThrow("Database connection failed");
 
       expect(mockConnection.rollback).not.toHaveBeenCalled(); // No transaction started
@@ -219,7 +231,7 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, MOCK_PARSED_DEMO_DATA)
       ).rejects.toThrow("Upsert failed");
 
       expect(mockConnection.rollback).toHaveBeenCalledTimes(1);
@@ -242,7 +254,7 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, emptyPlayersData)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, emptyPlayersData)
       ).rejects.toThrow(/Could not find team for game 123123/);
     });
 
@@ -261,7 +273,7 @@ describe("saveParsedDemoDataForGame", () => {
       // Act & Assert
       await expect(
         saveParsedDemoDataForGame(
-          MOCK_GAME_ID,
+          MOCK_MATCH_GAME_ID,
           dataWithoutScore as unknown as ParsedPayload
         )
       ).rejects.toThrow();
@@ -280,7 +292,7 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, dataWithoutRounds);
+      await saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, dataWithoutRounds);
 
       // Assert - should complete successfully with empty rounds
       expect(mockConnection.commit).toHaveBeenCalledTimes(1);
@@ -296,7 +308,10 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       expect(mockConnection.beginTransaction).toHaveBeenCalledTimes(1);
@@ -317,7 +332,7 @@ describe("saveParsedDemoDataForGame", () => {
 
       // Act & Assert
       await expect(
-        saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA)
+        saveParsedDemoDataForGame(MOCK_MATCH_GAME_ID, MOCK_PARSED_DEMO_DATA)
       ).rejects.toThrow("Upsert failed");
 
       expect(mockConnection.beginTransaction).toHaveBeenCalledTimes(1);
@@ -336,7 +351,10 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       // Verify that the function completed successfully
@@ -351,7 +369,10 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       // Verify that the function completed successfully
@@ -367,7 +388,10 @@ describe("saveParsedDemoDataForGame", () => {
         .mockResolvedValueOnce([{ team_id: 2 }]); // Team 2 found
 
       // Act
-      await saveParsedDemoDataForGame(MOCK_GAME_ID, MOCK_PARSED_DEMO_DATA);
+      await saveParsedDemoDataForGame(
+        MOCK_MATCH_GAME_ID,
+        MOCK_PARSED_DEMO_DATA
+      );
 
       // Assert
       // Verify that the function completed successfully

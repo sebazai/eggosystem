@@ -5,7 +5,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 export const upsertTeamGameScore = async ({
   match_id,
   team_id,
-  game_id,
+  match_game_id,
   starting_side,
   score,
   halftime_score,
@@ -15,14 +15,14 @@ export const upsertTeamGameScore = async ({
   const query = `INSERT INTO TeamGameScores (
     match_id,
     team_id,
-    game_id,
+    match_game_id,
     starting_side,
     score,
     halftime_score,
     overtime_score
     ) VALUES (?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE 
-      game_id = VALUES(game_id),
+      match_game_id = VALUES(match_game_id),
       starting_side = VALUES(starting_side),
       score = VALUES(score),
       halftime_score = VALUES(halftime_score),
@@ -31,7 +31,7 @@ export const upsertTeamGameScore = async ({
   const queryParams = [
     match_id,
     team_id,
-    game_id,
+    match_game_id,
     starting_side,
     score,
     halftime_score,

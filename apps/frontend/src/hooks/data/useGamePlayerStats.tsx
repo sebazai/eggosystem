@@ -4,10 +4,10 @@ import { expressFetcher } from "@/lib/utils";
 import type { MatchPlayerStats } from "@eggosystem/types";
 import useSWR from "swr";
 
-export function useGamePlayerStats(gameId: number, stat?: "CT" | "T") {
+export function useGamePlayerStats(matchGameId: number, stat?: "CT" | "T") {
   const url = stat
-    ? `/api/v1/games/${gameId}/playerstats?stat=${stat}`
-    : `/api/v1/games/${gameId}/playerstats`;
+    ? `/api/v1/match-games/${matchGameId}/playerstats?stat=${stat}`
+    : `/api/v1/match-games/${matchGameId}/playerstats`;
 
   const { data, error, isValidating, isLoading } = useSWR<MatchPlayerStats[]>(
     url,

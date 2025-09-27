@@ -979,7 +979,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
     expect(result).toEqual([
       {
         match_id: 9917,
-        game_id: null,
+        match_game_id: null,
         map_name: "de_nuke, de_anubis, de_dust2",
         best_of: 3,
         season_id: 14,
@@ -1013,7 +1013,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
       },
       {
         match_id: 10027,
-        game_id: null,
+        match_game_id: null,
         map_name: "de_anubis, de_ancient",
         best_of: 3,
         season_id: 14,
@@ -1047,7 +1047,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
       },
       {
         match_id: 10057,
-        game_id: null,
+        match_game_id: null,
         map_name: "de_anubis, de_nuke",
         best_of: 3,
         season_id: 14,

@@ -127,7 +127,7 @@ const mockMatchGamesByTeam = {
   match_date: "2024-01-01",
   league_id: 1,
   season_id: 1,
-  game_id: 123,
+  match_game_id: 123,
   map_name: "de_dust2",
   map_id: 1,
   map_order: 1,

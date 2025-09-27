@@ -3,7 +3,7 @@
 export interface FailedParseMessage {
   id: number;
   queue_name: string;
-  game_id: string;
+  match_game_id: string;
   failed_at: string;
   final_error: string;
   original_message: Record<string, unknown>;

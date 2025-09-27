@@ -88,7 +88,7 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
       ${leaderboardExpression} AS ${leaderboards}
     FROM SteamPlayers p
     JOIN PlayerStats ps ON ps.steam_id = p.steam_id
-    JOIN MatchGames mg ON mg.id = ps.game_id
+    JOIN MatchGames mg ON mg.id = ps.match_game_id
     JOIN Matches m ON m.id = mg.match_id
     JOIN MatchTeams mt ON mt.match_id = m.id
     JOIN Teams t ON t.id = mt.team_id
@@ -98,10 +98,10 @@ export const getLeaderboard = async <K extends keyof LeaderboardResponse>({
     AND stp.season_id = m.season_id
     AND stp.role = 'primary'
     INNER JOIN (
-      SELECT game_id, SUM(score + overtime_score) AS total_rounds
+      SELECT match_game_id, SUM(score + overtime_score) AS total_rounds
       FROM TeamGameScores
-      GROUP BY game_id
-    ) AS game_rounds ON game_rounds.game_id = mg.id
+      GROUP BY match_game_id
+    ) AS game_rounds ON game_rounds.match_game_id = mg.id
     WHERE ${query}
     GROUP BY p.steam_id, p.nickname, t.name, t.team_logo
     HAVING COUNT(DISTINCT mg.id) > 2

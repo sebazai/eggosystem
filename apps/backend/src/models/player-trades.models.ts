@@ -3,11 +3,11 @@ import { type DemoTrades } from "../types/parse-queue.types";
 import { runQuery } from "../db/mysqlRunQuery";
 
 export const upsertPlayerTradesForGame = async ({
-  gameId,
+  matchGameId,
   playerTrades,
   connection
 }: {
-  gameId: number;
+  matchGameId: number;
   playerTrades: DemoTrades;
   connection?: PoolConnection;
 }) => {
@@ -16,7 +16,7 @@ export const upsertPlayerTradesForGame = async ({
   );
 
   const query = `INSERT INTO PlayerTrades 
-    (game_id,
+    (match_game_id,
     trader_steam_id, 
     killer_steam_id, 
     victim_steam_id, 
@@ -44,7 +44,7 @@ export const upsertPlayerTradesForGame = async ({
       return runQuery(
         query,
         [
-          gameId,
+          matchGameId,
           trade.Trader,
           trade.Killer,
           trade.Victim,

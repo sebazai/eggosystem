@@ -6,7 +6,7 @@
 export interface BaseFailedMessage {
   id?: number; // Database ID when stored
   queue_name: string; // Which queue this came from
-  game_id: string;
+  match_game_id: string;
   failed_at: string;
   final_error: string;
   original_message: Record<string, unknown>;
@@ -86,7 +86,7 @@ export interface ReparseResponse {
 export interface FailedParseMessageRow {
   id: number;
   queue_name: string;
-  game_id: string;
+  match_game_id: string;
   failed_at: string;
   final_error: string;
   original_message: string; // JSON string in database

@@ -69,8 +69,8 @@ describe("Team Map Stats Models", () => {
       expect(sqlQuery).toContain(
         "JOIN SeasonTeamPlayers stp ON stp.steam_id = ps.steam_id AND stp.team_id = ? AND stp.season_id = ("
       );
-      expect(sqlQuery).toContain("GROUP BY ps.game_id");
-      expect(sqlQuery).toContain(") side ON side.game_id = mg.id");
+      expect(sqlQuery).toContain("GROUP BY ps.match_game_id");
+      expect(sqlQuery).toContain(") side ON side.match_game_id = mg.id");
 
       // Check that we're selecting summed side stats
       expect(sqlQuery).toContain("SUM(side.game_kills_ct) as kills_ct");

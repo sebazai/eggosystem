@@ -19,7 +19,7 @@ import { useGameClip } from "@/hooks/data/useGameClip";
 
 interface MatchStatsProps {
   matchId: number;
-  gameId: number;
+  matchGameId: number;
   platform: SeasonPlatform;
   matchInfo: MatchInfo;
   externalMatchRoomUrl: string | null;
@@ -27,7 +27,7 @@ interface MatchStatsProps {
 
 export const GameStats = ({
   matchId,
-  gameId,
+  matchGameId,
   platform,
   matchInfo,
   externalMatchRoomUrl
@@ -37,21 +37,21 @@ export const GameStats = ({
     "CT" | "T" | undefined
   >(undefined);
 
-  const handleMapSelect = (gameId: number | undefined) => {
-    // Generate the new URL based on the selected gameId
-    const newUrl = gameId
-      ? `/matches/${matchId}/games/${gameId}`
+  const handleMapSelect = (matchGameId: number | undefined) => {
+    // Generate the new URL based on the selected matchGameId
+    const newUrl = matchGameId
+      ? `/matches/${matchId}/games/${matchGameId}`
       : `/matches/${matchId}`;
 
     // Use router.push or router.replace to navigate without reloading the page
     router.push(newUrl, { scroll: false });
   };
 
-  const { teamStats } = useGameTeamStats(gameId);
-  const { playerStats } = useGamePlayerStats(gameId, selectedStat);
-  const { topPlayers } = useGameTopPlayers(gameId);
-  const { roundInfo } = useGameRoundInfo(gameId);
-  const { clip } = useGameClip(gameId);
+  const { teamStats } = useGameTeamStats(matchGameId);
+  const { playerStats } = useGamePlayerStats(matchGameId, selectedStat);
+  const { topPlayers } = useGameTopPlayers(matchGameId);
+  const { roundInfo } = useGameRoundInfo(matchGameId);
+  const { clip } = useGameClip(matchGameId);
 
   const baseFilter = {
     seasons: matchInfo.season_id.toString(),
@@ -64,7 +64,7 @@ export const GameStats = ({
 
       <MatchMapsHeader
         matchId={matchId}
-        gameId={gameId}
+        matchGameId={matchGameId}
         platform={platform}
         externalMatchRoomUrl={externalMatchRoomUrl}
         handleMapSelect={handleMapSelect}
@@ -74,7 +74,7 @@ export const GameStats = ({
         <TeamStatistics
           teamStats={teamStats}
           teamStatsFilters={baseFilter}
-          gameId={gameId}
+          matchGameId={matchGameId}
           clip={clip}
         />
       )}

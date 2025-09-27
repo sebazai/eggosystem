@@ -536,7 +536,7 @@ describe("Matches Controllers", () => {
 
   describe("getMatchGameController", () => {
     it("should return match game for valid IDs", async () => {
-      mockRequest.params = { match_id: "123", game_id: "456" };
+      mockRequest.params = { match_id: "123", match_game_id: "456" };
       const mockGame: MatchGame = {
         id: 456,
         match_id: 123,
@@ -549,7 +549,7 @@ describe("Matches Controllers", () => {
       await getMatchGameController(
         mockRequest as TestRequestWithParams<{
           match_id: string;
-          game_id: string;
+          match_game_id: string;
         }>,
         mockResponse as Response
       );
@@ -559,14 +559,14 @@ describe("Matches Controllers", () => {
     });
 
     it("should return 404 for non-existent match game", async () => {
-      mockRequest.params = { match_id: "123", game_id: "456" };
+      mockRequest.params = { match_id: "123", match_game_id: "456" };
       mockGetMatchGame.mockResolvedValue([]);
 
       await expect(
         getMatchGameController(
           mockRequest as TestRequestWithParams<{
             match_id: string;
-            game_id: string;
+            match_game_id: string;
           }>,
           mockResponse as Response
         )
@@ -574,14 +574,14 @@ describe("Matches Controllers", () => {
     });
 
     it("should handle invalid match game IDs", async () => {
-      mockRequest.params = { match_id: "invalid", game_id: "invalid" };
+      mockRequest.params = { match_id: "invalid", match_game_id: "invalid" };
       mockGetMatchGame.mockResolvedValue([]);
 
       await expect(
         getMatchGameController(
           mockRequest as TestRequestWithParams<{
             match_id: string;
-            game_id: string;
+            match_game_id: string;
           }>,
           mockResponse as Response
         )
@@ -609,7 +609,7 @@ describe("Matches Controllers", () => {
           team1: { id: 1, name: "Team A", logo: "logo1.png", score: 16 },
           team2: { id: 2, name: "Team B", logo: "logo2.png", score: 13 }
         }),
-        game_ids: JSON.stringify([1, 2, 3]),
+        match_game_ids: JSON.stringify([1, 2, 3]),
         status: "SCHEDULED"
       };
       mockGetMatchInfo.mockResolvedValue(mockMatchInfo);
@@ -622,7 +622,7 @@ describe("Matches Controllers", () => {
       expect(mockGetMatchInfo).toHaveBeenCalledWith(123);
       expect(mockJson).toHaveBeenCalledWith({
         ...mockMatchInfo,
-        game_ids: [1, 2, 3],
+        match_game_ids: [1, 2, 3],
         teams: {
           team1: { id: 1, name: "Team A", logo: "logo1.png", score: 16 },
           team2: { id: 2, name: "Team B", logo: "logo2.png", score: 13 }

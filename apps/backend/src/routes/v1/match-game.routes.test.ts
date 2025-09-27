@@ -4,7 +4,7 @@ process.env.FRONTEND_URL = "http://localhost:3000";
 import request from "supertest";
 import type express from "express";
 import { createExpressTestApp } from "../../test-utils";
-import gameRouter from "./game.routes";
+import gameRouter from "./match-game.routes";
 import {
   type MatchOrGameTopPlayerAwards,
   type GameTeamStats,
@@ -30,7 +30,7 @@ describe("Game Routes", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
-  describe("GET /games/:game_id/teamstats", () => {
+  describe("GET /games/:match_game_id/teamstats", () => {
     it("should return team stats for game id 104729", async () => {
       const expectedStats = [
         {
@@ -88,7 +88,7 @@ describe("Game Routes", () => {
     });
   });
 
-  describe("GET /:game_id/topplayers", () => {
+  describe("GET /:match_game_id/topplayers", () => {
     it("should return top players for match 7750 and game id 10340", async () => {
       const expectedTopPlayers = {
         most_kills: {
