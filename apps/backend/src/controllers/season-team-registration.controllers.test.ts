@@ -15,7 +15,8 @@ import {
   type SignupFormValues,
   type RequestWithParamsAndBody,
   SeasonPlatform,
-  type SeasonDetails
+  type SeasonDetails,
+  createMockSeason
 } from "@eggosystem/types";
 import type { PoolConnection } from "mysql2/promise";
 import _ from "lodash";
@@ -54,15 +55,15 @@ describe("addSignupForSeason - database transaction testing", () => {
       .spyOn(db, "getConnection")
       .mockResolvedValue(mockConnection as unknown as PoolConnection);
     jest.spyOn(seasonModels, "getSeasonDetailsById").mockResolvedValue({
-      id: 1,
-      name: "Test Season",
-      signup_start_date: String(yesterday),
-      signup_end_date: String(tomorrow),
-      platform: SeasonPlatform.FACEIT,
-      game_id: 0,
-      full_name: "CS2 Test Season",
-      start_date: String(tomorrow),
-      end_date: null,
+      ...createMockSeason(
+        1,
+        "Test Season",
+        "CS2 Test Season",
+        String(yesterday),
+        String(tomorrow),
+        SeasonPlatform.FACEIT,
+        String(tomorrow)
+      ),
       app_id: 730
     } satisfies SeasonDetails);
     jest

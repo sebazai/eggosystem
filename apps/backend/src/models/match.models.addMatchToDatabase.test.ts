@@ -1,5 +1,5 @@
 import { addMatchToDatabase } from "./match.models";
-import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getConnection } from "../db/mysqlConnection";
@@ -17,8 +17,8 @@ jest.mock("../db/mysqlRunQuery");
 jest.mock("../db/mysqlConnection");
 
 const mockGetSeasonLeagueExternalIdByExternalId =
-  getSeasonLeagueExternalIdByExternalId as jest.MockedFunction<
-    typeof getSeasonLeagueExternalIdByExternalId
+  getSeasonLeagueExternalIdByExternalIdWithSeasonSettings as jest.MockedFunction<
+    typeof getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
   >;
 
 const mockGetSeasonLeagueTeamByExternalId =
@@ -118,7 +118,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -148,7 +148,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -174,7 +174,7 @@ describe("addMatchToDatabase", () => {
     });
   });
 
-  describe("when isBO2PlayedAs2xBO1 is false", () => {
+  describe("when is_round_robin_bo2_as_2xbo1 is false", () => {
     it("should create a single match successfully", async () => {
       const matchDetails = validMatchDetailsMatchCreated;
       const externalLeagueId = "test-league-id";
@@ -188,7 +188,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -219,7 +219,7 @@ describe("addMatchToDatabase", () => {
 
       expect(result).toEqual({
         matchIds: [100],
-        isBO2PlayedAs2xBO1: false
+        is_round_robin_bo2_as_2xbo1: false
       });
 
       expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -247,7 +247,7 @@ describe("addMatchToDatabase", () => {
     });
   });
 
-  describe("when isBO2PlayedAs2xBO1 is true", () => {
+  describe("when is_round_robin_bo2_as_2xbo1 is true", () => {
     it("should create two matches successfully", async () => {
       const matchDetails = validMatchDetailsMatchCreated;
       const externalLeagueId = "test-league-id";
@@ -261,7 +261,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: true,
+        is_round_robin_bo2_as_2xbo1: true,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -295,7 +295,7 @@ describe("addMatchToDatabase", () => {
 
       expect(result).toEqual({
         matchIds: [100, 101],
-        isBO2PlayedAs2xBO1: true
+        is_round_robin_bo2_as_2xbo1: true
       });
 
       expect(mockConnection.beginTransaction).toHaveBeenCalled();
@@ -324,7 +324,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -396,7 +396,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -460,7 +460,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -524,7 +524,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -584,7 +584,7 @@ describe("addMatchToDatabase", () => {
         league_id: 1,
         season_id: 1,
         stage_id: 1,
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         type: "roundRobin",
         external_league_name: "Test League"
       });
@@ -615,7 +615,7 @@ describe("addMatchToDatabase", () => {
 
       expect(result).toEqual({
         matchIds: [100],
-        isBO2PlayedAs2xBO1: false
+        is_round_robin_bo2_as_2xbo1: false
       });
     });
   });

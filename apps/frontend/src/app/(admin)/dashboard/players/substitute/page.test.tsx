@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AddSubstitutePlayerPage from "./page";
-import { SeasonPlatform } from "@eggosystem/types";
+import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
 
 // Mock the hooks
 jest.mock("@/hooks/data/useAllSeasons", () => ({
@@ -88,6 +88,7 @@ import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignu
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddSubstitutePlayer } from "@/hooks/data/useAddSubstitutePlayer";
+import { create } from "lodash";
 
 const mockUseAllSeasons = useAllSeasons as jest.MockedFunction<
   typeof useAllSeasons
@@ -117,28 +118,26 @@ describe("AddSubstitutePlayerPage", () => {
     // Default mock implementations
     mockUseAllSeasons.mockReturnValue({
       seasons: [
-        {
-          id: 1,
-          game_id: 1,
-          name: "Season 1",
-          full_name: "Season 1",
-          signup_start_date: "2024-01-01",
-          signup_end_date: "2024-01-31",
-          platform: SeasonPlatform.FACEIT,
-          start_date: "2024-02-01",
-          end_date: "2024-03-31"
-        },
-        {
-          id: 2,
-          game_id: 1,
-          name: "Season 2",
-          full_name: "Season 2",
-          signup_start_date: "2024-04-01",
-          signup_end_date: "2024-04-30",
-          platform: SeasonPlatform.FACEIT,
-          start_date: "2024-05-01",
-          end_date: "2024-06-30"
-        }
+        createMockSeason(
+          1,
+          "Season 1",
+          "Season 1",
+          "2024-01-01",
+          "2024-01-31",
+          SeasonPlatform.FACEIT,
+          "2024-02-01",
+          "2024-03-31"
+        ),
+        createMockSeason(
+          2,
+          "Season 2",
+          "Season 2",
+          "2024-04-01",
+          "2024-04-30",
+          SeasonPlatform.FACEIT,
+          "2024-05-01",
+          "2024-06-30"
+        )
       ],
       isLoading: false,
       isError: null,

@@ -1196,7 +1196,7 @@ describe("FaceIT Routes - Webhook", () => {
           "5"
         );
 
-        // Stage=1 (roundRobin), isBO2PlayedAs2xBO1=true
+        // Stage=1 (roundRobin), is_round_robin_bo2_as_2xbo1=true
         expect(mockInsertSeasonLeagueExternalId).toHaveBeenCalledWith(
           "bf2c98d1-a163-4b8b-a49d-11b8e98046da",
           "5 Div S4 Lohko A",
@@ -1204,8 +1204,7 @@ describe("FaceIT Routes - Webhook", () => {
           5,
           1,
           "roundRobin",
-          1,
-          true
+          1
         );
       });
     });
@@ -1221,7 +1220,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
-          isBO2PlayedAs2xBO1: false
+          is_round_robin_bo2_as_2xbo1: false
         });
       });
 
@@ -1345,7 +1344,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValueOnce({
           matchIds: [1],
-          isBO2PlayedAs2xBO1: false
+          is_round_robin_bo2_as_2xbo1: false
         });
 
         const response = await request(app)
@@ -1384,7 +1383,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValueOnce({
           matchIds: [1],
-          isBO2PlayedAs2xBO1: false
+          is_round_robin_bo2_as_2xbo1: false
         });
 
         const response = await request(app)
@@ -1412,7 +1411,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
-          isBO2PlayedAs2xBO1: false
+          is_round_robin_bo2_as_2xbo1: false
         });
       });
 
@@ -1560,7 +1559,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
-          isBO2PlayedAs2xBO1: false
+          is_round_robin_bo2_as_2xbo1: false
         });
       });
 
@@ -1597,7 +1596,7 @@ describe("FaceIT Routes - Webhook", () => {
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
-          isBO2PlayedAs2xBO1: false
+          is_round_robin_bo2_as_2xbo1: false
         });
       });
 

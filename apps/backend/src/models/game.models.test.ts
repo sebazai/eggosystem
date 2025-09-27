@@ -11,7 +11,7 @@ jest.mock("../db/mysqlRunQuery");
 jest.mock("../services/faceit.services");
 import { getHubMatchesByExternalMatchRoomId } from "../models/match.models";
 import { getMatchTeamMapVetoPicksAndDeciders } from "../models/match-team-map-veto.models";
-import { getSeasonLeagueExternalIdByExternalId } from "../models/season-league-external-id.models";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "../models/season-league-external-id.models";
 import { getConnection } from "../db/mysqlConnection";
 import { runQuery } from "../db/mysqlRunQuery";
 import { getDemoDownloadUrl } from "../services/faceit.services";
@@ -28,8 +28,8 @@ const mockGetMatchTeamMapVetoPicksAndDeciders =
 
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockGetSeasonLeagueExternalIdByExternalId =
-  getSeasonLeagueExternalIdByExternalId as jest.MockedFunction<
-    typeof getSeasonLeagueExternalIdByExternalId
+  getSeasonLeagueExternalIdByExternalIdWithSeasonSettings as jest.MockedFunction<
+    typeof getSeasonLeagueExternalIdByExternalIdWithSeasonSettings
   >;
 const mockGetConnection = getConnection as jest.MockedFunction<
   typeof getConnection
@@ -58,7 +58,7 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         external_league_name: "Test League"
       });
 
@@ -143,7 +143,7 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: true,
+        is_round_robin_bo2_as_2xbo1: true,
         external_league_name: "Test League"
       });
 
@@ -258,7 +258,7 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: true,
+        is_round_robin_bo2_as_2xbo1: true,
         external_league_name: "Test League"
       });
 
@@ -313,7 +313,7 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: true,
+        is_round_robin_bo2_as_2xbo1: true,
         external_league_name: "Test League"
       });
 
@@ -370,7 +370,7 @@ describe("addMatchGamesForMatch", () => {
         season_id: 1,
         league_id: 1,
         type: "doubleElimination",
-        isBO2PlayedAs2xBO1: false,
+        is_round_robin_bo2_as_2xbo1: false,
         external_league_name: "Test League"
       });
 

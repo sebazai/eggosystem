@@ -53,11 +53,11 @@ const data: { navMain: Array<MenuItem> } = {
         //   url: `${createDashboardNextUrl("players")}`,
         //   requiredRoles: []
         // },
-        // {
-        //   title: "Seasons",
-        //   url: `${createDashboardNextUrl("seasons")}`,
-        //   requiredRoles: ["helpdesk"]
-        // }
+        {
+          title: "Seasons",
+          url: `${createDashboardNextUrl("seasons")}`,
+          requiredRoles: ["helpdesk"]
+        }
       ] satisfies Array<SubMenuItem>
     },
     {
@@ -77,14 +77,6 @@ const data: { navMain: Array<MenuItem> } = {
           title: "Add manual approval",
           url: createDashboardNextUrl("registration/approval")
         }
-        // {
-        //   title: "Player test",
-        //   url: "#"
-        // },
-        // {
-        //   title: "League sortter",
-        //   url: "#"
-        // }
       ] satisfies Array<SubMenuItem>
     },
     {
@@ -142,17 +134,6 @@ const data: { navMain: Array<MenuItem> } = {
       requiredRoles: ["admin", "helpdesk"],
       items: [] satisfies Array<SubMenuItem>
     }
-    // {
-    //   title: "Helpdesk",
-    //   url: "#",
-    //   requiredRoles: ["helpdesk"],
-    //   items: [
-    //     {
-    //       title: "Substitute player",
-    //       url: "#"
-    //     }
-    //   ] satisfies Array<SubMenuItem>
-    // }
   ]
 };
 

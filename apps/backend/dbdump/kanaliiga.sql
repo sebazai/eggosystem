@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Sep 21, 2025 at 09:06 AM
+-- Generation Time: Sep 27, 2025 at 01:32 PM
 -- Server version: 11.8.3-MariaDB
 -- PHP Version: 8.2.27
 
@@ -688,7 +688,6 @@ CREATE TABLE `SeasonLeagueExternalIds` (
   `external_id` varchar(255) NOT NULL,
   `external_league_name` varchar(255) DEFAULT NULL,
   `type` varchar(255) NOT NULL,
-  `isBO2PlayedAs2xBO1` tinyint(1) NOT NULL,
   `manual_group` int(11) DEFAULT NULL COMMENT 'Manual group parsed from external_league_name'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
@@ -807,7 +806,8 @@ CREATE TABLE `Seasons` (
   `signup_end_date` datetime DEFAULT NULL,
   `start_date` date NOT NULL,
   `end_date` date DEFAULT NULL,
-  `platform` enum('kanaliiga','esportal','faceit','popflash') NOT NULL DEFAULT 'kanaliiga'
+  `platform` enum('kanaliiga','esportal','faceit','popflash') NOT NULL DEFAULT 'kanaliiga',
+  `is_round_robin_bo2_as_2xbo1` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -2176,6 +2176,14 @@ ALTER TABLE `Teams`
 --
 ALTER TABLE `UserPolicyAcceptances`
   ADD CONSTRAINT `userpolicyacceptances_account_id_foreign` FOREIGN KEY (`account_id`) REFERENCES `Accounts` (`id`) ON DELETE CASCADE;
+
+DELIMITER $$
+--
+-- Events
+--
+CREATE DEFINER=`kanamain`@`%` EVENT `delete_old_audit_logs` ON SCHEDULE EVERY 1 DAY STARTS '2025-05-21 06:26:17' ON COMPLETION NOT PRESERVE ENABLE DO DELETE FROM AuditLog WHERE created_at < NOW() - INTERVAL 1 YEAR$$
+
+DELIMITER ;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

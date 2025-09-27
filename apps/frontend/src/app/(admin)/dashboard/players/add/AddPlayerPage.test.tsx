@@ -5,7 +5,8 @@ import { SWRConfig } from "swr";
 import {
   EligiblePlayerForValidationSteamId,
   IneligiblePlayerForValidationSteamId,
-  SeasonPlatform
+  SeasonPlatform,
+  createMockSeason
 } from "@eggosystem/types";
 import AddPlayerPage from "./page";
 
@@ -270,17 +271,16 @@ describe("AddPlayerPage", () => {
 
     mockUseAllSeasons.mockReturnValue({
       seasons: [
-        {
-          id: 14,
-          game_id: 1,
-          name: "Season 14",
-          full_name: "Season 14 - CS:GO",
-          signup_start_date: "2024-01-01",
-          signup_end_date: "2024-01-31",
-          platform: SeasonPlatform.Kanaliiga,
-          start_date: "2024-02-01",
-          end_date: "2024-03-31"
-        }
+        createMockSeason(
+          14,
+          "Season 14",
+          "Season 14 - CS:GO",
+          "2024-01-01",
+          "2024-01-31",
+          SeasonPlatform.Kanaliiga,
+          "2024-02-01",
+          "2024-03-31"
+        )
       ],
       isLoading: false,
       isError: null,

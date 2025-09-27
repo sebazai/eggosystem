@@ -36,7 +36,7 @@ import {
   getMatchDateTime
 } from "../utils/date-utils";
 import { type PoolConnection } from "mysql2/promise";
-import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 
 export const getMatches = (): Promise<Match[]> => {
@@ -556,7 +556,10 @@ export const addMatchToDatabase = async (
     }
 
     const seasonLeagueExternalRoom =
-      await getSeasonLeagueExternalIdByExternalId(externalLeagueId, connection);
+      await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+        externalLeagueId,
+        connection
+      );
     if (!seasonLeagueExternalRoom) {
       throw new Error(
         `No SeasonLeagueExternalId entry found for external_id: ${externalLeagueId}`
@@ -582,14 +585,14 @@ export const addMatchToDatabase = async (
     }
     const { league_id, season_id, stage_id } = seasonLeagueExternalRoom;
 
-    const { isBO2PlayedAs2xBO1 } = seasonLeagueExternalRoom;
+    const { is_round_robin_bo2_as_2xbo1 } = seasonLeagueExternalRoom;
 
     const { match_date, start_time } = getMatchDateTime(
       matchDetails.scheduled_at
     );
 
     const realBestOf =
-      matchDetails.best_of === 2 && isBO2PlayedAs2xBO1
+      matchDetails.best_of === 2 && is_round_robin_bo2_as_2xbo1
         ? 1
         : matchDetails.best_of;
 
@@ -623,7 +626,7 @@ export const addMatchToDatabase = async (
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
-    if (isBO2PlayedAs2xBO1) {
+    if (is_round_robin_bo2_as_2xbo1) {
       const firstMatch = await runQuery<{ insertId: number }>(
         matchQuery,
         params,
@@ -691,7 +694,10 @@ export const addMatchToDatabase = async (
 
       await connection.commit();
 
-      return { matchIds: [firstMatchId, secondMatchId], isBO2PlayedAs2xBO1 };
+      return {
+        matchIds: [firstMatchId, secondMatchId],
+        is_round_robin_bo2_as_2xbo1
+      };
     } else {
       const match = await runQuery<{ insertId: number }>(
         matchQuery,
@@ -718,7 +724,7 @@ export const addMatchToDatabase = async (
       ]);
 
       await connection.commit();
-      return { matchIds: [matchId], isBO2PlayedAs2xBO1 };
+      return { matchIds: [matchId], is_round_robin_bo2_as_2xbo1 };
     }
   } catch (error) {
     await connection.rollback();

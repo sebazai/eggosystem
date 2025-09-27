@@ -1,4 +1,5 @@
 export * from "./Game.interface";
+export * from "./GameType.interface";
 export * from "./League.interface";
 export * from "./Map.interface";
 export * from "./MapRoundStat.interface";

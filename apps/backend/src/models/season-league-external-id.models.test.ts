@@ -15,8 +15,8 @@ describe("season-league-external-id.models", () => {
     it("should return championship IDs for active seasons", async () => {
       // Mock data for active seasons
       const mockResults = [
-        { external_id: "active_champ_1", isBO2PlayedAs2xBO1: true },
-        { external_id: "active_champ_2", isBO2PlayedAs2xBO1: false }
+        { external_id: "active_champ_1", is_round_robin_bo2_as_2xbo1: true },
+        { external_id: "active_champ_2", is_round_robin_bo2_as_2xbo1: false }
       ];
 
       mockRunQuery.mockResolvedValue(mockResults);
@@ -32,7 +32,7 @@ describe("season-league-external-id.models", () => {
     it("should return championship IDs for seasons in signup period", async () => {
       // Mock data for seasons in signup period
       const mockResults = [
-        { external_id: "signup_champ_1", isBO2PlayedAs2xBO1: true }
+        { external_id: "signup_champ_1", is_round_robin_bo2_as_2xbo1: true }
       ];
 
       mockRunQuery.mockResolvedValue(mockResults);
@@ -50,9 +50,9 @@ describe("season-league-external-id.models", () => {
     it("should return championship IDs for both active and signup period seasons", async () => {
       // Mock data for both types of seasons
       const mockResults = [
-        { external_id: "active_champ_1", isBO2PlayedAs2xBO1: true },
-        { external_id: "signup_champ_1", isBO2PlayedAs2xBO1: false },
-        { external_id: "active_champ_2", isBO2PlayedAs2xBO1: true }
+        { external_id: "active_champ_1", is_round_robin_bo2_as_2xbo1: true },
+        { external_id: "signup_champ_1", is_round_robin_bo2_as_2xbo1: false },
+        { external_id: "active_champ_2", is_round_robin_bo2_as_2xbo1: true }
       ];
 
       mockRunQuery.mockResolvedValue(mockResults);

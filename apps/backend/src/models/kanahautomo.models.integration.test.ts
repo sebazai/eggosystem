@@ -15,7 +15,7 @@ import {
 } from "../__utils__/seed-database";
 import { runQuery } from "../db/mysqlRunQuery";
 import type { InsertSeason } from "@eggosystem/types";
-import { SeasonPlatform } from "@eggosystem/types";
+import { SeasonPlatform, createMockInsertSeason } from "@eggosystem/types";
 
 describe("Kanahautomo Models Integration Tests", () => {
   // Use unique steam IDs to avoid conflicts with existing data
@@ -45,18 +45,16 @@ describe("Kanahautomo Models Integration Tests", () => {
   let testOrganizationId: number;
   let testOrganizationId2: number;
 
-  const testSeason: InsertSeason = {
-    id: 999,
-    game_id: 1,
-    name: "Test Season",
-    full_name: "CS2 Test Season",
-    signup_start_date: new Date("2024-01-01"),
-    signup_end_date: new Date("2024-12-31"),
-    platform: SeasonPlatform.FACEIT,
-    start_date: new Date("2024-02-01"),
-    end_date: null
-  };
-
+  const testSeason: InsertSeason = createMockInsertSeason(
+    999,
+    "Test Season",
+    "CS2 Test Season",
+    "2024-01-01",
+    "2024-12-31",
+    SeasonPlatform.FACEIT,
+    "2024-02-01",
+    null
+  );
   beforeAll(async () => {
     // Set up test data
     await insertTestSeason(testSeason);

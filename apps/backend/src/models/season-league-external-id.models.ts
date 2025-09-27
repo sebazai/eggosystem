@@ -2,13 +2,18 @@ import { type Nullable, type SeasonLeagueExternalId } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 
-export const getSeasonLeagueExternalIdByExternalId = async (
+export const getSeasonLeagueExternalIdByExternalIdWithSeasonSettings = async (
   externalId: string,
   connection?: PoolConnection
 ) => {
-  const query = `SELECT * FROM SeasonLeagueExternalIds WHERE external_id = ?`;
+  const query = `SELECT slei.*, s.is_round_robin_bo2_as_2xbo1 FROM SeasonLeagueExternalIds slei
+    JOIN Seasons s ON slei.season_id = s.id
+    WHERE slei.external_id = ?`;
   const [seasonLeagueExternaMatchRoomResult] = await runQuery<
-    Array<SeasonLeagueExternalId | undefined>
+    Array<
+      | (SeasonLeagueExternalId & { is_round_robin_bo2_as_2xbo1: boolean })
+      | undefined
+    >
   >(query, [externalId], connection);
   return seasonLeagueExternaMatchRoomResult;
 };
@@ -21,27 +26,17 @@ export const insertSeasonLeagueExternalId = async (
   stage: number,
   type: string,
   manualGroup: Nullable<number>,
-  isBO2PlayedAs2xBO1: boolean,
   connection?: PoolConnection
 ) => {
   const query = `
     INSERT INTO SeasonLeagueExternalIds 
-      (external_id, external_league_name, season_id, league_id, stage_id, type, isBO2PlayedAs2xBO1, manual_group) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+      (external_id, external_league_name, season_id, league_id, stage_id, type, manual_group) 
+    VALUES (?, ?, ?, ?, ?, ?, ?)`;
   const seasonLeagueExternaMatchRoomResult = await runQuery<{
     insertId: number;
   }>(
     query,
-    [
-      externalId,
-      externalName,
-      seasonId,
-      leagueId,
-      stage,
-      type,
-      isBO2PlayedAs2xBO1,
-      manualGroup
-    ],
+    [externalId, externalName, seasonId, leagueId, stage, type, manualGroup],
     connection
   );
   return seasonLeagueExternaMatchRoomResult;
@@ -56,10 +51,10 @@ export const removeSeasonLeagueExternalId = async (
 };
 
 export const getActiveSeasonChampionshipIds = async (): Promise<
-  { external_id: string; isBO2PlayedAs2xBO1: boolean }[]
+  { external_id: string; is_round_robin_bo2_as_2xbo1: boolean }[]
 > => {
   const query = `
-    SELECT slei.external_id, slei.isBO2PlayedAs2xBO1
+    SELECT slei.external_id, s.is_round_robin_bo2_as_2xbo1
     FROM SeasonLeagueExternalIds slei
     JOIN Seasons s ON slei.season_id = s.id
     WHERE (
@@ -72,9 +67,9 @@ export const getActiveSeasonChampionshipIds = async (): Promise<
   `;
 
   const results =
-    await runQuery<Array<{ external_id: string; isBO2PlayedAs2xBO1: boolean }>>(
-      query
-    );
+    await runQuery<
+      Array<{ external_id: string; is_round_robin_bo2_as_2xbo1: boolean }>
+    >(query);
 
   return results;
 };

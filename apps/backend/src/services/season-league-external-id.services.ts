@@ -2,6 +2,7 @@ import { type ChampionshipCreatedWebhook } from "@eggosystem/types";
 import { getOrganizerFaceitActiveSeasonForApp } from "../models/organizer.models";
 import { getSeasonLeagueBySeasonAndFaceitName } from "../models/season-league.models";
 import { insertSeasonLeagueExternalId } from "../models/season-league-external-id.models";
+import { convertFaceitGameToAppId } from "./faceit.services";
 
 export const addChampionshipToDatabase = async (
   championship: ChampionshipCreatedWebhook
@@ -11,7 +12,7 @@ export const addChampionshipToDatabase = async (
   const faceitOrganizerId = championship.payload.organizer_id;
   const activeOrganizerSeason = await getOrganizerFaceitActiveSeasonForApp(
     faceitOrganizerId,
-    730
+    convertFaceitGameToAppId(championship.app_id)
   );
 
   if (!activeOrganizerSeason) {
@@ -21,8 +22,6 @@ export const addChampionshipToDatabase = async (
   const championshipType = championship.payload.type;
   // TODO: make more dynamic, If roundRobin, stage Regular, otherwise Playoff
   const stage = championshipType === "roundRobin" ? 1 : 2;
-  // TODO: This could be a setting from Seasons
-  const isBO2PlayedAs2xBO1 = championshipType === "roundRobin";
   // get league from name 11 DIV S3 Playoffs
   const nameSplit = externalChampionshipName.split(" ");
   const leagueName = nameSplit[0];
@@ -47,7 +46,6 @@ export const addChampionshipToDatabase = async (
     seasonLeague.league_id,
     stage,
     championshipType,
-    manualGroupNumber,
-    isBO2PlayedAs2xBO1
+    manualGroupNumber
   );
 };

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   type Account,
-  type InsertSeason,
   type InsertSeasonTeamRegistration,
   type SeasonDetails,
   SeasonPlatform,
@@ -10,7 +9,8 @@ import {
   type SignupNewTeamType,
   type SteamPlayer,
   type Team,
-  type UpdateSeasonTeamRegistration
+  type UpdateSeasonTeamRegistration,
+  createMockInsertSeason
 } from "@eggosystem/types";
 import {
   cleanUpTestUser,
@@ -46,23 +46,24 @@ describe("Season team registration services", () => {
   const now = new Date();
   const yesterday = new Date().setDate(now.getDate() - 1);
   const tomorrow = new Date().setDate(now.getDate() + 1);
-  const insertSeason = {
-    id: 1,
-    game_id: 1,
-    name: "Test Season",
-    full_name: "CS2 Test Season",
-    signup_start_date: new Date(yesterday),
-    signup_end_date: new Date(tomorrow),
-    platform: SeasonPlatform.FACEIT,
-    start_date: new Date(tomorrow),
-    end_date: null
-  } satisfies InsertSeason;
+  const insertSeason = createMockInsertSeason(
+    1,
+    "Test Season",
+    "CS2 Test Season",
+    String(yesterday),
+    String(tomorrow),
+    SeasonPlatform.FACEIT,
+    String(tomorrow)
+  );
+
   const seasonDetails = {
     ...insertSeason,
-    signup_start_date: insertSeason.signup_start_date.toDateString(),
-    signup_end_date: insertSeason.signup_end_date.toDateString(),
-    start_date: insertSeason.start_date.toDateString(),
-    app_id: 730
+    signup_start_date: insertSeason?.signup_start_date?.toDateString() ?? null,
+    signup_end_date: insertSeason?.signup_end_date?.toDateString() ?? null,
+    start_date: insertSeason?.start_date?.toDateString(),
+    end_date: insertSeason?.end_date?.toDateString() ?? null,
+    app_id: 730,
+    is_round_robin_bo2_as_2xbo1: false
   } satisfies SeasonDetails;
 
   beforeAll(async () => {

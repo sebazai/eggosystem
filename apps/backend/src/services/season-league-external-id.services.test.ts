@@ -1,5 +1,5 @@
 import type { ChampionshipCreatedWebhook } from "@eggosystem/types";
-import { SeasonPlatform } from "@eggosystem/types";
+import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
 import { addChampionshipToDatabase } from "./season-league-external-id.services";
 import { getOrganizerFaceitActiveSeasonForApp } from "../models/organizer.models";
 import { getSeasonLeagueBySeasonAndFaceitName } from "../models/season-league.models";
@@ -31,7 +31,7 @@ function buildWebhook(
     event: "championship_created",
     event_id: "evt-1",
     third_party_id: "tp-1",
-    app_id: "app-1",
+    app_id: "6d9298b7-73e4-4672-96b5-720293ba2a4a",
     timestamp: new Date().toISOString(),
     retry_count: 0,
     version: 1,
@@ -96,17 +96,17 @@ describe("addChampionshipToDatabase", () => {
   });
 
   it("throws when season league cannot be resolved from name prefix", async () => {
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce({
-      id: 77,
-      game_id: 1,
-      name: "S4",
-      full_name: "Season 4",
-      signup_start_date: null,
-      signup_end_date: null,
-      platform: SeasonPlatform.FACEIT,
-      start_date: new Date().toISOString().slice(0, 10),
-      end_date: null
-    });
+    const mockSeason = createMockSeason(
+      77,
+      "S4",
+      "Season 4",
+      new Date().toISOString().slice(0, 10),
+      new Date().toISOString().slice(0, 10),
+      SeasonPlatform.FACEIT,
+      new Date().toISOString().slice(0, 10),
+      null
+    );
+    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce(undefined);
 
@@ -128,18 +128,18 @@ describe("addChampionshipToDatabase", () => {
     expect(mockInsertSeasonLeagueExternalId).not.toHaveBeenCalled();
   });
 
-  it("inserts with stage=1 and isBO2PlayedAs2xBO1=true for roundRobin", async () => {
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce({
-      id: 77,
-      game_id: 1,
-      name: "S4",
-      full_name: "Season 4",
-      signup_start_date: null,
-      signup_end_date: null,
-      platform: SeasonPlatform.FACEIT,
-      start_date: new Date().toISOString().slice(0, 10),
-      end_date: null
-    });
+  it("inserts with stage=1 and is_round_robin_bo2_as_2xbo1=true for roundRobin", async () => {
+    const mockSeason = createMockSeason(
+      77,
+      "S4",
+      "Season 4",
+      new Date().toISOString().slice(0, 10),
+      new Date().toISOString().slice(0, 10),
+      SeasonPlatform.FACEIT,
+      new Date().toISOString().slice(0, 10),
+      null
+    );
+    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
       tier: 3,
@@ -164,23 +164,22 @@ describe("addChampionshipToDatabase", () => {
       5,
       1,
       "roundRobin",
-      2,
-      true
+      2
     );
   });
 
-  it("inserts with stage=2 and isBO2PlayedAs2xBO1=false for singleElimination", async () => {
-    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce({
-      id: 88,
-      game_id: 1,
-      name: "S4",
-      full_name: "Season 4",
-      signup_start_date: null,
-      signup_end_date: null,
-      platform: SeasonPlatform.FACEIT,
-      start_date: new Date().toISOString().slice(0, 10),
-      end_date: null
-    });
+  it("inserts with stage=2 and is_round_robin_bo2_as_2xbo1=false for singleElimination", async () => {
+    const mockSeason = createMockSeason(
+      88,
+      "S4",
+      "Season 4",
+      new Date().toISOString().slice(0, 10),
+      new Date().toISOString().slice(0, 10),
+      SeasonPlatform.FACEIT,
+      new Date().toISOString().slice(0, 10),
+      null
+    );
+    mockGetOrganizerFaceitActiveSeasonForApp.mockResolvedValueOnce(mockSeason);
 
     mockGetSeasonLeagueBySeasonAndFaceitName.mockResolvedValueOnce({
       tier: 1,
@@ -210,8 +209,7 @@ describe("addChampionshipToDatabase", () => {
       99,
       2,
       "singleElimination",
-      null,
-      false
+      null
     );
   });
 });

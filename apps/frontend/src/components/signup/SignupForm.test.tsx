@@ -6,7 +6,12 @@ import { screen } from "@testing-library/react";
 import { SignupForm } from "./SignupForm";
 import { useAuth } from "@/context/AuthContext";
 import { useSeasonDetails } from "@/hooks/data/useSeasonDetails";
-import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
+import {
+  SeasonPlatform,
+  type SeasonDetails,
+  type SignupFormValues,
+  createMockSeason
+} from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
 import {
   renderWithSWR,
@@ -50,28 +55,21 @@ const mockUser = {
   roles: []
 };
 
+const mockSeason = createMockSeason(
+  1,
+  "Test Season",
+  "Test Season Full Name",
+  new Date().toISOString(),
+  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  SeasonPlatform.Kanaliiga,
+  new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+);
+
 const mockSeasonDetails = {
-  id: 1,
-  name: "Test Season",
-  full_name: "Test Season Full Name",
-  platform: SeasonPlatform.Kanaliiga,
-  app_id: 730,
-  game_id: 1,
-  registration_start: new Date().toISOString(),
-  registration_end: new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000
-  ).toISOString(),
-  season_start: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  season_end: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-  signup_start_date: new Date().toISOString(),
-  signup_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-  season_start_date: new Date(
-    Date.now() + 14 * 24 * 60 * 60 * 1000
-  ).toISOString(),
-  start_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  end_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-  active: true
-};
+  ...mockSeason,
+  app_id: 730
+} satisfies SeasonDetails;
 
 const mockDraftValues: SignupFormValues = {
   organizationId: 1,

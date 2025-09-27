@@ -4,7 +4,8 @@ import "@testing-library/jest-dom";
 import { PlayerValidationForm } from "./PlayerValidationForm";
 import {
   EligiblePlayerForValidationSteamId,
-  SeasonPlatform
+  SeasonPlatform,
+  createMockSeason
 } from "@eggosystem/types";
 
 // Mock the UI components
@@ -154,28 +155,26 @@ jest.mock("lucide-react", () => ({
 
 describe("PlayerValidationForm", () => {
   const mockSeasons = [
-    {
-      id: 14,
-      game_id: 1,
-      name: "Season 14",
-      full_name: "Season 14 - CS:GO",
-      signup_start_date: "2024-01-01",
-      signup_end_date: "2024-01-31",
-      platform: SeasonPlatform.FACEIT,
-      start_date: "2024-02-01",
-      end_date: "2024-03-31"
-    },
-    {
-      id: 13,
-      game_id: 1,
-      name: "Season 13",
-      full_name: "Season 13 - CS:GO",
-      signup_start_date: "2023-10-01",
-      signup_end_date: "2023-10-31",
-      platform: SeasonPlatform.FACEIT,
-      start_date: "2023-11-01",
-      end_date: "2023-12-31"
-    }
+    createMockSeason(
+      14,
+      "Season 14",
+      "Season 14 - CS:GO",
+      "2024-01-01",
+      "2024-01-31",
+      SeasonPlatform.FACEIT,
+      "2024-02-01",
+      "2024-03-31"
+    ),
+    createMockSeason(
+      13,
+      "Season 13",
+      "Season 13 - CS:GO",
+      "2023-10-01",
+      "2023-10-31",
+      SeasonPlatform.FACEIT,
+      "2023-11-01",
+      "2023-12-31"
+    )
   ];
 
   const mockActiveSeason = { season_id: 14 };

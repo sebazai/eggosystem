@@ -14,7 +14,7 @@ import { getActiveOrPassedSeasonId } from "../services/season.services";
 import { getTeamCaptainsBySeasonId } from "../models/team.models";
 import type { RequestWithParams } from "@eggosystem/types";
 import type { Season, SeasonDetails } from "@eggosystem/types";
-import { SeasonPlatform } from "@eggosystem/types";
+import { SeasonPlatform, createMockSeason } from "@eggosystem/types";
 
 // Mock the models and Redis
 jest.mock("../models/season.models");
@@ -41,28 +41,19 @@ const mockGetSeasonDetailsById = getSeasonDetailsById as jest.MockedFunction<
 >;
 
 // Test data objects
-const mockSeason = {
-  id: 123,
-  game_id: 1,
-  name: "Test Season",
-  full_name: "Test Season Full Name",
-  signup_start_date: "2024-01-01",
-  signup_end_date: "2024-12-31",
-  platform: SeasonPlatform.FACEIT,
-  start_date: "2024-01-01",
-  end_date: "2024-12-31"
-} satisfies Season;
+const mockSeason = createMockSeason(
+  1,
+  "Test Season",
+  "Test Season Full Name",
+  "2024-01-01",
+  "2024-12-31",
+  SeasonPlatform.FACEIT,
+  "2024-01-01",
+  "2024-12-31"
+);
 
 const mockSeasonDetails = {
-  id: 123,
-  game_id: 1,
-  name: "Test Season",
-  full_name: "Test Season Full Name",
-  signup_start_date: "2024-01-01",
-  signup_end_date: "2024-12-31",
-  platform: SeasonPlatform.FACEIT,
-  start_date: "2024-01-01",
-  end_date: "2024-12-31",
+  ...mockSeason,
   app_id: 730
 } satisfies SeasonDetails;
 

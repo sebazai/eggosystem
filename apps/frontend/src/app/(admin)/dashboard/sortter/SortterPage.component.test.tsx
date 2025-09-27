@@ -4,11 +4,12 @@ import userEvent from "@testing-library/user-event";
 import SortterPage from "./page";
 import { useSortter } from "@/hooks/data/dashboard/useSortter";
 import { clientApiFetch } from "@/lib/apiClient";
-import type {
-  TeamSortterValues,
-  Season,
-  PlayerSortterValues,
-  SeasonPlatform
+import {
+  type TeamSortterValues,
+  type Season,
+  type PlayerSortterValues,
+  SeasonPlatform,
+  createMockSeason
 } from "@eggosystem/types";
 
 // Mock Next.js App Router
@@ -376,39 +377,36 @@ describe("SortterPage Component Tests", () => {
   ];
 
   const mockSeasons: Season[] = [
-    {
-      id: 15,
-      game_id: 1,
-      name: "Season 15",
-      full_name: "Season 15 Full Name",
-      signup_start_date: "2023-07-01",
-      signup_end_date: "2023-07-31",
-      platform: "steam" as SeasonPlatform,
-      start_date: "2023-08-01",
-      end_date: "2023-12-31"
-    },
-    {
-      id: 16,
-      game_id: 1,
-      name: "Season 16",
-      full_name: "Season 16 Full Name",
-      signup_start_date: "2024-01-01",
-      signup_end_date: "2024-01-31",
-      platform: "steam" as SeasonPlatform,
-      start_date: "2024-02-01",
-      end_date: "2024-06-30"
-    },
-    {
-      id: 17,
-      game_id: 1,
-      name: "Season 17",
-      full_name: "Season 17 Full Name",
-      signup_start_date: "2024-07-01",
-      signup_end_date: "2024-07-31",
-      platform: "steam" as SeasonPlatform,
-      start_date: "2024-08-01",
-      end_date: "2024-12-31"
-    }
+    createMockSeason(
+      15,
+      "Season 15",
+      "Season 15 Full Name",
+      "2023-07-01",
+      "2023-07-31",
+      "kanaliiga",
+      "2023-08-01",
+      "2023-12-31"
+    ),
+    createMockSeason(
+      16,
+      "Season 16",
+      "Season 16 Full Name",
+      "2024-01-01",
+      "2024-01-31",
+      "steam",
+      "2024-02-01",
+      "2024-06-30"
+    ),
+    createMockSeason(
+      17,
+      "Season 17",
+      "Season 17 Full Name",
+      "2024-07-01",
+      "2024-07-31",
+      "steam",
+      "2024-08-01",
+      "2024-12-31"
+    )
   ];
 
   const mockPlayerValues: PlayerSortterValues[] = [

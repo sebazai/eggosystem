@@ -611,7 +611,7 @@ export const fetchFaceitChampionshipUpcomingMatches = async (
 
 export const syncMatchSchedule = async (
   faceitMatch: FaceitMatch,
-  isBO2PlayedAs2xBO1: boolean
+  is_round_robin_bo2_as_2xbo1: boolean
 ): Promise<void> => {
   const databaseMatches = await getMatchesByExternalId(faceitMatch.match_id);
 
@@ -639,7 +639,7 @@ export const syncMatchSchedule = async (
     `[FACEIT] New time for match ${faceitMatch.match_id} ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
   );
 
-  if (isBO2PlayedAs2xBO1 && databaseMatches.length === 2) {
+  if (is_round_robin_bo2_as_2xbo1 && databaseMatches.length === 2) {
     // Handle BO2 matches stored as 2 BO1 matches
     // First match gets the FACEIT schedule
     const firstMatch = databaseMatches[0];
@@ -705,7 +705,10 @@ export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
     // Sync each match
     for (const faceitMatch of faceitMatches) {
       try {
-        await syncMatchSchedule(faceitMatch, championship.isBO2PlayedAs2xBO1);
+        await syncMatchSchedule(
+          faceitMatch,
+          championship.is_round_robin_bo2_as_2xbo1
+        );
       } catch (error) {
         logger.error(`Error syncing match ${faceitMatch.match_id}:`, error);
       }

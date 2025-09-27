@@ -15,7 +15,7 @@ import {
   matchTopStats
 } from "../shared/fetch-stat";
 import { getHubMatchesByExternalMatchRoomId } from "./match.models";
-import { getSeasonLeagueExternalIdByExternalId } from "./season-league-external-id.models";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "./season-league-external-id.models";
 import { getConnection } from "../db/mysqlConnection";
 import { type PoolConnection } from "mysql2/promise";
 import { parseDemoUrl } from "../utils/demo-url-parser";
@@ -286,7 +286,9 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   }
 
   const seasonLeague =
-    await getSeasonLeagueExternalIdByExternalId(externalLeagueId);
+    await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+      externalLeagueId
+    );
 
   if (!seasonLeague) {
     throw new Error(
@@ -294,7 +296,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
     );
   }
 
-  const { isBO2PlayedAs2xBO1 } = seasonLeague;
+  const { is_round_robin_bo2_as_2xbo1 } = seasonLeague;
 
   const connection = await getConnection();
   try {
@@ -307,7 +309,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
     const mapPlayedVoteObject = matchMapVetoes[mapPlayedIn - 1];
 
     if (
-      isBO2PlayedAs2xBO1 &&
+      is_round_robin_bo2_as_2xbo1 &&
       matchDetails.best_of === 2 &&
       matches.length === 2
     ) {

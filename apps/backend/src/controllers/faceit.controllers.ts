@@ -5,7 +5,7 @@ import {
   getFaceITGameRankWithUrl
 } from "../services/faceit.services";
 import { NotFoundError } from "../utils/errors";
-import { getSeasonLeagueExternalIdByExternalId } from "../models/season-league-external-id.models";
+import { getSeasonLeagueExternalIdByExternalIdWithSeasonSettings } from "../models/season-league-external-id.models";
 import { getSeasonLeagueTeamsBySeasonLeagueExternalId } from "../models/season-league-team.models";
 import {
   type TeamWithExternalDataValidated,
@@ -21,9 +21,10 @@ export const validateChampionshipTeamsController = async (
   res: Response,
   next: NextFunction
 ) => {
-  const seasonLeagueExternalIdRow = await getSeasonLeagueExternalIdByExternalId(
-    req.params.championship_id
-  );
+  const seasonLeagueExternalIdRow =
+    await getSeasonLeagueExternalIdByExternalIdWithSeasonSettings(
+      req.params.championship_id
+    );
 
   if (!seasonLeagueExternalIdRow) {
     return next(
