@@ -32,7 +32,7 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
   group?: string
 ) => {
   let query = `
-    SELECT m.*, s.is_bo2_as_2xbo1 FROM Matches m
+    SELECT m.*, s.is_round_robin_bo2_as_2xbo1 FROM Matches m
     JOIN Seasons s ON m.season_id = s.id
     JOIN SeasonLeagueExternalIds slei ON m.season_id = slei.season_id
       AND m.league_id = slei.league_id
@@ -50,7 +50,7 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
   query += `
     GROUP BY 
       CASE 
-        WHEN m.best_of = 1 AND s.is_bo2_as_2xbo1 = true AND m.status = 'FINISHED'
+        WHEN m.best_of = 1 AND s.is_round_robin_bo2_as_2xbo1 = true AND m.status = 'FINISHED'
         THEN m.external_match_room_id 
         ELSE m.id 
       END
