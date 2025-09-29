@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSWRConfig } from "swr";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
