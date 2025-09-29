@@ -9,8 +9,7 @@ import { BadRequestError } from "../utils/errors";
 import { z } from "zod";
 
 const updateDefaultUrlSchema = z.object({
-  default_stream_url: z
-    .string()
+  stream_url: z
     .url("Invalid stream URL format")
     .min(1, "Stream URL is required")
 });
@@ -25,12 +24,12 @@ export const getCasterDefaultUrlController = async (
   const defaultUrl = await getCasterDefaultUrl(user.account_id);
 
   res.json({
-    default_stream_url: defaultUrl
+    stream_url: defaultUrl
   });
 };
 
 export const updateCasterDefaultUrlController = async (
-  req: RequestWithBody<{ default_stream_url: string }>,
+  req: RequestWithBody<{ stream_url: string }>,
   res: Response,
   _next: NextFunction
 ) => {
@@ -41,7 +40,7 @@ export const updateCasterDefaultUrlController = async (
 
   const casterUrl = await setCasterDefaultUrl(
     user.account_id,
-    req.body.default_stream_url
+    req.body.stream_url
   );
 
   res.json({

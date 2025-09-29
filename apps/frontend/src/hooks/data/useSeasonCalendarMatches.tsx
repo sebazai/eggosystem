@@ -1,14 +1,14 @@
 "use client";
 
 import { expressFetcher } from "@/lib/utils";
-import useSWR from "swr";
+import useSWR, { type SWRResponse } from "swr";
 import type { MatchWithStreamUrls } from "@eggosystem/types";
 
 export const useSeasonCalendarMatches = (
   seasonId: string,
   selectedLeagueId: string | number
-) => {
-  const { data, isLoading, isValidating, error } = useSWR<
+): SWRResponse<MatchWithStreamUrls[], Error> => {
+  const { data, isLoading, isValidating, error, mutate } = useSWR<
     MatchWithStreamUrls[]
   >(
     `/api/v1/calendar/seasons/${seasonId}/leagues/${selectedLeagueId}/matches`,
@@ -16,9 +16,10 @@ export const useSeasonCalendarMatches = (
   );
 
   return {
-    calendarMatches: data,
+    data,
     isLoading: isLoading,
-    isError: error,
-    isValidating
+    error,
+    isValidating,
+    mutate
   };
 };

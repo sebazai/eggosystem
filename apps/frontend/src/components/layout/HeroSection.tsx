@@ -278,7 +278,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
   const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16"; // fallback to season 16
 
   // Get upcoming matches for all divisions
-  const { calendarMatches, isLoading: isLoadingMatches } =
+  const { data: calendarMatches, isLoading: isLoadingMatches } =
     useSeasonCalendarMatches(currentSeasonId, "all");
 
   // Get upcoming matches sorted by date/time first, then by tier

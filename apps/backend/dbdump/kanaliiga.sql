@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: eggo-devdb
--- Generation Time: Sep 27, 2025 at 04:30 PM
--- Server version: 11.8.3-MariaDB
+-- Generation Time: Sep 29, 2025 at 04:01 PM
+-- Server version: 11.7.2-MariaDB
 -- PHP Version: 8.2.27
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -48,9 +48,10 @@ DELIMITER ;
 CREATE TABLE `AccountCasterUrls` (
   `id` int(10) UNSIGNED NOT NULL,
   `account_id` int(10) UNSIGNED NOT NULL,
-  `default_stream_url` varchar(255) NOT NULL,
+  `stream_url` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `is_default` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- --------------------------------------------------------

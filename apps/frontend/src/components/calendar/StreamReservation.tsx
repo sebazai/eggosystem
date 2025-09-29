@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,19 +19,21 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { hasCasterAccess } from "@/lib/roleUtils";
 import { useIsMatch2xBO1StreamReservation } from "@/hooks/data/useIsMatch2xBO1StreamReservation";
+import { useAccountMatchReservation } from "@/hooks/data/user/useAccountMatchReservation";
+import { Spinner } from "../ui/spinner";
 
 interface StreamReservationProps {
   matchId: string;
-  onReservationSuccess: () => void;
+  onReservationChange: () => Promise<void>;
 }
 
 interface CasterDefaultUrl {
-  default_stream_url: string | null;
+  stream_url: string | null;
 }
 
 export function StreamReservation({
   matchId,
-  onReservationSuccess
+  onReservationChange
 }: StreamReservationProps) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -43,6 +45,17 @@ export function StreamReservation({
     useIsMatch2xBO1StreamReservation(matchId);
 
   const canReserve = hasCasterAccess(user);
+  const {
+    data: reservation,
+    isLoading: isLoadingReservation,
+    mutate: mutateReservation
+  } = useAccountMatchReservation(matchId);
+
+  useEffect(() => {
+    if (reservation) {
+      setStreamUrl(reservation.stream_url);
+    }
+  }, [reservation]);
 
   if (!canReserve) {
     return null; // Don't show button if user doesn't have caster role
@@ -54,8 +67,8 @@ export function StreamReservation({
       const response = await clientApiFetch<CasterDefaultUrl>(
         "/api/v1/accounts/caster/default-url"
       );
-      if (response.default_stream_url) {
-        setStreamUrl(response.default_stream_url);
+      if (response.stream_url && !reservation && streamUrl === "") {
+        setStreamUrl(response.stream_url);
       }
     } catch (_error) {
       // If no default URL is found, just continue with empty input
@@ -79,21 +92,58 @@ export function StreamReservation({
     setIsLoading(true);
     try {
       await clientApiFetch(`/api/v1/matches/${matchId}/reserve-cast`, {
-        method: "POST",
+        method: reservation ? "PUT" : "POST",
         body: JSON.stringify({
           stream_url: streamUrl,
           reserve_both_games: is2xBO1 ? reserveBothGames : undefined
         })
       });
+      await onReservationChange();
 
-      toast.success("Stream reserved successfully!");
+      toast.success(
+        reservation
+          ? is2xBO1 && reserveBothGames
+            ? "Stream updated successfully for both games!"
+            : "Stream updated successfully!"
+          : is2xBO1 && reserveBothGames
+            ? "Stream reserved successfully for both games!"
+            : "Stream reserved successfully!"
+      );
       setIsOpen(false);
       setStreamUrl("");
       setReserveBothGames(true); // Reset to default
-      onReservationSuccess();
     } catch (error: unknown) {
       toast.error(
         error instanceof Error ? error.message : "Failed to reserve stream"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    setIsLoading(true);
+    try {
+      await clientApiFetch(`/api/v1/matches/${matchId}/reserve-cast`, {
+        method: "DELETE"
+      });
+      await mutateReservation();
+      await onReservationChange();
+      toast.success("Stream reservation cancelled successfully!");
+      if (is2xBO1) {
+        toast.warning(
+          "Remember to cancel the other reservation if you reserved both BO1 games for same day",
+          {
+            duration: 10000,
+            position: "bottom-center"
+          }
+        );
+      }
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to cancel stream reservation"
       );
     } finally {
       setIsLoading(false);
@@ -109,7 +159,7 @@ export function StreamReservation({
           variant="outline"
         >
           <Tv className="h-4 w-4" />
-          Reserve for Streaming
+          {reservation ? "Edit Reservation" : "Reserve for Streaming"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -150,7 +200,9 @@ export function StreamReservation({
                 htmlFor="reserveBothGames"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Reserve both BO1 games for same day
+                {reservation
+                  ? "Update both BO1 games for same day"
+                  : "Reserve both BO1 games for same day"}
               </Label>
             </div>
           )}
@@ -160,7 +212,11 @@ export function StreamReservation({
               disabled={isLoading || !streamUrl.trim()}
               className="flex-1"
             >
-              {isLoading ? "Reserving..." : "Reserve Stream"}
+              {isLoading
+                ? "Saving..."
+                : reservation
+                  ? "Update"
+                  : "Reserve Stream"}
             </Button>
             <Button
               variant="outline"
@@ -170,6 +226,12 @@ export function StreamReservation({
               Cancel
             </Button>
           </div>
+          {isLoadingReservation && <Spinner />}
+          {reservation && (
+            <Button variant="outline" onClick={handleCancelReservation}>
+              Cancel Reservation
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

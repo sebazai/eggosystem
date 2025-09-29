@@ -1,13 +1,34 @@
 import { runQuery } from "../db/mysqlRunQuery";
 import type { Reservation } from "@eggosystem/types";
 import * as crypto from "crypto";
-import { ConflictError } from "../utils/errors";
+import { ConflictError, NotFoundError } from "../utils/errors";
 
 interface CreateStreamReservationData {
   match_id: number;
   account_id: number;
   stream_url: string;
 }
+
+export const updateStreamReservation = async (
+  matchId: number,
+  accountId: number,
+  streamUrl: string
+): Promise<Reservation> => {
+  const updateResult = await runQuery<{ affectedRows: number }>(
+    `UPDATE Reservations SET stream_url = ? WHERE match_id = ? AND account_id = ?`,
+    [streamUrl, matchId, accountId]
+  );
+  console.log("updateResult", updateResult);
+  if (updateResult.affectedRows === 0) {
+    console.log("Stream reservation not found");
+    throw new NotFoundError("Stream reservation not found");
+  }
+  const [updatedReservation] = await runQuery<Reservation[]>(
+    `SELECT * FROM Reservations WHERE match_id = ? AND account_id = ?`,
+    [matchId, accountId]
+  );
+  return updatedReservation;
+};
 
 export const createStreamReservation = async (
   data: CreateStreamReservationData
@@ -66,15 +87,4 @@ export const getStreamReservationsByMatch = async (
     `SELECT * FROM Reservations WHERE match_id = ?`,
     [matchId]
   );
-};
-
-export const getCasterDefaultStreamUrl = async (
-  accountId: number
-): Promise<string | null> => {
-  const result = await runQuery<{ default_stream_url: string }[]>(
-    `SELECT default_stream_url FROM AccountCasterUrls WHERE account_id = ?`,
-    [accountId]
-  );
-
-  return result.length > 0 ? result[0].default_stream_url : null;
 };

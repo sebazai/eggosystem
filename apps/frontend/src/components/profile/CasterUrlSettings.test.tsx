@@ -52,7 +52,7 @@ describe("CasterUrlSettings", () => {
   });
 
   it("should render caster URL settings for caster users", async () => {
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
     render(<CasterUrlSettings />);
 
@@ -75,7 +75,7 @@ describe("CasterUrlSettings", () => {
 
   it("should load and display existing default URL", async () => {
     const existingUrl = "https://twitch.tv/existingcaster";
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: existingUrl });
+    mockClientApiFetch.mockResolvedValue({ stream_url: existingUrl });
 
     render(<CasterUrlSettings />);
 
@@ -95,7 +95,7 @@ describe("CasterUrlSettings", () => {
   it("should successfully save a new default URL", async () => {
     const user = userEvent.setup();
     mockClientApiFetch
-      .mockResolvedValueOnce({ default_stream_url: null }) // Initial load
+      .mockResolvedValueOnce({ stream_url: null }) // Initial load
       .mockResolvedValueOnce({}); // Save request
 
     render(<CasterUrlSettings />);
@@ -121,7 +121,7 @@ describe("CasterUrlSettings", () => {
         {
           method: "POST",
           body: JSON.stringify({
-            default_stream_url: "https://twitch.tv/newcaster"
+            stream_url: "https://twitch.tv/newcaster"
           })
         }
       );
@@ -136,7 +136,7 @@ describe("CasterUrlSettings", () => {
     const user = userEvent.setup();
     const existingUrl = "https://twitch.tv/existingcaster";
     mockClientApiFetch
-      .mockResolvedValueOnce({ default_stream_url: existingUrl }) // Initial load
+      .mockResolvedValueOnce({ stream_url: existingUrl }) // Initial load
       .mockResolvedValueOnce({}); // Delete request
 
     render(<CasterUrlSettings />);
@@ -167,7 +167,7 @@ describe("CasterUrlSettings", () => {
 
   it("should validate URL format", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
     render(<CasterUrlSettings />);
 
@@ -208,7 +208,7 @@ describe("CasterUrlSettings", () => {
     const user = userEvent.setup();
     const errorMessage = "Failed to save";
     mockClientApiFetch
-      .mockResolvedValueOnce({ default_stream_url: null })
+      .mockResolvedValueOnce({ stream_url: null })
       .mockRejectedValueOnce(new Error(errorMessage));
 
     render(<CasterUrlSettings />);
@@ -234,7 +234,7 @@ describe("CasterUrlSettings", () => {
 
   it("should disable save button when form is pristine", async () => {
     mockClientApiFetch.mockResolvedValue({
-      default_stream_url: "https://twitch.tv/existing"
+      stream_url: "https://twitch.tv/existing"
     });
 
     render(<CasterUrlSettings />);
@@ -251,7 +251,7 @@ describe("CasterUrlSettings", () => {
   it("should enable save button when form is dirty", async () => {
     const user = userEvent.setup();
     mockClientApiFetch.mockResolvedValue({
-      default_stream_url: "https://twitch.tv/existing"
+      stream_url: "https://twitch.tv/existing"
     });
 
     render(<CasterUrlSettings />);

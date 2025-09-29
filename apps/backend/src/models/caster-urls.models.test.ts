@@ -13,7 +13,8 @@ const mockRunQuery = runQuery as jest.Mock;
 const mockCasterUrl: CasterUrl = {
   id: 1,
   account_id: 1,
-  default_stream_url: "https://twitch.tv/testcaster",
+  stream_url: "https://twitch.tv/testcaster",
+  is_default: true,
   created_at: "2024-01-01T00:00:00.000Z",
   updated_at: "2024-01-01T00:00:00.000Z"
 };
@@ -26,14 +27,14 @@ describe("caster-urls models", () => {
   describe("getCasterDefaultUrl", () => {
     it("should return default URL if exists", async () => {
       mockRunQuery.mockResolvedValueOnce([
-        { default_stream_url: "https://twitch.tv/testcaster" }
+        { stream_url: "https://twitch.tv/testcaster" }
       ]);
 
       const result = await getCasterDefaultUrl(1);
 
       expect(result).toBe("https://twitch.tv/testcaster");
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT default_stream_url FROM AccountCasterUrls WHERE account_id = ?",
+        "SELECT stream_url FROM AccountCasterUrls WHERE account_id = ? AND is_default = true",
         [1]
       );
     });
@@ -63,11 +64,11 @@ describe("caster-urls models", () => {
       expect(mockRunQuery).toHaveBeenNthCalledWith(
         1,
         expect.stringContaining("INSERT INTO AccountCasterUrls"),
-        [1, "https://twitch.tv/testcaster"]
+        [1, "https://twitch.tv/testcaster", true]
       );
       expect(mockRunQuery).toHaveBeenNthCalledWith(
         2,
-        "SELECT * FROM AccountCasterUrls WHERE account_id = ?",
+        "SELECT * FROM AccountCasterUrls WHERE account_id = ? AND is_default = true",
         [1]
       );
       expect(result).toEqual(mockCasterUrl);
@@ -76,7 +77,7 @@ describe("caster-urls models", () => {
     it("should update existing URL", async () => {
       const updatedUrl = {
         ...mockCasterUrl,
-        default_stream_url: "https://twitch.tv/newcaster"
+        stream_url: "https://twitch.tv/newcaster"
       };
 
       mockRunQuery.mockResolvedValueOnce({});
@@ -99,7 +100,7 @@ describe("caster-urls models", () => {
 
       expect(result).toBe(true);
       expect(mockRunQuery).toHaveBeenCalledWith(
-        "DELETE FROM AccountCasterUrls WHERE account_id = ?",
+        "DELETE FROM AccountCasterUrls WHERE account_id = ? AND is_default = true",
         [1]
       );
     });

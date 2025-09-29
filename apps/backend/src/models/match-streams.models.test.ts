@@ -1,8 +1,7 @@
 import {
   createStreamReservation,
   deleteStreamReservation,
-  getStreamReservationsByMatch,
-  getCasterDefaultStreamUrl
+  getStreamReservationsByMatch
 } from "./match-streams.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { ConflictError } from "../utils/errors";
@@ -115,30 +114,6 @@ describe("match-streams models", () => {
       const result = await getStreamReservationsByMatch(123);
 
       expect(result).toEqual([]);
-    });
-  });
-
-  describe("getCasterDefaultStreamUrl", () => {
-    it("should return default stream URL if exists", async () => {
-      mockRunQuery.mockResolvedValueOnce([
-        { default_stream_url: "https://twitch.tv/testcaster" }
-      ]);
-
-      const result = await getCasterDefaultStreamUrl(1);
-
-      expect(result).toBe("https://twitch.tv/testcaster");
-      expect(mockRunQuery).toHaveBeenCalledWith(
-        "SELECT default_stream_url FROM AccountCasterUrls WHERE account_id = ?",
-        [1]
-      );
-    });
-
-    it("should return null if no default URL exists", async () => {
-      mockRunQuery.mockResolvedValueOnce([]);
-
-      const result = await getCasterDefaultStreamUrl(1);
-
-      expect(result).toBeNull();
     });
   });
 });

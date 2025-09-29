@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   emailsVerifiedController,
+  getAccountMatchReservationsController,
   sendVerificationEmails,
   updateAccountProfileController
 } from "../../controllers/account.controllers";
@@ -76,6 +77,14 @@ router.delete(
   authenticateJWT,
   checkJWTPermissions({ fallbackRoles: ["caster"] }),
   deleteCasterDefaultUrlController
+);
+
+router.get(
+  "/reservations/match/:match_id",
+  validateNumericParams(),
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  getAccountMatchReservationsController
 );
 
 export default router;

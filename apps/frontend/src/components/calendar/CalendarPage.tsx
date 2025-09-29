@@ -110,19 +110,18 @@ const RenderStreamLinks = ({ streamUrl }: { streamUrl?: string[] }) => {
 
 const RenderStreamButton = ({
   matchId,
-  onReservationSuccess,
+  onReservationChange,
   status
 }: {
   matchId: string;
-  onReservationSuccess: () => void;
-
+  onReservationChange: () => Promise<void>;
   status: string;
 }) => {
   if (status === MatchStatus.SCHEDULED) {
     return (
       <StreamReservation
         matchId={matchId}
-        onReservationSuccess={onReservationSuccess}
+        onReservationChange={onReservationChange}
       />
     );
   }
@@ -168,7 +167,6 @@ const transformMatchesToEvents = (matches: MatchWithStreamUrls[]) => {
 export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { mutate } = useSWRConfig();
 
   // Initialize state from URL parameters
   const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(() => {
@@ -192,8 +190,11 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
   const { seasonLeagues, isLoading: isLoadingSeasonLeagues } =
     useSeasonLeagues(seasonId);
 
-  const { calendarMatches, isLoading: _isLoadingCalendarMatches } =
-    useSeasonCalendarMatches(seasonId, selectedDivision);
+  const {
+    data: calendarMatches,
+    isLoading: _isLoadingCalendarMatches,
+    mutate: mutateCalendarMatches
+  } = useSeasonCalendarMatches(seasonId, selectedDivision);
 
   const { refreshTimes, isLoading: isLoadingRefreshTimes } =
     useCalendarRefreshTimes();
@@ -480,11 +481,9 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
     updateUrlParams(undefined, newDivision);
   };
 
-  const handleStreamReservation = () => {
+  const handleStreamReservation = async () => {
     // Refresh calendar data to show the new stream
-    mutate(
-      `/api/v1/calendar/seasons/${seasonId}/leagues/${selectedDivision}/matches`
-    );
+    await mutateCalendarMatches();
     setIsDialogOpen(false);
   };
 
@@ -736,7 +735,7 @@ export default function CalendarPage({ seasonId }: { seasonId: string }) {
               <div className="flex flex-col gap-4 pt-2">
                 <RenderStreamButton
                   matchId={selectedEvent.id}
-                  onReservationSuccess={handleStreamReservation}
+                  onReservationChange={handleStreamReservation}
                   status={selectedEvent.status}
                 />
                 <RenderStreamLinks streamUrl={selectedEvent.streamUrl} />

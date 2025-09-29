@@ -2,11 +2,13 @@ import { type Response, type NextFunction } from "express";
 import {
   createStreamReservation,
   deleteStreamReservation,
-  getStreamReservationsByMatch
+  getStreamReservationsByMatch,
+  updateStreamReservation
 } from "../models/match-streams.models";
 import type {
   RequestWithParams,
-  RequestWithParamsAndBody
+  RequestWithParamsAndBody,
+  Reservation
 } from "@eggosystem/types";
 import { NotFoundError } from "../utils/errors";
 import { z } from "zod";
@@ -67,6 +69,51 @@ export const reserveStreamController = async (
     res.status(201).json({
       message: "Stream reserved successfully",
       reservations: [reservation]
+    });
+  }
+};
+
+export const updateStreamReservationController = async (
+  req: RequestWithParamsAndBody<
+    { match_id: string },
+    { stream_url: string; reserve_both_games: boolean }
+  >,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.auth!; // Middleware ensures this is defined
+  const matchId = +req.params.match_id;
+  const is2xBO1 = await getMatchIs2xBO1(matchId);
+  if (is2xBO1 && req.body.reserve_both_games) {
+    const matches = await getMatchIdsWithSameExternalMatchRoomId(matchId);
+    if (!matches) {
+      return next(
+        new NotFoundError("No matches found with same external match room id")
+      );
+    }
+    const reservations = await Promise.allSettled(
+      matches.map((match) =>
+        updateStreamReservation(match.id, user.account_id, req.body.stream_url)
+      )
+    );
+    res.status(200).json({
+      message: "Stream reservation updated successfully",
+      reservations: reservations
+        .filter(
+          (reservation): reservation is PromiseFulfilledResult<Reservation> =>
+            reservation.status === "fulfilled"
+        )
+        .map((reservation) => reservation.value)
+    });
+  } else {
+    const reservation = await updateStreamReservation(
+      matchId,
+      user.account_id,
+      req.body.stream_url
+    );
+    res.status(200).json({
+      message: "Stream reservation updated successfully",
+      reservation: reservation
     });
   }
 };

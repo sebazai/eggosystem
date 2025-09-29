@@ -3,7 +3,8 @@ import type {
   UpdateUserProfile,
   UserPolicyAcceptance,
   Account,
-  AccountUpdateValues
+  AccountUpdateValues,
+  Reservation
 } from "@eggosystem/types";
 import * as uuid from "uuid";
 import { type PoolConnection } from "mysql2/promise";
@@ -269,4 +270,15 @@ export const getAccountById = async (
     throw new NotFoundError("Account not found");
   }
   return account;
+};
+
+export const getAccountMatchReservations = async (
+  accountId: number,
+  matchId: number
+) => {
+  const [result] = await runQuery<Array<Reservation | undefined>>(
+    "SELECT * FROM Reservations WHERE account_id = ? AND match_id = ?",
+    [accountId, matchId]
+  );
+  return result;
 };

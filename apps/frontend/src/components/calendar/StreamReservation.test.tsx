@@ -43,7 +43,7 @@ describe("StreamReservation", () => {
   const mockOnReservationSuccess = jest.fn();
   const defaultProps = {
     matchId: "123",
-    onReservationSuccess: mockOnReservationSuccess
+    onReservationChange: mockOnReservationSuccess
   };
 
   beforeEach(() => {
@@ -77,7 +77,7 @@ describe("StreamReservation", () => {
 
   it("should open dialog when button is clicked", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -93,7 +93,7 @@ describe("StreamReservation", () => {
   it("should load and populate default stream URL", async () => {
     const user = userEvent.setup();
     const defaultUrl = "https://twitch.tv/defaultcaster";
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: defaultUrl });
+    mockClientApiFetch.mockResolvedValue({ stream_url: defaultUrl });
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -111,7 +111,7 @@ describe("StreamReservation", () => {
   it("should successfully reserve a stream", async () => {
     const user = userEvent.setup();
     mockClientApiFetch
-      .mockResolvedValueOnce({ default_stream_url: null }) // Load default URL
+      .mockResolvedValueOnce({ stream_url: null }) // Load default URL
       .mockResolvedValueOnce({}); // Reserve stream
 
     render(<StreamReservation {...defaultProps} />);
@@ -150,7 +150,7 @@ describe("StreamReservation", () => {
 
   it("should disable reserve button when URL is empty", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
     render(<StreamReservation {...defaultProps} />);
 
@@ -181,7 +181,7 @@ describe("StreamReservation", () => {
     const user = userEvent.setup();
     const errorMessage = "Already reserved";
     mockClientApiFetch
-      .mockResolvedValueOnce({ default_stream_url: null })
+      .mockResolvedValueOnce({ stream_url: null })
       .mockRejectedValueOnce(new Error(errorMessage));
 
     render(<StreamReservation {...defaultProps} />);
@@ -207,7 +207,7 @@ describe("StreamReservation", () => {
 
   it("should disable submit button when URL is empty", async () => {
     const user = userEvent.setup();
-    mockClientApiFetch.mockResolvedValue({ default_stream_url: null });
+    mockClientApiFetch.mockResolvedValue({ stream_url: null });
 
     render(<StreamReservation {...defaultProps} />);
 

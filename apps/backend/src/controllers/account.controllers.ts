@@ -14,7 +14,11 @@ import {
   BadRequestError,
   InternalServerError
 } from "../utils/errors";
-import { getAccountById, updateAccount } from "../models/account.models";
+import {
+  getAccountById,
+  getAccountMatchReservations,
+  updateAccount
+} from "../models/account.models";
 import { redisClient } from "../utils/redisClient";
 import { runQuery } from "../db/mysqlRunQuery";
 import { handleEmailVerification } from "../services/account.services";
@@ -209,4 +213,19 @@ export const verifyEmailController = async (
   logger.error("Invalid or expired token.", { token });
 
   return next(new BadRequestError("Invalid or expired token."));
+};
+
+export const getAccountMatchReservationsController = async (
+  req: RequestWithParams<{ match_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.auth;
+  const accountId = user?.account_id;
+  if (!accountId) {
+    return next(new UnauthorizedError("Could not get account id"));
+  }
+  const matchId = Number(req.params.match_id);
+  const reservation = await getAccountMatchReservations(accountId, matchId);
+  res.json(reservation ?? null);
 };

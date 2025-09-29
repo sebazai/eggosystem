@@ -28,16 +28,13 @@ import { hasCasterAccess } from "@/lib/roleUtils";
 import { Tv, Trash2 } from "lucide-react";
 
 const casterUrlSchema = z.object({
-  default_stream_url: z
-    .string()
-    .url("Please enter a valid URL")
-    .min(1, "Stream URL is required")
+  stream_url: z.url("Please enter a valid URL").min(1, "Stream URL is required")
 });
 
 type CasterUrlForm = z.infer<typeof casterUrlSchema>;
 
 interface CasterDefaultUrl {
-  default_stream_url: string | null;
+  stream_url: string | null;
 }
 
 export function CasterUrlSettings() {
@@ -51,7 +48,7 @@ export function CasterUrlSettings() {
   const form = useForm<CasterUrlForm>({
     resolver: zodResolver(casterUrlSchema),
     defaultValues: {
-      default_stream_url: ""
+      stream_url: ""
     }
   });
 
@@ -60,9 +57,9 @@ export function CasterUrlSettings() {
       const response = await clientApiFetch<CasterDefaultUrl>(
         "/api/v1/accounts/caster/default-url"
       );
-      if (response.default_stream_url) {
-        setCurrentUrl(response.default_stream_url);
-        form.setValue("default_stream_url", response.default_stream_url);
+      if (response.stream_url) {
+        setCurrentUrl(response.stream_url);
+        form.setValue("stream_url", response.stream_url);
       }
     } catch (_error) {
       // No default URL found, which is fine
@@ -84,7 +81,7 @@ export function CasterUrlSettings() {
         body: JSON.stringify(data)
       });
 
-      setCurrentUrl(data.default_stream_url);
+      setCurrentUrl(data.stream_url);
       toast.success("Default stream URL saved successfully!");
     } catch (error: unknown) {
       toast.error(
@@ -103,7 +100,7 @@ export function CasterUrlSettings() {
       });
 
       setCurrentUrl(null);
-      form.setValue("default_stream_url", "");
+      form.setValue("stream_url", "");
       toast.success("Default stream URL deleted successfully!");
     } catch (error: unknown) {
       toast.error(
@@ -134,7 +131,7 @@ export function CasterUrlSettings() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="default_stream_url"
+              name="stream_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Default Stream URL</FormLabel>

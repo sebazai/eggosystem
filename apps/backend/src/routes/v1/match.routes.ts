@@ -16,7 +16,8 @@ import {
 import {
   reserveStreamController,
   unreserveStreamController,
-  getMatchStreamReservationsController
+  getMatchStreamReservationsController,
+  updateStreamReservationController
 } from "../../controllers/match-streams.controllers";
 
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
@@ -96,6 +97,14 @@ router.post(
   checkJWTPermissions({ fallbackRoles: ["caster"] }),
   validateNumericParams(),
   reserveStreamController
+);
+
+router.put(
+  "/:match_id/reserve-cast",
+  authenticateJWT,
+  checkJWTPermissions({ fallbackRoles: ["caster"] }),
+  validateNumericParams(),
+  updateStreamReservationController
 );
 
 router.delete(
