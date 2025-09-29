@@ -1,4 +1,3 @@
-import { expireIn30Days, redisClient } from "../utils/redisClient";
 import type { Response } from "express";
 import jwt from "jsonwebtoken";
 import { getPath } from "../utils/path";
@@ -11,15 +10,6 @@ import {
 import { runQuery } from "../db/mysqlRunQuery";
 import { type PoolConnection } from "mysql2/promise";
 import { getJWTValues } from "../configs/jwt-keys";
-
-export const flushPermissionsAndRolesForAccountId = async (
-  accountId: number
-) => {
-  const redisPermissionKey = `permissions-${accountId}`;
-  const redisRoleKey = `roles-${accountId}`;
-  await redisClient.del(redisPermissionKey);
-  await redisClient.del(redisRoleKey);
-};
 
 export const getDBPermissionsForAccountId = async (
   accountId: number,
@@ -53,12 +43,6 @@ export const getPermissionsForAccountId = async (
   accountId: number,
   connection?: PoolConnection
 ) => {
-  const redisKey = `permissions-${accountId}`;
-  const permissionsInRedis = await redisClient.get(redisKey);
-  if (permissionsInRedis) {
-    return permissionsInRedis.split(",");
-  }
-
   const permissionsResult = await getDBPermissionsForAccountId(
     accountId,
     connection
@@ -69,24 +53,12 @@ export const getPermissionsForAccountId = async (
       (row) =>
         `${row.role_name}:${row.permission_name}:season-${row.season_id}:team-${row.team_id}`
     );
-    await redisClient.set(
-      redisKey,
-      permissions.join(","),
-      "EX",
-      expireIn30Days
-    );
     return permissions;
   }
   return [];
 };
 
 export const getRolesForAccountId = async (accountId: number) => {
-  const redisKey = `roles-${accountId}`;
-  const rolesInRedis = await redisClient.get(redisKey);
-  if (rolesInRedis) {
-    return rolesInRedis.split(",");
-  }
-
   const rolesResult = await runQuery<
     Array<{
       role_name: Role["role_name"];
@@ -102,9 +74,6 @@ export const getRolesForAccountId = async (accountId: number) => {
     [accountId]
   );
   const roles = rolesResult.map((role) => role.role_name);
-  if (roles.length > 0) {
-    await redisClient.set(redisKey, roles.join(","), "EX", expireIn30Days);
-  }
   return roles;
 };
 

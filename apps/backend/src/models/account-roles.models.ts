@@ -1,6 +1,5 @@
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../db/mysqlRunQuery";
-import { flushPermissionsAndRolesForAccountId } from "../services/auth.services";
 
 export const setRoleForAccount = async (
   roleName: string,
@@ -16,7 +15,6 @@ export const setRoleForAccount = async (
     throw new Error(`Unknown role ${roleName}`);
   }
   const roleId = role.role_id;
-  await flushPermissionsAndRolesForAccountId(accountId);
   await runQuery(
     `INSERT IGNORE INTO AccountRoles (account_id, role_id, game_id) VALUES (?, ?, ?)`,
     [accountId, roleId, 1],
@@ -38,7 +36,6 @@ export const removeRoleForAccount = async (
     throw new Error(`Unknown role ${roleName}`);
   }
   const roleId = role.role_id;
-  await flushPermissionsAndRolesForAccountId(accountId);
   await runQuery(
     `DELETE FROM AccountRoles WHERE account_id = ? AND role_id = ? AND game_id = ?`,
     [accountId, roleId, 1],
@@ -64,7 +61,6 @@ export const setScopedPermissionForAccount = async (
     throw new Error(`Unknown permission ${permissionName}`);
   }
   const permissionId = permission.permission_id;
-  await flushPermissionsAndRolesForAccountId(accountId);
   await runQuery(
     `INSERT IGNORE INTO AccountPermissionScopes (account_id, permission_id, season_id, team_id) VALUES (?, ?, ?, ?)`,
     [accountId, permissionId, seasonId, teamId],
@@ -90,7 +86,6 @@ export const removeScopedPermissionForAccount = async (
     throw new Error(`Unknown permission ${permissionName}`);
   }
   const permissionId = permission.permission_id;
-  await flushPermissionsAndRolesForAccountId(accountId);
   await runQuery(
     `DELETE FROM AccountPermissionScopes WHERE account_id = ? AND permission_id = ? AND season_id = ? AND team_id = ?`,
     [accountId, permissionId, seasonId, teamId],

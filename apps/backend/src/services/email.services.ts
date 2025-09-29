@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 
 function createTransporter() {
-  if (process.env.NODE_ENV === "test") {
+  if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "e2e") {
     return undefined;
   }
 

@@ -8,7 +8,6 @@ import {
   generateTokens,
   setCookies,
   getPermissionsForAccountId,
-  flushPermissionsAndRolesForAccountId,
   getRolesForAccountId
 } from "../services/auth.services";
 import { redisClient } from "../utils/redisClient";
@@ -102,7 +101,6 @@ export const logout = async (req: Request, res: Response) => {
         }
       );
       await redisClient.del(decoded.jti!);
-      await flushPermissionsAndRolesForAccountId(decoded.account_id);
     } catch (_err) {
       // NO-op
     }
