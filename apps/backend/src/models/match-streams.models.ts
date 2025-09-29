@@ -18,9 +18,7 @@ export const updateStreamReservation = async (
     `UPDATE Reservations SET stream_url = ? WHERE match_id = ? AND account_id = ?`,
     [streamUrl, matchId, accountId]
   );
-  console.log("updateResult", updateResult);
   if (updateResult.affectedRows === 0) {
-    console.log("Stream reservation not found");
     throw new NotFoundError("Stream reservation not found");
   }
   const [updatedReservation] = await runQuery<Reservation[]>(

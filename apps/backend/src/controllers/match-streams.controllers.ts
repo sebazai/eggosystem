@@ -17,11 +17,8 @@ import {
   getMatchIs2xBO1
 } from "../models/match.models";
 
-const reserveStreamSchema = z.object({
-  stream_url: z
-    .string()
-    .url("Invalid stream URL format")
-    .min(1, "Stream URL is required")
+const streamPayloadSchema = z.object({
+  stream_url: z.url().min(1, "Stream URL is required")
 });
 
 export const reserveStreamController = async (
@@ -36,7 +33,7 @@ export const reserveStreamController = async (
 
   const matchId = +req.params.match_id;
 
-  reserveStreamSchema.parse(req.body);
+  streamPayloadSchema.parse(req.body);
 
   const is2xBO1 = await getMatchIs2xBO1(matchId);
 
@@ -84,6 +81,7 @@ export const updateStreamReservationController = async (
   const user = req.auth!; // Middleware ensures this is defined
   const matchId = +req.params.match_id;
   const is2xBO1 = await getMatchIs2xBO1(matchId);
+  streamPayloadSchema.parse(req.body);
   if (is2xBO1 && req.body.reserve_both_games) {
     const matches = await getMatchIdsWithSameExternalMatchRoomId(matchId);
     if (!matches) {
