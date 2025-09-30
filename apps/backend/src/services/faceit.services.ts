@@ -741,6 +741,11 @@ export const getFaceitMatchStats = async (match_id: string) => {
     );
   }
   const data: FaceitMatchStatsResponse = await response.json();
-  await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn30Days);
+  if (
+    data.rounds &&
+    data.rounds.some((round) => round.best_of === round.played)
+  ) {
+    await redisClient.set(redisKey, JSON.stringify(data), "EX", expireIn30Days);
+  }
   return data;
 };

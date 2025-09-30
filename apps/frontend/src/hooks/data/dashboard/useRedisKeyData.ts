@@ -10,8 +10,8 @@ export function useRedisKeyData(key: string | null) {
     clientApiFetch,
     {
       revalidateOnFocus: false,
-      // Only fetch if key is provided
-      isPaused: () => !key
+      revalidateOnMount: true,
+      dedupingInterval: 0
     }
   );
 

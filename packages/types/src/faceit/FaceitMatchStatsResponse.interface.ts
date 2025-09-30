@@ -1,5 +1,7 @@
 export interface FaceitMatchStatsResponse {
   rounds: Array<{
+    best_of: string;
+    played: string;
     round_stats: {
       Rounds: string;
     };

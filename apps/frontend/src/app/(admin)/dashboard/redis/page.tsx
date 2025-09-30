@@ -195,6 +195,135 @@ export default function RedisManagementPage() {
           <div>
             <h1 className="text-2xl font-bold">Redis Management</h1>
             <p className="text-muted-foreground">Manage Redis keys and data</p>
+
+            {/* Common Redis Key Patterns */}
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                Common Key Patterns:
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    faceit-player-*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Faceit player data cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    730-*-faceit-cs2-rank
+                  </div>
+                  <div className="text-muted-foreground">
+                    CS2 Faceit rank cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    faceit-team-*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Faceit team details cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    faceit-match-stats-*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Faceit match statistics
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    730-*-hours
+                  </div>
+                  <div className="text-muted-foreground">
+                    Steam player hours cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    730-*-rank
+                  </div>
+                  <div className="text-muted-foreground">
+                    Steam player rank cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    elo-adjustment:s*:l*:*
+                  </div>
+                  <div className="text-muted-foreground">
+                    ELO adjustment data
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    team-flag:s*:l*:*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Team flagging data
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    verify:work-email:*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Email verification tokens
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    signup-*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Team signup drafts
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    *-*-active-season
+                  </div>
+                  <div className="text-muted-foreground">
+                    Active season cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    filtered*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Filtered query cache
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    team-placements:s*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Team placement data
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    finalization-status:s*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Season finalization status
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="font-mono bg-background px-2 py-1 rounded">
+                    flagged-matches:*
+                  </div>
+                  <div className="text-muted-foreground">
+                    Flagged match data
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -232,7 +361,7 @@ export default function RedisManagementPage() {
             <CardContent className="flex flex-col flex-1">
               <div className="mb-4">
                 <Input
-                  placeholder="Search pattern (e.g., user:*, session:*)"
+                  placeholder="Search pattern (e.g., faceit-player-*, 730-*-rank, elo-adjustment:s*:l*:*)"
                   value={searchPattern}
                   onChange={handleSearchInputChange}
                 />
@@ -265,7 +394,8 @@ export default function RedisManagementPage() {
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Enter a search pattern to find Redis keys</p>
                     <p className="text-xs mt-2">
-                      Examples: user:*, session:*, cache:*
+                      Examples: faceit-player-*, 730-*-rank,
+                      elo-adjustment:s*:l*:*
                     </p>
                   </div>
                 ) : keys.length === 0 ? (
