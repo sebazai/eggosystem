@@ -24,35 +24,16 @@ import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { useRedisKeys } from "@/hooks/data/dashboard/useRedisKeys";
 import { useRedisKeyData } from "@/hooks/data/dashboard/useRedisKeyData";
 import { useDeleteRedisKey } from "@/hooks/data/dashboard/useDeleteRedisKey";
-import { useDebounce } from "@/hooks/useDebounce";
 
 export default function RedisManagementPage() {
   const { user } = useAuth();
   const [searchPattern, setSearchPattern] = useState("");
-  const [debouncedSearchPattern, setDebouncedSearchPattern] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [selectedKeyName, setSelectedKeyName] = useState<string | null>(null);
 
-  // Debounce the search pattern with 500ms delay
-  const debouncedPattern = useDebounce(searchPattern, 500);
-
   // Check if user has admin role for delete operations
   const canDelete = user?.roles.includes("admin") || false;
-
-  // Update debounced search pattern when debounced value changes
-  useEffect(() => {
-    if (
-      debouncedPattern &&
-      debouncedPattern.trim() !== "" &&
-      debouncedPattern.trim() !== "*"
-    ) {
-      setDebouncedSearchPattern(debouncedPattern);
-      setCurrentPage(1); // Reset to first page when search changes
-    } else {
-      setDebouncedSearchPattern("");
-    }
-  }, [debouncedPattern]);
 
   // Use data hooks
   const {
@@ -62,7 +43,7 @@ export default function RedisManagementPage() {
     isError: keysError,
     mutate: refetchKeys
   } = useRedisKeys({
-    pattern: debouncedSearchPattern,
+    pattern: searchPattern,
     page: currentPage,
     limit: pageSize
   });
@@ -92,6 +73,7 @@ export default function RedisManagementPage() {
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchPattern(e.target.value);
+    setCurrentPage(1); // Reset to first page when search changes
   };
 
   const handlePageChange = (newPage: number) => {
@@ -342,7 +324,7 @@ export default function RedisManagementPage() {
                 Redis Keys
               </CardTitle>
               <CardDescription>
-                {debouncedSearchPattern ? (
+                {searchPattern ? (
                   <>
                     {pagination.total} key{pagination.total !== 1 ? "s" : ""}{" "}
                     found
@@ -368,7 +350,7 @@ export default function RedisManagementPage() {
               </div>
 
               {/* Page Size Selector */}
-              {debouncedSearchPattern && (
+              {searchPattern && (
                 <div className="flex items-center gap-2 mb-4">
                   <label className="text-sm text-muted-foreground">
                     Page size:
@@ -389,7 +371,7 @@ export default function RedisManagementPage() {
               )}
 
               <div className="flex-1 overflow-y-auto space-y-1">
-                {!debouncedSearchPattern ? (
+                {!searchPattern ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Enter a search pattern to find Redis keys</p>
@@ -400,7 +382,7 @@ export default function RedisManagementPage() {
                   </div>
                 ) : keys.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground">
-                    No keys found for pattern: {debouncedSearchPattern}
+                    No keys found for pattern: {searchPattern}
                   </div>
                 ) : (
                   keys.map((key) => (
@@ -446,7 +428,7 @@ export default function RedisManagementPage() {
               </div>
 
               {/* Pagination Controls */}
-              {debouncedSearchPattern && pagination.totalPages > 1 && (
+              {searchPattern && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t">
                   <div className="text-sm text-muted-foreground">
                     Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
