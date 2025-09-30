@@ -11,14 +11,14 @@ const router = Router();
 // Get Redis keys (admin and helpdesk can view)
 router.get(
   "/keys",
-  checkPermissions({ fallbackRoles: ["admin", "helpdesk"] }),
+  checkPermissions({ fallbackRoles: ["admin"] }),
   getRedisKeys
 );
 
 // Get specific key data (admin and helpdesk can view)
 router.get(
   "/keys/:key",
-  checkPermissions({ fallbackRoles: ["admin", "helpdesk"] }),
+  checkPermissions({ fallbackRoles: ["admin"] }),
   getRedisKeyData
 );
 

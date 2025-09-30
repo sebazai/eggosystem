@@ -131,7 +131,7 @@ const data: { navMain: Array<MenuItem> } = {
     {
       title: "Redis Management",
       url: createDashboardNextUrl("redis"),
-      requiredRoles: ["admin", "helpdesk"],
+      requiredRoles: ["admin"],
       items: [] satisfies Array<SubMenuItem>
     }
   ]

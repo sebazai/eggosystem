@@ -17,7 +17,8 @@ import {
   Trash2,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Search
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
@@ -27,6 +28,7 @@ import { useDeleteRedisKey } from "@/hooks/data/dashboard/useDeleteRedisKey";
 
 export default function RedisManagementPage() {
   const { user } = useAuth();
+  const [searchInput, setSearchInput] = useState("");
   const [searchPattern, setSearchPattern] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
@@ -72,8 +74,22 @@ export default function RedisManagementPage() {
   };
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchPattern(e.target.value);
-    setCurrentPage(1); // Reset to first page when search changes
+    setSearchInput(e.target.value);
+  };
+
+  const handleSearch = () => {
+    if (searchInput.trim() !== "" && searchInput.trim() !== "*") {
+      setSearchPattern(searchInput);
+      setCurrentPage(1); // Reset to first page when searching
+    } else {
+      setSearchPattern("");
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
 
   const handlePageChange = (newPage: number) => {
@@ -342,11 +358,17 @@ export default function RedisManagementPage() {
             </CardHeader>
             <CardContent className="flex flex-col flex-1">
               <div className="mb-4">
-                <Input
-                  placeholder="Search pattern (e.g., faceit-player-*, 730-*-rank, elo-adjustment:s*:l*:*)"
-                  value={searchPattern}
-                  onChange={handleSearchInputChange}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search pattern (e.g., faceit-player-*, 730-*-rank, elo-adjustment:s*:l*:*)"
+                    value={searchInput}
+                    onChange={handleSearchInputChange}
+                    onKeyPress={handleKeyPress}
+                  />
+                  <Button onClick={handleSearch} size="sm">
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
 
               {/* Page Size Selector */}
