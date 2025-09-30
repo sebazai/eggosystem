@@ -533,12 +533,12 @@ describe("Dashboard Routes Authentication Tests", () => {
       expect(response.status).not.toBe(403);
     });
 
-    it("should allow access to redis routes with helpdesk role", async () => {
+    it("should not allow access to redis routes with helpdesk role", async () => {
       const response = await request(app)
         .get("/api/v1/dashboard/redis/keys")
         .set("Authorization", "Bearer valid-token");
 
-      expect(response.status).not.toBe(403);
+      expect(response.status).toBe(403);
     });
   });
 
