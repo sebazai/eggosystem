@@ -96,7 +96,12 @@ export const faceitMetadataHandlers = [
       }
 
       if (faceit_player_id === "11111111111111114" && game === "csgo") {
-        return HttpResponse.json(createFaceitMetadataLastGame(1713542400000));
+        // Set last match to exactly 15 months ago to trigger 10% decay
+        const fifteenMonthsAgo =
+          new Date().getTime() - 15 * 30 * 24 * 60 * 60 * 1000;
+        return HttpResponse.json(
+          createFaceitMetadataLastGame(fifteenMonthsAgo)
+        );
       }
 
       // E2E test Steam IDs - provide recent match dates for all
