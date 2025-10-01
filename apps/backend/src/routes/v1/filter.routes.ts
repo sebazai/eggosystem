@@ -37,52 +37,57 @@ router.get("/", async (req, res) => {
     req.parsedParams;
 
   const filter_by_steam_id = req.query.steamId;
-  let query = knex("SeasonTeamPlayers as STP")
-    .distinct()
-    .select(
-      knex.raw(
-        "GROUP_CONCAT(DISTINCT STP.season_id ORDER BY STP.season_id) as season_ids"
-      ),
-      knex.raw(
-        "GROUP_CONCAT(DISTINCT COALESCE(M.league_id, '') ORDER BY M.league_id) as league_ids"
-      ),
-      knex.raw(
-        "GROUP_CONCAT(DISTINCT STP.team_id ORDER BY STP.team_id) as team_ids"
-      ),
-      knex.raw(
-        "GROUP_CONCAT(DISTINCT COALESCE(M.stage, '') ORDER BY M.stage) as stages"
-      ),
-      knex.raw(
-        "GROUP_CONCAT(DISTINCT COALESCE(MP.map_id, '') ORDER BY MP.map_id) as map_ids"
-      )
-    )
-    .leftJoin("MatchTeams as MT", function () {
-      this.on("MT.team_id", "STP.team_id");
-    })
-    .leftJoin("Matches as M", function () {
-      this.on("M.id", "MT.match_id").andOn("M.season_id", "STP.season_id");
-    })
-    .leftJoin("MatchGames as MP", "M.id", "MP.match_id");
-  if (filter_by_steam_id) {
-    query = query.where("STP.steam_id", filter_by_steam_id);
-  }
-  if (season_ids?.length) {
-    query = query.whereIn("STP.season_id", season_ids);
-  }
-  if (league_ids?.length) {
-    query = query.whereIn("M.league_id", league_ids);
-  }
-  if (team_ids?.length) {
-    query = query.whereIn("STP.team_id", team_ids);
-  }
-  if (stages?.length) {
-    query = query.whereIn("M.stage", stages);
-  }
-  if (map_ids?.length) {
-    query = query.whereIn("MP.map_id", map_ids);
-  }
 
-  const [result] = await query;
+  const result = await knex.transaction(async (trx) => {
+    let query = trx("SeasonTeamPlayers as STP")
+      .distinct()
+      .select(
+        knex.raw(
+          "GROUP_CONCAT(DISTINCT STP.season_id ORDER BY STP.season_id) as season_ids"
+        ),
+        knex.raw(
+          "GROUP_CONCAT(DISTINCT COALESCE(M.league_id, '') ORDER BY M.league_id) as league_ids"
+        ),
+        knex.raw(
+          "GROUP_CONCAT(DISTINCT STP.team_id ORDER BY STP.team_id) as team_ids"
+        ),
+        knex.raw(
+          "GROUP_CONCAT(DISTINCT COALESCE(M.stage, '') ORDER BY M.stage) as stages"
+        ),
+        knex.raw(
+          "GROUP_CONCAT(DISTINCT COALESCE(MP.map_id, '') ORDER BY MP.map_id) as map_ids"
+        )
+      )
+      .leftJoin("MatchTeams as MT", function () {
+        this.on("MT.team_id", "STP.team_id");
+      })
+      .leftJoin("Matches as M", function () {
+        this.on("M.id", "MT.match_id").andOn("M.season_id", "STP.season_id");
+      })
+      .leftJoin("MatchGames as MP", "M.id", "MP.match_id");
+
+    if (filter_by_steam_id) {
+      query = query.where("STP.steam_id", filter_by_steam_id);
+    }
+    if (season_ids?.length) {
+      query = query.whereIn("STP.season_id", season_ids);
+    }
+    if (league_ids?.length) {
+      query = query.whereIn("M.league_id", league_ids);
+    }
+    if (team_ids?.length) {
+      query = query.whereIn("STP.team_id", team_ids);
+    }
+    if (stages?.length) {
+      query = query.whereIn("M.stage", stages);
+    }
+    if (map_ids?.length) {
+      query = query.whereIn("MP.map_id", map_ids);
+    }
+
+    const [result] = await query;
+    return result;
+  });
 
   // Parse the concatenated string back into arrays and filter out empty values
   const grouped = {
