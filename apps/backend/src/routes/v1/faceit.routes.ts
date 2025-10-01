@@ -16,7 +16,6 @@ import { logger } from "../../utils/app-logger";
 import {
   type MatchStatusReadyWebhook,
   type MatchStatusConfiguringWebhook,
-  type RequestWithBody,
   type MatchDemoReadyWebhook,
   type MatchStatusFinishedAfterAbortWebhook,
   type MatchStatusFinishedWebhook,
@@ -53,12 +52,11 @@ import {
   validateChampionshipCancelledWebhook,
   type RequestWithQueryAndBody,
   type MatchmakingDetailsFinished,
-  validateMatchmakingDetailsFinished,
-  type ChampionshipDetailsFinished,
-  validateChampionshipDetailsFinished
+  validateMatchmakingDetailsFinished
 } from "@eggosystem/types";
 import {
   addMatchToDatabase,
+  getMatchesByExternalId,
   updateMatchEndTime,
   updateMatchFinished,
   updateMatchStatus
@@ -296,6 +294,21 @@ router.post(
           webhookData.event,
           manualReprocess
         );
+
+        if (validateMatchStatusConfiguringWebhook(webhookData)) {
+          const externalMatchRoomId = webhookData.payload.id;
+          const matchByExternalMatchRoomId =
+            await getMatchesByExternalId(externalMatchRoomId);
+          if (
+            matchByExternalMatchRoomId.some(
+              (match) => match.status === MatchStatus.FORFEIT
+            )
+          ) {
+            // The match was restarted, so we need to update the status to ONGOING
+            await updateMatchStatus(externalMatchRoomId, "ONGOING");
+          }
+        }
+
         res.status(200).send("Webhook received");
         return;
       }
@@ -368,7 +381,7 @@ router.post(
           const startTime = webhookData.payload.started_at;
 
           if (
-            // Match was aborted due to AFK.
+            // Match was aborted due to AFK or forfeit.
             startTime === "1970-01-01T00:00:00Z" &&
             validateMatchStatusFinishedAfterAbortWebhook(webhookData)
           ) {
