@@ -13,13 +13,11 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  flexRender,
-  createColumnHelper,
+  type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
-import { ChevronUp, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { TeamCaptain } from "@eggosystem/types";
+import type { TeamCaptain, CustomColumnMeta } from "@eggosystem/types";
+import { BaseTable } from "../tables/BaseTable";
 
 export const CaptainsPage = ({
   seasonId,
@@ -36,43 +34,58 @@ export const CaptainsPage = ({
   ]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const columnHelper = createColumnHelper<TeamCaptain>();
-
-  const columns = useMemo(
+  const columns = useMemo<ColumnDef<TeamCaptain>[]>(
     () => [
-      columnHelper.accessor("team_name", {
+      {
+        accessorKey: "team_name",
         header: "Team",
         cell: ({ getValue }) => (
-          <div className="font-medium text-foreground">{getValue()}</div>
+          <div className="font-medium text-foreground">
+            {getValue<string>()}
+          </div>
         ),
-        meta: { className: "text-left" }
-      }),
-      columnHelper.accessor("captain_discord", {
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Team Name",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "captain_discord",
         header: "Captain",
         cell: ({ getValue }) => {
-          const value = getValue();
+          const value = getValue<string>();
           return value ? (
             <div className="text-foreground">{value}</div>
           ) : (
             <div className="text-muted-foreground italic">Not set</div>
           );
         },
-        meta: { className: "text-left" }
-      }),
-      columnHelper.accessor("co_captain_discord", {
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Captain Discord",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "co_captain_discord",
         header: "Co-Captain",
         cell: ({ getValue }) => {
-          const value = getValue();
+          const value = getValue<string>();
           return value ? (
             <div className="text-foreground">{value}</div>
           ) : (
             <div className="text-muted-foreground italic">Not set</div>
           );
         },
-        meta: { className: "text-left" }
-      })
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Co-Captain Discord",
+          sortable: true
+        } satisfies CustomColumnMeta
+      }
     ],
-    [columnHelper]
+    []
   );
 
   const table = useReactTable({
@@ -161,87 +174,20 @@ export const CaptainsPage = ({
       </div>
 
       <CardContainer classNames="p-2 md:p-4">
-        <div className="bg-card overflow-hidden">
-          <div className="overflow-auto">
-            <table className="text-sm sm:text-base w-full">
-              <thead>
-                <tr className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange">
-                  {table.getHeaderGroups().map((headerGroup) =>
-                    headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className={cn(
-                          "px-3 py-2 text-left whitespace-nowrap font-semibold cursor-pointer select-none",
-                          header.column.getCanSort() &&
-                            "hover:bg-kanaliiga-light-brown/50"
-                        )}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
-                        <div className="flex items-center gap-1">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                          {header.column.getCanSort() && (
-                            <div className="flex flex-col">
-                              <ChevronUp
-                                className={cn(
-                                  "h-3 w-3 transition-colors",
-                                  header.column.getIsSorted() === "asc"
-                                    ? "text-foreground"
-                                    : "text-muted-foreground/50"
-                                )}
-                              />
-                              <ChevronDown
-                                className={cn(
-                                  "h-3 w-3 -mt-1 transition-colors",
-                                  header.column.getIsSorted() === "desc"
-                                    ? "text-foreground"
-                                    : "text-muted-foreground/50"
-                                )}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </th>
-                    ))
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className={cn(
-                          "px-3 py-2",
-                          (cell.column.columnDef.meta as { className?: string })
-                            ?.className
-                        )}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {table.getRowModel().rows.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                {globalFilter
-                  ? "No results found for your search."
-                  : "No team captains found."}
-              </div>
-            )}
+        <BaseTable
+          table={table}
+          showPagination={false}
+          customRowClassName={() =>
+            "border-b border-border h-10 transition-colors hover:bg-kanaliiga-light-brown/10"
+          }
+        />
+        {table.getRowModel().rows.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            {globalFilter
+              ? "No results found for your search."
+              : "No team captains found."}
           </div>
-        </div>
+        )}
       </CardContainer>
     </div>
   );

@@ -10,24 +10,25 @@ import {
   useReactTable,
   getCoreRowModel,
   getExpandedRowModel,
-  flexRender,
-  createColumnHelper,
-  getFilteredRowModel
+  getSortedRowModel,
+  getFilteredRowModel,
+  type ColumnDef,
+  type SortingState
 } from "@tanstack/react-table";
-import type { SeasonRegisteredTeamsWithPlayersValidatedTeams } from "@eggosystem/types";
+import type {
+  SeasonRegisteredTeamsWithPlayersValidatedTeams,
+  CustomColumnMeta
+} from "@eggosystem/types";
 import { useMemo, useState } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  CheckCircle
-} from "lucide-react";
+import { ExternalLink, CheckCircle } from "lucide-react";
 import { envConfig } from "@/configs/env";
 import { createPlatformTeamUrl } from "@/lib/utils";
-import type { CellContext } from "@tanstack/react-table";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { BaseTable } from "../../tables/BaseTable";
+import { ExpandableRow } from "../../tables/ExpandableRow";
+import { RowSelection } from "../../tables/RowSelection";
 
 export const ListRegisteredTeams = () => {
   const { registeredTeams, isLoading, error } = useRegisteredTeams();
@@ -35,72 +36,83 @@ export const ListRegisteredTeams = () => {
   const { manualValidityCheck } = useManualValidityCheck();
   const [rowSelection, setRowSelection] = useState({});
   const [isPerformingAction, setIsPerformingAction] = useState(false);
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  const columnHelper =
-    createColumnHelper<SeasonRegisteredTeamsWithPlayersValidatedTeams>();
-
-  const columns = useMemo(
+  const columns = useMemo<
+    ColumnDef<SeasonRegisteredTeamsWithPlayersValidatedTeams>[]
+  >(
     () => [
-      columnHelper.display({
+      {
         id: "select",
         header: ({ table }) => (
-          <input
-            type="checkbox"
-            checked={table.getIsAllPageRowsSelected()}
-            onChange={table.getToggleAllPageRowsSelectedHandler()}
-            className="w-4 h-4"
+          <RowSelection
+            isSelected={table.getIsAllPageRowsSelected()}
+            onToggle={table.getToggleAllPageRowsSelectedHandler()}
+            isIndeterminate={table.getIsSomePageRowsSelected()}
           />
         ),
         cell: ({ row }) => (
-          <input
-            type="checkbox"
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-            className="w-4 h-4"
+          <RowSelection
+            isSelected={row.getIsSelected()}
+            onToggle={row.getToggleSelectedHandler()}
           />
         ),
-        meta: { className: "text-center" }
-      }),
-      columnHelper.display({
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Select row",
+          sortable: false
+        } satisfies CustomColumnMeta
+      },
+      {
         id: "expander",
         header: () => null,
-        cell: ({ row }) =>
-          row.getCanExpand() ? (
-            <button
-              className="flex items-center justify-center w-6 h-6"
-              onClick={row.getToggleExpandedHandler()}
-              aria-label={row.getIsExpanded() ? "Collapse" : "Expand"}
-            >
-              {row.getIsExpanded() ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-          ) : null,
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("team_name", {
-        header: () => "Team",
-        cell: (info) => (
-          <span className="font-medium text-foreground">{info.getValue()}</span>
+        cell: ({ row }) => (
+          <ExpandableRow
+            isExpanded={row.getIsExpanded()}
+            onToggle={row.getToggleExpandedHandler()}
+            canExpand={row.getCanExpand()}
+          />
         ),
-        meta: { className: "text-left" }
-      }),
-      columnHelper.accessor("is_valid", {
-        header: () => "Valid",
-        cell: (info) =>
-          info.getValue() ? (
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Expand row",
+          sortable: false
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "team_name",
+        header: "Team",
+        cell: ({ getValue }) => (
+          <span className="font-medium text-foreground">
+            {getValue<string>()}
+          </span>
+        ),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Team Name",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "is_valid",
+        header: "Valid",
+        cell: ({ getValue }) =>
+          getValue<boolean>() ? (
             <span className="text-green-600 font-bold">Yes</span>
           ) : (
             <span className="text-red-500 font-bold">No</span>
           ),
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("approved", {
-        header: () => "Approved",
-        cell: (info) =>
-          info.getValue() ? (
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Team Validity",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "approved",
+        header: "Approved",
+        cell: ({ getValue }) =>
+          getValue<boolean>() ? (
             <span className="text-green-600 font-bold flex items-center justify-center gap-1">
               <CheckCircle className="w-4 h-4" />
               Yes
@@ -108,29 +120,33 @@ export const ListRegisteredTeams = () => {
           ) : (
             <span className="text-red-500 font-bold">No</span>
           ),
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("terms_and_conditions_approved", {
-        header: () => "Terms",
-        cell: (info) =>
-          info.getValue() ? (
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Approval Status",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "terms_and_conditions_approved",
+        header: "Terms",
+        cell: ({ getValue }) =>
+          getValue<boolean>() ? (
             <span className="text-green-600 font-bold">Yes</span>
           ) : (
             <span className="text-red-500 font-bold">No</span>
           ),
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("external_platform_id", {
-        header: () => "Platform ID",
-        cell: (
-          info: CellContext<
-            SeasonRegisteredTeamsWithPlayersValidatedTeams,
-            string | null
-          >
-        ) => {
-          const row = info.row.original;
-          const platform = row.season_platform;
-          const id = info.getValue();
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Terms and Conditions",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
+        accessorKey: "external_platform_id",
+        header: "Platform ID",
+        cell: ({ getValue, row }) => {
+          const platform = row.original.season_platform;
+          const id = getValue<string | null>();
           if (!id) return <span className="text-muted-foreground">-</span>;
           const url = createPlatformTeamUrl(id, platform);
           if (url?.startsWith("/")) {
@@ -159,10 +175,14 @@ export const ListRegisteredTeams = () => {
             return <span>{id}</span>;
           }
         },
-        meta: { className: "text-center" }
-      })
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Platform ID",
+          sortable: true
+        } satisfies CustomColumnMeta
+      }
     ],
-    [columnHelper]
+    []
   );
 
   const table = useReactTable({
@@ -170,18 +190,105 @@ export const ListRegisteredTeams = () => {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
     getRowCanExpand: () => true,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     state: {
-      rowSelection
+      rowSelection,
+      sorting
     },
     debugTable: false
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const hasSelectedRows = selectedRows.length > 0;
+
+  const renderExpandedRow = (
+    team: SeasonRegisteredTeamsWithPlayersValidatedTeams
+  ) => (
+    <div>
+      {/* Team Leadership */}
+      <div className="mb-4">
+        <div className="font-semibold mb-2 text-kanaliiga-orange">
+          Team Leadership
+        </div>
+        <div className="flex flex-wrap gap-4 text-sm">
+          {team.captain_nickname && (
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Captain:</span>
+              <span>{team.captain_nickname}</span>
+            </div>
+          )}
+          {team.co_captain_nickname && (
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Co-Captain:</span>
+              <span>{team.co_captain_nickname}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Players */}
+      <div className="font-semibold mb-2 text-kanaliiga-orange">Players</div>
+      <div className="flex flex-wrap gap-3 md:gap-4">
+        {team.players.map((player) => {
+          const isInvalid = team.invalid_players.some(
+            (invalidPlayer) => invalidPlayer.steam_id === player.steam_id
+          );
+
+          return (
+            <div
+              key={player.steam_id}
+              className={`flex flex-col gap-1 p-3 bg-background rounded border min-w-[200px] max-w-full md:max-w-xs shadow-sm ${
+                isInvalid ? "border-red-500" : "border-border"
+              }`}
+            >
+              <span className="font-semibold text-foreground break-words">
+                {player.nickname}
+              </span>
+              <span className="text-[0.65rem] text-muted-foreground break-words">
+                {player.work_email}
+                {player.is_work_email_personal_email ? (
+                  <span className="text-orange-600 ml-1">(Personal)</span>
+                ) : (
+                  <span className="text-green-600 ml-1">(Work)</span>
+                )}
+              </span>
+              <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
+                <a
+                  href={`https://steamcommunity.com/profiles/${player.steam_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline flex items-center gap-1"
+                >
+                  Steam
+                  <ExternalLink className="inline w-3 h-3" />
+                </a>
+                <span>|</span>
+                <a
+                  href={`${envConfig.BASE_URL}/players/${player.steam_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline flex items-center gap-1"
+                >
+                  Kanahub
+                  <ExternalLink className="inline w-3 h-3" />
+                </a>
+              </span>
+              {isInvalid && (
+                <span className="text-[0.65rem] text-red-600 font-medium">
+                  ⚠️ Needs approval
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const handleBulkApprove = async () => {
     if (!hasSelectedRows) return;
@@ -295,156 +402,13 @@ export const ListRegisteredTeams = () => {
         <div className="text-sm text-muted-foreground p-2">
           Total teams: {registeredTeams.length}
         </div>
-        <div className="overflow-x-auto">
-          <table className="text-xs w-full">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr
-                  key={headerGroup.id}
-                  className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange"
-                >
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className={
-                        "px-3 py-2 font-semibold " +
-                        ((
-                          header.column.columnDef.meta as { className?: string }
-                        )?.className || "text-left")
-                      }
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => [
-                <tr
-                  key={row.id}
-                  className={`border-b border-border hover:bg-kanaliiga-light-brown/10 ${
-                    row.getIsSelected() ? "bg-kanaliiga-light-brown/20" : ""
-                  }`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={
-                        "px-3 py-2 " +
-                        ((cell.column.columnDef.meta as { className?: string })
-                          ?.className || "text-left")
-                      }
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                </tr>,
-                row.getIsExpanded() && (
-                  <tr key={row.id + "-expanded"}>
-                    <td
-                      colSpan={columns.length}
-                      className="bg-kanaliiga-light-brown/10 px-3 py-4"
-                    >
-                      {/* Team Leadership */}
-                      <div className="mb-4">
-                        <div className="font-semibold mb-2 text-kanaliiga-orange">
-                          Team Leadership
-                        </div>
-                        <div className="flex flex-wrap gap-4 text-sm">
-                          {row.original.captain_nickname && (
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">Captain:</span>
-                              <span>{row.original.captain_nickname}</span>
-                            </div>
-                          )}
-                          {row.original.co_captain_nickname && (
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">Co-Captain:</span>
-                              <span>{row.original.co_captain_nickname}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Players */}
-                      <div className="font-semibold mb-2 text-kanaliiga-orange">
-                        Players
-                      </div>
-                      <div className="flex flex-wrap gap-3 md:gap-4">
-                        {row.original.players.map((player) => {
-                          const isInvalid = row.original.invalid_players.some(
-                            (invalidPlayer) =>
-                              invalidPlayer.steam_id === player.steam_id
-                          );
-
-                          return (
-                            <div
-                              key={player.steam_id}
-                              className={`flex flex-col gap-1 p-3 bg-background rounded border min-w-[200px] max-w-full md:max-w-xs shadow-sm ${
-                                isInvalid ? "border-red-500" : "border-border"
-                              }`}
-                            >
-                              <span className="font-semibold text-foreground break-words">
-                                {player.nickname}
-                              </span>
-                              <span className="text-[0.65rem] text-muted-foreground break-words">
-                                {player.work_email}
-                                {player.is_work_email_personal_email ? (
-                                  <span className="text-orange-600 ml-1">
-                                    (Personal)
-                                  </span>
-                                ) : (
-                                  <span className="text-green-600 ml-1">
-                                    (Work)
-                                  </span>
-                                )}
-                              </span>
-                              <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
-                                <a
-                                  href={`https://steamcommunity.com/profiles/${player.steam_id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline flex items-center gap-1"
-                                >
-                                  Steam
-                                  <ExternalLink className="inline w-3 h-3" />
-                                </a>
-                                <span>|</span>
-                                <a
-                                  href={`${envConfig.BASE_URL}/players/${player.steam_id}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline flex items-center gap-1"
-                                >
-                                  Kanahub
-                                  <ExternalLink className="inline w-3 h-3" />
-                                </a>
-                              </span>
-                              {isInvalid && (
-                                <span className="text-[0.65rem] text-red-600 font-medium">
-                                  ⚠️ Needs approval
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              ])}
-            </tbody>
-          </table>
-        </div>
+        <BaseTable
+          table={table}
+          showPagination={false}
+          enableRowExpansion={true}
+          enableRowSelection={true}
+          renderExpandedRow={renderExpandedRow}
+        />
       </div>
     </div>
   );

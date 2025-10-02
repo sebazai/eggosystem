@@ -16,12 +16,7 @@ import {
   type Cell
 } from "@tanstack/react-table";
 import { TablePagination } from "./TablePagination";
-
-interface CustomColumnMeta {
-  responsive?: string;
-  tooltip?: string;
-  sortable?: boolean;
-}
+import type { CustomColumnMeta } from "@eggosystem/types";
 
 interface BaseTableProps<TData> {
   table: Table<TData>;
@@ -36,6 +31,11 @@ interface BaseTableProps<TData> {
     cell: Cell<TData, unknown>,
     row: TData
   ) => React.ReactNode;
+  customPagination?: React.ReactNode;
+  enableRowExpansion?: boolean;
+  renderExpandedRow?: (row: TData) => React.ReactNode;
+  enableRowSelection?: boolean;
+  onRowSelectionChange?: (selectedRows: TData[]) => void;
 }
 
 export function BaseTable<TData>({
@@ -46,7 +46,12 @@ export function BaseTable<TData>({
   paginationType = "default",
   customRowClassName,
   customCellClassName,
-  customCellContent
+  customCellContent,
+  customPagination,
+  enableRowExpansion = false,
+  renderExpandedRow,
+  enableRowSelection = false,
+  onRowSelectionChange
 }: BaseTableProps<TData>) {
   return (
     <TooltipProvider>
@@ -109,64 +114,84 @@ export function BaseTable<TData>({
               {table.getRowModel().rows.map((row) => {
                 const rowClassName = customRowClassName
                   ? customRowClassName(row.original)
-                  : "hover:bg-kanaliiga-light-brown/10 cursor-pointer";
+                  : cn(
+                      "hover:bg-kanaliiga-light-brown/10 cursor-pointer",
+                      enableRowSelection &&
+                        row.getIsSelected() &&
+                        "bg-kanaliiga-light-brown/20"
+                    );
 
                 return (
-                  <tr
-                    key={row.id}
-                    className={rowClassName}
-                    onClick={() => onRowClick?.(row.original)}
-                    onMouseDown={(e) => {
-                      // Handle middle mouse button (wheel) click
-                      if (e.button === 1) {
-                        e.preventDefault();
-                        onRowMiddleClick?.(row.original);
-                      }
-                    }}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const cellClassName = customCellClassName
-                        ? customCellClassName(cell, row.original)
-                        : cn(
-                            "px-3 py-2 text-center",
-                            (cell.column.columnDef.meta as CustomColumnMeta)
-                              ?.responsive,
-                            cell.column.id === "opponent_name" && "text-left",
-                            cell.column.id === "kana_rating" && "font-bold"
-                          );
+                  <React.Fragment key={row.id}>
+                    <tr
+                      className={rowClassName}
+                      onClick={() => onRowClick?.(row.original)}
+                      onMouseDown={(e) => {
+                        // Handle middle mouse button (wheel) click
+                        if (e.button === 1) {
+                          e.preventDefault();
+                          onRowMiddleClick?.(row.original);
+                        }
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const cellClassName = customCellClassName
+                          ? customCellClassName(cell, row.original)
+                          : cn(
+                              "px-3 py-2 text-center",
+                              (cell.column.columnDef.meta as CustomColumnMeta)
+                                ?.responsive,
+                              cell.column.id === "opponent_name" && "text-left",
+                              cell.column.id === "kana_rating" && "font-bold"
+                            );
 
-                      return (
-                        <td key={cell.id} className={cellClassName}>
-                          {customCellContent
-                            ? customCellContent(cell, row.original)
-                            : flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                        </td>
-                      );
-                    })}
-                  </tr>
+                        return (
+                          <td key={cell.id} className={cellClassName}>
+                            {customCellContent
+                              ? customCellContent(cell, row.original)
+                              : flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    {enableRowExpansion &&
+                      row.getIsExpanded() &&
+                      renderExpandedRow && (
+                        <tr>
+                          <td
+                            colSpan={row.getVisibleCells().length}
+                            className="bg-kanaliiga-light-brown/10 px-3 py-4"
+                          >
+                            {renderExpandedRow(row.original)}
+                          </td>
+                        </tr>
+                      )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
         </div>
 
-        {showPagination && table.getFilteredRowModel().rows.length > 0 && (
-          <TablePagination
-            totalRows={table.getFilteredRowModel().rows.length}
-            currentPage={table.getState().pagination.pageIndex + 1}
-            totalPages={table.getPageCount()}
-            handlePageChange={(page) => table.setPageIndex(page - 1)}
-            handlePageSizeChange={(newPageSize) => {
-              table.setPageSize(newPageSize);
-              table.setPageIndex(0);
-            }}
-            pageSize={table.getState().pagination.pageSize}
-            type={paginationType}
-          />
-        )}
+        {showPagination &&
+          table.getFilteredRowModel().rows.length > 0 &&
+          (customPagination || (
+            <TablePagination
+              totalRows={table.getFilteredRowModel().rows.length}
+              currentPage={table.getState().pagination.pageIndex + 1}
+              totalPages={table.getPageCount()}
+              handlePageChange={(page) => table.setPageIndex(page - 1)}
+              handlePageSizeChange={(newPageSize) => {
+                table.setPageSize(newPageSize);
+                table.setPageIndex(0);
+              }}
+              pageSize={table.getState().pagination.pageSize}
+              type={paginationType}
+            />
+          ))}
       </div>
     </TooltipProvider>
   );

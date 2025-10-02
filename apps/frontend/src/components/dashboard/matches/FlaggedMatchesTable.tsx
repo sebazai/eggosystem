@@ -5,15 +5,13 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  flexRender,
-  createColumnHelper,
+  type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronUp, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { FlaggedMatches } from "@eggosystem/types";
+import { BaseTable } from "../../tables/BaseTable";
+import type { FlaggedMatches, CustomColumnMeta } from "@eggosystem/types";
 import { useFlaggedMatches } from "@/hooks/data/dashboard/useFlaggedMatches";
 import { TeamBadge } from "./TeamBadge";
 import { PlayerBadge } from "./PlayerBadge";
@@ -24,33 +22,44 @@ export const FlaggedMatchesTable = () => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { flaggedMatches, isLoading, error } = useFlaggedMatches();
 
-  const columnHelper = createColumnHelper<FlaggedMatches>();
-
-  const columns = useMemo(
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<FlaggedMatches>[]>(
     () => [
-      columnHelper.accessor("external_match_id", {
-        header: "External Match ID",
+      {
+        accessorKey: "external_match_id",
+        header: "EXTERNAL MATCH ID",
         cell: ({ getValue }) => {
-          const externalMatchId = getValue();
+          const externalMatchId = getValue<string>();
           return externalMatchId ? (
             <ExternalMatchIdBadge externalMatchId={externalMatchId} />
           ) : (
             <span className="text-muted-foreground text-xs">None</span>
           );
         },
-        meta: { className: "text-left" }
-      }),
-      columnHelper.accessor("team_id", {
-        header: "Team",
-        cell: ({ getValue }) => {
-          const teamId = getValue();
-          return <TeamBadge teamId={teamId} />;
+        meta: {
+          responsive: "table-cell",
+          tooltip: "External Match ID",
+          sortable: true
         }
-      }),
-      columnHelper.accessor("steam_ids", {
-        header: "Players",
+      },
+      {
+        accessorKey: "team_id",
+        header: "TEAM",
         cell: ({ getValue }) => {
-          const steamIds = getValue();
+          const teamId = getValue<number>();
+          return <TeamBadge teamId={teamId} />;
+        },
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Team",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "steam_ids",
+        header: "PLAYERS",
+        cell: ({ getValue }) => {
+          const steamIds = getValue<string[]>();
 
           // Early return for undefined/null/empty cases
           if (!steamIds || steamIds.length === 0) {
@@ -70,12 +79,17 @@ export const FlaggedMatchesTable = () => {
           );
         },
         enableSorting: false,
-        meta: { className: "text-left min-w-[200px]" }
-      }),
-      columnHelper.accessor("match_ids", {
-        header: "Match IDs",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Players",
+          sortable: false
+        }
+      },
+      {
+        accessorKey: "match_ids",
+        header: "MATCH IDS",
         cell: ({ getValue }) => {
-          const matchIds = getValue();
+          const matchIds = getValue<number[]>();
 
           // Early return for undefined/null/empty cases
           if (!matchIds || matchIds.length === 0) {
@@ -95,12 +109,17 @@ export const FlaggedMatchesTable = () => {
           );
         },
         enableSorting: false,
-        meta: { className: "text-left hidden md:table-cell" }
-      }),
-      columnHelper.accessor("players_added_for_this_match", {
-        header: "Added Players",
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Match IDs",
+          sortable: false
+        }
+      },
+      {
+        accessorKey: "players_added_for_this_match",
+        header: "ADDED PLAYERS",
         cell: ({ getValue }) => {
-          const addedPlayers = getValue();
+          const addedPlayers = getValue<string[]>();
 
           // Early return for undefined/null/empty cases
           if (!addedPlayers || addedPlayers.length === 0) {
@@ -121,21 +140,26 @@ export const FlaggedMatchesTable = () => {
           );
         },
         enableSorting: false,
-        meta: { className: "text-left hidden lg:table-cell" }
-      })
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Added Players",
+          sortable: false
+        }
+      }
     ],
-    [columnHelper]
+    []
   );
 
+  // TanStack Table configuration
   const table = useReactTable({
     data: flaggedMatches ?? [],
     columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     state: {
       sorting
-    },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel()
+    }
   });
 
   if (isLoading) {
@@ -211,97 +235,7 @@ export const FlaggedMatchesTable = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b">
-                  {headerGroup.headers.map((header) => {
-                    const meta = header.column.columnDef.meta as
-                      | {
-                          className?: string;
-                        }
-                      | undefined;
-
-                    return (
-                      <th
-                        key={header.id}
-                        className={cn(
-                          "px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider",
-                          meta?.className
-                        )}
-                      >
-                        {header.isPlaceholder ? null : (
-                          <div
-                            className={cn(
-                              header.column.getCanSort()
-                                ? "cursor-pointer select-none flex items-center gap-2 hover:text-foreground"
-                                : ""
-                            )}
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {header.column.getCanSort() && (
-                              <div className="flex flex-col">
-                                <ChevronUp
-                                  className={cn(
-                                    "h-3 w-3 -mb-1",
-                                    header.column.getIsSorted() === "asc"
-                                      ? "text-foreground"
-                                      : "text-muted-foreground/50"
-                                  )}
-                                />
-                                <ChevronDown
-                                  className={cn(
-                                    "h-3 w-3",
-                                    header.column.getIsSorted() === "desc"
-                                      ? "text-foreground"
-                                      : "text-muted-foreground/50"
-                                  )}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-border">
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-muted/50 transition-colors"
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const meta = cell.column.columnDef.meta as
-                      | {
-                          className?: string;
-                        }
-                      | undefined;
-
-                    return (
-                      <td
-                        key={cell.id}
-                        className={cn("px-4 py-3 text-sm", meta?.className)}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <BaseTable table={table} showPagination={false} />
       </CardContent>
     </Card>
   );

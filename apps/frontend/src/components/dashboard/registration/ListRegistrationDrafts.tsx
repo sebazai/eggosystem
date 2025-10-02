@@ -2,53 +2,59 @@
 
 import { useRegistrationDrafts } from "@/hooks/data/dashboard/useRegistrationDrafts";
 import { Spinner } from "@/components/ui/icons";
-import { useMemo } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getExpandedRowModel,
-  flexRender,
-  createColumnHelper
+  getSortedRowModel,
+  type ColumnDef,
+  type SortingState
 } from "@tanstack/react-table";
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
-import { type RegistrationDraftRaw } from "@eggosystem/types";
+import {
+  type RegistrationDraftRaw,
+  type CustomColumnMeta
+} from "@eggosystem/types";
+import { BaseTable } from "../../tables/BaseTable";
+import { ExpandableRow } from "../../tables/ExpandableRow";
 
 export const ListRegistrationDrafts = () => {
   const { registrationDrafts, isLoading, error } = useRegistrationDrafts();
-  const columnHelper = createColumnHelper<RegistrationDraftRaw>();
+  const [sorting, setSorting] = useState<SortingState>([]);
 
-  const columns = useMemo(
+  const columns = useMemo<ColumnDef<RegistrationDraftRaw>[]>(
     () => [
-      columnHelper.display({
+      {
         id: "expander",
         header: () => null,
-        cell: ({ row }) =>
-          row.getCanExpand() ? (
-            <button
-              className="flex items-center justify-center w-6 h-6"
-              onClick={row.getToggleExpandedHandler()}
-              aria-label={row.getIsExpanded() ? "Collapse" : "Expand"}
-            >
-              {row.getIsExpanded() ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-          ) : null,
-        meta: { className: "text-center" }
-      }),
-      columnHelper.display({
+        cell: ({ row }) => (
+          <ExpandableRow
+            isExpanded={row.getIsExpanded()}
+            onToggle={row.getToggleExpandedHandler()}
+            canExpand={row.getCanExpand()}
+          />
+        ),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Expand row",
+          sortable: false
+        } satisfies CustomColumnMeta
+      },
+      {
         id: "team_name",
-        header: () => "Team",
+        header: "Team",
         cell: ({ row }) => <TeamNameCell draft={row.original} />,
-        meta: { className: "text-left" }
-      }),
-      columnHelper.display({
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Team Name",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
         id: "captain_nickname",
-        header: () => "Captain",
+        header: "Captain",
         cell: ({ row }) => {
           const draft = row.original;
           const captain = draft.players?.find(
@@ -60,11 +66,15 @@ export const ListRegistrationDrafts = () => {
             )
           );
         },
-        meta: { className: "text-center" }
-      }),
-      columnHelper.display({
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Captain",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
         id: "co_captain_nickname",
-        header: () => "Co-Captain",
+        header: "Co-Captain",
         cell: ({ row }) => {
           const draft = row.original;
           const coCaptain = draft.players?.find(
@@ -76,11 +86,15 @@ export const ListRegistrationDrafts = () => {
             )
           );
         },
-        meta: { className: "text-center" }
-      }),
-      columnHelper.display({
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Co-Captain",
+          sortable: true
+        } satisfies CustomColumnMeta
+      },
+      {
         id: "platform_id",
-        header: () => "Platform ID",
+        header: "Platform ID",
         cell: ({ row }) => {
           const draft = row.original;
           const id = draft.teamExternalId;
@@ -90,10 +104,14 @@ export const ListRegistrationDrafts = () => {
             <span className="text-muted-foreground">-</span>
           );
         },
-        meta: { className: "text-center" }
-      })
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Platform ID",
+          sortable: true
+        } satisfies CustomColumnMeta
+      }
     ],
-    [columnHelper]
+    []
   );
 
   const table = useReactTable({
@@ -101,8 +119,13 @@ export const ListRegistrationDrafts = () => {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     getRowCanExpand: (row) =>
       Array.isArray(row.original.players) && row.original.players.length > 0,
+    state: {
+      sorting
+    },
     debugTable: false
   });
 
@@ -130,96 +153,47 @@ export const ListRegistrationDrafts = () => {
     );
   }
 
+  const renderExpandedRow = (draft: RegistrationDraftRaw) => (
+    <div>
+      <div className="font-semibold mb-2 text-kanaliiga-orange">Players</div>
+      <div className="flex flex-wrap gap-3 md:gap-4">
+        {draft.players?.map((player) => (
+          <div
+            key={player.accountId}
+            className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm"
+          >
+            <span className="font-semibold text-foreground break-words">
+              {player.nickname}
+            </span>
+            <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
+              <a
+                href={`https://steamcommunity.com/profiles/${player.steamId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline flex items-center gap-1"
+              >
+                Steam
+              </a>
+              <span className="font-mono text-xs select-all break-all">
+                {player.steamId}
+              </span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-card rounded-md overflow-hidden mt-8">
       <div className="overflow-x-auto">
         <div>In progress length: {registrationDrafts.length}</div>
-        <table className="text-xs w-full">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                key={headerGroup.id}
-                className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange"
-              >
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={
-                      "px-3 py-2 font-semibold " +
-                      ((header.column.columnDef.meta as { className?: string })
-                        ?.className || "text-left")
-                    }
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => [
-              <tr
-                key={row.id}
-                className="border-b border-border hover:bg-kanaliiga-light-brown/10"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={
-                      "px-3 py-2 " +
-                      ((cell.column.columnDef.meta as { className?: string })
-                        ?.className || "text-left")
-                    }
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>,
-              row.getIsExpanded() && (
-                <tr key={row.id + "-expanded"}>
-                  <td
-                    colSpan={columns.length}
-                    className="bg-kanaliiga-light-brown/10 px-3 py-4"
-                  >
-                    <div className="font-semibold mb-2 text-kanaliiga-orange">
-                      Players
-                    </div>
-                    <div className="flex flex-wrap gap-3 md:gap-4">
-                      {row.original.players?.map((player) => (
-                        <div
-                          key={player.accountId}
-                          className="flex flex-col gap-1 p-3 bg-background rounded border border-border min-w-[180px] max-w-full md:max-w-xs shadow-sm"
-                        >
-                          <span className="font-semibold text-foreground break-words">
-                            {player.nickname}
-                          </span>
-                          <span className="text-[0.65rem] text-muted-foreground flex items-center gap-2 flex-wrap">
-                            <a
-                              href={`https://steamcommunity.com/profiles/${player.steamId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline flex items-center gap-1"
-                            >
-                              Steam
-                            </a>
-                            <span className="font-mono text-xs select-all break-all">
-                              {player.steamId}
-                            </span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              )
-            ])}
-          </tbody>
-        </table>
+        <BaseTable
+          table={table}
+          showPagination={false}
+          enableRowExpansion={true}
+          renderExpandedRow={renderExpandedRow}
+        />
       </div>
     </div>
   );

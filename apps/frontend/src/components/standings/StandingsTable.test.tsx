@@ -69,16 +69,16 @@ describe("StandingsTable", () => {
 
     // Check if table headers are present
     expect(screen.getByText("#")).toBeInTheDocument();
-    expect(screen.getByText("Team")).toBeInTheDocument();
-    expect(screen.getByText("Played")).toBeInTheDocument();
-    expect(screen.getByText("Won")).toBeInTheDocument();
-    expect(screen.getByText("Won (OT)")).toBeInTheDocument();
-    expect(screen.getByText("Lost")).toBeInTheDocument();
-    expect(screen.getByText("Lost (OT)")).toBeInTheDocument();
-    expect(screen.getByText("Points")).toBeInTheDocument();
-    expect(screen.getByText("Rounds Won")).toBeInTheDocument();
-    expect(screen.getByText("Rounds Lost")).toBeInTheDocument();
-    expect(screen.getByText("Round Diff")).toBeInTheDocument();
+    expect(screen.getByText("TEAM")).toBeInTheDocument();
+    expect(screen.getByText("PLAYED")).toBeInTheDocument();
+    expect(screen.getByText("WON")).toBeInTheDocument();
+    expect(screen.getByText("WON (OT)")).toBeInTheDocument();
+    expect(screen.getByText("LOST")).toBeInTheDocument();
+    expect(screen.getByText("LOST (OT)")).toBeInTheDocument();
+    expect(screen.getByText("POINTS")).toBeInTheDocument();
+    expect(screen.getByText("ROUNDS WON")).toBeInTheDocument();
+    expect(screen.getByText("ROUNDS LOST")).toBeInTheDocument();
+    expect(screen.getByText("ROUND DIFF")).toBeInTheDocument();
 
     // Check if team data is rendered
     expect(screen.getByText("Frendy Fire")).toBeInTheDocument();
@@ -140,10 +140,10 @@ describe("StandingsTable", () => {
     // Check that all column headers are properly labeled
     expect(screen.getByRole("columnheader", { name: "#" })).toBeInTheDocument();
     expect(
-      screen.getByRole("columnheader", { name: "Team" })
+      screen.getByRole("columnheader", { name: "TEAM" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("columnheader", { name: "Points" })
+      screen.getByRole("columnheader", { name: "POINTS" })
     ).toBeInTheDocument();
   });
 

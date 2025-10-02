@@ -5,12 +5,12 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  flexRender,
-  createColumnHelper,
+  type ColumnDef,
   type SortingState,
   type RowSelectionState,
   type Table,
-  type Row
+  type Row,
+  type Cell
 } from "@tanstack/react-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,14 +23,50 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { ChevronUp, ChevronDown, RefreshCw, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { FailedParseMessage } from "@eggosystem/types";
+import { RefreshCw, AlertTriangle } from "lucide-react";
+import { BaseTable } from "../../tables/BaseTable";
+import { ServerSidePagination } from "../../tables/ServerSidePagination";
+import type { FailedParseMessage, CustomColumnMeta } from "@eggosystem/types";
 import {
   useFailedParseMessages,
   useReparseMessages
 } from "@/hooks/data/dashboard/useFailedParseMessages";
+import { useMatchDetailsByGameId } from "@/hooks/data/useMatchDetailsByGameId";
 import { toast } from "sonner";
+import Link from "next/link";
+
+interface MatchGameIdLinkProps {
+  matchGameId: number;
+}
+
+const MatchGameIdLink = ({ matchGameId }: MatchGameIdLinkProps) => {
+  const {
+    data: matchDetails,
+    isLoading,
+    error
+  } = useMatchDetailsByGameId(matchGameId);
+
+  if (isLoading) {
+    return (
+      <span className="font-mono text-sm text-muted-foreground">
+        Loading...
+      </span>
+    );
+  }
+
+  if (error || !matchDetails) {
+    return <span className="font-mono text-sm">{matchGameId}</span>;
+  }
+
+  return (
+    <Link
+      href={`/matches/${matchDetails.match_id}/games/${matchGameId}`}
+      className="font-mono text-sm text-blue-600 hover:text-blue-800 hover:underline"
+    >
+      {matchGameId}
+    </Link>
+  );
+};
 
 interface FailedParseTableProps {
   initialQueueFilter?: string;
@@ -80,9 +116,8 @@ export const FailedParseTable = ({
 
   const { submitReparse, isSubmitting } = useReparseMessages();
 
-  const columnHelper = createColumnHelper<FailedParseMessage>();
-
-  const columns = useMemo(
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<FailedParseMessage>[]>(
     () => [
       // Checkbox column
       {
@@ -108,28 +143,44 @@ export const FailedParseTable = ({
           />
         ),
         enableSorting: false,
-        meta: { className: "w-12 text-center" }
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Select",
+          sortable: false
+        }
       },
-      columnHelper.accessor("match_game_id", {
-        header: "Game ID",
-        cell: ({ getValue }) => (
-          <span className="font-mono text-sm">{getValue()}</span>
-        ),
-        meta: { className: "text-left" }
-      }),
-      columnHelper.accessor("queue_name", {
-        header: "Queue",
+      {
+        accessorKey: "match_game_id",
+        header: "GAME ID",
+        cell: ({ getValue }) => {
+          const matchGameId = getValue<number>();
+          return <MatchGameIdLink matchGameId={matchGameId} />;
+        },
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Game ID",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "queue_name",
+        header: "QUEUE",
         cell: ({ getValue }) => (
           <Badge variant="outline" className="text-xs">
-            {getValue()}
+            {getValue<string>()}
           </Badge>
         ),
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("status", {
-        header: "Status",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Queue",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "status",
+        header: "STATUS",
         cell: ({ getValue }) => {
-          const status = getValue();
+          const status = getValue<string>();
           const variant =
             status === "failed"
               ? "destructive"
@@ -142,12 +193,17 @@ export const FailedParseTable = ({
             </Badge>
           );
         },
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("final_error", {
-        header: "Error",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Status",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "final_error",
+        header: "ERROR",
         cell: ({ getValue }) => {
-          const error = getValue();
+          const error = getValue<string>();
           const truncatedError =
             error.length > 80 ? error.substring(0, 80) + "..." : error;
           return (
@@ -157,24 +213,34 @@ export const FailedParseTable = ({
           );
         },
         enableSorting: false,
-        meta: { className: "text-left max-w-md" }
-      }),
-      columnHelper.accessor("failed_at", {
-        header: "Failed At",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Error",
+          sortable: false
+        }
+      },
+      {
+        accessorKey: "failed_at",
+        header: "FAILED AT",
         cell: ({ getValue }) => {
-          const date = new Date(getValue());
+          const date = new Date(getValue<string>());
           return (
             <span className="text-sm text-muted-foreground">
               {date.toLocaleString()}
             </span>
           );
         },
-        meta: { className: "text-left hidden md:table-cell min-w-[140px]" }
-      }),
-      columnHelper.accessor("source", {
-        header: "Source",
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Failed At",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "source",
+        header: "SOURCE",
         cell: ({ getValue }) => {
-          const source = getValue();
+          const source = getValue<string>();
           return source ? (
             <Badge variant="outline" className="text-xs">
               {source}
@@ -183,26 +249,46 @@ export const FailedParseTable = ({
             <span className="text-muted-foreground text-xs">-</span>
           );
         },
-        meta: { className: "text-center hidden lg:table-cell" }
-      })
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Source",
+          sortable: true
+        }
+      }
     ],
-    [columnHelper]
+    []
   );
 
+  // TanStack Table configuration
   const table = useReactTable({
     data: failedMessages,
     columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
     state: {
       sorting,
       rowSelection
     },
-    onSortingChange: setSorting,
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     getRowId: (row) => row.id.toString(),
     enableRowSelection: (row) => row.original.status === "failed"
   });
+
+  const customCellClassName = (
+    cell: Cell<FailedParseMessage, unknown>,
+    row: FailedParseMessage
+  ) => {
+    return `px-4 py-3 text-sm text-left ${
+      (cell.column.columnDef.meta as CustomColumnMeta)?.responsive || ""
+    } ${cell.column.id === "select" ? "text-center" : ""}`;
+  };
+
+  const customRowClassName = (row: FailedParseMessage) => {
+    return `hover:bg-muted/50 transition-colors ${
+      row.status !== "failed" ? "opacity-60" : ""
+    }`;
+  };
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedCount = selectedRows.length;
@@ -399,125 +485,24 @@ export const FailedParseTable = ({
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b">
-                  {headerGroup.headers.map((header) => {
-                    const meta = header.column.columnDef.meta as
-                      | { className?: string }
-                      | undefined;
-
-                    return (
-                      <th
-                        key={header.id}
-                        className={cn(
-                          "px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider",
-                          meta?.className
-                        )}
-                      >
-                        {header.isPlaceholder ? null : (
-                          <div
-                            className={cn(
-                              header.column.getCanSort()
-                                ? "cursor-pointer select-none flex items-center gap-2 hover:text-foreground"
-                                : ""
-                            )}
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {header.column.getCanSort() && (
-                              <div className="flex flex-col">
-                                <ChevronUp
-                                  className={cn(
-                                    "h-3 w-3 -mb-1",
-                                    header.column.getIsSorted() === "asc"
-                                      ? "text-foreground"
-                                      : "text-muted-foreground/50"
-                                  )}
-                                />
-                                <ChevronDown
-                                  className={cn(
-                                    "h-3 w-3",
-                                    header.column.getIsSorted() === "desc"
-                                      ? "text-foreground"
-                                      : "text-muted-foreground/50"
-                                  )}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody className="divide-y divide-border">
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className={cn(
-                    "hover:bg-muted/50 transition-colors",
-                    row.original.status !== "failed" && "opacity-60"
-                  )}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const meta = cell.column.columnDef.meta as
-                      | { className?: string }
-                      | undefined;
-
-                    return (
-                      <td
-                        key={cell.id}
-                        className={cn("px-4 py-3 text-sm", meta?.className)}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {pagination && pagination.total > pageSize && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              Showing {currentPage * pageSize + 1} to{" "}
-              {Math.min((currentPage + 1) * pageSize, pagination.total)} of{" "}
-              {pagination.total} messages
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
-                disabled={currentPage === 0}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={!pagination.has_more}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+        <BaseTable
+          table={table}
+          columns={columns}
+          showPagination={false}
+          customCellClassName={customCellClassName}
+          customRowClassName={customRowClassName}
+          customPagination={
+            pagination ? (
+              <ServerSidePagination
+                currentPage={currentPage}
+                pageSize={pageSize}
+                total={pagination.total}
+                hasMore={pagination.has_more}
+                onPageChange={setCurrentPage}
+              />
+            ) : undefined
+          }
+        />
       </CardContent>
     </Card>
   );

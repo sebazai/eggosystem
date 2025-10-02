@@ -2,18 +2,19 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  flexRender,
-  createColumnHelper,
+  type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
-import { useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
-import type { StandingsFaceitTeamStats } from "@eggosystem/types";
+import { BaseTable } from "../tables/BaseTable";
+import type {
+  StandingsFaceitTeamStats,
+  CustomColumnMeta
+} from "@eggosystem/types";
 
 interface StandingsTableProps {
   data: StandingsFaceitTeamStats[];
@@ -26,62 +27,118 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
     { id: "rounds_diff", desc: true }
   ]);
 
-  const columnHelper = createColumnHelper<StandingsFaceitTeamStats>();
-
-  const columns = useMemo(
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<StandingsFaceitTeamStats>[]>(
     () => [
-      columnHelper.display({
+      {
         id: "position",
         header: "#",
         cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
-        meta: { className: "text-left w-[50px]" }
-      }),
-      columnHelper.accessor("team_name", {
-        header: "Team",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Position",
+          sortable: false
+        }
+      },
+      {
+        accessorKey: "team_name",
+        header: "TEAM",
         cell: ({ getValue }) => (
-          <span className="font-medium">{getValue()}</span>
+          <span className="font-medium">{getValue<string>()}</span>
         ),
-        meta: { className: "text-left" }
-      }),
-      columnHelper.accessor("games_played", {
-        header: "Played",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("maps_won", {
-        header: "Won",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("maps_won_ot", {
-        header: "Won (OT)",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("maps_lost", {
-        header: "Lost",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("maps_lost_ot", {
-        header: "Lost (OT)",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("points", {
-        header: "Points",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Team Name",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "games_played",
+        header: "PLAYED",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Games Played",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "maps_won",
+        header: "WON",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Maps Won",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "maps_won_ot",
+        header: "WON (OT)",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Maps Won in Overtime",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "maps_lost",
+        header: "LOST",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Maps Lost",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "maps_lost_ot",
+        header: "LOST (OT)",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Maps Lost in Overtime",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "points",
+        header: "POINTS",
         cell: ({ getValue }) => (
-          <span className="font-semibold">{getValue()}</span>
+          <span className="font-semibold">{getValue<number>()}</span>
         ),
-        meta: { className: "text-center font-semibold" }
-      }),
-      columnHelper.accessor("rounds_won", {
-        header: "Rounds Won",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("rounds_lost", {
-        header: "Rounds Lost",
-        meta: { className: "text-center" }
-      }),
-      columnHelper.accessor("rounds_diff", {
-        header: "Round Diff",
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Points",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "rounds_won",
+        header: "ROUNDS WON",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Rounds Won",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "rounds_lost",
+        header: "ROUNDS LOST",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "hidden lg:table-cell",
+          tooltip: "Rounds Lost",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "rounds_diff",
+        header: "ROUND DIFF",
         cell: ({ getValue }) => {
-          const value = getValue();
+          const value = getValue<number>();
           return (
             <span
               className={cn(
@@ -98,21 +155,26 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
             </span>
           );
         },
-        meta: { className: "text-center" }
-      })
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Round Difference",
+          sortable: true
+        }
+      }
     ],
-    [columnHelper]
+    []
   );
 
+  // TanStack Table configuration
   const table = useReactTable({
     data,
     columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
     state: {
       sorting
     },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     initialState: {
       sorting: [
         { id: "points", desc: true },
@@ -167,77 +229,7 @@ export const StandingsTable = ({ data, isLoading }: StandingsTableProps) => {
         <CardTitle>League Standings</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="border-b">
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className={cn(
-                        "p-3 font-medium",
-                        (header.column.columnDef.meta as { className?: string })
-                          ?.className || "text-left",
-                        header.column.getCanSort()
-                          ? "cursor-pointer select-none hover:bg-muted/50"
-                          : ""
-                      )}
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center gap-2">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                        {header.column.getCanSort() && (
-                          <div className="flex flex-col">
-                            {header.column.getIsSorted() === "asc" ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : header.column.getIsSorted() === "desc" ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <div className="h-4 w-4 opacity-50">
-                                <ChevronUp className="h-2 w-4" />
-                                <ChevronDown className="h-2 w-4" />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b hover:bg-muted/50 transition-colors"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={cn(
-                        "p-3",
-                        (cell.column.columnDef.meta as { className?: string })
-                          ?.className || "text-left"
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <BaseTable table={table} showPagination={false} />
       </CardContent>
     </Card>
   );

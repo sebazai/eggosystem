@@ -192,11 +192,11 @@ describe("FlaggedMatchesTable", () => {
     it("displays all column headers", () => {
       render(<FlaggedMatchesTable />);
 
-      expect(screen.getByText("External Match ID")).toBeInTheDocument();
-      expect(screen.getByText("Team")).toBeInTheDocument();
-      expect(screen.getByText("Players")).toBeInTheDocument();
-      expect(screen.getByText("Match IDs")).toBeInTheDocument();
-      expect(screen.getByText("Added Players")).toBeInTheDocument();
+      expect(screen.getByText("EXTERNAL MATCH ID")).toBeInTheDocument();
+      expect(screen.getByText("TEAM")).toBeInTheDocument();
+      expect(screen.getByText("PLAYERS")).toBeInTheDocument();
+      expect(screen.getByText("MATCH IDS")).toBeInTheDocument();
+      expect(screen.getByText("ADDED PLAYERS")).toBeInTheDocument();
     });
 
     it("displays match data in table rows", () => {
@@ -314,15 +314,15 @@ describe("FlaggedMatchesTable", () => {
       render(<FlaggedMatchesTable />);
 
       const externalMatchIdHeaderDiv = screen
-        .getByText("External Match ID")
+        .getByText("EXTERNAL MATCH ID")
         .closest("div");
-      const teamHeaderDiv = screen.getByText("Team").closest("div");
+      const teamHeaderDiv = screen.getByText("TEAM").closest("div");
 
       expect(externalMatchIdHeaderDiv).toHaveClass("cursor-pointer");
       expect(teamHeaderDiv).toHaveClass("cursor-pointer");
 
       // Players, Match IDs, and Added Players should not be sortable
-      const playersHeaderDiv = screen.getByText("Players").closest("div");
+      const playersHeaderDiv = screen.getByText("PLAYERS").closest("div");
       expect(playersHeaderDiv).not.toHaveClass("cursor-pointer");
     });
 
@@ -363,7 +363,7 @@ describe("FlaggedMatchesTable", () => {
     it("allows sorting by External Match ID", async () => {
       render(<FlaggedMatchesTable />);
 
-      const externalMatchIdHeader = screen.getByText("External Match ID");
+      const externalMatchIdHeader = screen.getByText("EXTERNAL MATCH ID");
 
       // Click to sort
       fireEvent.click(externalMatchIdHeader);
@@ -379,25 +379,25 @@ describe("FlaggedMatchesTable", () => {
     it("allows sorting by Team", async () => {
       render(<FlaggedMatchesTable />);
 
-      const teamHeader = screen.getByText("Team");
+      const teamHeader = screen.getByText("TEAM");
 
       // Click to sort
       fireEvent.click(teamHeader);
 
       await waitFor(() => {
         // Verify sorting icons appear
-        const sortIcons = teamHeader.parentElement?.querySelectorAll("svg");
-        expect(sortIcons).toHaveLength(2); // ChevronUp and ChevronDown
+        const sortIcons = teamHeader.closest("th")?.querySelectorAll("svg");
+        expect(sortIcons).toHaveLength(1); // Only one icon shows at a time
       });
     });
 
     it("does not allow sorting on non-sortable columns", () => {
       render(<FlaggedMatchesTable />);
 
-      const playersHeaderDiv = screen.getByText("Players").closest("div");
-      const matchIdsHeaderDiv = screen.getByText("Match IDs").closest("div");
+      const playersHeaderDiv = screen.getByText("PLAYERS").closest("div");
+      const matchIdsHeaderDiv = screen.getByText("MATCH IDS").closest("div");
       const addedPlayersHeaderDiv = screen
-        .getByText("Added Players")
+        .getByText("ADDED PLAYERS")
         .closest("div");
 
       // These should not have click handlers

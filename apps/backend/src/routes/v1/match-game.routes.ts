@@ -14,6 +14,7 @@ import {
   getGameTopPlayersController,
   getGameClipController
 } from "../../controllers/match-games.controllers";
+import { getMatchIdByGameId } from "../../models/match-game.models";
 
 import { NotFoundError } from "../../utils/errors";
 
@@ -41,6 +42,19 @@ router.get(
       return next(new NotFoundError("Game not found"));
     }
     res.json(game);
+  }
+);
+
+router.get(
+  "/:match_game_id/match",
+  validateNumericParams(),
+  async (req: RequestWithParams<{ match_game_id: string }>, res, next) => {
+    const matchGameId = Number(req.params.match_game_id);
+    const [result] = await getMatchIdByGameId(matchGameId);
+    if (!result) {
+      return next(new NotFoundError("Game not found"));
+    }
+    res.json({ match_id: result.match_id });
   }
 );
 

@@ -1,5 +1,18 @@
 import { useFilteredTeamMapStats } from "@/hooks/data/filtered/useFilteredTeamMapStats";
 import { mapToReadableName, type FilterParamsQuery } from "@/lib/utils";
+import { BaseTable } from "../tables/BaseTable";
+import { useState, useMemo } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  type ColumnDef,
+  type SortingState
+} from "@tanstack/react-table";
+import type {
+  TeamMapStats as TeamMapStatsType,
+  CustomColumnMeta
+} from "@eggosystem/types";
 
 interface TeamMapStatsProps {
   teamId: number;
@@ -14,154 +27,143 @@ export const TeamMapStats = ({
     teamId,
     filterQueryParams
   });
+
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<TeamMapStatsType>[]>(
+    () => [
+      {
+        accessorKey: "map_name",
+        header: "MAP",
+        cell: ({ getValue }) => mapToReadableName(getValue<string>()),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Map Name",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "maps_played",
+        header: "PLAYED",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Maps Played",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "wins",
+        header: "WINS",
+        cell: ({ getValue }) => (
+          <span className="text-green-500">{getValue<number>()}</span>
+        ),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Maps Won",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "losses",
+        header: "LOSSES",
+        cell: ({ getValue }) => (
+          <span className="text-red-500">{getValue<number>()}</span>
+        ),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Maps Lost",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "win_percentage",
+        header: "WIN %",
+        cell: ({ getValue }) => {
+          const percentage = getValue<number>();
+          return (
+            <span
+              className={percentage > 50 ? "text-green-500" : "text-red-500"}
+            >
+              {percentage.toFixed(1)}%
+            </span>
+          );
+        },
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Win Percentage",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "avg_score",
+        header: "AVG SCORE",
+        cell: ({ getValue }) => getValue<string>(),
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Average Score",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "avg_opponent_score",
+        header: "AVG OPP SCORE",
+        cell: ({ getValue }) => getValue<string>(),
+        meta: {
+          responsive: "hidden md:table-cell",
+          tooltip: "Average Opponent Score",
+          sortable: true
+        }
+      }
+    ],
+    []
+  );
+
+  // TanStack Table configuration
+  const table = useReactTable({
+    data: teamMapStats || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: {
+      sorting
+    }
+  });
+
   if (isLoading || isValidating || !teamMapStats) {
-    // Show skeleton loader instead of empty fragment
     return (
-      <div className="bg-card rounded-md overflow-hidden mb-3 animate-pulse">
+      <div className="bg-card rounded-md overflow-hidden mb-3">
         <div className="p-4">
-          <div className="h-7 bg-gray-800 rounded w-1/3 mb-4"></div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-20"></div>
-                  </th>
-                  <th className="px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                  </th>
-                  <th className="px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                  </th>
-                  <th className="px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                  </th>
-                  <th className="px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                  </th>
-                  <th className="hidden md:table-cell px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                  </th>
-                  <th className="hidden md:table-cell px-3 py-2">
-                    <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...Array(5)].map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-24"></div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-16 mx-auto"></div>
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2">
-                      <div className="h-5 bg-gray-800 rounded w-10 mx-auto"></div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h2 className="text-xl font-semibold mb-2">Map Statistics</h2>
+          <div className="text-center">
+            <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
+            <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
           </div>
         </div>
       </div>
     );
   }
+
+  if (teamMapStats.length === 0) {
+    return (
+      <div className="bg-card rounded-md overflow-hidden mb-3">
+        <div className="p-4">
+          <h2 className="text-xl font-semibold mb-2">Map Statistics</h2>
+          <div className="text-center text-muted-foreground">
+            No map statistics available for this team with the current filters.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card rounded-md overflow-hidden mb-3">
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-2">Map Statistics</h2>
-        <div className="overflow-x-auto">
-          <table className="text-sm sm:text-base w-full">
-            <thead>
-              <tr className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange">
-                <th className="px-3 py-2 text-left whitespace-nowrap font-semibold">
-                  MAP
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  PLAYED
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  WINS
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  LOSSES
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  WIN %
-                </th>
-                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  AVG SCORE
-                </th>
-                <th className="hidden md:table-cell px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  AVG OPP SCORE
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-kanaliiga-light-brown/10">
-              {teamMapStats.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-3 py-4 text-center text-muted-foreground"
-                  >
-                    No map statistics available
-                  </td>
-                </tr>
-              ) : (
-                teamMapStats.map((mapStat) => (
-                  <tr
-                    key={mapStat.map_id}
-                    className="hover:bg-kanaliiga-light-brown/10"
-                  >
-                    <td className="px-3 py-2 text-left">
-                      {mapToReadableName(mapStat.map_name)}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {mapStat.maps_played}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-500">
-                      {mapStat.wins}
-                    </td>
-                    <td className="px-3 py-2 text-center text-red-500">
-                      {mapStat.losses}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <span
-                        className={
-                          mapStat.win_percentage > 50
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }
-                      >
-                        {mapStat.win_percentage.toFixed(1)}%
-                      </span>
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {mapStat.avg_score}
-                    </td>
-                    <td className="hidden md:table-cell px-3 py-2 text-center">
-                      {mapStat.avg_opponent_score}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <BaseTable table={table} showPagination={false} />
       </div>
     </div>
   );

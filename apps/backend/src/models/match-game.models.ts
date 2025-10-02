@@ -392,7 +392,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   }
 };
 
-const getMatchIdByGameId = async (
+export const getMatchIdByGameId = async (
   matchGameId: number,
   connection?: PoolConnection
 ) => {

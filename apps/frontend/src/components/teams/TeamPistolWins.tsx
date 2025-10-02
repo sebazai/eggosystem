@@ -2,6 +2,16 @@
 
 import { useFilteredTeamPistolWins } from "@/hooks/data/filtered/useFilteredTeamPistolWins";
 import { mapToReadableName, type FilterParamsQuery } from "@/lib/utils";
+import { BaseTable } from "../tables/BaseTable";
+import { useState, useMemo } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  type ColumnDef,
+  type SortingState
+} from "@tanstack/react-table";
+import type { TeamPistolWinStat, CustomColumnMeta } from "@eggosystem/types";
 
 interface TeamPistolWinsProps {
   teamId: number;
@@ -19,78 +29,115 @@ export const TeamPistolWins = ({
     }
   );
 
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<TeamPistolWinStat>[]>(
+    () => [
+      {
+        accessorKey: "map_name",
+        header: "MAP",
+        cell: ({ getValue }) => mapToReadableName(getValue<string>()),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Map Name",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "pistol_rounds_played",
+        header: "PLAYED",
+        cell: ({ getValue }) => getValue<number>(),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Pistol Rounds Played",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "pistol_rounds_won",
+        header: "WINS",
+        cell: ({ getValue }) => (
+          <span className="text-green-500">{getValue<number>()}</span>
+        ),
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Pistol Rounds Won",
+          sortable: true
+        }
+      },
+      {
+        accessorKey: "pistol_win_percentage",
+        header: "WIN %",
+        cell: ({ getValue }) => {
+          const percentage = getValue<number>();
+          return (
+            <span
+              className={percentage > 50 ? "text-green-500" : "text-red-500"}
+            >
+              {percentage.toFixed(1)}%
+            </span>
+          );
+        },
+        meta: {
+          responsive: "table-cell",
+          tooltip: "Pistol Win Percentage",
+          sortable: true
+        }
+      }
+    ],
+    []
+  );
+
+  // TanStack Table configuration
+  const table = useReactTable({
+    data: teamPistolWins || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: {
+      sorting
+    }
+  });
+
   if (isLoading || isValidating) {
-    // SKELETON
-    return <></>;
+    return (
+      <div className="bg-card rounded-md overflow-hidden mb-3">
+        <div className="p-4">
+          <h2 className="text-xl font-semibold mb-2">
+            Pistol Round Statistics
+          </h2>
+          <div className="text-center">
+            <div className="h-6 w-40 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto mb-3" />
+            <div className="h-4 w-60 bg-kanaliiga-light-brown/30 animate-pulse rounded mx-auto" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Make sure teamPistolWins exists and is an array
-  const pistolStats = Array.isArray(teamPistolWins) ? teamPistolWins : [];
+  if (!teamPistolWins || teamPistolWins.length === 0) {
+    return (
+      <div className="bg-card rounded-md overflow-hidden mb-3">
+        <div className="p-4">
+          <h2 className="text-xl font-semibold mb-2">
+            Pistol Round Statistics
+          </h2>
+          <div className="text-center text-muted-foreground">
+            No pistol round statistics available for this team with the current
+            filters.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-md overflow-hidden mb-3">
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-2">Pistol Round Statistics</h2>
-        <div className="overflow-x-auto">
-          <table className="text-sm sm:text-base w-full">
-            <thead>
-              <tr className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange">
-                <th className="px-3 py-2 text-left whitespace-nowrap font-semibold">
-                  MAP
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  PLAYED
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  WINS
-                </th>
-                <th className="px-3 py-2 text-center whitespace-nowrap font-semibold">
-                  WIN %
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-kanaliiga-light-brown/10">
-              {pistolStats.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-3 py-4 text-center text-muted-foreground"
-                  >
-                    No pistol round statistics available
-                  </td>
-                </tr>
-              ) : (
-                pistolStats.map((pistolStat) => (
-                  <tr
-                    key={pistolStat.map_id}
-                    className="hover:bg-kanaliiga-light-brown/10"
-                  >
-                    <td className="px-3 py-2 text-left">
-                      {mapToReadableName(pistolStat.map_name)}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {pistolStat.pistol_rounds_played}
-                    </td>
-                    <td className="px-3 py-2 text-center text-green-500">
-                      {pistolStat.pistol_rounds_won}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      <span
-                        className={
-                          pistolStat.pistol_win_percentage > 50
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }
-                      >
-                        {pistolStat.pistol_win_percentage.toFixed(1)}%
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <BaseTable table={table} showPagination={false} />
       </div>
     </div>
   );

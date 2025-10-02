@@ -32,6 +32,7 @@ export * from "./standings/index";
 export * from "./season-league-external-id/index";
 export * from "./csrankker/index";
 export * from "./caster/index";
+export * from "./tables/index";
 export * from "./test/fixtures";
 export * from "./test/e2e-test-data";
 export * from "./test/mocks";
