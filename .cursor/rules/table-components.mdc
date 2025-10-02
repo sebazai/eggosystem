@@ -1,0 +1,31 @@
+# Table Components Rule
+
+**Always use BaseTable for table implementations**
+
+When creating or refactoring tables in the frontend, always use the `BaseTable` component from `@/components/tables/BaseTable` instead of manual HTML table implementations. This ensures consistency, responsive design, sorting, pagination, and other table features across the application.
+
+The `BaseTable` component supports:
+
+- Responsive column visibility
+- Sorting with visual indicators
+- Pagination (client-side and server-side)
+- Row expansion
+- Row selection
+- Custom styling and cell content
+- Tooltips and accessibility features
+
+Example usage:
+
+```typescript
+import { BaseTable } from "@/components/tables/BaseTable";
+import { useReactTable, getCoreRowModel, getSortedRowModel } from "@tanstack/react-table";
+
+const table = useReactTable({
+  data,
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+});
+
+return <BaseTable table={table} />;
+```
