@@ -221,9 +221,9 @@ describe("CaptainsPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Team Captains - Season 14")).toBeInTheDocument();
       // The table should be empty but still render
-      expect(screen.getByText("TEAM")).toBeInTheDocument();
-      expect(screen.getByText("CAPTAIN")).toBeInTheDocument();
-      expect(screen.getByText("CO-CAPTAIN")).toBeInTheDocument();
+      expect(screen.getByText("Team")).toBeInTheDocument();
+      expect(screen.getByText("Captain")).toBeInTheDocument();
+      expect(screen.getByText("Co-Captain")).toBeInTheDocument();
     });
   });
 });

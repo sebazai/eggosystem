@@ -313,13 +313,13 @@ describe("FlaggedMatchesTable", () => {
     it("displays sortable column headers with sort icons", () => {
       render(<FlaggedMatchesTable />);
 
-      const externalMatchIdHeaderDiv = screen
+      const externalMatchIdHeader = screen
         .getByText("EXTERNAL MATCH ID")
-        .closest("div");
-      const teamHeaderDiv = screen.getByText("TEAM").closest("div");
+        .closest("th");
+      const teamHeader = screen.getByText("TEAM").closest("th");
 
-      expect(externalMatchIdHeaderDiv).toHaveClass("cursor-pointer");
-      expect(teamHeaderDiv).toHaveClass("cursor-pointer");
+      expect(externalMatchIdHeader).toHaveClass("cursor-pointer");
+      expect(teamHeader).toHaveClass("cursor-pointer");
 
       // Players, Match IDs, and Added Players should not be sortable
       const playersHeaderDiv = screen.getByText("PLAYERS").closest("div");
@@ -332,19 +332,19 @@ describe("FlaggedMatchesTable", () => {
       const rows = screen.getAllByRole("row");
       const firstDataRow = rows[1]; // Skip header row
 
-      expect(firstDataRow).toHaveClass("hover:bg-muted/50");
+      expect(firstDataRow).toHaveClass("hover:bg-kanaliiga-light-brown/10");
     });
 
     it("applies responsive classes to columns", () => {
       render(<FlaggedMatchesTable />);
 
       // Match IDs column should be hidden on mobile
-      const matchIdsHeader = screen.getByText("Match IDs").closest("th");
+      const matchIdsHeader = screen.getByText("MATCH IDS").closest("th");
       expect(matchIdsHeader).toHaveClass("hidden", "md:table-cell");
 
       // Added Players column should be hidden on smaller screens
       const addedPlayersHeader = screen
-        .getByText("Added Players")
+        .getByText("ADDED PLAYERS")
         .closest("th");
       expect(addedPlayersHeader).toHaveClass("hidden", "lg:table-cell");
     });
@@ -372,7 +372,7 @@ describe("FlaggedMatchesTable", () => {
         // Verify sorting icons appear
         const sortIcons =
           externalMatchIdHeader.parentElement?.querySelectorAll("svg");
-        expect(sortIcons).toHaveLength(2); // ChevronUp and ChevronDown
+        expect(sortIcons).toHaveLength(1); // Only one icon shows at a time
       });
     });
 
