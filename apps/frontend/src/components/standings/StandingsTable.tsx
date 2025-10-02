@@ -11,10 +11,7 @@ import {
   type SortingState
 } from "@tanstack/react-table";
 import { BaseTable } from "../tables/BaseTable";
-import type {
-  StandingsFaceitTeamStats,
-  CustomColumnMeta
-} from "@eggosystem/types";
+import type { StandingsFaceitTeamStats } from "@eggosystem/types";
 
 interface StandingsTableProps {
   data: StandingsFaceitTeamStats[];

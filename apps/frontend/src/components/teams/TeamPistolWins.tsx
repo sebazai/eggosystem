@@ -11,7 +11,7 @@ import {
   type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
-import type { TeamPistolWinStat, CustomColumnMeta } from "@eggosystem/types";
+import type { TeamPistolWinStat } from "@eggosystem/types";
 
 interface TeamPistolWinsProps {
   teamId: number;

@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BaseTable } from "../../tables/BaseTable";
-import type { FlaggedMatches, CustomColumnMeta } from "@eggosystem/types";
+import type { FlaggedMatches } from "@eggosystem/types";
 import { useFlaggedMatches } from "@/hooks/data/dashboard/useFlaggedMatches";
 import { TeamBadge } from "./TeamBadge";
 import { PlayerBadge } from "./PlayerBadge";

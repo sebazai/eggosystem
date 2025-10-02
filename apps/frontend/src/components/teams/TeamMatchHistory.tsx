@@ -20,10 +20,7 @@ import {
   type SortingState,
   type PaginationState
 } from "@tanstack/react-table";
-import type {
-  TeamMatchHistory as TeamMatchHistoryType,
-  CustomColumnMeta
-} from "@eggosystem/types";
+import type { TeamMatchHistory as TeamMatchHistoryType } from "@eggosystem/types";
 
 interface TeamMatchHistoryProps {
   teamId: number;

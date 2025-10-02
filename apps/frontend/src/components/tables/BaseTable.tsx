@@ -35,7 +35,6 @@ interface BaseTableProps<TData> {
   enableRowExpansion?: boolean;
   renderExpandedRow?: (row: TData) => React.ReactNode;
   enableRowSelection?: boolean;
-  onRowSelectionChange?: (selectedRows: TData[]) => void;
 }
 
 export function BaseTable<TData>({
@@ -50,8 +49,7 @@ export function BaseTable<TData>({
   customPagination,
   enableRowExpansion = false,
   renderExpandedRow,
-  enableRowSelection = false,
-  onRowSelectionChange
+  enableRowSelection = false
 }: BaseTableProps<TData>) {
   return (
     <TooltipProvider>

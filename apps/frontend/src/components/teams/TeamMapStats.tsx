@@ -9,10 +9,7 @@ import {
   type ColumnDef,
   type SortingState
 } from "@tanstack/react-table";
-import type {
-  TeamMapStats as TeamMapStatsType,
-  CustomColumnMeta
-} from "@eggosystem/types";
+import type { TeamMapStats as TeamMapStatsType } from "@eggosystem/types";
 
 interface TeamMapStatsProps {
   teamId: number;

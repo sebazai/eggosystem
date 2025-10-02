@@ -277,7 +277,7 @@ export const FailedParseTable = ({
 
   const customCellClassName = (
     cell: Cell<FailedParseMessage, unknown>,
-    row: FailedParseMessage
+    _row: FailedParseMessage
   ) => {
     return `px-4 py-3 text-sm text-left ${
       (cell.column.columnDef.meta as CustomColumnMeta)?.responsive || ""

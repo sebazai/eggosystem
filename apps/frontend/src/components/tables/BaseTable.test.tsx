@@ -6,7 +6,9 @@ import {
   getSortedRowModel,
   getExpandedRowModel,
   type ColumnDef,
-  type SortingState
+  type SortingState,
+  type Table,
+  type Row
 } from "@tanstack/react-table";
 import { useState } from "react";
 import type { CustomColumnMeta } from "@eggosystem/types";
@@ -49,7 +51,7 @@ const TestBaseTableComponent = ({
       ? [
           {
             id: "select",
-            header: ({ table }) => (
+            header: ({ table }: { table: Table<TestData> }) => (
               <input
                 type="checkbox"
                 checked={table.getIsAllPageRowsSelected()}
@@ -57,7 +59,7 @@ const TestBaseTableComponent = ({
                 className="w-4 h-4"
               />
             ),
-            cell: ({ row }) => (
+            cell: ({ row }: { row: Row<TestData> }) => (
               <input
                 type="checkbox"
                 checked={row.getIsSelected()}
@@ -78,7 +80,7 @@ const TestBaseTableComponent = ({
           {
             id: "expander",
             header: () => null,
-            cell: ({ row }) => (
+            cell: ({ row }: { row: Row<TestData> }) => (
               <button
                 className="flex items-center justify-center w-6 h-6"
                 onClick={row.getToggleExpandedHandler()}
@@ -300,9 +302,10 @@ describe("BaseTable with Row Expansion", () => {
     render(<TestBaseTableComponent enableRowExpansion={true} />);
 
     const firstExpandButton = screen.getAllByLabelText("Expand")[0];
+    expect(firstExpandButton).toBeInTheDocument();
 
     // Click to expand
-    fireEvent.click(firstExpandButton);
+    fireEvent.click(firstExpandButton!);
 
     // Check that expanded content is shown
     expect(screen.getByText("Details for Item 1")).toBeInTheDocument();
@@ -312,7 +315,9 @@ describe("BaseTable with Row Expansion", () => {
     expect(screen.getAllByLabelText("Collapse")[0]).toBeInTheDocument();
 
     // Click to collapse
-    fireEvent.click(screen.getAllByLabelText("Collapse")[0]);
+    const collapseButton = screen.getAllByLabelText("Collapse")[0];
+    expect(collapseButton).toBeInTheDocument();
+    fireEvent.click(collapseButton!);
 
     // Check that expanded content is hidden
     expect(screen.queryByText("Details for Item 1")).not.toBeInTheDocument();
@@ -333,9 +338,10 @@ describe("BaseTable with Row Selection", () => {
 
     const checkboxes = screen.getAllByRole("checkbox");
     const firstRowCheckbox = checkboxes[1]; // Skip header checkbox
+    expect(firstRowCheckbox).toBeInTheDocument();
 
     // Select first row
-    fireEvent.click(firstRowCheckbox);
+    fireEvent.click(firstRowCheckbox!);
     expect(firstRowCheckbox).toBeChecked();
 
     // Check that row has selected styling
@@ -348,9 +354,10 @@ describe("BaseTable with Row Selection", () => {
 
     const checkboxes = screen.getAllByRole("checkbox");
     const selectAllCheckbox = checkboxes[0];
+    expect(selectAllCheckbox).toBeInTheDocument();
 
     // Select all
-    fireEvent.click(selectAllCheckbox);
+    fireEvent.click(selectAllCheckbox!);
 
     // Check that select all checkbox is checked
     expect(selectAllCheckbox).toBeChecked();
