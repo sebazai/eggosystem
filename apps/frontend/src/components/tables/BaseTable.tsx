@@ -32,7 +32,6 @@ interface BaseTableProps<TData> {
   paginationType?: string;
   customRowClassName?: (row: TData) => string;
   customCellClassName?: (cell: Cell<TData, unknown>, row: TData) => string;
-  mobileHeaders?: React.ReactNode;
   customCellContent?: (
     cell: Cell<TData, unknown>,
     row: TData
@@ -47,7 +46,6 @@ export function BaseTable<TData>({
   paginationType = "default",
   customRowClassName,
   customCellClassName,
-  mobileHeaders,
   customCellContent
 }: BaseTableProps<TData>) {
   return (
@@ -56,8 +54,8 @@ export function BaseTable<TData>({
         <div className="overflow-auto">
           <table className="text-sm sm:text-base w-full">
             <thead>
-              {/* Desktop headers */}
-              <tr className="hidden bg-kanaliiga-light-brown/30 xxs:table-row uppercase text-kanaliiga-orange">
+              {/* Headers */}
+              <tr className="bg-kanaliiga-light-brown/30 uppercase text-kanaliiga-orange">
                 {table.getHeaderGroups().map((headerGroup) =>
                   headerGroup.headers.map((header) => (
                     <th
@@ -106,9 +104,6 @@ export function BaseTable<TData>({
                   ))
                 )}
               </tr>
-
-              {/* Mobile headers */}
-              {mobileHeaders}
             </thead>
             <tbody className="divide-y divide-kanaliiga-light-brown/10">
               {table.getRowModel().rows.map((row) => {

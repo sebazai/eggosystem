@@ -342,26 +342,6 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
     return flexRender(cell.column.columnDef.cell, cell.getContext());
   };
 
-  const mobileHeaders = (
-    <tr className="sm:hidden bg-kanaliiga-light-brown/30 text-xs uppercase text-kanaliiga-orange">
-      <th className="px-3 py-2 text-left whitespace-nowrap font-semibold text-kanaliiga-orange">
-        OPPONENT
-      </th>
-      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-        RATING
-      </th>
-      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-        K
-      </th>
-      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-        D
-      </th>
-      <th className="px-3 py-2 text-center whitespace-nowrap font-semibold text-kanaliiga-orange">
-        ADR
-      </th>
-    </tr>
-  );
-
   if (isError) {
     return (
       <PlayerMatchHistoryTableWrapper>
@@ -405,7 +385,6 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
         paginationType="matches"
         customCellClassName={customCellClassName}
         customCellContent={customCellContent}
-        mobileHeaders={mobileHeaders}
       />
     </PlayerMatchHistoryTableWrapper>
   );
