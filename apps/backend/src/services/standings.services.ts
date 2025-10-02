@@ -262,7 +262,7 @@ export const getStandingsLeagues = async (seasonId: number) => {
      JOIN SeasonLeagues sl ON slei.season_id = sl.season_id AND slei.league_id = sl.league_id
      JOIN Leagues l ON sl.league_id = l.id
      JOIN Seasons s ON slei.season_id = s.id
-    WHERE slei.season_id = ?
+    WHERE slei.season_id = ? AND slei.stage_id = 1
     ORDER BY l.sort_priority ASC, slei.external_league_name ASC
   `;
 
