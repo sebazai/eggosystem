@@ -18,7 +18,7 @@ export const getPlayerHistoricalData = async (
     periodClause = `AND m.season_id = (
       SELECT s.id
       FROM Seasons s
-      JOIN Games g ON s.match_game_id = g.id
+      JOIN Games g ON s.game_id = g.id
       WHERE g.app_id = 730
         AND s.start_date <= NOW() 
         AND (s.end_date IS NULL OR s.end_date >= NOW())
@@ -29,7 +29,7 @@ export const getPlayerHistoricalData = async (
     periodClause = `AND m.season_id = (
       SELECT s.id
       FROM Seasons s
-      JOIN Games g ON s.match_game_id = g.id
+      JOIN Games g ON s.game_id = g.id
       WHERE g.app_id = 730
         AND s.end_date IS NOT NULL
         AND s.end_date < NOW()
