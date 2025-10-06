@@ -112,8 +112,8 @@ export interface FaceitMatchResultsFinished {
 // Detailed results interface for finished matches (with actual data)
 export interface FaceitDetailedResultsFinished {
   asc_score: boolean;
-  winner: string;
-  factions: Record<string, FaceitFactionScore>;
+  winner: "faction1" | "faction2";
+  factions: Record<"faction1" | "faction2", FaceitFactionScore>;
 }
 
 // Score breakdown interface for faction scores
@@ -199,6 +199,9 @@ export const FaceitMatchResultsFinishedSchema = z.object({
 
 export const FaceitDetailedResultsFinishedSchema = z.object({
   asc_score: z.boolean(),
-  winner: z.string(),
-  factions: z.record(z.string(), FaceitFactionScoreSchema)
+  winner: z.union([z.literal("faction1"), z.literal("faction2")]),
+  factions: z.record(
+    z.union([z.literal("faction1"), z.literal("faction2")]),
+    FaceitFactionScoreSchema
+  )
 });

@@ -3,7 +3,8 @@ import {
   type ChampionshipDetailsFinished,
   type Match,
   type StandingsFaceitTeamStats,
-  type StandingsLeagues
+  type StandingsLeagues,
+  type Season
 } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
@@ -26,6 +27,10 @@ interface FaceitMatchResponse {
 }
 
 const FACEIT_API_TOKEN = process.env.FACEIT_API_KEY;
+
+interface FaceitMatchFromDb extends Match {
+  is_round_robin_bo2_as_2xbo1: Season["is_round_robin_bo2_as_2xbo1"];
+}
 
 const getFaceitMatchesFromDbForFaceitLeague = async (
   externalLeagueId: string,
@@ -56,7 +61,7 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
       END
   `;
 
-  const matches = await runQuery<Match[]>(query, params);
+  const matches = await runQuery<Array<FaceitMatchFromDb>>(query, params);
   return matches;
 };
 
@@ -120,22 +125,27 @@ const getFaceitMatchInfoForForfeit = async (
 ): Promise<StandingsFaceitTeamStats[]> => {
   const matchDetails =
     await getFaceITMatchDetails<ChampionshipDetailsFinished>(faceitMatchId);
-  const winnerFaction = matchDetails.results.winner;
-  const winnerTeamName = matchDetails.teams[winnerFaction].name;
   const data: StandingsFaceitTeamStats[] = Object.values(
-    matchDetails.teams
-  ).map((team) => ({
-    team_name: team.name,
-    games_played: 1,
-    maps_won: winnerTeamName === team.name ? 1 : 0,
-    maps_won_ot: 0,
-    maps_lost: winnerTeamName === team.name ? 0 : 1,
-    maps_lost_ot: 0,
-    points: winnerTeamName === team.name ? 3 : 0,
-    rounds_won: winnerTeamName === team.name ? 6 : -6,
-    rounds_lost: 0,
-    rounds_diff: winnerTeamName === team.name ? 6 : -6
-  }));
+    matchDetails.detailed_results
+  ).flatMap((result) => {
+    const winnerFaction = result.winner;
+    const winnerTeamName = matchDetails.teams[winnerFaction].name;
+    const data = Object.values(matchDetails.teams).map((team) => {
+      return {
+        team_name: team.name,
+        games_played: 1,
+        maps_won: winnerTeamName === team.name ? 1 : 0,
+        maps_won_ot: 0,
+        maps_lost: winnerTeamName === team.name ? 0 : 1,
+        maps_lost_ot: 0,
+        points: winnerTeamName === team.name ? 3 : 0,
+        rounds_won: winnerTeamName === team.name ? 6 : -6,
+        rounds_lost: 0,
+        rounds_diff: winnerTeamName === team.name ? 6 : -6
+      };
+    });
+    return data;
+  });
   return data;
 };
 
@@ -199,26 +209,38 @@ export const getDivStandings = async (
   const matchesRaw =
     await getFaceitMatchesFromDbForFaceitLeague(faceitLeagueId);
   const matches = matchesRaw.filter(
-    (match): match is Match & { external_match_room_id: string } =>
+    (match): match is FaceitMatchFromDb & { external_match_room_id: string } =>
       match.external_match_room_id !== null
   );
+
+  const matchExternalIdParsed: Map<string, true> = new Map();
 
   // Get stats for each match
   const teamStatsArray: StandingsFaceitTeamStats[][] = [];
   for (const match of matches) {
+    if (
+      matchExternalIdParsed.has(match.external_match_room_id) &&
+      match.is_round_robin_bo2_as_2xbo1
+    ) {
+      continue;
+    }
     if (match.status === "FORFEIT") {
       const stats = await getFaceitMatchInfoForForfeit(
         match.external_match_room_id
       );
       teamStatsArray.push(stats);
+    } else {
+      const faceitMatchStats = await getFaceitMatchStats(
+        match.external_match_room_id
+      );
+      const stats =
+        await extractPointsFromFaceitMatchStatsResponse(faceitMatchStats);
+      teamStatsArray.push(stats);
+    }
+    if (match.is_round_robin_bo2_as_2xbo1) {
+      matchExternalIdParsed.set(match.external_match_room_id, true);
       continue;
     }
-    const faceitMatchStats = await getFaceitMatchStats(
-      match.external_match_room_id
-    );
-    const stats =
-      await extractPointsFromFaceitMatchStatsResponse(faceitMatchStats);
-    teamStatsArray.push(stats);
   }
 
   // Combine stats for each team by team_name
