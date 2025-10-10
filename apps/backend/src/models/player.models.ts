@@ -232,7 +232,7 @@ export const getMultiplePlayerStatsByFilters = async ({
 
 export const getPlayerMatchHistoryByFilters = async (
   steam_id: string,
-  { season_ids, league_ids, team_ids, stages }: ParsedParams
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
 ) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
@@ -248,6 +248,7 @@ export const getPlayerMatchHistoryByFilters = async (
       value: league_ids
     },
     { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids },
     { column: "sp.steam_id", value: [steam_id] }
   ]);
 
@@ -482,7 +483,7 @@ export const getPlayerGameDetailsWithFilters = async (
 
 export const getAllPlayerStatsWithPartialQueryFilters = async (
   steam_id: string,
-  { season_ids, league_ids, team_ids }: ParsedParams
+  { season_ids, league_ids, team_ids, stages, map_ids }: ParsedParams
 ) => {
   const { query, queryParams } = generateQueryWithFilters([
     {
@@ -497,6 +498,8 @@ export const getAllPlayerStatsWithPartialQueryFilters = async (
       column: "m.league_id",
       value: league_ids
     },
+    { column: "m.stage", value: stages },
+    { column: "mg.map_id", value: map_ids },
     { column: "p.steam_id", value: [steam_id] }
   ]);
 

@@ -76,12 +76,8 @@ function PlayerTabLayoutContent({
     <>
       <PlayerDetailsHeader steamId={steamId} />
       <CardContainer>
-        <div className="py-4">
-          <MultiFilters
-            {...filterParams}
-            steamId={steamId}
-            hideFilters={{ stages: true, maps: true }}
-          />
+        <div className="p-4">
+          <MultiFilters {...filterParams} steamId={steamId} />
         </div>
       </CardContainer>
 
