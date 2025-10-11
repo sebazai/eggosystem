@@ -13,6 +13,7 @@ import {
   XCircle,
   Users2
 } from "lucide-react";
+import { SteamLoginButton } from "../profile/SteamLoginButton";
 
 interface FaceitLinkCardProps {
   link: {
@@ -235,8 +236,24 @@ export const FaceitLinksPage = ({
   seasonId: string;
   seasonName: string;
 }) => {
-  const { user: _user } = useAuth();
+  const { user } = useAuth();
   const data = useFaceitLinks(seasonId);
+
+  if (!user) {
+    return (
+      <div className="mx-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-card border rounded-lg p-8 text-center items-center">
+            <h1 className="text-2xl font-bold mb-4">Error Loading Links</h1>
+            <p className=" text-lg">You must be logged in to view this page.</p>
+            <div className="flex justify-center">
+              <SteamLoginButton />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (data.isLoading || data.isValidating) {
     return (

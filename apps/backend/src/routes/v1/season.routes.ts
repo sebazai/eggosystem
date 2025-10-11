@@ -25,9 +25,14 @@ router.get(
 router.get(
   "/:season_id/leagues",
   validateNumericParams(),
+
   getLeaguesBySeasonController
 );
-router.get("/:season_id/faceit-links", getFaceitLinksForSeasonController);
+router.get(
+  "/:season_id/faceit-links",
+  authenticateJWT,
+  getFaceitLinksForSeasonController
+);
 
 router.get(
   "/:season_id/captains",
