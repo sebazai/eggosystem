@@ -132,6 +132,8 @@ describe("Match Routes", () => {
           id: 10338,
           map_name: "de_ancient",
           demofile: "pug_server30_de_ancient_2023-01-31_22-27-16.dem",
+          match_id: 7405,
+          map_order: null,
           team1_score: 16,
           team2_score: 12
         },
@@ -139,6 +141,8 @@ describe("Match Routes", () => {
           id: 10339,
           map_name: "de_inferno",
           demofile: "pug_server30_de_inferno_2023-01-31_21-05-16.dem",
+          match_id: 7405,
+          map_order: null,
           team1_score: 16,
           team2_score: 19
         },
@@ -146,6 +150,8 @@ describe("Match Routes", () => {
           id: 10340,
           map_name: "de_overpass",
           demofile: "pug_server30_de_overpass_2023-01-31_23-26-39.dem",
+          match_id: 7405,
+          map_order: null,
           team1_score: 16,
           team2_score: 14
         }

@@ -846,6 +846,8 @@ describe("Matches Controllers", () => {
         {
           id: 1,
           map_name: "de_dust2",
+          match_id: 123,
+          map_order: null,
           demofile: "demo.dem",
           team1_score: 16,
           team2_score: 13

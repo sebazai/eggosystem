@@ -52,7 +52,11 @@ export const MatchStats = ({
 
   return (
     <div className="space-y-4 p-1 sm:p-3">
-      <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
+      <MatchMapPicks
+        matchId={matchId}
+        handleMapSelect={handleMapSelect}
+        externalMatchRoomId={matchInfo.external_match_room_id}
+      />
       <MatchMapsHeader
         matchId={matchId}
         externalMatchRoomUrl={externalMatchRoomUrl}

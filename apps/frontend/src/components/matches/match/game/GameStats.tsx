@@ -22,6 +22,7 @@ interface MatchStatsProps {
   matchGameId: number;
   platform: SeasonPlatform;
   matchInfo: MatchInfo;
+  externalMatchRoomId: string | null;
   externalMatchRoomUrl: string | null;
 }
 
@@ -30,6 +31,7 @@ export const GameStats = ({
   matchGameId,
   platform,
   matchInfo,
+  externalMatchRoomId,
   externalMatchRoomUrl
 }: MatchStatsProps) => {
   const router = useRouter();
@@ -37,11 +39,17 @@ export const GameStats = ({
     "CT" | "T" | undefined
   >(undefined);
 
-  const handleMapSelect = (matchGameId: number | undefined) => {
+  const handleMapSelect = (
+    matchGameId: number | undefined,
+    matchId?: number
+  ) => {
     // Generate the new URL based on the selected matchGameId
-    const newUrl = matchGameId
-      ? `/matches/${matchId}/games/${matchGameId}`
-      : `/matches/${matchId}`;
+    const newUrl =
+      matchGameId && matchId
+        ? `/matches/${matchId}/games/${matchGameId}`
+        : matchId
+          ? `/matches/${matchId}`
+          : `/matches/${matchId}`;
 
     // Use router.push or router.replace to navigate without reloading the page
     router.push(newUrl, { scroll: false });
@@ -60,7 +68,11 @@ export const GameStats = ({
 
   return (
     <div className="space-y-4 sm:space-y-10 p-1 sm:p-3">
-      <MatchMapPicks matchId={matchId} handleMapSelect={handleMapSelect} />
+      <MatchMapPicks
+        matchId={matchId}
+        handleMapSelect={handleMapSelect}
+        externalMatchRoomId={externalMatchRoomId}
+      />
 
       <MatchMapsHeader
         matchId={matchId}

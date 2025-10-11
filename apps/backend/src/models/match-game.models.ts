@@ -392,6 +392,19 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
   }
 };
 
+export const getMatchGamesByExternalMatchRoomId = async (
+  externalMatchRoomId: string,
+  connection?: PoolConnection
+) => {
+  const query = `SELECT mg.* FROM MatchGames mg JOIN Matches m ON mg.match_id = m.id WHERE m.external_match_room_id = ?`;
+  const games = await runQuery<Array<MatchGame>>(
+    query,
+    [externalMatchRoomId],
+    connection
+  );
+  return games;
+};
+
 export const getMatchIdByGameId = async (
   matchGameId: number,
   connection?: PoolConnection

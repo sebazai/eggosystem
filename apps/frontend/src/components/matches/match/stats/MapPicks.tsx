@@ -7,19 +7,29 @@ import {
   createTeamLogoUrl
 } from "@/lib/utils";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
+import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchGamesByExternalMatchRoomId";
+import { useMemo } from "react";
 
 interface MatchMapPicksProps {
   matchId: number;
-  handleMapSelect: (mapId?: number) => void;
+  handleMapSelect: (matchGameId?: number, matchId?: number) => void;
+  externalMatchRoomId: string | null;
 }
 
 export const MatchMapPicks = ({
   matchId,
-  handleMapSelect
+  handleMapSelect,
+  externalMatchRoomId
 }: MatchMapPicksProps) => {
   const { maps } = useMatchMaps(matchId);
   const { vetoes } = useMatchMapVetoes(matchId);
   const { matchInfo } = useMatchInfo(String(matchId));
+  const { games } = useGetMatchGamesByExternalMatchRoomId(
+    externalMatchRoomId,
+    vetoes?.filter((veto) => veto.action !== "drop").length === 2
+  );
+  const theOtherGame = games?.find((game) => game.match_id !== matchId);
+  const { maps: theOtherGameMaps } = useMatchMaps(theOtherGame?.match_id);
 
   // Helper to get team info by id
   const getTeam = (teamId: number) =>
@@ -28,43 +38,54 @@ export const MatchMapPicks = ({
   // If vetoes exist, show vetoes UI, else fallback to maps
   const showVetoes = vetoes && vetoes.length > 0;
 
+  const allMatchGameMaps = useMemo(() => {
+    return [...(maps || []), ...(theOtherGameMaps || [])];
+  }, [maps, theOtherGameMaps]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
       {/* Picked Maps Scores */}
       <div className="w-full">
-        {maps?.map((map, index) => {
-          return (
-            <div
-              key={index}
-              className="relative flex flex-1 min-h-10 items-center cursor-pointer overflow-hidden rounded my-1 border-1 border-transparent hover:border-1 hover:border-kanaliiga-orange"
-              onClick={() => handleMapSelect(map.id ?? undefined)}
-            >
+        {allMatchGameMaps
+          .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
+          .map((mapMatchGame, index) => {
+            return (
               <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${createNextUrl(`/images/maps/${map.map_name}.png`)})`,
-                  filter: "brightness(0.6)"
-                }}
-              />
+                key={index}
+                className="relative flex flex-1 min-h-10 items-center cursor-pointer overflow-hidden rounded my-1 border-1 border-transparent hover:border-1 hover:border-kanaliiga-orange"
+                onClick={() =>
+                  handleMapSelect(
+                    mapMatchGame.id ?? undefined,
+                    mapMatchGame.match_id
+                  )
+                }
+              >
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${createNextUrl(`/images/maps/${mapMatchGame.map_name}.png`)})`,
+                    filter: "brightness(0.6)"
+                  }}
+                />
 
-              <div className="absolute inset-0 bg-gradient-to-l from-white/60 via-white/30 dark:from-black/60 dark:via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-l from-white/60 via-white/30 dark:from-black/60 dark:via-black/30 to-transparent" />
 
-              <div className="absolute bottom-1 left-1 right-1 text-xs text-white sm:text-sm font-semibold z-10">
-                {mapToReadableName(map.map_name)}
+                <div className="absolute bottom-1 left-1 right-1 text-xs text-white sm:text-sm font-semibold z-10">
+                  {mapToReadableName(mapMatchGame.map_name)}
+                </div>
+
+                <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
+                  <span className="text-lg w-6 font-black text-center">
+                    {mapMatchGame.team1_score}
+                  </span>
+                  <span className="text-md">-</span>
+                  <span className="text-lg w-6 font-black text-center">
+                    {mapMatchGame.team2_score}
+                  </span>
+                </div>
               </div>
-
-              <div className="flex items-center gap-1 p-3 z-10 w-full justify-end">
-                <span className="text-lg w-6 font-black text-center">
-                  {map.team1_score}
-                </span>
-                <span className="text-md">-</span>
-                <span className="text-lg w-6 font-black text-center">
-                  {map.team2_score}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
 
       {/* Map Pick/Ban Phase */}
@@ -120,7 +141,7 @@ export const MatchMapPicks = ({
           </div>
         ) : (
           <div className="grid grid-cols-2 xl:grid-cols-7 gap-3">
-            {maps?.map((mapInfo, index) => (
+            {allMatchGameMaps?.map((mapInfo, index) => (
               <div
                 key={index}
                 className="group relative rounded-xl overflow-hidden bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm shadow-lg p-4 min-h-[140px] flex flex-col items-center justify-center"

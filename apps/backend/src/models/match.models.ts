@@ -296,6 +296,8 @@ export const getMatchGames = async (match_id: number) => {
   const query = `
     SELECT 
       mmp.id,
+      mmp.match_id,
+      mmp.map_order,
       maps.name as map_name,
       mmp.demofile,
       tgs1.score as team1_score,

@@ -14,7 +14,10 @@ import {
   getGameTopPlayersController,
   getGameClipController
 } from "../../controllers/match-games.controllers";
-import { getMatchIdByGameId } from "../../models/match-game.models";
+import {
+  getMatchGamesByExternalMatchRoomId,
+  getMatchIdByGameId
+} from "../../models/match-game.models";
 
 import { NotFoundError } from "../../utils/errors";
 
@@ -88,5 +91,10 @@ router.get(
   validateNumericParams(),
   getGameClipController
 );
+router.get("/external/:external_match_room_id/games", async (req, res) => {
+  const externalMatchRoomId = req.params.external_match_room_id;
+  const games = await getMatchGamesByExternalMatchRoomId(externalMatchRoomId);
+  res.json(games);
+});
 
 export default router;

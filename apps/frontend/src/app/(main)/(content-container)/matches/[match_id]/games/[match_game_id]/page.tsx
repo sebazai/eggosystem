@@ -31,6 +31,7 @@ export default async function MatchGamePage({ params }: PageProps) {
       matchGameId={matchGameId}
       matchInfo={matchInfo}
       platform={matchInfo.season_platform}
+      externalMatchRoomId={matchInfo.external_match_room_id}
       externalMatchRoomUrl={createExternalMatchRoomUrl(
         matchInfo.external_match_room_id,
         matchInfo.season_platform
