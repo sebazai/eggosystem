@@ -837,7 +837,7 @@ export const getMatchesBySeasonAndLeagueWithStreamUrls = async (
     LEFT JOIN MatchTeams mt ON m.id = mt.match_id
     LEFT JOIN Teams t ON mt.team_id = t.id
     LEFT JOIN Reservations r ON m.id = r.match_id AND m.status NOT IN ('FINISHED', 'CANCELLED', 'FORFEIT', 'ABORTED')
-    WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?)
+    WHERE m.season_id = ? AND (? IS NULL OR m.league_id = ?) AND m.status NOT IN ('CANCELLED', 'ABORTED')
     GROUP BY m.id, m.league_id, m.season_id, m.stage, m.match_date, m.start_time, m.end_time, m.best_of, m.external_match_room_id, m.status, m.round, m.group, l.name, sl.tier
     ORDER BY m.match_date ASC, COUNT(CASE WHEN r.stream_url IS NOT NULL THEN r.stream_url END) DESC, sl.tier ASC
   `;
