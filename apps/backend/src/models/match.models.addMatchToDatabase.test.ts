@@ -249,7 +249,10 @@ describe("addMatchToDatabase", () => {
 
   describe("when is_round_robin_bo2_as_2xbo1 is true", () => {
     it("should create two matches successfully", async () => {
-      const matchDetails = validMatchDetailsMatchCreated;
+      const matchDetails = {
+        ...validMatchDetailsMatchCreated,
+        best_of: 2
+      };
       const externalLeagueId = "test-league-id";
 
       // Mock no existing match
@@ -483,7 +486,9 @@ describe("addMatchToDatabase", () => {
 
       // Mock match insertion failure
       const dbError = new Error("Database connection failed");
-      mockRunQuery.mockRejectedValueOnce(dbError);
+      mockRunQuery
+        .mockResolvedValueOnce([]) // Check for existing matches
+        .mockRejectedValueOnce(dbError); // Match insertion fails
 
       await expect(
         addMatchToDatabase(matchDetails, externalLeagueId)
@@ -605,11 +610,11 @@ describe("addMatchToDatabase", () => {
           position_offset: null
         });
 
-      // Mock match insertion
-      mockRunQuery.mockResolvedValueOnce({ insertId: 100 });
-      // Mock team to match associations
-      mockRunQuery.mockResolvedValueOnce([]);
-      mockRunQuery.mockResolvedValueOnce([]);
+      // Mock match insertion and team associations
+      mockRunQuery
+        .mockResolvedValueOnce({ insertId: 100 }) // Match insertion
+        .mockResolvedValueOnce([]) // First team association
+        .mockResolvedValueOnce([]); // Second team association
 
       const result = await addMatchToDatabase(matchDetails, externalLeagueId);
 
