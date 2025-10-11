@@ -26,6 +26,27 @@ export async function up(knex: Knex): Promise<void> {
     });
   }
 
+  // Set default value for Matches status field
+  await knex.schema.alterTable("Matches", (table) => {
+    table
+      .enum("status", [
+        "SCHEDULED",
+        "CHECK_IN",
+        "VOTING",
+        "CONFIGURING",
+        "READY",
+        "ONGOING",
+        "FINISHED",
+        "ABORTED",
+        "CANCELLED",
+        "FORFEIT",
+        "PAUSED"
+      ])
+      .notNullable()
+      .defaultTo("SCHEDULED")
+      .alter();
+  });
+
   // Create triggers for automatic updated_at updates
   const triggerPromises = tables.map((tableName) =>
     knex.raw(`
@@ -66,6 +87,27 @@ export async function down(knex: Knex): Promise<void> {
   );
 
   await Promise.all(dropTriggerPromises);
+
+  // Revert Matches status field to previous state (nullable with null default)
+  await knex.schema.alterTable("Matches", (table) => {
+    table
+      .enum("status", [
+        "SCHEDULED",
+        "CHECK_IN",
+        "VOTING",
+        "CONFIGURING",
+        "READY",
+        "ONGOING",
+        "FINISHED",
+        "ABORTED",
+        "CANCELLED",
+        "FORFEIT",
+        "PAUSED"
+      ])
+      .nullable()
+      .defaultTo(null)
+      .alter();
+  });
 
   // Remove created_at and updated_at columns from each table
   for (const tableName of tables) {
