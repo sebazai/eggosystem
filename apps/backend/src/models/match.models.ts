@@ -626,7 +626,7 @@ export const addMatchToDatabase = async (
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
-    if (is_round_robin_bo2_as_2xbo1) {
+    if (is_round_robin_bo2_as_2xbo1 && matchDetails.best_of === 2) {
       const firstMatch = await runQuery<{ insertId: number }>(
         matchQuery,
         params,
