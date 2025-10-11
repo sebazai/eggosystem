@@ -156,7 +156,8 @@ export const seasonPlayerRankFormSchema = z.object({
   external_elo: z.number().optional(),
   external_kd: z.number().optional(),
   cs2_rank: z.number().optional(),
-  cs_hours: z.number().optional()
+  cs_hours: z.number().optional(),
+  ticket_id: z.string().optional()
 });
 
 export type SeasonPlayerRankFormValues = z.infer<

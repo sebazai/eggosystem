@@ -8,7 +8,7 @@ import {
   getCSRank,
   getPlayerHoursForSteamAppId
 } from "../../services/player-ranks.services";
-import { insertFaceITPlayerRankForSeason } from "../../models/season-player-ranks.models";
+import { insertPlayerRankForSeason } from "../../models/season-player-ranks.models";
 import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
@@ -108,7 +108,7 @@ export const addPlayerToTeamController = async (
       }
 
       // Create or update player in SeasonPlayerRanks with real data
-      await insertFaceITPlayerRankForSeason(
+      await insertPlayerRankForSeason(
         steamId,
         seasonId,
         playerCS2Rank, // Real CS2 rank (1000-30000 range)

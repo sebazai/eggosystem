@@ -161,7 +161,7 @@ describe("addPlayerToTeamController", () => {
     });
 
     // Mock FACEIT player rank insertion
-    mockRankModels.insertFaceITPlayerRankForSeason.mockResolvedValueOnce(
+    mockRankModels.insertPlayerRankForSeason.mockResolvedValueOnce(
       {} as unknown
     );
 
@@ -175,7 +175,7 @@ describe("addPlayerToTeamController", () => {
     await addPlayerToTeamController(mockRequest, mockResponse, mockNext);
 
     // Verify player data was created
-    expect(mockRankModels.insertFaceITPlayerRankForSeason).toHaveBeenCalled();
+    expect(mockRankModels.insertPlayerRankForSeason).toHaveBeenCalled();
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId],

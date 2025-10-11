@@ -12,7 +12,7 @@ import { getConnection } from "../../db/mysqlConnection";
 import { handlePreApprovedRegistration } from "../../services/dashboard/registration.services";
 import { getActiveSignupOrActiveSeasonForAppId } from "../season.models";
 import { BadRequestError } from "../../utils/errors";
-import { insertFaceITPlayerRankForSeason } from "../season-player-ranks.models";
+import { insertPlayerRankForSeason } from "../season-player-ranks.models";
 import { faceitEloToLevel } from "../../utils/faceit-utils";
 import { runQuery } from "../../db/mysqlRunQuery";
 
@@ -54,7 +54,7 @@ export const addSeasonRankForPlayer = async (
   const cs2Rank = formData.cs2_rank;
   const csHours = formData.cs_hours;
 
-  await insertFaceITPlayerRankForSeason(
+  await insertPlayerRankForSeason(
     formData.steam_id,
     season.season_id,
     cs2Rank ?? null,
@@ -72,7 +72,8 @@ export const addSeasonRankForPlayer = async (
     },
     {
       isManuallyAddedExternalRank: !!formData.external_elo,
-      isManuallyAddedRank: !!cs2Rank
+      isManuallyAddedRank: !!cs2Rank,
+      ticket_id: formData.ticket_id
     }
   );
 };

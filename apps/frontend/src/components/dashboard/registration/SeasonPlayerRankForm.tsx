@@ -171,6 +171,19 @@ export function SeasonPlayerRankForm() {
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="ticket_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Ticket ID</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Button type="submit" disabled={loading}>
           {loading ? "Submitting..." : "Submit"}

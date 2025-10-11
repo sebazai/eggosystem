@@ -4,11 +4,11 @@ import {
   type SignupFormValues,
   type InsertSeasonTeamRegistration,
   SeasonPlatform,
-  isFaceITCSRank,
   type UpdateSeasonTeamRegistration,
   type PlayerDetailsBySteamId,
   type InsertSeasonTeamRegistrationPlayer,
-  type UpdateSeasonTeamRegistrationPlayer
+  type UpdateSeasonTeamRegistrationPlayer,
+  isFaceITCSRank
 } from "@eggosystem/types";
 import {
   insertSeasonTeamRegistration,
@@ -21,10 +21,7 @@ import { getTeamWithIdWithoutOrg, insertTeam } from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
 import { areSteamProfilesPublic } from "./steam.services";
 import { getPlayerDetailsBySteamId } from "../models/player.models";
-import {
-  insertCSPlayerRankForSeason,
-  insertFaceITPlayerRankForSeason
-} from "../models/season-player-ranks.models";
+import { insertPlayerRankForSeason } from "../models/season-player-ranks.models";
 import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
 import { getSeasonDetailsById } from "../models/season.models";
 import { NotFoundError, BadRequestError } from "../utils/errors";
@@ -130,24 +127,21 @@ export const addPlayersForTeamInSeason = async (
       );
     }
 
-    if (isFaceITCSRank(externalRank)) {
-      await insertFaceITPlayerRankForSeason(
-        player.steam_id,
-        seasonId,
-        rank.average_rank,
-        hours,
-        externalRank,
-        { connection }
-      );
-    } else {
-      await insertCSPlayerRankForSeason(
-        player.steam_id,
-        seasonId,
-        rank.average_rank,
-        hours,
-        { connection }
-      );
-    }
+    await insertPlayerRankForSeason(
+      player.steam_id,
+      seasonId,
+      rank.average_rank,
+      hours,
+      isFaceITCSRank(externalRank)
+        ? externalRank
+        : {
+            faceit_elo: undefined,
+            faceit_level: undefined,
+            faceit_kd: undefined,
+            faceit_date: undefined
+          },
+      { connection }
+    );
   }
 };
 
