@@ -102,6 +102,7 @@ router.get(
 
 router.get(
   "/championship/:championship_id/validate",
+  authenticateJWT,
   validateChampionshipTeamsController
 );
 

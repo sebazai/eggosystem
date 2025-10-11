@@ -141,8 +141,10 @@ const FaceitLinkCard = ({ link }: FaceitLinkCardProps) => {
               <div className="animate-spin rounded-full h-3 w-3 border-b border-slate-400"></div>
             ) : championshipTeams ? (
               <span className="text-muted-foreground">
-                {Object.keys(championshipTeams.teams).length} /{" "}
-                {championshipTeams.maximumSlots}
+                {Object.keys(championshipTeams.teams).length}{" "}
+                {championshipTeams.maximumSlots
+                  ? `/ ${championshipTeams.maximumSlots}`
+                  : ""}
               </span>
             ) : null}
           </div>
@@ -239,22 +241,6 @@ export const FaceitLinksPage = ({
   const { user } = useAuth();
   const data = useFaceitLinks(seasonId);
 
-  if (!user) {
-    return (
-      <div className="mx-auto">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-card border rounded-lg p-8 text-center items-center">
-            <h1 className="text-2xl font-bold mb-4">Error Loading Links</h1>
-            <p className=" text-lg">You must be logged in to view this page.</p>
-            <div className="flex justify-center">
-              <SteamLoginButton />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (data.isLoading || data.isValidating) {
     return (
       <div className="mx-auto">
@@ -277,6 +263,22 @@ export const FaceitLinksPage = ({
               Error Loading Links
             </h1>
             <p className="text-red-600 text-lg">{data.isError.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-card border rounded-lg p-8 text-center items-center">
+            <h1 className="text-2xl font-bold mb-4">Error Loading Links</h1>
+            <p className=" text-lg">You must be logged in to view this page.</p>
+            <div className="flex justify-center">
+              <SteamLoginButton />
+            </div>
           </div>
         </div>
       </div>

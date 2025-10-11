@@ -1,6 +1,6 @@
 "use client";
 
-import { expressFetcher } from "@/lib/utils";
+import { clientApiFetch } from "@/lib/apiClient";
 import useSWR from "swr";
 import type { TeamWithExternalDataValidated } from "@eggosystem/types";
 
@@ -10,10 +10,10 @@ export const useFaceitChampionshipTeamsValidations = (
   const { data, error, isLoading, isValidating } = useSWR<
     {
       teams: Record<string, TeamWithExternalDataValidated>;
-      maximumSlots: number;
+      maximumSlots?: number;
     },
     Error
-  >(`/api/v1/faceit/championship/${championshipId}/validate`, expressFetcher, {
+  >(`/api/v1/faceit/championship/${championshipId}/validate`, clientApiFetch, {
     revalidateOnFocus: false
   });
 
