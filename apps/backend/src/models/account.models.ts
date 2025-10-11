@@ -40,7 +40,7 @@ export const updateAccount = async (
   const updatedUser = {
     nickname: formData.nickname,
     full_name: formData.full_name,
-    work_email: formData.work_email,
+    work_email: formData.work_email.toLowerCase(),
     work_email_token: hasWorkEmailChanged
       ? workEmailVerificationToken
       : existingAccount.work_email_token,
