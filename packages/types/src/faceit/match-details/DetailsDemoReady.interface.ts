@@ -1,10 +1,10 @@
 import { z } from "zod";
 import {
   FaceitMatchTeams,
-  FaceitMatchResultsFinished,
-  FaceitDetailedResultsFinished,
-  FaceitMatchResultsFinishedSchema,
-  FaceitDetailedResultsFinishedSchema,
+  FaceitMatchResultsDemoReady,
+  FaceitDetailedResultsDemoReady,
+  FaceitMatchResultsDemoReadySchema,
+  FaceitDetailedResultsDemoReadySchema,
   FaceitMatchStatus,
   FaceitVoting,
   FaceitVotingSchema,
@@ -29,8 +29,8 @@ export interface DetailsDemoReadyBase {
   demo_url: string[];
   chat_room_id: string;
   best_of: number;
-  results: FaceitMatchResultsFinished;
-  detailed_results: FaceitDetailedResultsFinished[];
+  results: FaceitMatchResultsDemoReady;
+  detailed_results: FaceitDetailedResultsDemoReady[];
   status: keyof typeof FaceitMatchStatus;
   faceit_url: string;
 }
@@ -53,8 +53,8 @@ const DetailsDemoReadBaseSchema = z.object({
   demo_url: z.array(z.string().url()),
   chat_room_id: z.string(),
   best_of: z.number(),
-  results: FaceitMatchResultsFinishedSchema,
-  detailed_results: z.array(FaceitDetailedResultsFinishedSchema),
+  results: FaceitMatchResultsDemoReadySchema,
+  detailed_results: z.array(FaceitDetailedResultsDemoReadySchema),
   status: z.enum(Object.values(FaceitMatchStatus)),
   faceit_url: z.string()
 });

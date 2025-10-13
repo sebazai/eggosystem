@@ -205,3 +205,38 @@ export const FaceitDetailedResultsFinishedSchema = z.object({
     FaceitFactionScoreSchema
   )
 });
+
+// Match results interface for demo ready matches (may not have winner yet)
+export interface FaceitMatchResultsDemoReady {
+  winner: "faction1" | "faction2" | "";
+  score: FaceitFactionScores;
+}
+
+// Detailed results interface for demo ready matches (may not have winner yet)
+export interface FaceitDetailedResultsDemoReady {
+  asc_score: boolean;
+  winner: "faction1" | "faction2" | "";
+  factions: Record<"faction1" | "faction2", FaceitFactionScore>;
+}
+
+export const FaceitMatchResultsDemoReadySchema = z.object({
+  winner: z.union([
+    z.literal("faction1"),
+    z.literal("faction2"),
+    z.literal("")
+  ]),
+  score: FaceitFactionScoresSchema
+});
+
+export const FaceitDetailedResultsDemoReadySchema = z.object({
+  asc_score: z.boolean(),
+  winner: z.union([
+    z.literal("faction1"),
+    z.literal("faction2"),
+    z.literal("")
+  ]),
+  factions: z.record(
+    z.union([z.literal("faction1"), z.literal("faction2")]),
+    FaceitFactionScoreSchema
+  )
+});
