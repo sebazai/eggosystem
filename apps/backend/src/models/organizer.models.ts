@@ -5,7 +5,7 @@ export const getOrganizerByFaceitIdAndGameAppId = async (
   faceitId: string,
   appId: number
 ) => {
-  const organizer = await runQuery<Array<Organizer> | undefined>(
+  const [organizer] = await runQuery<Array<Organizer | undefined>>(
     `SELECT o.* FROM Organizers o 
       JOIN OrganizerGames og ON o.id = og.organizer_id 
       JOIN Games g ON og.game_id = g.id 

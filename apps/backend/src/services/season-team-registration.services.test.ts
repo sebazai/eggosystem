@@ -63,7 +63,8 @@ describe("Season team registration services", () => {
     start_date: insertSeason?.start_date?.toDateString(),
     end_date: insertSeason?.end_date?.toDateString() ?? null,
     app_id: 730,
-    is_round_robin_bo2_as_2xbo1: false
+    is_round_robin_bo2_as_2xbo1: false,
+    grand_final_round_one_only: false
   } satisfies SeasonDetails;
 
   beforeAll(async () => {

@@ -19,6 +19,7 @@ export interface Season {
   start_date: string; // DATE stored as string (ISO format)
   end_date: string | null;
   is_round_robin_bo2_as_2xbo1: boolean;
+  grand_final_round_one_only: boolean;
 }
 
 export interface InsertSeason {

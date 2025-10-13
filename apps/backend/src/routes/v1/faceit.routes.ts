@@ -62,7 +62,10 @@ import {
   updateMatchStatus
 } from "../../models/match.models";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
-import { getOrganizerByFaceitIdAndGameAppId } from "../../models/organizer.models";
+import {
+  getOrganizerByFaceitIdAndGameAppId,
+  getOrganizerFaceitActiveSeasonForApp
+} from "../../models/organizer.models";
 import { NotFoundError } from "../../utils/errors";
 import { addMatchTeamMapVetoes } from "../../models/match-team-map-veto.models";
 import { addMatchGameToDatabaseAndProcessDemo } from "../../models/match-game.models";
@@ -220,7 +223,7 @@ router.post(
     const manualReprocess = req.query.reprocess === "true";
     logger.info(`[FaceIT Webhook] Reprocess: ${manualReprocess}`);
 
-    if (!organizer || organizer.length === 0) {
+    if (!organizer) {
       logger.error(
         `Organizer not found for faceit_id ${webhookData.payload.organizer_id} and app_id ${appId}`
       );
@@ -256,6 +259,24 @@ router.post(
           webhookData.event,
           manualReprocess
         );
+
+        if (validatedMatchDetails.group === 3) {
+          const organizerActiveSeason =
+            await getOrganizerFaceitActiveSeasonForApp(
+              organizer.faceit_id,
+              appId
+            );
+          if (
+            organizerActiveSeason?.grand_final_round_one_only &&
+            validatedMatchDetails.round !== 1
+          ) {
+            logger.info(
+              `Grand final round one only, skipping match ${validatedMatchDetails.match_id}`
+            );
+            res.status(200).send("Webhook received");
+            return;
+          }
+        }
 
         await addMatchToDatabase(
           validatedMatchDetails,

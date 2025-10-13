@@ -13,7 +13,8 @@ export const createMockSeason = (
   game_id?: number,
   game_type_id?: number,
   organizer_id?: number,
-  is_round_robin_bo2_as_2xbo1?: boolean
+  is_round_robin_bo2_as_2xbo1?: boolean,
+  grand_final_round_one_only?: boolean
 ): Season => {
   return {
     id,
@@ -27,7 +28,8 @@ export const createMockSeason = (
     platform: platform as SeasonPlatform,
     start_date,
     end_date: end_date ?? null,
-    is_round_robin_bo2_as_2xbo1: is_round_robin_bo2_as_2xbo1 ?? false
+    is_round_robin_bo2_as_2xbo1: is_round_robin_bo2_as_2xbo1 ?? false,
+    grand_final_round_one_only: grand_final_round_one_only ?? false
   };
 };
 

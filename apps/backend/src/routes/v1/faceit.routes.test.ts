@@ -35,7 +35,10 @@ import { validatePlayersInTeams } from "../../models/season-team-players.models"
 import { expressErrorHandler } from "../../middlewares/express-error-handler";
 import * as seasonLeagueExternalIdServices from "../../services/season-league-external-id.services";
 import * as faceitServices from "../../services/faceit.services";
-import { validMatchDetailsMatchDemoReady } from "@eggosystem/shared-msw";
+import {
+  validMatchDetailsMatchDemoReady,
+  validMatchDetailsMatchCreated
+} from "@eggosystem/shared-msw";
 import { getSeasonLeagueBySeasonAndFaceitName } from "../../models/season-league.models";
 import { insertSeasonLeagueExternalId } from "../../models/season-league-external-id.models";
 import {
@@ -44,7 +47,8 @@ import {
   type MatchStatusReadyWebhook,
   type Season,
   type SeasonLeague,
-  type MatchStatusFinishedWebhook
+  type MatchStatusFinishedWebhook,
+  type SeasonPlatform
 } from "@eggosystem/types";
 
 const mockGetOrganizerByFaceitIdAndGameAppId =
@@ -942,9 +946,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Reprocess Query Parameter", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
 
         // Championship details fetch is not needed for assertions
@@ -1034,9 +1036,7 @@ describe("FaceIT Routes - Webhook", () => {
         jest.clearAllMocks();
 
         // Organizer exists
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
 
         // Save webhook succeeds
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
@@ -1215,9 +1215,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Reprocess Query Parameter", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
@@ -1339,9 +1337,9 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("should accept valid API key", async () => {
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce([
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce(
           mockOrganizer
-        ]);
+        );
         mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValueOnce({
           matchIds: [1],
@@ -1378,9 +1376,9 @@ describe("FaceIT Routes - Webhook", () => {
       });
 
       it("should proceed when organizer is found", async () => {
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce([
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce(
           mockOrganizer
-        ]);
+        );
         mockSaveWebhookData.mockResolvedValueOnce({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValueOnce({
           matchIds: [1],
@@ -1406,9 +1404,7 @@ describe("FaceIT Routes - Webhook", () => {
         jest.clearAllMocks();
 
         // Setup default mocks for success cases
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
@@ -1445,9 +1441,9 @@ describe("FaceIT Routes - Webhook", () => {
 
     describe("Webhook Processing - Error Cases", () => {
       beforeEach(() => {
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce([
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce(
           mockOrganizer
-        ]);
+        );
       });
 
       it("should handle webhook validation errors", async () => {
@@ -1554,9 +1550,7 @@ describe("FaceIT Routes - Webhook", () => {
         jest.clearAllMocks();
 
         // Setup default mocks for success cases
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
@@ -1591,9 +1585,7 @@ describe("FaceIT Routes - Webhook", () => {
         jest.clearAllMocks();
 
         // Setup default mocks for success cases
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchToDatabase.mockResolvedValue({
           matchIds: [1],
@@ -1632,7 +1624,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Edge Cases", () => {
       it("should handle empty organizer array", async () => {
         // Override the default mock for this specific test
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce([]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValueOnce(undefined);
 
         const response = await request(app)
           .post("/api/v1/faceit/webhook")
@@ -1794,9 +1786,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Reprocess Query Parameter", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
         mockUpdateMatchStatus.mockResolvedValue(undefined);
@@ -1826,9 +1816,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Success Cases", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchTeamMapVetoes.mockResolvedValue(undefined);
         mockUpdateMatchStatus.mockResolvedValue(undefined);
@@ -1870,9 +1858,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Success Cases", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockAddMatchGamesForMatch.mockResolvedValue(undefined);
         mockValidatePlayersInTeams.mockResolvedValue(undefined);
@@ -1918,9 +1904,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Success Cases", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockUpdateMatchStatus.mockResolvedValue(undefined);
         mockUpdateMatchFinished.mockResolvedValue(undefined);
@@ -2000,9 +1984,7 @@ describe("FaceIT Routes - Webhook", () => {
     describe("Success Cases", () => {
       beforeEach(() => {
         jest.clearAllMocks();
-        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue([
-          mockOrganizer
-        ]);
+        mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
         mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
         mockUpdateMatchStatus.mockResolvedValue(undefined);
       });
@@ -2034,6 +2016,461 @@ describe("FaceIT Routes - Webhook", () => {
 
         // Verify addMatchTeamMapVetoes was NOT called (matchmaking doesn't use it)
         expect(mockAddMatchTeamMapVetoes).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("Grand Final Round One Only Functionality", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockGetOrganizerByFaceitIdAndGameAppId.mockResolvedValue(mockOrganizer);
+      mockSaveWebhookData.mockResolvedValue({ insertId: 1 });
+      mockAddMatchToDatabase.mockResolvedValue({
+        matchIds: [1],
+        is_round_robin_bo2_as_2xbo1: false
+      });
+    });
+
+    describe("Group 3 (Grand Final) Matches", () => {
+      it("should process group 3 round 1 matches normally when grand_final_round_one_only is true", async () => {
+        // Mock active season with grand_final_round_one_only = true
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
+          id: 1,
+          game_id: 1,
+          game_type_id: 1,
+          organizer_id: 1,
+          name: "Test Season",
+          full_name: "Test Season Full Name",
+          signup_start_date: null,
+          signup_end_date: null,
+          platform: "FACEIT" as SeasonPlatform,
+          start_date: "2025-01-01",
+          end_date: null,
+          is_round_robin_bo2_as_2xbo1: false,
+          grand_final_round_one_only: true
+        });
+
+        // Create webhook payload for group 3 round 1 match
+        const group3Round1Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-grand-final-round-1-match"
+          }
+        };
+
+        // Mock match details for group 3 round 1
+        const group3Round1MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-grand-final-round-1-match",
+          round: 1,
+          group: 3
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group3Round1MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group3Round1Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
+          "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          730
+        );
+
+        // Verify that addMatchToDatabase was called (match should be processed)
+        expect(mockAddMatchToDatabase).toHaveBeenCalledWith(
+          expect.objectContaining({
+            round: 1,
+            group: 3
+          }),
+          "3eb11474-6211-4c99-b0f2-1f3e857ab6aa"
+        );
+      });
+
+      it("should skip group 3 round 2+ matches when grand_final_round_one_only is true", async () => {
+        // Mock active season with grand_final_round_one_only = true
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
+          id: 1,
+          game_id: 1,
+          game_type_id: 1,
+          organizer_id: 1,
+          name: "Test Season",
+          full_name: "Test Season Full Name",
+          signup_start_date: null,
+          signup_end_date: null,
+          platform: "FACEIT" as SeasonPlatform,
+          start_date: "2025-01-01",
+          end_date: null,
+          is_round_robin_bo2_as_2xbo1: false,
+          grand_final_round_one_only: true
+        });
+
+        // Create webhook payload for group 3 round 2 match
+        const group3Round2Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-grand-final-round-2-match"
+          }
+        };
+
+        // Mock match details for group 3 round 2
+        const group3Round2MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-grand-final-round-2-match",
+          round: 2,
+          group: 3
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group3Round2MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group3Round2Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
+          "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          730
+        );
+
+        // Verify that addMatchToDatabase was NOT called (match should be skipped)
+        expect(mockAddMatchToDatabase).not.toHaveBeenCalled();
+      });
+
+      it("should process group 3 round 2+ matches when grand_final_round_one_only is false", async () => {
+        // Mock active season with grand_final_round_one_only = false
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
+          id: 1,
+          game_id: 1,
+          game_type_id: 1,
+          organizer_id: 1,
+          name: "Test Season",
+          full_name: "Test Season Full Name",
+          signup_start_date: null,
+          signup_end_date: null,
+          platform: "FACEIT" as SeasonPlatform,
+          start_date: "2025-01-01",
+          end_date: null,
+          is_round_robin_bo2_as_2xbo1: false,
+          grand_final_round_one_only: false
+        });
+
+        // Create webhook payload for group 3 round 2 match
+        const group3Round2Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-grand-final-round-2-match"
+          }
+        };
+
+        // Mock match details for group 3 round 2
+        const group3Round2MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-grand-final-round-2-match",
+          round: 2,
+          group: 3
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group3Round2MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group3Round2Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
+          "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          730
+        );
+
+        // Verify that addMatchToDatabase was called (match should be processed)
+        expect(mockAddMatchToDatabase).toHaveBeenCalledWith(
+          expect.objectContaining({
+            round: 2,
+            group: 3
+          }),
+          "3eb11474-6211-4c99-b0f2-1f3e857ab6aa"
+        );
+      });
+
+      it("should process group 3 round 2+ matches when grand_final_round_one_only is undefined", async () => {
+        // Mock active season with grand_final_round_one_only = undefined
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
+          id: 1,
+          game_id: 1,
+          game_type_id: 1,
+          organizer_id: 1,
+          name: "Test Season",
+          full_name: "Test Season Full Name",
+          signup_start_date: null,
+          signup_end_date: null,
+          platform: "FACEIT" as SeasonPlatform,
+          start_date: "2025-01-01",
+          end_date: null,
+          is_round_robin_bo2_as_2xbo1: false
+        } as Season);
+
+        // Create webhook payload for group 3 round 2 match
+        const group3Round2Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-grand-final-round-2-match"
+          }
+        };
+
+        // Mock match details for group 3 round 2
+        const group3Round2MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-grand-final-round-2-match",
+          round: 2,
+          group: 3
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group3Round2MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group3Round2Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
+          "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          730
+        );
+
+        // Verify that addMatchToDatabase was called (match should be processed)
+        expect(mockAddMatchToDatabase).toHaveBeenCalledWith(
+          expect.objectContaining({
+            round: 2,
+            group: 3
+          }),
+          "3eb11474-6211-4c99-b0f2-1f3e857ab6aa"
+        );
+      });
+    });
+
+    describe("Non-Group 3 Matches", () => {
+      it("should process group 1 matches normally regardless of grand_final_round_one_only setting", async () => {
+        // Create webhook payload for group 1 match
+        const group1Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-group-1-match"
+          }
+        };
+
+        // Mock match details for group 1
+        const group1MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-group-1-match",
+          round: 2,
+          group: 1
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group1MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group1Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was NOT called for non-group 3 matches
+        expect(mockGetOrganizerActiveSeasonForApp).not.toHaveBeenCalled();
+
+        // Verify that addMatchToDatabase was called (match should be processed)
+        expect(mockAddMatchToDatabase).toHaveBeenCalledWith(
+          expect.objectContaining({
+            round: 2,
+            group: 1
+          }),
+          "3eb11474-6211-4c99-b0f2-1f3e857ab6aa"
+        );
+      });
+
+      it("should process group 2 matches normally regardless of grand_final_round_one_only setting", async () => {
+        // Create webhook payload for group 2 match
+        const group2Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-group-2-match"
+          }
+        };
+
+        // Mock match details for group 2
+        const group2MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-group-2-match",
+          round: 2,
+          group: 2
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group2MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group2Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was NOT called for non-group 3 matches
+        expect(mockGetOrganizerActiveSeasonForApp).not.toHaveBeenCalled();
+
+        // Verify that addMatchToDatabase was called (match should be processed)
+        expect(mockAddMatchToDatabase).toHaveBeenCalledWith(
+          expect.objectContaining({
+            round: 2,
+            group: 2
+          }),
+          "3eb11474-6211-4c99-b0f2-1f3e857ab6aa"
+        );
+      });
+    });
+
+    describe("Edge Cases", () => {
+      it("should process group 3 matches when no active season is found", async () => {
+        // Mock no active season found
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue(undefined);
+
+        // Create webhook payload for group 3 round 2 match
+        const group3Round2Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-grand-final-round-2-match"
+          }
+        };
+
+        // Mock match details for group 3 round 2
+        const group3Round2MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-grand-final-round-2-match",
+          round: 2,
+          group: 3
+        };
+
+        // Mock the getFaceITMatchDetails call
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group3Round2MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group3Round2Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that getOrganizerFaceitActiveSeasonForApp was called
+        expect(mockGetOrganizerActiveSeasonForApp).toHaveBeenCalledWith(
+          "08b06cfc-74d0-454b-9a51-feda4b6b18da",
+          730
+        );
+
+        // Verify that addMatchToDatabase was called (match should be processed when no season found)
+        expect(mockAddMatchToDatabase).toHaveBeenCalledWith(
+          expect.objectContaining({
+            round: 2,
+            group: 3
+          }),
+          "3eb11474-6211-4c99-b0f2-1f3e857ab6aa"
+        );
+      });
+
+      it("should handle different round numbers correctly", async () => {
+        // Mock active season with grand_final_round_one_only = true
+        mockGetOrganizerActiveSeasonForApp.mockResolvedValue({
+          id: 1,
+          game_id: 1,
+          game_type_id: 1,
+          organizer_id: 1,
+          name: "Test Season",
+          full_name: "Test Season Full Name",
+          signup_start_date: null,
+          signup_end_date: null,
+          platform: "FACEIT" as SeasonPlatform,
+          start_date: "2025-01-01",
+          end_date: null,
+          is_round_robin_bo2_as_2xbo1: false,
+          grand_final_round_one_only: true
+        });
+
+        // Test round 3 (should be skipped)
+        const group3Round3Webhook = {
+          ...validWebhookPayloadObjectCreated,
+          payload: {
+            ...validWebhookPayloadObjectCreated.payload,
+            id: "1-grand-final-round-3-match"
+          }
+        };
+
+        const group3Round3MatchDetails = {
+          ...validMatchDetailsMatchCreated,
+          match_id: "1-grand-final-round-3-match",
+          round: 3,
+          group: 3
+        };
+
+        jest
+          .spyOn(faceitServices, "getFaceITMatchDetails")
+          .mockResolvedValue(group3Round3MatchDetails);
+
+        const response = await request(app)
+          .post("/api/v1/faceit/webhook")
+          .set("X-API-KEY", TEST_WEBHOOK_API_KEY)
+          .send(group3Round3Webhook);
+
+        expect(response.status).toBe(200);
+        expect(response.text).toBe("Webhook received");
+
+        // Verify that addMatchToDatabase was NOT called (round 3 should be skipped)
+        expect(mockAddMatchToDatabase).not.toHaveBeenCalled();
       });
     });
   });
