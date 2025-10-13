@@ -40,16 +40,14 @@ export const GameStats = ({
   >(undefined);
 
   const handleMapSelect = (
-    matchGameId: number | undefined,
-    matchId?: number
+    matchId: number,
+    matchGameId?: number | undefined
   ) => {
     // Generate the new URL based on the selected matchGameId
     const newUrl =
       matchGameId && matchId
         ? `/matches/${matchId}/games/${matchGameId}`
-        : matchId
-          ? `/matches/${matchId}`
-          : `/matches/${matchId}`;
+        : `/matches/${matchId}`;
 
     // Use router.push or router.replace to navigate without reloading the page
     router.push(newUrl, { scroll: false });

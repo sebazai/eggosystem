@@ -12,7 +12,8 @@ import { useMemo } from "react";
 
 interface MatchMapPicksProps {
   matchId: number;
-  handleMapSelect: (matchGameId?: number, matchId?: number) => void;
+  matchGameId?: number | undefined;
+  handleMapSelect: (matchId: number, matchGameId?: number | undefined) => void;
   externalMatchRoomId: string | null;
 }
 
@@ -55,8 +56,8 @@ export const MatchMapPicks = ({
                 className="relative flex flex-1 min-h-10 items-center cursor-pointer overflow-hidden rounded my-1 border-1 border-transparent hover:border-1 hover:border-kanaliiga-orange"
                 onClick={() =>
                   handleMapSelect(
-                    mapMatchGame.id ?? undefined,
-                    mapMatchGame.match_id
+                    mapMatchGame.match_id,
+                    mapMatchGame.id ?? undefined
                   )
                 }
               >

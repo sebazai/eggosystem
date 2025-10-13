@@ -31,7 +31,10 @@ export const MatchStats = ({
     "CT" | "T" | undefined
   >(undefined);
 
-  const handleMapSelect = (matchGameId: number | undefined) => {
+  const handleMapSelect = (
+    matchId: number,
+    matchGameId?: number | undefined
+  ) => {
     // Generate the new URL based on the selected matchGameId
     const newUrl = matchGameId
       ? `/matches/${matchId}/games/${matchGameId}`

@@ -9,7 +9,7 @@ interface MatchMapsHeaderProps {
   matchGameId?: number;
   platform: SeasonPlatform;
   externalMatchRoomUrl: string | null;
-  handleMapSelect: (mapId?: number) => void;
+  handleMapSelect: (matchId: number, matchGameId?: number | undefined) => void;
 }
 
 const platformIcon = (platform: SeasonPlatform) => {
@@ -58,7 +58,7 @@ export const MatchMapsHeader = ({
           <div className="flex flex-wrap gap-2">
             <button
               className={`px-3 py-1 ${!matchGameId ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
-              onClick={() => handleMapSelect(undefined)}
+              onClick={() => handleMapSelect(matchId)}
             >
               ALL MAPS
             </button>
@@ -67,7 +67,7 @@ export const MatchMapsHeader = ({
               <button
                 key={map.id}
                 className={`px-3 py-1 ${matchGameId === map.id ? "bg-foreground text-background" : "text-muted-foreground"} rounded text-xs transition-transform hover:scale-105 hover:text-kanaliiga-orange hover:cursor-pointer`}
-                onClick={() => handleMapSelect(map.id)}
+                onClick={() => handleMapSelect(matchId, map.id)}
               >
                 {mapToReadableName(map.map_name)}
               </button>
