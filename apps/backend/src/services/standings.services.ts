@@ -40,7 +40,7 @@ const getFaceitMatchesFromDbForFaceitLeague = async (
     SELECT m.*, s.is_round_robin_bo2_as_2xbo1 FROM Matches m
     JOIN Seasons s ON m.season_id = s.id
     JOIN SeasonLeagueExternalIds slei ON m.season_id = slei.season_id
-      AND m.league_id = slei.league_id
+      AND m.league_id = slei.league_id AND m.stage = slei.stage_id
       AND (m.group = slei.manual_group OR (m.group IS NULL AND slei.manual_group IS NULL))
     WHERE slei.external_id = ? AND m.status IN ('FINISHED', 'FORFEIT')
   `;
