@@ -10,6 +10,7 @@ import {
 } from "@eggosystem/types";
 import { getSeasonLeagueTeamByExternalId } from "./season-league-team.models";
 import { getConnection } from "../db/mysqlConnection";
+import { logger } from "../utils/app-logger";
 
 // FACEIT Match History API Response Interfaces
 export interface FaceitMatchHistoryEntity {
@@ -130,13 +131,35 @@ const addMatchTeamMapVeto = async (
   await Promise.all(vetoPromises);
 };
 
+const getHubMatchMapVetoesByExternalMatchRoomId = async (
+  externalMatchRoomId: string,
+  connection?: PoolConnection
+) => {
+  const query = `SELECT * FROM MatchTeamMapVetoes mtmv JOIN Matches m ON m.id = mtmv.match_id WHERE m.external_match_room_id = ?`;
+  const mapVetoes = await runQuery<Array<MatchTeamMapVeto>>(
+    query,
+    [externalMatchRoomId],
+    connection
+  );
+  return mapVetoes;
+};
+
 export const addMatchTeamMapVetoes = async (
   details: ChampionshipDetailsReady,
   externalLeagueId: string
 ) => {
+  const hasAlreadyMapVetoesInDb =
+    await getHubMatchMapVetoesByExternalMatchRoomId(details.match_id);
+  if (hasAlreadyMapVetoesInDb && hasAlreadyMapVetoesInDb.length > 0) {
+    logger.info(
+      `Match ${details.match_id} already has map vetoes in db, skipping`
+    );
+    return;
+  }
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
+
     const { match_id, best_of } = details;
     const matches = await getHubMatchesByExternalMatchRoomId(
       match_id,
