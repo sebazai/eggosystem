@@ -547,6 +547,31 @@ importers:
         specifier: 5.0.3
         version: 5.0.3
 
+  packages/viewer:
+    dependencies:
+      react:
+        specifier: 19.1.1
+        version: 19.1.1
+      react-dom:
+        specifier: 19.1.1
+        version: 19.1.1(react@19.1.1)
+    devDependencies:
+      '@eggosystem/eslint':
+        specifier: workspace:*
+        version: link:../eslint
+      '@eggosystem/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/react':
+        specifier: 19.1.9
+        version: 19.1.9
+      '@types/react-dom':
+        specifier: 19.1.7
+        version: 19.1.7(@types/react@19.1.9)
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
 packages:
 
   '@adobe/css-tools@4.4.3':

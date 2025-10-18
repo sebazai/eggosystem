@@ -1,0 +1,46 @@
+{
+  "name": "@eggosystem/viewer",
+  "version": "1.0.0",
+  "description": "CS2 2D Demo Viewer component for Eggosystem",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf cache dist"
+  },
+  "keywords": [
+    "cs2",
+    "demo",
+    "viewer",
+    "react",
+    "component"
+  ],
+  "author": "Sebastian Sergelius",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@eggosystem/tsconfig": "workspace:*",
+    "@eggosystem/eslint": "workspace:*",
+    "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.7",
+    "typescript": "5.9.2"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js",
+      "development": "./src/index.ts"
+    },
+    "./styles": "./dist/styles.css"
+  }
+}

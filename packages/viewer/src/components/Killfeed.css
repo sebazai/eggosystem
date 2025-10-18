@@ -1,0 +1,120 @@
+.killfeed {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.kill-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.kill-assister {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-align: right;
+  min-width: 80px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-assist-icon {
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 2px;
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.95 !important;
+}
+
+.assist-plus {
+  color: #888;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.kill-killer,
+.kill-victim {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.kill-killer {
+  text-align: right;
+  min-width: 80px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kill-victim {
+  text-align: left;
+  min-width: 80px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Team colors */
+.kill-ct {
+  color: #79adde;
+}
+
+.kill-t {
+  color: #ffa336;
+}
+
+.kill-world {
+  color: #888;
+}
+
+/* Icon container */
+.kill-icons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+/* Kill modifier icons */
+.kill-modifier-icon {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) invert(1); /* Make icons white */
+  opacity: 0.9;
+}
+
+.headshot-icon {
+  filter: brightness(0) invert(1) sepia(1) saturate(10000%) hue-rotate(0deg); /* Make headshot red-ish */
+  opacity: 1;
+}
+
+/* Weapon icon in killfeed */
+.kill-weapon-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* Remove the inline styles from WeaponIcon and use CSS */
+.kill-entry .kill-weapon-icon img {
+  width: 24px !important;
+  height: 24px !important;
+  filter: brightness(0) invert(1) !important;
+}
