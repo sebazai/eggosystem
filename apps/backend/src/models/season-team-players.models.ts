@@ -100,8 +100,12 @@ export const validatePlayersInTeams = async (
         player.match_id !== null
     );
 
+    const uniquePlayerSteamIds = [
+      ...new Set(playersInSeasonTeamPlayers.map((player) => player.steam_id))
+    ];
+
     if (
-      playersInSeasonTeamPlayers.length !== playerSteamIds.length ||
+      uniquePlayerSteamIds.length !== playerSteamIds.length ||
       playersWithMatchId.some((stp) => !matchIdsArray.includes(stp.match_id))
     ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
