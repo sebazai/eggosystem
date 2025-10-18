@@ -48,7 +48,7 @@ async function fetchLabelFor(resource: string, id: string): Promise<string> {
     }
     case "games": {
       const response = await fetch(
-        `${envConfig.API_URL}/api/v1/${resource}/${id}`
+        `${envConfig.API_URL}/api/v1/match-${resource}/${id}`
       );
       const data: {
         map_order: MatchGame["map_order"];
