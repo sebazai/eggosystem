@@ -4,7 +4,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "react": ["./node_modules/@types/react"],
-      "@eggosystem/types": ["../../packages/types/dist/index"]
+      "@eggosystem/types": ["../../packages/types/dist/index"],
+      "@eggosystem/viewer": ["../../packages/viewer/src/index"]
     }
   },
   "include": [

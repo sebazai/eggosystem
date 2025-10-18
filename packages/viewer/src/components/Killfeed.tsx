@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import type { DemoEvent } from "../types";
 import WeaponIcon from "./WeaponIcon";
 import "./Killfeed.css";
 
@@ -20,7 +21,7 @@ interface Kill {
 }
 
 interface KillfeedProps {
-  events: Array<{ tick: number; eventType: string; data: any }>;
+  events: Array<DemoEvent>;
   currentTick: number;
   tickRate: number;
 }

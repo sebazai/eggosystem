@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DemoData } from "../types";
+import type { DemoData, DemoRound, DemoTick } from "../types";
 import WeaponIcon from "./WeaponIcon";
 import Killfeed from "./Killfeed";
 import "./Viewer.css";
@@ -530,7 +530,7 @@ function Viewer({ demoData }: ViewerProps) {
     const SAMPLE_INTERVAL = 16;
 
     // Find closest tick in our data
-    let closestTick = null;
+    let closestTick: DemoTick | undefined = undefined;
     let minDiff = Infinity;
 
     for (const t of demoData.ticks) {
@@ -568,7 +568,7 @@ function Viewer({ demoData }: ViewerProps) {
       if (sampledFlashDuration > 0 && !existingFlash) {
         // Brand new flash
         newActiveFlashes.set(player.steamid, {
-          startTick: closestTick.tick,
+          startTick: closestTick?.tick ?? 0,
           startDuration: sampledFlashDuration
         });
       } else if (sampledFlashDuration > 0 && existingFlash) {
@@ -583,10 +583,11 @@ function Viewer({ demoData }: ViewerProps) {
         // STRICT: Only accept as NEW flash if:
         // 1. We're at a sampled tick (not interpolated)
         // 2. Sampled is MUCH higher than calculated (> 2.0s difference)
-        const atSampledTick = Math.abs(closestTick.tick - currentTick) < 2;
+        const atSampledTick =
+          Math.abs(closestTick?.tick ?? 0 - currentTick) < 2;
         if (atSampledTick && sampledFlashDuration > calculatedRemaining + 2.0) {
           newActiveFlashes.set(player.steamid, {
-            startTick: closestTick.tick,
+            startTick: closestTick?.tick ?? 0,
             startDuration: sampledFlashDuration
           });
         }
@@ -1390,7 +1391,7 @@ function Viewer({ demoData }: ViewerProps) {
 
   // Find current round based on tick
   const tickRate = demoData.tickRate || 64;
-  let currentRound = null;
+  let currentRound: DemoRound | undefined = undefined;
   if (validRounds && validRounds.length > 0) {
     for (const round of validRounds) {
       if (currentTick >= round.startTick) {

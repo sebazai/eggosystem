@@ -1,11 +1,11 @@
 .viewer-professional {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   background: #0f0f0f;
   color: #fff;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -124,10 +124,8 @@
   display: flex;
   flex: 1;
   min-height: 0;
-  max-height: calc(100vh - 100px);
   gap: 8px;
   padding: 8px;
-  padding-bottom: 50px; /* Extra space for fixed bottom bar */
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -141,8 +139,6 @@
   overflow: hidden;
   min-width: 0;
   min-height: 0;
-  max-width: calc(100vw - 310px); /* Limit horizontal: viewport - scoreboard width */
-  max-height: calc(100vh - 200px); /* Limit vertical: leave much more room for controls */
 }
 
 .map-container canvas {
@@ -166,7 +162,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc((100vh - 160px) / 2); /* Half of available space minus gaps */
+  min-height: 0;
 }
 
 .ct-team {
@@ -239,7 +235,9 @@
   background: #222;
   border-radius: 4px;
   margin-bottom: 4px;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
 .player-row:hover {
@@ -392,11 +390,8 @@
   background: #1a1a1a;
   border-top: 1px solid #333;
   height: 42px;
-  position: fixed; /* Fixed to viewport bottom */
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000; /* Ensure it's on top of everything */
+  flex-shrink: 0;
+  z-index: 1000;
 }
 
 .playback-buttons {
@@ -450,6 +445,7 @@
   border-radius: 2px;
   outline: none;
   cursor: pointer;
+  appearance: none;
   -webkit-appearance: none;
 }
 
@@ -493,6 +489,7 @@
   border-radius: 2px;
   outline: none;
   cursor: pointer;
+  appearance: none;
   -webkit-appearance: none;
 }
 

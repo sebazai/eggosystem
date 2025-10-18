@@ -2,8 +2,8 @@
   "name": "@eggosystem/viewer",
   "version": "1.0.0",
   "description": "CS2 2D Demo Viewer component for Eggosystem",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -37,10 +37,10 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js",
+      "types": "./src/index.ts",
+      "default": "./src/index.ts",
       "development": "./src/index.ts"
     },
-    "./styles": "./dist/styles.css"
+    "./styles": "./src/components/Viewer.css"
   }
 }

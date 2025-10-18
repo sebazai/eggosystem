@@ -4,7 +4,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || "",
-  transpilePackages: ["@eggosystem/types", "@eggosystem/eslint"],
+  transpilePackages: [
+    "@eggosystem/types",
+    "@eggosystem/eslint",
+    "@eggosystem/viewer"
+  ],
   eslint: {
     dirs: ["src"],
     ignoreDuringBuilds: true

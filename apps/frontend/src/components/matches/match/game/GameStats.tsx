@@ -16,6 +16,7 @@ import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
 import _ from "lodash";
 import { MatchMapsHeader } from "../stats/MatchMapsHeader";
 import { useGameClip } from "@/hooks/data/useGameClip";
+import { Viewer } from "@eggosystem/viewer";
 
 interface MatchStatsProps {
   matchId: number;
@@ -90,6 +91,28 @@ export const GameStats = ({
       )}
 
       {roundInfo && roundInfo.length > 0 && <RoundInfo roundInfo={roundInfo} />}
+
+      {/* 2D Viewer */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">2D REPLAY VIEWER</h2>
+        <div className="border rounded-lg p-4">
+          <Viewer
+            demoData={{
+              map: "de_dust2",
+              tickRate: 64,
+              ticks: [],
+              events: [],
+              rounds: [],
+              mapData: {
+                offset: { x: -2476, y: 3239 },
+                resolution: 0.0625,
+                width: 1024,
+                height: 1024
+              }
+            }}
+          />
+        </div>
+      </div>
 
       {playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam
