@@ -19,7 +19,10 @@ export const LeaderboardsPage = () => {
 
   return (
     <div>
-      <h1 className="text-3xl mb-4 md:mb-8">Leaderboards</h1>
+      <h1 className="text-3xl mb-4">Leaderboards</h1>
+      <p className="text-sm text-gray-500">
+        At least 3 maps must be played to be eligible for the leaderboard.
+      </p>
       <div className="pb-2">
         <MultiFilters {...filterParams} />
       </div>
