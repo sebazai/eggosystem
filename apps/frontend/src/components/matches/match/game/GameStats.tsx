@@ -99,7 +99,6 @@ export const GameStats = ({
 
       {twoDViewerData?.status === "ready" && (
         <TwoDViewer
-          matchGameId={matchGameId}
           isModalOpen={is2DViewerOpen}
           setIsModalOpen={setIs2DViewerOpen}
           twoDViewerData={twoDViewerData.data}

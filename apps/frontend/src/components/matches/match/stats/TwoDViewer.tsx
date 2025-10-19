@@ -5,12 +5,10 @@ import type { DemoData } from "@eggosystem/viewer";
 import { X } from "lucide-react";
 
 export const TwoDViewer = ({
-  matchGameId,
   isModalOpen,
   setIsModalOpen,
   twoDViewerData
 }: {
-  matchGameId: number;
   isModalOpen: boolean;
   setIsModalOpen: (isModalOpen: boolean) => void;
   twoDViewerData: DemoData;
