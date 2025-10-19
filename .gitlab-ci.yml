@@ -421,6 +421,7 @@ build-dockerfile:frontend:
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2DDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
@@ -438,6 +439,7 @@ build-dockerfile:frontend:
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:$ENV_ID-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2DDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL/$ENV_ID \
           --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID \
@@ -528,6 +530,7 @@ push-dockerfile:frontend:
         docker buildx build \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:dev-cache \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:dev-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2DDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
@@ -544,6 +547,7 @@ push-dockerfile:frontend:
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA-stage \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:stage-cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2DSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBSTAGE_PUBLIC_URL \
@@ -561,6 +565,7 @@ push-dockerfile:frontend:
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:cache \
           --cache-from type=registry,ref=$REGISTRY/eggo-frontend:$CI_COMMIT_SHA \
           --cache-to type=registry,ref=$REGISTRY/eggo-frontend:cache,mode=max,compression=zstd \
+          --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://$CS2D_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUB_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUB_PUBLIC_URL \
@@ -740,6 +745,7 @@ deploy-ondemand:
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:stage-cache
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}
       --cache-from type=registry,ref=$REGISTRY/eggo-frontend:${ENV_ID}-cache
+      --build-arg NEXT_PUBLIC_VIEWER_API_URL=https://cs2dod.kanaliiga.fi/$ENV_ID \
       --build-arg NEXT_PUBLIC_API_URL=https://hubod.kanaliiga.fi/$ENV_ID
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://hubod.kanaliiga.fi/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID

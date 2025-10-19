@@ -76,6 +76,7 @@ services:
       - backend
     environment:
       NODE_ENV: production
+      NEXT_PUBLIC_VIEWER_API_URL: https://${CS2D_PUBLIC_URL}
       NEXT_PUBLIC_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}

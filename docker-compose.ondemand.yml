@@ -60,6 +60,7 @@ services:
       - backend
     environment:
       NODE_ENV: production
+      NEXT_PUBLIC_VIEWER_API_URL: https://cs2dod.kanaliiga.fi/${ENV_ID}
       NEXT_PUBLIC_API_URL: https://hubod.kanaliiga.fi/${ENV_ID}
       NEXT_PUBLIC_CLIENT_API_URL: https://hubod.kanaliiga.fi/${ENV_ID}
       NEXT_PUBLIC_BASE_PATH: /${ENV_ID}
