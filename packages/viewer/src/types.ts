@@ -46,7 +46,6 @@ export interface DemoRound {
 }
 
 export interface DemoData {
-  map: string;
   mapData: {
     offset: { x: number; y: number };
     resolution: number;

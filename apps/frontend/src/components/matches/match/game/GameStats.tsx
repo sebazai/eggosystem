@@ -101,6 +101,7 @@ export const GameStats = ({
         <TwoDViewer
           isModalOpen={is2DViewerOpen}
           setIsModalOpen={setIs2DViewerOpen}
+          mapName={twoDViewerData.map}
           twoDViewerData={twoDViewerData.data}
         />
       )}

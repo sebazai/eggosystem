@@ -7,10 +7,12 @@ import { X } from "lucide-react";
 export const TwoDViewer = ({
   isModalOpen,
   setIsModalOpen,
+  mapName,
   twoDViewerData
 }: {
   isModalOpen: boolean;
   setIsModalOpen: (isModalOpen: boolean) => void;
+  mapName: string;
   twoDViewerData: DemoData;
 }) => {
   const closeModal = () => {
@@ -33,7 +35,7 @@ export const TwoDViewer = ({
 
           {/* Viewer content */}
           <div className="w-full h-full">
-            <Viewer demoData={twoDViewerData} />
+            <Viewer demoData={twoDViewerData} mapName={mapName} />
           </div>
         </div>
       )}

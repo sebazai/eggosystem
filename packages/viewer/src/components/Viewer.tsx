@@ -6,6 +6,7 @@ import "./Viewer.css";
 
 interface ViewerProps {
   demoData: DemoData;
+  mapName: string;
 }
 
 interface Player {
@@ -36,7 +37,7 @@ interface Player {
   deaths?: number;
 }
 
-function Viewer({ demoData }: ViewerProps) {
+function Viewer({ demoData, mapName }: ViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentTick, setCurrentTick] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -164,8 +165,8 @@ function Viewer({ demoData }: ViewerProps) {
     img.onerror = (error) => {
       console.error("Failed to load map image:", error);
     };
-    img.src = `/maps/${demoData.map}/radar.png`;
-  }, [demoData.map]);
+    img.src = `/maps/${mapName}/radar.png`;
+  }, [mapName]);
 
   // Load grenade detonation images
   useEffect(() => {
