@@ -17,50 +17,45 @@ export function MatchClientTime({
   const [formattedTime, setFormattedTime] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
 
+  // Helper function to format time consistently
+  const formatTimeUTC = (date: Date) => date.toTimeString().slice(0, 5); // HH:MM UTC
+  const formatTimeLocal = (date: Date) => {
+    return date.toLocaleTimeString("en-US", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+  };
+
   useEffect(() => {
     setIsClient(true);
     const startDate = new Date(`${matchDate}T${startTime}Z`);
 
-    const formatTime = (date: Date) => {
-      return date.toLocaleTimeString("en-US", {
-        hour12: false,
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      });
-    };
-
-    const formattedStart = formatTime(startDate);
+    const formattedStart = formatTimeLocal(startDate);
 
     if (endTime) {
       const endDate = new Date(`${matchDate}T${endTime}Z`);
-      const formattedEnd = formatTime(endDate);
+      const formattedEnd = formatTimeLocal(endDate);
       setFormattedTime(`${formattedStart}–${formattedEnd}`);
     } else {
       setFormattedTime(formattedStart);
     }
   }, [matchDate, startTime, endTime]);
 
-  // Show server-rendered fallback until hydration
-  if (!isClient) {
-    const startDate = new Date(`${matchDate}T${startTime}Z`);
+  // Always render UTC time initially to prevent hydration mismatch
+  const startDate = new Date(`${matchDate}T${startTime}Z`);
+  const formattedStartUTC = formatTimeUTC(startDate);
 
-    const formatTime = (date: Date) => date.toTimeString().slice(0, 5); // HH:MM
-    const formattedStart = formatTime(startDate);
-
-    if (endTime) {
-      const endDate = new Date(`${matchDate}T${endTime}Z`);
-      const formattedEnd = formatTime(endDate);
-      return (
-        <span className={className}>{`${formattedStart}–${formattedEnd}`}</span>
-      );
-    } else {
-      return <span className={className}>Starts: {formattedStart}</span>;
-    }
-  }
   if (endTime) {
-    return <span className={className}>{formattedTime}</span>;
+    const endDate = new Date(`${matchDate}T${endTime}Z`);
+    const formattedEndUTC = formatTimeUTC(endDate);
+    const displayTime = isClient
+      ? formattedTime
+      : `${formattedStartUTC}–${formattedEndUTC}`;
+    return <span className={className}>{displayTime}</span>;
   } else {
-    return <span className={className}>Starts: {formattedTime}</span>;
+    const displayTime = isClient ? formattedTime : formattedStartUTC;
+    return <span className={className}>Starts: {displayTime}</span>;
   }
 }

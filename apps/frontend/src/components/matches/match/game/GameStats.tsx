@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 import { useRouter } from "next/navigation";
 import type { MatchInfo, SeasonPlatform } from "@eggosystem/types";
@@ -8,15 +8,15 @@ import { useGamePlayerStats } from "@/hooks/data/useGamePlayerStats";
 import { MatchMapPicks } from "../stats/MapPicks";
 import { TeamStatistics } from "../stats/TeamStatistics";
 import { useGameTeamStats } from "@/hooks/data/useGameTeamStats";
-import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
+import { use2DViewerData } from "@/hooks/data/use2DViewerData";
 import { RoundInfo } from "../stats/RoundRows";
+import { TwoDViewer } from "../stats/TwoDViewer";
 import { PlayerStatisticsForTeam } from "../stats/PlayerStatisticsForTeam";
 import { TopPlayers } from "../stats/TopPlayers";
 import { useGameTopPlayers } from "@/hooks/data/useGameTopPlayers";
 import _ from "lodash";
 import { MatchMapsHeader } from "../stats/MatchMapsHeader";
 import { useGameClip } from "@/hooks/data/useGameClip";
-import { Viewer } from "@eggosystem/viewer";
 
 interface MatchStatsProps {
   matchId: number;
@@ -36,6 +36,7 @@ export const GameStats = ({
   externalMatchRoomUrl
 }: MatchStatsProps) => {
   const router = useRouter();
+  const [is2DViewerOpen, setIs2DViewerOpen] = useState(false);
   const [selectedStat, setSelectedStat] = React.useState<
     "CT" | "T" | undefined
   >(undefined);
@@ -57,8 +58,8 @@ export const GameStats = ({
   const { teamStats } = useGameTeamStats(matchGameId);
   const { playerStats } = useGamePlayerStats(matchGameId, selectedStat);
   const { topPlayers } = useGameTopPlayers(matchGameId);
-  const { roundInfo } = useGameRoundInfo(matchGameId);
   const { clip } = useGameClip(matchGameId);
+  const { twoDViewerData } = use2DViewerData(matchGameId);
 
   const baseFilter = {
     seasons: matchInfo.season_id.toString(),
@@ -90,29 +91,20 @@ export const GameStats = ({
         />
       )}
 
-      {roundInfo && roundInfo.length > 0 && <RoundInfo roundInfo={roundInfo} />}
+      <RoundInfo
+        matchGameId={matchGameId}
+        setIs2DViewerOpen={setIs2DViewerOpen}
+        hasTwoDViewerData={twoDViewerData?.status === "ready"}
+      />
 
-      {/* 2D Viewer */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">2D REPLAY VIEWER</h2>
-        <div className="border rounded-lg p-4">
-          <Viewer
-            demoData={{
-              map: "de_dust2",
-              tickRate: 64,
-              ticks: [],
-              events: [],
-              rounds: [],
-              mapData: {
-                offset: { x: -2476, y: 3239 },
-                resolution: 0.0625,
-                width: 1024,
-                height: 1024
-              }
-            }}
-          />
-        </div>
-      </div>
+      {twoDViewerData?.status === "ready" && (
+        <TwoDViewer
+          matchGameId={matchGameId}
+          isModalOpen={is2DViewerOpen}
+          setIsModalOpen={setIs2DViewerOpen}
+          twoDViewerData={twoDViewerData.data}
+        />
+      )}
 
       {playerStats && playerStats.length > 0 && (
         <PlayerStatisticsForTeam

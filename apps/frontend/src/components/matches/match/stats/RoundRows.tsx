@@ -1,4 +1,6 @@
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
+import { useGameRoundInfo } from "@/hooks/data/useGameRoundInfo";
+import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -21,7 +23,9 @@ import {
 import React from "react";
 
 interface RoundInfoProps {
-  roundInfo: MapRoundInfo[];
+  matchGameId: number;
+  setIs2DViewerOpen: (is2DViewerOpen: boolean) => void;
+  hasTwoDViewerData: boolean;
 }
 
 const getEndReasonText = (
@@ -204,8 +208,15 @@ const RoundIcon = ({
   );
 };
 
-export const RoundInfo = ({ roundInfo }: RoundInfoProps) => {
-  const firstRound = roundInfo[0];
+export const RoundInfo = ({
+  matchGameId,
+  setIs2DViewerOpen,
+  hasTwoDViewerData
+}: RoundInfoProps) => {
+  const { roundInfo, isLoading, isError } = useGameRoundInfo(matchGameId);
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error loading round info</div>;
+  const firstRound = roundInfo?.[0];
   if (!roundInfo || !firstRound) return null;
   const roundsInGame = firstRound.regulation_rounds;
 
@@ -235,7 +246,14 @@ export const RoundInfo = ({ roundInfo }: RoundInfoProps) => {
   return (
     <TooltipProvider>
       <div className="relative overflow-x-auto">
-        <h2 className="mb-4">ROUND HISTORY</h2>
+        <div className="flex flex-row gap-2 mb-5 sm:mb-0">
+          <h2 className="mb-4">ROUND HISTORY</h2>
+          {hasTwoDViewerData && (
+            <Button variant="ghost" onClick={() => setIs2DViewerOpen(true)}>
+              Open 2D Viewer
+            </Button>
+          )}
+        </div>
 
         <div className="min-w-[max-content]">
           <div className="flex gap-2">
@@ -253,7 +271,6 @@ export const RoundInfo = ({ roundInfo }: RoundInfoProps) => {
             <Separator className="bg-kanaliiga-orange w-full my-2" />
           )}
         </div>
-
         {overtimeRounds.length > 0 && (
           <div className="min-w-[max-content]">
             {overtimeRounds.length > roundsInGame && (

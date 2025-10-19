@@ -82,7 +82,7 @@ export const expressFetcher = async <T>(
   const isInternalApi =
     typeof url === "string" && basePath && url.startsWith("/api/");
 
-  if (typeof url === "string" && basePath) {
+  if (typeof url === "string" && url.startsWith("/") && basePath) {
     url = `${basePath}${url}`;
   }
 
