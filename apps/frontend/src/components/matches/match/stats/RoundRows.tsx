@@ -216,9 +216,11 @@ export const RoundInfo = ({
   isLoadingViewerData
 }: RoundInfoProps) => {
   const { roundInfo, isLoading, isError } = useGameRoundInfo(matchGameId);
-  const { hasViewerData, isProcessing } = use2DViewerDataUntilReady(
-    matchGameId.toString()
-  );
+  const {
+    hasViewerData,
+    isProcessing,
+    isLoading: isLoadingViewerDataUntilReady
+  } = use2DViewerDataUntilReady(matchGameId.toString());
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading round info</div>;
   const firstRound = roundInfo?.[0];
@@ -253,14 +255,15 @@ export const RoundInfo = ({
       <div className="relative overflow-x-auto">
         <div className="flex flex-row gap-2 mb-5 sm:mb-3 items-center">
           <h2>ROUND HISTORY</h2>
-          {isProcessing ||
-            (isLoadingViewerData && (
-              <Spinner
-                thickness="thick"
-                color="kanaliigaOrange"
-                className="ml-2"
-              />
-            ))}
+          {(isProcessing ||
+            isLoadingViewerData ||
+            isLoadingViewerDataUntilReady) && (
+            <Spinner
+              thickness="thick"
+              color="kanaliigaOrange"
+              className="ml-2"
+            />
+          )}
           {!(isProcessing || isLoadingViewerData) && hasViewerData && (
             <Button
               variant="kanaliigaOrange"
