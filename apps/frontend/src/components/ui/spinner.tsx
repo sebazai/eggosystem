@@ -9,10 +9,21 @@ const spinnerVariants = cva("animate-spin rounded-full border-t-transparent", {
       default: "h-6 w-6 border-2",
       lg: "h-8 w-8 border-2",
       xl: "h-12 w-12 border-4"
+    },
+    color: {
+      default: "border-muted-foreground/20 border-r-muted-foreground/40",
+      kanaliigaOrange: "border-kanaliiga-orange/20 border-r-kanaliiga-orange/40"
+    },
+    thickness: {
+      default: "border-2",
+      thin: "border-1",
+      thick: "border-4"
     }
   },
   defaultVariants: {
-    size: "default"
+    size: "default",
+    color: "default",
+    thickness: "default"
   }
 });
 
@@ -20,14 +31,15 @@ interface SpinnerProps extends VariantProps<typeof spinnerVariants> {
   className?: string;
 }
 
-export function Spinner({ size, className }: SpinnerProps) {
+export function Spinner({
+  size = "default",
+  color = "default",
+  thickness = "default",
+  className
+}: SpinnerProps) {
   return (
     <div
-      className={cn(
-        spinnerVariants({ size }),
-        "border-muted-foreground/20 border-r-muted-foreground/40",
-        className
-      )}
+      className={cn(spinnerVariants({ size, color, thickness }), className)}
     />
   );
 }

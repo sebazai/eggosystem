@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
 import type { MultiSelect } from "@/types/MultiSelectType";
-import { Spinner } from "../ui/icons";
+import { SelectSpinner } from "@/components/ui/icons";
 
 type FancyMultiSelectProps<T> = {
   isMulti: true;
@@ -274,7 +274,7 @@ export function FancySelect<T>({
             {isValidating && !disabled && (
               <div className="relative">
                 <div className="absolute inset-y-0 right-2 flex items-center">
-                  <Spinner />
+                  <SelectSpinner />
                 </div>
               </div>
             )}

@@ -59,7 +59,8 @@ export const GameStats = ({
   const { playerStats } = useGamePlayerStats(matchGameId, selectedStat);
   const { topPlayers } = useGameTopPlayers(matchGameId);
   const { clip } = useGameClip(matchGameId);
-  const { twoDViewerData } = use2DViewerData(matchGameId);
+  const { twoDViewerData, isLoading: isLoadingViewerData } =
+    use2DViewerData(matchGameId);
 
   const baseFilter = {
     seasons: matchInfo.season_id.toString(),
@@ -94,7 +95,7 @@ export const GameStats = ({
       <RoundInfo
         matchGameId={matchGameId}
         setIs2DViewerOpen={setIs2DViewerOpen}
-        hasTwoDViewerData={twoDViewerData?.status === "ready"}
+        isLoadingViewerData={isLoadingViewerData}
       />
 
       {twoDViewerData?.status === "ready" && (

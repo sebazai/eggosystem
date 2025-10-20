@@ -21,11 +21,13 @@ import {
   type MapRoundStat
 } from "@eggosystem/types";
 import React from "react";
+import { use2DViewerDataUntilReady } from "@/hooks/data/use2DViewerDataUntilReady";
+import { Spinner } from "@/components/ui/spinner";
 
 interface RoundInfoProps {
   matchGameId: number;
   setIs2DViewerOpen: (is2DViewerOpen: boolean) => void;
-  hasTwoDViewerData: boolean;
+  isLoadingViewerData: boolean;
 }
 
 const getEndReasonText = (
@@ -211,9 +213,12 @@ const RoundIcon = ({
 export const RoundInfo = ({
   matchGameId,
   setIs2DViewerOpen,
-  hasTwoDViewerData
+  isLoadingViewerData
 }: RoundInfoProps) => {
   const { roundInfo, isLoading, isError } = useGameRoundInfo(matchGameId);
+  const { hasViewerData, isProcessing } = use2DViewerDataUntilReady(
+    matchGameId.toString()
+  );
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading round info</div>;
   const firstRound = roundInfo?.[0];
@@ -246,10 +251,22 @@ export const RoundInfo = ({
   return (
     <TooltipProvider>
       <div className="relative overflow-x-auto">
-        <div className="flex flex-row gap-2 mb-5 sm:mb-0">
-          <h2 className="mb-4">ROUND HISTORY</h2>
-          {hasTwoDViewerData && (
-            <Button variant="ghost" onClick={() => setIs2DViewerOpen(true)}>
+        <div className="flex flex-row gap-2 mb-5 sm:mb-3 items-center">
+          <h2>ROUND HISTORY</h2>
+          {isProcessing ||
+            (isLoadingViewerData && (
+              <Spinner
+                thickness="thick"
+                color="kanaliigaOrange"
+                className="ml-2"
+              />
+            ))}
+          {!(isProcessing || isLoadingViewerData) && hasViewerData && (
+            <Button
+              variant="kanaliigaOrange"
+              size="xs"
+              onClick={() => setIs2DViewerOpen(true)}
+            >
               Open 2D Viewer
             </Button>
           )}

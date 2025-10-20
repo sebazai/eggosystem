@@ -43,7 +43,8 @@ import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./SignupPlayerNotification";
 import { FaceITLevelIcon } from "../profile/FaceITLevelIcon";
 import { CS2PremierRankBadge } from "../profile/CS2PremierRankBadge";
-import { Spinner, TooltipIcon } from "../ui/icons";
+import { Spinner } from "@/components/ui/spinner";
+import { TooltipIcon } from "../ui/icons";
 import Link from "next/link";
 
 interface TabPlayersProps {

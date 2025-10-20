@@ -14,7 +14,6 @@ export function MatchClientTime({
   endTime,
   className
 }: ClientTimeProps) {
-  const [formattedTime, setFormattedTime] = useState<string>("");
   const [isClient, setIsClient] = useState(false);
 
   // Helper function to format time consistently
@@ -30,18 +29,7 @@ export function MatchClientTime({
 
   useEffect(() => {
     setIsClient(true);
-    const startDate = new Date(`${matchDate}T${startTime}Z`);
-
-    const formattedStart = formatTimeLocal(startDate);
-
-    if (endTime) {
-      const endDate = new Date(`${matchDate}T${endTime}Z`);
-      const formattedEnd = formatTimeLocal(endDate);
-      setFormattedTime(`${formattedStart}–${formattedEnd}`);
-    } else {
-      setFormattedTime(formattedStart);
-    }
-  }, [matchDate, startTime, endTime]);
+  }, []);
 
   // Always render UTC time initially to prevent hydration mismatch
   const startDate = new Date(`${matchDate}T${startTime}Z`);
@@ -50,12 +38,30 @@ export function MatchClientTime({
   if (endTime) {
     const endDate = new Date(`${matchDate}T${endTime}Z`);
     const formattedEndUTC = formatTimeUTC(endDate);
-    const displayTime = isClient
-      ? formattedTime
-      : `${formattedStartUTC}–${formattedEndUTC}`;
-    return <span className={className}>{displayTime}</span>;
+
+    if (isClient) {
+      // Only format local time on client after hydration
+      const formattedStart = formatTimeLocal(startDate);
+      const formattedEnd = formatTimeLocal(endDate);
+      return (
+        <span className={className}>{`${formattedStart}–${formattedEnd}`}</span>
+      );
+    } else {
+      // Always show UTC time on server and initial client render
+      return (
+        <span
+          className={className}
+        >{`${formattedStartUTC}–${formattedEndUTC}`}</span>
+      );
+    }
   } else {
-    const displayTime = isClient ? formattedTime : formattedStartUTC;
-    return <span className={className}>Starts: {displayTime}</span>;
+    if (isClient) {
+      // Only format local time on client after hydration
+      const formattedStart = formatTimeLocal(startDate);
+      return <span className={className}>Starts: {formattedStart}</span>;
+    } else {
+      // Always show UTC time on server and initial client render
+      return <span className={className}>Starts: {formattedStartUTC}</span>;
+    }
   }
 }

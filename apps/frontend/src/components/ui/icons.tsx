@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-function Spinner() {
+function SelectSpinner() {
   return (
     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
       <div className="h-5 w-5 animate-spin rounded-full border-4 border-transparent border-t-primary" />
@@ -74,4 +74,4 @@ const TooltipIcon = ({ text, icon }: TooltipIconProps) => {
 
 export default TooltipIcon;
 
-export { Spinner, ProcessingSpinner, TooltipIcon };
+export { SelectSpinner, ProcessingSpinner, TooltipIcon };

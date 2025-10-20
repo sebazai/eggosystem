@@ -1,5 +1,5 @@
 import { FancySelect } from "@/components/filters/FancyMultiSelect";
-import { Spinner } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import {
   FormField,

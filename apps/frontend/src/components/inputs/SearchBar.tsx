@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
-import { Spinner } from "@/components/ui/icons";
+import { SelectSpinner } from "@/components/ui/icons";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -115,7 +115,7 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
 
         {isPending && (
           <div className="absolute right-8 top-1/2 -translate-y-1/2">
-            <Spinner />
+            <SelectSpinner />
           </div>
         )}
 

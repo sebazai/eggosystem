@@ -1,7 +1,7 @@
 "use client";
 
 import { useRegistrationDrafts } from "@/hooks/data/dashboard/useRegistrationDrafts";
-import { Spinner } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/spinner";
 import { useMemo, useState } from "react";
 import {
   useReactTable,
