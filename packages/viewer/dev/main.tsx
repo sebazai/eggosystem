@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { Viewer } from "../src/index";
@@ -27,7 +28,8 @@ type TwoDViewerReadyStatus = {
 
 type TwoDViewerReturnData = TwoDViewerProcessingStatus | TwoDViewerReadyStatus;
 
-const API_BASE_URL = process.env.VITE_VIEWER_API_URL || "http://localhost:3000";
+const API_BASE_URL =
+  import.meta.env.VITE_VIEWER_API_URL || "http://localhost:3000";
 
 async function fetchDemoData(
   matchGameId: number
@@ -48,9 +50,16 @@ async function fetchDemoData(
 function DevApp() {
   const [matchGameId, setMatchGameId] = useState<string>("");
   const [demoData, setDemoData] = useState<DemoData | null>(null);
+  const [mapName, setMapName] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
+
+  // Debug: Log environment variables
+  console.log("Environment variables:", {
+    VITE_VIEWER_API_URL: import.meta.env.VITE_VIEWER_API_URL,
+    VITE_VIEWER_ASSETS_URL: import.meta.env.VITE_VIEWER_ASSETS_URL
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,12 +73,14 @@ function DevApp() {
     setLoading(true);
     setError(null);
     setDemoData(null);
+    setMapName("");
 
     try {
       const result = await fetchDemoData(id);
 
       if (result.status === "ready") {
         setDemoData(result.data);
+        setMapName(result.map);
         setStatus("Demo loaded successfully!");
       } else {
         setStatus(`Status: ${result.status} (${result.progress}%)`);
@@ -89,6 +100,7 @@ function DevApp() {
 
               if (updatedResult.status === "ready") {
                 setDemoData(updatedResult.data);
+                setMapName(updatedResult.map);
                 setStatus("Demo loaded successfully!");
                 clearInterval(pollInterval);
                 setLoading(false);
@@ -131,10 +143,11 @@ function DevApp() {
     }
   }, []);
 
-  if (demoData) {
+  if (demoData && mapName) {
+    console.log("Rendering Viewer with:", { demoData, mapName });
     return (
       <div style={{ height: "100vh", width: "100vw" }}>
-        <Viewer demoData={demoData} />
+        <Viewer demoData={demoData} mapName={mapName} />
       </div>
     );
   }
@@ -174,6 +187,22 @@ function DevApp() {
         >
           @eggosystem/viewer
         </h1>
+
+        <div
+          style={{
+            background: "#2a2a2a",
+            padding: "10px",
+            borderRadius: "4px",
+            marginBottom: "20px",
+            fontSize: "12px",
+            color: "#ccc"
+          }}
+        >
+          <div>API URL: {import.meta.env.VITE_VIEWER_API_URL}</div>
+          <div>Assets URL: {import.meta.env.VITE_VIEWER_ASSETS_URL}</div>
+          <div>Map Name: {mapName || "Not set"}</div>
+          <div>Demo Data: {demoData ? "Loaded" : "Not loaded"}</div>
+        </div>
 
         <p
           style={{

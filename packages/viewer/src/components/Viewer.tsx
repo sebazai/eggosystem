@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DemoData, DemoRound, DemoTick } from "../types";
 import WeaponIcon from "./WeaponIcon";
 import Killfeed from "./Killfeed";
+import { getAssetUrl } from "../utils/assetUrl";
 import "./Viewer.css";
 
 interface ViewerProps {
@@ -165,7 +166,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     img.onerror = (error) => {
       console.error("Failed to load map image:", error);
     };
-    img.src = `/maps/${mapName}/radar.png`;
+    img.src = getAssetUrl(`maps/${mapName}/radar.png`);
   }, [mapName]);
 
   // Load grenade detonation images
@@ -174,19 +175,19 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     flashImg.onload = () => setFlashbangImage(flashImg);
     flashImg.onerror = (error) =>
       console.error("Failed to load flashbang image:", error);
-    flashImg.src = "/flashbang-detonate.png";
+    flashImg.src = getAssetUrl("flashbang-detonate.png");
 
     const smokeImg = new Image();
     smokeImg.onload = () => setSmokeImage(smokeImg);
     smokeImg.onerror = (error) =>
       console.error("Failed to load smoke image:", error);
-    smokeImg.src = "/smoke-detonate.png";
+    smokeImg.src = getAssetUrl("smoke-detonate.png");
 
     const molotovImg = new Image();
     molotovImg.onload = () => setMolotovImage(molotovImg);
     molotovImg.onerror = (error) =>
       console.error("Failed to load molotov image:", error);
-    molotovImg.src = "/molotov-detonate.png";
+    molotovImg.src = getAssetUrl("molotov-detonate.png");
   }, []);
 
   // Update bullet trails based on current tick

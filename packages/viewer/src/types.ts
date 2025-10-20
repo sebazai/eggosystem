@@ -60,6 +60,7 @@ export interface DemoData {
 
 export interface ViewerProps {
   demoData: DemoData;
+  mapName: string;
 }
 
 export { default as Viewer } from "./components/Viewer";

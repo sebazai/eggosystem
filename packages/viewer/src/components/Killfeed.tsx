@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { DemoEvent } from "../types";
 import WeaponIcon from "./WeaponIcon";
+import { getAssetUrl } from "../utils/assetUrl";
 import "./Killfeed.css";
 
 interface Kill {
@@ -104,7 +105,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
                 {/* Flash assist icon - only show if BOTH assisted AND blind */}
                 {kill.blind && (
                   <img
-                    src="/kill-modifiers/flash-assist.svg"
+                    src={getAssetUrl("kill-modifiers/flash-assist.svg")}
                     alt="Flash assist"
                     className="kill-modifier-icon flash-assist-icon"
                     title="Flash assist"
@@ -121,7 +122,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
               {/* Only show blind icon if killer was blind but NO flash assist */}
               {kill.blind && !kill.assisted && (
                 <img
-                  src="/kill-modifiers/blind.svg"
+                  src={getAssetUrl("kill-modifiers/blind.svg")}
                   alt="Blind"
                   className="kill-modifier-icon"
                   title="Blind kill"
@@ -129,7 +130,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
               )}
               {kill.wallbang && (
                 <img
-                  src="/kill-modifiers/wallbang.svg"
+                  src={getAssetUrl("kill-modifiers/wallbang.svg")}
                   alt="Wallbang"
                   className="kill-modifier-icon"
                   title="Wallbang"
@@ -137,7 +138,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
               )}
               {kill.throughSmoke && (
                 <img
-                  src="/kill-modifiers/smoke.svg"
+                  src={getAssetUrl("kill-modifiers/smoke.svg")}
                   alt="Through smoke"
                   className="kill-modifier-icon"
                   title="Through smoke"
@@ -145,7 +146,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
               )}
               {kill.airborne && (
                 <img
-                  src="/kill-modifiers/jumpshot.svg"
+                  src={getAssetUrl("kill-modifiers/jumpshot.svg")}
                   alt="Jumpshot"
                   className="kill-modifier-icon"
                   title="Jumpshot"
@@ -153,7 +154,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
               )}
               {kill.noscope && (
                 <img
-                  src="/kill-modifiers/noscope.svg"
+                  src={getAssetUrl("kill-modifiers/noscope.svg")}
                   alt="Noscope"
                   className="kill-modifier-icon"
                   title="Noscope"
@@ -169,7 +170,7 @@ function Killfeed({ events, currentTick, tickRate }: KillfeedProps) {
               {/* Headshot icon (after weapon) */}
               {kill.headshot && (
                 <img
-                  src="/kill-modifiers/headshot.svg"
+                  src={getAssetUrl("kill-modifiers/headshot.svg")}
                   alt="Headshot"
                   className="kill-modifier-icon headshot-icon"
                   title="Headshot"

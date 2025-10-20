@@ -22,6 +22,7 @@ The dev server will ask you for a match game ID, then start a Vite development s
 ## Environment Variables
 
 - `VITE_VIEWER_API_URL`: API base URL (default: `http://localhost:3000`)
+- `VITE_VIEWER_ASSETS_URL`: Assets base URL for images and icons (optional)
 - `VIEWER_API_URL`: Alternative way to set API URL
 
 ### Environment Files
@@ -30,7 +31,8 @@ The package supports `.env.development` files for development configuration:
 
 ```bash
 # .env.development
-VITE_VIEWER_API_URL=https://cs2d.kanaliiga.fi
+VITE_VIEWER_API_URL=https://cs2ddev.kanaliiga.fi
+VITE_VIEWER_ASSETS_URL=https://hubdev.kanaliiga.fi
 ```
 
 This will automatically be loaded by Vite when running in development mode.

@@ -1,3 +1,5 @@
+import { getAssetUrl } from "../utils/assetUrl";
+
 interface WeaponIconProps {
   weaponName: string | undefined;
   className?: string;
@@ -151,7 +153,7 @@ function WeaponIcon({ weaponName, className = "" }: WeaponIconProps) {
   }
 
   // Return image icon
-  const iconPath = `/weapons/${iconName}-icon.svg`;
+  const iconPath = getAssetUrl(`weapons/${iconName}-icon.svg`);
 
   return (
     <img

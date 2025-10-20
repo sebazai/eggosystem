@@ -34,21 +34,24 @@ async function main() {
   const env = {
     ...process.env,
     VITE_VIEWER_API_URL:
-      process.env.VITE_VIEWER_API_URL || "http://localhost:3000"
+      process.env.VITE_VIEWER_API_URL || "http://localhost:3000",
+    VITE_VIEWER_ASSETS_URL: process.env.VITE_VIEWER_ASSETS_URL || ""
   };
 
   if (matchGameId) {
     env.VITE_MATCH_GAME_ID = matchGameId;
     console.log(`\n🚀 Starting dev server with match game ID: ${matchGameId}`);
     console.log(`📡 API URL: ${env.VITE_VIEWER_API_URL}`);
+    console.log(`🖼️  Assets URL: ${env.VITE_VIEWER_ASSETS_URL || "Not set"}`);
   } else {
     console.log("\n🚀 Starting dev server (no match game ID specified)");
     console.log(`📡 API URL: ${env.VITE_VIEWER_API_URL}`);
+    console.log(`🖼️  Assets URL: ${env.VITE_VIEWER_ASSETS_URL || "Not set"}`);
   }
 
   console.log("\n💡 You can also pass the match game ID via URL parameter:");
   console.log(
-    `   http://localhost:3001?matchGameId=${matchGameId || "YOUR_ID"}\n`
+    `   http://localhost:3002?matchGameId=${matchGameId || "YOUR_ID"}\n`
   );
 
   // Start Vite dev server
