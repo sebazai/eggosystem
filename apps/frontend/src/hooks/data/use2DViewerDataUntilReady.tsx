@@ -34,7 +34,7 @@ export function use2DViewerDataUntilReady(gameId: string) {
         if (gameData && gameData.status === "ready") {
           return 0;
         }
-        return 30000;
+        return 10000;
       }
       return 0;
     }
