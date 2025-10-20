@@ -5,7 +5,11 @@
  * @returns The full URL to the asset
  */
 export function getAssetUrl(assetPath: string): string {
-  const assetsUrl = import.meta.env.VITE_VIEWER_ASSETS_URL || "";
+  // Check if we're in a Vite environment
+  const assetsUrl =
+    typeof import.meta !== "undefined" && import.meta.env
+      ? import.meta.env.VITE_VIEWER_ASSETS_URL || ""
+      : "";
 
   if (assetsUrl) {
     // Ensure the asset path doesn't start with a slash
