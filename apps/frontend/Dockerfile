@@ -12,8 +12,11 @@ COPY pnpm-workspace.yaml turbo.json ./
 COPY pnpm-lock.yaml ./
 COPY package.json ./
 COPY apps/frontend/package.json ./apps/frontend/package.json
-COPY packages/*/package.json ./packages/
+COPY packages/eslint/package.json ./packages/eslint/
+COPY packages/shared-msw/package.json ./packages/shared-msw/
+COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/types/package.json ./packages/types/
+COPY packages/viewer/package.json ./packages/viewer/
 
 # Builder stage
 FROM base AS builder
