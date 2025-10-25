@@ -106,7 +106,8 @@ export const validatePlayersInTeams = async (
 
     if (
       uniquePlayerSteamIds.length !== playerSteamIds.length ||
-      !playersWithMatchId.some((stp) => matchIdsArray.includes(stp.match_id))
+      (playersWithMatchId.length > 0 &&
+        !playersWithMatchId.some((stp) => matchIdsArray.includes(stp.match_id)))
     ) {
       // Add to redis as flag that players are not in SeasonTeamPlayers
       const key = `match:invalid_players:${externalMatchId}`;
