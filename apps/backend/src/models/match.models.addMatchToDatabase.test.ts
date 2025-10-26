@@ -428,7 +428,8 @@ describe("addMatchToDatabase", () => {
 
       await addMatchToDatabase(matchDetails, externalLeagueId);
 
-      // Verify default date/time is used (next Wednesday at 19:00)
+      // Verify default date/time is used (next Wednesday at 20:00 Helsinki time)
+      // DST conversion varies: 20:00 Helsinki = 17:00 UTC (summer) or 18:00 UTC (winter)
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO Matches"),
         expect.arrayContaining([
@@ -437,7 +438,7 @@ describe("addMatchToDatabase", () => {
           expect.any(Number), // stage_id
           matchDetails.best_of,
           expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), // match_date format
-          "17:00:00", // start_time
+          expect.stringMatching(/^(17|18):00:00$/), // start_time (DST-dependent)
           null, // end_time
           matchDetails.match_id,
           matchDetails.status,
