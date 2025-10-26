@@ -37,56 +37,216 @@ router.get("/", async (req, res) => {
     req.parsedParams;
 
   const filter_by_steam_id = req.query.steamId as string | undefined;
+  const filter_by_player_name = req.query.player_name as string | undefined;
 
-  const whereConditions: string[] = [];
+  // Check which dimensions need joins based on filters
+  // Only optimize seasons and teams - leagues/stages/maps always need their respective joins
+  const hasSeasonFilters = Boolean(
+    league_ids?.length || stages?.length || team_ids?.length || map_ids?.length
+  );
+  const hasTeamFilters = Boolean(
+    season_ids?.length ||
+      league_ids?.length ||
+      stages?.length ||
+      map_ids?.length
+  );
+
+  // Build parameterized query parts
   const queryParams: (string | number)[] = [];
 
-  if (filter_by_steam_id) {
-    whereConditions.push("STP.steam_id = ?");
-    queryParams.push(filter_by_steam_id);
-  }
-  if (season_ids?.length) {
-    whereConditions.push(
-      `STP.season_id IN (${season_ids.map(() => "?").join(", ")})`
-    );
-    queryParams.push(...season_ids);
-  }
-  if (league_ids?.length) {
-    whereConditions.push(
-      `M.league_id IN (${league_ids.map(() => "?").join(", ")})`
-    );
-    queryParams.push(...league_ids);
-  }
-  if (team_ids?.length) {
-    whereConditions.push(
-      `STP.team_id IN (${team_ids.map(() => "?").join(", ")})`
-    );
-    queryParams.push(...team_ids);
-  }
-  if (stages?.length) {
-    whereConditions.push(`M.stage IN (${stages.map(() => "?").join(", ")})`);
-    queryParams.push(...stages);
-  }
-  if (map_ids?.length) {
-    whereConditions.push(`MP.map_id IN (${map_ids.map(() => "?").join(", ")})`);
-    queryParams.push(...map_ids);
+  // Helper to build IN clause
+  const buildInClause = (values: number[] | null): string => {
+    if (!values?.length) return "1=1";
+    return values.map(() => "?").join(", ");
+  };
+
+  // Each subquery needs steamId and player_name parameters
+  const steamIdParam = filter_by_steam_id || "";
+  const playerNameLikeParam = filter_by_player_name
+    ? `%${filter_by_player_name}%`
+    : "";
+
+  // Helper to build player filter EXISTS clause
+  const buildPlayerFilter = () => {
+    if (!filter_by_steam_id && !filter_by_player_name) {
+      return "";
+    }
+    return `
+      EXISTS (
+        SELECT 1 FROM SeasonTeamPlayers AS STP
+        ${filter_by_player_name ? `INNER JOIN SteamPlayers AS SP ON SP.steam_id = STP.steam_id` : ""}
+        WHERE STP.team_id = MT.team_id 
+          AND STP.season_id = M.season_id
+          ${filter_by_steam_id ? `AND STP.steam_id = ?` : ""}
+          ${filter_by_player_name ? `AND (SP.nickname LIKE ? OR SP.faceit_nickname LIKE ?)` : ""}
+      )
+    `;
+  };
+
+  // For ValidSeasons subquery
+  if (hasSeasonFilters) {
+    // Player filter params (steamId and/or player_name)
+    if (filter_by_steam_id) queryParams.push(steamIdParam);
+    if (filter_by_player_name)
+      queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
+    // Dimension filters
+    if (team_ids?.length) queryParams.push(...team_ids);
+    if (league_ids?.length) queryParams.push(...league_ids);
+    if (stages?.length) queryParams.push(...stages);
+    if (map_ids?.length) queryParams.push(...map_ids);
+  } else {
+    // Fast path parameters
+    queryParams.push(steamIdParam, steamIdParam);
+    if (filter_by_player_name)
+      queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
   }
 
-  const whereClause =
-    whereConditions.length > 0 ? `WHERE ${whereConditions.join(" AND ")}` : "";
+  // For ValidLeagues subquery
+  if (filter_by_steam_id) queryParams.push(steamIdParam);
+  if (filter_by_player_name)
+    queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
+  if (season_ids?.length) queryParams.push(...season_ids);
+  if (team_ids?.length) queryParams.push(...team_ids);
+  if (stages?.length) queryParams.push(...stages);
+  if (map_ids?.length) queryParams.push(...map_ids);
 
+  // For ValidTeams subquery
+  if (hasTeamFilters) {
+    // Player filter params
+    if (filter_by_steam_id) queryParams.push(steamIdParam);
+    if (filter_by_player_name)
+      queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
+    // Dimension filters
+    if (season_ids?.length) queryParams.push(...season_ids);
+    if (league_ids?.length) queryParams.push(...league_ids);
+    if (stages?.length) queryParams.push(...stages);
+    if (map_ids?.length) queryParams.push(...map_ids);
+  } else {
+    // Fast path parameters
+    queryParams.push(steamIdParam, steamIdParam);
+    if (filter_by_player_name)
+      queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
+  }
+
+  // For ValidStages subquery
+  if (filter_by_steam_id) queryParams.push(steamIdParam);
+  if (filter_by_player_name)
+    queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
+  if (season_ids?.length) queryParams.push(...season_ids);
+  if (team_ids?.length) queryParams.push(...team_ids);
+  if (league_ids?.length) queryParams.push(...league_ids);
+  if (map_ids?.length) queryParams.push(...map_ids);
+
+  // For ValidMaps subquery
+  if (filter_by_steam_id) queryParams.push(steamIdParam);
+  if (filter_by_player_name)
+    queryParams.push(playerNameLikeParam, playerNameLikeParam); // Two params for OR condition
+  if (season_ids?.length) queryParams.push(...season_ids);
+  if (team_ids?.length) queryParams.push(...team_ids);
+  if (league_ids?.length) queryParams.push(...league_ids);
+  if (stages?.length) queryParams.push(...stages);
+  // Query each dimension - use INNER JOINs only when necessary
   const query = `
-    SELECT DISTINCT
-      GROUP_CONCAT(DISTINCT STP.season_id ORDER BY STP.season_id) as season_ids,
-      GROUP_CONCAT(DISTINCT COALESCE(M.league_id, '') ORDER BY M.league_id) as league_ids,
-      GROUP_CONCAT(DISTINCT STP.team_id ORDER BY STP.team_id) as team_ids,
-      GROUP_CONCAT(DISTINCT COALESCE(M.stage, '') ORDER BY M.stage) as stages,
-      GROUP_CONCAT(DISTINCT COALESCE(MP.map_id, '') ORDER BY MP.map_id) as map_ids
-    FROM SeasonTeamPlayers as STP
-    LEFT JOIN MatchTeams as MT ON MT.team_id = STP.team_id
-    LEFT JOIN Matches as M ON M.id = MT.match_id AND M.season_id = STP.season_id
-    LEFT JOIN MatchGames as MP ON M.id = MP.match_id
-    ${whereClause}
+    SELECT
+      -- Valid seasons (optimize: no joins if no cross-dimension filters)
+      COALESCE(
+        (${
+          !hasSeasonFilters
+            ? `
+          SELECT GROUP_CONCAT(DISTINCT STP.season_id ORDER BY STP.season_id)
+          FROM SeasonTeamPlayers AS STP
+          ${filter_by_player_name ? `INNER JOIN SteamPlayers AS SP ON SP.steam_id = STP.steam_id` : ""}
+          WHERE (? = '' OR STP.steam_id = ?)
+            ${filter_by_player_name ? `AND (SP.nickname LIKE ? OR SP.faceit_nickname LIKE ?)` : ""}
+         `
+            : `
+          SELECT GROUP_CONCAT(DISTINCT M.season_id ORDER BY M.season_id)
+          FROM MatchTeams AS MT
+          INNER JOIN Matches AS M ON M.id = MT.match_id
+          ${map_ids?.length ? `INNER JOIN MatchGames AS MP ON M.id = MP.match_id` : ""}
+          WHERE 1=1
+            ${buildPlayerFilter() ? `AND ${buildPlayerFilter()}` : ""}
+            ${team_ids?.length ? `AND MT.team_id IN (${buildInClause(team_ids)})` : ""}
+            ${league_ids?.length ? `AND M.league_id IN (${buildInClause(league_ids)})` : ""}
+            ${stages?.length ? `AND M.stage IN (${buildInClause(stages)})` : ""}
+            ${map_ids?.length ? `AND MP.map_id IN (${buildInClause(map_ids)})` : ""}
+         `
+        }), ''
+      ) as season_ids,
+      
+      -- Valid leagues (always needs Matches join)
+      COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT M.league_id ORDER BY M.league_id)
+         FROM MatchTeams AS MT
+         INNER JOIN Matches AS M ON M.id = MT.match_id
+         ${map_ids?.length ? `INNER JOIN MatchGames AS MP ON M.id = MP.match_id` : ""}
+         WHERE 1=1
+           ${buildPlayerFilter() ? `AND ${buildPlayerFilter()}` : ""}
+           ${season_ids?.length ? `AND M.season_id IN (${buildInClause(season_ids)})` : ""}
+           ${team_ids?.length ? `AND MT.team_id IN (${buildInClause(team_ids)})` : ""}
+           ${stages?.length ? `AND M.stage IN (${buildInClause(stages)})` : ""}
+           ${map_ids?.length ? `AND MP.map_id IN (${buildInClause(map_ids)})` : ""}
+           AND M.league_id IS NOT NULL
+        ), ''
+      ) as league_ids,
+      
+      -- Valid teams (optimize: no joins if no cross-dimension filters)
+      COALESCE(
+        (${
+          !hasTeamFilters
+            ? `
+          SELECT GROUP_CONCAT(DISTINCT STP.team_id ORDER BY STP.team_id)
+          FROM SeasonTeamPlayers AS STP
+          ${filter_by_player_name ? `INNER JOIN SteamPlayers AS SP ON SP.steam_id = STP.steam_id` : ""}
+          WHERE (? = '' OR STP.steam_id = ?)
+            ${filter_by_player_name ? `AND (SP.nickname LIKE ? OR SP.faceit_nickname LIKE ?)` : ""}
+         `
+            : `
+          SELECT GROUP_CONCAT(DISTINCT MT.team_id ORDER BY MT.team_id)
+          FROM MatchTeams AS MT
+          INNER JOIN Matches AS M ON M.id = MT.match_id
+          ${map_ids?.length ? `INNER JOIN MatchGames AS MP ON M.id = MP.match_id` : ""}
+          WHERE 1=1
+            ${buildPlayerFilter() ? `AND ${buildPlayerFilter()}` : ""}
+            ${season_ids?.length ? `AND M.season_id IN (${buildInClause(season_ids)})` : ""}
+            ${league_ids?.length ? `AND M.league_id IN (${buildInClause(league_ids)})` : ""}
+            ${stages?.length ? `AND M.stage IN (${buildInClause(stages)})` : ""}
+            ${map_ids?.length ? `AND MP.map_id IN (${buildInClause(map_ids)})` : ""}
+         `
+        }), ''
+      ) as team_ids,
+      
+      -- Valid stages (always needs Matches join)
+      COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT M.stage ORDER BY M.stage)
+         FROM MatchTeams AS MT
+         INNER JOIN Matches AS M ON M.id = MT.match_id
+         ${map_ids?.length ? `INNER JOIN MatchGames AS MP ON M.id = MP.match_id` : ""}
+         WHERE 1=1
+           ${buildPlayerFilter() ? `AND ${buildPlayerFilter()}` : ""}
+           ${season_ids?.length ? `AND M.season_id IN (${buildInClause(season_ids)})` : ""}
+           ${team_ids?.length ? `AND MT.team_id IN (${buildInClause(team_ids)})` : ""}
+           ${league_ids?.length ? `AND M.league_id IN (${buildInClause(league_ids)})` : ""}
+           ${map_ids?.length ? `AND MP.map_id IN (${buildInClause(map_ids)})` : ""}
+           AND M.stage IS NOT NULL
+        ), ''
+      ) as stages,
+      
+      -- Valid maps (always needs MatchGames join)
+      COALESCE(
+        (SELECT GROUP_CONCAT(DISTINCT MP.map_id ORDER BY MP.map_id)
+         FROM MatchTeams AS MT
+         INNER JOIN Matches AS M ON M.id = MT.match_id
+         INNER JOIN MatchGames AS MP ON M.id = MP.match_id
+         WHERE 1=1
+           ${buildPlayerFilter() ? `AND ${buildPlayerFilter()}` : ""}
+           ${season_ids?.length ? `AND M.season_id IN (${buildInClause(season_ids)})` : ""}
+           ${team_ids?.length ? `AND MT.team_id IN (${buildInClause(team_ids)})` : ""}
+           ${league_ids?.length ? `AND M.league_id IN (${buildInClause(league_ids)})` : ""}
+           ${stages?.length ? `AND M.stage IN (${buildInClause(stages)})` : ""}
+           AND MP.map_id IS NOT NULL
+        ), ''
+      ) as map_ids;
   `;
 
   const [result] = await runQuery<
