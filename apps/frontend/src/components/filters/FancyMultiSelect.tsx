@@ -207,8 +207,18 @@ export function FancySelect<T>({
         <div className="flex flex-wrap gap-1">
           {isMulti
             ? currentSelection.map((item, index) => (
-                <Badge key={`${item.label}-${index}`} variant="secondary">
-                  {item.label}
+                <Badge
+                  key={`${item.label}-${index}`}
+                  variant="secondary"
+                  title={
+                    item.isInvalid
+                      ? "This selection is incompatible with current filters"
+                      : undefined
+                  }
+                >
+                  <span className={item.isInvalid ? "line-through" : ""}>
+                    {item.label}
+                  </span>
                   <button
                     disabled={disabled}
                     className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground cursor-pointer disabled:hover:text-muted-foreground disabled:cursor-not-allowed"
@@ -219,8 +229,21 @@ export function FancySelect<T>({
                 </Badge>
               ))
             : currentSelection.length > 0 && (
-                <Badge variant="secondary">
-                  {currentSelection[0]?.label}
+                <Badge
+                  variant="secondary"
+                  title={
+                    currentSelection[0]?.isInvalid
+                      ? "This selection is incompatible with current filters"
+                      : undefined
+                  }
+                >
+                  <span
+                    className={
+                      currentSelection[0]?.isInvalid ? "line-through" : ""
+                    }
+                  >
+                    {currentSelection[0]?.label}
+                  </span>
                   <button
                     disabled={disabled}
                     className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground cursor-pointer disabled:hover:text-muted-foreground disabled:cursor-not-allowed"

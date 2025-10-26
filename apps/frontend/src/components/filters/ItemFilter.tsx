@@ -60,9 +60,11 @@ export const ItemFilter = <T extends { id: number }>(
     const label =
       data.find((item) => item.id === id)?.[props.labelKey as keyof T] ??
       "Unknown item";
+    const isInvalid = !props.selectableIds?.includes(id);
     return {
       value: id,
-      label: String(label)
+      label: String(label),
+      isInvalid
     };
   });
 
