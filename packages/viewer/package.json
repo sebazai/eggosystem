@@ -31,10 +31,10 @@
     "@eggosystem/eslint": "workspace:*",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
-    "@vitejs/plugin-react": "^4.3.3",
-    "dotenv": "^16.4.5",
+    "@vitejs/plugin-react": "5.1.0",
+    "dotenv": "17.2.3",
     "typescript": "5.9.3",
-    "vite": "^5.4.10"
+    "vite": "7.1.2"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
