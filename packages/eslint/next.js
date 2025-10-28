@@ -19,33 +19,39 @@ export const config = [
   eslintConfigPrettier,
   ...tseslint.configs.recommended,
   {
-    ...pluginReact.configs.flat.recommended,
     languageOptions: {
-      ...pluginReact.configs.flat.recommended.languageOptions,
       globals: {
-        ...globals.serviceworker
+        ...globals.browser,
+        ...globals.serviceworker,
+        React: "readonly",
+        NodeJS: "readonly",
+        RequestInfo: "readonly",
+        RequestInit: "readonly",
+        FrameRequestCallback: "readonly"
       }
     }
   },
   {
     plugins: {
+      react: pluginReact,
+      "react-hooks": pluginReactHooks,
       "@next/next": pluginNext
     },
-    rules: {
-      ...pluginNext.configs.recommended.rules,
-      ...pluginNext.configs["core-web-vitals"].rules
-    }
-  },
-  {
-    plugins: {
-      "react-hooks": pluginReactHooks
+    settings: {
+      react: { version: "detect" }
     },
-    settings: { react: { version: "detect" } },
     rules: {
+      ...pluginReact.configs.recommended.rules,
       ...pluginReactHooks.configs.recommended.rules,
+      ...pluginNext.configs.recommended.rules,
+      ...pluginNext.configs["core-web-vitals"].rules,
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+      // Relax some React Hooks rules for Next.js 16 compatibility
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/incompatible-library": "warn",
+      "react-hooks/purity": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -54,7 +60,24 @@ export const config = [
           caughtErrorsIgnorePattern: "^_", // Ignore unused catch clause parameters
           ignoreRestSiblings: true //  Ignore unused properties when using object destructuring
         }
-      ]
+      ],
+      // Allow variable redeclaration in some cases
+      "no-redeclare": "warn"
+    }
+  },
+  {
+    files: [
+      "**/*.config.{js,ts}",
+      "**/next.config.{js,ts}",
+      "**/playwright.config.{js,ts}",
+      "**/robots.{js,ts}",
+      "**/env.{js,ts}"
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        process: "readonly"
+      }
     }
   }
 ];

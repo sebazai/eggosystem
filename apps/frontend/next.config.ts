@@ -9,10 +9,6 @@ const nextConfig: NextConfig = {
     "@eggosystem/eslint",
     "@eggosystem/viewer"
   ],
-  eslint: {
-    dirs: ["src"],
-    ignoreDuringBuilds: true
-  },
   images: {
     remotePatterns: [
       {
