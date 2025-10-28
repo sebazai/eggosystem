@@ -4,13 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
-interface FailedParseLoadingStateProps {
-  onRetry?: () => void;
-}
-
-export const FailedParseLoadingState = ({
-  onRetry
-}: FailedParseLoadingStateProps) => (
+export const FailedParseLoadingState = () => (
   <Card>
     <CardHeader>
       <CardTitle>Failed Parse Messages</CardTitle>
@@ -56,9 +50,7 @@ export const FailedParseErrorState = ({
   </Card>
 );
 
-interface FailedParseEmptyStateProps {}
-
-export const FailedParseEmptyState = ({}: FailedParseEmptyStateProps) => (
+export const FailedParseEmptyState = () => (
   <Card>
     <CardHeader>
       <CardTitle>Failed Parse Messages</CardTitle>
