@@ -91,11 +91,7 @@ const extractGameId = (
   queueName: string
 ): string => {
   if (queueName === "parse_queue_failed") {
-    // For parse_queue_failed: match_game_id is in original_message.match_game_id
-    const originalMessage = messageContent.original_message as
-      | Record<string, unknown>
-      | undefined;
-    return (originalMessage?.match_game_id as string) || "unknown";
+    return (messageContent?.match_game_id as string) || "unknown";
   } else if (queueName === "parsed_save_failed") {
     // For parsed_save_failed: match_game_id is directly in messageContent or in originalMessage.match_game_id
     const originalMessage = messageContent.originalMessage as
@@ -201,7 +197,7 @@ export const getFailedParseMessages = async (
               failed_at:
                 (content.failed_at as string) ||
                 (content.timestamp as string) ||
-                new Date().toISOString(),
+                (content.created_at as string),
               final_error:
                 (content.final_error as string) ||
                 (content.error as string) ||
@@ -221,10 +217,8 @@ export const getFailedParseMessages = async (
                   ?.source as string) ||
                 "unknown",
               status: "failed",
-              created_at:
-                (content.created_at as string) || new Date().toISOString(),
-              updated_at:
-                (content.updated_at as string) || new Date().toISOString(),
+              created_at: content.created_at as string,
+              updated_at: content.updated_at as string,
               _rabbitMQMessage: msg // Store reference for later requeuing
             };
 
