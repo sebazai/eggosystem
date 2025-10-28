@@ -68,8 +68,8 @@
     "zod": "4.1.9"
   },
   "devDependencies": {
-    "@babel/core": "7.28.4",
-    "@babel/preset-env": "7.28.3",
+    "@babel/core": "7.28.5",
+    "@babel/preset-env": "7.28.5",
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/shared-msw": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
