@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "",
   "dependencies": {
-    "zod": "4.1.9"
+    "zod": "4.1.12"
   },
   "devDependencies": {
     "@eggosystem/tsconfig": "workspace:*",
