@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import type {
   FailedParseMessagesResponse,
@@ -9,7 +9,6 @@ import type {
   ReparseResponse
 } from "@eggosystem/types";
 import { clientApiFetch } from "@/lib/apiClient";
-import { useAuth } from "@/context/AuthContext";
 
 interface UseFailedParseMessagesParams {
   limit?: number;
@@ -20,28 +19,31 @@ interface UseFailedParseMessagesParams {
 
 export const useFailedParseMessages = (
   params: UseFailedParseMessagesParams = {}
-) => {
-  const { user } = useAuth();
+): {
+  failedMessages: FailedParseMessagesResponse["messages"];
+  pagination: FailedParseMessagesResponse["pagination"] | undefined;
+  filters: FailedParseMessagesResponse["filters"] | undefined;
+  isLoading: boolean;
+  error: unknown;
+  mutate: () => void;
+} => {
+  // Memoize the endpoint to prevent unnecessary re-renders
+  const endpoint = useMemo(() => {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.set("limit", params.limit.toString());
+    if (params.offset) queryParams.set("offset", params.offset.toString());
+    if (params.queue_name) queryParams.set("queue_name", params.queue_name);
+    if (params.status) queryParams.set("status", params.status);
 
-  // Build query string
-  const queryParams = new URLSearchParams();
-  if (params.limit) queryParams.set("limit", params.limit.toString());
-  if (params.offset) queryParams.set("offset", params.offset.toString());
-  if (params.queue_name) queryParams.set("queue_name", params.queue_name);
-  if (params.status) queryParams.set("status", params.status);
-
-  const queryString = queryParams.toString();
-  const endpoint = `/api/v1/dashboard/demos/failed/parse${queryString ? "?" + queryString : ""}`;
+    const queryString = queryParams.toString();
+    return `/api/v1/dashboard/demos/failed/parse${queryString ? "?" + queryString : ""}`;
+  }, [params.limit, params.offset, params.queue_name, params.status]);
 
   const { data, error, isLoading, mutate } =
-    useSWR<FailedParseMessagesResponse>(
-      user ? endpoint : null,
-      clientApiFetch,
-      {
-        revalidateOnFocus: false,
-        revalidateOnReconnect: true
-      }
-    );
+    useSWR<FailedParseMessagesResponse>(endpoint, clientApiFetch, {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true
+    });
 
   return {
     failedMessages: data?.messages || [],
@@ -53,11 +55,14 @@ export const useFailedParseMessages = (
   };
 };
 
-export const useFailedParseStats = () => {
-  const { user } = useAuth();
-
+export const useFailedParseStats = (): {
+  stats: FailedParseStatsResponse["stats"];
+  isLoading: boolean;
+  error: unknown;
+  mutate: () => void;
+} => {
   const { data, error, isLoading, mutate } = useSWR<FailedParseStatsResponse>(
-    user ? "/api/v1/dashboard/demos/failed/parse/stats" : null,
+    "/api/v1/dashboard/demos/failed/parse/stats",
     clientApiFetch,
     {
       revalidateOnFocus: false,

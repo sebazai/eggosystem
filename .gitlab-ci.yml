@@ -314,7 +314,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.55.0-jammy
+  image: mcr.microsoft.com/playwright:v1.56.1-jammy
   stage: test-e2e
   dependencies:
     - build:backend
