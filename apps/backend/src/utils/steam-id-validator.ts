@@ -102,10 +102,11 @@ export function normalizeSteamId(steamId: string): string {
   // - http://steamcommunity.com/profiles/76561198049745649
   // - steamcommunity.com/profiles/76561198049745649
   // - /profiles/76561198049745649
-  const profileMatch = trimmedId.match(
-    /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#)/i
-  );
-  if (profileMatch) {
+  const profileMatch =
+    trimmedId.match(
+      /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#|)/i
+    ) || trimmedId.match(/\/profiles\/(\d{17})(?:\/|$|\?|#|)/i);
+  if (profileMatch && profileMatch[1]) {
     const steamId64 = profileMatch[1];
     if (isValidSteamId(steamId64)) {
       return steamId64;
