@@ -232,7 +232,7 @@ export const isValidSteamId = sharedIsValidSteamId;
 /**
  * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, or custom URL) to SteamID64.
  * For formats that require API calls (custom URLs), returns null if resolution fails.
- * For formats that can be converted locally (SteamID, SteamID3), returns null if conversion fails.
+ * For formats that can be converted locally (SteamID, SteamID3, /profiles/ URLs), returns null if conversion fails.
  * Uses BigInt to handle large SteamID64 values that exceed JavaScript's safe integer limit.
  *
  * @param input The Steam ID input in any format
@@ -252,6 +252,22 @@ export const resolveSteamIdToSteamId64 = async (
   }
 
   const trimmed = input.trim();
+
+  // Extract SteamID64 from /profiles/ URLs (these contain SteamID64 directly)
+  // Handles formats like:
+  // - https://steamcommunity.com/profiles/76561198049745649
+  // - http://steamcommunity.com/profiles/76561198049745649
+  // - steamcommunity.com/profiles/76561198049745649
+  // - /profiles/76561198049745649
+  const profileMatch = trimmed.match(
+    /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#)/i
+  );
+  if (profileMatch && profileMatch[1]) {
+    const steamId64 = profileMatch[1];
+    if (isValidSteamId(steamId64)) {
+      return steamId64;
+    }
+  }
 
   // Try local conversion first (SteamID and SteamID3 formats)
   // SteamID format: STEAM_X:Y:Z

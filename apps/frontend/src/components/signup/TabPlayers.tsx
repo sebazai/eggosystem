@@ -394,18 +394,16 @@ export const TabPlayers = ({
             // Already valid SteamID64
             resolvedSteamId = newValue;
           } else {
-            // Only try API resolution for full Steam community URLs
+            // Only try API resolution for custom Steam community URLs (/id/username)
             // Pattern: https://steamcommunity.com/id/username or http://steamcommunity.com/id/username
             // Allow trailing slashes and query parameters
-            const isFullSteamUrl =
+            // Note: /profiles/ URLs are handled locally by resolveSteamIdToSteamId64
+            const isCustomSteamUrl =
               /^https?:\/\/(?:www\.)?steamcommunity\.com\/id\/[^/?#]+(?:\/|$|\?|#)/i.test(
-                newValue.trim()
-              ) ||
-              /^https?:\/\/(?:www\.)?steamcommunity\.com\/profiles\/\d{17}(?:\/|$|\?|#)/i.test(
                 newValue.trim()
               );
 
-            if (isFullSteamUrl) {
+            if (isCustomSteamUrl) {
               // Try API resolution for custom URLs
               setLoadingStates((prev) => ({
                 ...prev,

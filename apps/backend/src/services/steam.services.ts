@@ -178,25 +178,13 @@ export const resolveSteamIdVanityURL = async (
     // - /id/sububobi
     // - id/sububobi
     // - sububobi
-    // Also handles /profiles/ URLs (these use SteamID64 directly)
+    // Note: /profiles/ URLs are handled by normalizeSteamId() before this function is called
     const steamProfileMatch = cleanedVanityUrl.match(
       /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/id\/([^/?#]+)/i
     );
     if (steamProfileMatch) {
       cleanedVanityUrl = steamProfileMatch[1];
     } else {
-      // Check for /profiles/ URLs - these contain SteamID64 directly
-      const profileMatch = cleanedVanityUrl.match(
-        /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})/i
-      );
-      if (profileMatch) {
-        // This is already a SteamID64, return it directly
-        const steamId64 = profileMatch[1];
-        if (isValidSteamId(steamId64)) {
-          return steamId64;
-        }
-      }
-
       // If not a full URL, try to extract from paths like /id/username
       const idPathMatch = cleanedVanityUrl.match(/\/id\/([^/?#]+)/i);
       if (idPathMatch) {
@@ -208,6 +196,7 @@ export const resolveSteamIdVanityURL = async (
     }
 
     // If after cleaning we have a valid SteamID64, return it
+    // (This handles edge cases where a SteamID64 was passed directly)
     if (isValidSteamId(cleanedVanityUrl)) {
       return cleanedVanityUrl;
     }

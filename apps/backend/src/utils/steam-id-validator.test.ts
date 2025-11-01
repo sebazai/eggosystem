@@ -91,6 +91,31 @@ describe("Steam ID Validator", () => {
       expect(normalizeSteamId(" [U:1:89479921] ")).toBe("76561198049745649");
     });
 
+    it("should extract SteamID64 from /profiles/ URLs", () => {
+      const steamId64 = "76561198049745649";
+      expect(
+        normalizeSteamId(`https://steamcommunity.com/profiles/${steamId64}`)
+      ).toBe(steamId64);
+      expect(
+        normalizeSteamId(`http://steamcommunity.com/profiles/${steamId64}`)
+      ).toBe(steamId64);
+      expect(normalizeSteamId(`steamcommunity.com/profiles/${steamId64}`)).toBe(
+        steamId64
+      );
+      expect(normalizeSteamId(`/profiles/${steamId64}`)).toBe(steamId64);
+      expect(
+        normalizeSteamId(`https://steamcommunity.com/profiles/${steamId64}/`)
+      ).toBe(steamId64);
+      expect(
+        normalizeSteamId(
+          `https://steamcommunity.com/profiles/${steamId64}?param=value`
+        )
+      ).toBe(steamId64);
+      expect(
+        normalizeSteamId(`https://www.steamcommunity.com/profiles/${steamId64}`)
+      ).toBe(steamId64);
+    });
+
     it("should throw BadRequestError for invalid Steam ID", () => {
       expect(() => normalizeSteamId("invalid")).toThrow(BadRequestError);
       expect(() => normalizeSteamId("")).toThrow(BadRequestError);

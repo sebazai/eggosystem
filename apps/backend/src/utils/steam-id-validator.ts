@@ -80,7 +80,7 @@ export function convertSteamId3ToSteamId64(steamId3: string): string {
 
 /**
  * Detects the Steam ID format and returns the SteamID64.
- * Supports: SteamID64, SteamID, SteamID3 formats.
+ * Supports: SteamID64, SteamID, SteamID3 formats, and URLs containing SteamID64.
  * Note: Custom URLs (vanity URLs) must be resolved via API call separately.
  *
  * @param steamId The Steam ID string to validate and normalize
@@ -96,6 +96,22 @@ export function normalizeSteamId(steamId: string): string {
     return trimmedId;
   }
 
+  // Extract SteamID64 from /profiles/ URLs (these contain SteamID64 directly)
+  // Handles formats like:
+  // - https://steamcommunity.com/profiles/76561198049745649
+  // - http://steamcommunity.com/profiles/76561198049745649
+  // - steamcommunity.com/profiles/76561198049745649
+  // - /profiles/76561198049745649
+  const profileMatch = trimmedId.match(
+    /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#)/i
+  );
+  if (profileMatch) {
+    const steamId64 = profileMatch[1];
+    if (isValidSteamId(steamId64)) {
+      return steamId64;
+    }
+  }
+
   // Try SteamID format (STEAM_X:Y:Z)
   if (trimmedId.startsWith("STEAM_")) {
     return convertSteamIdToSteamId64(trimmedId);
@@ -107,6 +123,6 @@ export function normalizeSteamId(steamId: string): string {
   }
 
   throw new BadRequestError(
-    "Unsupported Steam ID format. Supported formats: SteamID64 (17 digits), SteamID (STEAM_X:Y:Z), SteamID3 ([U:1:AccountID]). For custom URLs, use resolveSteamIdVanityURL."
+    "Unsupported Steam ID format. Supported formats: SteamID64 (17 digits), SteamID (STEAM_X:Y:Z), SteamID3 ([U:1:AccountID]), or Steam profile URLs (/profiles/SteamID64). For custom URLs, use resolveSteamIdVanityURL."
   );
 }
