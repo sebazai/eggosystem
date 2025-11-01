@@ -13,6 +13,7 @@ import {
   FormDescription
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SteamIdInput } from "@/components/ui/steam-id-input";
 import { useState } from "react";
 import {
