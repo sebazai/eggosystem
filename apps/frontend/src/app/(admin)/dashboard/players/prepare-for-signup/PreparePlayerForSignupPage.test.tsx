@@ -165,7 +165,7 @@ describe("PreparePlayerForSignupPage", () => {
       expect(alert).toBeInTheDocument();
       expect(alert).toHaveClass("border-blue-500");
       expect(alert.textContent || "").toContain(
-        "Profile was already valid - no changes were made"
+        "Profile validation complete - all required fields are already set correctly. No changes were made."
       );
       expect(alert.textContent || "").toContain("2925");
       expect(alert.textContent || "").toContain("76561198049745649");
@@ -194,7 +194,7 @@ describe("PreparePlayerForSignupPage", () => {
       expect(alert).toBeInTheDocument();
       expect(alert).toHaveClass("border-blue-500");
       expect(alert.textContent || "").toContain(
-        "Profile was already valid - no changes were made"
+        "Profile validation complete - all required fields are already set correctly. No changes were made."
       );
       expect(alert.textContent || "").toContain("2925");
       expect(alert.textContent || "").toContain("76561198049745649");

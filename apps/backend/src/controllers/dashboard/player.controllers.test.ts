@@ -14,6 +14,9 @@ import * as rankModels from "../../models/season-player-ranks.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import * as matchUtils from "../../utils/matchUtils";
 import * as steamIdValidator from "../../utils/steam-id-validator";
+import * as playerRankServices from "../../services/player-ranks.services";
+import * as faceitServices from "../../services/faceit.services";
+import * as dbConnection from "../../db/mysqlConnection";
 
 // Mock dependencies
 jest.mock("../../models/dashboard/season.models");
@@ -22,6 +25,9 @@ jest.mock("../../models/season-player-ranks.models");
 jest.mock("../../db/mysqlRunQuery");
 jest.mock("../../utils/matchUtils");
 jest.mock("../../utils/steam-id-validator");
+jest.mock("../../services/player-ranks.services");
+jest.mock("../../services/faceit.services");
+jest.mock("../../db/mysqlConnection");
 
 const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 const mockPlayerModels = playerModels as jest.Mocked<typeof playerModels>;
@@ -30,6 +36,13 @@ const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockMatchUtils = matchUtils as jest.Mocked<typeof matchUtils>;
 const mockSteamIdValidator = steamIdValidator as jest.Mocked<
   typeof steamIdValidator
+>;
+const mockPlayerRankServices = playerRankServices as jest.Mocked<
+  typeof playerRankServices
+>;
+const mockFaceitServices = faceitServices as jest.Mocked<typeof faceitServices>;
+const mockGetConnection = dbConnection.getConnection as jest.MockedFunction<
+  typeof dbConnection.getConnection
 >;
 
 describe("addPlayerToTeamController", () => {
@@ -63,6 +76,16 @@ describe("addPlayerToTeamController", () => {
     (mockResponse.json as jest.Mock).mockClear();
     (mockResponse.status as jest.Mock).mockClear();
     mockNext.mockClear();
+
+    // Mock database connection
+    const mockConnection = {
+      beginTransaction: jest.fn().mockResolvedValue(undefined),
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      release: jest.fn().mockResolvedValue(undefined),
+      execute: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(mockConnection as never);
   });
 
   it("should add an eligible player to the team", async () => {
@@ -77,6 +100,9 @@ describe("addPlayerToTeamController", () => {
         kana_elo: 200
       }
     ]);
+
+    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
     // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
@@ -95,14 +121,26 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
-    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
+    // Mock getPlayerDetailsForDashboardBySteamId query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        steam_id: EligiblePlayerForValidationSteamId,
+        nickname: "Test Player",
+        account_id: 123,
+        discord: "test#1234",
+        work_email_verified: true,
+        work_email: "test@example.com",
+        is_work_email_personal_email: false,
+        is_valid_work_email: true,
+        is_valid_full_name: true
+      }
+    ]);
 
     // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
-    // Mock team player query (success)
-    mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+    // Mock team player query (success) - insertSeasonTeamPlayer
+    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
     // Call the controller
     await addPlayerToTeamController(mockRequest, mockResponse, mockNext);
@@ -152,6 +190,24 @@ describe("addPlayerToTeamController", () => {
     // Mock empty player data - not found in SeasonPlayerRanks
     mockRunQuery.mockResolvedValueOnce([]);
 
+    // Mock external services for fetching player data
+    mockPlayerRankServices.getCSRank.mockResolvedValueOnce({
+      average_rank: 15000,
+      rank_updated_at: null
+    });
+    mockPlayerRankServices.getPlayerHoursForSteamAppId.mockResolvedValueOnce({
+      hours: 1000
+    });
+    mockFaceitServices.getFaceITCS2Rank.mockResolvedValueOnce({
+      faceit_level: 5,
+      faceit_elo: 1500,
+      faceit_kd: 1.2,
+      faceit_date: new Date("2024-01-01").getTime(),
+      metadata: {
+        faceit_decay: false
+      }
+    });
+
     // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
@@ -172,6 +228,21 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
+    // Mock getPlayerDetailsForDashboardBySteamId query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        steam_id: EligiblePlayerForValidationSteamId,
+        nickname: "Test Player",
+        account_id: 123,
+        discord: "test#1234",
+        work_email_verified: true,
+        work_email: "test@example.com",
+        is_work_email_personal_email: false,
+        is_valid_work_email: true,
+        is_valid_full_name: true
+      }
+    ]);
+
     // Mock FACEIT player rank insertion
     mockRankModels.insertPlayerRankForSeason.mockResolvedValueOnce(
       {} as unknown
@@ -180,8 +251,8 @@ describe("addPlayerToTeamController", () => {
     // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
-    // Mock team player query (success)
-    mockRunQuery.mockResolvedValueOnce({ affectedRows: 1 });
+    // Mock team player query (success) - insertSeasonTeamPlayer
+    mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
     // Call the controller
     await addPlayerToTeamController(mockRequest, mockResponse, mockNext);
@@ -290,6 +361,21 @@ describe("addPlayerToTeamController", () => {
       canAddPlayer: true,
       league_name: "Test League"
     });
+
+    // Mock getPlayerDetailsForDashboardBySteamId query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        steam_id: EligiblePlayerForValidationSteamId,
+        nickname: "Test Player",
+        account_id: 123,
+        discord: "test#1234",
+        work_email_verified: true,
+        work_email: "test@example.com",
+        is_work_email_personal_email: false,
+        is_valid_work_email: true,
+        is_valid_full_name: true
+      }
+    ]);
 
     // Mock setPlayerKanaElo failing by throwing an error
     mockPlayerModels.setPlayerKanaElo.mockRejectedValueOnce(
