@@ -89,6 +89,9 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
+    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
+
     // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
@@ -142,6 +145,9 @@ describe("addPlayerToTeamController", () => {
   it("should create player data if missing in SeasonPlayerRanks", async () => {
     // Mock empty player data - not found in SeasonPlayerRanks
     mockRunQuery.mockResolvedValueOnce([]);
+
+    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
     // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
@@ -199,6 +205,9 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
+    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
+
     // Mock eligibility check with ineligible result
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
@@ -255,6 +264,9 @@ describe("addPlayerToTeamController", () => {
         kana_elo: 200
       }
     ]);
+
+    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
     // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({

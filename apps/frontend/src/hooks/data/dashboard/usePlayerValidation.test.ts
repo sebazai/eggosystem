@@ -5,10 +5,13 @@ import type { PlayerValidationResult } from "@eggosystem/types";
 
 // Mock dependencies
 jest.mock("@/lib/apiClient");
-jest.mock("@/lib/utils");
+jest.mock("@/lib/utils", () => ({
+  isValidSteamId: jest.fn(),
+  convertSteamIdToSteamId64: jest.fn()
+}));
 
 import { clientApiFetch } from "@/lib/apiClient";
-import { isValidSteamId } from "@/lib/utils";
+import { isValidSteamId, convertSteamIdToSteamId64 } from "@/lib/utils";
 
 const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
   typeof clientApiFetch
@@ -16,6 +19,10 @@ const mockClientApiFetch = clientApiFetch as jest.MockedFunction<
 const mockIsValidSteamId = isValidSteamId as jest.MockedFunction<
   typeof isValidSteamId
 >;
+const mockConvertSteamIdToSteamId64 =
+  convertSteamIdToSteamId64 as jest.MockedFunction<
+    typeof convertSteamIdToSteamId64
+  >;
 
 const mockValidationResult: PlayerValidationResult = {
   steam_id: "76561198012345678",
@@ -59,6 +66,12 @@ describe("usePlayerValidation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockIsValidSteamId.mockReturnValue(true);
+    // Mock convertSteamIdToSteamId64 to return the Steam ID as-is (resolves immediately)
+    mockConvertSteamIdToSteamId64.mockImplementation(
+      async (steamId: string) => steamId
+    );
+    // Reset mockClientApiFetch to ensure it's ready
+    mockClientApiFetch.mockClear();
   });
 
   describe("Initial State", () => {
@@ -147,25 +160,37 @@ describe("usePlayerValidation", () => {
 
     it("should set and clear loading state correctly", async () => {
       let resolvePromise: (value: PlayerValidationResult) => void = () => {};
-      const promise = new Promise((resolve) => {
+      const promise = new Promise<PlayerValidationResult>((resolve) => {
         resolvePromise = resolve;
       });
 
       mockClientApiFetch.mockReturnValueOnce(promise);
       const { result } = renderHook(() => usePlayerValidation());
 
-      // Start validation
+      // Start validation (async call)
       act(() => {
-        result.current.validatePlayer("76561198012345678", "1");
+        result.current.validatePlayer("76561198012345678", "1").catch(() => {
+          // Ignore errors for this test
+        });
       });
 
-      // Should be loading initially
+      // Wait for the conversion to complete and loading state to be set
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      // Should be loading after conversion completes and API call starts
       expect(result.current.isValidating).toBe(true);
 
       // Resolve the promise
       await act(async () => {
-        resolvePromise!(mockValidationResult);
+        resolvePromise(mockValidationResult);
         await promise;
+      });
+
+      // Wait for validation to complete
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
       });
 
       // Should not be loading after completion
@@ -177,6 +202,10 @@ describe("usePlayerValidation", () => {
     it("should clear validation results and errors", async () => {
       mockClientApiFetch.mockResolvedValueOnce(mockValidationResult);
       const { result } = renderHook(() => usePlayerValidation());
+
+      // Ensure the hook is properly initialized
+      expect(result.current).toBeDefined();
+      expect(result.current.validatePlayer).toBeDefined();
 
       // First validate a player to have some state
       await act(async () => {

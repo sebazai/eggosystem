@@ -290,6 +290,47 @@ export const resolveSteamIdToSteamId64 = async (
   return null;
 };
 
+/**
+ * Converts a single Steam ID to SteamID64 format.
+ * Uses local conversion for SteamID/SteamID3, API call for custom URLs.
+ * This is the same pattern used in SignupForm for dashboard forms.
+ *
+ * @param steamId The Steam ID input in any format
+ * @returns Resolved SteamID64 or the original input if conversion fails
+ */
+export const convertSteamIdToSteamId64 = async (
+  steamId: string
+): Promise<string> => {
+  // Skip empty Steam IDs
+  if (!steamId || !steamId.trim()) {
+    return steamId;
+  }
+
+  // If already SteamID64, return as-is
+  if (isValidSteamId(steamId)) {
+    return steamId;
+  }
+
+  // Try local conversion first (SteamID, SteamID3)
+  const localConverted = await resolveSteamIdToSteamId64(steamId);
+  if (localConverted) {
+    return localConverted;
+  }
+
+  // Try API resolution for custom URLs
+  try {
+    const { clientApiFetch } = await import("@/lib/apiClient");
+    const response = await clientApiFetch<{ steamId64: string }>(
+      `/api/v1/players/resolve/${encodeURIComponent(steamId.trim())}`
+    );
+    return response.steamId64;
+  } catch (error) {
+    // If resolution fails, keep original (validation will catch it)
+    console.warn(`Failed to resolve Steam ID "${steamId}":`, error);
+    return steamId;
+  }
+};
+
 export const createPlatformTeamUrl = (
   externalPlatformId: string | null,
   platform: SeasonPlatform = SeasonPlatform.FACEIT

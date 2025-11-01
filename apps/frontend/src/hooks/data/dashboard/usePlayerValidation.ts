@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { clientApiFetch } from "@/lib/apiClient";
-import { isValidSteamId } from "@/lib/utils";
+import { isValidSteamId, convertSteamIdToSteamId64 } from "@/lib/utils";
 import type { PlayerValidationResult } from "@eggosystem/types";
 
 export interface UsePlayerValidationReturn {
@@ -35,12 +35,15 @@ export function usePlayerValidation(): UsePlayerValidationReturn {
       throw new Error("All fields are required. Please select a season first.");
     }
 
-    if (!isValidSteamId(steamId)) {
+    // Convert Steam ID to SteamID64 format (handles SteamID, SteamID3, URLs, custom URLs)
+    const convertedSteamId = await convertSteamIdToSteamId64(steamId);
+
+    if (!isValidSteamId(convertedSteamId)) {
       throw new Error("Invalid Steam ID format");
     }
 
     // Create the API URL
-    const apiUrl = `/api/v1/dashboard/players/${steamId}/validate?season_id=${seasonId}`;
+    const apiUrl = `/api/v1/dashboard/players/${convertedSteamId}/validate?season_id=${seasonId}`;
 
     setIsValidating(true);
     setError(null);

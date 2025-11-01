@@ -123,7 +123,22 @@ export const addPlayerToTeamController = async (
       );
     }
 
-    // 3. Now that we have player data, check eligibility
+    // 3. Check if team is in tier 1 league
+    const tierQuery = `
+      SELECT sl.tier
+      FROM SeasonLeagueTeams slt
+      JOIN SeasonLeagues sl ON sl.season_id = slt.season_id AND sl.league_id = slt.league_id
+      WHERE slt.team_id = ? AND slt.season_id = ?
+      LIMIT 1
+    `;
+    const tierResults = await runQuery<Array<{ tier: number }>>(
+      tierQuery,
+      [teamId, seasonId],
+      connection
+    );
+    const isTier1 = tierResults.length > 0 && tierResults[0].tier === 1;
+
+    // 4. Now that we have player data, check eligibility
     const eligibility = await checkPlayerAdditionEligibility(
       seasonId,
       teamId,
@@ -131,14 +146,14 @@ export const addPlayerToTeamController = async (
       { connection }
     );
 
-    // 4. Verify player is eligible
-    if (!eligibility.canAddPlayer) {
+    // 5. Verify player is eligible (skip check for tier 1 teams)
+    if (!isTier1 && !eligibility.canAddPlayer) {
       return next(
         new BadRequestError("Player is not eligible to be added to this team")
       );
     }
 
-    // 5. Set the player's kana_elo from the eligibility check
+    // 6. Set the player's kana_elo from the eligibility check
     const calculusString =
       typeof calculusData === "object"
         ? JSON.stringify(calculusData)
@@ -153,7 +168,7 @@ export const addPlayerToTeamController = async (
       connection
     );
 
-    // 6. Finally add the player to the team in SeasonTeamPlayers
+    // 7. Finally add the player to the team in SeasonTeamPlayers
     await insertSeasonTeamPlayer(
       seasonId,
       teamId,
