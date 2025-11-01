@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { extractErrorMessage } from "@/lib/apiClient";
 
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
@@ -31,7 +34,6 @@ import { useAddPlayer } from "@/hooks/data/useAddPlayer";
 import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
 import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationForm";
 import { convertSteamIdToSteamId64 } from "@/lib/utils";
-import { ApiError } from "@/lib/apiClient";
 
 export default function AddPlayerPage() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
@@ -39,7 +41,8 @@ export default function AddPlayerPage() {
   const [steamId, setSteamId] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<React.ReactNode | null>(null);
+  const [skipProfileValidation, setSkipProfileValidation] = useState(false);
 
   // Get all seasons
   const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
@@ -126,6 +129,7 @@ export default function AddPlayerPage() {
     clearResult();
     setSuccess(null);
     setApiError(null);
+    setSkipProfileValidation(false);
   };
 
   const handleSteamIdChange = (value: string) => {
@@ -136,6 +140,7 @@ export default function AddPlayerPage() {
       clearResult();
       setSuccess(null);
       setApiError(null);
+      setSkipProfileValidation(false);
     }
   };
 
@@ -149,6 +154,23 @@ export default function AddPlayerPage() {
 
   const handleAddPlayer = async () => {
     if (!selectedSeasonId || !selectedTeamId) {
+      return;
+    }
+
+    // Profile validation must be successful before adding player
+    if (!validationResult || !validationResult.profile.success) {
+      setApiError(
+        <>
+          Cannot add player: Profile validation is required. Please ensure the
+          player has a verified Kanahub profile.{" "}
+          <Link
+            href="/dashboard/players/prepare-for-signup"
+            className="underline font-medium text-kanaliiga-orange hover:text-orange-600"
+          >
+            Prepare player profile
+          </Link>
+        </>
+      );
       return;
     }
 
@@ -192,21 +214,12 @@ export default function AddPlayerPage() {
       setSuccess(null);
 
       // Handle API errors with RFC 7807 format
-      if (err instanceof ApiError) {
-        setApiError(err.detail || err.message);
-      } else if (err instanceof Error) {
-        setApiError(err.message);
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const error = err as any;
-        if (error?.detail) {
-          setApiError(error.detail);
-        } else if (error?.message) {
-          setApiError(error.message);
-        } else {
-          setApiError("An unexpected error occurred while adding the player");
-        }
-      }
+      setApiError(
+        extractErrorMessage(
+          err,
+          "An unexpected error occurred while adding the player"
+        )
+      );
     } finally {
       setIsAdding(false);
     }
@@ -292,6 +305,33 @@ export default function AddPlayerPage() {
                 </Select>
               </div>
 
+              {/* Skip Profile Validation Checkbox - Show when profile validation fails but ranks/hours are present */}
+              {!isTier1Team &&
+                validationResult &&
+                !validationResult.overall_success &&
+                validationResult.hours.success &&
+                validationResult.rank.success &&
+                validationResult.platform_rank.success &&
+                !validationResult.profile.success && (
+                  <div className="flex items-center space-x-2 rounded-md border p-3">
+                    <Checkbox
+                      id="skip-profile-validation"
+                      checked={skipProfileValidation}
+                      onCheckedChange={(checked) =>
+                        setSkipProfileValidation(checked === true)
+                      }
+                      data-testid="skip-profile-validation-checkbox"
+                    />
+                    <Label
+                      htmlFor="skip-profile-validation"
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      Skip profile validation (ranks and hours are sufficient
+                      for eligibility check)
+                    </Label>
+                  </div>
+                )}
+
               {/* Check Eligibility Button - Hidden for tier 1 teams */}
               {!isTier1Team && (
                 <Button
@@ -302,7 +342,13 @@ export default function AddPlayerPage() {
                     !steamId ||
                     isChecking ||
                     !validationResult ||
-                    !validationResult.overall_success
+                    (!validationResult.overall_success &&
+                      !(
+                        skipProfileValidation &&
+                        validationResult.hours.success &&
+                        validationResult.rank.success &&
+                        validationResult.platform_rank.success
+                      ))
                   }
                   className="w-full"
                   data-testid="check-eligibility-button"
@@ -331,6 +377,23 @@ export default function AddPlayerPage() {
                   </AlertDescription>
                 </Alert>
               )}
+
+              {/* Show info when profile validation is skipped */}
+              {!isTier1Team &&
+                skipProfileValidation &&
+                validationResult &&
+                !validationResult.profile.success && (
+                  <Alert
+                    variant="default"
+                    className="border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                    data-testid="skip-profile-info"
+                  >
+                    <AlertDescription className="text-blue-700 dark:text-blue-300">
+                      Profile validation skipped. Eligibility check can proceed
+                      with rank data only.
+                    </AlertDescription>
+                  </Alert>
+                )}
 
               {/* Eligibility Error Display */}
               {eligibilityError && (
@@ -546,27 +609,51 @@ export default function AddPlayerPage() {
                 </Alert>
 
                 {/* Add Player Button */}
-                {eligibilityResult.canAddPlayer && (
-                  <Button
-                    onClick={handleAddPlayer}
-                    disabled={isAdding}
-                    className="w-full"
-                    variant="default"
-                    data-testid="add-player-button"
-                  >
-                    {isAdding ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adding Player...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        3. Add Player to Team
-                      </>
-                    )}
-                  </Button>
-                )}
+                {eligibilityResult.canAddPlayer &&
+                  validationResult &&
+                  validationResult.profile.success && (
+                    <Button
+                      onClick={handleAddPlayer}
+                      disabled={isAdding}
+                      className="w-full"
+                      variant="default"
+                      data-testid="add-player-button"
+                    >
+                      {isAdding ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Adding Player...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          3. Add Player to Team
+                        </>
+                      )}
+                    </Button>
+                  )}
+
+                {/* Show warning if profile validation failed */}
+                {eligibilityResult.canAddPlayer &&
+                  validationResult &&
+                  !validationResult.profile.success && (
+                    <Alert
+                      variant="destructive"
+                      data-testid="profile-validation-warning"
+                    >
+                      <AlertDescription>
+                        Cannot add player: Profile validation is required. The
+                        player must have a verified Kanahub profile before being
+                        added to a team.{" "}
+                        <Link
+                          href="/dashboard/players/prepare-for-signup"
+                          className="underline font-medium hover:text-primary"
+                        >
+                          Prepare player profile
+                        </Link>
+                      </AlertDescription>
+                    </Alert>
+                  )}
               </CardContent>
             </Card>
           )}
@@ -575,6 +662,7 @@ export default function AddPlayerPage() {
           {isTier1Team &&
             validationResult &&
             validationResult.overall_success &&
+            validationResult.profile.success &&
             selectedTeamId &&
             !eligibilityResult && (
               <Card>
@@ -607,6 +695,40 @@ export default function AddPlayerPage() {
                       </>
                     )}
                   </Button>
+                </CardContent>
+              </Card>
+            )}
+
+          {/* Show warning for tier 1 teams if profile validation failed */}
+          {isTier1Team &&
+            validationResult &&
+            validationResult.overall_success &&
+            !validationResult.profile.success &&
+            selectedTeamId && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    Cannot Add Player
+                  </CardTitle>
+                  <CardDescription>
+                    Profile validation is required
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      Cannot add player: Profile validation is required. The
+                      player must have a verified Kanahub profile before being
+                      added to a team.{" "}
+                      <Link
+                        href="/dashboard/players/prepare-for-signup"
+                        className="underline font-medium hover:text-primary"
+                      >
+                        Prepare player profile
+                      </Link>
+                    </AlertDescription>
+                  </Alert>
                 </CardContent>
               </Card>
             )}

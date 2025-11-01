@@ -94,6 +94,11 @@ const data: { navMain: Array<MenuItem> } = {
           requiredRoles: ["helpdesk", "admin"]
         },
         {
+          title: "Fill profile data",
+          url: createDashboardNextUrl("players/prepare-for-signup"),
+          requiredRoles: ["helpdesk", "admin"]
+        },
+        {
           title: "Substitute",
           url: createDashboardNextUrl("players/substitute"),
           requiredRoles: ["helpdesk", "admin"]

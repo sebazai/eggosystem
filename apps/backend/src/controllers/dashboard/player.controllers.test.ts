@@ -5,13 +5,15 @@ import {
 } from "@eggosystem/types";
 import {
   addPlayerToTeamController,
-  addSubstitutePlayerController
+  addSubstitutePlayerController,
+  preparePlayerForSignupController
 } from "./player.controllers";
 import * as seasonModels from "../../models/dashboard/season.models";
 import * as playerModels from "../../models/player.models";
 import * as rankModels from "../../models/season-player-ranks.models";
 import { runQuery } from "../../db/mysqlRunQuery";
 import * as matchUtils from "../../utils/matchUtils";
+import * as steamIdValidator from "../../utils/steam-id-validator";
 
 // Mock dependencies
 jest.mock("../../models/dashboard/season.models");
@@ -19,12 +21,16 @@ jest.mock("../../models/player.models");
 jest.mock("../../models/season-player-ranks.models");
 jest.mock("../../db/mysqlRunQuery");
 jest.mock("../../utils/matchUtils");
+jest.mock("../../utils/steam-id-validator");
 
 const mockSeasonModels = seasonModels as jest.Mocked<typeof seasonModels>;
 const mockPlayerModels = playerModels as jest.Mocked<typeof playerModels>;
 const mockRankModels = rankModels as jest.Mocked<typeof rankModels>;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockMatchUtils = matchUtils as jest.Mocked<typeof matchUtils>;
+const mockSteamIdValidator = steamIdValidator as jest.Mocked<
+  typeof steamIdValidator
+>;
 
 describe("addPlayerToTeamController", () => {
   // Create test objects
@@ -613,5 +619,180 @@ describe("addSubstitutePlayerController", () => {
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
       expect.any(Object)
     );
+  });
+});
+
+describe("preparePlayerForSignupController", () => {
+  const testSteamId = "76561198012345678";
+  const normalizedSteamId = "76561198012345678";
+
+  const mockRequest = {
+    params: {
+      steam_id: testSteamId
+    }
+  } as unknown as RequestWithParams<{
+    steam_id: string;
+  }>;
+
+  const mockResponse = {
+    json: jest.fn().mockReturnThis(),
+    status: jest.fn().mockReturnThis()
+  } as unknown as Response;
+
+  const mockNext = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (mockResponse.json as jest.Mock).mockClear();
+    (mockResponse.status as jest.Mock).mockClear();
+    mockNext.mockClear();
+  });
+
+  it("should successfully prepare player for signup", async () => {
+    // Mock normalizeSteamId
+    mockSteamIdValidator.normalizeSteamId.mockReturnValue(normalizedSteamId);
+
+    // Mock preparePlayerForSignup
+    mockPlayerModels.preparePlayerForSignup.mockResolvedValueOnce({
+      account_id: 123,
+      steam_id: normalizedSteamId,
+      changes_made: true
+    });
+
+    await preparePlayerForSignupController(mockRequest, mockResponse, mockNext);
+
+    expect(mockSteamIdValidator.normalizeSteamId).toHaveBeenCalledWith(
+      testSteamId
+    );
+    expect(mockPlayerModels.preparePlayerForSignup).toHaveBeenCalledWith(
+      normalizedSteamId
+    );
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Player prepared for signup successfully",
+      account_id: 123,
+      steam_id: normalizedSteamId,
+      changes_made: true
+    });
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it("should return info message when profile was already valid", async () => {
+    // Mock normalizeSteamId
+    mockSteamIdValidator.normalizeSteamId.mockReturnValue(normalizedSteamId);
+
+    // Mock preparePlayerForSignup - no changes made
+    mockPlayerModels.preparePlayerForSignup.mockResolvedValueOnce({
+      account_id: 123,
+      steam_id: normalizedSteamId,
+      changes_made: false
+    });
+
+    await preparePlayerForSignupController(mockRequest, mockResponse, mockNext);
+
+    expect(mockSteamIdValidator.normalizeSteamId).toHaveBeenCalledWith(
+      testSteamId
+    );
+    expect(mockPlayerModels.preparePlayerForSignup).toHaveBeenCalledWith(
+      normalizedSteamId
+    );
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Profile was already valid, no changes were made",
+      account_id: 123,
+      steam_id: normalizedSteamId,
+      changes_made: false
+    });
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it("should handle invalid Steam ID format", async () => {
+    const invalidSteamId = "invalid-steam-id";
+    const requestWithInvalidId = {
+      params: {
+        steam_id: invalidSteamId
+      }
+    } as unknown as RequestWithParams<{
+      steam_id: string;
+    }>;
+
+    const badRequestError = new Error("Invalid Steam ID format");
+    // Mock normalizeSteamId to throw error
+    mockSteamIdValidator.normalizeSteamId.mockImplementation(() => {
+      throw badRequestError;
+    });
+
+    await preparePlayerForSignupController(
+      requestWithInvalidId,
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockSteamIdValidator.normalizeSteamId).toHaveBeenCalledWith(
+      invalidSteamId
+    );
+    expect(mockPlayerModels.preparePlayerForSignup).not.toHaveBeenCalled();
+    expect(mockNext).toHaveBeenCalledWith(badRequestError);
+    expect(mockResponse.json).not.toHaveBeenCalled();
+  });
+
+  it("should handle database errors from preparePlayerForSignup", async () => {
+    // Mock normalizeSteamId
+    mockSteamIdValidator.normalizeSteamId.mockReturnValue(normalizedSteamId);
+
+    // Mock preparePlayerForSignup to throw error
+    const dbError = new Error("Database error");
+    mockPlayerModels.preparePlayerForSignup.mockRejectedValueOnce(dbError);
+
+    await preparePlayerForSignupController(mockRequest, mockResponse, mockNext);
+
+    expect(mockSteamIdValidator.normalizeSteamId).toHaveBeenCalledWith(
+      testSteamId
+    );
+    expect(mockPlayerModels.preparePlayerForSignup).toHaveBeenCalledWith(
+      normalizedSteamId
+    );
+    expect(mockNext).toHaveBeenCalledWith(dbError);
+    expect(mockResponse.json).not.toHaveBeenCalled();
+  });
+
+  it("should normalize SteamID format before processing", async () => {
+    const steamId3 = "[U:1:12345678]";
+    const normalizedId = "76561198012345678";
+
+    const requestWithSteamId3 = {
+      params: {
+        steam_id: steamId3
+      }
+    } as unknown as RequestWithParams<{
+      steam_id: string;
+    }>;
+
+    mockSteamIdValidator.normalizeSteamId.mockReturnValue(normalizedId);
+    mockPlayerModels.preparePlayerForSignup.mockResolvedValueOnce({
+      account_id: 123,
+      steam_id: normalizedId,
+      changes_made: false
+    });
+
+    await preparePlayerForSignupController(
+      requestWithSteamId3,
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockSteamIdValidator.normalizeSteamId).toHaveBeenCalledWith(
+      steamId3
+    );
+    expect(mockPlayerModels.preparePlayerForSignup).toHaveBeenCalledWith(
+      normalizedId
+    );
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: "Profile was already valid, no changes were made",
+      account_id: 123,
+      steam_id: normalizedId,
+      changes_made: false
+    });
   });
 });

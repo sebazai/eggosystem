@@ -75,7 +75,14 @@ jest.mock("@/hooks/data/useDashboardSeasonTeams", () => ({
       {
         team_id: 1,
         team_name: "Test Team",
-        league_name: "Division 1"
+        league_name: "Division 1",
+        tier: 2 // Non-tier 1 team
+      },
+      {
+        team_id: 2,
+        team_name: "Tier 1 Team",
+        league_name: "Division 1",
+        tier: 1 // Tier 1 team
       }
     ],
     isLoading: false
@@ -87,6 +94,140 @@ jest.mock("@/components/dashboard/WithRoleProtection", () => ({
   WithRoleProtection: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="mock-role-protection">{children}</div>
   )
+}));
+
+// Mock Checkbox component
+jest.mock("@/components/ui/checkbox", () => ({
+  Checkbox: ({
+    checked,
+    onCheckedChange,
+    "data-testid": testId
+  }: {
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+    "data-testid"?: string;
+  }) => (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(e) => onCheckedChange(e.target.checked)}
+      data-testid={testId}
+    />
+  )
+}));
+
+// Mock Alert component
+jest.mock("@/components/ui/alert", () => ({
+  Alert: ({
+    children,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    "data-testid"?: string;
+  }) => <div data-testid={testId}>{children}</div>,
+  AlertDescription: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  )
+}));
+
+// Mock Select component
+jest.mock("@/components/ui/select", () => {
+  let selectedValue = "";
+  let onValueChangeCallback: ((value: string) => void) | undefined;
+
+  return {
+    Select: ({
+      children,
+      value,
+      onValueChange
+    }: {
+      children: React.ReactNode;
+      value?: string;
+      onValueChange?: (value: string) => void;
+    }) => {
+      selectedValue = value || "";
+      onValueChangeCallback = onValueChange;
+      return <div data-testid="team-select">{children}</div>;
+    },
+    SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="team-selector" onClick={() => {}}>
+        {children}
+      </div>
+    ),
+    SelectValue: ({ placeholder }: { placeholder: string }) => (
+      <div>{selectedValue || placeholder}</div>
+    ),
+    SelectContent: ({ children }: { children: React.ReactNode }) => (
+      <div data-testid="team-dropdown">{children}</div>
+    ),
+    SelectItem: ({
+      children,
+      value,
+      "data-testid": testId
+    }: {
+      children: React.ReactNode;
+      value: string;
+      "data-testid"?: string;
+    }) => (
+      <div
+        data-testid={testId || `team-option-${value}`}
+        onClick={() => {
+          if (onValueChangeCallback) {
+            onValueChangeCallback(value);
+          }
+        }}
+      >
+        {children}
+      </div>
+    )
+  };
+});
+
+// Mock Button component
+jest.mock("@/components/ui/button", () => ({
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    "data-testid": testId
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    "data-testid"?: string;
+  }) => (
+    <button onClick={onClick} disabled={disabled} data-testid={testId}>
+      {children}
+    </button>
+  )
+}));
+
+// Mock Card components
+jest.mock("@/components/ui/card", () => ({
+  Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CardHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CardTitle: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CardDescription: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  CardContent: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  )
+}));
+
+// Mock Label component
+jest.mock("@/components/ui/label", () => ({
+  Label: ({
+    children,
+    htmlFor
+  }: {
+    children: React.ReactNode;
+    htmlFor?: string;
+  }) => <label htmlFor={htmlFor}>{children}</label>
 }));
 
 // Define proper types for mock components
@@ -429,6 +570,350 @@ describe("Add Player Validation Workflow (TDD)", () => {
 
       // Should call clearResults
       expect(mockClearValidationResults).toHaveBeenCalled();
+    });
+  });
+
+  describe("Skip Profile Validation", () => {
+    const mockValidationWithProfileFailure: PlayerValidationResult = {
+      steam_id: EligiblePlayerForValidationSteamId,
+      season_id: 14,
+      app_id: 730,
+      platform: SeasonPlatform.FACEIT,
+      hours: {
+        value: 1500,
+        success: true,
+        error: null
+      },
+      rank: {
+        value: 15000,
+        success: true,
+        error: null
+      },
+      platform_rank: {
+        value: 5,
+        success: true,
+        error: null
+      },
+      profile: {
+        success: false,
+        data: null,
+        error: "Player not found in Kanahub"
+      },
+      overall_success: false
+    };
+
+    it("should show skip profile validation checkbox when profile fails but ranks/hours succeed", async () => {
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: mockValidationWithProfileFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including team (non-tier 1)
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select non-tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-1");
+      fireEvent.click(teamOption);
+
+      // Checkbox should appear
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("skip-profile-validation-checkbox")
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("should not show checkbox for tier 1 teams", async () => {
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: mockValidationWithProfileFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including tier 1 team
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-2");
+      fireEvent.click(teamOption);
+
+      // Checkbox should NOT appear for tier 1 teams
+      expect(
+        screen.queryByTestId("skip-profile-validation-checkbox")
+      ).not.toBeInTheDocument();
+    });
+
+    it("should not show checkbox when hours validation fails", async () => {
+      const validationWithHoursFailure: PlayerValidationResult = {
+        ...mockValidationWithProfileFailure,
+        hours: {
+          value: -1,
+          success: false,
+          error: "Failed to fetch hours"
+        }
+      };
+
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: validationWithHoursFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including team
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select non-tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-1");
+      fireEvent.click(teamOption);
+
+      // Checkbox should NOT appear when hours fail
+      expect(
+        screen.queryByTestId("skip-profile-validation-checkbox")
+      ).not.toBeInTheDocument();
+    });
+
+    it("should enable eligibility button when skip checkbox is checked", async () => {
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: mockValidationWithProfileFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including team
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select non-tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-1");
+      fireEvent.click(teamOption);
+
+      // Wait for checkbox to appear
+      const checkbox = await screen.findByTestId(
+        "skip-profile-validation-checkbox"
+      );
+
+      // Initially disabled
+      const eligibilityButton = screen.getByTestId("check-eligibility-button");
+      expect(eligibilityButton).toBeDisabled();
+
+      // Check the checkbox
+      fireEvent.click(checkbox);
+
+      // Eligibility button should now be enabled
+      await waitFor(() => {
+        expect(eligibilityButton).not.toBeDisabled();
+      });
+    });
+
+    it("should show alert when profile validation is skipped", async () => {
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: mockValidationWithProfileFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including team
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select non-tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-1");
+      fireEvent.click(teamOption);
+
+      // Wait for checkbox to appear and check it
+      const checkbox = await screen.findByTestId(
+        "skip-profile-validation-checkbox"
+      );
+      fireEvent.click(checkbox);
+
+      // Alert should appear
+      await waitFor(() => {
+        expect(screen.getByTestId("skip-profile-info")).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId("skip-profile-info")).toHaveTextContent(
+        /Profile validation skipped/i
+      );
+    });
+
+    it("should clear checkbox state when Steam ID changes", async () => {
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: mockValidationWithProfileFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including team
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select non-tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-1");
+      fireEvent.click(teamOption);
+
+      // Wait for checkbox to appear and check it
+      const checkbox = await screen.findByTestId(
+        "skip-profile-validation-checkbox"
+      );
+      fireEvent.click(checkbox);
+      expect((checkbox as HTMLInputElement).checked).toBe(true);
+
+      // Change Steam ID
+      fireEvent.change(steamIdInput, {
+        target: { value: "different-steam-id" }
+      });
+
+      // Checkbox should be cleared (not visible anymore or unchecked)
+      await waitFor(() => {
+        const checkboxAfterChange = screen.queryByTestId(
+          "skip-profile-validation-checkbox"
+        );
+        // Either checkbox is removed or unchecked
+        expect(
+          checkboxAfterChange === null ||
+            (checkboxAfterChange as HTMLInputElement).checked === false
+        ).toBe(true);
+      });
+    });
+
+    it("should clear checkbox state when season changes", async () => {
+      mockUsePlayerValidation.mockReturnValue({
+        validationResult: mockValidationWithProfileFailure,
+        isValidating: false,
+        error: null,
+        validatePlayer: mockValidatePlayer,
+        clearResults: mockClearValidationResults
+      });
+
+      renderWithAuthAndSWR(<AddPlayerPage />, {
+        user: mockAdminUser,
+        swrConfig: createSWRConfig({})
+      });
+
+      // Fill in form including team
+      const steamIdInput = screen.getByTestId("steam-id-input");
+      const seasonSelect = screen.getByTestId("season-select");
+      const teamSelect = screen.getByTestId("team-selector");
+
+      fireEvent.change(steamIdInput, {
+        target: { value: EligiblePlayerForValidationSteamId }
+      });
+      fireEvent.change(seasonSelect, { target: { value: "14" } });
+
+      // Select non-tier 1 team
+      fireEvent.click(teamSelect);
+      const teamOption = screen.getByTestId("team-option-1");
+      fireEvent.click(teamOption);
+
+      // Wait for checkbox to appear and check it
+      const checkbox = await screen.findByTestId(
+        "skip-profile-validation-checkbox"
+      );
+      fireEvent.click(checkbox);
+      expect((checkbox as HTMLInputElement).checked).toBe(true);
+
+      // Change season
+      fireEvent.change(seasonSelect, { target: { value: "13" } });
+
+      // Checkbox should be cleared (not visible anymore or unchecked)
+      await waitFor(() => {
+        const checkboxAfterChange = screen.queryByTestId(
+          "skip-profile-validation-checkbox"
+        );
+        // Either checkbox is removed or unchecked
+        expect(
+          checkboxAfterChange === null ||
+            (checkboxAfterChange as HTMLInputElement).checked === false
+        ).toBe(true);
+      });
     });
   });
 

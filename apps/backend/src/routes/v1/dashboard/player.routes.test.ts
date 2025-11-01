@@ -19,6 +19,10 @@ const mockValidatePlayerController =
   playerControllers.validatePlayerController as jest.MockedFunction<
     typeof playerControllers.validatePlayerController
   >;
+const mockPreparePlayerForSignupController =
+  playerControllers.preparePlayerForSignupController as jest.MockedFunction<
+    typeof playerControllers.preparePlayerForSignupController
+  >;
 
 describe("Dashboard Player Routes", () => {
   let app: express.Application;
@@ -170,6 +174,40 @@ describe("Dashboard Player Routes", () => {
         .expect(200);
 
       expect(mockValidatePlayerController).toHaveBeenCalled();
+    });
+  });
+
+  describe("POST /:steam_id/prepare-for-signup", () => {
+    it("should call preparePlayerForSignupController", async () => {
+      mockPreparePlayerForSignupController.mockImplementation(
+        async (req, res, _next) => {
+          res.status(200).json({
+            message: "Player prepared for signup successfully",
+            account_id: 123,
+            steam_id: req.params.steam_id
+          });
+        }
+      );
+
+      const response = await request(app)
+        .post("/api/v1/dashboard/players/76561198012345678/prepare-for-signup")
+        .expect(200);
+
+      expect(mockPreparePlayerForSignupController).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: {
+            steam_id: "76561198012345678"
+          }
+        }),
+        expect.any(Object),
+        expect.any(Function)
+      );
+
+      expect(response.body).toMatchObject({
+        message: "Player prepared for signup successfully",
+        account_id: 123,
+        steam_id: "76561198012345678"
+      });
     });
   });
 });
