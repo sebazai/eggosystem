@@ -58,27 +58,11 @@ export const faceitPlayerGameRankHandlers = [
     const game = url.searchParams.get("game");
 
     if (gamePlayerId === faceitValidSteamId) {
-      return HttpResponse.json({
-        games: {
-          cs2: {
-            faceit_elo: 1500,
-            skill_level: 7
-          }
-        },
-        player_id: gamePlayerId
-      });
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 7));
     }
 
     if (gamePlayerId === faceitValidSteamIdDecayed) {
-      return HttpResponse.json({
-        games: {
-          cs2: {
-            faceit_elo: 1500,
-            skill_level: 7
-          }
-        },
-        player_id: gamePlayerId
-      });
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1500, 7));
     }
 
     if (gamePlayerId === faceitCs2EmptyMetadataSteamId) {
