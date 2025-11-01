@@ -165,7 +165,7 @@ export default function AddPlayerPage() {
           player has a verified Kanahub profile.{" "}
           <Link
             href="/dashboard/players/prepare-for-signup"
-            className="underline font-medium text-kanaliiga-orange hover:text-orange-600"
+            className="underline text-kanaliiga-orange font-medium text-kanaliiga-orange hover:text-orange-600"
           >
             Prepare player profile
           </Link>
@@ -647,7 +647,7 @@ export default function AddPlayerPage() {
                         added to a team.{" "}
                         <Link
                           href="/dashboard/players/prepare-for-signup"
-                          className="underline font-medium hover:text-primary"
+                          className="underline text-kanaliiga-orange font-medium hover:text-primary"
                         >
                           Prepare player profile
                         </Link>
@@ -723,7 +723,7 @@ export default function AddPlayerPage() {
                       added to a team.{" "}
                       <Link
                         href="/dashboard/players/prepare-for-signup"
-                        className="underline font-medium hover:text-primary"
+                        className="underline text-kanaliiga-orange font-medium hover:text-primary"
                       >
                         Prepare player profile
                       </Link>
