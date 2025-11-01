@@ -175,6 +175,106 @@ export const clearSeasonPlayerRanks = async (seasonId?: number) => {
   }
 };
 
+export const clearTestUserBySteamId = async (
+  steamId: string,
+  seasonId?: number
+) => {
+  // Clean up SeasonPlayerRanks for this steam_id and season
+  if (seasonId !== undefined) {
+    await runQuery(
+      "DELETE FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+      [steamId, seasonId]
+    );
+  }
+
+  // Clean up LinkedAccounts
+  await runQuery(
+    "DELETE FROM LinkedAccounts WHERE provider_id = ? AND provider = ?",
+    [`steam-${steamId}`, "steam"]
+  );
+
+  // Clean up SteamPlayers (this will cascade to related data)
+  await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [steamId]);
+};
+
+export const clearTestUserAndRanks = async (
+  accountId: number,
+  steamId: string,
+  seasonId?: number
+) => {
+  // First, try to find the account_id from steam_id before deleting SteamPlayers
+  let foundAccountId: number | undefined;
+  try {
+    const [steamPlayer] = await runQuery<Array<{ account_id: number }>>(
+      "SELECT account_id FROM SteamPlayers WHERE steam_id = ? LIMIT 1",
+      [steamId]
+    );
+    if (steamPlayer) {
+      foundAccountId = steamPlayer.account_id;
+    }
+  } catch {
+    // Ignore if query fails
+  }
+
+  // Clean up SeasonPlayerRanks for this steam_id and season
+  if (seasonId !== undefined) {
+    try {
+      await runQuery(
+        "DELETE FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [steamId, seasonId]
+      );
+    } catch {
+      // Ignore if cleanup fails
+    }
+  }
+
+  // Clean up LinkedAccounts (do this before deleting SteamPlayers to avoid FK issues)
+  try {
+    await runQuery(
+      "DELETE FROM LinkedAccounts WHERE provider_id = ? AND provider = ?",
+      [`steam-${steamId}`, "steam"]
+    );
+  } catch {
+    // Ignore if cleanup fails
+  }
+
+  // Clean up SteamPlayers
+  try {
+    await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [steamId]);
+  } catch {
+    // Ignore if cleanup fails
+  }
+
+  // Clean up account(s) - try both the provided accountId and the found accountId
+  const accountIdsToClean = new Set([accountId]);
+  if (foundAccountId !== undefined && foundAccountId !== accountId) {
+    accountIdsToClean.add(foundAccountId);
+  }
+
+  for (const id of accountIdsToClean) {
+    try {
+      // Delete LinkedAccounts by account_id as well
+      const linkedAccounts = await runQuery<Array<{ provider_id: string }>>(
+        "SELECT provider_id FROM LinkedAccounts WHERE account_id = ? AND provider = ?",
+        [id, "steam"]
+      );
+      for (const linkedAccount of linkedAccounts) {
+        try {
+          await runQuery(
+            "DELETE FROM LinkedAccounts WHERE provider_id = ? AND provider = ?",
+            [linkedAccount.provider_id, "steam"]
+          );
+        } catch {
+          // Ignore if cleanup fails
+        }
+      }
+      await cleanUpTestUser(id);
+    } catch {
+      // Ignore if cleanup fails
+    }
+  }
+};
+
 export const setCaptainEditRegistrationForAccountId = async (
   accountId: number,
   seasonId?: number

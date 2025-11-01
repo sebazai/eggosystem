@@ -181,6 +181,21 @@ export const faceitPlayerGameRankHandlers = [
       return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1800, 10));
     }
 
+    // Test Steam ID for partial data bug test (AppIdRank in DB, hours and FaceIT rank from API)
+    if (gamePlayerId === "88888888888888888") {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1600, 9));
+    }
+
+    // Test Steam ID for partial data bug test (FaceIT rank in DB, AppIdRank and hours from API)
+    if (gamePlayerId === "77777777777777777") {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1600, 9));
+    }
+
+    // Test Steam ID for partial data bug test (hours in DB, AppIdRank and FaceIT rank from API)
+    if (gamePlayerId === "66666666666666666") {
+      return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1600, 9));
+    }
+
     //Default success response CS2
     return HttpResponse.json(createFaceitRank(gamePlayerId, "cs2", 1301, 6));
   })
