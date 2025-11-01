@@ -4,7 +4,7 @@ import { useState } from "react";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { SteamIdInput } from "@/components/ui/steam-id-input";
 import {
   Select,
   SelectContent,
@@ -148,15 +148,14 @@ export default function RoleManagementPage() {
               </div>
 
               {/* Steam ID Input */}
-              <div className="space-y-2">
-                <Label htmlFor="steamId">Steam ID</Label>
-                <Input
-                  id="steamId"
-                  placeholder="Enter Steam ID (e.g., 76561198000000001)"
-                  value={steamId}
-                  onChange={(e) => handleSteamIdChange(e.target.value)}
-                />
-              </div>
+              <SteamIdInput
+                id="steamId"
+                value={steamId}
+                onChange={handleSteamIdChange}
+                label="Steam ID"
+                placeholder="Enter Steam ID (e.g., 76561198000000001)"
+                convertOnBlur={true}
+              />
 
               {/* Add Role Button */}
               <Button

@@ -12,8 +12,8 @@ import {
   FormMessage,
   FormDescription
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SteamIdInput } from "@/components/ui/steam-id-input";
 import { useState } from "react";
 import {
   seasonPlayerRankFormSchema,
@@ -73,7 +73,12 @@ export function SeasonPlayerRankForm() {
             <FormItem>
               <FormLabel>Steam ID</FormLabel>
               <FormControl>
-                <Input placeholder="7656119..." {...field} />
+                <SteamIdInput
+                  {...field}
+                  placeholder="Enter Steam ID"
+                  convertOnBlur={true}
+                  data-testid="steam-id-input"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

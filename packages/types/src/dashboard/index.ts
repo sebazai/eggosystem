@@ -5,3 +5,4 @@ export * from "./PlayerValidation.interface";
 export * from "./RoleManagement.interface";
 export * from "./Redis.interface";
 export * from "./failed-parse.types";
+export * from "./DashboardSeasonTeam.interface";

@@ -30,6 +30,8 @@ import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation"
 import { useAddPlayer } from "@/hooks/data/useAddPlayer";
 import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
 import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationForm";
+import { convertSteamIdToSteamId64 } from "@/lib/utils";
+import { ApiError } from "@/lib/apiClient";
 
 export default function AddPlayerPage() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
@@ -37,6 +39,7 @@ export default function AddPlayerPage() {
   const [steamId, setSteamId] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Get all seasons
   const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
@@ -48,6 +51,12 @@ export default function AddPlayerPage() {
   // Get teams for the selected season
   const { teams, isLoading: isLoadingTeams } =
     useDashboardSeasonTeams(selectedSeasonId);
+
+  // Get the selected team's tier
+  const selectedTeam = teams?.find(
+    (team) => team.team_id.toString() === selectedTeamId
+  );
+  const isTier1Team = selectedTeam?.tier === 1;
 
   // Get player validation hook
   const {
@@ -116,6 +125,7 @@ export default function AddPlayerPage() {
     clearValidationResults();
     clearResult();
     setSuccess(null);
+    setApiError(null);
   };
 
   const handleSteamIdChange = (value: string) => {
@@ -125,6 +135,7 @@ export default function AddPlayerPage() {
       clearValidationResults();
       clearResult();
       setSuccess(null);
+      setApiError(null);
     }
   };
 
@@ -133,33 +144,69 @@ export default function AddPlayerPage() {
     // Clear results when team changes
     clearResult();
     setSuccess(null);
+    setApiError(null);
   };
 
   const handleAddPlayer = async () => {
-    if (!eligibilityResult || !selectedSeasonId) {
+    if (!selectedSeasonId || !selectedTeamId) {
+      return;
+    }
+
+    // For tier 1 teams, we can add without eligibility check
+    // For other teams, we need eligibility result
+    if (!isTier1Team && !eligibilityResult) {
       return;
     }
 
     setIsAdding(true);
     setSuccess(null);
+    setApiError(null);
 
     try {
-      await addPlayer(selectedSeasonId, selectedTeamId, steamId, {
-        kana_elo: eligibilityResult.selectedTeam.new_player_kana_elo,
-        calculus: eligibilityResult.selectedTeam.csrankker_components || {}
+      // Convert Steam ID to SteamID64 format before adding
+      const convertedSteamId = await convertSteamIdToSteamId64(steamId);
+
+      // Use eligibility result data if available, otherwise use default/empty values
+      // The backend will fetch the actual kana_elo internally
+      const kanaElo = eligibilityResult?.selectedTeam.new_player_kana_elo ?? 0;
+      const calculus =
+        eligibilityResult?.selectedTeam.csrankker_components || {};
+
+      await addPlayer(selectedSeasonId, selectedTeamId, convertedSteamId, {
+        kana_elo: kanaElo,
+        calculus
       });
 
-      setSuccess(
-        `Player successfully added to ${eligibilityResult.selectedTeam.team_name}`
-      );
+      const teamName =
+        eligibilityResult?.selectedTeam.team_name ||
+        selectedTeam?.team_name ||
+        "team";
+
+      setSuccess(`Player successfully added to ${teamName}`);
 
       // Clear validation and eligibility check results after successful addition
       clearValidationResults();
       clearResult();
     } catch (err) {
-      // For now, just log the error - could add a toast notification or other error handling
       console.error("Failed to add player:", err);
       setSuccess(null);
+
+      // Handle API errors with RFC 7807 format
+      if (err instanceof ApiError) {
+        setApiError(err.detail || err.message);
+      } else if (err instanceof Error) {
+        setApiError(err.message);
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const error = err as any;
+        if (error?.detail) {
+          setApiError(error.detail);
+        } else if (error?.message) {
+          setApiError(error.message);
+        } else {
+          setApiError("An unexpected error occurred while adding the player");
+        }
+      }
     } finally {
       setIsAdding(false);
     }
@@ -245,29 +292,45 @@ export default function AddPlayerPage() {
                 </Select>
               </div>
 
-              {/* Check Eligibility Button */}
-              <Button
-                onClick={handleCheckEligibility}
-                disabled={
-                  !selectedSeasonId ||
-                  !selectedTeamId ||
-                  !steamId ||
-                  isChecking ||
-                  !validationResult ||
-                  !validationResult.overall_success
-                }
-                className="w-full"
-                data-testid="check-eligibility-button"
-              >
-                {isChecking ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Checking...
-                  </>
-                ) : (
-                  "2. Check Team Eligibility"
-                )}
-              </Button>
+              {/* Check Eligibility Button - Hidden for tier 1 teams */}
+              {!isTier1Team && (
+                <Button
+                  onClick={handleCheckEligibility}
+                  disabled={
+                    !selectedSeasonId ||
+                    !selectedTeamId ||
+                    !steamId ||
+                    isChecking ||
+                    !validationResult ||
+                    !validationResult.overall_success
+                  }
+                  className="w-full"
+                  data-testid="check-eligibility-button"
+                >
+                  {isChecking ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    "2. Check Team Eligibility"
+                  )}
+                </Button>
+              )}
+
+              {/* For tier 1 teams, show info that eligibility check is skipped */}
+              {isTier1Team && validationResult?.overall_success && (
+                <Alert
+                  variant="default"
+                  className="border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                  data-testid="tier1-info"
+                >
+                  <AlertDescription className="text-blue-700 dark:text-blue-300">
+                    Tier 1 league: Eligibility check skipped. You can add the
+                    player directly.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Eligibility Error Display */}
               {eligibilityError && (
@@ -280,6 +343,17 @@ export default function AddPlayerPage() {
                       ? eligibilityError.message
                       : "Failed to check eligibility"}
                   </AlertDescription>
+                </Alert>
+              )}
+
+              {/* API Error Display */}
+              {apiError && (
+                <Alert
+                  variant="destructive"
+                  data-testid="add-player-error-message"
+                >
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>{apiError}</AlertDescription>
                 </Alert>
               )}
 
@@ -307,8 +381,8 @@ export default function AddPlayerPage() {
             />
           )}
 
-          {/* Eligibility Results Display */}
-          {eligibilityResult && (
+          {/* Eligibility Results Display - Hidden for tier 1 teams */}
+          {eligibilityResult && !isTier1Team && (
             <Card>
               <CardHeader>
                 <CardTitle
@@ -496,6 +570,46 @@ export default function AddPlayerPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Add Player Button for Tier 1 Teams - Show directly after validation */}
+          {isTier1Team &&
+            validationResult &&
+            validationResult.overall_success &&
+            selectedTeamId &&
+            !eligibilityResult && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Ready to Add Player
+                  </CardTitle>
+                  <CardDescription>
+                    Tier 1 league: Eligibility check not required
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    onClick={handleAddPlayer}
+                    disabled={isAdding}
+                    className="w-full"
+                    variant="default"
+                    data-testid="add-player-button-tier1"
+                  >
+                    {isAdding ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Adding Player...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        2. Add Player to Team
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
         </div>
       </div>
     </WithRoleProtection>

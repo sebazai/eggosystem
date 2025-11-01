@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { SteamIdInput } from "@/components/ui/steam-id-input";
 import type { Season } from "@eggosystem/types";
 
 interface PlayerValidationFormProps {
@@ -52,18 +52,16 @@ export function PlayerValidationForm({
   return (
     <div className="space-y-4">
       {/* Steam ID Input */}
-      <div className="space-y-2">
-        <Label htmlFor="steamId">Steam ID</Label>
-        <Input
-          id="steamId"
-          type="text"
-          placeholder="Enter Steam ID"
-          value={steamId}
-          onChange={(e) => setSteamId(e.target.value)}
-          disabled={isValidating}
-          data-testid="steam-id-input"
-        />
-      </div>
+      <SteamIdInput
+        id="steamId"
+        value={steamId}
+        onChange={setSteamId}
+        label="Steam ID"
+        placeholder="Enter Steam ID"
+        disabled={isValidating}
+        convertOnBlur={true}
+        data-testid="steam-id-input"
+      />
 
       {/* Season Selector */}
       <div className="space-y-2">

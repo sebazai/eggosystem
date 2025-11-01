@@ -16,12 +16,14 @@ describe("Team Models Unit Tests", () => {
         {
           team_id: 1,
           team_name: "Test Team 1",
-          league_name: "Test League"
+          league_name: "Test League",
+          tier: 1
         },
         {
           team_id: 2,
           team_name: "Test Team 2",
-          league_name: "Test League"
+          league_name: "Test League",
+          tier: 2
         }
       ];
 
@@ -61,7 +63,8 @@ describe("Team Models Unit Tests", () => {
         {
           team_id: 1,
           team_name: "Test Team",
-          league_name: "Unassigned"
+          league_name: "Unassigned",
+          tier: null
         }
       ];
 
@@ -71,6 +74,7 @@ describe("Team Models Unit Tests", () => {
 
       expect(result).toEqual(mockData);
       expect(result[0].league_name).toBe("Unassigned");
+      expect(result[0].tier).toBeNull();
     });
   });
 });

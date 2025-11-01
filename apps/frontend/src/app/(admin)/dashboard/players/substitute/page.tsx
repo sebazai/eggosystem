@@ -29,6 +29,8 @@ import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation"
 import { useAddSubstitutePlayer } from "@/hooks/data/useAddSubstitutePlayer";
 import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
 import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationForm";
+import { convertSteamIdToSteamId64 } from "@/lib/utils";
+import { ApiError } from "@/lib/apiClient";
 
 export default function AddSubstitutePlayerPage() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
@@ -124,6 +126,9 @@ export default function AddSubstitutePlayerPage() {
     setApiError(null);
 
     try {
+      // Convert Steam ID to SteamID64 format before adding
+      const convertedSteamId = await convertSteamIdToSteamId64(steamId);
+
       // Send the match ID as-is to the backend for resolution
       // Backend will handle numeric IDs, Faceit room IDs, and Faceit URLs
       const matchIdValue = matchId.trim() || undefined;
@@ -131,7 +136,7 @@ export default function AddSubstitutePlayerPage() {
       await addSubstitutePlayer({
         seasonId: selectedSeasonId,
         teamId: selectedTeamId,
-        steamId,
+        steamId: convertedSteamId,
         matchId: matchIdValue
       });
 
@@ -150,20 +155,27 @@ export default function AddSubstitutePlayerPage() {
       clearValidationResults();
       setSteamId("");
       setMatchId("");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to add substitute player:", err);
       setSuccess(null);
 
       // Handle API errors with RFC 7807 format
-      if (err?.detail) {
-        setApiError(err.detail);
-      } else if (err?.message) {
+      if (err instanceof ApiError) {
+        setApiError(err.detail || err.message);
+      } else if (err instanceof Error) {
         setApiError(err.message);
       } else {
-        setApiError(
-          "An unexpected error occurred while adding the substitute player"
-        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const error = err as any;
+        if (error?.detail) {
+          setApiError(error.detail);
+        } else if (error?.message) {
+          setApiError(error.message);
+        } else {
+          setApiError(
+            "An unexpected error occurred while adding the substitute player"
+          );
+        }
       }
     } finally {
       setIsAdding(false);
