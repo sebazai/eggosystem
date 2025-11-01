@@ -55,6 +55,27 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   return results.length > 0 ? results[0] : undefined;
 };
 
+/**
+ * Update SteamPlayers table with FaceIT data (nickname and player_id)
+ */
+export const updateSteamPlayerFaceitData = async (
+  steamId: string,
+  faceitNickname: string,
+  faceitId: string,
+  connection?: PoolConnection
+): Promise<void> => {
+  const query = `
+    UPDATE SteamPlayers 
+    SET faceit_nickname = ?, faceit_id = ?
+    WHERE steam_id = ?
+  `;
+
+  // Ensure steamId is a string to match database format
+  const steamIdString = String(steamId);
+
+  await runQuery(query, [faceitNickname, faceitId, steamIdString], connection);
+};
+
 export const getAllPlayerStatsByFilters = async ({
   season_ids,
   league_ids,
