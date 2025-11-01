@@ -180,6 +180,24 @@ export const faceitMetadataHandlers = [
         return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
       }
 
+      // Test Steam ID for partial data bug test (AppIdRank in DB, hours and FaceIT rank from API)
+      if (faceit_player_id === "88888888888888888" && game === "cs2") {
+        // Return a recent match date (7 days ago)
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      // Test Steam ID for partial data bug test (FaceIT rank in DB, AppIdRank and hours from API)
+      if (faceit_player_id === "77777777777777777" && game === "cs2") {
+        // Return a recent match date (7 days ago)
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
+      // Test Steam ID for partial data bug test (hours in DB, AppIdRank and FaceIT rank from API)
+      if (faceit_player_id === "66666666666666666" && game === "cs2") {
+        // Return a recent match date (7 days ago)
+        return HttpResponse.json(createFaceitMetadataLastGame(recentMatchTime));
+      }
+
       // Default success response
       return HttpResponse.json(
         createFaceitMetadataLastGame(new Date().getTime())
@@ -315,6 +333,27 @@ export const faceitMetadataHandlers = [
       if (faceit_player_id === EligiblePlayerForValidationSteamId) {
         return HttpResponse.json(
           createFaceitMetadataPlayerStatsGame("1.5", "300")
+        );
+      }
+
+      // Test Steam ID for partial data bug test (AppIdRank in DB, hours and FaceIT rank from API)
+      if (faceit_player_id === "88888888888888888" && game === "cs2") {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.42", "285")
+        );
+      }
+
+      // Test Steam ID for partial data bug test (FaceIT rank in DB, AppIdRank and hours from API)
+      if (faceit_player_id === "77777777777777777" && game === "cs2") {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.42", "285")
+        );
+      }
+
+      // Test Steam ID for partial data bug test (hours in DB, AppIdRank and FaceIT rank from API)
+      if (faceit_player_id === "66666666666666666" && game === "cs2") {
+        return HttpResponse.json(
+          createFaceitMetadataPlayerStatsGame("1.42", "285")
         );
       }
 
