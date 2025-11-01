@@ -4,6 +4,7 @@ import {
   isValidSteamId as sharedIsValidSteamId,
   convertSteamIdToSteamId64 as sharedConvertSteamIdToSteamId64,
   convertSteamId3ToSteamId64 as sharedConvertSteamId3ToSteamId64,
+  extractSteamId64FromProfileUrl,
   SeasonPlatform
 } from "@eggosystem/types";
 import { clsx, type ClassValue } from "clsx";
@@ -241,11 +242,6 @@ export const isValidSteamId = sharedIsValidSteamId;
 export const resolveSteamIdToSteamId64 = async (
   input: string
 ): Promise<string | null> => {
-  // If it's already a valid SteamID64, return it
-  if (isValidSteamId(input)) {
-    return input;
-  }
-
   // If empty, return null
   if (!input.trim()) {
     return null;
@@ -253,20 +249,15 @@ export const resolveSteamIdToSteamId64 = async (
 
   const trimmed = input.trim();
 
+  // If it's already a valid SteamID64, return it
+  if (isValidSteamId(trimmed)) {
+    return trimmed;
+  }
+
   // Extract SteamID64 from /profiles/ URLs (these contain SteamID64 directly)
-  // Handles formats like:
-  // - https://steamcommunity.com/profiles/76561198049745649
-  // - http://steamcommunity.com/profiles/76561198049745649
-  // - steamcommunity.com/profiles/76561198049745649
-  // - /profiles/76561198049745649
-  const profileMatch = trimmed.match(
-    /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#)/i
-  );
-  if (profileMatch && profileMatch[1]) {
-    const steamId64 = profileMatch[1];
-    if (isValidSteamId(steamId64)) {
-      return steamId64;
-    }
+  const steamId64FromUrl = extractSteamId64FromProfileUrl(trimmed);
+  if (steamId64FromUrl) {
+    return steamId64FromUrl;
   }
 
   // Try local conversion first (SteamID and SteamID3 formats)

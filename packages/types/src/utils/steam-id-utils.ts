@@ -15,6 +15,39 @@ export function isValidSteamId(steamId: string): boolean {
 }
 
 /**
+ * Extracts SteamID64 from Steam profile URLs.
+ * Handles formats like:
+ * - https://steamcommunity.com/profiles/76561198049745649
+ * - http://steamcommunity.com/profiles/76561198049745649
+ * - steamcommunity.com/profiles/76561198049745649
+ * - /profiles/76561198049745649
+ *
+ * @param input The input string that may contain a Steam profile URL
+ * @returns The extracted SteamID64, or null if not found
+ */
+export function extractSteamId64FromProfileUrl(input: string): string | null {
+  const trimmed = input.trim();
+
+  // Match full Steam community URLs with /profiles/
+  const fullUrlMatch = trimmed.match(
+    /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#|)/i
+  );
+
+  // Match /profiles/ URLs without domain
+  const pathMatch = trimmed.match(/\/profiles\/(\d{17})(?:\/|$|\?|#|)/i);
+
+  const match = fullUrlMatch || pathMatch;
+  if (match && match[1]) {
+    const steamId64 = match[1];
+    if (isValidSteamId(steamId64)) {
+      return steamId64;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Converts SteamID format (STEAM_X:Y:Z) to SteamID64
  * Uses BigInt to handle large SteamID64 values that exceed JavaScript's safe integer limit.
  *

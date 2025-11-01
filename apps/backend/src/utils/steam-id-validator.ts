@@ -2,7 +2,8 @@ import { BadRequestError } from "./errors";
 import {
   isValidSteamId as sharedIsValidSteamId,
   convertSteamIdToSteamId64 as sharedConvertSteamIdToSteamId64,
-  convertSteamId3ToSteamId64 as sharedConvertSteamId3ToSteamId64
+  convertSteamId3ToSteamId64 as sharedConvertSteamId3ToSteamId64,
+  extractSteamId64FromProfileUrl
 } from "@eggosystem/types";
 
 /**
@@ -97,20 +98,9 @@ export function normalizeSteamId(steamId: string): string {
   }
 
   // Extract SteamID64 from /profiles/ URLs (these contain SteamID64 directly)
-  // Handles formats like:
-  // - https://steamcommunity.com/profiles/76561198049745649
-  // - http://steamcommunity.com/profiles/76561198049745649
-  // - steamcommunity.com/profiles/76561198049745649
-  // - /profiles/76561198049745649
-  const profileMatch =
-    trimmedId.match(
-      /(?:https?:\/\/)?(?:www\.)?steamcommunity\.com\/profiles\/(\d{17})(?:\/|$|\?|#|)/i
-    ) || trimmedId.match(/\/profiles\/(\d{17})(?:\/|$|\?|#|)/i);
-  if (profileMatch && profileMatch[1]) {
-    const steamId64 = profileMatch[1];
-    if (isValidSteamId(steamId64)) {
-      return steamId64;
-    }
+  const steamId64FromUrl = extractSteamId64FromProfileUrl(trimmedId);
+  if (steamId64FromUrl) {
+    return steamId64FromUrl;
   }
 
   // Try SteamID format (STEAM_X:Y:Z)
