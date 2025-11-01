@@ -15,9 +15,15 @@ import {
   type Control,
   type UseFormResetField,
   type UseFormSetValue,
-  type UseFormWatch
+  type UseFormWatch,
+  type UseFormTrigger
 } from "react-hook-form";
-import { cn, createNextUrl, isValidSteamId } from "@/lib/utils";
+import {
+  cn,
+  createNextUrl,
+  isValidSteamId,
+  resolveSteamIdToSteamId64
+} from "@/lib/utils";
 import {
   Accordion,
   AccordionItem,
@@ -52,6 +58,7 @@ interface TabPlayersProps {
   resetField: UseFormResetField<SignupFormValues>;
   setValue: UseFormSetValue<SignupFormValues>;
   watch: UseFormWatch<SignupFormValues>;
+  trigger: UseFormTrigger<SignupFormValues>;
   playerErrorIndices: string[];
   seasonSteamAppId: Game["app_id"];
   platform: SeasonPlatform;
@@ -66,6 +73,7 @@ export const TabPlayers = ({
   watch,
   playerErrorIndices,
   resetField,
+  trigger,
   seasonSteamAppId,
   platform,
   seasonId,
@@ -100,6 +108,46 @@ export const TabPlayers = ({
   const watchTeamId = useWatch({ control, name: "teamId" });
   const watchOrganizationId = useWatch({ control, name: "organizationId" });
   const steamIds = watchPlayers.map((p) => p.steamId);
+
+  /**
+   * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, or custom URL) to SteamID64.
+   * @param input The Steam ID input in any format
+   * @returns Resolved SteamID64 or null if resolution fails
+   */
+  const resolveSteamId = useCallback(
+    async (input: string): Promise<string | null> => {
+      // Try local conversion first (SteamID, SteamID3)
+      const localConverted = await resolveSteamIdToSteamId64(input);
+      if (localConverted) {
+        return localConverted;
+      }
+
+      // If empty, return null
+      if (!input.trim()) {
+        return null;
+      }
+
+      // Try API resolution for custom URLs
+      try {
+        const response = await clientApiFetch<{ steamId64: string }>(
+          `/api/v1/players/resolve/${encodeURIComponent(input.trim())}`
+        );
+        return response.steamId64;
+      } catch (error) {
+        if (error instanceof ApiError) {
+          // Log error but don't throw - let the form validation handle it
+          console.warn(
+            `Failed to resolve Steam ID "${input}":`,
+            error.detail || error.message
+          );
+        } else {
+          console.warn(`Failed to resolve Steam ID "${input}":`, error);
+        }
+        return null;
+      }
+    },
+    []
+  );
 
   const handlePlayer = useCallback(
     async (steam_id: string | number, index: number) => {
@@ -285,20 +333,121 @@ export const TabPlayers = ({
     Record<number, boolean | undefined>
   >({});
 
-  const clearValuesForIndex = (index: number) => {
-    resetField(`players.${index}.nickname`);
-    resetField(`players.${index}.discord`);
-    setValue(`players.${index}.hasValidData`, undefined);
-    setValue(`players.${index}.hasValidWorkEmail`, undefined);
-    setValue(`players.${index}.isEmailVerified`, undefined);
-    setValue(`players.${index}.hours`, undefined);
-    setValue(`players.${index}.rank`, undefined);
-    setValue(`players.${index}.externalRank`, undefined);
-    setLoadingStates((prev) => ({
-      ...prev,
-      [index]: undefined
-    }));
-  };
+  const clearValuesForIndex = useCallback(
+    (index: number) => {
+      resetField(`players.${index}.nickname`);
+      resetField(`players.${index}.discord`);
+      setValue(`players.${index}.hasValidData`, undefined);
+      setValue(`players.${index}.hasValidWorkEmail`, undefined);
+      setValue(`players.${index}.isEmailVerified`, undefined);
+      setValue(`players.${index}.hours`, undefined);
+      setValue(`players.${index}.rank`, undefined);
+      setValue(`players.${index}.externalRank`, undefined);
+      setLoadingStates((prev) => ({
+        ...prev,
+        [index]: undefined
+      }));
+    },
+    [resetField, setValue]
+  );
+
+  /**
+   * Handles Steam ID input change, converting various formats to SteamID64.
+   * Updates the input field with the converted value and triggers player data fetching.
+   */
+  const handleSteamIdChange = useCallback(
+    async (
+      index: number,
+      newValue: string,
+      oldValue: string,
+      fieldOnChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+      // Always update the field immediately for responsive typing
+      fieldOnChange(e);
+
+      if (newValue !== oldValue) {
+        // If field is being cleared, just clear values
+        if (!newValue.trim()) {
+          clearValuesForIndex(index);
+          return;
+        }
+
+        clearValuesForIndex(index);
+
+        // Try to resolve Steam ID if it's not a valid SteamID64
+        // Run this asynchronously after field update
+        (async () => {
+          let resolvedSteamId: string | null = null;
+
+          // First, try local conversion (instant for SteamID/SteamID3)
+          const localConverted = await resolveSteamIdToSteamId64(newValue);
+          if (localConverted) {
+            resolvedSteamId = localConverted;
+            // Update the field with converted value
+            setValue(`players.${index}.steamId`, resolvedSteamId, {
+              shouldValidate: true
+            });
+            // Trigger validation to clear any existing errors
+            await trigger(`players.${index}.steamId`);
+          } else if (isValidSteamId(newValue)) {
+            // Already valid SteamID64
+            resolvedSteamId = newValue;
+          } else {
+            // Only try API resolution for custom Steam community URLs (/id/username)
+            // Pattern: https://steamcommunity.com/id/username or http://steamcommunity.com/id/username
+            // Allow trailing slashes and query parameters
+            // Note: /profiles/ URLs are handled locally by resolveSteamIdToSteamId64
+            const isCustomSteamUrl =
+              /^https?:\/\/(?:www\.)?steamcommunity\.com\/id\/[^/?#]+(?:\/|$|\?|#)/i.test(
+                newValue.trim()
+              );
+
+            if (isCustomSteamUrl) {
+              // Try API resolution for custom URLs
+              setLoadingStates((prev) => ({
+                ...prev,
+                [index]: true
+              }));
+              resolvedSteamId = await resolveSteamId(newValue);
+              setLoadingStates((prev) => ({
+                ...prev,
+                [index]: false
+              }));
+
+              // Update the field with resolved SteamID64 if available
+              if (resolvedSteamId) {
+                setValue(`players.${index}.steamId`, resolvedSteamId, {
+                  shouldValidate: true
+                });
+                // Trigger validation to clear any existing errors
+                await trigger(`players.${index}.steamId`);
+              }
+            }
+          }
+
+          // If we have a valid SteamID64 and it's not a duplicate, fetch player data
+          // Check duplicates excluding the current player's Steam ID
+          const otherSteamIds = steamIds.filter((_, i) => i !== index);
+          if (
+            resolvedSteamId &&
+            isValidSteamId(resolvedSteamId) &&
+            !otherSteamIds.includes(resolvedSteamId)
+          ) {
+            handlePlayer(resolvedSteamId, index);
+          }
+        })();
+      }
+    },
+    [
+      clearValuesForIndex,
+      resolveSteamId,
+      handlePlayer,
+      steamIds,
+      setValue,
+      trigger
+    ]
+  );
 
   const playerHasErrors = useCallback(
     (player: SignupPlayerType, isDuplicate?: boolean) => {
@@ -484,20 +633,14 @@ export const TabPlayers = ({
                               onClick={(e) => e.stopPropagation()}
                               disabled={loadingStates[index]}
                               data-testid={`steam-id-input-${index}`}
-                              onChange={(e) => {
-                                const newValue = e.target.value;
-                                const oldValue = field.value;
-                                if (newValue !== oldValue) {
-                                  clearValuesForIndex(index);
-
-                                  if (
-                                    isValidSteamId(newValue) &&
-                                    !steamIds.includes(newValue)
-                                  ) {
-                                    handlePlayer(newValue, index);
-                                  }
-                                }
-                                field.onChange(e);
+                              onChange={async (e) => {
+                                await handleSteamIdChange(
+                                  index,
+                                  e.target.value,
+                                  field.value,
+                                  field.onChange,
+                                  e
+                                );
                               }}
                             />
                             {loadingStates[index] && (

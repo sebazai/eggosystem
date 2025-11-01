@@ -1,4 +1,10 @@
 import { BadRequestError } from "./errors";
+import {
+  isValidSteamId as sharedIsValidSteamId,
+  convertSteamIdToSteamId64 as sharedConvertSteamIdToSteamId64,
+  convertSteamId3ToSteamId64 as sharedConvertSteamId3ToSteamId64,
+  extractSteamId64FromProfileUrl
+} from "@eggosystem/types";
 
 /**
  * Utility functions for validating Steam IDs
@@ -12,10 +18,7 @@ import { BadRequestError } from "./errors";
  * @returns Boolean indicating if the Steam ID is valid
  */
 export function isValidSteamId(steamId: string): boolean {
-  if (!steamId) return false;
-
-  // Basic validation for Steam ID 64 format (17 digits)
-  return /^\d{17}$/.test(steamId);
+  return sharedIsValidSteamId(steamId);
 }
 
 /**
@@ -39,11 +42,50 @@ export function validateSteamId(
 }
 
 /**
- * Validates and normalizes a Steam ID.
- * Currently only supports and returns Steam ID 64 format.
+ * Converts SteamID format (STEAM_X:Y:Z) to SteamID64
+ *
+ * @param steamId SteamID in format STEAM_X:Y:Z
+ * @returns SteamID64 (17-digit numeric string)
+ * @throws {BadRequestError} If the Steam ID format is invalid
+ */
+export function convertSteamIdToSteamId64(steamId: string): string {
+  try {
+    return sharedConvertSteamIdToSteamId64(steamId);
+  } catch (error) {
+    // Wrap generic Error in BadRequestError for backend consistency
+    if (error instanceof Error) {
+      throw new BadRequestError(error.message);
+    }
+    throw new BadRequestError("Failed to convert SteamID to SteamID64");
+  }
+}
+
+/**
+ * Converts SteamID3 format ([U:1:AccountID]) to SteamID64
+ *
+ * @param steamId3 SteamID3 in format [U:1:AccountID]
+ * @returns SteamID64 (17-digit numeric string)
+ * @throws {BadRequestError} If the Steam ID format is invalid
+ */
+export function convertSteamId3ToSteamId64(steamId3: string): string {
+  try {
+    return sharedConvertSteamId3ToSteamId64(steamId3);
+  } catch (error) {
+    // Wrap generic Error in BadRequestError for backend consistency
+    if (error instanceof Error) {
+      throw new BadRequestError(error.message);
+    }
+    throw new BadRequestError("Failed to convert SteamID3 to SteamID64");
+  }
+}
+
+/**
+ * Detects the Steam ID format and returns the SteamID64.
+ * Supports: SteamID64, SteamID, SteamID3 formats, and URLs containing SteamID64.
+ * Note: Custom URLs (vanity URLs) must be resolved via API call separately.
  *
  * @param steamId The Steam ID string to validate and normalize
- * @returns The normalized Steam ID
+ * @returns The normalized Steam ID 64
  * @throws {BadRequestError} If the Steam ID format is invalid or unsupported
  */
 export function normalizeSteamId(steamId: string): string {
@@ -55,7 +97,23 @@ export function normalizeSteamId(steamId: string): string {
     return trimmedId;
   }
 
-  // For future: Add conversion from other Steam ID formats
+  // Extract SteamID64 from /profiles/ URLs (these contain SteamID64 directly)
+  const steamId64FromUrl = extractSteamId64FromProfileUrl(trimmedId);
+  if (steamId64FromUrl) {
+    return steamId64FromUrl;
+  }
 
-  throw new BadRequestError("Unsupported Steam ID format");
+  // Try SteamID format (STEAM_X:Y:Z)
+  if (trimmedId.startsWith("STEAM_")) {
+    return convertSteamIdToSteamId64(trimmedId);
+  }
+
+  // Try SteamID3 format ([U:1:AccountID])
+  if (trimmedId.startsWith("[") && trimmedId.endsWith("]")) {
+    return convertSteamId3ToSteamId64(trimmedId);
+  }
+
+  throw new BadRequestError(
+    "Unsupported Steam ID format. Supported formats: SteamID64 (17 digits), SteamID (STEAM_X:Y:Z), SteamID3 ([U:1:AccountID]), or Steam profile URLs (/profiles/SteamID64). For custom URLs, use resolveSteamIdVanityURL."
+  );
 }
