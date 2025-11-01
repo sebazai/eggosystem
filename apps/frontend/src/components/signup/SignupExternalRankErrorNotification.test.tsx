@@ -128,6 +128,7 @@ const TestWrapper = ({
           resetField={methods.resetField}
           setValue={methods.setValue}
           watch={methods.watch}
+          trigger={methods.trigger}
           playerErrorIndices={[]}
           seasonSteamAppId={seasonSteamAppId}
           platform={platform}

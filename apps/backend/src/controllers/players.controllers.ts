@@ -32,7 +32,10 @@ import {
   type RequestWithParams,
   type HistoricalDataParams
 } from "@eggosystem/types";
-import { isSteamProfilePublic } from "../services/steam.services";
+import {
+  isSteamProfilePublic,
+  resolveSteamIdVanityURL
+} from "../services/steam.services";
 import {
   getPlayerSkillDiagram,
   getMultiplePlayersSkillDiagrams
@@ -42,6 +45,7 @@ import {
   InternalServerError,
   NotFoundError
 } from "../utils/errors";
+import { normalizeSteamId } from "../utils/steam-id-validator";
 import { logger } from "../utils/app-logger";
 
 export const getPlayerBySteamIdController = async (
@@ -72,6 +76,81 @@ export const getIsPlayerProfilePublic = async (req: Request, res: Response) => {
   const steam_id = req.params.steam_id;
   const isPublic = await isSteamProfilePublic(steam_id);
   res.status(200).json({ public: isPublic });
+};
+
+/**
+ * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, or custom URL) to SteamID64.
+ * Supports:
+ * - SteamID64: 76561198049745649
+ * - SteamID: STEAM_0:1:44739960
+ * - SteamID3: [U:1:89479921]
+ * - Custom URL: sububobi
+ *
+ * @param req Request with steam_id parameter (can be any format)
+ * @param res Response with resolved SteamID64
+ * @param next Next function for error handling
+ */
+export const resolveSteamIdController = async (
+  req: RequestWithParams<{ steam_id: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  let input = req.params.steam_id;
+
+  if (!input || typeof input !== "string") {
+    return next(new BadRequestError("Steam ID is required"));
+  }
+
+  // Decode URL-encoded input (e.g., https%3A%2F%2Fsteamcommunity.com%2Fid%2Fsububobi)
+  try {
+    input = decodeURIComponent(input);
+  } catch (error) {
+    // If decoding fails, use original input
+    logger.warn(`[Steam] Failed to decode Steam ID input: ${input}`, error);
+  }
+
+  try {
+    // Try to normalize locally first (SteamID64, SteamID, SteamID3)
+    let steamId64: string;
+    let normalizeError: Error | undefined;
+    try {
+      steamId64 = normalizeSteamId(input);
+      res.status(200).json({ steamId64 });
+      return;
+    } catch (err) {
+      normalizeError = err instanceof Error ? err : new Error(String(err));
+      // If normalization fails, it might be a custom URL
+      // Continue to try resolving via Steam API
+    }
+
+    // Try resolving as custom URL (vanity URL)
+    try {
+      steamId64 = await resolveSteamIdVanityURL(input);
+      res.status(200).json({ steamId64 });
+      return;
+    } catch (vanityError) {
+      logger.warn(
+        `[Steam] Failed to resolve Steam ID: ${input}`,
+        normalizeError,
+        vanityError
+      );
+      return next(
+        new BadRequestError(
+          `Could not resolve Steam ID. Supported formats: SteamID64 (17 digits), SteamID (STEAM_X:Y:Z), SteamID3 ([U:1:AccountID]), or custom URL. Error: ${vanityError instanceof Error ? vanityError.message : "Unknown error"}`
+        )
+      );
+    }
+  } catch (error) {
+    logger.error(
+      `[Steam] Unexpected error resolving Steam ID: ${input}`,
+      error
+    );
+    return next(
+      new InternalServerError(
+        `Failed to resolve Steam ID: ${error instanceof Error ? error.message : "Unknown error"}`
+      )
+    );
+  }
 };
 
 /**
