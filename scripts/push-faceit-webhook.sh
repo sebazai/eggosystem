@@ -299,6 +299,19 @@ fi
         fi
     fi
 
+# Prompt for reprocess parameter
+echo
+print_status "Do you want to set reprocess=true for the API call?"
+print_status "This will mark webhooks as manually reprocessed in the database (sets manual_reprocess = 1)"
+read -p "Set reprocess=true? (y/N): " SET_REPROCESS
+
+if [[ "$SET_REPROCESS" == "y" || "$SET_REPROCESS" == "Y" ]]; then
+    WEBHOOK_URL="$WEBHOOK_URL?reprocess=true"
+    print_success "Will use reprocess=true - webhooks will be marked as manually reprocessed"
+else
+    print_status "Will NOT use reprocess=true - webhooks will not be marked as reprocessed"
+fi
+
 # Prompt for operation mode
 echo
 print_status "Choose operation mode:"
@@ -309,10 +322,6 @@ read -p "Choose option (1 or 2): " OPERATION_MODE
 if [[ "$OPERATION_MODE" == "2" ]]; then
     # Database reprocessing mode
     print_status "Database reprocessing mode selected"
-    
-    # Add reprocess=true query parameter for database reprocessing
-    WEBHOOK_URL="$WEBHOOK_URL?reprocess=true"
-    print_status "Reprocessing webhook URL: $WEBHOOK_URL"
     
     # Database connection details
     echo

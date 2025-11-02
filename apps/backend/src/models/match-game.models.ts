@@ -341,7 +341,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         publishDemoProcessingRequest(
           gameWithDemo?.id ?? insertedRow.insertId,
           demoDownloadUrl,
-          manualReprocess
+          manualReprocess || !gameWithDemo
         )
       ]);
     } else {
@@ -380,7 +380,7 @@ export const addMatchGameToDatabaseAndProcessDemo = async (
         publishDemoProcessingRequest(
           gameWithDemo?.id ?? insertedRow.insertId,
           demoDownloadUrl,
-          !gameWithDemo
+          manualReprocess || !gameWithDemo
         )
       ]);
     }
