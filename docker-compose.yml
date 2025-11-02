@@ -71,7 +71,7 @@ services:
       - redis-data:/data
 
   eggo-rabbitmq:
-    image: rabbitmq:4.1-management
+    image: rabbitmq:4.1.5-management
     restart: always
     environment:
       - RABBITMQ_DEFAULT_USER=test

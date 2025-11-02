@@ -166,6 +166,7 @@ stages:
   - on-demand-env
   - cleanup
   - deploy
+  - pages
 
 install:
   stage: install
@@ -814,3 +815,22 @@ stop-ondemand:
     - if: $CI_MERGE_REQUEST_ID
       <<: *all-app-changes
       when: manual
+
+pages:
+  stage: pages
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp docs/database.html public/index.html
+    - |
+      echo ""
+      echo "=============================================="
+      echo "📊 GitLab Pages Published!"
+      echo "=============================================="
+      echo "🔗 Database Schema: https://${CI_PROJECT_NAMESPACE}.gitlab.io/${CI_PROJECT_NAME}/"
+      echo "=============================================="
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

@@ -19,11 +19,19 @@ jest.mock("@/lib/apiClient", () => ({
   clientApiFetch: (url: string) => mockClientApiFetch(url)
 }));
 
-// Mock isValidSteamId utility
+// Mock isValidSteamId and convertSteamIdToSteamId64 utilities
 jest.mock("@/lib/utils", () => ({
   isValidSteamId: jest.fn((steamId: string) => {
     // Simple validation: should be a string of 17 digits
     return /^\d{17}$/.test(steamId);
+  }),
+  convertSteamIdToSteamId64: jest.fn(async (steamId: string) => {
+    // If already valid SteamID64, return as-is
+    if (/^\d{17}$/.test(steamId)) {
+      return steamId;
+    }
+    // For testing, just return the input as-is (conversion logic tested elsewhere)
+    return steamId;
   })
 }));
 

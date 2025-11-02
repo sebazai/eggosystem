@@ -17,6 +17,8 @@ import { resolveMatchId } from "../../utils/matchUtils";
 import { getPlayerRankForPlatform } from "../../services/player-ranks.services";
 import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
 import { getPlayerDetailsForDashboardBySteamId } from "../../models/dashboard/player.models";
+import { preparePlayerForSignup } from "../../models/player.models";
+import { normalizeSteamId } from "../../utils/steam-id-validator";
 /**
  * Controller to add a player to a team
  * This will:
@@ -123,7 +125,22 @@ export const addPlayerToTeamController = async (
       );
     }
 
-    // 3. Now that we have player data, check eligibility
+    // 3. Check if team is in tier 1 league
+    const tierQuery = `
+      SELECT sl.tier
+      FROM SeasonLeagueTeams slt
+      JOIN SeasonLeagues sl ON sl.season_id = slt.season_id AND sl.league_id = slt.league_id
+      WHERE slt.team_id = ? AND slt.season_id = ?
+      LIMIT 1
+    `;
+    const tierResults = await runQuery<Array<{ tier: number }>>(
+      tierQuery,
+      [teamId, seasonId],
+      connection
+    );
+    const isTier1 = tierResults.length > 0 && tierResults[0].tier === 1;
+
+    // 4. Now that we have player data, check eligibility
     const eligibility = await checkPlayerAdditionEligibility(
       seasonId,
       teamId,
@@ -131,14 +148,31 @@ export const addPlayerToTeamController = async (
       { connection }
     );
 
-    // 4. Verify player is eligible
-    if (!eligibility.canAddPlayer) {
+    // 5. Verify player is eligible (skip check for tier 1 teams)
+    if (!isTier1 && !eligibility.canAddPlayer) {
       return next(
         new BadRequestError("Player is not eligible to be added to this team")
       );
     }
 
-    // 5. Set the player's kana_elo from the eligibility check
+    // 6. Verify player has valid profile (required for all teams)
+    const playerProfile = await getPlayerDetailsForDashboardBySteamId(steamId);
+    if (
+      !playerProfile ||
+      !playerProfile.account_id ||
+      !playerProfile.nickname ||
+      !playerProfile.work_email_verified ||
+      !playerProfile.is_valid_full_name ||
+      !playerProfile.is_valid_work_email
+    ) {
+      return next(
+        new BadRequestError(
+          "Cannot add player: Profile validation is required. The player must have a verified Kanahub profile with valid email and full name before being added to a team."
+        )
+      );
+    }
+
+    // 7. Set the player's kana_elo from the eligibility check
     const calculusString =
       typeof calculusData === "object"
         ? JSON.stringify(calculusData)
@@ -153,7 +187,7 @@ export const addPlayerToTeamController = async (
       connection
     );
 
-    // 6. Finally add the player to the team in SeasonTeamPlayers
+    // 7. Finally add the player to the team in SeasonTeamPlayers
     await insertSeasonTeamPlayer(
       seasonId,
       teamId,
@@ -402,5 +436,42 @@ export const addSubstitutePlayerController = async (
     return next(error);
   } finally {
     connection.release();
+  }
+};
+
+/**
+ * Controller to prepare a player for signup by creating/updating account and SteamPlayers profile
+ * with fake data. Sets work_email_verified to true but does NOT set UserPolicyAcceptance.
+ * This allows accepting teams from signup drafts when players don't have complete account data.
+ */
+export const preparePlayerForSignupController = async (
+  req: RequestWithParams<{
+    steam_id: string;
+  }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const steamId = req.params.steam_id;
+
+  // Normalize Steam ID (handles SteamID64, SteamID, SteamID3, and URLs)
+  let normalizedSteamId: string;
+  try {
+    normalizedSteamId = normalizeSteamId(steamId);
+  } catch (error) {
+    return next(error);
+  }
+
+  try {
+    const result = await preparePlayerForSignup(normalizedSteamId);
+    res.status(200).json({
+      message: result.changes_made
+        ? "Player prepared for signup successfully"
+        : "Profile was already valid, no changes were made",
+      account_id: result.account_id,
+      steam_id: result.steam_id,
+      changes_made: result.changes_made
+    });
+  } catch (error) {
+    return next(error);
   }
 };

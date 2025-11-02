@@ -13,7 +13,8 @@ import {
   getPlayerHistoricalDataController,
   getPlayerHistoricalAverageByRankController,
   getPlayerHistoricalAverageByLevelController,
-  getPlayerHistoricalAverageController
+  getPlayerHistoricalAverageController,
+  resolveSteamIdController
 } from "../../controllers/players.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
@@ -30,6 +31,9 @@ router.get(
   getPlayerDetailsBySteamIdController
 );
 router.get("/:steam_id/public", getIsPlayerProfilePublic);
+
+// Resolve Steam ID endpoint - supports SteamID64, SteamID, SteamID3, and custom URLs
+router.get("/resolve/:steam_id", corsMiddleware, resolveSteamIdController);
 
 router.get(
   "/:steam_id/app/:app_id/hours",

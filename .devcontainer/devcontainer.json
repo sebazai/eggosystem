@@ -49,7 +49,7 @@
       ]
     }
   },
-  "postCreateCommand": "pnpm install && pnpm install:playwright",
+  "postCreateCommand": "pnpm install",
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [3000],
   // Use 'portsAttributes' to set default properties for specific forwarded ports.
@@ -64,7 +64,7 @@
   "hostRequirements": {
     "cli": ["xhost"]
   },
-  "postStartCommand": "xhost + 127.0.0.1 || true",
+  "postStartCommand": "[ \"$(uname)\" = \"Darwin\" ] && (xhost + 127.0.0.1 || true) || true",
   "runServices": [
     "devcontainer",
     "eggo-devdb",

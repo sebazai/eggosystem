@@ -16,7 +16,12 @@ import { TabPlayers } from "./TabPlayers";
 import { TabTeam } from "./TabTeam";
 import { ErrorMessage } from "@hookform/error-message";
 import { CheckCheck } from "lucide-react";
-import { cn, createBaseUrl } from "@/lib/utils";
+import {
+  cn,
+  createBaseUrl,
+  resolveSteamIdToSteamId64,
+  isValidSteamId
+} from "@/lib/utils";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import {
   SeasonPlatform,
@@ -121,7 +126,7 @@ export const SignupForm = ({
     return [];
   }, [editValues, draft]);
 
-  const { control, setValue, resetField, watch } = form;
+  const { control, setValue, resetField, watch, trigger } = form;
 
   const watchOrgId = useWatch({ control, name: "organizationId" });
   const watchNewOrg = useWatch({ control, name: "newOrganization" });
@@ -271,6 +276,9 @@ export const SignupForm = ({
     setSuccessMessage(null);
     setErrorMessage(null);
     try {
+      // Convert all Steam IDs to SteamID64 format before submitting
+      const convertedData = await convertSteamIdsToSteamId64(data);
+
       const returnValue = await clientApiFetch<{
         team_id: number;
         organization_id: number;
@@ -280,7 +288,7 @@ export const SignupForm = ({
           : `/api/v1/registrations/season/${seasonId}/signup`,
         {
           method: editValues ? "PUT" : "POST",
-          body: JSON.stringify(data)
+          body: JSON.stringify(convertedData)
         }
       );
       setSuccessMessage(`Team registered succesfully, please remember to`);
@@ -305,10 +313,58 @@ export const SignupForm = ({
     }
   };
 
+  /**
+   * Converts all Steam IDs in form data to SteamID64 format.
+   * Uses local conversion for SteamID/SteamID3, API call for custom URLs.
+   */
+  const convertSteamIdsToSteamId64 = async (
+    data: SignupFormValues
+  ): Promise<SignupFormValues> => {
+    const convertedPlayers = await Promise.all(
+      data.players.map(async (player) => {
+        // Skip empty Steam IDs
+        if (!player.steamId || !player.steamId.trim()) {
+          return player;
+        }
+
+        // If already SteamID64, return as-is
+        if (isValidSteamId(player.steamId)) {
+          return player;
+        }
+
+        // Try local conversion first (SteamID, SteamID3)
+        const localConverted = await resolveSteamIdToSteamId64(player.steamId);
+        if (localConverted) {
+          return { ...player, steamId: localConverted };
+        }
+
+        // Try API resolution for custom URLs
+        try {
+          const response = await clientApiFetch<{ steamId64: string }>(
+            `/api/v1/players/resolve/${encodeURIComponent(player.steamId.trim())}`
+          );
+          return { ...player, steamId: response.steamId64 };
+        } catch (error) {
+          // If resolution fails, keep original (validation will catch it)
+          console.warn(
+            `Failed to resolve Steam ID "${player.steamId}":`,
+            error
+          );
+          return player;
+        }
+      })
+    );
+
+    return { ...data, players: convertedPlayers };
+  };
+
   const saveAsDraft = async (formData: SignupFormValues) => {
+    // Convert all Steam IDs to SteamID64 format before saving
+    const convertedData = await convertSteamIdsToSteamId64(formData);
+
     const formDataStripped = {
-      ...formData,
-      players: formData.players.map((player) => ({
+      ...convertedData,
+      players: convertedData.players.map((player) => ({
         accountId: player.accountId,
         steamId: player.steamId,
         nickname: player.nickname,
@@ -439,6 +495,7 @@ export const SignupForm = ({
                 resetField={resetField}
                 setValue={setValue}
                 watch={watch}
+                trigger={trigger}
                 playerErrorIndices={
                   form.formState.errors.players
                     ? Object.keys(form.formState.errors.players)

@@ -25,7 +25,7 @@ import { insertPlayerRankForSeason } from "../models/season-player-ranks.models"
 import { isPlayerApprovedForSeasonManually } from "../models/season-team-players.models";
 import { getSeasonDetailsById } from "../models/season.models";
 import { NotFoundError, BadRequestError } from "../utils/errors";
-import { getFaceITTeamDetails } from "./faceit.services";
+import { getFaceITTeamDetails, fetchFaceitPlayerData } from "./faceit.services";
 import {
   getPlayerAppIdRank,
   getPlayerHoursForSteamAppId,
@@ -33,6 +33,8 @@ import {
 } from "./player-ranks.services";
 import { runQuery } from "../db/mysqlRunQuery";
 import { insertSeasonTeamRegistrationPlayer } from "../models/season-team-registration-player.models";
+import { updateSteamPlayerFaceitData } from "../models/player.models";
+import { logger } from "../utils/app-logger";
 
 export const ensurePlayerSteamProfilesPublic = async (
   playerSteamIds: string[]
@@ -80,6 +82,39 @@ export const getValidSeason = async (seasonId: number) => {
   return season;
 };
 
+/**
+ * Update FaceIT nickname and ID for players when platform is FaceIT
+ */
+const updatePlayersFaceitData = async (
+  platform: SeasonPlatform | null,
+  playerSteamIds: string[],
+  connection?: PoolConnection
+): Promise<void> => {
+  if (platform !== SeasonPlatform.FACEIT) {
+    return;
+  }
+
+  for (const steamId of playerSteamIds) {
+    try {
+      const faceitData = await fetchFaceitPlayerData(steamId, "cs2");
+      if (faceitData && faceitData.nickname && faceitData.player_id) {
+        await updateSteamPlayerFaceitData(
+          steamId,
+          faceitData.nickname,
+          faceitData.player_id,
+          connection
+        );
+        logger.info(
+          `Updated FaceIT data for player ${steamId}: ${faceitData.nickname} (${faceitData.player_id})`
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail if FaceIT data fetch fails
+      logger.warn(`Failed to fetch FaceIT data for player ${steamId}:`, error);
+    }
+  }
+};
+
 export const addPlayersForTeamInSeason = async (
   seasonId: number,
   appId: number,
@@ -100,8 +135,6 @@ export const addPlayersForTeamInSeason = async (
       connection
     );
 
-    // TODO: https://gitlab.com/kanaliiga_public/kanahub/eggosystem/-/issues/238
-    // What if one of the ranks are in database, but the other is not? We do not want to fetch all rank data from DB
     const [rank, { hours }, externalRank] = await Promise.all([
       getPlayerAppIdRank(player.steam_id, appId, seasonId),
       getPlayerHoursForSteamAppId(player.steam_id, appId, seasonId),
@@ -142,6 +175,30 @@ export const addPlayersForTeamInSeason = async (
           },
       { connection }
     );
+
+    // Fetch and save FaceIT nickname and ID when platform is FaceIT
+    if (platform === SeasonPlatform.FACEIT) {
+      try {
+        const faceitData = await fetchFaceitPlayerData(player.steam_id, "cs2");
+        if (faceitData && faceitData.nickname && faceitData.player_id) {
+          await updateSteamPlayerFaceitData(
+            player.steam_id,
+            faceitData.nickname,
+            faceitData.player_id,
+            connection
+          );
+          logger.info(
+            `Updated FaceIT data for player ${player.steam_id}: ${faceitData.nickname} (${faceitData.player_id})`
+          );
+        }
+      } catch (error) {
+        // Log error but don't fail the signup if FaceIT data fetch fails
+        logger.warn(
+          `Failed to fetch FaceIT data for player ${player.steam_id}:`,
+          error
+        );
+      }
+    }
   }
 };
 
@@ -214,6 +271,10 @@ export const handleUpdateSeasonTeamRegistration = async (
   connection?: PoolConnection
 ) => {
   const playerSteamIds = playerUpdateData.map((player) => player.steam_id);
+
+  // Get season to check platform
+  const season = await getSeasonDetailsById(seasonId);
+
   await Promise.all([
     validatePlayersFromDBForSignup(
       seasonId,
@@ -230,6 +291,11 @@ export const handleUpdateSeasonTeamRegistration = async (
     )
     // Captain permissions are now handled automatically by database triggers
   ]);
+
+  // Update FaceIT data for players when platform is FaceIT
+  if (season) {
+    await updatePlayersFaceitData(season.platform, playerSteamIds, connection);
+  }
 };
 
 export const handleSeasonTeamRegistration = async (

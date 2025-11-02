@@ -2,7 +2,8 @@ import { Router } from "express";
 import {
   addPlayerToTeamController,
   addSubstitutePlayerController,
-  validatePlayerController
+  validatePlayerController,
+  preparePlayerForSignupController
 } from "../../../controllers/dashboard/player.controllers";
 import { validateNumericParams } from "../../../middlewares/validate-numeric-params";
 import { getPlayerBySteamIdController } from "../../../controllers/players.controllers";
@@ -27,5 +28,8 @@ router.post(
 );
 
 router.get("/:steam_id", getPlayerBySteamIdController);
+
+// POST /api/v1/dashboard/players/:steam_id/prepare-for-signup
+router.post("/:steam_id/prepare-for-signup", preparePlayerForSignupController);
 
 export default router;

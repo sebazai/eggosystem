@@ -157,8 +157,13 @@ describe("AddSubstitutePlayerPage", () => {
 
     mockUseDashboardSeasonTeams.mockReturnValue({
       teams: [
-        { team_id: 1, team_name: "Team Alpha", league_name: "League 1" },
-        { team_id: 2, team_name: "Team Beta", league_name: "League 2" }
+        {
+          team_id: 1,
+          team_name: "Team Alpha",
+          league_name: "League 1",
+          tier: 1
+        },
+        { team_id: 2, team_name: "Team Beta", league_name: "League 2", tier: 2 }
       ],
       isLoading: false,
       isError: null,

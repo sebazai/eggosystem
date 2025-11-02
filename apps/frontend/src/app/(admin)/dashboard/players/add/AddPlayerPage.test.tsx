@@ -211,8 +211,18 @@ describe("AddPlayerPage", () => {
     full_name: "Season 14 - CS:GO"
   };
   const mockTeams = [
-    { team_id: 1650, team_name: "Test Team", league_name: "Test League" },
-    { team_id: 1651, team_name: "Another Team", league_name: "Test League" }
+    {
+      team_id: 1650,
+      team_name: "Test Team",
+      league_name: "Test League",
+      tier: 1
+    },
+    {
+      team_id: 1651,
+      team_name: "Another Team",
+      league_name: "Test League",
+      tier: 2
+    }
   ];
 
   const eligiblePlayerResponse = {

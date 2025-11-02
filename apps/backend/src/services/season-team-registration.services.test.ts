@@ -18,6 +18,7 @@ import {
   clearOrganization,
   clearRogueTeam,
   clearSeasonPlayerRanks,
+  clearTestUserAndRanks,
   insertOneTestUser,
   insertRogueTeam,
   insertTestSeason,
@@ -592,6 +593,15 @@ describe("Season team registration services", () => {
     });
   });
   describe("addPlayersForTeamInSeason", () => {
+    const testSteamId = "88888888888888888"; // Steam ID for partial data bug test (AppIdRank in DB)
+    const testAccountId = 8888888; // Account ID for partial data bug test
+
+    const testSteamIdFaceitInDb = "77777777777777777"; // Steam ID for FaceIT rank in DB test
+    const testAccountIdFaceitInDb = 7777777; // Account ID for FaceIT rank in DB test
+
+    const testSteamIdHoursInDb = "66666666666666666"; // Steam ID for hours in DB test
+    const testAccountIdHoursInDb = 6666666; // Account ID for hours in DB test
+
     beforeEach(async () => {
       await unsetSeasonTeamRegistration();
       await setSeasonTeamRegistration();
@@ -600,12 +610,38 @@ describe("Season team registration services", () => {
       await insertOneTestUser(9999112, "11111111111111112", "Faceit Ranker");
       await insertOneTestUser(9999113, "11111111111111113", "No Ranker");
       await insertOneTestUser(9999114, "11111111111111114", "CSGO Ranker");
+
+      // Clean up test users for partial data bug tests (in case they exist from previous runs)
+      await clearTestUserAndRanks(testAccountId, testSteamId, seasonDetails.id);
+      await clearTestUserAndRanks(
+        testAccountIdFaceitInDb,
+        testSteamIdFaceitInDb,
+        seasonDetails.id
+      );
+      await clearTestUserAndRanks(
+        testAccountIdHoursInDb,
+        testSteamIdHoursInDb,
+        seasonDetails.id
+      );
     });
     afterEach(async () => {
       await cleanUpTestUser(9999111);
       await cleanUpTestUser(9999112);
       await cleanUpTestUser(9999113);
       await cleanUpTestUser(9999114);
+
+      // Clean up test users for partial data bug tests
+      await clearTestUserAndRanks(testAccountId, testSteamId, seasonDetails.id);
+      await clearTestUserAndRanks(
+        testAccountIdFaceitInDb,
+        testSteamIdFaceitInDb,
+        seasonDetails.id
+      );
+      await clearTestUserAndRanks(
+        testAccountIdHoursInDb,
+        testSteamIdHoursInDb,
+        seasonDetails.id
+      );
     });
     it("should fail if a player is missing hours for app_id", async () => {
       const formData = _.cloneDeep(validSignupData);
@@ -677,8 +713,8 @@ describe("Season team registration services", () => {
       expect(rankForSeason.faceit_elo).toEqual(750);
       expect(rankForSeason.faceit_level).toEqual(2);
       expect(rankForSeason.faceit_kd).toEqual(0.95);
-      // 6 times for app id rank, 6 times for hours, 6 times for external rank
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(20);
+      // 6 times for app id rank, 6 times for hours, 6 times for external rank, 6 times for faceit player data
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(26);
     });
     it("Should throw error if no rank and no external rank", async () => {
       const formData = _.cloneDeep(validSignupData);
@@ -758,8 +794,8 @@ describe("Season team registration services", () => {
       expect(rankForSeason.faceit_kd).toEqual(1.35);
       expect(rankForSeason.faceit_level).toEqual(6);
       expect(rankForSeason.faceit_date).toBeDefined();
-      // 4 times for app id rank, 5 times for external rank, except added player to db, 5 times for hours
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(14);
+      // 4 times for app id rank, 5 times for external rank, except added player to db, 5 times for hours, 5 times for faceit player data
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(19);
 
       await runQuery("DELETE FROM SeasonPlayerRanks WHERE id = ?", [
         idToRemove.insertId
@@ -810,8 +846,8 @@ describe("Season team registration services", () => {
       // Should fetch season 14 rank even though season 11 is closer to now
       expect(rankForSeason.cs2_rank).toEqual(5000);
       expect(rankForSeason.cs_hours).toEqual(112);
-      // 6 times for app id rank, 6 times for external rank, 6 times for hours, as there are 6 players
-      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(20);
+      // 6 times for app id rank, 6 times for external rank, 6 times for hours, 6 times for faceit player data, as there are 6 players
+      expect(redisClient.get as jest.Mock).toHaveBeenCalledTimes(26);
     });
     it("Should fall back to csgo faceit rank if cs2 faceit rank not present, and apply decay on csgo faceit rank", async () => {
       const faceitReturnEloCsGo = 2700;
@@ -852,6 +888,199 @@ describe("Season team registration services", () => {
       expect(getPlayerRank.rank_updated_at).toContain(formatted);
       expect(getPlayerRank.hours_updated_at).toContain(formatted);
       expect(getPlayerRank.faceit_date).toContain(formatted);
+    });
+    it("Should fetch hours and FaceIT rank from APIs when AppIdRank is already in database but hours and platform rank are not", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      // Create a test user for this specific test with unique nickname to avoid email conflicts
+      // This Steam ID is specifically set up in the MSW handlers with mocked responses
+      const uniqueNickname = `PartialDataPlayer${Date.now()}`;
+      await insertOneTestUser(testAccountId, testSteamId, uniqueNickname);
+
+      // Insert ONLY AppIdRank into database (manually added)
+      // Do NOT insert hours or FaceIT rank
+      await runQuery(
+        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs2_rank, rank_updated_at) VALUES (?, ?, ?, NOW())",
+        [testSteamId, seasonDetails.id, 15000]
+      );
+
+      // Add the test player to form data
+      formData.players.push({
+        steamId: testSteamId,
+        accountId: testAccountId,
+        nickname: uniqueNickname
+      });
+
+      // Call addPlayersForTeamInSeason
+      // This should fetch hours from Steam API and FaceIT rank from FaceIT API
+      // even though AppIdRank is already in the database
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        SeasonPlatform.FACEIT,
+        formData.teamId,
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
+      );
+
+      // Verify that hours and FaceIT rank were fetched from APIs and inserted
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [testSteamId, seasonDetails.id]
+      );
+
+      // AppIdRank should remain as manually added value
+      expect(rankForSeason.cs2_rank).toEqual(15000);
+
+      // Hours should be fetched from Steam API
+      // Mocked Steam handler returns 7200 minutes = 120 hours
+      expect(rankForSeason.cs_hours).toBeDefined();
+      expect(rankForSeason.cs_hours).not.toEqual(-1);
+      expect(rankForSeason.cs_hours).not.toBeNull();
+      expect(rankForSeason.cs_hours).toEqual(120); // 7200 minutes / 60 = 120 hours
+
+      // FaceIT rank should be fetched from FaceIT API
+      // Mocked FaceIT handler returns elo: 1600, which converts to level: 8 (via faceitEloToLevel)
+      expect(rankForSeason.faceit_elo).toBeDefined();
+      expect(rankForSeason.faceit_elo).not.toEqual(-1);
+      expect(rankForSeason.faceit_elo).toEqual(1600);
+      expect(rankForSeason.faceit_level).toBeDefined();
+      expect(rankForSeason.faceit_level).toEqual(8); // 1600 elo converts to level 8 (1531-1750 range)
+      expect(rankForSeason.faceit_kd).toBeDefined();
+      expect(rankForSeason.faceit_kd).toEqual(1.42);
+      expect(rankForSeason.faceit_date).toBeDefined();
+      expect(rankForSeason.faceit_date).not.toBeNull();
+    });
+    it("Should fetch AppIdRank and hours from APIs when FaceIT rank is already in database but AppIdRank and hours are not", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const uniqueNickname = `FaceitInDbPlayer${Date.now()}`;
+      await insertOneTestUser(
+        testAccountIdFaceitInDb,
+        testSteamIdFaceitInDb,
+        uniqueNickname
+      );
+
+      // Insert ONLY FaceIT rank into database (manually added)
+      // Do NOT insert AppIdRank or hours
+      await runQuery(
+        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, faceit_elo, faceit_level, faceit_kd, faceit_date, rank_updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
+        [testSteamIdFaceitInDb, seasonDetails.id, 1800, 9, 1.5]
+      );
+
+      // Add the test player to form data
+      formData.players.push({
+        steamId: testSteamIdFaceitInDb,
+        accountId: testAccountIdFaceitInDb,
+        nickname: uniqueNickname
+      });
+
+      // Call addPlayersForTeamInSeason
+      // This should fetch AppIdRank from API and hours from Steam API
+      // even though FaceIT rank is already in the database
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        SeasonPlatform.FACEIT,
+        formData.teamId,
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
+      );
+
+      // Verify that AppIdRank and hours were fetched from APIs and inserted
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [testSteamIdFaceitInDb, seasonDetails.id]
+      );
+
+      // FaceIT rank should remain as manually added value
+      expect(rankForSeason.faceit_elo).toEqual(1800);
+      expect(rankForSeason.faceit_level).toEqual(9);
+      expect(rankForSeason.faceit_kd).toEqual(1.5);
+      expect(rankForSeason.faceit_date).toBeDefined();
+      expect(rankForSeason.faceit_date).not.toBeNull();
+
+      // AppIdRank should be fetched from API (not -1)
+      expect(rankForSeason.cs2_rank).toBeDefined();
+      expect(rankForSeason.cs2_rank).not.toEqual(-1);
+      expect(rankForSeason.cs2_rank).not.toBeNull();
+      expect(rankForSeason.cs2_rank).toBeGreaterThan(0);
+
+      // Hours should be fetched from Steam API
+      // Mocked Steam handler returns 7200 minutes = 120 hours
+      expect(rankForSeason.cs_hours).toBeDefined();
+      expect(rankForSeason.cs_hours).not.toEqual(-1);
+      expect(rankForSeason.cs_hours).not.toBeNull();
+      expect(rankForSeason.cs_hours).toEqual(120); // 7200 minutes / 60 = 120 hours
+    });
+    it("Should fetch AppIdRank and FaceIT rank from APIs when hours are already in database but AppIdRank and platform rank are not", async () => {
+      const formData = _.cloneDeep(validSignupData);
+      const uniqueNickname = `HoursInDbPlayer${Date.now()}`;
+      await insertOneTestUser(
+        testAccountIdHoursInDb,
+        testSteamIdHoursInDb,
+        uniqueNickname
+      );
+
+      // Insert ONLY hours into database (manually added)
+      // Do NOT insert AppIdRank or FaceIT rank
+      await runQuery(
+        "INSERT INTO SeasonPlayerRanks (steam_id, season_id, cs_hours, hours_updated_at) VALUES (?, ?, ?, NOW())",
+        [testSteamIdHoursInDb, seasonDetails.id, 250]
+      );
+
+      // Add the test player to form data
+      formData.players.push({
+        steamId: testSteamIdHoursInDb,
+        accountId: testAccountIdHoursInDb,
+        nickname: uniqueNickname
+      });
+
+      // Call addPlayersForTeamInSeason
+      // This should fetch AppIdRank from API and FaceIT rank from FaceIT API
+      // even though hours are already in the database
+      await registrationServices.addPlayersForTeamInSeason(
+        seasonDetails.id,
+        seasonDetails.app_id,
+        SeasonPlatform.FACEIT,
+        formData.teamId,
+        formData.players.map((player) => ({
+          steam_id: player.steamId,
+          is_captain: Boolean(player.captain),
+          is_co_captain: Boolean(player.coCaptain)
+        }))
+      );
+
+      // Verify that AppIdRank and FaceIT rank were fetched from APIs and inserted
+      const [rankForSeason] = await runQuery<[SeasonPlayerRank]>(
+        "SELECT * FROM SeasonPlayerRanks WHERE steam_id = ? AND season_id = ?",
+        [testSteamIdHoursInDb, seasonDetails.id]
+      );
+
+      // Hours should remain as manually added value
+      expect(rankForSeason.cs_hours).toEqual(250);
+
+      // AppIdRank should be fetched from API (not -1)
+      expect(rankForSeason.cs2_rank).toBeDefined();
+      expect(rankForSeason.cs2_rank).not.toEqual(-1);
+      expect(rankForSeason.cs2_rank).not.toBeNull();
+      expect(rankForSeason.cs2_rank).toBeGreaterThan(0);
+
+      // FaceIT rank should be fetched from FaceIT API
+      // Mocked FaceIT handler returns elo: 1600, which converts to level: 8 (via faceitEloToLevel)
+      expect(rankForSeason.faceit_elo).toBeDefined();
+      expect(rankForSeason.faceit_elo).not.toEqual(-1);
+      expect(rankForSeason.faceit_elo).toEqual(1600);
+      expect(rankForSeason.faceit_level).toBeDefined();
+      expect(rankForSeason.faceit_level).toEqual(8); // 1600 elo converts to level 8 (1531-1750 range)
+      expect(rankForSeason.faceit_kd).toBeDefined();
+      expect(rankForSeason.faceit_kd).toEqual(1.42);
+      expect(rankForSeason.faceit_date).toBeDefined();
+      expect(rankForSeason.faceit_date).not.toBeNull();
     });
   });
   // Captain permission tests removed - now handled by database triggers

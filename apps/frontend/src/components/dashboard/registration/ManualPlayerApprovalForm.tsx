@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SteamIdInput } from "@/components/ui/steam-id-input";
 import {
   Select,
   SelectTrigger,
@@ -119,9 +120,13 @@ function SteamIdInputWithName({
     <FormItem>
       <Label className="pb-1">Accepted Player Steam ID #{index + 1}</Label>
       <FormControl>
-        <Input
-          {...field}
+        <SteamIdInput
+          value={field.value}
+          onChange={field.onChange}
+          onBlur={field.onBlur}
+          name={field.name}
           placeholder="Insert player steamid"
+          convertOnBlur={true}
           data-testid={`player-steam-id-${index}`}
         />
       </FormControl>

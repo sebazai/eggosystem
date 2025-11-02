@@ -250,6 +250,24 @@ export const getLeetifyHandlers = [
         } satisfies LeetifyResponse);
       }
 
+      // Test Steam ID for partial data bug test (FaceIT rank in DB, AppIdRank and hours from API)
+      if (steamId === "77777777777777777") {
+        return HttpResponse.json({
+          games: [
+            createLeetifyResponse(16000, 11, true, new Date().toISOString())
+          ]
+        } satisfies LeetifyResponse);
+      }
+
+      // Test Steam ID for partial data bug test (hours in DB, AppIdRank and FaceIT rank from API)
+      if (steamId === "66666666666666666") {
+        return HttpResponse.json({
+          games: [
+            createLeetifyResponse(17000, 11, true, new Date().toISOString())
+          ]
+        } satisfies LeetifyResponse);
+      }
+
       // Default success response
       return HttpResponse.json({
         games: [

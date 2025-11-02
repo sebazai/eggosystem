@@ -1,5 +1,12 @@
 import { envConfig } from "@/configs/env";
 import type { Nullable } from "@eggosystem/types";
+import {
+  isValidSteamId as sharedIsValidSteamId,
+  convertSteamIdToSteamId64 as sharedConvertSteamIdToSteamId64,
+  convertSteamId3ToSteamId64 as sharedConvertSteamId3ToSteamId64,
+  extractSteamId64FromProfileUrl,
+  SeasonPlatform
+} from "@eggosystem/types";
 import { clsx, type ClassValue } from "clsx";
 import type { ReadonlyURLSearchParams } from "next/navigation";
 import { twMerge } from "tailwind-merge";
@@ -221,11 +228,108 @@ export const convertSeasonToS = (season: string) => {
   return season.replace("Season ", "S");
 };
 
-export const isValidSteamId = (steamId: string) => {
-  return /^[0-9]{17}$/.test(steamId);
+export const isValidSteamId = sharedIsValidSteamId;
+
+/**
+ * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, or custom URL) to SteamID64.
+ * For formats that require API calls (custom URLs), returns null if resolution fails.
+ * For formats that can be converted locally (SteamID, SteamID3, /profiles/ URLs), returns null if conversion fails.
+ * Uses BigInt to handle large SteamID64 values that exceed JavaScript's safe integer limit.
+ *
+ * @param input The Steam ID input in any format
+ * @returns Resolved SteamID64 or null if resolution fails (for custom URLs or invalid formats)
+ */
+export const resolveSteamIdToSteamId64 = async (
+  input: string
+): Promise<string | null> => {
+  // If empty, return null
+  if (!input.trim()) {
+    return null;
+  }
+
+  const trimmed = input.trim();
+
+  // If it's already a valid SteamID64, return it
+  if (isValidSteamId(trimmed)) {
+    return trimmed;
+  }
+
+  // Extract SteamID64 from /profiles/ URLs (these contain SteamID64 directly)
+  const steamId64FromUrl = extractSteamId64FromProfileUrl(trimmed);
+  if (steamId64FromUrl) {
+    return steamId64FromUrl;
+  }
+
+  // Try local conversion first (SteamID and SteamID3 formats)
+  // SteamID format: STEAM_X:Y:Z
+  if (trimmed.startsWith("STEAM_")) {
+    try {
+      const steamId64 = sharedConvertSteamIdToSteamId64(trimmed);
+      if (isValidSteamId(steamId64)) {
+        return steamId64;
+      }
+    } catch {
+      // Invalid format, continue to check SteamID3
+    }
+  }
+
+  // SteamID3 format: [U:1:AccountID]
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const steamId64 = sharedConvertSteamId3ToSteamId64(trimmed);
+      if (isValidSteamId(steamId64)) {
+        return steamId64;
+      }
+    } catch {
+      // Invalid format, return null
+    }
+  }
+
+  // For custom URLs, we need to call the API
+  // This will be handled by the caller using the resolve endpoint
+  return null;
 };
 
-import { SeasonPlatform } from "@eggosystem/types";
+/**
+ * Converts a single Steam ID to SteamID64 format.
+ * Uses local conversion for SteamID/SteamID3, API call for custom URLs.
+ * This is the same pattern used in SignupForm for dashboard forms.
+ *
+ * @param steamId The Steam ID input in any format
+ * @returns Resolved SteamID64 or the original input if conversion fails
+ */
+export const convertSteamIdToSteamId64 = async (
+  steamId: string
+): Promise<string> => {
+  // Skip empty Steam IDs
+  if (!steamId || !steamId.trim()) {
+    return steamId;
+  }
+
+  // If already SteamID64, return as-is
+  if (isValidSteamId(steamId)) {
+    return steamId;
+  }
+
+  // Try local conversion first (SteamID, SteamID3)
+  const localConverted = await resolveSteamIdToSteamId64(steamId);
+  if (localConverted) {
+    return localConverted;
+  }
+
+  // Try API resolution for custom URLs
+  try {
+    const { clientApiFetch } = await import("@/lib/apiClient");
+    const response = await clientApiFetch<{ steamId64: string }>(
+      `/api/v1/players/resolve/${encodeURIComponent(steamId.trim())}`
+    );
+    return response.steamId64;
+  } catch (error) {
+    // If resolution fails, keep original (validation will catch it)
+    console.warn(`Failed to resolve Steam ID "${steamId}":`, error);
+    return steamId;
+  }
+};
 
 export const createPlatformTeamUrl = (
   externalPlatformId: string | null,
