@@ -56,7 +56,7 @@
 
 - **[Architecture Overview](README.architecture.md)** - System design and technical patterns
 - **[Backend API Documentation](README.api.md)** - API endpoints, authentication, and security patterns
-- **[Database Schema](README.database.md)** - Complete database documentation with triggers and functions
+- **[Database Schema](README.database.md)** - Complete database documentation with triggers and functions ([Visual Diagram](https://csdb.kanaliiga.fi/))
 - **[Development Commands](README.commands.md)** - Comprehensive command reference
 - **[Dashboard Security](README.dashboard.md)** - Dashboard authentication, authorization, and security patterns
 - **[Frontend Development](README.frontend.md)** - Frontend component patterns, responsive design, and data fetching

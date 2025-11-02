@@ -14,6 +14,15 @@ This file contains the complete database schema including:
 - Indexes and constraints
 - Foreign key relationships
 
+**Visual Database Architecture**: [https://csdb.kanaliiga.fi/](https://csdb.kanaliiga.fi/)
+
+Interactive entity-relationship diagram showing:
+
+- All tables and their columns with data types
+- Foreign key relationships and constraints
+- Visual representation of the database architecture
+- Navigable diagram with pan and zoom functionality
+
 ## Core Design Principles
 
 ### Dual-Roster Architecture
