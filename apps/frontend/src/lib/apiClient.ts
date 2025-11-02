@@ -81,6 +81,44 @@ function isLegacyError(error: unknown): error is LegacyError {
   );
 }
 
+/**
+ * Type guard for error objects with optional detail and message properties
+ * Used for handling unknown error types in catch blocks
+ */
+interface ErrorWithDetail {
+  detail?: string;
+  message?: string;
+}
+
+function isErrorWithDetail(error: unknown): error is ErrorWithDetail {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (typeof (error as Record<string, unknown>).detail === "string" ||
+      typeof (error as Record<string, unknown>).message === "string")
+  );
+}
+
+/**
+ * Extracts error message from unknown error types
+ * Handles ApiError, Error, and error objects with detail/message properties
+ */
+export function extractErrorMessage(
+  error: unknown,
+  fallbackMessage = "An unexpected error occurred"
+): string {
+  if (error instanceof ApiError) {
+    return error.detail || error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (isErrorWithDetail(error)) {
+    return error.detail || error.message || fallbackMessage;
+  }
+  return fallbackMessage;
+}
+
 export class ApiError extends Error {
   status: number;
   type?: string;

@@ -3,6 +3,8 @@ import {
   generateQueryWithFilters
 } from "../utils/queryFilter";
 import { runQuery } from "../db/mysqlRunQuery";
+import { getConnection } from "../db/mysqlConnection";
+import { validateSteamId } from "../utils/steam-id-validator";
 import {
   type SteamPlayer,
   type ParsedParams,
@@ -53,6 +55,194 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   );
 
   return results.length > 0 ? results[0] : undefined;
+};
+
+/**
+ * Prepare a player for signup by creating/updating account and SteamPlayers profile
+ * with fake data. Sets work_email_verified to true but does NOT set UserPolicyAcceptance.
+ * @param steamId Steam ID of the player (must be valid SteamID64 format)
+ * @returns Account ID, Steam ID, and whether changes were made
+ * @throws {BadRequestError} If the Steam ID format is invalid
+ */
+export const preparePlayerForSignup = async (
+  steamId: string
+): Promise<{ account_id: number; steam_id: string; changes_made: boolean }> => {
+  // Validate Steam ID format (defense in depth)
+  validateSteamId(steamId, "Invalid Steam ID format");
+
+  const connection = await getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // Check if SteamPlayers exists
+    const [existingPlayer] = await runQuery<SteamPlayer[]>(
+      "SELECT * FROM SteamPlayers WHERE steam_id = ?",
+      [steamId],
+      connection
+    );
+
+    if (!existingPlayer) {
+      // Create new account, SteamPlayers, and LinkedAccounts
+      const fakeNickname = `Player_${steamId.slice(-8)}`;
+      const fakeFullName = `Fake Name ${steamId.slice(-4)}`;
+      const fakeWorkEmail = `fake_${steamId.slice(-8)}@example.com`;
+
+      const accountResult = await runQuery<{ insertId: number }>(
+        "INSERT INTO Accounts (full_name, work_email, work_email_verified, is_work_email_personal_email) VALUES (?, ?, ?, ?)",
+        [fakeFullName, fakeWorkEmail, true, false],
+        connection
+      );
+
+      if (!accountResult.insertId) {
+        throw new Error("Failed to create account: insertId is missing");
+      }
+
+      try {
+        await runQuery(
+          "INSERT INTO SteamPlayers (steam_id, nickname, account_id) VALUES (?, ?, ?)",
+          [steamId, fakeNickname, accountResult.insertId],
+          connection
+        );
+
+        await runQuery(
+          "INSERT INTO LinkedAccounts (account_id, provider_id, provider) VALUES (?, ?, ?)",
+          [accountResult.insertId, steamId, "steam"],
+          connection
+        );
+      } catch (insertError: unknown) {
+        // Handle race condition: if another request created the player simultaneously
+        if (
+          insertError &&
+          typeof insertError === "object" &&
+          "code" in insertError &&
+          (insertError as { code?: string }).code === "ER_DUP_ENTRY"
+        ) {
+          await connection.rollback();
+          connection.release();
+          // Retry: check if player now exists and handle as update
+          // This is safe because: 1) We rolled back, so no partial state
+          // 2) The other request will have committed, so player exists
+          // 3) Retry will go to the "else" branch and update the player
+          return await preparePlayerForSignup(steamId);
+        }
+        throw insertError;
+      }
+
+      await connection.commit();
+      return {
+        account_id: accountResult.insertId,
+        steam_id: steamId,
+        changes_made: true
+      };
+    } else {
+      // Update existing player - ensure account has required fields
+      const [accountRaw] = await runQuery<
+        Array<{
+          id: number;
+          full_name: string | null;
+          work_email: string | null;
+          work_email_verified: number | boolean | null; // tinyint(1) returns as number
+          is_work_email_personal_email: number | null;
+        }>
+      >(
+        "SELECT id, full_name, work_email, work_email_verified, is_work_email_personal_email FROM Accounts WHERE id = ?",
+        [existingPlayer.account_id],
+        connection
+      );
+
+      if (!accountRaw) {
+        throw new Error(`Account not found for steam_id ${steamId}`);
+      }
+
+      // Convert work_email_verified to boolean (tinyint(1) returns as number 0 or 1)
+      // Also normalize is_work_email_personal_email to number (may return as string from some queries)
+      const account = {
+        ...accountRaw,
+        work_email_verified: Boolean(accountRaw.work_email_verified),
+        is_work_email_personal_email:
+          accountRaw.is_work_email_personal_email !== null
+            ? Number(accountRaw.is_work_email_personal_email)
+            : null
+      };
+
+      // Generate fake data if missing or invalid
+      const fakeNickname =
+        existingPlayer.nickname || `Player_${steamId.slice(-8)}`;
+      const fakeFullName =
+        account.full_name && account.full_name.includes(" ")
+          ? account.full_name
+          : `Fake Name ${steamId.slice(-4)}`;
+
+      // Check if work_email is valid (not null, contains @, and is_work_email_personal_email != 1)
+      const isWorkEmailValid =
+        account.work_email !== null &&
+        account.work_email.includes("@") &&
+        account.is_work_email_personal_email !== 1;
+
+      const fakeWorkEmail: string =
+        isWorkEmailValid && account.work_email !== null
+          ? account.work_email
+          : `fake_${steamId.slice(-8)}@example.com`;
+
+      // Check if any changes are needed
+      const nicknameChanged = existingPlayer.nickname !== fakeNickname;
+      const fullNameChanged = account.full_name !== fakeFullName;
+      // Normalize email comparison: trim whitespace and handle null/empty string cases
+      // fakeWorkEmail is never null because if account.work_email is null, we use the fake email
+      const normalizedWorkEmail = account.work_email?.trim() || null;
+      const normalizedFakeWorkEmail = (fakeWorkEmail ?? "").trim();
+      const workEmailChanged = normalizedWorkEmail !== normalizedFakeWorkEmail;
+      const workEmailVerifiedChanged = account.work_email_verified !== true;
+      // is_work_email_personal_email: null or 0 means "not personal", 1 means "personal"
+      // We want to set it to false (0), so if it's null or 0, no change needed
+      const isPersonalEmailChanged =
+        account.is_work_email_personal_email !== null &&
+        account.is_work_email_personal_email !== 0;
+
+      const changesMade =
+        nicknameChanged ||
+        fullNameChanged ||
+        workEmailChanged ||
+        workEmailVerifiedChanged ||
+        isPersonalEmailChanged;
+
+      // Update SteamPlayers nickname if needed
+      if (nicknameChanged) {
+        await runQuery(
+          "UPDATE SteamPlayers SET nickname = ? WHERE steam_id = ?",
+          [fakeNickname, steamId],
+          connection
+        );
+      }
+
+      // Update Account to ensure all required fields are set
+      // Only update if changes are needed
+      if (changesMade) {
+        await runQuery(
+          `UPDATE Accounts 
+         SET full_name = ?, 
+             work_email = ?, 
+             work_email_verified = ?, 
+             is_work_email_personal_email = ?
+         WHERE id = ?`,
+          [fakeFullName, fakeWorkEmail, true, false, account.id],
+          connection
+        );
+      }
+
+      await connection.commit();
+      return {
+        account_id: account.id,
+        steam_id: steamId,
+        changes_made: changesMade
+      };
+    }
+  } catch (error: unknown) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 };
 
 /**
