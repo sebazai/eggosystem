@@ -1232,6 +1232,46 @@ export const validMatchDetailsMatchStatusReadyChampionship = {
   group: 1
 } satisfies ChampionshipDetailsReady;
 
+// Scheduled match details for team validation test
+export const validMatchDetailsMatchScheduledTeamValidation = {
+  match_id: "match-2-external-id",
+  version: 1,
+  game: "cs2",
+  region: "EU",
+  competition_id: "test-championship-id",
+  competition_type: "championship",
+  competition_name: "Test Championship",
+  organizer_id: "test-organizer-id",
+  teams: {
+    faction1: {
+      faction_id: "team-a-external-id",
+      leader: "leader-1",
+      avatar: "",
+      roster: [],
+      substituted: false,
+      name: "Team A",
+      type: "premade"
+    },
+    faction2: {
+      faction_id: "team-c-external-id",
+      leader: "leader-2",
+      avatar: "",
+      roster: [],
+      substituted: false,
+      name: "Team C",
+      type: "premade"
+    }
+  },
+  calculate_elo: false,
+  scheduled_at: Math.floor(new Date("2024-01-20T18:00:00Z").getTime() / 1000),
+  chat_room_id: "",
+  best_of: 1,
+  status: FaceitMatchStatus.SCHEDULED,
+  round: 2,
+  group: 1,
+  faceit_url: ""
+} satisfies ChampionshipDetailsObjectCreated;
+
 export const faceitMatchDetailsHandlers = [
   // Valid championship match details for the test match ID
   http.get(
@@ -1258,6 +1298,11 @@ export const faceitMatchDetailsHandlers = [
       // Return valid championship match details for the test match ID
       if (match_id === "1-dba8981d-5647-466a-be32-12a06fb8fc31") {
         return HttpResponse.json(validMatchDetailsMatchStatusFinished);
+      }
+
+      // Scheduled match for team validation test
+      if (match_id === "match-2-external-id") {
+        return HttpResponse.json(validMatchDetailsMatchScheduledTeamValidation);
       }
 
       // Invalid match details for testing validation errors

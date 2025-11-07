@@ -60,7 +60,8 @@ export {
   validMatchDetailsMatchCreated,
   validMatchDetailsMatchDemoReady,
   validMatchDetailsMatchStatusReadyMatchmaking,
-  validMatchDetailsMatchStatusFinished
+  validMatchDetailsMatchStatusFinished,
+  validMatchDetailsMatchScheduledTeamValidation
 } from "./faceit/MatchDetails-handlers.js";
 
 export { http, HttpResponse } from "msw";
