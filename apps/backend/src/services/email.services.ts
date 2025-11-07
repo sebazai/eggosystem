@@ -185,6 +185,16 @@ export const sendSeasonCaptainWelcomeEmail = async (
         day: "numeric"
       })
     : null;
+  const signupEndDate = season.signup_end_date
+    ? new Date(season.signup_end_date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short"
+      })
+    : null;
 
   const transporter = createTransporter();
   const mailOptions = {
@@ -235,7 +245,17 @@ export const sendSeasonCaptainWelcomeEmail = async (
               ? `
           <h2 style="color: hsl(35, 93%, 49%); font-size: 20px; margin-top: 40px; margin-bottom: 15px;">Payment Required</h2>
           
-          <p>Please remember to pay the participation fee for this season:</p>
+          <p>Please remember to pay the participation fee for this season.${
+            signupEndDate
+              ? ` <strong>Payment must be completed before signup ends on ${signupEndDate}.</strong>`
+              : ""
+          }</p>
+          
+          ${
+            signupEndDate
+              ? `<p style="margin-bottom: 20px;"><strong>Signup ends:</strong> ${signupEndDate}</p>`
+              : ""
+          }
           
           <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
             <tr>
