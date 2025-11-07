@@ -5,6 +5,14 @@ export const getGames = async (): Promise<Game[]> => {
   return runQuery<Game[]>("SELECT * FROM Games ORDER BY name");
 };
 
+export const getGameById = async (id: number): Promise<Game | undefined> => {
+  const [game] = await runQuery<[Game | undefined]>(
+    "SELECT * FROM Games WHERE id = ?",
+    [id]
+  );
+  return game;
+};
+
 export const getGameTypes = async (): Promise<GameType[]> => {
   return runQuery<GameType[]>(
     "SELECT gt.*, CONCAT(g.abbreviation, ' ', gt.name) as name FROM GameTypes gt JOIN Games g ON gt.game_id = g.id ORDER BY g.name, gt.name"

@@ -46,6 +46,11 @@ export const seasonFormSchema = z
       }
     ),
     is_round_robin_bo2_as_2xbo1: z.boolean(),
+    payment_link: z
+      .string()
+      .url("Payment link must be a valid URL")
+      .optional()
+      .nullable(),
     timezone: z.string().optional()
   })
   .refine(
@@ -109,4 +114,5 @@ export interface SeasonFormRaw {
   end_date: string | null;
   platform: SeasonPlatform;
   is_round_robin_bo2_as_2xbo1: boolean;
+  payment_link: string | null;
 }

@@ -136,8 +136,9 @@ export const createSeason = async (
       start_date,
       end_date,
       platform,
-      is_round_robin_bo2_as_2xbo1
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      is_round_robin_bo2_as_2xbo1,
+      payment_link
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const result = await runQuery<{ insertId: number }>(
@@ -153,7 +154,8 @@ export const createSeason = async (
       seasonData.start_date,
       seasonData.end_date,
       seasonData.platform,
-      seasonData.is_round_robin_bo2_as_2xbo1
+      seasonData.is_round_robin_bo2_as_2xbo1,
+      seasonData.payment_link
     ],
     connection
   );
