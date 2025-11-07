@@ -14,7 +14,8 @@ export const createMockSeason = (
   game_type_id?: number,
   organizer_id?: number,
   is_round_robin_bo2_as_2xbo1?: boolean,
-  grand_final_round_one_only?: boolean
+  grand_final_round_one_only?: boolean,
+  payment_link?: string | null
 ): Season => {
   return {
     id,
@@ -29,7 +30,8 @@ export const createMockSeason = (
     start_date,
     end_date: end_date ?? null,
     is_round_robin_bo2_as_2xbo1: is_round_robin_bo2_as_2xbo1 ?? false,
-    grand_final_round_one_only: grand_final_round_one_only ?? false
+    grand_final_round_one_only: grand_final_round_one_only ?? false,
+    payment_link: payment_link ?? null
   };
 };
 

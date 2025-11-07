@@ -62,7 +62,8 @@ export function SeasonForm({
       end_date: initialValues?.end_date || null,
       platform: initialValues?.platform || SeasonPlatform.Kanaliiga,
       is_round_robin_bo2_as_2xbo1:
-        initialValues?.is_round_robin_bo2_as_2xbo1 || false
+        initialValues?.is_round_robin_bo2_as_2xbo1 || false,
+      payment_link: initialValues?.payment_link || null
     },
     mode: "onTouched"
   });
@@ -91,7 +92,8 @@ export function SeasonForm({
         start_date: data.start_date,
         end_date: data.end_date || null,
         platform: data.platform,
-        is_round_robin_bo2_as_2xbo1: data.is_round_robin_bo2_as_2xbo1
+        is_round_robin_bo2_as_2xbo1: data.is_round_robin_bo2_as_2xbo1,
+        payment_link: data.payment_link || null
       };
 
       await onSubmit(rawData);
@@ -360,6 +362,30 @@ export function SeasonForm({
                       Treat round robin BO2 matches as two separate BO1 matches
                     </p>
                   </div>
+                </FormItem>
+              )}
+            />
+
+            {/* Payment Link */}
+            <FormField
+              control={form.control}
+              name="payment_link"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Link (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder="https://example.com/payment"
+                      {...field}
+                      value={field.value || ""}
+                      disabled={isFormDisabled}
+                    />
+                  </FormControl>
+                  <p className="text-sm text-muted-foreground">
+                    Link to payment page for participation fee
+                  </p>
+                  <FormMessage />
                 </FormItem>
               )}
             />
