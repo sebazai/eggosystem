@@ -2047,7 +2047,8 @@ describe("FaceIT Routes - Webhook", () => {
           start_date: "2025-01-01",
           end_date: null,
           is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: true
+          grand_final_round_one_only: true,
+          payment_link: null
         });
 
         // Create webhook payload for group 3 round 1 match
@@ -2111,7 +2112,8 @@ describe("FaceIT Routes - Webhook", () => {
           start_date: "2025-01-01",
           end_date: null,
           is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: true
+          grand_final_round_one_only: true,
+          payment_link: null
         });
 
         // Create webhook payload for group 3 round 2 match
@@ -2169,7 +2171,8 @@ describe("FaceIT Routes - Webhook", () => {
           start_date: "2025-01-01",
           end_date: null,
           is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: false
+          grand_final_round_one_only: false,
+          payment_link: null
         });
 
         // Create webhook payload for group 3 round 2 match
@@ -2438,7 +2441,8 @@ describe("FaceIT Routes - Webhook", () => {
           start_date: "2025-01-01",
           end_date: null,
           is_round_robin_bo2_as_2xbo1: false,
-          grand_final_round_one_only: true
+          grand_final_round_one_only: true,
+          payment_link: null
         });
 
         // Test round 3 (should be skipped)

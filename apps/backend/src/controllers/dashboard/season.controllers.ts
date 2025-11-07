@@ -102,7 +102,8 @@ export const createSeasonController = async (
         ? new Date(validatedData.end_date).toISOString().split("T")[0]
         : null,
       platform: validatedData.platform,
-      is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1
+      is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
+      payment_link: validatedData.payment_link || null
     };
 
     // Create the season in the database

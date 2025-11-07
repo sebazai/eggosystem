@@ -35,6 +35,7 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { insertSeasonTeamRegistrationPlayer } from "../models/season-team-registration-player.models";
 import { updateSteamPlayerFaceitData } from "../models/player.models";
 import { logger } from "../utils/app-logger";
+import { sendSeasonCaptainWelcomeEmail } from "./email.services";
 
 export const ensurePlayerSteamProfilesPublic = async (
   playerSteamIds: string[]
@@ -327,6 +328,26 @@ export const handleSeasonTeamRegistration = async (
     )
     // Captain permissions are now handled automatically by database triggers
   ]);
+
+  // Send welcome email to captain after successful registration
+  const captainPlayer = playerInsertData.find((player) => player.is_captain);
+  if (captainPlayer) {
+    const { captainEmail, players } = await getCaptainEmailAndPlayers(
+      captainPlayer.steam_id,
+      playerSteamIds,
+      connection
+    );
+    if (captainEmail) {
+      sendSeasonCaptainWelcomeEmail(
+        captainEmail,
+        seasonId,
+        "https://discord.gg/UFetjhv",
+        players
+      ).catch((error) => {
+        logger.error("Failed to send captain welcome email", error);
+      });
+    }
+  }
 };
 
 export const handleSignupFormForSeasonUpdate = async (
@@ -363,6 +384,49 @@ export const handleSignupFormForSeasonUpdate = async (
     }),
     connection
   );
+};
+
+/**
+ * Get captain email and player list for welcome email
+ */
+const getCaptainEmailAndPlayers = async (
+  captainSteamId: string,
+  playerSteamIds: string[],
+  connection?: PoolConnection
+): Promise<{
+  captainEmail: string | null;
+  players: Array<{ nickname: string; steam_id: string }>;
+}> => {
+  // Get captain email
+  const captainResult = await runQuery<Array<{ work_email: string | null }>>(
+    `SELECT a.work_email 
+     FROM Accounts a 
+     JOIN SteamPlayers sp ON a.id = sp.account_id 
+     WHERE sp.steam_id = ?`,
+    [captainSteamId],
+    connection
+  );
+
+  const captainEmail = captainResult[0]?.work_email ?? null;
+
+  // Get all players' nicknames and steam_ids
+  const playersResult = await runQuery<
+    Array<{ nickname: string; steam_id: string | number }>
+  >(
+    `SELECT nickname, steam_id 
+     FROM SteamPlayers 
+     WHERE steam_id IN (${playerSteamIds.map(() => "?").join(", ")})`,
+    playerSteamIds,
+    connection
+  );
+
+  return {
+    captainEmail,
+    players: playersResult.map((player) => ({
+      nickname: player.nickname,
+      steam_id: String(player.steam_id)
+    }))
+  };
 };
 
 export const handleSignupFormForSeason = async (

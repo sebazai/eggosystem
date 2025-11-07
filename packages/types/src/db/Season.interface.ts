@@ -20,6 +20,7 @@ export interface Season {
   end_date: string | null;
   is_round_robin_bo2_as_2xbo1: boolean;
   grand_final_round_one_only: boolean;
+  payment_link: string | null;
 }
 
 export interface InsertSeason {
@@ -35,4 +36,5 @@ export interface InsertSeason {
   start_date: Date; // DATE stored as string (ISO format)
   end_date: Nullable<Date>;
   is_round_robin_bo2_as_2xbo1?: boolean;
+  payment_link?: Nullable<string>;
 }
