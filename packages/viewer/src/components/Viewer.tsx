@@ -38,11 +38,30 @@ interface Player {
   deaths?: number;
 }
 
+interface FireParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  color: string;
+  opacity: number;
+  molotovId: string; // Unique identifier for the molotov this particle belongs to
+}
+
 function Viewer({ demoData, mapName }: ViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentTick, setCurrentTick] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
+
+  // Mobile detection and orientation
+  const [isMobile, setIsMobile] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(true);
+  const [showLandscapePrompt, setShowLandscapePrompt] = useState(false);
+
   const [scale, setScale] = useState(0.8);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -113,10 +132,8 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     null
   );
   const [smokeImage, setSmokeImage] = useState<HTMLImageElement | null>(null);
-  const [molotovImage, setMolotovImage] = useState<HTMLImageElement | null>(
-    null
-  );
   const [heImage, setHeImage] = useState<HTMLImageElement | null>(null);
+  const [fireParticles, setFireParticles] = useState<FireParticle[]>([]);
 
   // Track active flashes per player: { steamid: { startTick, startDuration } }
   const [activeFlashes, setActiveFlashes] = useState<
@@ -196,11 +213,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
       console.error("Failed to load smoke image:", error);
     smokeImg.src = getAssetUrl("smoke-detonate.png");
 
-    const molotovImg = new Image();
-    molotovImg.onload = () => setMolotovImage(molotovImg);
-    molotovImg.onerror = (error) =>
-      console.error("Failed to load molotov image:", error);
-    molotovImg.src = getAssetUrl("molotov-detonate.png");
+    // Molotov now uses dynamic particle system instead of static image
 
     const heImg = new Image();
     heImg.onload = () => setHeImage(heImg);
@@ -632,6 +645,117 @@ function Viewer({ demoData, mapName }: ViewerProps) {
 
     setHeTrails(newTrails);
   }, [currentTick, demoData.events, demoData.tickRate]);
+
+  // Update fire particles for molotovs
+  useEffect(() => {
+    if (!demoData.events) return;
+
+    const PARTICLES_PER_MOLOTOV = 40; // Number of particles per active molotov
+    const PARTICLE_SPAWN_RADIUS = 20 / scale; // Tighter spread radius
+    const PARTICLE_LIFETIME = demoData.tickRate * 0.5; // Shorter lifetime for faster churn
+
+    // Find active molotovs (currently burning)
+    const activeMolotovs = molotovTrails.filter((trail) => {
+      const hasDetonated = currentTick >= trail.detonateTick;
+      const stillBurning =
+        currentTick < trail.detonateTick + demoData.tickRate * 10;
+      return hasDetonated && stillBurning && trail.opacity > 0;
+    });
+
+    // Generate new particles for active molotovs
+    const newParticles: FireParticle[] = [];
+
+    activeMolotovs.forEach((molotov) => {
+      const molotovId = `${molotov.toX}-${molotov.toY}-${molotov.detonateTick}`;
+
+      // Generate particles for this molotov
+      for (let i = 0; i < PARTICLES_PER_MOLOTOV; i++) {
+        // Random position within burn area
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * PARTICLE_SPAWN_RADIUS;
+        const x = molotov.toX + Math.cos(angle) * distance;
+        const y = molotov.toY + Math.sin(angle) * distance;
+
+        // Random velocity - mostly horizontal spread, minimal upward
+        const vx = (Math.random() - 0.5) * 0.5; // More horizontal movement
+        const vy = (Math.random() - 0.5) * 0.2 - 0.05; // Very slight upward, mostly horizontal
+
+        // Random lifetime
+        const maxLife = PARTICLE_LIFETIME * (0.5 + Math.random() * 0.5);
+        const life = Math.random() * maxLife; // Stagger particle ages
+
+        // Random size - varied for flickering effect
+        const size = 2 + Math.random() * 3;
+
+        // Random fire color - bright yellow/orange like flames, not lava
+        const colorChoice = Math.random();
+        let color: string;
+        if (colorChoice < 0.35) {
+          color = "#FFD700"; // Gold/yellow
+        } else if (colorChoice < 0.65) {
+          color = "#FFC000"; // Bright yellow-orange
+        } else if (colorChoice < 0.85) {
+          color = "#FFB300"; // Lighter orange
+        } else {
+          color = "#FFEB3B"; // Bright yellow
+        }
+
+        newParticles.push({
+          x,
+          y,
+          vx,
+          vy,
+          life,
+          maxLife,
+          size,
+          color,
+          opacity: 1.0,
+          molotovId
+        });
+      }
+    });
+
+    // Update existing particles using functional state update
+    setFireParticles((currentParticles) => {
+      const updatedParticles = currentParticles
+        .map((particle) => {
+          // Decrease life
+          const newLife = particle.life - 1;
+
+          // Update position
+          const newX = particle.x + particle.vx;
+          const newY = particle.y + particle.vy;
+
+          // Update velocity - deceleration with turbulence (flickering)
+          const turbulence = (Math.random() - 0.5) * 0.05;
+          const newVx = particle.vx * 0.95 + turbulence;
+          const newVy = particle.vy * 0.95 + turbulence * 0.5; // Chaotic movement
+
+          // Calculate opacity based on life remaining
+          const lifeRatio = newLife / particle.maxLife;
+          const newOpacity = Math.max(0, Math.min(1, lifeRatio));
+
+          // Update size (grow slightly then shrink)
+          const newSize =
+            particle.size * (1 + Math.sin(lifeRatio * Math.PI) * 0.1);
+
+          return {
+            ...particle,
+            x: newX,
+            y: newY,
+            vx: newVx,
+            vy: newVy,
+            life: newLife,
+            opacity: newOpacity,
+            size: newSize
+          };
+        })
+        .filter((p) => p.life > 0); // Remove dead particles
+
+      // Combine updated particles with new ones
+      return [...updatedParticles, ...newParticles];
+    });
+  }, [currentTick, molotovTrails, demoData.tickRate, scale]);
 
   // Track flash durations - STRICT: once set, only counts down, NEVER up
   useEffect(() => {
@@ -1192,21 +1316,59 @@ function Viewer({ demoData, mapName }: ViewerProps) {
         ctx.setLineDash([]);
         ctx.restore();
 
-        // Draw fire spread area
-        if (molotovImage) {
-          const imgSize = 60 / scale;
-          ctx.save();
-          ctx.globalAlpha = trail.opacity * 0.9;
-          ctx.drawImage(
-            molotovImage,
-            to.x - imgSize / 2,
-            to.y - imgSize / 2,
-            imgSize,
-            imgSize
-          );
-          ctx.restore();
-        }
+        // Fire particles are now rendered separately below
+        // No longer using static molotov image
       }
+    });
+
+    // Draw fire particles for molotovs
+    fireParticles.forEach((particle) => {
+      ctx.save();
+      ctx.globalAlpha = particle.opacity;
+
+      // Draw particle with glow effect - tighter glow for fire
+      const gradient = ctx.createRadialGradient(
+        particle.x,
+        particle.y,
+        0,
+        particle.x,
+        particle.y,
+        (particle.size * 1.2) / scale
+      );
+      gradient.addColorStop(0, particle.color);
+      gradient.addColorStop(0.3, particle.color + "CC"); // Less transparent
+      gradient.addColorStop(0.7, particle.color + "66"); // Semi-transparent
+      gradient.addColorStop(1, particle.color + "00"); // Fully transparent
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(
+        particle.x,
+        particle.y,
+        (particle.size * 1.2) / scale,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+      // Add bright white-yellow core for hot center
+      const lifeRatio = particle.life / particle.maxLife;
+      if (lifeRatio > 0.3) {
+        // Only show core when particle is young
+        ctx.globalAlpha = particle.opacity * 0.8;
+        ctx.fillStyle = "#FFF9E6"; // Almost white-yellow core (hottest part)
+        ctx.beginPath();
+        ctx.arc(
+          particle.x,
+          particle.y,
+          (particle.size * 0.35) / scale,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      ctx.restore();
     });
 
     // Draw HE grenade trajectories and explosions
@@ -1530,6 +1692,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     smokeTrails,
     molotovTrails,
     heTrails,
+    fireParticles,
     activeFlashes
   ]);
 
