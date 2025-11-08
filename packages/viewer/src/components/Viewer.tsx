@@ -133,7 +133,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
   );
   const [smokeImage, setSmokeImage] = useState<HTMLImageElement | null>(null);
   const [heImage, setHeImage] = useState<HTMLImageElement | null>(null);
-  const [fireParticles, setFireParticles] = useState<FireParticle[]>([]);
+  const fireParticlesRef = useRef<FireParticle[]>([]);
 
   // Track active flashes per player: { steamid: { startTick, startDuration } }
   const [activeFlashes, setActiveFlashes] = useState<
@@ -263,11 +263,11 @@ function Viewer({ demoData, mapName }: ViewerProps) {
   // Adjust scale for mobile devices
   useEffect(() => {
     if (isMobile && isLandscape) {
-      // Mobile landscape mode: zoom out to show more of the map
-      setScale(0.45);
+      // Mobile landscape mode: zoom out to show whole map
+      setScale(0.38);
     } else if (isMobile && !isLandscape) {
       // Mobile portrait mode: zoom out to fit
-      setScale(0.3);
+      setScale(0.25);
     }
     // Desktop keeps user-controlled scale
   }, [isMobile, isLandscape]);
@@ -701,8 +701,8 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     if (!demoData.events) return;
 
     const PARTICLES_PER_MOLOTOV = 40; // Number of particles per active molotov
-    const PARTICLE_SPAWN_RADIUS = 20 / scale; // Tighter spread radius
-    const PARTICLE_LIFETIME = demoData.tickRate * 0.5; // Shorter lifetime for faster churn
+    const PARTICLE_SPAWN_RADIUS = 16 / scale; // 20% smaller radius (was 20, now 16)
+    const PARTICLE_LIFETIME = demoData.tickRate * 0.65; // Slower particle lifetime (30% slower)
 
     // Find active molotovs (currently burning)
     const activeMolotovs = molotovTrails.filter((trail) => {
@@ -734,8 +734,8 @@ function Viewer({ demoData, mapName }: ViewerProps) {
         const maxLife = PARTICLE_LIFETIME * (0.5 + Math.random() * 0.5);
         const life = Math.random() * maxLife; // Stagger particle ages
 
-        // Random size - varied for flickering effect
-        const size = 2 + Math.random() * 3;
+        // Random size - varied for flickering effect (20% smaller)
+        const size = 1.6 + Math.random() * 2.4; // Reduced from 2-5 to 1.6-4
 
         // Random fire color - bright yellow/orange like flames, not lava
         const colorChoice = Math.random();
@@ -765,25 +765,43 @@ function Viewer({ demoData, mapName }: ViewerProps) {
       }
     });
 
-    // Update existing particles using functional state update
-    setFireParticles((currentParticles) => {
+    // Update existing particles directly in ref
+    const currentParticles = fireParticlesRef.current;
+    {
       const updatedParticles = currentParticles
         .map((particle) => {
-          // Decrease life
-          const newLife = particle.life - 1;
+          // Check if parent molotov still exists
+          const parentMolotov = activeMolotovs.find(
+            (m) => `${m.toX}-${m.toY}-${m.detonateTick}` === particle.molotovId
+          );
+
+          // If parent molotov is gone or fading, accelerate particle death
+          let lifeDrain = 1;
+          if (!parentMolotov || parentMolotov.opacity < 0.5) {
+            lifeDrain = 5; // Die 5x faster when molotov is fading/gone
+          }
+
+          const newLife = particle.life - lifeDrain;
 
           // Update position
           const newX = particle.x + particle.vx;
           const newY = particle.y + particle.vy;
 
-          // Update velocity - deceleration with turbulence (flickering)
-          const turbulence = (Math.random() - 0.5) * 0.05;
-          const newVx = particle.vx * 0.95 + turbulence;
-          const newVy = particle.vy * 0.95 + turbulence * 0.5; // Chaotic movement
+          // Update velocity - deceleration with turbulence (flickering) - slower movement
+          const turbulence = (Math.random() - 0.5) * 0.04;
+          const newVx = particle.vx * 0.96 + turbulence;
+          const newVy = particle.vy * 0.96 + turbulence * 0.5; // Chaotic movement
 
-          // Calculate opacity based on life remaining
+          // Calculate opacity based on life remaining AND parent molotov
           const lifeRatio = newLife / particle.maxLife;
-          const newOpacity = Math.max(0, Math.min(1, lifeRatio));
+          let newOpacity = Math.max(0, Math.min(1, lifeRatio));
+
+          // If parent molotov is fading, fade particles faster
+          if (parentMolotov && parentMolotov.opacity < 1) {
+            newOpacity *= parentMolotov.opacity;
+          } else if (!parentMolotov) {
+            newOpacity *= 0.5; // Quickly fade out if molotov is gone
+          }
 
           // Update size (grow slightly then shrink)
           const newSize =
@@ -803,8 +821,8 @@ function Viewer({ demoData, mapName }: ViewerProps) {
         .filter((p) => p.life > 0); // Remove dead particles
 
       // Combine updated particles with new ones
-      return [...updatedParticles, ...newParticles];
-    });
+      fireParticlesRef.current = [...updatedParticles, ...newParticles];
+    }
   }, [currentTick, molotovTrails, demoData.tickRate, scale]);
 
   // Track flash durations - STRICT: once set, only counts down, NEVER up
@@ -1372,7 +1390,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     });
 
     // Draw fire particles for molotovs
-    fireParticles.forEach((particle) => {
+    fireParticlesRef.current.forEach((particle) => {
       ctx.save();
       ctx.globalAlpha = particle.opacity;
 
@@ -1645,6 +1663,27 @@ function Viewer({ demoData, mapName }: ViewerProps) {
         ctx.stroke();
 
         ctx.restore();
+
+        // Draw flash duration counter above player
+        if (remainingDuration > 0) {
+          const counterText = remainingDuration.toFixed(1) + "s";
+          ctx.save();
+          ctx.font = `${14 / scale}px monospace`;
+          ctx.fillStyle = "#FFFFFF";
+          ctx.strokeStyle = "#000000";
+          ctx.lineWidth = 3 / scale;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "bottom";
+
+          const textY = pos.y - flashRadius - 6 / scale; // Above the flash indicator
+
+          // Draw text stroke (outline)
+          ctx.strokeText(counterText, pos.x, textY);
+          // Draw text fill
+          ctx.fillText(counterText, pos.x, textY);
+
+          ctx.restore();
+        }
       }
 
       // Draw view direction line (starts OUTSIDE the circle) - only for alive players
@@ -1742,9 +1781,8 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     smokeTrails,
     molotovTrails,
     heTrails,
-    fireParticles,
     activeFlashes
-  ]);
+  ]); // Removed fireParticles - it updates too frequently and causes infinite loop
 
   // Initialize canvas size
   useEffect(() => {
@@ -1827,14 +1865,19 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     }
   }
 
-  // Calculate round time countdown (1:55 → 0:00)
+  // Calculate round time countdown (1:55 → 0:00) with freeze time
   let roundMinutes = 1;
   let roundSeconds = 55;
   if (currentRound && currentRound.startTick) {
+    const freezeTime = 15; // CS2 freeze/buy time is 15 seconds
     const ticksIntoRound = currentTick - currentRound.startTick;
     const secondsIntoRound = Math.floor(ticksIntoRound / tickRate);
+
+    // Only start counting down after freeze time ends
+    const secondsAfterFreezeTime = Math.max(0, secondsIntoRound - freezeTime);
+
     const roundTimeLimit = 115; // CS2 round time is 1:55 (115 seconds)
-    const timeRemaining = Math.max(0, roundTimeLimit - secondsIntoRound);
+    const timeRemaining = Math.max(0, roundTimeLimit - secondsAfterFreezeTime);
     roundMinutes = Math.floor(timeRemaining / 60);
     roundSeconds = timeRemaining % 60;
   }
