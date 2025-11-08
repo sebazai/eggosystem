@@ -528,3 +528,247 @@
 .players-list::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
+
+/* ===== LANDSCAPE PROMPT OVERLAY ===== */
+.landscape-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.landscape-prompt-content {
+  text-align: center;
+  padding: 2rem;
+  max-width: 400px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.rotate-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: rotateIcon 2s ease-in-out infinite;
+}
+
+@keyframes rotateIcon {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(90deg);
+  }
+}
+
+.landscape-prompt-content h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.landscape-prompt-content p {
+  font-size: 1.1rem;
+  color: #aaa;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.dismiss-button {
+  background: #4a90e2;
+  color: #fff;
+  border: none;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+}
+
+.dismiss-button:hover {
+  background: #3a7ac2;
+  transform: scale(1.05);
+}
+
+.dismiss-button:active {
+  transform: scale(0.95);
+}
+
+/* ===== MOBILE MODE ADJUSTMENTS ===== */
+.viewer-professional.mobile-mode {
+  padding: 0;
+}
+
+.viewer-professional.mobile-mode .top-bar {
+  padding: 3px 6px;
+  height: auto;
+  min-height: 35px;
+}
+
+.viewer-professional.mobile-mode .round-label {
+  font-size: 9px;
+}
+
+.viewer-professional.mobile-mode .round-timer {
+  font-size: 16px;
+}
+
+.viewer-professional.mobile-mode .round-selector {
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.viewer-professional.mobile-mode .round-dot {
+  width: 22px;
+  height: 22px;
+  font-size: 8px;
+}
+
+.viewer-professional.mobile-mode .main-content {
+  padding: 4px;
+  gap: 4px;
+}
+
+/* Keep scoreboards on right but make them much narrower */
+.viewer-professional.mobile-mode .scoreboards {
+  width: 130px; /* Even narrower to fit 5th player */
+  gap: 3px;
+}
+
+.viewer-professional.mobile-mode .team-scoreboard {
+  min-height: 0;
+}
+
+.viewer-professional.mobile-mode .team-header {
+  padding: 3px 4px;
+}
+
+.viewer-professional.mobile-mode .team-name {
+  font-size: 8px;
+}
+
+.viewer-professional.mobile-mode .team-score {
+  font-size: 18px;
+}
+
+.viewer-professional.mobile-mode .players-list {
+  padding: 2px;
+}
+
+.viewer-professional.mobile-mode .player-row {
+  padding: 2px 3px;
+  gap: 3px;
+  margin-bottom: 1px;
+}
+
+.viewer-professional.mobile-mode .player-health {
+  width: 20px;
+  height: 20px;
+}
+
+.viewer-professional.mobile-mode .armor-ring {
+  width: 20px;
+  height: 20px;
+}
+
+.viewer-professional.mobile-mode .health-circle {
+  width: 16px;
+  height: 16px;
+  top: 2px;
+  left: 2px;
+  font-size: 8px;
+  border-width: 1px;
+}
+
+.viewer-professional.mobile-mode .helmet-icon,
+.viewer-professional.mobile-mode .armor-icon {
+  font-size: 8px;
+  top: -1px;
+  right: -1px;
+}
+
+.viewer-professional.mobile-mode .armor-icon {
+  bottom: -1px;
+  top: auto;
+}
+
+.viewer-professional.mobile-mode .player-name {
+  font-size: 9px;
+}
+
+.viewer-professional.mobile-mode .player-stats {
+  font-size: 7px;
+  gap: 2px;
+}
+
+.viewer-professional.mobile-mode .player-money {
+  display: none; /* Hide money to save space */
+}
+
+.viewer-professional.mobile-mode .player-kda {
+  font-size: 7px;
+}
+
+.viewer-professional.mobile-mode .player-weapon {
+  font-size: 7px;
+  min-width: 20px;
+  max-width: 35px;
+}
+
+.viewer-professional.mobile-mode .player-weapon img,
+.viewer-professional.mobile-mode .player-weapon svg {
+  width: 20px;
+}
+
+.viewer-professional.mobile-mode .bottom-bar {
+  padding: 3px 6px;
+  height: auto;
+  min-height: 32px;
+  gap: 6px;
+}
+
+.viewer-professional.mobile-mode .control-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 11px;
+}
+
+.viewer-professional.mobile-mode .speed-label {
+  font-size: 10px;
+  min-width: 28px;
+}
+
+.viewer-professional.mobile-mode .speed-control {
+  width: 70px;
+}
+
+.viewer-professional.mobile-mode .timeline-info {
+  font-size: 8px;
+}
