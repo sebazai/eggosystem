@@ -222,6 +222,56 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     heImg.src = getAssetUrl("he-detonate.png");
   }, []);
 
+  // Mobile detection and orientation monitoring
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        ) || window.innerWidth <= 768;
+      setIsMobile(isMobileDevice);
+      return isMobileDevice;
+    };
+
+    const checkOrientation = () => {
+      const isLandscapeMode = window.innerWidth > window.innerHeight;
+      setIsLandscape(isLandscapeMode);
+
+      // Show prompt if mobile and in portrait
+      const mobile = checkMobile();
+      if (mobile && !isLandscapeMode) {
+        setShowLandscapePrompt(true);
+      } else {
+        setShowLandscapePrompt(false);
+      }
+    };
+
+    // Initial check
+    checkMobile();
+    checkOrientation();
+
+    // Listen for orientation changes
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
+  // Adjust scale for mobile devices
+  useEffect(() => {
+    if (isMobile && isLandscape) {
+      // Mobile landscape mode: zoom out to show more of the map
+      setScale(0.45);
+    } else if (isMobile && !isLandscape) {
+      // Mobile portrait mode: zoom out to fit
+      setScale(0.3);
+    }
+    // Desktop keeps user-controlled scale
+  }, [isMobile, isLandscape]);
+
   // Update bullet trails based on current tick
   useEffect(() => {
     if (!demoData.events) return;
@@ -1806,7 +1856,27 @@ function Viewer({ demoData, mapName }: ViewerProps) {
   }
 
   return (
-    <div className="viewer-professional">
+    <div className={`viewer-professional ${isMobile ? "mobile-mode" : ""}`}>
+      {/* Landscape Prompt for Mobile Portrait Mode */}
+      {showLandscapePrompt && (
+        <div className="landscape-prompt-overlay">
+          <div className="landscape-prompt-content">
+            <div className="rotate-icon">📱 ↻</div>
+            <h2>Rotate Your Device</h2>
+            <p>
+              For the best viewing experience, please rotate your device to
+              landscape mode.
+            </p>
+            <button
+              className="dismiss-button"
+              onClick={() => setShowLandscapePrompt(false)}
+            >
+              Continue Anyway
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar: Round Info */}
       <div className="top-bar">
         <div className="round-info">
