@@ -1239,7 +1239,6 @@ describe("Season team registration services", () => {
           [100000]
         );
         expect(account.nickname).toEqual("Nakki Kauppias");
-        expect(account.discord).toEqual("nakki#123");
         expect(addedOne.added.length).toEqual(1);
         expect(addedOne.added[0]).toEqual("12345678912345601");
         expect(addedOne.removed.length).toEqual(0);
@@ -1283,7 +1282,6 @@ describe("Season team registration services", () => {
           [100000]
         );
         expect(account.nickname).toEqual("Nakki Kauppias");
-        expect(account.discord).toEqual("nakki#123");
         expect(addedOne.removed.length).toEqual(1);
         expect(addedOne.removed[0]).toEqual("12345678912345601");
         expect(addedOne.added.length).toEqual(0);

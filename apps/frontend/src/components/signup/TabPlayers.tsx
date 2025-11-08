@@ -263,6 +263,8 @@ export const TabPlayers = ({
           if (data.nickname)
             setValue(`players.${index}.nickname`, data.nickname);
           if (data.discord) setValue(`players.${index}.discord`, data.discord);
+          // Set discordLinked status - check if discord exists (from LinkedAccounts)
+          setValue(`players.${index}.discordLinked`, Boolean(data.discord));
         } else {
           if (playerData.reason instanceof ApiError) {
             if (playerData.reason.status === 404) {
@@ -760,33 +762,41 @@ export const TabPlayers = ({
                     )}
                   />
 
-                  {/* If players.index.captain is checked, render discord field */}
+                  {/* If players.index.captain is checked, render discord status */}
                   {(player.captain || player.coCaptain) && (
                     <FormField
                       control={control}
-                      name={`players.${index}.discord`}
+                      name={`players.${index}.discordLinked`}
                       render={({ field }) => (
                         <FormItem className="py-1 sm:py-2">
                           <FormLabel>Discord</FormLabel>
                           <FormControl>
-                            <Input
-                              disabled={true}
-                              {...field}
-                              data-testid={`player-discord-${index}`}
-                            />
+                            <div className="flex items-center space-x-2">
+                              {field.value ? (
+                                <div className="flex items-center space-x-2 text-green-600">
+                                  <span>✓</span>
+                                  <span>Discord linked</span>
+                                  {player.discord && (
+                                    <span className="text-muted-foreground">
+                                      ({player.discord})
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex flex-col space-y-1">
+                                  <SignupPlayerNotification>
+                                    User needs to link Discord in their profile
+                                  </SignupPlayerNotification>
+                                  <Link
+                                    href="/profile"
+                                    className="text-sm text-blue-500 hover:underline"
+                                  >
+                                    Go to profile to link Discord
+                                  </Link>
+                                </div>
+                              )}
+                            </div>
                           </FormControl>
-                          <FormDescription className="text-primary text-xs pb-1">
-                            {player.discord ? (
-                              <SignupPlayerNotification type="info">
-                                Can be updated in profile page
-                              </SignupPlayerNotification>
-                            ) : (
-                              <SignupPlayerNotification>
-                                User needs to fill in Discord nick in his
-                                profile
-                              </SignupPlayerNotification>
-                            )}
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}

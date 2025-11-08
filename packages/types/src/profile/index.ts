@@ -14,7 +14,6 @@ export const accountSchema = z.object({
     }),
   work_email: z.string().email(),
   isPersonalEmail: z.boolean().optional(),
-  discord: z.string().optional(),
   acceptPrivacyPolicy: z.boolean().refine((val) => val === true, {
     message: "You must accept the privacy policy"
   }),

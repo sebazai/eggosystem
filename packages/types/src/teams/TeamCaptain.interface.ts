@@ -1,9 +1,8 @@
-import type { Nullable } from "../utils";
-import type { Team } from "../db";
+import type { Team, LinkedAccount } from "../db";
 
 export interface TeamCaptain {
   team_id: Team["id"];
   team_name: Team["name"];
-  captain_discord: Nullable<string>;
-  co_captain_discord: Nullable<string>;
+  captain_discord: LinkedAccount["provider_username"];
+  co_captain_discord: LinkedAccount["provider_username"];
 }

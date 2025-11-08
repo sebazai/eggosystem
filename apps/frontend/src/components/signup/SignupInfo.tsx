@@ -50,8 +50,8 @@ export const SignupInfo = () => {
               .
             </li>
             <li>
-              Captain and co-captain are required to have their Discord nickname
-              set in their profiles.
+              Captain and co-captain are required to link their Discord account
+              in their profiles.
             </li>
           </ul>
 

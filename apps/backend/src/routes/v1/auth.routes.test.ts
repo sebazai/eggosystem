@@ -74,8 +74,7 @@ describe("GET /me", () => {
       is_work_email_personal_email: false,
       provider: "steam",
       full_name: "Test User",
-      work_email: "test@example.com",
-      discord: null
+      work_email: "test@example.com"
     });
 
     // Mock account models

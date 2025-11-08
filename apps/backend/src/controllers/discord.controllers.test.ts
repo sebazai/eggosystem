@@ -75,7 +75,6 @@ describe("Discord Controllers", () => {
         work_email_token: null,
         work_email_token_expires_at: null,
         is_work_email_personal_email: false,
-        discord: "testuser#1234",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
       };
@@ -116,7 +115,6 @@ describe("Discord Controllers", () => {
         work_email_token: null,
         work_email_token_expires_at: null,
         is_work_email_personal_email: false,
-        discord: null,
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
       };
@@ -157,7 +155,6 @@ describe("Discord Controllers", () => {
         work_email_token: null,
         work_email_token_expires_at: null,
         is_work_email_personal_email: false,
-        discord: "testuser#1234",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
       };
@@ -190,7 +187,6 @@ describe("Discord Controllers", () => {
         work_email_token: null,
         work_email_token_expires_at: null,
         is_work_email_personal_email: false,
-        discord: "testuser#1234",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
       };
@@ -250,7 +246,6 @@ describe("Discord Controllers", () => {
         work_email_token: null,
         work_email_token_expires_at: null,
         is_work_email_personal_email: false,
-        discord: "testuser#1234",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
       };
@@ -282,7 +277,6 @@ describe("Discord Controllers", () => {
         work_email_token: null,
         work_email_token_expires_at: null,
         is_work_email_personal_email: false,
-        discord: "testuser#1234",
         created_at: "2024-01-01T00:00:00Z",
         updated_at: "2024-01-01T00:00:00Z"
       };
