@@ -362,7 +362,8 @@
   font-size: 10px; /* Increased from 9px to 10px */
   color: #777; /* Slightly lighter from #666 to #777 */
   text-align: right;
-  width: 50px;
+  min-width: 40px;
+  max-width: 80px; /* Flexible width instead of fixed */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
