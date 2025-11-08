@@ -131,7 +131,81 @@ const WEAPON_MAP: Record<string, string> = {
   "incendiary grenade": "incendiary-grenade",
   incgrenade: "incendiary-grenade",
   decoy: "decoy",
-  "decoy grenade": "decoy"
+  "decoy grenade": "decoy",
+
+  // Uppercase variants (for case-insensitive matching)
+  // Rifles
+  "AK-47": "ak47",
+  AK47: "ak47",
+  "M4A1-S": "m4a1",
+  M4A1: "m4a1",
+  M4A4: "m4a4",
+  AWP: "awp",
+  AUG: "aug",
+  SG553: "sg553",
+  "SG 553": "sg553",
+  FAMAS: "famas",
+  "GALIL AR": "galilar",
+  "SCAR-20": "scar20",
+  G3SG1: "g3sg1",
+  "SSG 08": "ssg08",
+
+  // SMGs
+  MP9: "mp9",
+  MAC10: "mac10",
+  "MAC-10": "mac10",
+  MP7: "mp7",
+  UMP45: "ump45",
+  "UMP-45": "ump45",
+  P90: "p90",
+  "PP-BIZON": "bizon",
+  BIZON: "bizon",
+  "MP5-SD": "mp5sd",
+
+  // Shotguns
+  NOVA: "nova",
+  XM1014: "xm1014",
+  "SAWED-OFF": "sawed-off",
+  "MAG-7": "mag7",
+
+  // Heavy
+  M249: "m249",
+  NEGEV: "negev",
+
+  // Pistols
+  GLOCK: "glock",
+  "GLOCK-18": "glock",
+  P2000: "p2000",
+  "USP-S": "usps",
+  "DUAL BERETTAS": "dual-elite",
+  P250: "p250",
+  "TEC-9": "tec9",
+  TEC9: "tec9",
+  "FIVE-SEVEN": "five-seven",
+  "CZ75-AUTO": "cz75a",
+  CZ75A: "cz75a",
+  "DESERT EAGLE": "deagle",
+  DEAGLE: "deagle",
+  Deagle: "deagle",
+  REVOLVER: "revolver",
+  "R8 REVOLVER": "revolver",
+
+  // Equipment
+  "ZEUS X27": "zeus",
+  ZEUS: "zeus",
+  "C4 EXPLOSIVE": "bomb",
+  C4: "bomb",
+  "HIGH EXPLOSIVE GRENADE": "he-grenade",
+  "HE GRENADE": "he-grenade",
+  HEGRENADE: "he-grenade",
+  FLASHBANG: "flashbang",
+  "SMOKE GRENADE": "smoke-grenade",
+  SMOKEGRENADE: "smoke-grenade",
+  MOLOTOV: "molotov",
+  "INCENDIARY GRENADE": "incendiary-grenade",
+  INCGRENADE: "incendiary-grenade",
+  DECOY: "decoy",
+  "DECOY GRENADE": "decoy"
 };
 
 function WeaponIcon({ weaponName, className = "" }: WeaponIconProps) {
@@ -146,10 +220,14 @@ function WeaponIcon({ weaponName, className = "" }: WeaponIconProps) {
   // Try to find weapon in map
   const iconName = WEAPON_MAP[normalizedName];
 
-  // If no icon found, return text fallback
+  // If no icon found, SHOW THE NAME in red so you can debug and add to map
   if (!iconName) {
     const displayName = normalizedName.replace("weapon_", "").toUpperCase();
-    return <span className={className}>{displayName}</span>;
+    return (
+      <span className={className} style={{ fontSize: "9px", color: "#f55" }}>
+        {displayName}
+      </span>
+    );
   }
 
   // Return image icon

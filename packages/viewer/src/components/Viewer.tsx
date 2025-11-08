@@ -96,6 +96,18 @@ function Viewer({ demoData, mapName }: ViewerProps) {
       opacity: number;
     }>
   >([]);
+  const [heTrails, setHeTrails] = useState<
+    Array<{
+      fromX: number;
+      fromY: number;
+      toX: number;
+      toY: number;
+      teamColor: string;
+      startTick: number;
+      detonateTick: number;
+      opacity: number;
+    }>
+  >([]);
   const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
   const [flashbangImage, setFlashbangImage] = useState<HTMLImageElement | null>(
     null
@@ -104,6 +116,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
   const [molotovImage, setMolotovImage] = useState<HTMLImageElement | null>(
     null
   );
+  const [heImage, setHeImage] = useState<HTMLImageElement | null>(null);
 
   // Track active flashes per player: { steamid: { startTick, startDuration } }
   const [activeFlashes, setActiveFlashes] = useState<
@@ -188,6 +201,12 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     molotovImg.onerror = (error) =>
       console.error("Failed to load molotov image:", error);
     molotovImg.src = getAssetUrl("molotov-detonate.png");
+
+    const heImg = new Image();
+    heImg.onload = () => setHeImage(heImg);
+    heImg.onerror = (error) =>
+      console.error("Failed to load HE grenade image:", error);
+    heImg.src = getAssetUrl("he-detonate.png");
   }, []);
 
   // Update bullet trails based on current tick
@@ -525,6 +544,93 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     }
 
     setMolotovTrails(newTrails);
+  }, [currentTick, demoData.events, demoData.tickRate]);
+
+  // Update HE grenade trails based on current tick
+  useEffect(() => {
+    if (!demoData.events) return;
+
+    // HE grenades explode instantly (quick explosion effect)
+    const heDetonations = demoData.events.filter(
+      (e) => e.eventType === "he_detonate"
+    );
+
+    const newTrails: Array<{
+      fromX: number;
+      fromY: number;
+      toX: number;
+      toY: number;
+      teamColor: string;
+      startTick: number;
+      detonateTick: number;
+      opacity: number;
+    }> = [];
+
+    for (const detonationEvent of heDetonations) {
+      const detonateTick = detonationEvent.tick;
+      const tickWindow = Math.floor(demoData.tickRate * 3); // 3 seconds after explosion
+      const throwerSteamid = detonationEvent.data.steamid;
+
+      // Find the throw event
+      const maxFlightTime = demoData.tickRate * 5;
+      const throwEvent = demoData.events.find(
+        (e) =>
+          e.eventType === "weapon_fire" &&
+          e.data.steamid === throwerSteamid &&
+          ((e.data.weapon || "").toLowerCase().includes("he") ||
+            (e.data.weapon || "").toLowerCase().includes("hegrenade")) &&
+          e.tick <= detonateTick &&
+          e.tick >= detonateTick - maxFlightTime
+      );
+
+      const throwTick = throwEvent ? throwEvent.tick : detonateTick;
+
+      // Only show from throw to 3 seconds after detonation
+      if (currentTick < throwTick || currentTick > detonateTick + tickWindow) {
+        continue;
+      }
+
+      const tickData = interpolatePlayerData(throwTick);
+      const thrower = tickData.find((p) => p.steamid === throwerSteamid);
+
+      if (!thrower) continue;
+
+      const throwerPos = gameToRadar(thrower.x, thrower.y);
+      const detonationPos = gameToRadar(
+        detonationEvent.data.x,
+        detonationEvent.data.y
+      );
+
+      // Full opacity during flight and brief explosion, then fade quickly
+      let opacity = 1.0;
+      if (currentTick > detonateTick) {
+        const ticksSinceExplosion = currentTick - detonateTick;
+        const fadeStartTicks = demoData.tickRate * 0.5; // Start fading after 0.5 seconds
+        if (ticksSinceExplosion > fadeStartTicks) {
+          opacity = Math.max(
+            0,
+            1 -
+              (ticksSinceExplosion - fadeStartTicks) /
+                (tickWindow - fadeStartTicks)
+          );
+        }
+      }
+
+      const teamColor = thrower.team === 3 ? "#79ADDE" : "#FFA336";
+
+      newTrails.push({
+        fromX: throwerPos.x,
+        fromY: throwerPos.y,
+        toX: detonationPos.x,
+        toY: detonationPos.y,
+        teamColor,
+        startTick: throwTick,
+        detonateTick: detonateTick,
+        opacity
+      });
+    }
+
+    setHeTrails(newTrails);
   }, [currentTick, demoData.events, demoData.tickRate]);
 
   // Track flash durations - STRICT: once set, only counts down, NEVER up
@@ -1103,6 +1209,104 @@ function Viewer({ demoData, mapName }: ViewerProps) {
       }
     });
 
+    // Draw HE grenade trajectories and explosions
+    heTrails.forEach((trail) => {
+      const from = { x: trail.fromX, y: trail.fromY };
+      const to = { x: trail.toX, y: trail.toY };
+      const isInFlight =
+        currentTick >= trail.startTick && currentTick < trail.detonateTick;
+      const hasDetonated = currentTick >= trail.detonateTick;
+
+      // Skip if completely faded out
+      if (!isInFlight && trail.opacity <= 0) return;
+
+      const midX = (from.x + to.x) / 2;
+      const midY = (from.y + to.y) / 2;
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const arcHeight = distance * 0.15;
+      const perpX = -dy / distance;
+      const perpY = dx / distance;
+      const controlX = midX + perpX * arcHeight;
+      const controlY = midY + perpY * arcHeight;
+
+      const getPointOnCurve = (t: number) => {
+        const x =
+          (1 - t) * (1 - t) * from.x +
+          2 * (1 - t) * t * controlX +
+          t * t * to.x;
+        const y =
+          (1 - t) * (1 - t) * from.y +
+          2 * (1 - t) * t * controlY +
+          t * t * to.y;
+        return { x, y };
+      };
+
+      if (isInFlight) {
+        const flightProgress = Math.max(
+          0,
+          Math.min(
+            1,
+            (currentTick - trail.startTick) /
+              (trail.detonateTick - trail.startTick)
+          )
+        );
+        const currentPos = getPointOnCurve(flightProgress);
+
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = trail.teamColor;
+        ctx.lineWidth = 2 / scale;
+        ctx.setLineDash([5 / scale, 5 / scale]);
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.quadraticCurveTo(controlX, controlY, currentPos.x, currentPos.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        // Draw flying HE grenade
+        const grenadeSize = 5 / scale;
+        ctx.save();
+        ctx.fillStyle = trail.teamColor;
+        ctx.shadowColor = trail.teamColor;
+        ctx.shadowBlur = 8 / scale;
+        ctx.beginPath();
+        ctx.arc(currentPos.x, currentPos.y, grenadeSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (hasDetonated) {
+        // Draw faded trajectory
+        ctx.save();
+        ctx.globalAlpha = trail.opacity * 0.3;
+        ctx.strokeStyle = trail.teamColor;
+        ctx.lineWidth = 1 / scale;
+        ctx.setLineDash([5 / scale, 5 / scale]);
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.quadraticCurveTo(controlX, controlY, to.x, to.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        // Draw HE explosion effect
+        if (heImage) {
+          const imgSize = 40 / scale;
+          ctx.save();
+          ctx.globalAlpha = trail.opacity;
+          ctx.drawImage(
+            heImage,
+            to.x - imgSize / 2,
+            to.y - imgSize / 2,
+            imgSize,
+            imgSize
+          );
+          ctx.restore();
+        }
+      }
+    });
+
     // Draw players
     players.forEach((player) => {
       const pos = gameToRadar(player.x, player.y);
@@ -1325,6 +1529,7 @@ function Viewer({ demoData, mapName }: ViewerProps) {
     flashbangTrails,
     smokeTrails,
     molotovTrails,
+    heTrails,
     activeFlashes
   ]);
 
