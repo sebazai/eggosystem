@@ -1,7 +1,11 @@
 import request from "supertest";
 import * as seasonModels from "../../models/season.models";
 import type TestAgent from "supertest/lib/agent";
-import { type SeasonDetails, SeasonPlatform } from "@eggosystem/types";
+import {
+  type SeasonDetails,
+  SeasonPlatform,
+  type SignupFormValues
+} from "@eggosystem/types";
 import _ from "lodash";
 import express from "express";
 import seasonTeamRegRoute from "./season-team-registration.routes";
@@ -149,23 +153,32 @@ describe("POST /:id/signup", () => {
 
     it("should return 400 if missing discord for captain", async () => {
       mockSeasonWith({ signup_start_date: "2024-01-01T00:00:00Z" });
+      const testData = _.cloneDeep(invalidSignupData) as SignupFormValues;
+      // Ensure captain doesn't have discordLinked set
+      if (testData.players[0]) {
+        testData.players[0].discordLinked = false;
+      }
 
-      const res = await agent
-        .post("/season/123/signup")
-        .send(invalidSignupData);
+      const res = await agent.post("/season/123/signup").send(testData);
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
         type: "about:blank",
         title: "Bad Request",
         status: 400,
         detail: expect.stringContaining(
-          "Captains and co-captains must provide a Discord username."
+          "Captains and co-captains must link their Discord account in their profile."
         ),
         instance: "/season/123/signup",
         issues: expect.arrayContaining([
           expect.objectContaining({
             code: "custom",
-            message: "Captains and co-captains must provide a Discord username."
+            message:
+              "Captains and co-captains must link their Discord account in their profile.",
+            path: expect.arrayContaining([
+              "players",
+              expect.any(Number),
+              "discordLinked"
+            ])
           })
         ])
       });

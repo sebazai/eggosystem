@@ -1,18 +1,19 @@
 import { type Request, type Response } from "express";
 import { getUserDiscordStatus } from "./discord.controllers";
-import { getAccountById } from "../models/account.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { logger } from "../utils/app-logger";
-import type { Account, UserPayload } from "@eggosystem/types";
+import { getDiscordUsernameByAccountId } from "../models/discord.models";
+import type { UserPayload } from "@eggosystem/types";
 
 // Mock dependencies
-jest.mock("../models/account.models");
 jest.mock("../db/mysqlRunQuery");
 jest.mock("../utils/app-logger");
+jest.mock("../models/discord.models");
 
-const mockGetAccountById = getAccountById as jest.MockedFunction<
-  typeof getAccountById
->;
+const mockGetDiscordUsernameByAccountId =
+  getDiscordUsernameByAccountId as jest.MockedFunction<
+    typeof getDiscordUsernameByAccountId
+  >;
 const mockRunQuery = runQuery as jest.MockedFunction<typeof runQuery>;
 const mockLogger = logger as jest.Mocked<typeof logger>;
 
@@ -65,20 +66,6 @@ describe("Discord Controllers", () => {
     });
 
     it("should return user Discord status with Discord username", async () => {
-      const mockAccount: Account = {
-        id: 123,
-        steam_id: "steam123",
-        nickname: "testuser",
-        full_name: "Test User",
-        work_email: "test@example.com",
-        work_email_verified: true,
-        work_email_token: null,
-        work_email_token_expires_at: null,
-        is_work_email_personal_email: false,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      };
-
       const mockRegistrations = [
         {
           organization_id: 1,
@@ -87,7 +74,7 @@ describe("Discord Controllers", () => {
         }
       ];
 
-      mockGetAccountById.mockResolvedValue(mockAccount);
+      mockGetDiscordUsernameByAccountId.mockResolvedValue("testuser");
       mockRunQuery.mockResolvedValue(mockRegistrations);
 
       const mockNext = jest.fn();
@@ -97,28 +84,15 @@ describe("Discord Controllers", () => {
         mockNext
       );
 
+      expect(mockGetDiscordUsernameByAccountId).toHaveBeenCalledWith(123);
       expect(mockJson).toHaveBeenCalledWith({
         hasDiscordUsername: true,
-        discordUsername: "testuser#1234",
+        discordUsername: "testuser",
         kanahautomoRegistrations: mockRegistrations
       });
     });
 
     it("should return user Discord status without Discord username", async () => {
-      const mockAccount: Account = {
-        id: 123,
-        steam_id: "steam123",
-        nickname: "testuser",
-        full_name: "Test User",
-        work_email: "test@example.com",
-        work_email_verified: true,
-        work_email_token: null,
-        work_email_token_expires_at: null,
-        is_work_email_personal_email: false,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      };
-
       const mockRegistrations = [
         {
           organization_id: 1,
@@ -127,7 +101,7 @@ describe("Discord Controllers", () => {
         }
       ];
 
-      mockGetAccountById.mockResolvedValue(mockAccount);
+      mockGetDiscordUsernameByAccountId.mockResolvedValue(null);
       mockRunQuery.mockResolvedValue(mockRegistrations);
 
       const mockNext = jest.fn();
@@ -137,6 +111,7 @@ describe("Discord Controllers", () => {
         mockNext
       );
 
+      expect(mockGetDiscordUsernameByAccountId).toHaveBeenCalledWith(123);
       expect(mockJson).toHaveBeenCalledWith({
         hasDiscordUsername: false,
         discordUsername: null,
@@ -145,21 +120,7 @@ describe("Discord Controllers", () => {
     });
 
     it("should return empty registrations when user has no Kanahautomo registrations", async () => {
-      const mockAccount: Account = {
-        id: 123,
-        steam_id: "steam123",
-        nickname: "testuser",
-        full_name: "Test User",
-        work_email: "test@example.com",
-        work_email_verified: true,
-        work_email_token: null,
-        work_email_token_expires_at: null,
-        is_work_email_personal_email: false,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      };
-
-      mockGetAccountById.mockResolvedValue(mockAccount);
+      mockGetDiscordUsernameByAccountId.mockResolvedValue("testuser");
       mockRunQuery.mockResolvedValue([]);
 
       const mockNext = jest.fn();
@@ -169,29 +130,16 @@ describe("Discord Controllers", () => {
         mockNext
       );
 
+      expect(mockGetDiscordUsernameByAccountId).toHaveBeenCalledWith(123);
       expect(mockJson).toHaveBeenCalledWith({
         hasDiscordUsername: true,
-        discordUsername: "testuser#1234",
+        discordUsername: "testuser",
         kanahautomoRegistrations: []
       });
     });
 
     it("should handle database errors gracefully", async () => {
-      const mockAccount: Account = {
-        id: 123,
-        steam_id: "steam123",
-        nickname: "testuser",
-        full_name: "Test User",
-        work_email: "test@example.com",
-        work_email_verified: true,
-        work_email_token: null,
-        work_email_token_expires_at: null,
-        is_work_email_personal_email: false,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      };
-
-      mockGetAccountById.mockResolvedValue(mockAccount);
+      mockGetDiscordUsernameByAccountId.mockResolvedValue("testuser");
       mockRunQuery.mockRejectedValue(new Error("Database error"));
 
       const mockNext = jest.fn();
@@ -214,7 +162,9 @@ describe("Discord Controllers", () => {
     });
 
     it("should handle account retrieval errors gracefully", async () => {
-      mockGetAccountById.mockRejectedValue(new Error("Account not found"));
+      mockGetDiscordUsernameByAccountId.mockRejectedValue(
+        new Error("Account not found")
+      );
 
       const mockNext = jest.fn();
       await getUserDiscordStatus(
@@ -236,21 +186,7 @@ describe("Discord Controllers", () => {
     });
 
     it("should query Kanahautomo registrations with correct steam ID", async () => {
-      const mockAccount: Account = {
-        id: 123,
-        steam_id: "steam123",
-        nickname: "testuser",
-        full_name: "Test User",
-        work_email: "test@example.com",
-        work_email_verified: true,
-        work_email_token: null,
-        work_email_token_expires_at: null,
-        is_work_email_personal_email: false,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      };
-
-      mockGetAccountById.mockResolvedValue(mockAccount);
+      mockGetDiscordUsernameByAccountId.mockResolvedValue(null);
       mockRunQuery.mockResolvedValue([]);
 
       const mockNext = jest.fn();
@@ -267,20 +203,6 @@ describe("Discord Controllers", () => {
     });
 
     it("should handle multiple Kanahautomo registrations", async () => {
-      const mockAccount: Account = {
-        id: 123,
-        steam_id: "steam123",
-        nickname: "testuser",
-        full_name: "Test User",
-        work_email: "test@example.com",
-        work_email_verified: true,
-        work_email_token: null,
-        work_email_token_expires_at: null,
-        is_work_email_personal_email: false,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z"
-      };
-
       const mockRegistrations = [
         {
           organization_id: 1,
@@ -294,7 +216,7 @@ describe("Discord Controllers", () => {
         }
       ];
 
-      mockGetAccountById.mockResolvedValue(mockAccount);
+      mockGetDiscordUsernameByAccountId.mockResolvedValue("testuser");
       mockRunQuery.mockResolvedValue(mockRegistrations);
 
       const mockNext = jest.fn();
@@ -304,9 +226,10 @@ describe("Discord Controllers", () => {
         mockNext
       );
 
+      expect(mockGetDiscordUsernameByAccountId).toHaveBeenCalledWith(123);
       expect(mockJson).toHaveBeenCalledWith({
         hasDiscordUsername: true,
-        discordUsername: "testuser#1234",
+        discordUsername: "testuser",
         kanahautomoRegistrations: mockRegistrations
       });
     });
