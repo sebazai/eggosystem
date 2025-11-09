@@ -50,7 +50,6 @@ const mockValidationResult: PlayerValidationResult = {
       account_id: 123,
       steam_id: "76561197960287930",
       nickname: "TestPlayer",
-      discord: "TestPlayer#1234",
       discord_linked: true,
       work_email_verified: true,
       is_work_email_personal_email: false,

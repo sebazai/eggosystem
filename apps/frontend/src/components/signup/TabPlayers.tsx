@@ -261,9 +261,11 @@ export const TabPlayers = ({
 
           if (data.nickname)
             setValue(`players.${index}.nickname`, data.nickname);
-          if (data.discord) setValue(`players.${index}.discord`, data.discord);
-          // Set discordLinked status - check if discord exists (from LinkedAccounts)
-          setValue(`players.${index}.discordLinked`, Boolean(data.discord));
+          // Set discordLinked status from API response
+          setValue(
+            `players.${index}.discordLinked`,
+            Boolean(data.discord_linked)
+          );
         } else {
           if (playerData.reason instanceof ApiError) {
             if (playerData.reason.status === 404) {
@@ -337,7 +339,6 @@ export const TabPlayers = ({
   const clearValuesForIndex = useCallback(
     (index: number) => {
       resetField(`players.${index}.nickname`);
-      resetField(`players.${index}.discord`);
       setValue(`players.${index}.hasValidData`, undefined);
       setValue(`players.${index}.hasValidWorkEmail`, undefined);
       setValue(`players.${index}.isEmailVerified`, undefined);
@@ -775,23 +776,13 @@ export const TabPlayers = ({
                                 <div className="flex items-center space-x-2 text-green-600">
                                   <span>✓</span>
                                   <span>Discord linked</span>
-                                  {player.discord && (
-                                    <span className="text-muted-foreground">
-                                      ({player.discord})
-                                    </span>
-                                  )}
                                 </div>
                               ) : (
                                 <div className="flex flex-col space-y-1">
                                   <SignupPlayerNotification>
                                     User needs to link Discord in their profile
+                                    if they want to be a captain or co-captain
                                   </SignupPlayerNotification>
-                                  <Link
-                                    href="/profile"
-                                    className="text-sm text-blue-500 hover:underline"
-                                  >
-                                    Go to profile to link Discord
-                                  </Link>
                                 </div>
                               )}
                             </div>
@@ -960,7 +951,6 @@ export const TabPlayers = ({
                 accountId: 0,
                 steamId: "",
                 nickname: "",
-                discord: "",
                 captain: false,
                 coCaptain: false
               });

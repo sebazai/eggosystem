@@ -92,7 +92,9 @@ export function PlayerValidationDisplay({
                   <div>Name: {validationResult.profile.data.nickname}</div>
                   <div>
                     Discord:{" "}
-                    {validationResult.profile.data.discord || "Not set"}
+                    {validationResult.profile.data.discord_linked
+                      ? "Linked"
+                      : "Not linked"}
                   </div>
                   <div>
                     Work Email:{" "}
@@ -304,7 +306,9 @@ export function PlayerValidationDisplay({
                       </p>
                       <p>
                         Discord (captains only):{" "}
-                        {validationResult.profile.data.discord || "Not set"}
+                        {validationResult.profile.data.discord_linked
+                          ? "Linked"
+                          : "Not linked"}
                       </p>
                       <p>
                         Work Email:{" "}
