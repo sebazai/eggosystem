@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
     <div className="privacy-policy">
       <h1>Privacy Policy</h1>
       <p>Effective Date: 1st of April 2025</p>
-      <p>Last Updated: 12th of May 2025</p>
+      <p>Last Updated: 9th of November 2025</p>
 
       <h2>1. Introduction</h2>
       <p>
@@ -30,6 +30,11 @@ export default function PrivacyPolicy() {
         <li>
           <strong>Steam ID and Nickname:</strong> Required to track your
           participation in games.
+        </li>
+        <li>
+          <strong>Discord ID and Username:</strong> Collected when you link your
+          Discord account, used for communication and role assignment within the
+          Kanaliiga Ry Discord server.
         </li>
         <li>
           <strong>Team and Organization Association:</strong> Linked through
@@ -56,6 +61,11 @@ export default function PrivacyPolicy() {
           <strong>Verification:</strong> Ensuring players are correctly
           associated with their teams/organizations.
         </li>
+        <li>
+          <strong>Communication & Coordination:</strong> Using Discord ID and
+          username for team coordination, tournament communication, and platform
+          integration.
+        </li>
       </ul>
 
       <h2>4. Data Retention</h2>
@@ -67,6 +77,10 @@ export default function PrivacyPolicy() {
             Performance Data:
           </strong>{" "}
           Stored for ranking history and statistical purposes.
+        </li>
+        <li>
+          <strong>Discord ID and Username:</strong> Stored until you unlink your
+          Discord account or request deletion.
         </li>
         <li>
           <strong>Personal Email & Work Email & Full Name:</strong> Stored until
@@ -88,8 +102,10 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}
-          <strong>personal email, work email, and full name</strong> at any
-          time. However,{" "}
+          <strong>
+            personal email, work email, full name, and Discord ID/username
+          </strong>{" "}
+          at any time. However,{" "}
           <strong>Steam ID and nickname cannot be deleted</strong> due to their
           essential role in maintaining ranking history and statistical
           tracking. If you wish to have them anonymized, we can replace your
@@ -98,17 +114,71 @@ export default function PrivacyPolicy() {
         </li>
       </ul>
 
-      <h2>6. Marketing Communications</h2>
+      <h2>6. Email Communications</h2>
+
+      <h3>6.1. Essential Communications</h3>
+      <p>
+        The following communications are necessary for tournament participation
+        and cannot be opted out of:
+      </p>
+      <ul className="list-disc list-inside px-4 pb-2">
+        <li>
+          <strong>Captain Information Packets:</strong> When you register as a
+          team captain for a season, you will automatically receive a welcome
+          email containing essential tournament information, including
+          registration details, important dates, payment information (if
+          applicable), Discord server links, and resources.
+        </li>
+        <li>
+          <strong>Account-Related Communications:</strong> Email verification
+          messages, password reset emails, and other account management
+          communications.
+        </li>
+      </ul>
+
+      <h3>6.2. Season Information Newsletter</h3>
+      <p>
+        When you participate in a Kanaliiga tournament, you may receive
+        season-related information emails from tournament organizers. These
+        communications may include tournament updates, schedule changes,
+        important announcements, rule clarifications, and other information
+        relevant to your active tournaments.
+      </p>
+      <p>
+        <strong>Opt-Out Option:</strong> You can opt out of receiving the season
+        information newsletter while still participating in tournaments. To opt
+        out, update your preferences in{" "}
+        <Link href={createNextUrl("/profile")}>your profile settings</Link> or
+        contact us at <a href="mailto:info@kanaliiga.fi">info@kanaliiga.fi</a>.
+      </p>
+      <p>
+        <strong>Important:</strong> Please note that opting out of the season
+        information newsletter means you will not receive tournament updates via
+        email. You will still be able to access all information through the
+        Kanahub platform and Discord. However, we strongly recommend staying
+        subscribed to ensure you receive timely updates about your active
+        tournaments.
+      </p>
+      <p>
+        <strong>Note for Captains:</strong> Even if you opt out of the season
+        information newsletter, you will still receive the mandatory captain
+        information packet when you register your team, as this is essential for
+        tournament participation.
+      </p>
+
+      <h3>6.3. Marketing Communications</h3>
       <p>
         If you have opted in to receive marketing communications, we will use
-        your personal data to send you relevant updates, event notifications,
-        and promotions related to Kanaliiga Ry.
+        your personal data to send you promotional emails, event notifications,
+        and updates about Kanaliiga Ry activities. This may also include emails
+        from our partners or sponsors that may contain promotional content, such
+        as discount codes or special offers related to esports and gaming.
       </p>
       <p>
         We will never share your personal data with third parties for marketing
-        purposes. All marketing communications will come exclusively from
-        Kanaliiga Ry and will not be shared with external organizations for
-        marketing purposes.
+        purposes. All marketing communications, including those from partners or
+        sponsors, will be sent by Kanaliiga Ry on their behalf and will not
+        involve sharing your email address directly with third parties.
       </p>
       <p>
         You can withdraw your consent at any time by updating your profile
