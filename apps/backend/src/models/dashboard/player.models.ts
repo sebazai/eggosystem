@@ -9,6 +9,7 @@ export const getPlayerDetailsForDashboardBySteamId = async (
         p.steam_id, 
         p.nickname,
         a.id as account_id,
+        la_discord.provider_username as discord,
         CASE WHEN la_discord.provider_id IS NOT NULL THEN TRUE ELSE FALSE END as discord_linked,
         a.work_email_verified,
         a.work_email,

@@ -326,6 +326,7 @@ export const validatePlayerController = async (
                 account_id: playerData.value.account_id,
                 nickname: playerData.value.nickname,
                 steam_id: playerData.value.steam_id,
+                discord: playerData.value.discord || null,
                 discord_linked: Boolean(playerData.value.discord_linked),
                 work_email: playerData.value.work_email || null,
                 work_email_verified: Boolean(
