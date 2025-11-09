@@ -146,12 +146,17 @@ router.get("/discord/login", authenticateJWT, (req, res, next) => {
     return next(new UnauthorizedError("Unauthorized"));
   }
 
+  const returnTo = (req.query.returnTo as string) || "kanahautomo";
+  const validReturnTo = ["kanahautomo", "profile"].includes(returnTo)
+    ? returnTo
+    : "kanahautomo";
+
   logger.info(
-    `Initiating Discord OAuth for account_id: ${req.auth.account_id}`
+    `Initiating Discord OAuth for account_id: ${req.auth.account_id}, returnTo: ${validReturnTo}`
   );
 
   const stateToken = jwt.sign(
-    { account_id: req.auth.account_id },
+    { account_id: req.auth.account_id, returnTo: validReturnTo },
     process.env.JWT_SECRET!,
     { expiresIn: "5m" }
   );
@@ -180,10 +185,24 @@ router.get("/discord/callback", async (req, res) => {
       `Discord callback received. Code: ${code ? "present" : "missing"}, State: ${state ? "present" : "missing"}`
     );
 
+    // Default returnTo for error cases - will be overridden if state is valid
+    let errorReturnTo = "profile";
+
     if (!code) {
       logger.error("No code provided in Discord callback");
+      // Try to extract returnTo from state if available
+      if (state) {
+        try {
+          const decoded = jwt.decode(state) as { returnTo?: string } | null;
+          if (decoded?.returnTo) {
+            errorReturnTo = decoded.returnTo;
+          }
+        } catch {
+          // Ignore decode errors, use default
+        }
+      }
       res.redirect(
-        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_code`
+        `${process.env.FRONTEND_URL}/${errorReturnTo}?discordError=no_code`
       );
       return;
     }
@@ -191,17 +210,20 @@ router.get("/discord/callback", async (req, res) => {
     if (!state) {
       logger.error("No state parameter provided in Discord callback");
       res.redirect(
-        `${process.env.FRONTEND_URL}/kanahautomo?discordError=no_state`
+        `${process.env.FRONTEND_URL}/${errorReturnTo}?discordError=no_state`
       );
       return;
     }
 
     let accountId: number;
+    let returnTo = "kanahautomo";
     try {
       const decoded = jwt.verify(state, process.env.JWT_SECRET!) as {
         account_id: number;
+        returnTo?: string;
       };
       accountId = decoded.account_id;
+      returnTo = decoded.returnTo || "kanahautomo";
     } catch (jwtError) {
       logger.error(
         "Invalid or expired state token in Discord callback:",
@@ -270,26 +292,40 @@ router.get("/discord/callback", async (req, res) => {
 
     const discordUser = await userResponse.json();
     const discordUserId = discordUser.id;
+    const discordUsername = discordUser.username; // Discord username (e.g., "username" without discriminator)
 
     if (!discordUserId) {
       throw new Error("No Discord user ID received");
     }
 
-    // Store Discord user ID in database
-    await updateUserDiscordId(accountId, discordUserId);
+    // Store Discord user ID and username in database
+    await updateUserDiscordId(accountId, discordUserId, discordUsername);
 
     logger.info(
-      `Discord account linked for user ${accountId}: ${discordUserId}`
+      `Discord account linked for user ${accountId}: ${discordUserId}${discordUsername ? ` (${discordUsername})` : ""}, redirecting to: ${returnTo}`
     );
 
     // Redirect back to frontend with success
     res.redirect(
-      `${process.env.FRONTEND_URL}/kanahautomo?discordLinked=1&discordUserId=${discordUserId}`
+      `${process.env.FRONTEND_URL}/${returnTo}?discordLinked=1&discordUserId=${discordUserId}`
     );
   } catch (error) {
     logger.error("Discord OAuth callback error:", error);
+    // Try to extract returnTo from state for error case
+    let errorReturnTo = "kanahautomo";
+    try {
+      const state = req.query.state as string;
+      if (state) {
+        const decoded = jwt.decode(state) as { returnTo?: string } | null;
+        if (decoded?.returnTo) {
+          errorReturnTo = decoded.returnTo;
+        }
+      }
+    } catch {
+      // Ignore decode errors, use default
+    }
     res.redirect(
-      `${process.env.FRONTEND_URL}/kanahautomo?discordError=callback_failed`
+      `${process.env.FRONTEND_URL}/${errorReturnTo}?discordError=callback_failed`
     );
   }
 });

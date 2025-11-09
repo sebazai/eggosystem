@@ -28,7 +28,6 @@ export const getAuthUserByProviderId = async (
       a.id as account_id, 
       a.full_name, 
       a.work_email, 
-      a.discord,
       a.is_work_email_personal_email, 
       la.provider 
     FROM LinkedAccounts la 

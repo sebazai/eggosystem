@@ -40,7 +40,6 @@ export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
 export interface UserProfilePayload {
   fullName: Account["full_name"];
   workEmail: Account["work_email"];
-  discord: Account["discord"];
 }
 
 export type RequestWithParams<P> = Request<P>;

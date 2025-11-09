@@ -11,6 +11,7 @@ export const validSignupData: SignupFormValues = {
       steamId: "12345678901234566",
       nickname: "Player One",
       discord: "playerOne#1234",
+      discordLinked: true,
       captain: true
     },
     {
@@ -18,6 +19,7 @@ export const validSignupData: SignupFormValues = {
       steamId: "12345678901234567",
       nickname: "Player Two",
       discord: "playerTwo#1234",
+      discordLinked: true,
       coCaptain: true
     },
     {

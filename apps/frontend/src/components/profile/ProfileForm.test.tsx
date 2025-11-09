@@ -145,8 +145,7 @@ describe("ProfileForm", () => {
       account: {
         details: {
           fullName: "Test User",
-          workEmail: "test@user.com",
-          discord: "tester"
+          workEmail: "test@user.com"
         }
       }
     });
@@ -157,7 +156,6 @@ describe("ProfileForm", () => {
       expect(screen.getByDisplayValue("TestUser")).toBeInTheDocument();
       expect(screen.getByDisplayValue("Test User")).toBeInTheDocument();
       expect(screen.getByDisplayValue("test@user.com")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("tester")).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /save changes/i })
       ).toBeInTheDocument();
@@ -179,8 +177,7 @@ describe("ProfileForm", () => {
       account: {
         details: {
           fullName: "Test User",
-          workEmail: "test@user.com",
-          discord: "tester"
+          workEmail: "test@user.com"
         }
       }
     });
@@ -227,7 +224,7 @@ describe("ProfileForm", () => {
     });
     (useAccountDetails as jest.Mock).mockReturnValue({
       isLoading: false,
-      account: { details: { fullName: "", workEmail: "", discord: "" } }
+      account: { details: { fullName: "", workEmail: "" } }
     });
 
     render(<ProfileForm />);
@@ -266,8 +263,7 @@ describe("ProfileForm", () => {
       account: {
         details: {
           fullName: "Test User",
-          workEmail: "test@user.com",
-          discord: "tester"
+          workEmail: "test@user.com"
         }
       }
     });

@@ -1,12 +1,13 @@
 import { SeasonPlatform } from "../enums";
 
-import { Account, SteamPlayer } from "../db";
+import { Account, SteamPlayer, LinkedAccount } from "../db";
 
 export interface PlayerDetailsForDashboardBySteamId {
   account_id: Account["id"];
   steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
-  discord: Account["discord"];
+  discord: LinkedAccount["provider_username"];
+  discord_linked: boolean;
   work_email_verified: Account["work_email_verified"];
   is_work_email_personal_email: Account["is_work_email_personal_email"];
   is_valid_full_name: boolean;

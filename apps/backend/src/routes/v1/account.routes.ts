@@ -39,8 +39,7 @@ router.get("/profile", auditReadEntity("Accounts"), async (req, res, next) => {
 
     const userPayload = {
       fullName: userInDb.full_name,
-      workEmail: userInDb.work_email,
-      discord: userInDb.discord
+      workEmail: userInDb.work_email
     } satisfies UserProfilePayload;
     res.json({ details: userPayload });
     return;

@@ -1,8 +1,8 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { logger } from "../utils/app-logger";
-import { getAccountById } from "../models/account.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { UnauthorizedError, InternalServerError } from "../utils/errors";
+import { getDiscordUsernameByAccountId } from "../models/discord.models";
 
 // Get user's Discord registration status
 export const getUserDiscordStatus = async (
@@ -16,10 +16,10 @@ export const getUserDiscordStatus = async (
     }
 
     const accountId = req.auth.account_id;
-    const account = await getAccountById(accountId);
 
-    // Check if user has Discord username in their profile
-    const hasDiscordUsername = !!account.discord;
+    // Check if user has Discord linked via OAuth
+    const discordUsername = await getDiscordUsernameByAccountId(accountId);
+    const hasDiscordUsername = !!discordUsername;
 
     // Get user's Kanahautomo registrations
     const registrations = await runQuery<
@@ -44,7 +44,7 @@ export const getUserDiscordStatus = async (
 
     res.json({
       hasDiscordUsername,
-      discordUsername: account.discord,
+      discordUsername: discordUsername || null,
       kanahautomoRegistrations: registrations
     });
   } catch (error) {
