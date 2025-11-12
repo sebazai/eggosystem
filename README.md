@@ -45,12 +45,27 @@
    pnpm seed
    ```
 
-4. **Start development servers**
+4. **Apply for your own Steam API key**
+
+- [https://steamcommunity.com/dev/apikey](https://steamcommunity.com/dev/apikey)
+
+5. **Create following apps/backend/.env file**
+
+   ```env
+   STEAM_API_KEY=your_api_key
+   ```
+
+6. **Start development servers**
+
    ```bash
    pnpm dev
    ```
 
 **You're ready!** Backend runs on `localhost:3001`, frontend on `localhost:3000`
+
+7. Optional: Apply for FaceIT App Studio API Key (should work withoout)
+
+- https://developers.faceit.com/
 
 ## Documentation
 
