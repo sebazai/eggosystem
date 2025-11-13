@@ -14,6 +14,12 @@ export default function PrivacyPolicy() {
       <p>Effective Date: 1st of April 2025</p>
       <p>Last Updated: 9th of November 2025</p>
 
+      <p>
+        <strong>Controller:</strong> Kanaliiga ry (Business ID 2992559-2),
+        registered in Finland. <strong>Contact:</strong>{" "}
+        <a href="mailto:info@kanaliiga.fi">info@kanaliiga.fi</a>
+      </p>
+
       <h2>1. Introduction</h2>
       <p>
         Welcome to Kanahub by Kanaliiga. Your privacy is important to us. This
@@ -38,7 +44,7 @@ export default function PrivacyPolicy() {
         </li>
         <li>
           <strong>Team and Organization Association:</strong> Linked through
-          your <strong>Steam ID</strong>
+          your <strong>Steam ID</strong>.
         </li>
         <li>
           <strong>Performance and Game Data:</strong> Parsed from matches for
@@ -51,20 +57,25 @@ export default function PrivacyPolicy() {
       </ul>
 
       <h2>3. Why We Process Your Data</h2>
-      <p>We process your data for the following reasons:</p>
+      <p>
+        We process your data only when there is a lawful basis to do so, such as
+        fulfilling a contract, based on your consent, or where we have a
+        legitimate interest. Specifically, we process your data for the
+        following reasons:
+      </p>
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
-          <strong>Ranking History & Statistics:</strong> To maintain player
-          records and provide statistical services.
+          <strong>Ranking History & Statistics (legitimate interest):</strong>{" "}
+          To maintain player records and provide statistical services.
         </li>
         <li>
-          <strong>Verification:</strong> Ensuring players are correctly
-          associated with their teams/organizations.
+          <strong>Verification (legitimate interest):</strong> Ensuring players
+          are correctly associated with their teams/organizations.
         </li>
         <li>
-          <strong>Communication & Coordination:</strong> Using Discord ID and
-          username for team coordination, tournament communication, and platform
-          integration.
+          <strong>Communication & Coordination (legitimate interest):</strong>{" "}
+          Using Discord ID and username for team coordination, tournament
+          communication, and platform integration.
         </li>
       </ul>
 
@@ -87,6 +98,10 @@ export default function PrivacyPolicy() {
           a user requests deletion.
         </li>
       </ul>
+      <p>
+        Retention periods are reviewed periodically, and data is deleted or
+        anonymized when no longer needed for the stated purposes.
+      </p>
 
       <h2>5. User Rights</h2>
       <p>Under the GDPR, you have rights regarding your personal data:</p>
@@ -98,7 +113,7 @@ export default function PrivacyPolicy() {
         <li>
           <strong>Correction:</strong> If any information is incorrect, you can
           request a correction. You can also edit your personal data in{" "}
-          <Link href={createNextUrl("/profile")}>your profile</Link>
+          <Link href={createNextUrl("/profile")}>your profile</Link>.
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}
@@ -113,6 +128,11 @@ export default function PrivacyPolicy() {
           longer be traced back to you.
         </li>
       </ul>
+      <p>
+        If you believe your data has been processed unlawfully, you have the
+        right to lodge a complaint with the Finnish Data Protection Ombudsman
+        (Tietosuojavaltuutetun toimisto) or your local supervisory authority.
+      </p>
 
       <h2>6. Email Communications</h2>
 
@@ -219,10 +239,10 @@ export default function PrivacyPolicy() {
       </ul>
       <p>
         We do not share your full name, work email, or personal email with third
-        parties unless necessary for event coordination or related services. Any
-        data sharing with third parties is solely to support your participation
-        in Kanaliiga events and to ensure proper management of the platform and
-        competitions.
+        parties unless necessary for event coordination or related services.
+        Faceit,Discord and Steam have their own privacy policies and process
+        data independently. We do not transfer or share your personal data with
+        them beyond what is necessary for you to use their services.
       </p>
 
       <h2>8. Security Measures</h2>
