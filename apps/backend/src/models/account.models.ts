@@ -52,13 +52,13 @@ export const updateAccount = async (
     work_email_verified: hasWorkEmailChanged
       ? false
       : existingAccount.work_email_verified,
-    discord: formData.discord ?? null,
     is_work_email_personal_email: formData.isPersonalEmail || false
   } satisfies UpdateUserProfile;
 
   const userPolicyAcceptancePayload = {
     accepted_privacy_policy: formData.acceptPrivacyPolicy,
     accepted_marketing: formData.acceptMarketing ?? false,
+    accepted_tournament_newsletter: formData.acceptTournamentNewsletter ?? true,
     privacy_policy_version: privacyPolicyVersion
   } satisfies UserPolicyAcceptancesPayload;
 
@@ -138,8 +138,7 @@ export const updateAccountData = async (
         work_email_token = ?, 
         work_email_token_expires_at = ?, 
         work_email_verified = ?,
-        is_work_email_personal_email = ?,
-        discord = ? 
+        is_work_email_personal_email = ?
       WHERE id = ?`,
     [
       updatedUser.full_name,
@@ -148,7 +147,6 @@ export const updateAccountData = async (
       updatedUser.work_email_token_expires_at,
       updatedUser.work_email_verified,
       updatedUser.is_work_email_personal_email,
-      updatedUser.discord,
       accountId
     ],
     connection
@@ -180,10 +178,11 @@ export const updateUserPolicyAcceptance = async (
   connection: PoolConnection
 ) => {
   await runQuery(
-    `UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ?, accepted_marketing = ? WHERE account_id = ? AND privacy_policy_version = ?`,
+    `UPDATE UserPolicyAcceptances SET accepted_privacy_policy = ?, accepted_marketing = ?, accepted_tournament_newsletter = ? WHERE account_id = ? AND privacy_policy_version = ?`,
     [
       updatedData.accepted_privacy_policy,
       updatedData.accepted_marketing,
+      updatedData.accepted_tournament_newsletter,
       accountId,
       updatedData.privacy_policy_version
     ],
@@ -198,11 +197,12 @@ export const insertUserPolicyAcceptance = async (
 ) => {
   // Update or insert UserPolicyAcceptance
   await runQuery(
-    `INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO UserPolicyAcceptances (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version) VALUES (?, ?, ?, ?, ?)`,
     [
       accountId,
       newUserPolicy.accepted_privacy_policy,
       newUserPolicy.accepted_marketing,
+      newUserPolicy.accepted_tournament_newsletter,
       newUserPolicy.privacy_policy_version
     ],
     connection
@@ -235,6 +235,16 @@ export const getLatestUserProfileMarketingConsent = async (
     [accountId]
   );
   return !!result?.[0]?.accepted_marketing;
+};
+
+export const getLatestUserProfileNewsletterConsent = async (
+  accountId: Account["id"]
+) => {
+  const result = await runQuery<UserPolicyAcceptance[] | undefined>(
+    "SELECT * FROM UserPolicyAcceptances WHERE account_id = ? ORDER BY created_at DESC",
+    [accountId]
+  );
+  return result?.[0]?.accepted_tournament_newsletter ?? true;
 };
 
 export const getAccountIdBySteamId = async (

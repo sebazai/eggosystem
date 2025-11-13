@@ -7,13 +7,6 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
   Form,
   FormField,
   FormItem,
@@ -116,66 +109,67 @@ export function CasterUrlSettings() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <div className="space-y-4 pt-6 border-t">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
           <Tv className="h-5 w-5" />
           Caster Settings
-        </CardTitle>
-        <CardDescription>
+        </h2>
+        <p className="text-sm text-muted-foreground">
           Set your default stream URL for quick match reservations
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="stream_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Default Stream URL</FormLabel>
-                  <div className="flex gap-2">
-                    <FormControl>
-                      <Input
-                        type="url"
-                        placeholder="https://twitch.tv/your-channel"
-                        {...field}
-                        disabled={isLoading || isDeleting}
-                      />
-                    </FormControl>
-                    {currentUrl && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={handleDelete}
-                        disabled={isLoading || isDeleting}
-                        title="Delete default URL"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <FormMessage />
+        </p>
+      </div>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-4 max-w-md"
+        >
+          <FormField
+            control={form.control}
+            name="stream_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Default Stream URL</FormLabel>
+                <div className="flex gap-2">
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder="https://twitch.tv/your-channel"
+                      {...field}
+                      disabled={isLoading || isDeleting}
+                    />
+                  </FormControl>
                   {currentUrl && (
-                    <p className="text-sm text-muted-foreground">
-                      This URL will be auto-filled when you reserve matches for
-                      streaming.
-                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleDelete}
+                      disabled={isLoading || isDeleting}
+                      title="Delete default URL"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   )}
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              disabled={isLoading || isDeleting || !form.formState.isDirty}
-            >
-              {isLoading ? "Saving..." : "Save Default URL"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                </div>
+                <FormMessage />
+                {currentUrl && (
+                  <p className="text-sm text-muted-foreground">
+                    This URL will be auto-filled when you reserve matches for
+                    streaming.
+                  </p>
+                )}
+              </FormItem>
+            )}
+          />
+          <Button
+            type="submit"
+            disabled={isLoading || isDeleting || !form.formState.isDirty}
+          >
+            {isLoading ? "Saving..." : "Save Default URL"}
+          </Button>
+        </form>
+      </Form>
+    </div>
   );
 }

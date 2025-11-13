@@ -16,14 +16,12 @@ export const insertAccountWithSteamId = async (
   steamId: string,
   nickname: string,
   fullName: string,
-  workEmail: string,
-  discord?: string
+  workEmail: string
 ) => {
   const accountInsertQuery = buildInsertQueryParts({
     id: accountId,
     full_name: fullName,
-    work_email: workEmail,
-    discord
+    work_email: workEmail
   });
   const account = await runQuery<{ insertId: number }>(
     `INSERT INTO Accounts (${accountInsertQuery.columns.join(", ")}, work_email_verified) VALUES (${accountInsertQuery.placeholders}, ?)`,
@@ -54,16 +52,14 @@ export const insertAccountPrivacyPolicyAccepted = async (accountId: number) => {
 export const insertOneTestUser = async (
   accountId: number,
   steamId: string,
-  nickname: string,
-  discord?: string
+  nickname: string
 ) => {
   await insertAccountWithSteamId(
     accountId,
     steamId,
     nickname,
     nickname,
-    nickname.replace(" ", "_").concat("@kanaliiga.org"),
-    discord
+    nickname.replace(" ", "_").concat("@kanaliiga.org")
   );
   await insertAccountPrivacyPolicyAccepted(accountId);
 };
@@ -75,8 +71,7 @@ export const insertTestUsersForSignup = async () => {
       player.steamId,
       player.nickname,
       player.nickname,
-      player.nickname.replace(" ", "_").concat("@kanaliiga.org"),
-      player.discord
+      player.nickname.replace(" ", "_").concat("@kanaliiga.org")
     );
     await insertAccountPrivacyPolicyAccepted(player.accountId);
   }

@@ -7,6 +7,5 @@ export interface AuthSteamUser {
   nickname: SteamPlayer["nickname"];
   full_name: Account["full_name"];
   work_email: Account["work_email"];
-  discord: Account["discord"];
   is_work_email_personal_email: Account["is_work_email_personal_email"];
 }

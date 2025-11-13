@@ -589,7 +589,7 @@ export default function KanahautomoPage() {
                       onClick={() => {
                         saveFormToStorage();
                         router.push(
-                          `${envConfig.CLIENT_API_URL}/api/v1/auth/discord/login`
+                          `${envConfig.CLIENT_API_URL}/api/v1/auth/discord/login?returnTo=kanahautomo`
                         );
                       }}
                       className="flex items-center space-x-2"

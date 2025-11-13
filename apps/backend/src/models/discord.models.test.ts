@@ -2,7 +2,9 @@ import { runQuery } from "../db/mysqlRunQuery";
 import {
   updateUserDiscordId,
   linkDiscordAccount,
-  getDiscordIdByAccountId
+  getDiscordIdByAccountId,
+  getDiscordUsernameByAccountId,
+  getDiscordInfoByAccountId
 } from "./discord.models";
 
 // Mock the database connection
@@ -33,7 +35,7 @@ describe("Discord Models", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO LinkedAccounts"),
-        [accountId, discordUserId],
+        [accountId, discordUserId, null],
         undefined
       );
     });
@@ -57,12 +59,12 @@ describe("Discord Models", () => {
 
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO LinkedAccounts"),
-        [accountId, discordUserId],
+        [accountId, discordUserId, null],
         undefined
       );
     });
 
-    it("should not update existing Discord link for same account", async () => {
+    it("should not update existing Discord link for same account when no username provided", async () => {
       const accountId = 123;
       const discordUserId = "456789";
 
@@ -80,6 +82,47 @@ describe("Discord Models", () => {
 
       // Should not call INSERT or UPDATE since link already exists for this account
       expect(mockRunQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it("should update username when existing Discord link exists and username provided", async () => {
+      const accountId = 123;
+      const discordUserId = "456789";
+      const discordUsername = "testuser";
+
+      // Mock existing link for the same account
+      mockRunQuery.mockResolvedValueOnce([{ account_id: accountId }]);
+      mockRunQuery.mockResolvedValueOnce([]); // UPDATE result
+
+      await linkDiscordAccount(accountId, discordUserId, discordUsername);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT account_id FROM LinkedAccounts"),
+        [discordUserId],
+        undefined
+      );
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("UPDATE LinkedAccounts"),
+        [discordUsername, discordUserId, accountId],
+        undefined
+      );
+    });
+
+    it("should create new Discord link with username", async () => {
+      const accountId = 123;
+      const discordUserId = "456789";
+      const discordUsername = "testuser";
+
+      mockRunQuery.mockResolvedValueOnce([]); // No existing link
+      mockRunQuery.mockResolvedValueOnce([]); // Insert result
+
+      await linkDiscordAccount(accountId, discordUserId, discordUsername);
+
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO LinkedAccounts"),
+        [accountId, discordUserId, discordUsername],
+        undefined
+      );
     });
 
     it("should throw error when Discord account is linked to different account", async () => {
@@ -126,6 +169,73 @@ describe("Discord Models", () => {
       mockRunQuery.mockResolvedValueOnce([]);
 
       const result = await getDiscordIdByAccountId(accountId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getDiscordUsernameByAccountId", () => {
+    it("should return Discord username when link exists", async () => {
+      const accountId = 123;
+      const expectedDiscordUsername = "testuser";
+
+      mockRunQuery.mockResolvedValueOnce([
+        { provider_username: expectedDiscordUsername }
+      ]);
+
+      const result = await getDiscordUsernameByAccountId(accountId);
+
+      expect(result).toBe(expectedDiscordUsername);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT provider_username FROM LinkedAccounts"),
+        [accountId],
+        undefined
+      );
+    });
+
+    it("should return null when Discord link does not exist", async () => {
+      const accountId = 123;
+
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      const result = await getDiscordUsernameByAccountId(accountId);
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("getDiscordInfoByAccountId", () => {
+    it("should return Discord ID and username when link exists", async () => {
+      const accountId = 123;
+      const expectedDiscordId = "456789";
+      const expectedDiscordUsername = "testuser";
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          provider_id: expectedDiscordId,
+          provider_username: expectedDiscordUsername
+        }
+      ]);
+
+      const result = await getDiscordInfoByAccountId(accountId);
+
+      expect(result).toEqual({
+        discordId: expectedDiscordId,
+        discordUsername: expectedDiscordUsername
+      });
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT provider_id, provider_username"),
+        [accountId],
+        undefined
+      );
+    });
+
+    it("should return null when Discord link does not exist", async () => {
+      const accountId = 123;
+
+      mockRunQuery.mockResolvedValueOnce([]);
+
+      const result = await getDiscordInfoByAccountId(accountId);
 
       expect(result).toBeNull();
     });

@@ -33,6 +33,7 @@ export interface UserPayload {
 export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
   acceptedPrivacyPolicy: boolean;
   acceptedMarketing: boolean;
+  acceptedNewsletter: boolean;
   isPersonalEmail: Account["is_work_email_personal_email"];
   discordLinked: boolean;
 }
@@ -40,7 +41,6 @@ export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
 export interface UserProfilePayload {
   fullName: Account["full_name"];
   workEmail: Account["work_email"];
-  discord: Account["discord"];
 }
 
 export type RequestWithParams<P> = Request<P>;

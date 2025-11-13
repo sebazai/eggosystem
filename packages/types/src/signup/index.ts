@@ -13,15 +13,17 @@ const playerSchema = z
     rank: z.number().optional(),
     externalRank: z.number().optional(),
     discord: z.string().optional(),
+    discordLinked: z.boolean().optional(),
     captain: z.boolean().optional(),
     coCaptain: z.boolean().optional()
   })
   .refine(
     (player) =>
-      !(player.captain || player.coCaptain) || !!player.discord?.trim(),
+      !(player.captain || player.coCaptain) || player.discordLinked === true,
     {
-      message: "Captains and co-captains must provide a Discord username.",
-      path: ["discord"]
+      message:
+        "Captains and co-captains must link their Discord account in their profile.",
+      path: ["discordLinked"]
     }
   )
   .refine(

@@ -181,8 +181,7 @@ export async function seed(knex: Knex): Promise<void> {
       await knex("Accounts").where({ id: user.id }).update({
         work_email: null, // Missing work email
         work_email_verified: 0, // Not verified
-        full_name: "Invalid", // Invalid full name (no space)
-        discord: null // Missing discord
+        full_name: "Invalid" // Invalid full name (no space)
       });
     }
 
@@ -196,9 +195,9 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
         VALUES 
-          (?, 0, 0, 'old_version')
+          (?, 0, 0, 1, 'old_version')
         ON DUPLICATE KEY UPDATE 
           accepted_privacy_policy = 0,
           privacy_policy_version = 'old_version'
@@ -213,9 +212,9 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
         VALUES 
-          (?, 0, 0, 'old_version')
+          (?, 0, 0, 1, 'old_version')
         ON DUPLICATE KEY UPDATE 
           accepted_privacy_policy = 0,
           privacy_policy_version = 'old_version'
@@ -226,9 +225,9 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
         VALUES 
-          (?, 1, 0, ?)
+          (?, 1, 0, 1, ?)
         ON DUPLICATE KEY UPDATE 
           accepted_privacy_policy = 1,
           privacy_policy_version = VALUES(privacy_policy_version)
@@ -307,9 +306,9 @@ export async function seed(knex: Knex): Promise<void> {
     await knex.raw(
       `
       INSERT INTO UserPolicyAcceptances 
-        (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+        (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
       VALUES 
-        (?, 1, 0, ?)
+        (?, 1, 0, 1, ?)
       ON DUPLICATE KEY UPDATE 
         accepted_privacy_policy = 1,
         privacy_policy_version = VALUES(privacy_policy_version)
@@ -325,21 +324,19 @@ export async function seed(knex: Knex): Promise<void> {
     // Insert account if it doesn't exist
     await knex.raw(
       `
-      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, is_work_email_personal_email, discord)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO Accounts (id, full_name, work_email, work_email_verified, is_work_email_personal_email)
+      VALUES (?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE 
         work_email = VALUES(work_email),
         work_email_verified = VALUES(work_email_verified),
-        is_work_email_personal_email = VALUES(is_work_email_personal_email),
-        discord = VALUES(discord)
+        is_work_email_personal_email = VALUES(is_work_email_personal_email)
     `,
       [
         player.account_id,
         player.nickname,
         player.work_email ?? `test+${player.account_id}@kanaliiga.fi`,
         player.work_email_verified ?? 1,
-        player.is_work_email_personal_email ?? 0,
-        player.discord ?? `${player.nickname}#1234`
+        player.is_work_email_personal_email ?? 0
       ]
     );
 
@@ -450,6 +447,58 @@ export async function seed(knex: Knex): Promise<void> {
 
   for (const player of teamPlayers) {
     await knex("SeasonTeamRegistrationPlayers").insert(player);
+  }
+
+  // Add Discord LinkedAccounts for captains and co-captains
+  // Aabe (account_id 15003) - captain
+  await knex.raw(`
+    INSERT INTO LinkedAccounts (account_id, provider, provider_id, provider_username)
+    VALUES (15003, 'discord', '15003-discord-id', 'aabe')
+    ON DUPLICATE KEY UPDATE 
+      provider_id = VALUES(provider_id),
+      provider_username = VALUES(provider_username)
+  `);
+
+  // Trev (account_id 15006) - co-captain
+  await knex.raw(`
+    INSERT INTO LinkedAccounts (account_id, provider, provider_id, provider_username)
+    VALUES (15006, 'discord', '15006-discord-id', 'trev')
+    ON DUPLICATE KEY UPDATE 
+      provider_id = VALUES(provider_id),
+      provider_username = VALUES(provider_username)
+  `);
+
+  // Add Discord LinkedAccounts for other test players that have discord in e2e-test-data.ts
+  // This ensures tests that check for Discord linked status work correctly
+  const playersWithDiscord = [
+    { account_id: 15003, username: "aabe" }, // Aabe - captain
+    { account_id: 15004, username: "heppajpg" }, // heppajpg
+    { account_id: 15005, username: "quattra" }, // Quattra
+    { account_id: 15006, username: "trev" }, // Trev - co-captain
+    { account_id: 15008, username: "hoolyz" }, // Hoolyz
+    { account_id: 15009, username: "realplayer1" }, // RealPlayer1
+    { account_id: 15010, username: "realplayer2" }, // RealPlayer2
+    { account_id: 15011, username: "realplayer3" }, // RealPlayer3
+    { account_id: 15001, username: "privateprofileplayer" }, // PrivateProfilePlayer
+    { account_id: 15007, username: "validworkemail1" }, // ValidWorkEmail1
+    { account_id: 15015, username: "validworkemail2" }, // ValidWorkEmail2
+    { account_id: 15016, username: "validworkemail3" }, // ValidWorkEmail3
+    { account_id: 15017, username: "validworkemail4" }, // ValidWorkEmail4
+    { account_id: 15018, username: "validworkemail5" }, // ValidWorkEmail5
+    { account_id: 15020, username: "eligibleplayer" } // EligiblePlayerForValidation
+  ];
+
+  for (const player of playersWithDiscord) {
+    await knex.raw(
+      `
+      INSERT INTO LinkedAccounts (account_id, provider, provider_id, provider_username)
+      VALUES (?, 'discord', ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        provider_id = VALUES(provider_id),
+        provider_username = VALUES(provider_username)
+    `,
+      [player.account_id, `${player.account_id}-discord-id`, player.username]
+    );
   }
 
   // Add admin role for heppajpg (account_id 15004) for e2e tests

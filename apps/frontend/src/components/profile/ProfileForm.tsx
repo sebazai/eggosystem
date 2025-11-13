@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,7 @@ export default function ProfileForm() {
   const user = auth.user;
   const { emailsVerified } = useEmailsVerified(auth.user?.account_id);
   const { mutate } = useSWRConfig();
+  const discordCallbackProcessed = useRef(false);
 
   useEffect(() => {
     const requiresPolicyAcceptance = searchParams.get(
@@ -74,6 +75,57 @@ export default function ProfileForm() {
       });
     }
   }, [searchParams, pathname, router]);
+
+  useEffect(() => {
+    const discordLinked = searchParams.get("discordLinked");
+    const discordError = searchParams.get("discordError");
+    const discordUserId = searchParams.get("discordUserId");
+
+    if (!discordLinked && !discordError) {
+      discordCallbackProcessed.current = false;
+      return;
+    }
+
+    if (discordCallbackProcessed.current) {
+      return;
+    }
+
+    if (discordLinked === "1" && discordUserId) {
+      discordCallbackProcessed.current = true;
+      toast.success("Discord account linked successfully!");
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("discordLinked");
+      newUrl.searchParams.delete("discordUserId");
+      router.replace(newUrl.pathname, { scroll: false });
+
+      auth.checkAuth();
+    }
+
+    if (discordError) {
+      discordCallbackProcessed.current = true;
+      let errorMessage = "Failed to link Discord account";
+      switch (discordError) {
+        case "no_code":
+          errorMessage = "No authorization code received from Discord";
+          break;
+        case "no_state":
+          errorMessage = "No state parameter provided";
+          break;
+        case "invalid_state":
+          errorMessage = "Invalid or expired authorization";
+          break;
+        case "callback_failed":
+          errorMessage = "Discord authorization failed";
+          break;
+      }
+      toast.error(errorMessage);
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("discordError");
+      router.replace(newUrl.pathname, { scroll: false });
+    }
+  }, [searchParams, router, auth]);
 
   if (auth.loading || isLoadingProfile) {
     return <ContentContainer>Loading...</ContentContainer>;
@@ -117,7 +169,6 @@ export default function ProfileForm() {
         {
           details: {
             fullName: data.full_name,
-            discord: data.discord,
             workEmail: data.work_email
           }
         },
@@ -136,8 +187,8 @@ export default function ProfileForm() {
         workEmail={account.details.workEmail}
         acceptedPrivacyPolicy={user.acceptedPrivacyPolicy}
         acceptedMarketing={user.acceptedMarketing}
+        acceptedNewsletter={user.acceptedNewsletter}
         isPersonalEmail={user.isPersonalEmail}
-        discord={account.details.discord}
         onSubmit={onSubmit}
         emailsVerified={emailsVerified}
         requestNewEmailVerificationLinks={() =>
@@ -165,20 +216,21 @@ const ProfileFormInputs = ({
   nickname,
   workEmail,
   acceptedMarketing,
-  discord,
+  acceptedNewsletter,
   isPersonalEmail,
   onSubmit,
   emailsVerified,
   requestNewEmailVerificationLinks
-}: Partial<UserFullPayload> &
-  UserProfilePayload & {
-    onSubmit: (data: AccountUpdateValues) => void;
-    emailsVerified?: Pick<
-      Account,
-      "work_email_verified" | "work_email_token_expires_at"
-    >;
-    requestNewEmailVerificationLinks: () => void;
-  }) => {
+}: Partial<UserFullPayload> & {
+  fullName: UserProfilePayload["fullName"];
+  workEmail: UserProfilePayload["workEmail"];
+  onSubmit: (data: AccountUpdateValues) => void;
+  emailsVerified?: Pick<
+    Account,
+    "work_email_verified" | "work_email_token_expires_at"
+  >;
+  requestNewEmailVerificationLinks: () => void;
+}) => {
   const form = useForm({
     resolver: zodResolver(accountSchema),
     defaultValues: {
@@ -186,9 +238,9 @@ const ProfileFormInputs = ({
       full_name: fullName ?? "",
       work_email: workEmail ?? "",
       isPersonalEmail: Boolean(isPersonalEmail),
-      discord: discord ?? "",
       acceptPrivacyPolicy: Boolean(acceptedPrivacyPolicy),
-      acceptMarketing: Boolean(acceptedMarketing)
+      acceptMarketing: Boolean(acceptedMarketing),
+      acceptTournamentNewsletter: acceptedNewsletter ?? true
     }
   });
   const [resendEmailButtonDisabled, setResendEmailButtonDisabled] =
@@ -200,7 +252,7 @@ const ProfileFormInputs = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 max-w-md mx-2"
+        className="space-y-4 max-w-md"
       >
         <FormField
           control={form.control}
@@ -292,21 +344,7 @@ const ProfileFormInputs = ({
           </div>
         )}
 
-        <FormField
-          control={form.control}
-          name="discord"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                Discord (required for captains & co-captains)
-              </FormLabel>
-              <FormControl>
-                <Input placeholder="Discord username" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <hr className="my-4 border-t" />
 
         <FormField
           control={form.control}
@@ -349,6 +387,25 @@ const ProfileFormInputs = ({
                 />
               </FormControl>
               <FormLabel>Receive marketing emails (optional)</FormLabel>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="acceptTournamentNewsletter"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel>
+                Receive tournament participation emails (you can opt out
+                anytime)
+              </FormLabel>
             </FormItem>
           )}
         />

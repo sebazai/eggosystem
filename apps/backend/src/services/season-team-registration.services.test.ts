@@ -1100,6 +1100,7 @@ describe("Season team registration services", () => {
       const formData = _.cloneDeep(validSignupData);
       formData.players[0].captain = false;
       formData.players[3].captain = true;
+      formData.players[3].discordLinked = true;
       const validatePlayersInDb = jest.spyOn(
         registrationServices,
         "validatePlayersFromDBForSignup"
@@ -1202,12 +1203,7 @@ describe("Season team registration services", () => {
     });
     describe("with new account", () => {
       beforeEach(async () => {
-        await insertOneTestUser(
-          100000,
-          "12345678912345601",
-          "Nakki Kauppias",
-          "nakki#123"
-        );
+        await insertOneTestUser(100000, "12345678912345601", "Nakki Kauppias");
       });
       afterEach(async () => {
         await runQuery("DELETE FROM SteamPlayers WHERE steam_id = ?", [
@@ -1239,7 +1235,6 @@ describe("Season team registration services", () => {
           [100000]
         );
         expect(account.nickname).toEqual("Nakki Kauppias");
-        expect(account.discord).toEqual("nakki#123");
         expect(addedOne.added.length).toEqual(1);
         expect(addedOne.added[0]).toEqual("12345678912345601");
         expect(addedOne.removed.length).toEqual(0);
@@ -1247,12 +1242,7 @@ describe("Season team registration services", () => {
     });
     describe("with 6 players", () => {
       beforeEach(async () => {
-        await insertOneTestUser(
-          100000,
-          "12345678912345601",
-          "Nakki Kauppias",
-          "nakki#123"
-        );
+        await insertOneTestUser(100000, "12345678912345601", "Nakki Kauppias");
         await setSeasonTeamPlayer(
           "12345678912345601",
           false,
@@ -1283,7 +1273,6 @@ describe("Season team registration services", () => {
           [100000]
         );
         expect(account.nickname).toEqual("Nakki Kauppias");
-        expect(account.discord).toEqual("nakki#123");
         expect(addedOne.removed.length).toEqual(1);
         expect(addedOne.removed[0]).toEqual("12345678912345601");
         expect(addedOne.added.length).toEqual(0);
@@ -1291,17 +1280,11 @@ describe("Season team registration services", () => {
     });
     describe("with two new accounts", () => {
       beforeEach(async () => {
-        await insertOneTestUser(
-          100000,
-          "12345678912345601",
-          "Nakki Kauppias",
-          "nakki#123"
-        );
+        await insertOneTestUser(100000, "12345678912345601", "Nakki Kauppias");
         await insertOneTestUser(
           100001,
           "12345678912345603",
-          "Saippua Kauppias",
-          "soap#123"
+          "Saippua Kauppias"
         );
       });
       afterEach(async () => {

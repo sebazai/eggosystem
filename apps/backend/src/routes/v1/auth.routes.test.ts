@@ -74,8 +74,7 @@ describe("GET /me", () => {
       is_work_email_personal_email: false,
       provider: "steam",
       full_name: "Test User",
-      work_email: "test@example.com",
-      discord: null
+      work_email: "test@example.com"
     });
 
     // Mock account models
@@ -86,6 +85,7 @@ describe("GET /me", () => {
         account_id: 1,
         accepted_privacy_policy: true,
         accepted_marketing: false,
+        accepted_tournament_newsletter: true,
         privacy_policy_version: "1",
         created_at: new Date(),
         updated_at: new Date()
@@ -93,6 +93,9 @@ describe("GET /me", () => {
     jest
       .spyOn(accountModels, "getLatestUserProfileMarketingConsent")
       .mockResolvedValue(false);
+    jest
+      .spyOn(accountModels, "getLatestUserProfileNewsletterConsent")
+      .mockResolvedValue(true);
   });
 
   it("should return user data when token is valid", async () => {
@@ -112,6 +115,7 @@ describe("GET /me", () => {
     expect(response.body.user).not.toHaveProperty("discord");
     expect(response.body.user).toHaveProperty("acceptedPrivacyPolicy");
     expect(response.body.user).toHaveProperty("acceptedMarketing");
+    expect(response.body.user).toHaveProperty("acceptedNewsletter");
   });
 
   it("should return 401 Unauthorized when token is invalid", async () => {

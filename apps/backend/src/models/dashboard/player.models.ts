@@ -9,7 +9,8 @@ export const getPlayerDetailsForDashboardBySteamId = async (
         p.steam_id, 
         p.nickname,
         a.id as account_id,
-        a.discord,
+        la_discord.provider_username as discord,
+        CASE WHEN la_discord.provider_id IS NOT NULL THEN TRUE ELSE FALSE END as discord_linked,
         a.work_email_verified,
         a.work_email,
         a.is_work_email_personal_email,
@@ -24,6 +25,9 @@ export const getPlayerDetailsForDashboardBySteamId = async (
         END AS is_valid_full_name
       FROM SteamPlayers p 
       JOIN Accounts a ON a.id = p.account_id
+      LEFT JOIN LinkedAccounts la_discord ON 
+        la_discord.account_id = a.id AND 
+        la_discord.provider = 'discord'
       WHERE p.steam_id = ?`,
     [steam_id]
   );
