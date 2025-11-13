@@ -240,7 +240,7 @@ const ProfileFormInputs = ({
       isPersonalEmail: Boolean(isPersonalEmail),
       acceptPrivacyPolicy: Boolean(acceptedPrivacyPolicy),
       acceptMarketing: Boolean(acceptedMarketing),
-      acceptNewsletter: acceptedNewsletter ?? true
+      acceptTournamentNewsletter: acceptedNewsletter ?? true
     }
   });
   const [resendEmailButtonDisabled, setResendEmailButtonDisabled] =
@@ -393,7 +393,7 @@ const ProfileFormInputs = ({
 
         <FormField
           control={form.control}
-          name="acceptNewsletter"
+          name="acceptTournamentNewsletter"
           render={({ field }) => (
             <FormItem className="flex items-center space-x-2">
               <FormControl>

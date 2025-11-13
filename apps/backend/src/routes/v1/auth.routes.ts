@@ -119,7 +119,7 @@ router.get("/me", authenticateJWT, async (req, res, next) => {
         await getLatestUserProfileMarketingConsent(req.auth.account_id);
 
     const hasNewsletterConsent = userPolicy
-      ? userPolicy.accepted_newsletter
+      ? userPolicy.accepted_tournament_newsletter
       : // Default to true (opt-out) if privacy_policy version changes
         await getLatestUserProfileNewsletterConsent(req.auth.account_id);
 

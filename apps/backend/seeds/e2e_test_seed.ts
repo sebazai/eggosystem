@@ -195,7 +195,7 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
         VALUES 
           (?, 0, 0, 1, 'old_version')
         ON DUPLICATE KEY UPDATE 
@@ -212,7 +212,7 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
         VALUES 
           (?, 0, 0, 1, 'old_version')
         ON DUPLICATE KEY UPDATE 
@@ -225,7 +225,7 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
         VALUES 
           (?, 1, 0, 1, ?)
         ON DUPLICATE KEY UPDATE 
@@ -306,7 +306,7 @@ export async function seed(knex: Knex): Promise<void> {
     await knex.raw(
       `
       INSERT INTO UserPolicyAcceptances 
-        (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
+        (account_id, accepted_privacy_policy, accepted_marketing, accepted_tournament_newsletter, privacy_policy_version)
       VALUES 
         (?, 1, 0, 1, ?)
       ON DUPLICATE KEY UPDATE 

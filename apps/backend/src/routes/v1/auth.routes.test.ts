@@ -85,7 +85,7 @@ describe("GET /me", () => {
         account_id: 1,
         accepted_privacy_policy: true,
         accepted_marketing: false,
-        accepted_newsletter: true,
+        accepted_tournament_newsletter: true,
         privacy_policy_version: "1",
         created_at: new Date(),
         updated_at: new Date()
