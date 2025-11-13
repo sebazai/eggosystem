@@ -17,7 +17,8 @@ export const accountSchema = z.object({
   acceptPrivacyPolicy: z.boolean().refine((val) => val === true, {
     message: "You must accept the privacy policy"
   }),
-  acceptMarketing: z.boolean().optional()
+  acceptMarketing: z.boolean().optional(),
+  acceptNewsletter: z.boolean().optional()
 });
 
 export type AccountUpdateValues = z.infer<typeof accountSchema>;

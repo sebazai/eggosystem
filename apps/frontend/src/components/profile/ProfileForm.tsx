@@ -187,6 +187,7 @@ export default function ProfileForm() {
         workEmail={account.details.workEmail}
         acceptedPrivacyPolicy={user.acceptedPrivacyPolicy}
         acceptedMarketing={user.acceptedMarketing}
+        acceptedNewsletter={user.acceptedNewsletter}
         isPersonalEmail={user.isPersonalEmail}
         onSubmit={onSubmit}
         emailsVerified={emailsVerified}
@@ -215,6 +216,7 @@ const ProfileFormInputs = ({
   nickname,
   workEmail,
   acceptedMarketing,
+  acceptedNewsletter,
   isPersonalEmail,
   onSubmit,
   emailsVerified,
@@ -237,7 +239,8 @@ const ProfileFormInputs = ({
       work_email: workEmail ?? "",
       isPersonalEmail: Boolean(isPersonalEmail),
       acceptPrivacyPolicy: Boolean(acceptedPrivacyPolicy),
-      acceptMarketing: Boolean(acceptedMarketing)
+      acceptMarketing: Boolean(acceptedMarketing),
+      acceptNewsletter: acceptedNewsletter ?? true
     }
   });
   const [resendEmailButtonDisabled, setResendEmailButtonDisabled] =
@@ -384,6 +387,25 @@ const ProfileFormInputs = ({
                 />
               </FormControl>
               <FormLabel>Receive marketing emails (optional)</FormLabel>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="acceptNewsletter"
+          render={({ field }) => (
+            <FormItem className="flex items-center space-x-2">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel>
+                Receive tournament participation emails (you can opt out
+                anytime)
+              </FormLabel>
             </FormItem>
           )}
         />

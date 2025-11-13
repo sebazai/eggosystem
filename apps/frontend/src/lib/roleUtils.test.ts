@@ -14,6 +14,7 @@ describe("roleUtils", () => {
     provider: "steam" as const,
     acceptedPrivacyPolicy: true,
     acceptedMarketing: false,
+    acceptedNewsletter: true,
     isPersonalEmail: false,
     discordLinked: false
   };

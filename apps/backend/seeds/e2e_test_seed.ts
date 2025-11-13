@@ -195,9 +195,9 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
         VALUES 
-          (?, 0, 0, 'old_version')
+          (?, 0, 0, 1, 'old_version')
         ON DUPLICATE KEY UPDATE 
           accepted_privacy_policy = 0,
           privacy_policy_version = 'old_version'
@@ -212,9 +212,9 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
         VALUES 
-          (?, 0, 0, 'old_version')
+          (?, 0, 0, 1, 'old_version')
         ON DUPLICATE KEY UPDATE 
           accepted_privacy_policy = 0,
           privacy_policy_version = 'old_version'
@@ -225,9 +225,9 @@ export async function seed(knex: Knex): Promise<void> {
       await knex.raw(
         `
         INSERT INTO UserPolicyAcceptances 
-          (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+          (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
         VALUES 
-          (?, 1, 0, ?)
+          (?, 1, 0, 1, ?)
         ON DUPLICATE KEY UPDATE 
           accepted_privacy_policy = 1,
           privacy_policy_version = VALUES(privacy_policy_version)
@@ -306,9 +306,9 @@ export async function seed(knex: Knex): Promise<void> {
     await knex.raw(
       `
       INSERT INTO UserPolicyAcceptances 
-        (account_id, accepted_privacy_policy, accepted_marketing, privacy_policy_version)
+        (account_id, accepted_privacy_policy, accepted_marketing, accepted_newsletter, privacy_policy_version)
       VALUES 
-        (?, 1, 0, ?)
+        (?, 1, 0, 1, ?)
       ON DUPLICATE KEY UPDATE 
         accepted_privacy_policy = 1,
         privacy_policy_version = VALUES(privacy_policy_version)

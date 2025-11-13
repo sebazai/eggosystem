@@ -45,6 +45,7 @@ const mockUser = {
   nickname: "TestUser",
   acceptedPrivacyPolicy: true,
   acceptedMarketing: false,
+  acceptedNewsletter: true,
   isPersonalEmail: false,
   discordLinked: false,
   fullName: "Test User",
