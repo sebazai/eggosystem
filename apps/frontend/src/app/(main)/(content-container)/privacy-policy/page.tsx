@@ -245,7 +245,37 @@ export default function PrivacyPolicy() {
         them beyond what is necessary for you to use their services.
       </p>
 
-      <h2>8. Security Measures</h2>
+      <h2>8. Cookies and Analytics</h2>
+      <p>
+        Currently, we do not use cookies or analytics services such as Google
+        Analytics on our platform. However, if we decide to implement cookies or
+        analytics services in the future, we will:
+      </p>
+      <ul className="list-disc list-inside px-4 pb-2">
+        <li>
+          Update this Privacy Policy to inform you about the types of cookies
+          and analytics we use
+        </li>
+        <li>
+          Request your consent before implementing any non-essential cookies or
+          analytics services
+        </li>
+        <li>
+          Provide you with clear information about the purpose of each cookie
+          and analytics tool
+        </li>
+        <li>
+          Allow you to manage your cookie preferences through your browser
+          settings or our consent management system
+        </li>
+      </ul>
+      <p>
+        Essential cookies required for the platform to function (such as
+        authentication cookies) may be used without explicit consent, as they
+        are necessary for the service to operate.
+      </p>
+
+      <h2>9. Security Measures</h2>
       <p>
         We implement strong security measures to protect your personal data,
         including:
@@ -267,10 +297,32 @@ export default function PrivacyPolicy() {
         </li>
       </ul>
 
-      <h2>9. Updates to This Privacy Policy</h2>
+      <h2>10. Updates to This Privacy Policy</h2>
       <p>
-        We may update this Privacy Policy from time to time. Changes will be
-        notified via a banner on our website.
+        We may update this Privacy Policy from time to time. When we make
+        significant changes to this policy, we will:
+      </p>
+      <ul className="list-disc list-inside px-4 pb-2">
+        <li>
+          Update the &quot;Last Updated&quot; date at the top of this page
+        </li>
+        <li>
+          Notify you when you log in that the privacy policy has been updated
+        </li>
+        <li>
+          Require you to review and accept the updated privacy policy before you
+          can continue using the platform
+        </li>
+        <li>
+          Redirect you to your profile page where you can review the changes and
+          accept the updated policy
+        </li>
+      </ul>
+      <p>
+        Your continued use of the platform after accepting the updated privacy
+        policy indicates your agreement to the changes. If you do not agree with
+        the updated policy, you may contact us to discuss your concerns or
+        request deletion of your account.
       </p>
 
       <h2>Contact Information</h2>
