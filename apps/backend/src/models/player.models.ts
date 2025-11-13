@@ -37,7 +37,7 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
       p.steam_id, 
       p.nickname,
       a.id as account_id,
-      CASE WHEN la_discord.provider_id IS NOT NULL THEN TRUE ELSE FALSE END as discord_linked,
+      CASE WHEN la_discord.provider_id IS NOT NULL AND la_discord.provider_id NOT LIKE 'fake_%' THEN TRUE ELSE FALSE END as discord_linked,
       a.work_email_verified,
       CASE 
           WHEN a.work_email IS NULL THEN FALSE
@@ -52,7 +52,9 @@ export const getPlayerDetailsBySteamId = async (steam_id: string) => {
     JOIN Accounts a ON a.id = p.account_id
     LEFT JOIN LinkedAccounts la_discord ON 
       la_discord.account_id = a.id AND 
-      la_discord.provider = 'discord'
+      la_discord.provider = 'discord' AND
+      la_discord.provider_id IS NOT NULL AND
+      la_discord.provider_id NOT LIKE 'fake_%'
     WHERE p.steam_id = ?`,
     [steam_id]
   );

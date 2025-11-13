@@ -30,15 +30,16 @@ export const linkDiscordAccount = async (
     throw new Error("Invalid Discord user ID provided");
   }
 
-  const existingLink = await runQuery<{ account_id: number }[]>(
+  // Check if this Discord user ID is already linked to a different account
+  const existingLinkByDiscordId = await runQuery<{ account_id: number }[]>(
     `SELECT account_id FROM LinkedAccounts 
      WHERE provider = 'discord' AND provider_id = ?`,
     [discordUserId],
     connection
   );
 
-  if (existingLink.length > 0) {
-    if (existingLink.some((link) => link.account_id !== accountId)) {
+  if (existingLinkByDiscordId.length > 0) {
+    if (existingLinkByDiscordId.some((link) => link.account_id !== accountId)) {
       logger.info(
         `Discord account ${discordUserId} already linked to account ${accountId}`
       );
@@ -57,6 +58,30 @@ export const linkDiscordAccount = async (
     return;
   }
 
+  // Check if there's an existing fake row (provider_id starts with 'fake_') for this account
+  const existingFakeLink = await runQuery<{ account_id: number }[]>(
+    `SELECT account_id FROM LinkedAccounts 
+     WHERE provider = 'discord' AND account_id = ? AND provider_id LIKE 'fake_%'`,
+    [accountId],
+    connection
+  );
+
+  if (existingFakeLink.length > 0) {
+    // Update the fake row with real OAuth data
+    await runQuery(
+      `UPDATE LinkedAccounts 
+       SET provider_id = ?, provider_username = ? 
+       WHERE provider = 'discord' AND account_id = ? AND provider_id LIKE 'fake_%'`,
+      [discordUserId, discordUsername || null, accountId],
+      connection
+    );
+    logger.info(
+      `Updated fake Discord link to real OAuth link for account ${accountId}: ${discordUserId}${discordUsername ? ` (${discordUsername})` : ""}`
+    );
+    return;
+  }
+
+  // Create new link
   await runQuery(
     `INSERT INTO LinkedAccounts (account_id, provider, provider_id, provider_username) 
      VALUES (?, 'discord', ?, ?)`,
@@ -70,6 +95,7 @@ export const linkDiscordAccount = async (
 };
 
 // Get Discord user ID by account ID
+// Only returns provider_id if it's not NULL (i.e., valid OAuth-linked account)
 export const getDiscordIdByAccountId = async (
   accountId: number,
   connection?: PoolConnection
@@ -80,7 +106,7 @@ export const getDiscordIdByAccountId = async (
 
   const [discordLink] = await runQuery<{ provider_id: string }[]>(
     `SELECT provider_id FROM LinkedAccounts 
-     WHERE provider = 'discord' AND account_id = ?`,
+     WHERE provider = 'discord' AND account_id = ? AND provider_id IS NOT NULL AND provider_id NOT LIKE 'fake_%'`,
     [accountId],
     connection
   );
@@ -89,6 +115,7 @@ export const getDiscordIdByAccountId = async (
 };
 
 // Get Discord username by account ID
+// Only returns username if provider_id is not NULL (i.e., valid OAuth-linked account)
 export const getDiscordUsernameByAccountId = async (
   accountId: number,
   connection?: PoolConnection
@@ -101,7 +128,7 @@ export const getDiscordUsernameByAccountId = async (
     Array<{ provider_username: string | null }>
   >(
     `SELECT provider_username FROM LinkedAccounts 
-     WHERE provider = 'discord' AND account_id = ?`,
+     WHERE provider = 'discord' AND account_id = ? AND provider_id IS NOT NULL AND provider_id NOT LIKE 'fake_%'`,
     [accountId],
     connection
   );
@@ -110,6 +137,7 @@ export const getDiscordUsernameByAccountId = async (
 };
 
 // Get Discord ID and username by account ID
+// Only returns info if provider_id is not NULL (i.e., valid OAuth-linked account)
 export const getDiscordInfoByAccountId = async (
   accountId: number,
   connection?: PoolConnection
@@ -122,7 +150,7 @@ export const getDiscordInfoByAccountId = async (
     Array<{ provider_id: string; provider_username: string | null }>
   >(
     `SELECT provider_id, provider_username FROM LinkedAccounts 
-     WHERE provider = 'discord' AND account_id = ?`,
+     WHERE provider = 'discord' AND account_id = ? AND provider_id IS NOT NULL AND provider_id NOT LIKE 'fake_%'`,
     [accountId],
     connection
   );
