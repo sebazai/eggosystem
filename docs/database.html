@@ -41,293 +41,58 @@ config: # https://mermaid.js.org/schemas/config.schema.json
 erDiagram
   direction BT # TB, BT, LR, RL
 
-"AccountCasterUrls" |o--|| "Accounts" : ""
-"AccountPermissionScopes" }o--|| "Accounts" : ""
-"AccountPermissionScopes" }o--|| "Permissions" : ""
-"AccountPermissionScopes" }o--|| "Seasons" : ""
-"AccountPermissionScopes" }o--|| "Teams" : ""
-"AccountRoles" }o--|| "Accounts" : ""
-"AccountRoles" }o--|| "Games" : ""
-"AccountRoles" }o--|| "Roles" : ""
-"AuditLog" }o--o| "Accounts" : ""
-"GameTypes" }o--|| "Games" : ""
-"KanahautomoRegistrationGameTypes" }o--|| "GameTypes" : ""
-"KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
-"KanahautomoRegistrations" }o--|| "Organizations" : ""
-"KanahautomoRegistrations" }o--|| "SteamPlayers" : ""
-"LinkedAccounts" }o--|| "Accounts" : ""
-"MapRoundStats" }o--|| "Teams" : ""
-"MapRoundStats" }o--|| "MatchGames" : ""
-"MapRoundStats" }o--|| "Teams" : ""
-"Matches" }o--|| "SeasonLeagues" : ""
-"Matches" }o--|| "Stages" : ""
-"MatchGameClips" }o--o| "SteamPlayers" : ""
-"MatchGameClips" }o--|| "MatchGames" : ""
-"MatchGames" }o--|| "Maps" : ""
-"MatchGames" }o--|| "Matches" : ""
-"MatchTeamMapVetoes" }o--|| "Maps" : ""
-"MatchTeamMapVetoes" }o--|| "MatchTeams" : ""
-"MatchTeams" }o--|| "Matches" : ""
-"MatchTeams" }o--|| "SeasonLeagueTeams" : ""
-"OrganizerGames" }o--|| "Games" : ""
-"OrganizerGames" }o--|| "Organizers" : ""
-"PlayerStats" }o--|| "MatchGames" : ""
-"PlayerStats" }o--|| "SteamPlayers" : ""
-"PlayerTrades" }o--|| "MatchGames" : ""
-"PlayerTrades" }o--|| "SteamPlayers" : ""
-"PlayerTrades" }o--|| "SteamPlayers" : ""
-"PlayerTrades" }o--|| "SteamPlayers" : ""
-"Reservations" }o--o| "Accounts" : ""
-"Reservations" }o--|| "Matches" : ""
-"RolePermissions" }o--|| "Permissions" : ""
-"RolePermissions" }o--|| "Roles" : ""
-"SeasonLeagueExternalIds" }o--|| "SeasonLeagues" : ""
-"SeasonLeagueExternalIds" }o--|| "Stages" : ""
-"SeasonLeagues" }o--|| "Leagues" : ""
-"SeasonLeagues" }o--|| "Seasons" : ""
-"SeasonLeagueTeams" }o--|| "SeasonLeagues" : ""
-"SeasonPlayerApprovals" }o--o| "Accounts" : ""
-"SeasonPlayerApprovals" }o--o| "Organizations" : ""
-"SeasonPlayerApprovals" }o--o| "Seasons" : ""
-"SeasonPlayerApprovals" }o--|| "SteamPlayers" : ""
-"SeasonPlayerApprovals" }o--o| "Teams" : ""
-"SeasonPlayerRanks" }o--|| "Seasons" : ""
-"SeasonPlayerRanks" }o--|| "SteamPlayers" : ""
-"Seasons" }o--|| "Games" : ""
-"Seasons" }o--o| "GameTypes" : ""
-"Seasons" }o--|| "Organizers" : ""
-"SeasonTeamPlayers" }o--o| "Matches" : ""
-"SeasonTeamPlayers" }o--|| "SteamPlayers" : ""
-"SeasonTeamPlayers" }o--|| "Teams" : ""
-"SeasonTeamRegistrationPlayers" }o--|| "SeasonTeamRegistrations" : ""
-"SeasonTeamRegistrationPlayers" }o--|| "SteamPlayers" : ""
-"SeasonTeamRegistrations" }o--o| "Accounts" : ""
-"SeasonTeamRegistrations" }o--o| "Accounts" : ""
-"SeasonTeamRegistrations" }o--|| "Seasons" : ""
-"SeasonTeamRegistrations" }o--|| "Teams" : ""
-"SteamPlayerKanaElo" |o--|| "SteamPlayers" : ""
-"SteamPlayers" }o--o| "Accounts" : ""
-"TeamGameScores" }o--|| "MatchGames" : ""
-"TeamGameScores" }o--|| "MatchTeams" : ""
-"TeamRosters" }o--|| "SteamPlayers" : ""
-"TeamRosters" }o--|| "Teams" : ""
-"Teams" }o--o| "Organizations" : ""
-"UserPolicyAcceptances" }o--|| "Accounts" : ""
 
 "AccountCasterUrls" {
-  int_10__unsigned id PK
-  int_10__unsigned account_id FK
 }
 "AccountPermissionScopes" {
-  int_10__unsigned id PK
-  int_10__unsigned account_id FK
-  int_10__unsigned permission_id FK
-  int_10__unsigned season_id FK
-  int_10__unsigned team_id FK
 }
 "AccountRoles" {
-  int_10__unsigned account_id PK
-  int_10__unsigned role_id PK
-  int_10__unsigned game_id PK
 }
 "Accounts" {
-  int_10__unsigned id PK
 }
 "AuditLog" {
-  bigint_20__unsigned id PK
-  int_10__unsigned user_id FK
 }
 "FaceitWebhooks" {
-  int_10__unsigned id PK
 }
 "Games" {
-  int_10__unsigned id PK
 }
 "GameTypes" {
-  int_10__unsigned id PK
-  int_10__unsigned game_id FK
 }
 "KanahautomoRegistrationGameTypes" {
-  int_10__unsigned game_type_id PK
-  int_10__unsigned kanahautomo_registration_id PK
 }
 "KanahautomoRegistrations" {
-  int_10__unsigned id PK
-  bigint_20_ steam_id FK
-  int_10__unsigned organization_id FK
 }
 "knex_migrations" {
-  int_10__unsigned id PK
 }
 "knex_migrations_lock" {
-  int_10__unsigned index PK
 }
 "Leagues" {
-  int_10__unsigned id PK
 }
 "LinkedAccounts" {
-  int_10__unsigned account_id FK
-  enum__steam___discord__ provider PK
-  varchar_255_ provider_id PK
 }
 "MapRoundStats" {
-  int_10__unsigned id PK
-  int_10__unsigned match_game_id FK
-  int_10__unsigned ct_team_id FK
-  int_10__unsigned t_team_id FK
 }
 "Maps" {
-  tinyint_3__unsigned id PK
 }
 "Matches" {
-  int_10__unsigned id PK
-  int_10__unsigned league_id FK
-  int_10__unsigned season_id FK
-  int_10__unsigned stage FK
 }
 "MatchGameClips" {
-  int_10__unsigned id PK
-  int_10__unsigned match_game_id FK
-  bigint_20_ clip_steam_id FK
 }
 "MatchGames" {
-  int_10__unsigned id PK
-  int_10__unsigned match_id FK
-  tinyint_3__unsigned map_id FK
 }
 "MatchTeamMapVetoes" {
-  int_10__unsigned id PK
-  int_10__unsigned match_id FK
-  int_10__unsigned team_id FK
-  tinyint_3__unsigned map_id FK
 }
 "MatchTeams" {
-  int_10__unsigned match_id PK
-  int_10__unsigned team_id PK
-  int_10__unsigned season_id FK
-  int_10__unsigned league_id FK
 }
 "Organizations" {
-  int_10__unsigned id PK
 }
 "OrganizerGames" {
-  int_10__unsigned id PK
-  int_10__unsigned organizer_id FK
-  int_10__unsigned game_id FK
 }
 "Organizers" {
-  int_10__unsigned id PK
 }
 "Permissions" {
-  int_10__unsigned id PK
 }
 "PlayerStats" {
-  int_10__unsigned id PK
-  bigint_20_ steam_id FK
-  int_10__unsigned match_game_id FK
-}
-"PlayerTrades" {
-  int_10__unsigned id PK
-  int_10__unsigned match_game_id FK
-  bigint_20_ trader_steam_id FK
-  bigint_20_ killer_steam_id FK
-  bigint_20_ victim_steam_id FK
-}
-"PublicEmailDomains" {
-  int_10__unsigned id PK
-}
-"Reservations" {
-  int_10__unsigned id PK
-  int_10__unsigned match_id FK
-  int_10__unsigned account_id FK
-}
-"RolePermissions" {
-  int_10__unsigned role_id PK
-  int_10__unsigned permission_id PK
-}
-"Roles" {
-  int_10__unsigned id PK
-}
-"SeasonLeagueExternalIds" {
-  int_10__unsigned id PK
-  int_10__unsigned season_id FK
-  int_10__unsigned league_id FK
-  int_10__unsigned stage_id FK
-}
-"SeasonLeagues" {
-  int_10__unsigned season_id PK
-  int_10__unsigned league_id PK
-}
-"SeasonLeagueTeams" {
-  int_10__unsigned season_id PK
-  int_10__unsigned team_id PK
-  int_10__unsigned league_id PK
-}
-"SeasonPlayerApprovals" {
-  int_10__unsigned id PK
-  bigint_20_ steam_id FK
-  int_10__unsigned season_id FK
-  int_10__unsigned organization_id FK
-  int_10__unsigned team_id FK
-  int_10__unsigned approved_by_id FK
-}
-"SeasonPlayerRanks" {
-  int_10__unsigned id PK
-  bigint_20_ steam_id FK
-  int_10__unsigned season_id FK
-}
-"Seasons" {
-  int_10__unsigned id PK
-  int_10__unsigned game_id FK
-  int_10__unsigned game_type_id FK
-  int_10__unsigned organizer_id FK
-}
-"SeasonTeamPlayers" {
-  int_10__unsigned team_id FK
-  bigint_20_ steam_id FK
-  int_10__unsigned match_id FK
-  int_10__unsigned id PK
-}
-"SeasonTeamRegistrationPlayers" {
-  int_10__unsigned season_id PK
-  int_10__unsigned team_id PK
-  bigint_20_ steam_id PK
-}
-"SeasonTeamRegistrations" {
-  int_10__unsigned season_id PK
-  int_10__unsigned team_id PK
-  int_10__unsigned approved_by FK
-  int_10__unsigned manual_validity_check_by FK
-}
-"Stages" {
-  int_10__unsigned id PK
-}
-"SteamPlayerKanaElo" {
-  int_10__unsigned id PK
-  bigint_20_ steam_id FK
-}
-"SteamPlayers" {
-  bigint_20_ steam_id PK
-  int_10__unsigned account_id FK
-}
-"TeamGameScores" {
-  int_10__unsigned id PK
-  int_10__unsigned match_id FK
-  int_10__unsigned team_id FK
-  int_10__unsigned match_game_id FK
-}
-"TeamRosters" {
-  int_10__unsigned id PK
-  int_10__unsigned team_id FK
-  bigint_20_ steam_id FK
-}
-"Teams" {
-  int_10__unsigned id PK
-  int_10__unsigned organization_id FK
-}
-"UserPolicyAcceptances" {
-  int_10__unsigned id PK
-  int_10__unsigned account_id FK
 }
   </pre>
   <div class="footer">Pan: Left Mouse Button | Zoom: Scroll Wheel</div>

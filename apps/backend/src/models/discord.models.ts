@@ -59,24 +59,39 @@ export const linkDiscordAccount = async (
   }
 
   // Check if there's an existing fake row (provider_id starts with 'fake_') for this account
-  const existingFakeLink = await runQuery<{ account_id: number }[]>(
-    `SELECT account_id FROM LinkedAccounts 
+  const existingFakeLink = await runQuery<
+    Array<{ account_id: number; provider_username: string | null }>
+  >(
+    `SELECT account_id, provider_username FROM LinkedAccounts 
      WHERE provider = 'discord' AND account_id = ? AND provider_id LIKE 'fake_%'`,
     [accountId],
     connection
   );
 
   if (existingFakeLink.length > 0) {
-    // Update the fake row with real OAuth data
+    // Can't UPDATE provider_id directly (it's part of primary key), so DELETE and INSERT
+    // Preserve existing username if new one is not provided
+    const usernameToUse =
+      discordUsername || existingFakeLink[0].provider_username || null;
+
+    // Delete the fake row
     await runQuery(
-      `UPDATE LinkedAccounts 
-       SET provider_id = ?, provider_username = ? 
+      `DELETE FROM LinkedAccounts 
        WHERE provider = 'discord' AND account_id = ? AND provider_id LIKE 'fake_%'`,
-      [discordUserId, discordUsername || null, accountId],
+      [accountId],
       connection
     );
+
+    // Insert the real OAuth link
+    await runQuery(
+      `INSERT INTO LinkedAccounts (account_id, provider, provider_id, provider_username) 
+       VALUES (?, 'discord', ?, ?)`,
+      [accountId, discordUserId, usernameToUse],
+      connection
+    );
+
     logger.info(
-      `Updated fake Discord link to real OAuth link for account ${accountId}: ${discordUserId}${discordUsername ? ` (${discordUsername})` : ""}`
+      `Updated fake Discord link to real OAuth link for account ${accountId}: ${discordUserId}${usernameToUse ? ` (${usernameToUse})` : ""}`
     );
     return;
   }
