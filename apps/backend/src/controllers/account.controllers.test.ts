@@ -116,6 +116,7 @@ describe("updateProfile Controller", () => {
       account_id: 0,
       accepted_privacy_policy: false,
       accepted_marketing: false,
+      accepted_tournament_newsletter: true,
       created_at: new Date(),
       updated_at: new Date(),
       privacy_policy_version: ""

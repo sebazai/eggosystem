@@ -33,6 +33,7 @@ export interface UserPayload {
 export interface UserFullPayload extends Omit<UserPayload, "permissions"> {
   acceptedPrivacyPolicy: boolean;
   acceptedMarketing: boolean;
+  acceptedNewsletter: boolean;
   isPersonalEmail: Account["is_work_email_personal_email"];
   discordLinked: boolean;
 }

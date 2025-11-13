@@ -12,7 +12,13 @@ export default function PrivacyPolicy() {
     <div className="privacy-policy">
       <h1>Privacy Policy</h1>
       <p>Effective Date: 1st of April 2025</p>
-      <p>Last Updated: 12th of May 2025</p>
+      <p>Last Updated: 13th of November 2025</p>
+
+      <p>
+        <strong>Controller:</strong> Kanaliiga ry (Business ID 2992559-2),
+        registered in Finland. <strong>Contact:</strong>{" "}
+        <a href="mailto:info@kanaliiga.fi">info@kanaliiga.fi</a>
+      </p>
 
       <h2>1. Introduction</h2>
       <p>
@@ -32,8 +38,13 @@ export default function PrivacyPolicy() {
           participation in games.
         </li>
         <li>
+          <strong>Discord ID and Username:</strong> Collected when you link your
+          Discord account, used for communication and role assignment within the
+          Kanaliiga Ry Discord server.
+        </li>
+        <li>
           <strong>Team and Organization Association:</strong> Linked through
-          your <strong>Steam ID</strong>
+          your <strong>Steam ID</strong>.
         </li>
         <li>
           <strong>Performance and Game Data:</strong> Parsed from matches for
@@ -46,15 +57,25 @@ export default function PrivacyPolicy() {
       </ul>
 
       <h2>3. Why We Process Your Data</h2>
-      <p>We process your data for the following reasons:</p>
+      <p>
+        We process your data only when there is a lawful basis to do so, such as
+        fulfilling a contract, based on your consent, or where we have a
+        legitimate interest. Specifically, we process your data for the
+        following reasons:
+      </p>
       <ul className="list-disc list-inside px-4 pb-2">
         <li>
-          <strong>Ranking History & Statistics:</strong> To maintain player
-          records and provide statistical services.
+          <strong>Ranking History & Statistics (legitimate interest):</strong>{" "}
+          To maintain player records and provide statistical services.
         </li>
         <li>
-          <strong>Verification:</strong> Ensuring players are correctly
-          associated with their teams/organizations.
+          <strong>Verification (legitimate interest):</strong> Ensuring players
+          are correctly associated with their teams/organizations.
+        </li>
+        <li>
+          <strong>Communication & Coordination (legitimate interest):</strong>{" "}
+          Using Discord ID and username for team coordination, tournament
+          communication, and platform integration.
         </li>
       </ul>
 
@@ -69,10 +90,18 @@ export default function PrivacyPolicy() {
           Stored for ranking history and statistical purposes.
         </li>
         <li>
+          <strong>Discord ID and Username:</strong> Stored until you unlink your
+          Discord account or request deletion.
+        </li>
+        <li>
           <strong>Personal Email & Work Email & Full Name:</strong> Stored until
           a user requests deletion.
         </li>
       </ul>
+      <p>
+        Retention periods are reviewed periodically, and data is deleted or
+        anonymized when no longer needed for the stated purposes.
+      </p>
 
       <h2>5. User Rights</h2>
       <p>Under the GDPR, you have rights regarding your personal data:</p>
@@ -84,12 +113,14 @@ export default function PrivacyPolicy() {
         <li>
           <strong>Correction:</strong> If any information is incorrect, you can
           request a correction. You can also edit your personal data in{" "}
-          <Link href={createNextUrl("/profile")}>your profile</Link>
+          <Link href={createNextUrl("/profile")}>your profile</Link>.
         </li>
         <li>
           <strong>Deletion:</strong> You can request the deletion of your{" "}
-          <strong>personal email, work email, and full name</strong> at any
-          time. However,{" "}
+          <strong>
+            personal email, work email, full name, and Discord ID/username
+          </strong>{" "}
+          at any time. However,{" "}
           <strong>Steam ID and nickname cannot be deleted</strong> due to their
           essential role in maintaining ranking history and statistical
           tracking. If you wish to have them anonymized, we can replace your
@@ -97,18 +128,77 @@ export default function PrivacyPolicy() {
           longer be traced back to you.
         </li>
       </ul>
+      <p>
+        If you believe your data has been processed unlawfully, you have the
+        right to lodge a complaint with the Finnish Data Protection Ombudsman
+        (Tietosuojavaltuutetun toimisto) or your local supervisory authority.
+      </p>
 
-      <h2>6. Marketing Communications</h2>
+      <h2>6. Email Communications</h2>
+
+      <h3>6.1. Essential Communications</h3>
+      <p>
+        The following communications are necessary for tournament participation
+        and cannot be opted out of:
+      </p>
+      <ul className="list-disc list-inside px-4 pb-2">
+        <li>
+          <strong>Captain Information Packets:</strong> When you register as a
+          team captain for a season, you will automatically receive a welcome
+          email containing essential tournament information, including
+          registration details, important dates, payment information (if
+          applicable), Discord server links, and resources.
+        </li>
+        <li>
+          <strong>Account-Related Communications:</strong> Email verification
+          messages, password reset emails, and other account management
+          communications.
+        </li>
+      </ul>
+
+      <h3>6.2. Season Information Newsletter</h3>
+      <p>
+        When you participate in a Kanaliiga tournament, you may receive
+        season-related information emails from tournament organizers. These
+        communications may include tournament updates, schedule changes,
+        important announcements, rule clarifications, and other information
+        relevant to your active tournaments.
+      </p>
+      <p>
+        <strong>Opt-Out Option:</strong> You can opt out of receiving the season
+        information newsletter while still participating in tournaments. To opt
+        out, update your preferences in{" "}
+        <Link href={createNextUrl("/profile")}>your profile settings</Link> or
+        contact us at <a href="mailto:info@kanaliiga.fi">info@kanaliiga.fi</a>.
+      </p>
+      <p>
+        <strong>Important:</strong> Please note that opting out of the season
+        information newsletter means you will not receive tournament updates via
+        email. You will still be able to access all information through the
+        Kanahub platform and Discord. However, we strongly recommend staying
+        subscribed to ensure you receive timely updates about your active
+        tournaments.
+      </p>
+      <p>
+        <strong>Note for Captains:</strong> Even if you opt out of the season
+        information newsletter, you will still receive the mandatory captain
+        information packet when you register your team, as this is essential for
+        tournament participation.
+      </p>
+
+      <h3>6.3. Marketing Communications</h3>
       <p>
         If you have opted in to receive marketing communications, we will use
-        your personal data to send you relevant updates, event notifications,
-        and promotions related to Kanaliiga Ry.
+        your personal data to send you promotional emails, event notifications,
+        and updates about Kanaliiga Ry activities. This may also include emails
+        from our partners or sponsors that may contain promotional content, such
+        as discount codes or special offers related to esports and gaming.
       </p>
       <p>
         We will never share your personal data with third parties for marketing
-        purposes. All marketing communications will come exclusively from
-        Kanaliiga Ry and will not be shared with external organizations for
-        marketing purposes.
+        purposes. All marketing communications, including those from partners or
+        sponsors, will be sent by Kanaliiga Ry on their behalf and will not
+        involve sharing your email address directly with third parties.
       </p>
       <p>
         You can withdraw your consent at any time by updating your profile
@@ -149,13 +239,43 @@ export default function PrivacyPolicy() {
       </ul>
       <p>
         We do not share your full name, work email, or personal email with third
-        parties unless necessary for event coordination or related services. Any
-        data sharing with third parties is solely to support your participation
-        in Kanaliiga events and to ensure proper management of the platform and
-        competitions.
+        parties unless necessary for event coordination or related services.
+        Faceit,Discord and Steam have their own privacy policies and process
+        data independently. We do not transfer or share your personal data with
+        them beyond what is necessary for you to use their services.
       </p>
 
-      <h2>8. Security Measures</h2>
+      <h2>8. Cookies and Analytics</h2>
+      <p>
+        Currently, we do not use cookies or analytics services such as Google
+        Analytics on our platform. However, if we decide to implement cookies or
+        analytics services in the future, we will:
+      </p>
+      <ul className="list-disc list-inside px-4 pb-2">
+        <li>
+          Update this Privacy Policy to inform you about the types of cookies
+          and analytics we use
+        </li>
+        <li>
+          Request your consent before implementing any non-essential cookies or
+          analytics services
+        </li>
+        <li>
+          Provide you with clear information about the purpose of each cookie
+          and analytics tool
+        </li>
+        <li>
+          Allow you to manage your cookie preferences through your browser
+          settings or our consent management system
+        </li>
+      </ul>
+      <p>
+        Essential cookies required for the platform to function (such as
+        authentication cookies) may be used without explicit consent, as they
+        are necessary for the service to operate.
+      </p>
+
+      <h2>9. Security Measures</h2>
       <p>
         We implement strong security measures to protect your personal data,
         including:
@@ -177,10 +297,32 @@ export default function PrivacyPolicy() {
         </li>
       </ul>
 
-      <h2>9. Updates to This Privacy Policy</h2>
+      <h2>10. Updates to This Privacy Policy</h2>
       <p>
-        We may update this Privacy Policy from time to time. Changes will be
-        notified via a banner on our website.
+        We may update this Privacy Policy from time to time. When we make
+        significant changes to this policy, we will:
+      </p>
+      <ul className="list-disc list-inside px-4 pb-2">
+        <li>
+          Update the &quot;Last Updated&quot; date at the top of this page
+        </li>
+        <li>
+          Notify you when you log in that the privacy policy has been updated
+        </li>
+        <li>
+          Require you to review and accept the updated privacy policy before you
+          can continue using the platform
+        </li>
+        <li>
+          Redirect you to your profile page where you can review the changes and
+          accept the updated policy
+        </li>
+      </ul>
+      <p>
+        Your continued use of the platform after accepting the updated privacy
+        policy indicates your agreement to the changes. If you do not agree with
+        the updated policy, you may contact us to discuss your concerns or
+        request deletion of your account.
       </p>
 
       <h2>Contact Information</h2>

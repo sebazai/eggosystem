@@ -63,6 +63,7 @@ const mockUser: UserFullPayload = {
   provider: "steam",
   acceptedPrivacyPolicy: true,
   acceptedMarketing: false,
+  acceptedNewsletter: true,
   isPersonalEmail: false,
   discordLinked: false
 };
