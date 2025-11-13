@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
     <div className="privacy-policy">
       <h1>Privacy Policy</h1>
       <p>Effective Date: 1st of April 2025</p>
-      <p>Last Updated: 9th of November 2025</p>
+      <p>Last Updated: 13th of November 2025</p>
 
       <p>
         <strong>Controller:</strong> Kanaliiga ry (Business ID 2992559-2),
