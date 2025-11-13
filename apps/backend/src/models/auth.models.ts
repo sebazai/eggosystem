@@ -63,7 +63,11 @@ export const createAccountForSteam = async ({
       connection
     );
     await runQuery<{ insertId: number }>(
-      "INSERT INTO SteamPlayers (steam_id, nickname, account_id) VALUES (?, ?, ?)",
+      `INSERT INTO SteamPlayers (steam_id, nickname, account_id) 
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE 
+         account_id = VALUES(account_id),
+         nickname = VALUES(nickname)`,
       [steamId, steamDisplayName, account.insertId],
       connection
     );
