@@ -14,7 +14,8 @@ import type { UserFullPayload } from "@eggosystem/types";
 import {
   getLatestUserProfileMarketingConsent,
   getLatestUserProfileNewsletterConsent,
-  getUserProfileAcceptanceForVersion
+  getUserProfileAcceptanceForVersion,
+  hasAcceptedAnyPrivacyPolicy
 } from "../../models/account.models";
 import { getRolesForAccountId } from "../../services/auth.services";
 import { logger } from "../../utils/app-logger";
@@ -123,6 +124,11 @@ router.get("/me", authenticateJWT, async (req, res, next) => {
       : // Default to true (opt-out) if privacy_policy version changes
         await getLatestUserProfileNewsletterConsent(req.auth.account_id);
 
+    // Check if user has accepted any previous privacy policy version
+    const hasAcceptedPreviousPolicy = await hasAcceptedAnyPrivacyPolicy(
+      req.auth.account_id
+    );
+
     // Check if user has Discord linked
     const discordId = await getDiscordIdByAccountId(userInDb.account_id);
     const discordLinked = !!discordId;
@@ -137,6 +143,7 @@ router.get("/me", authenticateJWT, async (req, res, next) => {
         : false,
       acceptedMarketing: hasMarketingConsent,
       acceptedNewsletter: hasNewsletterConsent,
+      hasAcceptedPreviousPolicy,
       isPersonalEmail: userInDb.is_work_email_personal_email,
       discordLinked,
       roles

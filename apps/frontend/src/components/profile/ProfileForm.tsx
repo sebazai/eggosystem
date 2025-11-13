@@ -64,9 +64,12 @@ export default function ProfileForm() {
     if (requiresPolicyAcceptance) {
       const returnTo = searchParams.get("returnTo");
 
-      setErrorMessage(
-        "You need to fill in the form and accept the privacy policy"
-      );
+      // Show different message if user has accepted a previous version
+      const errorMsg = user?.hasAcceptedPreviousPolicy
+        ? "Privacy policy has been updated, please accept the new policy."
+        : "You need to fill in the form and accept the privacy policy";
+
+      setErrorMessage(errorMsg);
       const replacedUrl = returnTo
         ? `${pathname}?returnTo=${encodeURIComponent(returnTo)}`
         : pathname;
@@ -74,7 +77,7 @@ export default function ProfileForm() {
         scroll: false
       });
     }
-  }, [searchParams, pathname, router]);
+  }, [searchParams, pathname, router, user]);
 
   useEffect(() => {
     const discordLinked = searchParams.get("discordLinked");

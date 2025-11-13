@@ -247,6 +247,14 @@ export const getLatestUserProfileNewsletterConsent = async (
   return result?.[0]?.accepted_tournament_newsletter ?? true;
 };
 
+export const hasAcceptedAnyPrivacyPolicy = async (accountId: Account["id"]) => {
+  const result = await runQuery<Array<{ count: number }> | undefined>(
+    "SELECT COUNT(*) as count FROM UserPolicyAcceptances WHERE account_id = ? AND accepted_privacy_policy = 1",
+    [accountId]
+  );
+  return (result?.[0]?.count ?? 0) > 0;
+};
+
 export const getAccountIdBySteamId = async (
   steamId: string,
   connection?: PoolConnection

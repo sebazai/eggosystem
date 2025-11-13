@@ -96,6 +96,9 @@ describe("GET /me", () => {
     jest
       .spyOn(accountModels, "getLatestUserProfileNewsletterConsent")
       .mockResolvedValue(true);
+    jest
+      .spyOn(accountModels, "hasAcceptedAnyPrivacyPolicy")
+      .mockResolvedValue(false);
   });
 
   it("should return user data when token is valid", async () => {
@@ -116,6 +119,7 @@ describe("GET /me", () => {
     expect(response.body.user).toHaveProperty("acceptedPrivacyPolicy");
     expect(response.body.user).toHaveProperty("acceptedMarketing");
     expect(response.body.user).toHaveProperty("acceptedNewsletter");
+    expect(response.body.user).toHaveProperty("hasAcceptedPreviousPolicy");
   });
 
   it("should return 401 Unauthorized when token is invalid", async () => {
