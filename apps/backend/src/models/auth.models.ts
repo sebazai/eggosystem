@@ -68,8 +68,8 @@ export const createAccountForSteam = async ({
       connection
     );
     await runQuery<{ insertId: number }>(
-      "INSERT INTO LinkedAccounts (account_id, provider_id, provider) VALUES (?, ?, ?)",
-      [account.insertId, steamId, "steam"],
+      "INSERT INTO LinkedAccounts (account_id, provider_id, provider, provider_username) VALUES (?, ?, ?, ?)",
+      [account.insertId, steamId, "steam", steamDisplayName],
       connection
     );
     await connection.commit();
