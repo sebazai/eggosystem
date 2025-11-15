@@ -1,7 +1,6 @@
 ---
-description: Documentation organization constraints
-globs:
-alwaysApply: true
+description: Documentation organization and maintenance patterns
+alwaysApply: false
 ---
 
 # Documentation Organization Constraints

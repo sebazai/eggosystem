@@ -1,3 +1,13 @@
+---
+description: Table component patterns using BaseTable
+alwaysApply: false
+globs:
+  [
+    "apps/frontend/**/components/**/*Table*.tsx",
+    "apps/frontend/**/components/tables/**/*.tsx"
+  ]
+---
+
 # Table Components Rule
 
 **Always use BaseTable for table implementations**

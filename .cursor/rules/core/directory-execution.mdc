@@ -1,6 +1,5 @@
 ---
 description: Directory execution constraints for monorepo
-globs:
 alwaysApply: true
 ---
 

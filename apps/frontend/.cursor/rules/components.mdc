@@ -1,0 +1,124 @@
+---
+description: Frontend component patterns, component reuse, and shadcn/ui usage
+alwaysApply: false
+globs:
+  [
+    "apps/frontend/**/components/**/*.tsx",
+    "apps/frontend/**/components/**/*.ts"
+  ]
+---
+
+# Frontend Component Patterns
+
+## Component Reuse Priority
+
+**CRITICAL**: Always check for existing components before creating new ones.
+
+### 1. Check Existing Components First
+
+Before creating a new component:
+
+1. **Search existing components** in `@/components/` directories
+2. **Check if similar functionality exists** that can be reused or extended
+3. **Prefer composition** over creating new components from scratch
+4. **If component exists but needs modification**, extend it rather than duplicating
+
+### 2. Use shadcn/ui Components
+
+**Always prefer shadcn/ui components** from `@/components/ui/` for UI primitives.
+
+#### Available shadcn/ui Components
+
+Check `@/components/ui/` for available components:
+
+- `Button`, `Input`, `Textarea`, `Select`, `Checkbox`, `Label`
+- `Card`, `Dialog`, `DropdownMenu`, `Popover`, `Tooltip`
+- `Tabs`, `Accordion`, `Alert`, `Badge`, `Breadcrumb`
+- `Calendar`, `Command`, `Form`, `NavigationMenu`, `Sheet`, `Sidebar`
+- `Skeleton`, `Spinner`, `Separator`, `Sonner` (toast notifications)
+
+#### Installing New shadcn/ui Components
+
+If you need a component that doesn't exist in `@/components/ui/`:
+
+1. **Check shadcn/ui documentation**: https://ui.shadcn.com/docs/components
+2. **Install using the project command**:
+
+   ```bash
+   cd $(git rev-parse --show-toplevel)/apps/frontend && pnpm shadcn:add [component-name]
+   ```
+
+   Example: `pnpm shadcn:add toast` or `pnpm shadcn:add data-table`
+
+3. **Components will be installed** to `@/components/ui/[component-name].tsx`
+4. **Import and use** the component:
+   ```tsx
+   import { Button } from "@/components/ui/button";
+   import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+   ```
+
+#### Component Usage Pattern
+
+```tsx
+// ✅ Good - Using shadcn/ui components
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+export default function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <h2>Title</h2>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Enter text" />
+        <Button>Submit</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## Component Structure
+
+- Use functional components with TypeScript
+- Define props interfaces at the top of the file
+- Use named exports for components
+- Follow existing component patterns in the codebase
+- Use `cn()` utility from `@/lib/utils` for className merging
+
+## Styling
+
+- Use Tailwind CSS for styling
+- **Use semantic color tokens** for theme support (`bg-background`, `text-foreground`, etc.)
+- Follow existing design system patterns
+- Ensure responsive design for mobile and desktop
+- Use `cn()` helper for conditional classes
+
+## Component Organization
+
+```
+src/components/
+├── ui/              # shadcn/ui components (DO NOT modify directly)
+├── layout/          # Layout components
+├── [domain]/        # Feature-specific components (reuse from here)
+└── [feature]/       # Domain components
+```
+
+## Testing
+
+- Write component tests using React Testing Library
+- Test user interactions and accessibility
+- Use MSW for API mocking in component tests
+- Test responsive behavior across breakpoints
+
+## Summary
+
+- **Always check for existing components** before creating new ones
+- **Prefer shadcn/ui components** from `@/components/ui/`
+- **Install new shadcn components** with `pnpm shadcn:add [name]`
+- Functional components with TypeScript
+- Tailwind CSS with semantic color tokens
+- Test with React Testing Library
+- Use MSW for API mocking

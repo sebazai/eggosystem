@@ -1,7 +1,6 @@
 ---
-description: TDD workflow constraints
-globs:
-alwaysApply: true
+description: TDD workflow constraints and patterns
+alwaysApply: false
 ---
 
 # Test-Driven Development (TDD) Workflow Rule

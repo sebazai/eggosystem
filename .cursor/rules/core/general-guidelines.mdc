@@ -1,6 +1,5 @@
 ---
 description: General response format and technical conventions
-globs:
 alwaysApply: true
 ---
 

@@ -1,7 +1,6 @@
 ---
 description: Testing strategy constraints and patterns
-globs:
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Testing Strategy Constraints
