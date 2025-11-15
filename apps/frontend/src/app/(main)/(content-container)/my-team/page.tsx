@@ -17,8 +17,12 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/context/AuthContext";
+import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
+import { ContentContainer } from "@/components/layout/ContentContainer";
 
 export default function MyTeamPage() {
+  const auth = useAuth();
   const { teams, isLoading: teamsLoading, isError: teamsError } = useMyTeams();
   const {
     matches,
@@ -60,13 +64,23 @@ export default function MyTeamPage() {
     return null;
   };
 
-  if (teamsLoading || matchesLoading) {
+  // Check authentication first
+  if (auth.loading || teamsLoading || matchesLoading) {
     return (
       <div className="space-y-6">
         <h1 className="pb-4">My Team</h1>
         <Skeleton className="h-[200px] w-full" />
         <Skeleton className="h-[200px] w-full" />
       </div>
+    );
+  }
+
+  if (!auth.user) {
+    return (
+      <ContentContainer classNames="flex-col space-y-4">
+        <div>Please log in to view your team.</div>
+        <SteamLoginButton />
+      </ContentContainer>
     );
   }
 
