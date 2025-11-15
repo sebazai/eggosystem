@@ -65,7 +65,7 @@ export default function MyTeamPage() {
   };
 
   // Check authentication first
-  if (auth.loading || teamsLoading || matchesLoading) {
+  if (auth.loading) {
     return (
       <div className="space-y-6">
         <h1 className="pb-4">My Team</h1>
@@ -81,6 +81,17 @@ export default function MyTeamPage() {
         <div>Please log in to view your team.</div>
         <SteamLoginButton />
       </ContentContainer>
+    );
+  }
+
+  // Now check data loading (only if authenticated)
+  if (teamsLoading || matchesLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="pb-4">My Team</h1>
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[200px] w-full" />
+      </div>
     );
   }
 
