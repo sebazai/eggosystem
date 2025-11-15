@@ -85,3 +85,20 @@ export const createAccountForSteam = async ({
     connection.release();
   }
 };
+
+/**
+ * Update LinkedAccounts username for existing Steam user
+ * @param steamId
+ * @param steamDisplayName
+ */
+export const updateSteamLinkedAccountUsername = async (
+  steamId: string,
+  steamDisplayName: string
+) => {
+  await runQuery(
+    `UPDATE LinkedAccounts 
+       SET provider_username = ? 
+       WHERE provider = 'steam' AND provider_id = ?`,
+    [steamDisplayName, steamId]
+  );
+};
