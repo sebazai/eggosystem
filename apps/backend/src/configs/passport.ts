@@ -3,7 +3,8 @@ import steam from "passport-steam";
 
 import {
   getAuthUserBySteamId,
-  createAccountForSteam
+  createAccountForSteam,
+  updateSteamLinkedAccountUsername
 } from "../models/auth.models";
 import { clearPossibleRedisCacheForNewUser } from "../services/redis.services";
 import type { SteamUserPayload } from "@eggosystem/types";
@@ -39,10 +40,18 @@ passport.use(
         }
       }
 
+      // Update username in LinkedAccounts if it has changed
+      try {
+        await updateSteamLinkedAccountUsername(profile.id, profile.displayName);
+      } catch (error) {
+        logger.error("Failed to update Steam username", error);
+        // Continue with login even if update fails
+      }
+
       const user = {
         account_id: userInDb.account_id,
         provider_id: profile.id,
-        nickname: userInDb.nickname,
+        nickname: profile.displayName,
         provider: "steam"
       } satisfies SteamUserPayload;
 
