@@ -1,0 +1,50 @@
+---
+description: Express controller patterns for files in controllers directory or ending in .controllers.ts
+alwaysApply: false
+globs:
+  ["apps/backend/**/controllers/**/*.ts", "apps/backend/**/*.controllers.ts"]
+---
+
+# Backend Controller Patterns
+
+## Error Handling: Use `return next(new Error())`
+
+**Rule**: In controllers, use `return next(new ErrorClass("message"))` to pass errors to the RFC 7807 middleware.
+
+```typescript
+// ✅ Good - Controller pattern
+export const getUserController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = await getUser(req.params.id);
+  if (!user) {
+    return next(new NotFoundError("User not found"));
+  }
+  res.json(user);
+};
+```
+
+**Exception**: Controllers may throw errors inside try/catch blocks when handling database transactions. The thrown error will be caught and passed to `next()`.
+
+```typescript
+// ✅ Good - Transaction handling in controller
+const connection = await getConnection();
+try {
+  await connection.beginTransaction();
+  // ... transaction logic
+  await connection.commit();
+} catch (error) {
+  await connection.rollback();
+  throw error; // Caught by outer try/catch or passed to next()
+} finally {
+  connection.release();
+}
+```
+
+## Summary
+
+- **Controllers**: `return next(new ErrorClass("message"))` for error handling
+- **Transactions**: May throw errors inside try/catch blocks
+- Errors are automatically formatted as RFC 7807 Problem Details by middleware

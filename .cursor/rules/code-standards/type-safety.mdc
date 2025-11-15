@@ -1,7 +1,6 @@
 ---
-description: Type safety constraints
-globs:
-alwaysApply: true
+description: Type safety constraints and patterns for TypeScript code
+alwaysApply: false
 ---
 
 # Type Safety Constraints

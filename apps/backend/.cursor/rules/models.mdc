@@ -1,0 +1,65 @@
+---
+description: Database model and service patterns for files in models/services directories or ending in .models.ts
+alwaysApply: false
+globs:
+  [
+    "apps/backend/**/models/**/*.ts",
+    "apps/backend/**/*.models.ts",
+    "apps/backend/**/services/**/*.ts"
+  ]
+---
+
+# Backend Model Patterns
+
+## Error Handling: Let Errors Bubble Up
+
+**Rule**: In models and services, throw errors and let them bubble up to controllers, which will pass them to the express-error-handler via `next()`.
+
+```typescript
+// ✅ Good - Service throws error
+export const getUser = async (id: string): Promise<User> => {
+  const user = await db.query("SELECT * FROM users WHERE id = ?", [id]);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  return user;
+};
+```
+
+## Database Transactions
+
+Use try/catch only when you need `finally` cleanup, such as database transactions.
+
+```typescript
+// ✅ Good - Database transaction with cleanup
+export const updateSignupForSeason = async (
+  season: SeasonDetails,
+  teamId: number,
+  formData: SignupFormValues
+) => {
+  const connection = await getConnection();
+
+  try {
+    await connection.beginTransaction();
+    const data = await handleSignupFormForSeasonUpdate(
+      season.id,
+      teamId,
+      formData,
+      connection
+    );
+    await connection.commit();
+    return data;
+  } catch (error) {
+    await connection.rollback();
+    throw error; // Let it bubble up to express-error-handler
+  } finally {
+    connection.release();
+  }
+};
+```
+
+## Summary
+
+- **Models/Services**: `throw new ErrorClass("message")`
+- **Try/Catch**: Only for database transactions with cleanup
+- Errors bubble up to RFC 7807 middleware automatically

@@ -1,0 +1,20 @@
+---
+description: Architecture constraints and technology stack
+alwaysApply: true
+---
+
+# Architecture Constraints
+
+## Monorepo Structure
+
+- **PNPM workspace** with `apps/backend` and `apps/frontend`
+- **Technology Stack**: Node.js, TypeScript, Express (backend), Next.js (frontend)
+- **Database**: MariaDB with Knex.js migrations
+- **Testing**: Jest for unit tests, Playwright for E2E tests
+- **Development**: DevContainer environment with Docker Compose
+
+## Critical Prohibitions
+
+- **No Git Commits**: AI must never commit code - all commits must be done by the user
+- **No Unsafe Type Casting**: Use `satisfies` operator and proper type guards instead of `as` keyword
+- **No Try/Catch Without Cleanup**: Only use try/catch for database transactions with proper cleanup

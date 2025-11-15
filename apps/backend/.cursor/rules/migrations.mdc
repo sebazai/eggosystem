@@ -1,0 +1,34 @@
+---
+description: Knex.js migration patterns for files in migrations directory
+alwaysApply: false
+globs: ["apps/backend/migrations/**/*.ts"]
+---
+
+# Database Migration Patterns
+
+## Migration Guidelines
+
+- Use Knex.js migrations for all schema changes
+- Always update `README.database.md` if migrations include:
+  - New triggers or trigger modifications
+  - New functions or procedures
+  - Schema changes (new tables, columns, constraints)
+  - Index changes
+
+## Migration Structure
+
+- Use descriptive migration names
+- Include both `up` and `down` migrations
+- Test migrations in development before applying to production
+
+## Type Safety
+
+- After schema changes, update types in `@eggosystem/types` package
+- Build types package after migration: `cd packages/types && pnpm build`
+- Compose new types from `@eggosystem/types/db` interfaces
+
+## Summary
+
+- Use Knex.js for migrations
+- Update documentation for schema changes
+- Update and build types package after migrations

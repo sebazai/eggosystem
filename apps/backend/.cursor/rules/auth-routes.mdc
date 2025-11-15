@@ -1,0 +1,116 @@
+---
+description: Authentication route security patterns for sensitive auth endpoints
+alwaysApply: false
+globs:
+  ["apps/backend/**/routes/**/auth*.ts", "apps/backend/**/routes/**/*auth*.ts"]
+---
+
+# Authentication Route Security Patterns
+
+**CRITICAL**: Sensitive authentication routes MUST have proper JWT authentication and permission checks.
+
+## Route Categories
+
+### Public Routes (No Authentication Required)
+
+These routes are intentionally public for OAuth flows and token refresh:
+
+- `/auth/steam` - Steam OAuth initiation (public)
+- `/auth/steam/return` - Steam OAuth callback (public)
+- `/auth/refresh` - Token refresh (public, uses refresh token)
+- `/auth/logout` - Logout (public, clears cookies)
+- `/auth/discord/callback` - Discord OAuth callback (public)
+
+### Sensitive Routes (Authentication Required)
+
+These routes MUST use `authenticateJWT` middleware:
+
+- `/auth/me` - Get current user info (requires authentication)
+- `/auth/discord/login` - Initiate Discord OAuth (requires authentication)
+
+## Required Security Pattern
+
+**All sensitive auth routes MUST use `authenticateJWT` middleware**:
+
+```typescript
+import { authenticateJWT } from "../../middlewares/auth.middleware";
+
+// ✅ Good - Sensitive route protected
+router.get("/me", authenticateJWT, async (req, res, next) => {
+  if (!req.auth) {
+    return next(new UnauthorizedError("Unauthorized"));
+  }
+  // ... handler logic
+});
+
+// ✅ Good - Discord OAuth initiation protected
+router.get("/discord/login", authenticateJWT, (req, res, next) => {
+  if (!req.auth) {
+    return next(new UnauthorizedError("Unauthorized"));
+  }
+  // ... handler logic
+});
+```
+
+## When Adding New Auth Routes
+
+1. **Determine if route is sensitive**:
+   - Does it expose user data? → Requires authentication
+   - Does it modify user account? → Requires authentication
+   - Does it initiate OAuth flows? → Requires authentication
+   - Is it a public callback? → No authentication needed
+
+2. **If route is sensitive**:
+   - Add `authenticateJWT` middleware
+   - Check `req.auth` exists in handler
+   - Return `UnauthorizedError` if authentication fails
+   - **If uncertain whether route should be protected, ASK THE USER**
+
+3. **If route needs permissions** (beyond just authentication):
+   - Use `checkPermissions` middleware after `authenticateJWT`
+   - **If uncertain about required permissions, ASK THE USER** what access level should be required
+
+## Permission Checks for Sensitive Routes
+
+Some auth routes may need permission checks beyond authentication:
+
+```typescript
+import {
+  authenticateJWT,
+  checkPermissions
+} from "../../middlewares/auth.middleware";
+
+// Example: Admin-only auth route
+router.get(
+  "/admin/users",
+  authenticateJWT,
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  handler
+);
+```
+
+## Common Sensitive Auth Operations
+
+- **User profile access** (`/me`) - Requires authentication
+- **OAuth initiation** (`/discord/login`) - Requires authentication
+- **Account linking** - Requires authentication
+- **Token management** - Requires authentication
+- **Session management** - May require authentication depending on operation
+
+## Security Checklist
+
+- [ ] Sensitive routes have `authenticateJWT` middleware
+- [ ] Handler checks `req.auth` exists
+- [ ] Returns `UnauthorizedError` if authentication fails
+- [ ] If route needs permissions, uses `checkPermissions`
+- [ ] If uncertain about protection requirements, asked user for clarification
+- [ ] Error responses follow RFC 7807 format
+
+## Summary
+
+- **Public routes**: OAuth callbacks, token refresh, logout (no auth needed)
+- **Sensitive routes**: User data, OAuth initiation, account operations (require `authenticateJWT`)
+- **If uncertain**: **ASK THE USER** whether route should be protected and what permissions are needed
+- **Always check `req.auth`** in sensitive route handlers

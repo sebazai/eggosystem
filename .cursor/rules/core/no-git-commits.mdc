@@ -1,8 +1,8 @@
 ---
-description: 
-globs: 
+description: Git commit prohibition - AI must never commit code
 alwaysApply: true
 ---
+
 # No Git Commits Rule
 
 **Type:** Strict Prohibition
@@ -38,4 +38,4 @@ The assistant MAY:
 - "You can check the status of your changes with `git status`"
 
 * 
-Directly borrowed from https://github.com/polarsquad/ecoestate 
+Directly borrowed from https://github.com/polarsquad/ecoestate

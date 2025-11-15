@@ -1,0 +1,29 @@
+---
+description: Express route setup patterns for files in routes directory or ending in .routes.ts
+alwaysApply: false
+globs: ["apps/backend/**/routes/**/*.ts", "apps/backend/**/*.routes.ts"]
+---
+
+# Backend Route Patterns
+
+## Route Setup
+
+- Use Express router objects for route organization
+- Import router objects directly (never use dynamic `require()` paths)
+- Apply middleware at the router level when appropriate
+
+## Error Handling
+
+Routes call controller functions. Controllers handle errors using `return next(new ErrorClass())` pattern. Routes themselves don't handle errors directly - they delegate to controllers.
+
+## Testing Routes
+
+- Use `createExpressTestApp` utility for route testing
+- Set environment variables at top level before imports
+- Always cleanup in `afterEach`
+
+## Summary
+
+- Use router objects for organization
+- Import routers directly
+- Controllers handle error passing to middleware

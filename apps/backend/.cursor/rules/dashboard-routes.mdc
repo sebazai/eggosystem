@@ -1,0 +1,111 @@
+---
+description: Dashboard route security patterns requiring JWT authentication and permission checks
+alwaysApply: false
+globs: ["apps/backend/**/routes/**/dashboard/**/*.ts"]
+---
+
+# Dashboard Route Security Patterns
+
+**CRITICAL**: All dashboard routes MUST have proper JWT authentication and permission checks.
+
+## Required Security Layers
+
+### 1. Authentication Middleware
+
+All dashboard routes are automatically protected at the router level with `authenticateJWT`:
+
+```typescript
+// apps/backend/src/routes/index.ts
+v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
+```
+
+### 2. Authorization Middleware
+
+**Every dashboard sub-router MUST use `checkPermissions` middleware**:
+
+```typescript
+import { checkPermissions } from "../../../middlewares/auth.middleware";
+
+router.use(
+  "/seasons",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  seasonRouter
+);
+```
+
+## Permission Patterns
+
+### Fallback Roles (Most Common)
+
+```typescript
+// Standard dashboard routes (admin + helpdesk)
+router.use(
+  "/route-name",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  routeRouter
+);
+```
+
+### Admin-Only Routes
+
+```typescript
+// Sensitive routes (admin only)
+router.use(
+  "/sortter",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  sortterRouter
+);
+```
+
+### Static Permissions
+
+```typescript
+// Routes with specific permissions
+router.get(
+  "/",
+  checkPermissions({
+    staticPermissions: ["read:dashboard"],
+    fallbackRoles: ["admin"]
+  }),
+  handler
+);
+```
+
+## When Adding New Dashboard Routes
+
+1. **Add `checkPermissions` middleware** to the route in `dashboard/index.ts`
+2. **Determine appropriate access level**:
+   - If uncertain about required roles/permissions, **ASK THE USER** what access level should be required
+   - Consider: Is this admin-only? Should helpdesk have access? What permissions are needed?
+3. **Use appropriate pattern**:
+   - `fallbackRoles: ["admin", "helpdesk"]` for standard dashboard routes
+   - `fallbackRoles: ["admin"]` for sensitive/admin-only routes
+   - `staticPermissions` for specific permission-based access
+4. **Create authentication tests** in `auth.test.ts` file
+
+## Common Dashboard Route Roles
+
+- **Standard routes**: `["admin", "helpdesk"]` - Most dashboard functionality
+- **Admin-only routes**: `["admin"]` - Sensitive operations (sortter, system config)
+- **Root dashboard**: `staticPermissions: ["read:dashboard"]` + `fallbackRoles: ["admin"]`
+
+## Security Checklist
+
+- [ ] Route has `checkPermissions` middleware
+- [ ] Appropriate roles/permissions specified
+- [ ] If uncertain about access, asked user for clarification
+- [ ] Authentication tests created in `auth.test.ts`
+- [ ] Error responses follow RFC 7807 format
+
+## Summary
+
+- **Always use `checkPermissions`** for dashboard routes
+- **If uncertain about access requirements, ASK THE USER**
+- **Test authentication** in dedicated `auth.test.ts` files
+- **Follow principle of least privilege** - grant minimum required access
