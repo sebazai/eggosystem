@@ -10,6 +10,10 @@ import {
   updateCasterDefaultUrlController,
   deleteCasterDefaultUrlController
 } from "../../controllers/caster-urls.controllers";
+import {
+  getMyTeamsController,
+  getMyTeamsUpcomingMatchesController
+} from "../../controllers/my-team.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
 import { type UserProfilePayload } from "@eggosystem/types";
@@ -85,5 +89,9 @@ router.get(
   checkJWTPermissions({ fallbackRoles: ["caster"] }),
   getAccountMatchReservationsController
 );
+
+// My Team routes
+router.get("/my-teams", getMyTeamsController);
+router.get("/my-teams/upcoming-matches", getMyTeamsUpcomingMatchesController);
 
 export default router;
