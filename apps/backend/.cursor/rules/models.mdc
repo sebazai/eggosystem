@@ -58,8 +58,29 @@ export const updateSignupForSeason = async (
 };
 ```
 
+## JSON Parsing with Large Integers
+
+**CRITICAL**: When parsing JSON strings from database queries (especially `JSON_ARRAYAGG` or `JSON_OBJECT`), use `JSONBig` instead of `JSON.parse()` to preserve large integers like Steam IDs.
+
+**Rule**: Always use `JSONBig` with `storeAsString: true` when parsing JSON that may contain large integers.
+
+```typescript
+import JSONBig from "json-bigint";
+
+// ✅ Good - Use JSONBig for parsing JSON with large integers
+const players = row.players
+  ? JSONBig({ storeAsString: true }).parse(row.players)
+  : [];
+
+// ❌ Bad - JSON.parse() loses precision for large integers
+const players = row.players ? JSON.parse(row.players) : [];
+```
+
+**Why**: Steam IDs (17-digit numbers) exceed JavaScript's `Number.MAX_SAFE_INTEGER` (2^53 - 1). `JSON.parse()` converts them to floating point numbers, causing precision loss. `JSONBig` with `storeAsString: true` preserves them as strings.
+
 ## Summary
 
 - **Models/Services**: `throw new ErrorClass("message")`
 - **Try/Catch**: Only for database transactions with cleanup
+- **JSON Parsing**: Use `JSONBig({ storeAsString: true })` for JSON with large integers
 - Errors bubble up to RFC 7807 middleware automatically

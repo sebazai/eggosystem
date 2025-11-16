@@ -1,5 +1,6 @@
 import type { MyTeamDetails, MyTeamUpcomingMatch } from "@eggosystem/types";
 import { runQuery } from "../db/mysqlRunQuery";
+import JSONBig from "json-bigint";
 
 /**
  * Gets all teams that a user (by steam_id) is a member of across all active seasons
@@ -48,10 +49,36 @@ export const getMyTeams = async (
     >
   >(query, [steam_id]);
 
-  // Parse JSON players array
+  // Parse JSON players array using JSONBig to preserve large integers (Steam IDs)
+  // Convert boolean strings back to booleans (MySQL returns booleans as 0/1, JSONBig converts to "0"/"1")
   return results.map((row) => ({
     ...row,
-    players: row.players ? JSON.parse(row.players) : []
+    players: row.players
+      ? JSONBig({ storeAsString: true })
+          .parse(row.players)
+          .map(
+            (player: {
+              steam_id: string;
+              nickname: string;
+              is_captain: string | boolean | number;
+              is_co_captain: string | boolean | number;
+              role: "primary" | "substitute";
+            }) =>
+              ({
+                steam_id: player.steam_id,
+                nickname: player.nickname,
+                is_captain:
+                  player.is_captain === true ||
+                  player.is_captain === "1" ||
+                  player.is_captain === 1,
+                is_co_captain:
+                  player.is_co_captain === true ||
+                  player.is_co_captain === "1" ||
+                  player.is_co_captain === 1,
+                role: player.role
+              }) satisfies MyTeamDetails["players"][0]
+          )
+      : []
   }));
 };
 
