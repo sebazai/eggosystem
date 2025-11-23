@@ -118,6 +118,11 @@ const getSeasonMenuItems = (
           title: "Faceit Links",
           url: `/seasons/${signupOrActiveSeason.season_id}/faceit-links`,
           hasFilters: false
+        },
+        {
+          title: "Fantasy",
+          url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
+          hasFilters: false
         }
       ]
     }

@@ -12,6 +12,7 @@ import {
   authenticateJWT,
   checkJWTPermissions
 } from "../../middlewares/auth.middleware";
+import { getFantasyPlayersByLeagueController } from "../../controllers/fantasy.controllers";
 
 const router = Router();
 
@@ -42,6 +43,12 @@ router.get(
     fallbackRoles: ["admin", "captain", "helpdesk", "caster"]
   }),
   getTeamCaptainsBySeasonIdController
+);
+
+router.get(
+  "/:season_id/fantasy/leagues/:league_id/players",
+  validateNumericParams(),
+  getFantasyPlayersByLeagueController
 );
 
 export default router;
