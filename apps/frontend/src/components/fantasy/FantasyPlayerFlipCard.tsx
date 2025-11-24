@@ -10,6 +10,7 @@ type Props = {
   onAdd: (player: FantasyPlayer) => void;
   disabled: boolean;
   budgetRemaining: number;
+  isExistingTeamPlayer?: boolean; // Don't apply opacity to existing team cards
 };
 
 // Metallic color palettes
@@ -65,7 +66,8 @@ export default function FantasyPlayerFlipCard({
   player,
   onAdd,
   disabled,
-  budgetRemaining
+  budgetRemaining,
+  isExistingTeamPlayer = false
 }: Props) {
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -96,7 +98,7 @@ export default function FantasyPlayerFlipCard({
       ref={cardRef}
       className={cn(
         "group relative w-full h-[420px] perspective cursor-pointer",
-        isDisabled && "opacity-60"
+        isDisabled && !isExistingTeamPlayer && "opacity-60" // Don't fade existing team cards
       )}
       onClick={handleCardClick}
     >
@@ -141,7 +143,7 @@ export default function FantasyPlayerFlipCard({
                   >
                     <NextImageFallback
                       src={teamLogoUrl}
-                      alt={player.team}
+                      alt={player.team || "Team logo"}
                       width={28}
                       height={28}
                       className="rounded-full bg-neutral-900 p-0.5"
@@ -151,21 +153,23 @@ export default function FantasyPlayerFlipCard({
                     {player.team}
                   </span>
                 </div>
-                {/* Tier Ribbon Badge */}
-                <div className="relative">
-                  <div
-                    className={cn(
-                      "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg",
-                      tierAccents[player.tier],
-                      tierTextColor[player.tier],
-                      tierInnerGlow[player.tier],
-                      "shadow-[0_2px_6px_rgba(0,0,0,0.4)]",
-                      "relative"
-                    )}
-                  >
-                    {player.tier}
-                    {/* Shine effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent rounded-lg" />
+                <div className="flex items-center gap-2">
+                  {/* Tier Ribbon Badge */}
+                  <div className="relative">
+                    <div
+                      className={cn(
+                        "px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg",
+                        tierAccents[player.tier],
+                        tierTextColor[player.tier],
+                        tierInnerGlow[player.tier],
+                        "shadow-[0_2px_6px_rgba(0,0,0,0.4)]",
+                        "relative"
+                      )}
+                    >
+                      {player.tier}
+                      {/* Shine effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent rounded-lg" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -184,13 +188,30 @@ export default function FantasyPlayerFlipCard({
                 {player.photo ? (
                   <NextImageFallback
                     src={player.photo}
-                    alt={player.name}
+                    alt={`${player.name} player photo`}
                     fill
                     className="object-cover"
                   />
                 ) : (
                   <div className="text-6xl text-gray-700 font-bold blur-[1px] opacity-40">
                     ?
+                  </div>
+                )}
+
+                {/* Points Badge - Floating Circle over Avatar (Lower Right) */}
+                {player.points !== undefined && player.points !== 0 && (
+                  <div
+                    className={cn(
+                      "absolute bottom-5 right-3 z-20 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm shadow-lg border-2",
+                      player.points > 0
+                        ? "bg-green-600/90 border-green-400/50"
+                        : "bg-red-600/90 border-red-400/50"
+                    )}
+                  >
+                    <p className="text-[10px] font-black text-white leading-tight text-center">
+                      {player.points > 0 ? "+" : ""}
+                      {player.points}p
+                    </p>
                   </div>
                 )}
 
@@ -304,7 +325,7 @@ export default function FantasyPlayerFlipCard({
                     Value
                   </div>
                   <div className="font-black text-lg text-green-400/90 drop-shadow-[0_0_6px_rgba(74,222,128,0.4)]">
-                    ${(player.value / 1000).toFixed(0)}K
+                    €{(player.value / 1000).toFixed(0)}K
                   </div>
                 </div>
 
@@ -373,7 +394,7 @@ export default function FantasyPlayerFlipCard({
                   >
                     <NextImageFallback
                       src={teamLogoUrl}
-                      alt={player.team}
+                      alt={player.team || "Team logo"}
                       width={32}
                       height={32}
                       className="rounded-full bg-neutral-900"
@@ -411,12 +432,12 @@ export default function FantasyPlayerFlipCard({
                   Kana Rating 3.0
                 </div>
 
-                {/* Main Stats Grid */}
+                {/* Main Stats Grid - Smaller */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-3 text-center border border-neutral-700/50">
+                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-neutral-700/50">
                     <div
                       className={cn(
-                        "text-2xl font-black",
+                        "text-xl font-black",
                         player.tier === "gold"
                           ? "text-yellow-400"
                           : player.tier === "silver"
@@ -427,15 +448,15 @@ export default function FantasyPlayerFlipCard({
                     >
                       {player.stats.rating.toFixed(2)}
                     </div>
-                    <div className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">
+                    <div className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
                       Rating
                     </div>
                   </div>
 
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-3 text-center border border-neutral-700/50">
+                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-neutral-700/50">
                     <div
                       className={cn(
-                        "text-2xl font-black",
+                        "text-xl font-black",
                         player.tier === "gold"
                           ? "text-yellow-400"
                           : player.tier === "silver"
@@ -446,28 +467,28 @@ export default function FantasyPlayerFlipCard({
                     >
                       {player.stats.kd.toFixed(2)}
                     </div>
-                    <div className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">
+                    <div className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
                       K/D
                     </div>
                   </div>
                 </div>
 
-                {/* Secondary Stats */}
+                {/* Secondary Stats - Smaller */}
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2.5 text-center border border-green-900/30">
-                    <div className="text-lg font-black text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">
+                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-green-900/30">
+                    <div className="text-base font-black text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.6)]">
                       {player.stats.kills}
                     </div>
-                    <div className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
+                    <div className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
                       Kills
                     </div>
                   </div>
 
-                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2.5 text-center border border-red-900/30">
-                    <div className="text-lg font-black text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.6)]">
+                  <div className="bg-neutral-800/80 backdrop-blur-sm rounded-lg p-2 text-center border border-red-900/30">
+                    <div className="text-base font-black text-red-400 drop-shadow-[0_0_6px_rgba(248,113,113,0.6)]">
                       {player.stats.deaths}
                     </div>
-                    <div className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
+                    <div className="text-[9px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">
                       Deaths
                     </div>
                   </div>
@@ -477,16 +498,18 @@ export default function FantasyPlayerFlipCard({
                 <div className="space-y-2">
                   {/* Headshot % and KAST */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                          HS%
-                        </span>
-                        <span className="text-base font-black text-orange-400">
-                          {player.stats.headshotPercentage.toFixed(1)}%
-                        </span>
+                    {player.stats.headshotPercentage > 0 && (
+                      <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
+                            HS%
+                          </span>
+                          <span className="text-base font-black text-orange-400">
+                            {player.stats.headshotPercentage.toFixed(1)}%
+                          </span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                     {player.stats.kast && (
                       <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
                         <div className="flex justify-between items-center">
@@ -501,82 +524,56 @@ export default function FantasyPlayerFlipCard({
                     )}
                   </div>
 
-                  {/* Flash Assists and Kills per Round */}
+                  {/* Flash Assists, FK/FD, ADR (T), ADR (CT) - 2 columns, value on top */}
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                          Flash Assists
-                        </span>
-                        <span className="text-base font-black text-yellow-400">
-                          {player.stats.flashAssists}
-                        </span>
+                    {/* Flash Assists */}
+                    <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30 text-center">
+                      <div className="text-base font-black text-yellow-400 mb-0.5">
+                        {player.stats.flashAssists}
+                      </div>
+                      <div className="text-[9px] text-gray-400 uppercase tracking-wider font-bold">
+                        Flash Assists
                       </div>
                     </div>
-                    {player.stats.killsPerRound && (
-                      <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                            K/R
-                          </span>
-                          <span className="text-base font-black text-indigo-400">
-                            {player.stats.killsPerRound.toFixed(2)}
-                          </span>
+
+                    {/* FK / FD */}
+                    {player.stats.firstKills !== undefined &&
+                      player.stats.firstDeaths !== undefined && (
+                        <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30 text-center">
+                          <div className="text-base font-black text-pink-400 mb-0.5">
+                            {player.stats.firstKills} /{" "}
+                            {player.stats.firstDeaths}
+                          </div>
+                          <div className="text-[9px] text-gray-400 uppercase tracking-wider font-bold">
+                            FK / FD
+                          </div>
+                        </div>
+                      )}
+
+                    {/* ADR (T) */}
+                    {player.stats.adrT && (
+                      <div className="bg-neutral-800/60 rounded-lg p-2 border border-amber-900/30 text-center">
+                        <div className="text-base font-black text-amber-400 mb-0.5">
+                          {player.stats.adrT.toFixed(1)}
+                        </div>
+                        <div className="text-[9px] text-gray-400 uppercase tracking-wider font-bold">
+                          ADR (T)
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ADR (CT) */}
+                    {player.stats.adrCT && (
+                      <div className="bg-neutral-800/60 rounded-lg p-2 border border-blue-900/30 text-center">
+                        <div className="text-base font-black text-blue-400 mb-0.5">
+                          {player.stats.adrCT.toFixed(1)}
+                        </div>
+                        <div className="text-[9px] text-gray-400 uppercase tracking-wider font-bold">
+                          ADR (CT)
                         </div>
                       </div>
                     )}
                   </div>
-
-                  {/* First Kills / Deaths Ratio */}
-                  <div className="bg-neutral-800/60 rounded-lg p-2 border border-neutral-700/30">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                        FK / FD
-                      </span>
-                      <span className="text-base font-black text-pink-400">
-                        {player.stats.firstKills} / {player.stats.firstDeaths}
-                        {player.stats.firstDeaths > 0 && (
-                          <span className="text-xs ml-1 text-gray-500">
-                            (
-                            {(
-                              player.stats.firstKills / player.stats.firstDeaths
-                            ).toFixed(2)}
-                            )
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* ADR by Side */}
-                  {(player.stats.adrT || player.stats.adrCT) && (
-                    <div className="grid grid-cols-2 gap-2">
-                      {player.stats.adrT && (
-                        <div className="bg-neutral-800/60 rounded-lg p-2 border border-amber-900/30">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                              ADR (T)
-                            </span>
-                            <span className="text-sm font-black text-amber-400">
-                              {player.stats.adrT.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      {player.stats.adrCT && (
-                        <div className="bg-neutral-800/60 rounded-lg p-2 border border-blue-900/30">
-                          <div className="flex justify-between items-center">
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">
-                              ADR (CT)
-                            </span>
-                            <span className="text-sm font-black text-blue-400">
-                              {player.stats.adrCT.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -606,8 +603,8 @@ export default function FantasyPlayerFlipCard({
                   )}
                   <span className="relative z-10">
                     {!canAfford
-                      ? `No Funds - $${(player.value / 1000).toFixed(0)}K`
-                      : `Add - $${(player.value / 1000).toFixed(0)}K`}
+                      ? `No Funds - €${(player.value / 1000).toFixed(0)}K`
+                      : `Add - €${(player.value / 1000).toFixed(0)}K`}
                   </span>
                 </button>
               </div>

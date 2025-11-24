@@ -120,9 +120,31 @@ const getSeasonMenuItems = (
           hasFilters: false
         },
         {
-          title: "Fantasy",
+          title: "Fantasy League",
           url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
-          hasFilters: false
+          hasFilters: false,
+          items: [
+            {
+              title: "Draft Team",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
+              hasFilters: false
+            },
+            {
+              title: "Leaderboard",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/leaderboard`,
+              hasFilters: false
+            },
+            {
+              title: "Top Players",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/top-players`,
+              hasFilters: false
+            },
+            {
+              title: "Price History",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/price-history`,
+              hasFilters: false
+            }
+          ]
         }
       ]
     }

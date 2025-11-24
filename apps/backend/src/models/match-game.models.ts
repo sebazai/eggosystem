@@ -499,11 +499,11 @@ export const saveParsedDemoDataForGame = async (
 
     const team1PlayerSteamIds = Object.values(Players)
       .filter((player) => player.Team === 1)
-      .map((player) => player.SteamID);
+      .map((player) => String(player.SteamID));
 
     const team2PlayerSteamIds = Object.values(Players)
       .filter((player) => player.Team === 2)
-      .map((player) => player.SteamID);
+      .map((player) => String(player.SteamID));
 
     const terroristTeamResult = await getTeamIdByPlayerSteamIdsAndGameId(
       team1PlayerSteamIds,

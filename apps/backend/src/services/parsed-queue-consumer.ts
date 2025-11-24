@@ -3,6 +3,7 @@ import JSONBig from "json-bigint";
 import { logger } from "../utils/app-logger";
 import type { ParseResultMessage } from "../types/parse-queue.types";
 import { saveParsedDemoDataForGame } from "../models/match-game.models";
+import { calculateFantasyPointsForGame } from "./fantasy-points.service";
 // import * as fs from "fs";
 // import * as path from "path";
 
@@ -433,6 +434,20 @@ export class ParsedQueueConsumer {
 
     try {
       await saveParsedDemoDataForGame(match_game_id, parsed_payload);
+
+      // Calculate fantasy points after demo data is saved
+      try {
+        await calculateFantasyPointsForGame(Number(match_game_id));
+      } catch (fantasyError) {
+        // Log fantasy calculation errors but don't fail the entire process
+        logger.error("Failed to calculate fantasy points", {
+          matchGameId: match_game_id,
+          error:
+            fantasyError instanceof Error
+              ? fantasyError.message
+              : String(fantasyError)
+        });
+      }
     } catch (error) {
       logger.info("Failed to save parsed demo data for game", {
         matchGameId: match_game_id,

@@ -1,13 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 import { cn, createTeamLogoUrl } from "@/lib/utils";
 import { NextImageFallback } from "../layout/NextImageFallback";
@@ -16,74 +11,13 @@ import type { SelectedPlayer } from "./FantasyLeague";
 type Props = {
   selectedPlayers: SelectedPlayer[];
   onRemovePlayer: (playerId: number) => void;
-  onRoleChange: (
-    playerId: number,
-    role: SelectedPlayer["role"]
-  ) => void;
   onFinalize: () => void;
   budgetRemaining: number;
-};
-
-type PlayerRole = 
-  | "main_awp"
-  | "leader"
-  | "support"
-  | "entry_fragger"
-  | "defender"
-  | "hs_machine"
-  | "multi_fragger"
-  | "attacker"
-  | "camper"
-  | "stathunter"
-  | "noob"
-  | "eco_friendly"
-  | "flash_master"
-  | "clutch_player"
-  | "first_blood"
-  | "t_specialist"
-  | "ct_specialist"
-  | "anchor";
-
-const roleLabels: Record<PlayerRole, string> = {
-  main_awp: "Main AWP",
-  leader: "Leader",
-  support: "Support",
-  entry_fragger: "Entry Fragger",
-  defender: "Defender",
-  hs_machine: "HS Machine",
-  multi_fragger: "Multi Fragger",
-  attacker: "Attacker",
-  camper: "Camper",
-  stathunter: "Stathunter",
-  noob: "Noob",
-  eco_friendly: "Eco Friendly",
-  flash_master: "Flash Master",
-  clutch_player: "Clutch Player",
-  first_blood: "First Blood",
-  t_specialist: "T-Side Specialist",
-  ct_specialist: "CT-Side Specialist",
-  anchor: "Anchor"
-};
-
-const roleDescriptions: Record<PlayerRole, string> = {
-  main_awp: "Primary AWPer",
-  leader: "Team captain & IGL",
-  support: "Utility & trades",
-  entry_fragger: "Opens sites",
-  defender: "Holds positions",
-  hs_machine: "Headshot specialist",
-  multi_fragger: "Multi-kill rounds",
-  attacker: "Aggressive plays",
-  camper: "Defensive positioning",
-  stathunter: "Consistent performance",
-  noob: "Learning & improving",
-  eco_friendly: "Eco round specialist",
-  flash_master: "Flash assist expert",
-  clutch_player: "High KAST player",
-  first_blood: "First kill specialist",
-  t_specialist: "T-side focused",
-  ct_specialist: "CT-side focused",
-  anchor: "Site anchor"
+  teamName: string;
+  onTeamNameChange: (name: string) => void;
+  teamNameError?: string | null;
+  isSubmitting?: boolean;
+  submitError?: string | null;
 };
 
 const tierFrameGradients = {
@@ -100,8 +34,10 @@ const tierCardShadow = {
 
 const tierInnerGlow = {
   gold: "shadow-[inset_0_1px_2px_rgba(255,255,255,0.4),inset_0_-1px_2px_rgba(0,0,0,0.3)]",
-  silver: "shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),inset_0_-1px_2px_rgba(0,0,0,0.2)]",
-  bronze: "shadow-[inset_0_1px_2px_rgba(255,200,150,0.4),inset_0_-1px_2px_rgba(0,0,0,0.3)]"
+  silver:
+    "shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),inset_0_-1px_2px_rgba(0,0,0,0.2)]",
+  bronze:
+    "shadow-[inset_0_1px_2px_rgba(255,200,150,0.4),inset_0_-1px_2px_rgba(0,0,0,0.3)]"
 } as const;
 
 const tierAccents = {
@@ -119,16 +55,16 @@ const tierTextColor = {
 export default function SelectedTeamPanel({
   selectedPlayers,
   onRemovePlayer,
-  onRoleChange,
   onFinalize,
-  budgetRemaining
+  budgetRemaining,
+  teamName,
+  onTeamNameChange,
+  teamNameError,
+  isSubmitting = false,
+  submitError
 }: Props) {
   const isTeamComplete = selectedPlayers.length === 5;
-  
-  // Get roles that are already assigned
-  const assignedRoles = new Set(
-    selectedPlayers.map((p) => p.role).filter((r): r is PlayerRole => r !== undefined)
-  );
+  const isTeamNameValid = teamName.trim().length >= 3 && teamName.length <= 30;
 
   return (
     <Card>
@@ -149,7 +85,7 @@ export default function SelectedTeamPanel({
                     : "text-green-600 dark:text-green-400"
                 )}
               >
-                ${budgetRemaining.toLocaleString()}
+                €{budgetRemaining.toLocaleString()}
               </span>
             </div>
           </div>
@@ -172,28 +108,38 @@ export default function SelectedTeamPanel({
                   )}
                 >
                   <div className="text-4xl mb-2 font-bold">?</div>
-                  <div className="text-xs uppercase tracking-wider font-bold">Empty</div>
+                  <div className="text-xs uppercase tracking-wider font-bold">
+                    Empty
+                  </div>
                 </div>
               );
             }
 
-            const teamLogoUrl = player.teamLogo || createTeamLogoUrl(player.team.toLowerCase().replace(/\s+/g, '-') + '.png');
+            const teamLogoUrl =
+              player.teamLogo ||
+              createTeamLogoUrl(
+                player.team.toLowerCase().replace(/\s+/g, "-") + ".png"
+              );
 
             return (
               <div key={player.id} className="relative">
                 {/* Premium Frame */}
-                <div className={cn(
-                  "relative p-[3px] h-full bg-gradient-to-b rounded-2xl",
-                  tierFrameGradients[player.tier],
-                  tierCardShadow[player.tier],
-                  tierInnerGlow[player.tier]
-                )}>
+                <div
+                  className={cn(
+                    "relative p-[3px] h-full bg-gradient-to-b rounded-2xl",
+                    tierFrameGradients[player.tier],
+                    tierCardShadow[player.tier],
+                    tierInnerGlow[player.tier]
+                  )}
+                >
                   {/* Inner Border */}
-                  <div className={cn(
-                    "absolute inset-[3px] border border-black/40 rounded-[14px]",
-                    "pointer-events-none"
-                  )} />
-                  
+                  <div
+                    className={cn(
+                      "absolute inset-[3px] border border-black/40 rounded-[14px]",
+                      "pointer-events-none"
+                    )}
+                  />
+
                   {/* Inner Card */}
                   <div className="relative bg-neutral-900 h-full w-full rounded-[14px] overflow-hidden">
                     {/* Remove Button */}
@@ -208,10 +154,12 @@ export default function SelectedTeamPanel({
 
                     {/* Team Logo Badge */}
                     <div className="absolute top-1 left-1 z-10">
-                      <div className={cn(
-                        "p-0.5 rounded-full bg-gradient-to-br",
-                        tierFrameGradients[player.tier]
-                      )}>
+                      <div
+                        className={cn(
+                          "p-0.5 rounded-full bg-gradient-to-br",
+                          tierFrameGradients[player.tier]
+                        )}
+                      >
                         <NextImageFallback
                           src={teamLogoUrl}
                           alt={player.team}
@@ -231,27 +179,33 @@ export default function SelectedTeamPanel({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="text-3xl text-gray-600 font-bold">?</div>
+                        <div className="text-3xl text-gray-600 font-bold">
+                          ?
+                        </div>
                       )}
-                      
+
                       {/* Overlay */}
-                      <div className={cn(
-                        "absolute inset-0 bg-gradient-to-br opacity-10",
-                        tierFrameGradients[player.tier],
-                        "mix-blend-overlay"
-                      )} />
+                      <div
+                        className={cn(
+                          "absolute inset-0 bg-gradient-to-br opacity-10",
+                          tierFrameGradients[player.tier],
+                          "mix-blend-overlay"
+                        )}
+                      />
                       <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 to-transparent" />
                     </div>
 
                     <div className="p-2 space-y-2 bg-gradient-to-b from-neutral-900 to-neutral-950">
                       {/* Premium Player Name Banner */}
-                      <div className={cn(
-                        "relative text-center py-1.5 px-2 font-black text-xs uppercase tracking-wider rounded-lg",
-                        tierAccents[player.tier],
-                        tierTextColor[player.tier],
-                        tierInnerGlow[player.tier],
-                        "shadow-[0_2px_6px_rgba(0,0,0,0.4)]"
-                      )}>
+                      <div
+                        className={cn(
+                          "relative text-center py-1.5 px-2 font-black text-xs uppercase tracking-wider rounded-lg",
+                          tierAccents[player.tier],
+                          tierTextColor[player.tier],
+                          tierInnerGlow[player.tier],
+                          "shadow-[0_2px_6px_rgba(0,0,0,0.4)]"
+                        )}
+                      >
                         {/* Shine effect */}
                         <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-transparent rounded-lg" />
                         <div className="relative truncate">{player.name}</div>
@@ -260,41 +214,9 @@ export default function SelectedTeamPanel({
                       {/* Value */}
                       <div className="text-center">
                         <span className="text-xs font-black text-green-400/90 drop-shadow-[0_0_4px_rgba(74,222,128,0.4)]">
-                          ${(player.value / 1000).toFixed(0)}K
+                          €{(player.value / 1000).toFixed(0)}K
                         </span>
                       </div>
-
-                      {/* Role Selection */}
-                      <Select
-                        value={player.role || "none"}
-                        onValueChange={(value) =>
-                          onRoleChange(
-                            player.id,
-                            value === "none"
-                              ? undefined
-                              : (value as SelectedPlayer["role"])
-                          )
-                        }
-                      >
-                        <SelectTrigger className="h-7 text-[9px] font-black uppercase tracking-wider bg-neutral-800/60 border-neutral-700">
-                          <SelectValue placeholder="Role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">No Role</SelectItem>
-                          {(Object.entries(roleLabels) as [PlayerRole, string][]).map(([value, label]) => (
-                            <SelectItem
-                              key={value}
-                              value={value}
-                              disabled={
-                                assignedRoles.has(value) &&
-                                player.role !== value
-                              }
-                            >
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </div>
@@ -303,29 +225,85 @@ export default function SelectedTeamPanel({
           })}
         </div>
 
+        {/* Team Name Input */}
+        <div className="space-y-2">
+          <Label htmlFor="team-name" className="text-sm font-medium">
+            Team Name *
+          </Label>
+          <Input
+            id="team-name"
+            placeholder="Enter your team name (3-30 characters)"
+            value={teamName}
+            onChange={(e) => onTeamNameChange(e.target.value)}
+            maxLength={30}
+            disabled={isSubmitting}
+            className={cn(
+              "bg-neutral-900 border-neutral-700",
+              teamNameError && "border-red-500 focus-visible:ring-red-500"
+            )}
+          />
+          {teamNameError && (
+            <p className="text-sm text-red-500">{teamNameError}</p>
+          )}
+          {!teamNameError && teamName && (
+            <p className="text-xs text-muted-foreground">
+              {teamName.length}/30 characters
+            </p>
+          )}
+        </div>
+
+        {/* Info Note */}
+        {isTeamComplete && (
+          <div className="p-3 bg-blue-950/30 border border-blue-900/50 rounded-md">
+            <p className="text-sm text-blue-300">
+              💡 <strong>Tip:</strong> You can assign player roles after
+              creating your team to earn bonus points!
+            </p>
+          </div>
+        )}
+
+        {/* Submit Error */}
+        {submitError && (
+          <div className="p-3 bg-red-950/50 border border-red-900 rounded-md">
+            <p className="text-sm text-red-400">{submitError}</p>
+          </div>
+        )}
+
         {/* Finalize Button */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
           <Button
             onClick={onFinalize}
-            disabled={!isTeamComplete || budgetRemaining < 0}
+            disabled={
+              !isTeamComplete ||
+              budgetRemaining < 0 ||
+              !isTeamNameValid ||
+              isSubmitting
+            }
             className="flex-1"
             size="lg"
             variant="kanaliigaOrange"
           >
-            {!isTeamComplete
-              ? `Add ${5 - selectedPlayers.length} More Player${5 - selectedPlayers.length > 1 ? "s" : ""}`
-              : budgetRemaining < 0
-                ? "Over Budget!"
-                : "Finalize Team"}
+            {isSubmitting
+              ? "Creating Team..."
+              : !isTeamComplete
+                ? `Add ${5 - selectedPlayers.length} More Player${5 - selectedPlayers.length > 1 ? "s" : ""}`
+                : budgetRemaining < 0
+                  ? "Over Budget!"
+                  : !isTeamNameValid
+                    ? "Enter Team Name"
+                    : "Finalize Team"}
           </Button>
-          
+
           {/* Info Text */}
           <div className="text-xs text-muted-foreground flex-1 text-center sm:text-left">
             {isTeamComplete && budgetRemaining >= 0 && (
               <p>✓ Ready to finalize your team!</p>
             )}
             {selectedPlayers.length < 5 && (
-              <p>Select {5 - selectedPlayers.length} more player{5 - selectedPlayers.length > 1 ? "s" : ""}</p>
+              <p>
+                Select {5 - selectedPlayers.length} more player
+                {5 - selectedPlayers.length > 1 ? "s" : ""}
+              </p>
             )}
           </div>
         </div>
@@ -333,4 +311,3 @@ export default function SelectedTeamPanel({
     </Card>
   );
 }
-

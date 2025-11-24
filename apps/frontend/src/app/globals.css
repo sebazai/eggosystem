@@ -1116,4 +1116,84 @@ Vaaleanruskea: #d09158 / hsl(29, 56%, 58%) */
     font-weight: 500 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
+
+  /* Fantasy League Content Scaling - Actual size reduction for sharp text */
+  .fantasy-content-scale {
+    font-size: 0.8rem; /* Base font size reduced to 80% */
+  }
+
+  /* Scale down headings */
+  .fantasy-content-scale h1 {
+    font-size: 1.6rem; /* was 2rem */
+  }
+
+  .fantasy-content-scale h2 {
+    font-size: 1.2rem; /* was 1.5rem */
+  }
+
+  .fantasy-content-scale h3 {
+    font-size: 1rem; /* was 1.25rem */
+  }
+
+  /* Scale down buttons and inputs */
+  .fantasy-content-scale button {
+    font-size: 0.7rem; /* was 0.875rem */
+    padding: 0.4rem 0.8rem; /* was 0.5rem 1rem */
+  }
+
+  .fantasy-content-scale input {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  /* Scale down badges and labels */
+  .fantasy-content-scale [class*="badge"] {
+    font-size: 0.6rem;
+    padding: 0.16rem 0.48rem;
+  }
+
+  /* Scale down cards */
+  .fantasy-content-scale [class*="Card"] {
+    font-size: 0.8rem;
+  }
+
+  /* Scale down player cards specifically */
+  .fantasy-content-scale .perspective {
+    font-size: 0.8rem;
+  }
+
+  /* Reduce spacing proportionally */
+  .fantasy-content-scale .space-y-6 > * + * {
+    margin-top: 1.2rem; /* was 1.5rem (6*0.25) */
+  }
+
+  .fantasy-content-scale .space-y-4 > * + * {
+    margin-top: 0.8rem; /* was 1rem (4*0.25) */
+  }
+
+  .fantasy-content-scale .space-y-2 > * + * {
+    margin-top: 0.4rem; /* was 0.5rem (2*0.25) */
+  }
+
+  .fantasy-content-scale .gap-4 {
+    gap: 0.8rem; /* was 1rem */
+  }
+
+  .fantasy-content-scale .gap-6 {
+    gap: 1.2rem; /* was 1.5rem */
+  }
+
+  /* Reduce padding */
+  .fantasy-content-scale .p-4 {
+    padding: 0.8rem; /* was 1rem */
+  }
+
+  .fantasy-content-scale .p-6 {
+    padding: 1.2rem; /* was 1.5rem */
+  }
+
+  .fantasy-content-scale .py-8 {
+    padding-top: 1.6rem;
+    padding-bottom: 1.6rem;
+  }
 }
