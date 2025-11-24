@@ -102,7 +102,13 @@ export default function SubstitutionDialog({
     }
 
     return filtered.sort((a, b) => b.stats.rating - a.stats.rating);
-  }, [availablePlayers, existingTeamPlayerIds, budgetAfterSale, searchQuery]);
+  }, [
+    availablePlayers,
+    existingTeamPlayerIds,
+    budgetAfterSale,
+    searchQuery,
+    playerToReplace
+  ]);
 
   // Group players by team
   const playersByTeam = useMemo(() => {

@@ -365,7 +365,7 @@ export default function FantasyLeague({ seasonId }: Props) {
     []
   );
 
-  const [editingRoles, setEditingRoles] = useState(false);
+  const [_editingRoles, setEditingRoles] = useState(false);
   const [roleChangesRemaining, setRoleChangesRemaining] = useState(2); // 2 role changes per week
   const [tempRoles, setTempRoles] = useState<
     Record<string, string | undefined>
