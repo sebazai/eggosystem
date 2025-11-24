@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,6 @@ import {
   Shield,
   Zap,
   Crosshair,
-  Award,
   Flame,
   Skull,
   TrendingUp,
@@ -463,7 +461,7 @@ export default function RoleAssignmentDialog({
                   Click on a role icon to see details
                 </p>
                 <p className="text-xs mt-2">
-                  Choose a role that matches the player's strengths
+                  Choose a role that matches the player&apos;s strengths
                 </p>
               </div>
             )}

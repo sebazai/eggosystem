@@ -80,6 +80,20 @@ export const createFantasyTeamController = async (
     return next(new BadRequestError("Invalid request body"));
   }
 
+  // Validate exactly 5 players
+  if (players.length !== 5) {
+    return next(
+      new BadRequestError("Fantasy team must have exactly 5 players")
+    );
+  }
+
+  // Validate team_name length (max 100 chars per DB schema)
+  if (team_name && team_name.length > 100) {
+    return next(
+      new BadRequestError("Team name must be 100 characters or less")
+    );
+  }
+
   // Validate and map players (support both steam_id and player_id)
   const mappedPlayers = players.map((p) => {
     const steamId = p.steam_id || p.player_id;
@@ -166,9 +180,15 @@ export const substitutePlayerController = async (
     !remove_steam_id ||
     !add_steam_id ||
     !body.new_player_value ||
-    !body.week_number
+    body.week_number === undefined ||
+    body.week_number === null
   ) {
     return next(new BadRequestError("Invalid request body"));
+  }
+
+  // Validate week_number is a positive integer
+  if (!Number.isInteger(body.week_number) || body.week_number < 1) {
+    return next(new BadRequestError("week_number must be a positive integer"));
   }
 
   const steamId = await getSteamIdFromAuth(req.auth.account_id);
@@ -341,13 +361,17 @@ export const seedInitialPlayerValuesController = async (
   res: Response,
   next: NextFunction
 ) => {
+  if (!req.auth) {
+    return next(new UnauthorizedError("Authentication required"));
+  }
+
+  // Admin check - only admins can seed initial player values
+  if (!req.auth.roles || !req.auth.roles.includes("admin")) {
+    return next(new UnauthorizedError("Admin access required"));
+  }
+
   const seasonId = Number(req.params.season_id);
   const leagueId = Number(req.params.league_id);
-
-  // Optional: Add admin check here
-  // if (!req.auth?.isAdmin) {
-  //   return next(new UnauthorizedError("Admin access required"));
-  // }
 
   // Calculate initial values for all players in the league
   const playerValues = await calculateInitialPlayerValues(seasonId, leagueId);

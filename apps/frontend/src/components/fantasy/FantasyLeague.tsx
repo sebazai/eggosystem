@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useMemo,
-  useCallback,
-  useDeferredValue,
-  useEffect
-} from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -29,10 +23,9 @@ import {
 import { createTeamLogoUrl, expressFetcher, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Edit2, TrendingUp, Award } from "lucide-react";
+import { RefreshCw, TrendingUp, Award } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { NextImageFallback } from "../layout/NextImageFallback";
 import { toast } from "sonner";
 
 export type PlayerTier = "bronze" | "silver" | "gold";
@@ -190,12 +183,10 @@ export default function FantasyLeague({ seasonId }: Props) {
         { credentials: "include" }
       )
         .then((data) => {
-          console.log("Rank data:", data); // Debug log
           setUserRank(data.currentUserRank ?? null);
           setTotalTeams(data.totalTeams ?? 0);
         })
-        .catch((err) => {
-          console.error("Error fetching rank:", err);
+        .catch(() => {
           // Set to null on error to show "-"
           setUserRank(null);
           setTotalTeams(0);
@@ -275,15 +266,6 @@ export default function FantasyLeague({ seasonId }: Props) {
     setSelectedPlayers((prev) => prev.filter((p) => p.id !== playerId));
   }, []);
 
-  const handleRoleChange = useCallback(
-    (playerId: number, role: SelectedPlayer["role"]) => {
-      setSelectedPlayers((prev) =>
-        prev.map((p) => (p.id === playerId ? { ...p, role } : p))
-      );
-    },
-    []
-  );
-
   const validateTeamName = useCallback((name: string): string | null => {
     if (!name || name.trim().length < 3) {
       return "Team name must be at least 3 characters";
@@ -339,7 +321,7 @@ export default function FantasyLeague({ seasonId }: Props) {
         };
       });
 
-      const result = await expressFetcher<{
+      await expressFetcher<{
         team_id: number;
         success: boolean;
         message: string;
@@ -362,7 +344,6 @@ export default function FantasyLeague({ seasonId }: Props) {
       // Reload the page to show the created team
       window.location.reload();
     } catch (error) {
-      console.error("Error creating fantasy team:", error);
       setSubmitError(
         error instanceof Error ? error.message : "Failed to create team"
       );
@@ -392,7 +373,7 @@ export default function FantasyLeague({ seasonId }: Props) {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [currentRolePlayerIndex, setCurrentRolePlayerIndex] = useState(0);
 
-  const handleStartEditingRoles = useCallback(() => {
+  const _handleStartEditingRoles = useCallback(() => {
     if (!existingTeam) return;
     // Initialize temp roles with current roles
     const currentRoles: Record<string, string | undefined> = {};
@@ -404,13 +385,12 @@ export default function FantasyLeague({ seasonId }: Props) {
     setRoleDialogOpen(true);
   }, [existingTeam]);
 
-  const handleCancelEditingRoles = useCallback(() => {
-    setEditingRoles(false);
+  const _handleCancelEditingRoles = useCallback(() => {
     setTempRoles({});
     setRoleDialogOpen(false);
   }, []);
 
-  const handleTempRoleChange = useCallback(
+  const _handleTempRoleChange = useCallback(
     (playerId: string, role: string | undefined) => {
       setTempRoles((prev) => ({ ...prev, [playerId]: role }));
     },
@@ -470,7 +450,6 @@ export default function FantasyLeague({ seasonId }: Props) {
       mutate(); // Revalidate team data
       return true; // Success
     } catch (error) {
-      console.error("Error updating role:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to update role"
       );
@@ -480,7 +459,7 @@ export default function FantasyLeague({ seasonId }: Props) {
     }
   };
 
-  const handleSaveRoles = async () => {
+  const _handleSaveRoles = async () => {
     if (!existingTeam) return;
 
     setIsSubmitting(true);
@@ -530,7 +509,6 @@ export default function FantasyLeague({ seasonId }: Props) {
       setRoleDialogOpen(false);
       mutate(); // Revalidate team data
     } catch (error) {
-      console.error("Error updating roles:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to update roles"
       );
@@ -593,9 +571,9 @@ export default function FantasyLeague({ seasonId }: Props) {
               })
             }
           );
-        } catch (roleError) {
-          console.error("Error assigning role during substitution:", roleError);
+        } catch {
           // Don't fail the substitution if role assignment fails
+          // Error is already handled by toast.error in handleUpdateRole
         }
       }
 
@@ -606,7 +584,6 @@ export default function FantasyLeague({ seasonId }: Props) {
       setShowSubstitutionDialog(false);
       setPlayerToReplace(null);
     } catch (error) {
-      console.error("Error substituting player:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to substitute player"
       );
@@ -660,7 +637,7 @@ export default function FantasyLeague({ seasonId }: Props) {
     ((teamError instanceof Error && teamError.message.includes("not found")) ||
       (typeof teamError === "object" &&
         "status" in teamError &&
-        (teamError as any).status === 404));
+        (teamError as { status?: number }).status === 404));
 
   if (teamError && !isLoadingTeam && !isNotFoundError) {
     return (
@@ -671,7 +648,7 @@ export default function FantasyLeague({ seasonId }: Props) {
           </h2>
           <p className="text-muted-foreground mb-4">
             We encountered an error while loading your fantasy team. Your team
-            data is safe, but we couldn't display it right now.
+            data is safe, but we couldn&apos;t display it right now.
           </p>
           <p className="text-sm text-red-300 font-mono bg-red-950/30 p-3 rounded border border-red-800/30">
             {teamError instanceof Error ? teamError.message : String(teamError)}

@@ -22,7 +22,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Trophy, TrendingUp, Users } from "lucide-react";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 
@@ -63,7 +63,7 @@ export default function TopPlayersPage() {
   );
 
   // Auto-select first league when loaded
-  useMemo(() => {
+  useEffect(() => {
     if (
       !isLoadingLeagues &&
       seasonLeagues &&
@@ -85,7 +85,7 @@ export default function TopPlayersPage() {
     expressFetcher
   );
 
-  const selectedLeague = seasonLeagues?.find(
+  const _selectedLeague = seasonLeagues?.find(
     (l: { id: number }) => String(l.id) === selectedLeagueId
   );
 

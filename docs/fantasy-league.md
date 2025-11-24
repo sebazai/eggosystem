@@ -9,11 +9,13 @@ The Fantasy League is a seasonal competition where players can create their own 
 ### 1. Team Creation & Management
 
 #### League Selection
+
 - Users must first select which season division they want to play in
 - They can only draft players from that specific division
 - Each season has its own independent fantasy league
 
 #### Team Drafting
+
 - Users build a 5-player roster
 - Each player has a value and tier (Bronze, Silver, Gold)
 - Budget constraint prevents selecting all high-tier players
@@ -22,16 +24,19 @@ The Fantasy League is a seasonal competition where players can create their own 
 #### Player Tiers & Budget System
 
 **Tier Distribution:**
+
 - **Gold:** Premium players (high past performance)
 - **Silver:** Mid-tier players (consistent performance)
 - **Bronze:** Entry-level or new players
 
 **Budget Constraints Examples:**
+
 - 5 Silver players: ~$200k each = $1,000k total ✓
 - 2 Gold + 3 Bronze: ~$300k + ~$150k = $1,050k (tight but doable)
 - 5 Gold players: ~$300k each = $1,500k total ✗ (over budget)
 
 **Typical Player Values:**
+
 - Bronze: $100k - $180k
 - Silver: $180k - $250k
 - Gold: $250k - $350k+
@@ -55,6 +60,7 @@ Player values are calculated before the season starts based on:
 #### Dynamic Value Changes
 
 Player values update throughout the season:
+
 - **Performance-based:** Points earned, K/D ratio, ADR, clutches
 - **Frequency:** Weekly updates (after match rounds)
 - **Change rate:** ±5-15% per week based on performance
@@ -63,9 +69,11 @@ Player values update throughout the season:
 ### 3. Team Composition & Roles
 
 #### Player Roles
+
 Users can assign roles to maximize points based on player specialization. Each role provides specific bonuses:
 
 **Core Roles:**
+
 - **Main AWP:** +20% bonus for AWP kills, sniper rifle eliminations count 1.5x
 - **Leader:** +20% multiplier to all points earned (team captain bonus)
 - **Support:** +25% bonus for assists and flash assists
@@ -73,6 +81,7 @@ Users can assign roles to maximize points based on player specialization. Each r
 - **Defender:** +20% bonus for kills while defending bomb site, holding angles
 
 **Specialist Roles:**
+
 - **HS Machine:** +25% bonus when headshot % > 50% in a map
 - **Multi Fragger:** +30% bonus for 3K+ rounds (3, 4, 5 kill rounds)
 - **Attacker:** +20% bonus for T-side performance (T-side kills × 1.2)
@@ -81,17 +90,20 @@ Users can assign roles to maximize points based on player specialization. Each r
 - **Eco Friendly:** +30% bonus for kills on eco/force-buy rounds
 
 **Meme/Fun Roles:**
+
 - **Noob:** +50% bonus if K/D < 0.8 but still wins round (underdog points)
 - **Flash Master:** +30% bonus for flash assists (minimum 3 per map)
 - **Clutch Player:** +40% bonus for clutch wins (1vX situations)
 - **First Blood:** +35% bonus for first kills, -15% penalty for first deaths
 
 **Side-Specialist Roles:**
+
 - **T-Side Specialist:** +25% bonus for T-side performance, T-side stats × 1.25
 - **CT-Side Specialist:** +25% bonus for CT-side performance, CT-side stats × 1.25
 - **Anchor:** +20% bonus for site holds, retakes, post-plant situations
 
 **Constraints:**
+
 - Each role can only be assigned to one player
 - Not all players need a role (can have empty slots)
 - Roles cannot be changed mid-week (locked after matches start)
@@ -99,6 +111,7 @@ Users can assign roles to maximize points based on player specialization. Each r
 - Some roles conflict (e.g., can't have both T-Specialist and CT-Specialist on same team)
 
 #### Boosters (Future Feature)
+
 - Weekly boosters can be applied to specific players
 - Examples: "Double Points Weekend", "Opening Kill Specialist"
 - Limited usage per season
@@ -106,29 +119,30 @@ Users can assign roles to maximize points based on player specialization. Each r
 ### 4. Points System
 
 #### Base Points
+
 Players earn points based on real match statistics:
 
-| Action | Points |
-|--------|--------|
-| Kill | +10 |
-| Death | -5 |
-| Assist | +5 |
-| Flash Assist | +3 |
-| Opening Kill (First Kill) | +12 |
-| Opening Death (First Death) | -8 |
-| Clutch Win (1v1) | +15 |
-| Clutch Win (1v2) | +25 |
-| Clutch Win (1v3+) | +40 |
-| MVP Star | +20 |
-| Match Win | +10 |
-| Match Loss | -5 |
-| ADR > 85 | +15 bonus |
-| K/D > 1.3 | +12 bonus |
-| KAST > 75% | +10 bonus |
-| Headshot % > 50% | +8 bonus |
-| 3K Round | +15 |
-| 4K Round | +25 |
-| Ace (5K) | +50 |
+| Action                      | Points    |
+| --------------------------- | --------- |
+| Kill                        | +10       |
+| Death                       | -5        |
+| Assist                      | +5        |
+| Flash Assist                | +3        |
+| Opening Kill (First Kill)   | +12       |
+| Opening Death (First Death) | -8        |
+| Clutch Win (1v1)            | +15       |
+| Clutch Win (1v2)            | +25       |
+| Clutch Win (1v3+)           | +40       |
+| MVP Star                    | +20       |
+| Match Win                   | +10       |
+| Match Loss                  | -5        |
+| ADR > 85                    | +15 bonus |
+| K/D > 1.3                   | +12 bonus |
+| KAST > 75%                  | +10 bonus |
+| Headshot % > 50%            | +8 bonus  |
+| 3K Round                    | +15       |
+| 4K Round                    | +25       |
+| Ace (5K)                    | +50       |
 
 #### Role-Based Point Multipliers
 
@@ -164,21 +178,25 @@ Points are calculated as: `base_points × role_multiplier + role_bonuses`
 #### Role Synergies & Strategies
 
 **Aggressive Lineup:**
+
 - Entry Fragger + First Blood + Attacker + Multi Fragger + Leader
 - Focus: Opening kills, T-side aggression, multi-kill potential
 - Risk: High penalty for early deaths
 
 **Balanced Lineup:**
+
 - Leader + Main AWP + Support + HS Machine + Clutch Player
 - Focus: Consistent performance, utility usage, clutch situations
 - Safe choice for steady points
 
 **Defensive Lineup:**
+
 - Anchor + Defender + CT-Specialist + Camper + Support
 - Focus: Site holds, retakes, CT-side dominance
 - Best for CT-heavy maps
 
 **Stat-Focused Lineup:**
+
 - Stathunter + HS Machine + Leader + Flash Master + Eco Friendly
 - Focus: Consistent stats, percentages, efficiency
 - Rewards players with high accuracy and game sense
@@ -186,18 +204,21 @@ Points are calculated as: `base_points × role_multiplier + role_bonuses`
 #### Advanced Scoring Mechanics
 
 **Combo Bonuses:**
+
 - Opening Kill → Win Round: +5 bonus
 - Flash Assist → Kill within 2s: +2 bonus
 - Clutch Win → High damage: +5 bonus
 - Eco Round → 2+ kills: +10 bonus
 
 **Penalties:**
+
 - Team Damage: -3 per instance
 - Early Death (first 15s): -2
 - Losing round after advantage (3v1+): -5
 - Saving when should plant/fight: -8
 
 **Weekly Performance Multipliers:**
+
 - Perfect Week (all matches won): +20% bonus
 - Consistent Stats (rating > 1.0 all maps): +15% bonus
 - MVP in >50% of maps: +25% bonus
@@ -213,6 +234,7 @@ Points are calculated as: `base_points × role_multiplier + role_bonuses`
 ### 6. Authentication & Data Storage
 
 #### User Identification
+
 - **Authentication:** `steam_id` (no separate login required)
 - Users are identified through Steam OAuth integration
 - One fantasy team per user per season
@@ -220,6 +242,7 @@ Points are calculated as: `base_points × role_multiplier + role_bonuses`
 #### Database Schema
 
 **Table: `fantasy_teams`**
+
 ```sql
 CREATE TABLE fantasy_teams (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -238,6 +261,7 @@ CREATE TABLE fantasy_teams (
 ```
 
 **Table: `fantasy_team_players`**
+
 ```sql
 CREATE TABLE fantasy_team_players (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -279,6 +303,7 @@ CREATE TABLE fantasy_team_players (
 ```
 
 **Table: `fantasy_player_history`**
+
 ```sql
 CREATE TABLE fantasy_player_history (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -296,6 +321,7 @@ CREATE TABLE fantasy_player_history (
 ```
 
 **Table: `fantasy_player_values`**
+
 ```sql
 CREATE TABLE fantasy_player_values (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -316,6 +342,7 @@ CREATE TABLE fantasy_player_values (
 ```
 
 **Table: `fantasy_leaderboard`**
+
 ```sql
 CREATE TABLE fantasy_leaderboard (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -336,7 +363,9 @@ CREATE TABLE fantasy_leaderboard (
 ### 7. User Interface
 
 #### Team Selection Page (Draft Phase)
+
 Following HLTV Fantasy pattern:
+
 - **Top Section:** Budget display, remaining slots, division info
 - **Player Grid:** Cards showing:
   - Player photo
@@ -356,6 +385,7 @@ Following HLTV Fantasy pattern:
   - "Finalize Team" button
 
 #### Team Management Page
+
 - **Team Overview:**
   - Current points
   - Rank in division
@@ -374,6 +404,7 @@ Following HLTV Fantasy pattern:
   - Player contribution breakdown
 
 #### Leaderboard Page
+
 - Division-specific rankings
 - Team name, owner (steam name), total points
 - Week-by-week points history
@@ -382,12 +413,14 @@ Following HLTV Fantasy pattern:
 ### 8. Game Flow
 
 #### Phase 1: Pre-Season (Draft)
+
 1. User selects season and division
 2. User drafts 5 players within budget
 3. User assigns roles to players
 4. User finalizes team (no changes until season starts)
 
 #### Phase 2: Active Season
+
 1. Weekly match rounds occur
 2. Points calculated based on player performance
 3. Points added to fantasy teams
@@ -396,6 +429,7 @@ Following HLTV Fantasy pattern:
 6. Player values update weekly
 
 #### Phase 3: Post-Season
+
 1. Final rankings displayed
 2. Historical data preserved
 3. Awards/badges for top performers
@@ -430,17 +464,20 @@ GET    /api/v1/fantasy/:seasonId/team/history
 ## Technical Considerations
 
 ### Performance
+
 - Cache player values (update weekly, not real-time)
 - Paginate player lists for large divisions
 - Index database tables appropriately for leaderboard queries
 
 ### Security
+
 - Validate all team changes server-side
 - Prevent budget manipulation
 - Rate limit API calls
 - Ensure users can only modify their own teams
 
 ### Data Integrity
+
 - Transaction support for team changes
 - Audit trail for all actions
 - Rollback capability for disputed points
@@ -468,4 +505,3 @@ GET    /api/v1/fantasy/:seasonId/team/history
 **Last Updated:** 2025-11-23  
 **Status:** Design Phase  
 **Next Steps:** Frontend PoC for team selection page
-

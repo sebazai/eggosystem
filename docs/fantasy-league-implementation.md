@@ -13,13 +13,20 @@
   - API endpoints (future)
   - UI/UX specifications
 
-### 2. Frontend PoC (Team Selection)
+### 2. Frontend Implementation
 
 #### Routes
 
-- **Page:** `apps/frontend/src/app/(main)/(content-container)/seasons/[season]/fantasy/page.tsx`
-- **URL:** `/seasons/{seasonId}/fantasy`
-- Accessible via the season navigation menu dropdown
+- **Main Page:** `apps/frontend/src/app/(main)/(content-container)/seasons/[season]/fantasy/page.tsx`
+  - **URL:** `/seasons/{seasonId}/fantasy`
+  - Draft new team or view existing team
+- **Leaderboard Page:** `apps/frontend/src/app/(main)/(content-container)/seasons/[season]/fantasy/leaderboard/page.tsx`
+  - **URL:** `/seasons/{seasonId}/fantasy/leaderboard`
+  - View top 50 fantasy teams and your ranking
+- **Price History Page:** `apps/frontend/src/app/(main)/(content-container)/seasons/[season]/fantasy/price-history/page.tsx`
+  - **URL:** `/seasons/{seasonId}/fantasy/price-history`
+  - Track player price changes over time
+- Accessible via the season navigation menu dropdown under "Fantasy League"
 
 #### Components
 
@@ -27,11 +34,37 @@
 
 - `src/components/fantasy/FantasyLeague.tsx`
   - Main container for fantasy league
-  - Division selection
-  - Budget management ($1,000,000)
-  - Player filtering (by tier: bronze/silver/gold)
-  - Player sorting (by value, name, rating)
-  - Team composition tracking (5 players)
+  - **Two modes:**
+    1. **Draft Mode:** Select and finalize new team
+       - League selection
+       - Budget management ($1,000,000)
+       - Player filtering (by tier: bronze/silver/gold)
+       - Player sorting (by value, name, rating)
+       - Team composition tracking (5 players)
+       - Team name input and validation
+       - Team finalization with API integration
+    2. **Team View Mode:** View and manage existing team
+       - Display team name, stats, and rankings
+       - Show rank as "X / Y" (user rank / total teams in division)
+       - Show all 5 selected players with roles
+       - Player substitution interface
+       - Budget tracking
+       - Quick links to leaderboard and top players
+       - Role assignment and swapping with weekly limits
+  - Fetches real data from backend APIs
+  - Authentication-aware (shows login prompt if needed)
+
+**Data Hooks:**
+
+- `src/hooks/data/useSeasonLeagues.tsx`
+  - Fetches available leagues for a season
+  - Used for league selection dropdown
+- `src/hooks/data/useFantasyPlayers.tsx`
+  - Fetches all players for a specific league with stats
+  - Returns player ratings, K/D, ADR, headshot %, etc.
+- `src/hooks/data/useMyFantasyTeam.tsx`
+  - Fetches authenticated user's existing fantasy team
+  - Returns team details, players, roles, and stats
 
 **Sub-Components:**
 
@@ -51,13 +84,22 @@
     - Detailed season statistics
     - Main stats (Rating, K/D) in large display
     - Secondary stats (Kills, Deaths) color-coded
-    - Additional stats (ADR, HLTV 2.0) if available
+    - Additional stats (HS%, KAST, Flash Assists, FK/FD, ADR T/CT) in 2-column vertical layout
+    - Value on top, label below for consistency
     - Rounded action button
   - Hover to flip on desktop, touch to flip on mobile
   - Team logos displayed with gradient frames
 - `src/components/fantasy/SelectedTeamPanel.tsx`
   - Shows selected team in horizontal row (5 slots)
   - Trading card style with smooth rounded corners
+  - Team name input with validation (3-30 characters)
+  - Budget tracking and finalize button
+  - Real-time form validation and error display
+- `src/components/fantasy/SubstitutionDialog.tsx`
+  - Modal dialog for player substitutions
+  - Search and filter available players
+  - Budget impact visualization
+  - Substitution confirmation with validation
   - Team logos with gradient frames
   - Colored borders and gradients matching tier
   - Budget tracker in header
@@ -108,18 +150,39 @@ The PoC includes mock data for demonstration:
 - [x] Filter by tier
 - [x] Sort by rating/value/name
 - [x] Click to flip cards (both desktop & mobile)
+- [x] Team name input with validation (3-30 characters)
+- [x] Team creation API integration
+- [x] Existing team view/management
+- [x] Player substitution UI with dialog
+- [x] Leaderboard page with top 50 teams
+- [x] Price history page
+- [x] Navigation menu integration
+- [x] Backend: Fantasy team CRUD endpoints
+- [x] Backend: Initial player value seeding endpoint
+- [x] Backend: Points calculation service
+- [x] Backend: Database migrations for all fantasy tables
+- [x] Backend: Instant price updates after each match (replaces weekly job)
+- [x] Backend: Value calculation priority fix (incremental updates)
+- [x] Frontend: Rank display (X / Y format) using leaderboard data
+- [x] Frontend: Card stats layout improvements (2-column vertical layout for last 4 stats)
 
 ### 🚧 Not Yet Implemented
 
-- [ ] Steam authentication integration
-- [ ] Team save/persistence to database
-- [ ] Points system integration
-- [ ] Weekly substitutions
-- [ ] Player stats tracking during season
-- [ ] Leaderboard
-- [ ] Historical tracking
-- [ ] Team finalization API (POST endpoint)
 - [ ] Player photos (currently using placeholder)
+- [ ] Admin interface for managing fantasy seasons
+- [ ] Email notifications for price changes
+- [ ] Push notifications for match start/end
+- [ ] Advanced analytics and insights
+- [ ] Mobile app integration
+- [ ] Fantasy league rewards/prizes system
+
+### ✅ Recent Fixes & Improvements
+
+- [x] **Value Calculation Priority Fix**: Fixed bug where snapshot value was prioritized over current value, causing incorrect incremental updates. Now correctly prioritizes `FantasyPlayerValues` for incremental updates.
+- [x] **Rank Display**: Fixed rank display to show "X / Y" format (user rank / total teams in division) using `steam_id` from team data.
+- [x] **Card Stats Layout**: Improved last 4 stats (Flash Assists, FK/FD, ADR T, ADR CT) to use 2-column vertical layout with value on top and label below, matching the style of top stats.
+- [x] **Instant Price Updates**: Changed from weekly price updates to instant updates after each match for better responsiveness.
+- [x] **Value Change Cap**: Implemented ±10% cap per match to prevent excessive value swings.
 
 ## How to Test
 
@@ -134,22 +197,44 @@ The PoC includes mock data for demonstration:
    - Click on the season menu (e.g., "Season 16")
    - Click on "Fantasy" in the dropdown
 
-3. **Test the flow:**
-   - Select a division from the dropdown
+3. **Test the flow (Draft Mode):**
+   - **Login first** (fantasy requires authentication)
+   - Select a league from the dropdown
    - Notice players are now grouped by team with horizontal scrolling
-   - Scroll horizontally within each team row to see all players
-   - **Hover over a player card** (desktop) or **touch a card** (mobile) to flip and see stats
-   - Notice the trading card design with decorative corners and team logos
+   - **Click on a player card** to flip and see detailed stats
+   - Notice the premium trading card design with smooth rounded corners
    - Add players to your team (max 5, within $1,000,000 budget)
-   - Selected team appears at the top in a horizontal row with trading card style
+   - Selected team appears at the top in a horizontal row
    - Try to add a 6th player (should be disabled)
    - Try to exceed budget (should show "Can't Afford")
-   - Assign roles to players in the selected team panel (top section)
+   - Assign unique roles to each player (18 different roles available)
    - Try assigning the same role to multiple players (should be disabled)
    - Remove players using the X button on selected player cards
-   - Notice colored borders on cards indicating tier (gold/silver/bronze) - 4px thick
-   - Observe team logos on both selectable and selected player cards
-   - Finalize the team when all 5 slots are filled
+   - **Enter a team name** (3-30 characters required)
+   - See validation errors if name is too short/long
+   - Finalize the team when all requirements are met
+
+4. **Test existing team view:**
+   - After creating a team, reload the page
+   - Should see your existing team instead of draft interface
+   - View team stats: total points, budget remaining
+   - See all 5 players with their roles and stats
+   - Click "Replace" on any player to open substitution dialog
+   - Search and filter available replacement players
+   - See budget impact calculation (sell + buy)
+   - Confirm substitution (max 2 per week)
+
+5. **Test leaderboard:**
+   - Navigate to Fantasy League → Leaderboard
+   - See top 50 fantasy teams ranked by points
+   - Your team should be highlighted if in top 50
+   - View team names, points, and player counts
+
+6. **Test price history:**
+   - Navigate to Fantasy League → Price History
+   - See player value changes over time
+   - View current vs previous values
+   - See percentage change indicators
 
 ## UI/UX Highlights
 
@@ -244,57 +329,112 @@ With a **$1,000,000 budget** for 5 players (~$200K average):
 
 The normalized distribution creates a **tight market** where every 5-10K matters, forcing careful strategic choices and trade-offs between star power and budget constraints.
 
-## Next Steps (Backend Integration)
+## Backend Implementation (Completed)
 
-1. **Database Setup:**
-   - Run migrations for fantasy tables (see design doc)
-   - Seed initial player values (DONE - using dynamic calculation)
+### Database
 
-2. **API Development:**
-   - GET `/api/v1/seasons/:seasonId/leagues` (DONE)
-   - GET `/api/v1/seasons/:seasonId/fantasy/leagues/:leagueId/players` (DONE)
-   - POST `/api/v1/fantasy/:seasonId/team` (TODO)
-   - PUT `/api/v1/fantasy/:seasonId/team/players` (TODO)
+1. **Migrations Created:**
+   - `fantasy_teams` - User fantasy teams with budget tracking
+   - `fantasy_team_players` - Team rosters with roles and values
+   - `fantasy_player_values` - Historical player pricing
+   - `fantasy_player_history` - Value change tracking
+   - `fantasy_points_log` - Game-by-game point records
+   - `fantasy_leaderboard` - Weekly standings
 
-3. **Frontend Integration:**
-   - Replace mock data with API calls
-   - Add loading states
-   - Add error handling
-   - Implement team persistence
-   - Add real player photos
-   - Add team logos
+### API Endpoints
 
-4. **Authentication:**
-   - Integrate with Steam OAuth
-   - Use steam_id for team ownership
-   - Protect fantasy routes
+All endpoints implemented in `/api/v1/seasons/:season_id/fantasy/`:
 
-5. **Points System:**
-   - Implement points calculation
-   - Real-time/periodic updates
-   - Leaderboard integration
+- ✅ `GET /leagues/:league_id/players` - Fetch all players with stats
+- ✅ `POST /teams` - Create new fantasy team (with auth)
+- ✅ `GET /teams/me` - Get user's existing team (with auth)
+- ✅ `PUT /teams/me/players` - Substitute players (with auth)
+- ✅ `PUT /teams/me/roles` - Update player roles (with auth)
+- ✅ `GET /leagues/:league_id/leaderboard` - View rankings
+- ✅ `GET /leagues/:league_id/price-history` - Track price changes
+- ✅ `POST /leagues/:league_id/seed-values` - Admin endpoint for initial values
 
-6. **Testing:**
-   - Unit tests for components
-   - Integration tests for API
-   - E2E tests for user flows
+### Services
+
+1. **Fantasy Value Service** (`fantasy-value.service.ts`):
+   - Calculate initial player values using sigmoid normalization
+   - Calculate player tiers (Gold/Silver/Bronze) based on value thresholds
+   - Value change calculations with ±10% cap per match
+
+2. **Fantasy Points Service** (`fantasy-points.service.ts`):
+   - Calculate points after each match game
+   - Apply role-based multipliers (18 different roles)
+   - **Instant price updates** after each match (not weekly)
+   - Uses priority order for value calculation: `FantasyPlayerValues` → snapshot → historical stats → current match
+   - Update team totals and leaderboard
+
+### Integration
+
+- Points calculation integrated into demo processing pipeline
+- Automatic point updates when match demos are parsed
+- Price history tracking with weekly snapshots
+
+## Remaining Work
+
+1. **Testing:**
+   - Unit tests for backend services
+   - Integration tests for API endpoints
+   - E2E tests for fantasy user flows
+
+2. **UX Polish:**
+   - Loading skeletons for all data fetching
+   - Toast notifications for success/error states
+   - Confirmation dialogs for critical actions
+   - Help text and tooltips for complex features
+
+3. **Advanced Features:**
+   - Real-time substitution tracking (calculate week number)
+   - Admin dashboard for fantasy management
+   - Email notifications for price changes
+   - Push notifications for match events
+
+4. **Performance:**
+   - Caching strategies for player data
+   - Optimize database queries
+   - Add pagination for large datasets
 
 ## File Structure
 
 ```
 apps/frontend/src/
 ├── app/(main)/(content-container)/seasons/[season]/fantasy/
-│   └── page.tsx                           # Fantasy route page
+│   ├── page.tsx                              # Main fantasy page
+│   ├── leaderboard/page.tsx                  # Leaderboard view
+│   └── price-history/page.tsx                # Price history view
 ├── components/fantasy/
-│   ├── FantasyLeague.tsx                  # Main component
-│   ├── FantasyPlayerFlipCard.tsx          # Flippable player trading card
-│   └── SelectedTeamPanel.tsx              # Selected team panel (top)
+│   ├── FantasyLeague.tsx                     # Main component (draft & team view)
+│   ├── FantasyPlayerFlipCard.tsx             # Flippable player trading card
+│   ├── SelectedTeamPanel.tsx                 # Selected team panel (draft mode)
+│   └── SubstitutionDialog.tsx                # Player substitution modal
+├── hooks/data/
+│   ├── useFantasyPlayers.tsx                 # Fetch players for league
+│   ├── useMyFantasyTeam.tsx                  # Fetch user's team
+│   └── useSeasonLeagues.tsx                  # Fetch available leagues
 └── components/layout/
-    └── Navigation.tsx                     # Updated with Fantasy link
+    └── Navigation.tsx                        # Updated with Fantasy submenu
+
+apps/backend/src/
+├── controllers/
+│   └── fantasy.controllers.ts                # All fantasy API controllers
+├── models/
+│   └── fantasy.models.ts                     # Database queries
+├── services/
+│   ├── fantasy-value.service.ts              # Value & tier calculations
+│   ├── fantasy-points.service.ts             # Points calculation & instant price updates
+│   └── parsed-queue-consumer.ts              # Integrated points calc
+├── routes/v1/
+│   └── season.routes.ts                      # Fantasy routes
+└── migrations/
+    └── 20251124000001_create_fantasy_league_tables.ts
 
 docs/
-├── fantasy-league.md                      # Complete design spec
-└── fantasy-league-implementation.md       # This file
+├── fantasy-league.md                         # Complete design spec
+└── fantasy-league-implementation.md          # This file
 ```
 
 ## Design Decisions
@@ -330,19 +470,32 @@ docs/
 14. **Color Theory:** Adjusted for metallic appearance with proper highlights and shadows
 15. **Scrollable Teams:** Horizontal scroll with overflow-y hidden to prevent vertical scrollbars
 
-## Known Limitations (PoC)
+## Known Limitations
 
-- No persistence (refresh loses data)
-- No authentication
-- Static mock data
 - No player photos (placeholder "?")
-- Mock team logos (using nologo.png placeholder)
-- No actual points calculation
-- Finalize button shows alert instead of API call
-- No validation for division selection requirement
-- Team logos in mock data use placeholder path
+- Mock team logos (using nologo.png placeholder for some teams)
+- Admin interface for managing fantasy seasons not yet implemented
+- Email/push notifications not yet implemented
 
-These will be addressed in the backend implementation phase.
+## Recent Bug Fixes
+
+### Value Calculation Priority (Fixed)
+
+- **Issue**: Snapshot value was prioritized over current value, causing incorrect incremental updates
+- **Fix**: Changed priority order to check `FantasyPlayerValues` first, then snapshot value
+- **Impact**: Values now update correctly after each match, building incrementally
+
+### Rank Display (Fixed)
+
+- **Issue**: Rank was not displaying correctly or showing "-"
+- **Fix**: Updated to use `steam_id` from team data and fetch from leaderboard API
+- **Impact**: Rank now shows as "X / Y" (user rank / total teams in division)
+
+### Card Stats Layout (Fixed)
+
+- **Issue**: Last 4 stats (Flash Assists, FK/FD, ADR T, ADR CT) were horizontally aligned
+- **Fix**: Changed to 2-column vertical layout with value on top, label below
+- **Impact**: Better visual consistency and readability
 
 ---
 

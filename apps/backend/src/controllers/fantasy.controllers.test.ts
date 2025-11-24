@@ -14,14 +14,10 @@ import {
   getPlayerPointHistoryController
 } from "./fantasy.controllers";
 import * as fantasyModels from "../models/fantasy.models";
+import type { PlayerRole } from "../models/fantasy.models";
 import { runQuery } from "../db/mysqlRunQuery";
 import { calculateInitialPlayerValues } from "../services/fantasy-value.service";
 import { getCurrentWeekNumberForSeason } from "../utils/week-calculation";
-import {
-  BadRequestError,
-  NotFoundError,
-  UnauthorizedError
-} from "../utils/errors";
 
 // Mock dependencies
 jest.mock("../models/fantasy.models");
@@ -71,9 +67,23 @@ describe("Fantasy Controllers", () => {
         {
           steam_id: "12345",
           nickname: "Test Player",
+          team_id: 1,
           team_name: "Test Team",
-          player_value: 200000,
-          tier: "gold"
+          team_logo: null,
+          kana_rating: 0.8,
+          kd: 1.2,
+          kills: 100,
+          deaths: 83,
+          adr: 85.5,
+          adr_t: 80.0,
+          adr_ct: 90.0,
+          headshots: 50,
+          headshot_percentage: 50.0,
+          flash_assists: 10,
+          first_kills: 20,
+          first_deaths: 15,
+          kast: 0.7,
+          maps_played: 10
         }
       ];
 
@@ -117,30 +127,40 @@ describe("Fantasy Controllers", () => {
         league_id: 1,
         team_name: "My Team",
         players: [
-          { steam_id: "1", role: "rifler", player_value: 200000 },
-          { steam_id: "2", role: "awper", player_value: 200000 },
-          { steam_id: "3", role: "rifler", player_value: 200000 },
-          { steam_id: "4", role: "rifler", player_value: 200000 },
-          { steam_id: "5", role: "rifler", player_value: 200000 }
+          {
+            steam_id: "1",
+            role: "main_awp" as PlayerRole,
+            player_value: 200000
+          },
+          { steam_id: "2", role: "leader" as PlayerRole, player_value: 200000 },
+          {
+            steam_id: "3",
+            role: "support" as PlayerRole,
+            player_value: 200000
+          },
+          {
+            steam_id: "4",
+            role: "entry_fragger" as PlayerRole,
+            player_value: 200000
+          },
+          {
+            steam_id: "5",
+            role: "defender" as PlayerRole,
+            player_value: 200000
+          }
         ]
       }
     } as unknown as RequestWithParams<{ season_id: string }>;
 
     beforeEach(() => {
       // Mock getSteamIdFromAuth (uses runQuery)
-      mockRunQuery.mockResolvedValue([
-        { provider_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ provider_id: "12345" }] as never);
     });
 
     it("should create team with valid data", async () => {
       mockFantasyModels.createFantasyTeam.mockResolvedValue(1);
 
-      await createFantasyTeamController(
-        mockRequest,
-        mockResponse,
-        mockNext
-      );
+      await createFantasyTeamController(mockRequest, mockResponse, mockNext);
 
       expect(mockFantasyModels.createFantasyTeam).toHaveBeenCalled();
       expect(mockResponse.status).toHaveBeenCalledWith(201);
@@ -177,11 +197,7 @@ describe("Fantasy Controllers", () => {
         body: {}
       } as unknown as RequestWithParams<{ season_id: string }>;
 
-      await createFantasyTeamController(
-        invalidRequest,
-        mockResponse,
-        mockNext
-      );
+      await createFantasyTeamController(invalidRequest, mockResponse, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -199,11 +215,7 @@ describe("Fantasy Controllers", () => {
         }
       } as unknown as RequestWithParams<{ season_id: string }>;
 
-      await createFantasyTeamController(
-        invalidRequest,
-        mockResponse,
-        mockNext
-      );
+      await createFantasyTeamController(invalidRequest, mockResponse, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -219,11 +231,31 @@ describe("Fantasy Controllers", () => {
         body: {
           league_id: 1,
           players: [
-            { player_id: "1", role: "rifler", player_value: 200000 },
-            { player_id: "2", role: "awper", player_value: 200000 },
-            { player_id: "3", role: "rifler", player_value: 200000 },
-            { player_id: "4", role: "rifler", player_value: 200000 },
-            { player_id: "5", role: "rifler", player_value: 200000 }
+            {
+              player_id: "1",
+              role: "main_awp" as PlayerRole,
+              player_value: 200000
+            },
+            {
+              player_id: "2",
+              role: "leader" as PlayerRole,
+              player_value: 200000
+            },
+            {
+              player_id: "3",
+              role: "support" as PlayerRole,
+              player_value: 200000
+            },
+            {
+              player_id: "4",
+              role: "entry_fragger" as PlayerRole,
+              player_value: 200000
+            },
+            {
+              player_id: "5",
+              role: "defender" as PlayerRole,
+              player_value: 200000
+            }
           ]
         }
       } as unknown as RequestWithParams<{ season_id: string }>;
@@ -258,16 +290,20 @@ describe("Fantasy Controllers", () => {
     } as unknown as RequestWithParams<{ season_id: string }>;
 
     beforeEach(() => {
-      mockRunQuery.mockResolvedValue([
-        { provider_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ provider_id: "12345" }] as never);
     });
 
     it("should return team for authenticated user", async () => {
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
         players: []
       };
 
@@ -339,21 +375,26 @@ describe("Fantasy Controllers", () => {
     } as unknown as RequestWithParams<{ season_id: string }>;
 
     beforeEach(() => {
-      mockRunQuery.mockResolvedValue([
-        { provider_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ provider_id: "12345" }] as never);
     });
 
     it("should substitute player successfully", async () => {
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
         players: []
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
       mockFantasyModels.substitutePlayer.mockResolvedValue({
+        success: true,
         remaining_substitutions: 1
       });
 
@@ -393,11 +434,7 @@ describe("Fantasy Controllers", () => {
         body: {}
       } as unknown as RequestWithParams<{ season_id: string }>;
 
-      await substitutePlayerController(
-        invalidRequest,
-        mockResponse,
-        mockNext
-      );
+      await substitutePlayerController(invalidRequest, mockResponse, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -433,13 +470,20 @@ describe("Fantasy Controllers", () => {
 
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
         players: []
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
       mockFantasyModels.substitutePlayer.mockResolvedValue({
+        success: true,
         remaining_substitutions: 1
       });
 
@@ -469,29 +513,34 @@ describe("Fantasy Controllers", () => {
       },
       body: {
         role_updates: [
-          { steam_id: "1", role: "rifler" },
-          { steam_id: "2", role: "awper" }
+          { steam_id: "1", role: "main_awp" as PlayerRole },
+          { steam_id: "2", role: "leader" as PlayerRole }
         ]
       }
     } as unknown as RequestWithParams<{ season_id: string }>;
 
     beforeEach(() => {
-      mockRunQuery.mockResolvedValue([
-        { provider_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ provider_id: "12345" }] as never);
       mockGetCurrentWeekNumberForSeason.mockResolvedValue(1);
     });
 
     it("should update roles successfully", async () => {
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
         players: []
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
       mockFantasyModels.updatePlayerRoles.mockResolvedValue({
+        success: true,
         remaining_swaps: 1
       });
 
@@ -531,11 +580,7 @@ describe("Fantasy Controllers", () => {
         body: {}
       } as unknown as RequestWithParams<{ season_id: string }>;
 
-      await updatePlayerRolesController(
-        invalidRequest,
-        mockResponse,
-        mockNext
-      );
+      await updatePlayerRolesController(invalidRequest, mockResponse, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -562,22 +607,27 @@ describe("Fantasy Controllers", () => {
       const requestWithSkipLimit = {
         ...mockRequest,
         body: {
-          role_updates: [
-            { steam_id: "1", role: "rifler" }
-          ],
+          role_updates: [{ steam_id: "1", role: "main_awp" as PlayerRole }],
           skip_swap_limit: true
         }
       } as unknown as RequestWithParams<{ season_id: string }>;
 
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
         players: []
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
       mockFantasyModels.updatePlayerRoles.mockResolvedValue({
+        success: true,
         remaining_swaps: 1
       });
 
@@ -599,21 +649,26 @@ describe("Fantasy Controllers", () => {
       const requestWithPlayerId = {
         ...mockRequest,
         body: {
-          role_updates: [
-            { player_id: "1", role: "rifler" }
-          ]
+          role_updates: [{ player_id: "1", role: "main_awp" as PlayerRole }]
         }
       } as unknown as RequestWithParams<{ season_id: string }>;
 
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
+        created_at: new Date(),
+        updated_at: new Date(),
         players: []
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
       mockFantasyModels.updatePlayerRoles.mockResolvedValue({
+        success: true,
         remaining_swaps: 1
       });
 
@@ -640,14 +695,20 @@ describe("Fantasy Controllers", () => {
     }>;
 
     it("should return leaderboard for valid league", async () => {
-      const mockLeaderboard = [
-        {
-          rank: 1,
-          team_id: 1,
-          team_name: "Team 1",
-          total_points: 100
-        }
-      ];
+      const mockLeaderboard = {
+        leaderboard: [
+          {
+            rank: 1,
+            fantasy_team_id: 1,
+            team_name: "Team 1",
+            owner_name: "Owner 1",
+            total_points: 100,
+            is_current_user: false
+          }
+        ],
+        currentUserRank: null,
+        totalTeams: 1
+      };
 
       mockFantasyModels.getFantasyLeaderboard.mockResolvedValue(
         mockLeaderboard
@@ -672,15 +733,20 @@ describe("Fantasy Controllers", () => {
         league_id: string;
       }>;
 
-      const mockLeaderboard = [
-        {
-          rank: 1,
-          team_id: 1,
-          team_name: "Team 1",
-          total_points: 100,
-          is_current_user: true
-        }
-      ];
+      const mockLeaderboard = {
+        leaderboard: [
+          {
+            rank: 1,
+            fantasy_team_id: 1,
+            team_name: "Team 1",
+            owner_name: "Owner 1",
+            total_points: 100,
+            is_current_user: true
+          }
+        ],
+        currentUserRank: 1,
+        totalTeams: 1
+      };
 
       mockFantasyModels.getFantasyLeaderboard.mockResolvedValue(
         mockLeaderboard
@@ -704,18 +770,22 @@ describe("Fantasy Controllers", () => {
         league_id: string;
       }>;
 
-      mockRunQuery.mockResolvedValue([
-        { steam_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ steam_id: "12345" }] as never);
 
-      const mockLeaderboard = [
-        {
-          rank: 1,
-          team_id: 1,
-          team_name: "Team 1",
-          total_points: 100
-        }
-      ];
+      const mockLeaderboard = {
+        leaderboard: [
+          {
+            rank: 1,
+            fantasy_team_id: 1,
+            team_name: "Team 1",
+            owner_name: "Owner 1",
+            total_points: 100,
+            is_current_user: false
+          }
+        ],
+        currentUserRank: null,
+        totalTeams: 1
+      };
 
       mockFantasyModels.getFantasyLeaderboard.mockResolvedValue(
         mockLeaderboard
@@ -732,11 +802,19 @@ describe("Fantasy Controllers", () => {
     });
 
     it("should return empty array for league with no teams", async () => {
-      mockFantasyModels.getFantasyLeaderboard.mockResolvedValue([]);
+      mockFantasyModels.getFantasyLeaderboard.mockResolvedValue({
+        leaderboard: [],
+        currentUserRank: null,
+        totalTeams: 0
+      });
 
       await getFantasyLeaderboardController(mockRequest, mockResponse);
 
-      expect(mockResponse.json).toHaveBeenCalledWith([]);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        leaderboard: [],
+        currentUserRank: null,
+        totalTeams: 0
+      });
     });
   });
 
@@ -749,15 +827,20 @@ describe("Fantasy Controllers", () => {
     } as unknown as RequestWithParams<{ season_id: string }>;
 
     it("should return leaderboard across all leagues", async () => {
-      const mockLeaderboard = [
-        {
-          rank: 1,
-          team_id: 1,
-          team_name: "Team 1",
-          total_points: 100,
-          league_name: "League 1"
-        }
-      ];
+      const mockLeaderboard = {
+        leaderboard: [
+          {
+            rank: 1,
+            fantasy_team_id: 1,
+            team_name: "Team 1",
+            owner_name: "Owner 1",
+            total_points: 100,
+            league_name: "League 1",
+            is_current_user: false
+          }
+        ],
+        currentUserRank: null
+      };
 
       mockFantasyModels.getFantasyOverallLeaderboard.mockResolvedValue(
         mockLeaderboard
@@ -785,18 +868,22 @@ describe("Fantasy Controllers", () => {
         }
       } as unknown as RequestWithParams<{ season_id: string }>;
 
-      mockRunQuery.mockResolvedValue([
-        { provider_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ provider_id: "12345" }] as never);
 
-      const mockLeaderboard = [
-        {
-          rank: 1,
-          team_id: 1,
-          team_name: "Team 1",
-          total_points: 100
-        }
-      ];
+      const mockLeaderboard = {
+        leaderboard: [
+          {
+            rank: 1,
+            fantasy_team_id: 1,
+            team_name: "Team 1",
+            owner_name: "Owner 1",
+            total_points: 100,
+            league_name: "League 1",
+            is_current_user: false
+          }
+        ],
+        currentUserRank: null
+      };
 
       mockFantasyModels.getFantasyOverallLeaderboard.mockResolvedValue(
         mockLeaderboard
@@ -813,7 +900,10 @@ describe("Fantasy Controllers", () => {
     });
 
     it("should work without authentication", async () => {
-      const mockLeaderboard = [];
+      const mockLeaderboard = {
+        leaderboard: [],
+        currentUserRank: null
+      };
 
       mockFantasyModels.getFantasyOverallLeaderboard.mockResolvedValue(
         mockLeaderboard
@@ -842,9 +932,25 @@ describe("Fantasy Controllers", () => {
       const mockPriceHistory = [
         {
           steam_id: "12345",
+          nickname: "Test Player",
+          team_name: "Test Team",
           current_value: 200000,
+          current_tier: "gold",
           previous_value: 190000,
-          value_change: 10000
+          value_change: 10000,
+          value_change_percent: 5.26,
+          value_history: [
+            {
+              week_number: 1,
+              value: 190000,
+              tier: "silver"
+            },
+            {
+              week_number: 2,
+              value: 200000,
+              tier: "gold"
+            }
+          ]
         }
       ];
 
@@ -875,6 +981,15 @@ describe("Fantasy Controllers", () => {
       params: {
         season_id: "1",
         league_id: "1"
+      },
+      auth: {
+        account_id: 1,
+        provider: "steam",
+        provider_id: "12345",
+        permissions: [],
+        roles: ["admin"],
+        nickname: "testuser",
+        jti: "test-jti"
       }
     } as unknown as RequestWithParams<{
       season_id: string;
@@ -883,8 +998,38 @@ describe("Fantasy Controllers", () => {
 
     it("should seed initial values for league", async () => {
       const mockPlayerValues = [
-        { steam_id: "1", value: 200000, tier: "gold" },
-        { steam_id: "2", value: 190000, tier: "silver" }
+        {
+          steam_id: "1",
+          value: 200000,
+          tier: "gold" as const,
+          stats: {
+            kana_rating: 0.9,
+            kd: 1.2,
+            kills: 100,
+            deaths: 83,
+            assists: 50,
+            adr: 85.5,
+            headshot_percentage: 50.0,
+            kast: 0.7,
+            maps_played: 10
+          }
+        },
+        {
+          steam_id: "2",
+          value: 190000,
+          tier: "silver" as const,
+          stats: {
+            kana_rating: 0.8,
+            kd: 1.1,
+            kills: 90,
+            deaths: 82,
+            assists: 45,
+            adr: 80.0,
+            headshot_percentage: 50.0,
+            kast: 0.65,
+            maps_played: 10
+          }
+        }
       ];
 
       mockCalculateInitialPlayerValues.mockResolvedValue(mockPlayerValues);
@@ -940,7 +1085,14 @@ describe("Fantasy Controllers", () => {
         {
           steam_id: "1",
           nickname: "Player 1",
-          total_points: 100
+          team_name: "Team 1",
+          team_logo: null,
+          total_points: 100,
+          current_value: 200000,
+          tier: "gold" as const,
+          kana_rating: 0.9,
+          kd: 1.2,
+          is_on_fantasy_team: false
         }
       ];
 
@@ -1010,26 +1162,99 @@ describe("Fantasy Controllers", () => {
     }>;
 
     beforeEach(() => {
-      mockRunQuery.mockResolvedValue([
-        { provider_id: "12345" }
-      ] as never);
+      mockRunQuery.mockResolvedValue([{ provider_id: "12345" }] as never);
     });
 
     it("should return point history for player in user's team", async () => {
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
-        players: [{ steam_id: "12345" }]
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: [
+          {
+            id: 1,
+            steam_id: "12345",
+            nickname: "Test Player",
+            team_name: "Test Team",
+            team_logo: null,
+            role: null,
+            player_value: 200000,
+            tier: "gold" as const,
+            points_earned: 100,
+            individual_points: 50,
+            team_points: 30,
+            role_points: 20,
+            is_active: true,
+            kana_rating: 0.9,
+            kills: 100,
+            deaths: 83,
+            kd: 1.2,
+            adr: 85.5,
+            adr_t: 80.0,
+            adr_ct: 90.0,
+            headshots: 50,
+            headshot_percentage: 50.0,
+            flash_assists: 10,
+            first_kills: 20,
+            first_deaths: 15,
+            kast: 0.7
+          }
+        ]
       };
 
       const mockHistory = [
         {
           match_game_id: 1,
+          match_date: new Date(),
+          opponent: "Opponent Team",
+          map_name: "de_dust2",
           points_earned: 10,
           individual_points: 5,
           team_points: 3,
-          role_points: 2
+          role_points: 2,
+          stats_breakdown: {
+            kills: 20,
+            deaths: 15,
+            assists: 5,
+            flash_assists: 2,
+            first_kills: 3,
+            first_deaths: 2,
+            kills_3: 1,
+            kills_4: 0,
+            kills_5: 0,
+            clutches_won: 1,
+            awp_kills: 2,
+            mvps: 1,
+            kana_rating: 1.2,
+            kd: 1.33,
+            adr: 85.5,
+            kast: 0.7,
+            hs_percent: 50.0,
+            team_won: true
+          },
+          points_breakdown: {
+            kills: 20,
+            deaths: -15,
+            assists: 5,
+            flash_assists: 2,
+            opening_kills: 3,
+            opening_deaths: -2,
+            multi_kills: 5,
+            clutches: 5,
+            mvps: 2,
+            team_result: 3,
+            adr_bonus: 1,
+            kd_bonus: 1,
+            kast_bonus: 1,
+            hs_bonus: 1,
+            role_multiplier: 1.2
+          }
         }
       ];
 
@@ -1092,9 +1317,44 @@ describe("Fantasy Controllers", () => {
     it("should return 400 if player not in user's team", async () => {
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
-        players: [{ steam_id: "99999" }] // Different player
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: [
+          {
+            id: 1,
+            steam_id: "99999",
+            nickname: "Other Player",
+            team_name: "Other Team",
+            team_logo: null,
+            role: null,
+            player_value: 200000,
+            tier: "gold" as const,
+            points_earned: 100,
+            individual_points: 50,
+            team_points: 30,
+            role_points: 20,
+            is_active: true,
+            kana_rating: 0.9,
+            kills: 100,
+            deaths: 83,
+            kd: 1.2,
+            adr: 85.5,
+            adr_t: 80.0,
+            adr_ct: 90.0,
+            headshots: 50,
+            headshot_percentage: 50.0,
+            flash_assists: 10,
+            first_kills: 20,
+            first_deaths: 15,
+            kast: 0.7
+          }
+        ] // Different player
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
@@ -1116,9 +1376,44 @@ describe("Fantasy Controllers", () => {
     it("should return empty array if player has no matches", async () => {
       const mockTeam = {
         id: 1,
+        steam_id: "12345",
+        season_id: 1,
+        league_id: 1,
         team_name: "My Team",
+        budget_remaining: 500000,
         total_points: 100,
-        players: [{ steam_id: "12345" }]
+        created_at: new Date(),
+        updated_at: new Date(),
+        players: [
+          {
+            id: 1,
+            steam_id: "12345",
+            nickname: "Test Player",
+            team_name: "Test Team",
+            team_logo: null,
+            role: null,
+            player_value: 200000,
+            tier: "gold" as const,
+            points_earned: 100,
+            individual_points: 50,
+            team_points: 30,
+            role_points: 20,
+            is_active: true,
+            kana_rating: 0.9,
+            kills: 100,
+            deaths: 83,
+            kd: 1.2,
+            adr: 85.5,
+            adr_t: 80.0,
+            adr_ct: 90.0,
+            headshots: 50,
+            headshot_percentage: 50.0,
+            flash_assists: 10,
+            first_kills: 20,
+            first_deaths: 15,
+            kast: 0.7
+          }
+        ]
       };
 
       mockFantasyModels.getFantasyTeamByUser.mockResolvedValue(mockTeam);
@@ -1134,4 +1429,3 @@ describe("Fantasy Controllers", () => {
     });
   });
 });
-

@@ -3,10 +3,9 @@ process.env.FRONTEND_URL = "http://localhost:3000";
 process.env.BACKEND_SERVICE_API_KEY = "test-api-key";
 
 import request from "supertest";
-import express from "express";
+import type express from "express";
 import { createExpressTestApp } from "../../../../test-utils";
 import seasonRouter from "../../season.routes";
-import { authenticateJWT } from "../../../../middlewares/auth.middleware";
 
 // Mock the auth services
 jest.mock("../../../../services/auth.services");

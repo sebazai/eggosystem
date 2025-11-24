@@ -15,11 +15,9 @@ export const calculateCurrentWeekNumber = (seasonStartDate: Date): number => {
   // Set both dates to Helsinki timezone for consistent week calculation
   // Monday = 1, Sunday = 0
   const startDayOfWeek = start.getUTCDay(); // 0 = Sunday, 1 = Monday, etc.
-  const nowDayOfWeek = now.getUTCDay();
 
-  // Calculate days since season start
-  const diffTime = now.getTime() - start.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  // Calculate days since season start (not used but kept for clarity)
+  const _diffTime = now.getTime() - start.getTime();
 
   // Calculate how many Mondays have passed
   // If season started on Monday, week increments every 7 days

@@ -453,10 +453,7 @@ describe("Fantasy Points Service", () => {
       // Mock getFantasyTeamPlayersForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock check for existing log (no existing log) - returns empty array
-      mockRunQuery.mockResolvedValueOnce([]);
-
-      // Mock insert into FantasyPointsLog - returns insert result
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
       mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
       // Mock update FantasyTeamPlayers - returns undefined
@@ -560,13 +557,12 @@ describe("Fantasy Points Service", () => {
       // Mock getFantasyTeamPlayersForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock check for existing log (EXISTING log found) - returns array with one item
-      mockRunQuery.mockResolvedValueOnce([{ id: 1 }]);
+      // Mock insert into FantasyPointsLog - throws ER_DUP_ENTRY error (race condition)
+      const duplicateError = new Error("Duplicate entry");
+      (duplicateError as { code?: string }).code = "ER_DUP_ENTRY";
+      mockRunQuery.mockRejectedValueOnce(duplicateError);
 
-      // Mock insert FantasyPlayerHistory for points (still happens even if log exists)
-      mockRunQuery.mockResolvedValueOnce(undefined);
-
-      // Mock get match info - returns array
+      // Mock get match info - returns array (for value updates that still happen)
       mockRunQuery.mockResolvedValueOnce([
         { season_id: seasonId, league_id: leagueId }
       ]);
@@ -583,51 +579,52 @@ describe("Fantasy Points Service", () => {
       await calculateFantasyPointsForGame(matchGameId);
 
       expect(mockConnection.commit).toHaveBeenCalled();
-      // Should NOT insert new FantasyPointsLog (because existing log was found)
+      // Should attempt INSERT but catch ER_DUP_ENTRY and skip point updates
+      // Value updates should still happen
       const insertCalls = mockRunQuery.mock.calls.filter(
         (call) =>
           call[0] &&
           typeof call[0] === "string" &&
           call[0].includes("INSERT INTO FantasyPointsLog")
       );
-      expect(insertCalls.length).toBe(0);
+      expect(insertCalls.length).toBe(1); // INSERT was attempted
     });
 
     it("should update FantasyTeamPlayers points correctly", async () => {
-      // Mock getPlayerStatsForGame
-      mockRunQuery.mockResolvedValueOnce(mockPlayerStats as never);
+      // Reset mocks
+      mockRunQuery.mockReset();
 
-      // Mock getFantasyTeamPlayersForGame
-      mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers as never);
+      // Mock getPlayerStatsForGame - returns array
+      mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
-      // Mock check for existing log
-      mockRunQuery.mockResolvedValueOnce([] as never);
+      // Mock getFantasyTeamPlayersForGame - returns array
+      mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock insert into FantasyPointsLog
-      mockRunQuery.mockResolvedValueOnce({ insertId: 1 } as never);
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
+      mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
-      // Mock update FantasyTeamPlayers
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeamPlayers - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock update FantasyTeams
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeams - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock insert FantasyPlayerHistory
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert FantasyPlayerHistory - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock get match info
+      // Mock get match info - returns array with one element
       mockRunQuery.mockResolvedValueOnce([
         { season_id: seasonId, league_id: leagueId }
-      ] as never);
+      ]);
 
-      // Mock get current value
-      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }] as never);
+      // Mock get current value - returns array
+      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }]);
 
-      // Mock get individual points
-      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }] as never);
+      // Mock get individual points - returns array
+      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }]);
 
-      // Mock insert/update FantasyPlayerValues
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert/update FantasyPlayerValues - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
       await calculateFantasyPointsForGame(matchGameId);
 
@@ -642,40 +639,40 @@ describe("Fantasy Points Service", () => {
     });
 
     it("should update FantasyTeams total_points correctly", async () => {
-      // Mock getPlayerStatsForGame
-      mockRunQuery.mockResolvedValueOnce(mockPlayerStats as never);
+      // Reset mocks
+      mockRunQuery.mockReset();
 
-      // Mock getFantasyTeamPlayersForGame
-      mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers as never);
+      // Mock getPlayerStatsForGame - returns array
+      mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
-      // Mock check for existing log
-      mockRunQuery.mockResolvedValueOnce([] as never);
+      // Mock getFantasyTeamPlayersForGame - returns array
+      mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock insert into FantasyPointsLog
-      mockRunQuery.mockResolvedValueOnce({ insertId: 1 } as never);
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
+      mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
-      // Mock update FantasyTeamPlayers
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeamPlayers - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock update FantasyTeams
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeams - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock insert FantasyPlayerHistory
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert FantasyPlayerHistory - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock get match info
+      // Mock get match info - returns array with one element
       mockRunQuery.mockResolvedValueOnce([
         { season_id: seasonId, league_id: leagueId }
-      ] as never);
+      ]);
 
-      // Mock get current value
-      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }] as never);
+      // Mock get current value - returns array
+      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }]);
 
-      // Mock get individual points
-      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }] as never);
+      // Mock get individual points - returns array
+      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }]);
 
-      // Mock insert/update FantasyPlayerValues
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert/update FantasyPlayerValues - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
       await calculateFantasyPointsForGame(matchGameId);
 
@@ -690,40 +687,40 @@ describe("Fantasy Points Service", () => {
     });
 
     it("should create FantasyPointsLog entries with correct breakdown", async () => {
-      // Mock getPlayerStatsForGame
-      mockRunQuery.mockResolvedValueOnce(mockPlayerStats as never);
+      // Reset mocks
+      mockRunQuery.mockReset();
 
-      // Mock getFantasyTeamPlayersForGame
-      mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers as never);
+      // Mock getPlayerStatsForGame - returns array
+      mockRunQuery.mockResolvedValueOnce(mockPlayerStats);
 
-      // Mock check for existing log
-      mockRunQuery.mockResolvedValueOnce([] as never);
+      // Mock getFantasyTeamPlayersForGame - returns array
+      mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock insert into FantasyPointsLog
-      mockRunQuery.mockResolvedValueOnce({ insertId: 1 } as never);
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
+      mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
-      // Mock update FantasyTeamPlayers
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeamPlayers - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock update FantasyTeams
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeams - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock insert FantasyPlayerHistory
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert FantasyPlayerHistory - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock get match info
+      // Mock get match info - returns array with one element
       mockRunQuery.mockResolvedValueOnce([
         { season_id: seasonId, league_id: leagueId }
-      ] as never);
+      ]);
 
-      // Mock get current value
-      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }] as never);
+      // Mock get current value - returns array
+      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }]);
 
-      // Mock get individual points
-      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }] as never);
+      // Mock get individual points - returns array
+      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }]);
 
-      // Mock insert/update FantasyPlayerValues
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert/update FantasyPlayerValues - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
       await calculateFantasyPointsForGame(matchGameId);
 
@@ -754,49 +751,46 @@ describe("Fantasy Points Service", () => {
       // Mock getPlayerStatsForGame - returns array
       mockRunQuery.mockResolvedValueOnce(multiplePlayers);
 
-      // Mock getFantasyTeamPlayersForGame (only first player on team)
-      mockRunQuery.mockResolvedValueOnce([mockFantasyTeamPlayers[0]] as never);
+      // Mock getFantasyTeamPlayersForGame (only first player on team) - returns array
+      mockRunQuery.mockResolvedValueOnce([mockFantasyTeamPlayers[0]]);
 
-      // Mock check for existing log
-      mockRunQuery.mockResolvedValueOnce([] as never);
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
+      mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
-      // Mock insert into FantasyPointsLog
-      mockRunQuery.mockResolvedValueOnce({ insertId: 1 } as never);
+      // Mock update FantasyTeamPlayers - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock update FantasyTeamPlayers
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock update FantasyTeams - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock update FantasyTeams
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert FantasyPlayerHistory - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock insert FantasyPlayerHistory
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
-
-      // Mock get match info
+      // Mock get match info - returns array with one element
       mockRunQuery.mockResolvedValueOnce([
         { season_id: seasonId, league_id: leagueId }
-      ] as never);
+      ]);
 
-      // Mock get current value for first player
-      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }] as never);
+      // Mock get current value for first player - returns array
+      mockRunQuery.mockResolvedValueOnce([{ value: 190000 }]);
 
-      // Mock get individual points for first player
-      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }] as never);
+      // Mock get individual points for first player - returns array
+      mockRunQuery.mockResolvedValueOnce([{ individual_points: 50 }]);
 
-      // Mock insert/update FantasyPlayerValues for first player
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert/update FantasyPlayerValues for first player - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
-      // Mock get current value for second player (not on team)
-      mockRunQuery.mockResolvedValueOnce([] as never); // No FantasyPlayerValues
-      mockRunQuery.mockResolvedValueOnce([] as never); // No snapshot value
+      // Mock get current value for second player (not on team) - returns empty array
+      mockRunQuery.mockResolvedValueOnce([]); // No FantasyPlayerValues
+      mockRunQuery.mockResolvedValueOnce([]); // No snapshot value
 
-      // Mock get historical stats for second player
+      // Mock get historical stats for second player - returns array
       mockRunQuery.mockResolvedValueOnce([
         { kana_rating: 1.0, kd: 1.0, kills: 100 }
-      ] as never);
+      ]);
 
-      // Mock insert/update FantasyPlayerValues for second player
-      mockRunQuery.mockResolvedValueOnce(undefined as never);
+      // Mock insert/update FantasyPlayerValues for second player - returns undefined
+      mockRunQuery.mockResolvedValueOnce(undefined);
 
       await calculateFantasyPointsForGame(matchGameId);
 
@@ -868,10 +862,7 @@ describe("Fantasy Points Service", () => {
       // Mock getFantasyTeamPlayersForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock check for existing log - returns empty array
-      mockRunQuery.mockResolvedValueOnce([]);
-
-      // Mock insert into FantasyPointsLog - returns insert result
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
       mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
       // Mock update FantasyTeamPlayers - returns undefined
@@ -922,10 +913,7 @@ describe("Fantasy Points Service", () => {
       // Mock getFantasyTeamPlayersForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock check for existing log - returns empty array
-      mockRunQuery.mockResolvedValueOnce([]);
-
-      // Mock insert into FantasyPointsLog - returns insert result
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
       mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
       // Mock update FantasyTeamPlayers - returns undefined
@@ -967,10 +955,7 @@ describe("Fantasy Points Service", () => {
       // Mock getFantasyTeamPlayersForGame - returns array
       mockRunQuery.mockResolvedValueOnce(mockFantasyTeamPlayers);
 
-      // Mock check for existing log - returns empty array
-      mockRunQuery.mockResolvedValueOnce([]);
-
-      // Mock insert into FantasyPointsLog - returns insert result
+      // Mock insert into FantasyPointsLog - returns insert result (no duplicate error)
       mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
       // Mock update FantasyTeamPlayers - returns undefined

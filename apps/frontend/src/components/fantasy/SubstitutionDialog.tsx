@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import FantasyPlayerFlipCard from "./FantasyPlayerFlipCard";
 import RoleAssignmentDialog from "./RoleAssignmentDialog";
 import type { FantasyPlayer } from "./FantasyLeague";
@@ -133,7 +134,9 @@ export default function SubstitutionDialog({
       setSearchQuery("");
       onOpenChange(false);
     } catch (error) {
-      console.error("Substitution failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to substitute player"
+      );
     }
   };
 

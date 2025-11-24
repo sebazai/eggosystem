@@ -304,105 +304,119 @@ export const applyRoleBonus = (
   switch (role) {
     case "main_awp":
       // +20% bonus for AWP kills
-      roleBonus = Math.floor(stats.awp_kills * 10 * 0.2);
+      roleBonus = Math.floor(
+        stats.awp_kills * AWP_KILL_BASE_POINTS * ROLE_MULTIPLIER_MAIN_AWP
+      );
       break;
 
     case "leader":
       // +20% multiplier to ALL points
-      roleBonus = Math.floor(basePoints * 0.2);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_LEADER);
       break;
 
-    case "support":
+    case "support": {
       // +25% bonus for assists and flash assists
       const assistPoints = breakdown.assists + breakdown.flash_assists;
-      roleBonus = Math.floor(assistPoints * 0.25);
+      roleBonus = Math.floor(assistPoints * ROLE_MULTIPLIER_SUPPORT);
       break;
+    }
 
     case "entry_fragger":
       // +30% bonus for opening kills
-      roleBonus = Math.floor(breakdown.opening_kills * 0.3);
+      roleBonus = Math.floor(
+        breakdown.opening_kills * ROLE_MULTIPLIER_ENTRY_FRAGGER
+      );
       break;
 
     case "defender":
       // +20% bonus (simplified - would need CT-side kills in real implementation)
-      roleBonus = Math.floor(basePoints * 0.1);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_DEFENDER);
       break;
 
     case "hs_machine":
       // +25% bonus when headshot % > 50%
-      if (stats.hs_percent > 50) {
-        roleBonus = Math.floor(breakdown.kills * 0.25);
+      if (stats.hs_percent > HS_THRESHOLD_MEDIUM) {
+        roleBonus = Math.floor(breakdown.kills * ROLE_MULTIPLIER_HS_MACHINE);
       }
       break;
 
     case "multi_fragger":
       // +30% bonus for multi-kill rounds
-      roleBonus = Math.floor(breakdown.multi_kills * 0.3);
+      roleBonus = Math.floor(
+        breakdown.multi_kills * ROLE_MULTIPLIER_MULTI_FRAGGER
+      );
       break;
 
     case "attacker":
       // +20% bonus (simplified - would need T-side kills in real implementation)
-      roleBonus = Math.floor(basePoints * 0.1);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_ATTACKER);
       break;
 
     case "camper":
       // +15% bonus (simplified)
-      roleBonus = Math.floor(basePoints * 0.075);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_CAMPER);
       break;
 
     case "stathunter":
       // +15% bonus if rating > 1.0 (approximated by K/D > 1.0)
-      if (stats.kd > 1.0) {
-        roleBonus = Math.floor(basePoints * 0.15);
+      if (stats.kd > STATHUNTER_KD_THRESHOLD) {
+        roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_STATHUNTER);
       }
       break;
 
     case "noob":
       // +50% bonus if K/D < 0.8 but positive points (underdog)
-      if (stats.kd < 0.8 && basePoints > 0) {
-        roleBonus = Math.floor(basePoints * 0.5);
+      if (stats.kd < NOOB_KD_THRESHOLD && basePoints > 0) {
+        roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_NOOB);
       }
       break;
 
     case "eco_friendly":
       // +30% bonus for kills (simplified - would need eco round data)
-      roleBonus = Math.floor(breakdown.kills * 0.15);
+      roleBonus = Math.floor(breakdown.kills * ROLE_MULTIPLIER_ECO_FRIENDLY);
       break;
 
     case "flash_master":
       // +30% bonus for flash assists (minimum 3 per map)
-      if (stats.flash_assists >= 3) {
-        roleBonus = Math.floor(breakdown.flash_assists * 0.3);
+      if (stats.flash_assists >= FLASH_ASSIST_MINIMUM) {
+        roleBonus = Math.floor(
+          breakdown.flash_assists * ROLE_MULTIPLIER_FLASH_MASTER
+        );
       }
       break;
 
     case "clutch_player":
       // +40% bonus for clutches
-      roleBonus = Math.floor(breakdown.clutches * 0.4);
+      roleBonus = Math.floor(
+        breakdown.clutches * ROLE_MULTIPLIER_CLUTCH_PLAYER
+      );
       break;
 
-    case "first_blood":
+    case "first_blood": {
       // +35% bonus for first kills, -15% penalty for first deaths
-      const firstBloodPoints =
-        breakdown.opening_kills + breakdown.opening_deaths;
-      roleBonus = Math.floor(breakdown.opening_kills * 0.35);
+      roleBonus = Math.floor(
+        breakdown.opening_kills * ROLE_MULTIPLIER_FIRST_BLOOD_KILLS
+      );
       // Note: opening_deaths is already negative
-      roleBonus += Math.floor(Math.abs(breakdown.opening_deaths) * 0.15);
+      roleBonus += Math.floor(
+        Math.abs(breakdown.opening_deaths) * ROLE_MULTIPLIER_FIRST_BLOOD_DEATHS
+      );
       break;
+    }
 
     case "t_specialist":
       // +25% bonus (simplified - would need T-side specific stats)
-      roleBonus = Math.floor(basePoints * 0.125);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_T_SPECIALIST);
       break;
 
     case "ct_specialist":
       // +25% bonus (simplified - would need CT-side specific stats)
-      roleBonus = Math.floor(basePoints * 0.125);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_CT_SPECIALIST);
       break;
 
     case "anchor":
       // +20% bonus (simplified - would need site hold stats)
-      roleBonus = Math.floor(basePoints * 0.1);
+      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_ANCHOR);
       break;
 
     default:

@@ -1,5 +1,4 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import { getConnection } from "../db/mysqlConnection";
 import type { PoolConnection } from "mysql2/promise";
 import {
   type PlayerTier,
