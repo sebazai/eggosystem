@@ -50,6 +50,17 @@ erDiagram
 "AccountRoles" }o--|| "Games" : ""
 "AccountRoles" }o--|| "Roles" : ""
 "AuditLog" }o--o| "Accounts" : ""
+"FantasyLeaderboard" }o--|| "FantasyTeams" : ""
+"FantasyLeaderboard" }o--|| "Leagues" : ""
+"FantasyLeaderboard" }o--|| "Seasons" : ""
+"FantasyPlayerHistory" }o--|| "FantasyTeams" : ""
+"FantasyPlayerValues" }o--|| "Leagues" : ""
+"FantasyPlayerValues" }o--|| "Seasons" : ""
+"FantasyPointsLog" }o--|| "FantasyTeamPlayers" : ""
+"FantasyPointsLog" }o--|| "MatchGames" : ""
+"FantasyTeamPlayers" }o--|| "FantasyTeams" : ""
+"FantasyTeams" }o--|| "Leagues" : ""
+"FantasyTeams" }o--|| "Seasons" : ""
 "GameTypes" }o--|| "Games" : ""
 "KanahautomoRegistrationGameTypes" }o--|| "GameTypes" : ""
 "KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
@@ -139,6 +150,35 @@ erDiagram
 }
 "FaceitWebhooks" {
   int_10__unsigned id PK
+}
+"FantasyLeaderboard" {
+  int_10__unsigned id PK
+  int_10__unsigned fantasy_team_id FK
+  int_10__unsigned season_id FK
+  int_10__unsigned league_id FK
+}
+"FantasyPlayerHistory" {
+  int_10__unsigned id PK
+  int_10__unsigned fantasy_team_id FK
+}
+"FantasyPlayerValues" {
+  int_10__unsigned id PK
+  int_10__unsigned season_id FK
+  int_10__unsigned league_id FK
+}
+"FantasyPointsLog" {
+  int_10__unsigned id PK
+  int_10__unsigned fantasy_team_player_id FK
+  int_10__unsigned match_game_id FK
+}
+"FantasyTeamPlayers" {
+  int_10__unsigned id PK
+  int_10__unsigned fantasy_team_id FK
+}
+"FantasyTeams" {
+  int_10__unsigned id PK
+  int_10__unsigned season_id FK
+  int_10__unsigned league_id FK
 }
 "Games" {
   int_10__unsigned id PK

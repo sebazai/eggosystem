@@ -19,7 +19,7 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
       ) : (
         <SteamLoginButton />
       )}
-      {user ? (
+      {user && (
         <>
           <div className="flex items-center gap-2">
             <SettingsIcon className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
@@ -40,7 +40,7 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
             </Link>
           </div>
         </>
-      ) : null}
+      )}
       <div>
         <ModeToggle />
       </div>
