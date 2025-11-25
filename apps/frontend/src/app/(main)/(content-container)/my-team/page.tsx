@@ -2,6 +2,7 @@
 
 import { useMyTeams } from "@/hooks/data/user/useMyTeams";
 import { useMyTeamsUpcomingMatches } from "@/hooks/data/user/useMyTeamsUpcomingMatches";
+import { TeamChampionshipLinks } from "@/components/my-team/TeamChampionshipLinks";
 import {
   Card,
   CardContent,
@@ -50,16 +51,12 @@ export default function MyTeamPage() {
     });
   };
 
-  const getFaceitBracketLink = (
+  const getFaceitMatchLink = (
     external_match_room_id: string | null,
-    external_team_id: string | null,
     platform: string | null
   ) => {
     if (platform === "faceit" && external_match_room_id) {
       return `https://www.faceit.com/en/cs2/room/${external_match_room_id}`;
-    }
-    if (platform === "faceit" && external_team_id) {
-      return `https://www.faceit.com/en/teams/${external_team_id}`;
     }
     return null;
   };
@@ -143,9 +140,8 @@ export default function MyTeamPage() {
           ) : (
             <div className="space-y-4">
               {matches.map((match) => {
-                const faceitLink = getFaceitBracketLink(
+                const faceitLink = getFaceitMatchLink(
                   match.external_match_room_id,
-                  null,
                   match.platform
                 );
                 return (
@@ -206,11 +202,6 @@ export default function MyTeamPage() {
 
       {/* Teams Section */}
       {teams.map((team) => {
-        const faceitLink = getFaceitBracketLink(
-          null,
-          team.external_team_id,
-          team.platform
-        );
         return (
           <Card key={`${team.team_id}-${team.season_id}`}>
             <CardHeader>
@@ -224,18 +215,7 @@ export default function MyTeamPage() {
                     </CardDescription>
                   </div>
                 </div>
-                {faceitLink && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={faceitLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      FaceIT Team
-                    </a>
-                  </Button>
-                )}
+                <TeamChampionshipLinks team={team} />
               </div>
             </CardHeader>
             <CardContent>

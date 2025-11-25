@@ -26,13 +26,21 @@ export default async function Home() {
     total_games: 15000,
     total_organizations: 220
   } satisfies LandingPageStats;
-  // No cache required, as otherwise build fails
-  const statistics = await fetch(`${envConfig.API_URL}/api/v1/stats`, {
-    cache: "no-cache"
-  });
-  const data: LandingPageStats = statistics.ok
-    ? await statistics.json()
-    : defaultData;
+
+  let data: LandingPageStats = defaultData;
+
+  try {
+    // No cache required, as otherwise build fails
+    const statistics = await fetch(`${envConfig.API_URL}/api/v1/stats`, {
+      cache: "no-cache"
+    });
+    if (statistics.ok) {
+      data = await statistics.json();
+    }
+  } catch (error) {
+    // Use default data if fetch fails (e.g., during build time)
+    console.warn("Failed to fetch statistics, using default data:", error);
+  }
 
   return (
     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen">
