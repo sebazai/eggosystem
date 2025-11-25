@@ -99,7 +99,7 @@ export default function FantasyPlayerFlipCard({
     <div
       ref={cardRef}
       className={cn(
-        "group relative w-full h-[420px] perspective cursor-pointer",
+        "group relative w-full h-[320px] sm:h-[380px] lg:h-[420px] perspective cursor-pointer",
         isDisabled && !isExistingTeamPlayer && "opacity-60" // Don't fade existing team cards
       )}
       onClick={handleCardClick}
@@ -134,8 +134,8 @@ export default function FantasyPlayerFlipCard({
             {/* Inner Card */}
             <div className="relative bg-neutral-900 h-full w-full flex flex-col overflow-hidden rounded-[14px]">
               {/* Header with Team Logo and Tier Ribbon */}
-              <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900">
+                <div className="flex items-center gap-2 sm:gap-2.5">
                   <div
                     className={cn(
                       "p-[2px] rounded-full bg-gradient-to-br",
@@ -146,12 +146,12 @@ export default function FantasyPlayerFlipCard({
                     <NextImageFallback
                       src={teamLogoUrl}
                       alt={player.team || "Team logo"}
-                      width={28}
-                      height={28}
+                      width={24}
+                      height={24}
                       className="rounded-full bg-neutral-900 p-0.5"
                     />
                   </div>
-                  <span className="text-xs font-bold text-gray-100 tracking-wide">
+                  <span className="text-xs font-bold text-gray-100 tracking-wide truncate max-w-[120px] sm:max-w-none">
                     {player.team}
                   </span>
                 </div>
@@ -237,10 +237,10 @@ export default function FantasyPlayerFlipCard({
               </div>
 
               {/* Premium Player Name Banner */}
-              <div className="relative -mt-7 z-10 px-2">
+              <div className="relative -mt-6 sm:-mt-7 z-10 px-2">
                 <div
                   className={cn(
-                    "relative px-4 py-2.5 bg-gradient-to-r rounded-xl",
+                    "relative px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r rounded-xl",
                     tierFrameGradients[player.tier],
                     tierInnerGlow[player.tier],
                     "shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
@@ -254,7 +254,7 @@ export default function FantasyPlayerFlipCard({
 
                   <div
                     className={cn(
-                      "relative font-black text-lg text-center uppercase tracking-[0.1em] truncate",
+                      "relative font-black text-base sm:text-lg text-center uppercase tracking-[0.1em] truncate",
                       tierTextColor[player.tier],
                       tierTextGlow[player.tier]
                     )}
@@ -265,19 +265,19 @@ export default function FantasyPlayerFlipCard({
               </div>
 
               {/* Premium Stats Section with Hierarchy */}
-              <div className="relative px-3 py-3 bg-gradient-to-b from-neutral-900 via-neutral-850 to-neutral-900">
+              <div className="relative px-2 sm:px-3 py-2 sm:py-3 bg-gradient-to-b from-neutral-900 via-neutral-850 to-neutral-900">
                 {/* Subtle background blur for readability */}
                 <div className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm" />
 
                 <div className="relative grid grid-cols-3 gap-0">
                   {/* Rating */}
-                  <div className="text-center px-2">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-1.5 letterspacing-wider">
+                  <div className="text-center px-1 sm:px-2">
+                    <div className="text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-1 sm:mb-1.5">
                       Rating
                     </div>
                     <div
                       className={cn(
-                        "text-xl font-black tracking-tight",
+                        "text-lg sm:text-xl font-black tracking-tight",
                         tierStatHighlight[player.tier],
                         "drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
                       )}
@@ -287,13 +287,13 @@ export default function FantasyPlayerFlipCard({
                   </div>
 
                   {/* Vertical Separator */}
-                  <div className="relative text-center px-2 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-transparent before:via-neutral-600 before:to-transparent after:absolute after:right-0 after:top-1 after:bottom-1 after:w-px after:bg-gradient-to-b after:from-transparent after:via-neutral-600 after:to-transparent">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-1.5">
+                  <div className="relative text-center px-1 sm:px-2 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-px before:bg-gradient-to-b before:from-transparent before:via-neutral-600 before:to-transparent after:absolute after:right-0 after:top-1 after:bottom-1 after:w-px after:bg-gradient-to-b after:from-transparent after:via-neutral-600 before:to-transparent">
+                    <div className="text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-1 sm:mb-1.5">
                       K/D
                     </div>
                     <div
                       className={cn(
-                        "text-xl font-black tracking-tight",
+                        "text-lg sm:text-xl font-black tracking-tight",
                         tierStatHighlight[player.tier],
                         "drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
                       )}
@@ -303,13 +303,13 @@ export default function FantasyPlayerFlipCard({
                   </div>
 
                   {/* Kills */}
-                  <div className="text-center px-2">
-                    <div className="text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-1.5">
+                  <div className="text-center px-1 sm:px-2">
+                    <div className="text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-1 sm:mb-1.5">
                       Kills
                     </div>
                     <div
                       className={cn(
-                        "text-xl font-black tracking-tight",
+                        "text-lg sm:text-xl font-black tracking-tight",
                         tierStatHighlight[player.tier],
                         "drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]"
                       )}
@@ -321,12 +321,12 @@ export default function FantasyPlayerFlipCard({
               </div>
 
               {/* Premium Footer with Better Alignment */}
-              <div className="flex items-center justify-between gap-3 px-3 py-3 bg-gradient-to-t from-black via-neutral-900 to-neutral-800">
-                <div className="flex-1">
-                  <div className="text-[9px] text-gray-500 uppercase tracking-[0.15em] font-black mb-0.5">
+              <div className="flex items-center justify-between gap-2 sm:gap-3 px-2 sm:px-3 py-2 sm:py-3 bg-gradient-to-t from-black via-neutral-900 to-neutral-800">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-[0.1em] font-black mb-0.5">
                     Value
                   </div>
-                  <div className="font-black text-lg text-green-400/90 drop-shadow-[0_0_6px_rgba(74,222,128,0.4)]">
+                  <div className="font-black text-base sm:text-lg text-green-400/90 drop-shadow-[0_0_6px_rgba(74,222,128,0.4)]">
                     €{(player.value / 1000).toFixed(0)}K
                   </div>
                 </div>
@@ -336,7 +336,7 @@ export default function FantasyPlayerFlipCard({
                   onClick={handleAddClick}
                   disabled={isDisabled}
                   className={cn(
-                    "relative px-4 py-2 font-black uppercase tracking-[0.1em] text-[10px] transition-all duration-200 rounded-lg",
+                    "relative px-3 sm:px-4 py-1.5 sm:py-2 font-black uppercase tracking-[0.1em] text-[9px] sm:text-[10px] transition-all duration-200 rounded-lg",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                     !isDisabled && [
                       "bg-gradient-to-br shadow-[0_4px_10px_rgba(0,0,0,0.4)]",

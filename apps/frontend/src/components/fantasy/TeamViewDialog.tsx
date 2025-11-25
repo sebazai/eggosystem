@@ -23,20 +23,20 @@ export default function TeamViewDialog({ open, onOpenChange, team }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[1150px] w-[95vw] max-h-[90vh] h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="!max-w-[1150px] w-[95vw] max-h-[95vh] h-[95vh] sm:max-h-[90vh] sm:h-[90vh] p-0 overflow-hidden">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-neutral-800">
-          <div className="flex items-center justify-between">
+        <div className="p-4 sm:p-6 pb-4 border-b border-neutral-800">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
             <div>
-              <DialogTitle className="text-2xl mb-1">
+              <DialogTitle className="text-xl sm:text-2xl mb-1">
                 {team.team_name}
               </DialogTitle>
               <DialogDescription className="text-sm">
                 View team details and player roles
               </DialogDescription>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-green-400">
+            <div className="text-left sm:text-right">
+              <div className="text-xl sm:text-2xl font-bold text-green-400">
                 {team.total_points.toLocaleString()}
               </div>
               <div className="text-sm text-muted-foreground">Total Points</div>
@@ -44,33 +44,37 @@ export default function TeamViewDialog({ open, onOpenChange, team }: Props) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Team Stats */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Team Overview</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Team Overview
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-neutral-900/50 rounded-lg border border-neutral-800">
-                  <div className="text-xl font-bold text-white">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="text-center p-3 sm:p-4 bg-neutral-900/50 rounded-lg border border-neutral-800">
+                  <div className="text-lg sm:text-xl font-bold text-white">
                     €{(team.budget_remaining / 1000).toFixed(0)}K
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     Budget Remaining
                   </div>
                 </div>
-                <div className="text-center p-3 bg-neutral-900/50 rounded-lg border border-neutral-800">
-                  <div className="text-xl font-bold text-white">
+                <div className="text-center p-3 sm:p-4 bg-neutral-900/50 rounded-lg border border-neutral-800">
+                  <div className="text-lg sm:text-xl font-bold text-white">
                     {team.players.length}/5
                   </div>
-                  <div className="text-sm text-muted-foreground">Players</div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
+                    Players
+                  </div>
                 </div>
-                <div className="text-center p-3 bg-neutral-900/50 rounded-lg border border-neutral-800">
-                  <div className="text-xl font-bold text-white">
+                <div className="text-center p-3 sm:p-4 bg-neutral-900/50 rounded-lg border border-neutral-800">
+                  <div className="text-lg sm:text-xl font-bold text-white">
                     Week {team.current_week_number || 1}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     Current Week
                   </div>
                 </div>
@@ -81,13 +85,15 @@ export default function TeamViewDialog({ open, onOpenChange, team }: Props) {
           {/* Team Players */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                 Team Players
-                <Badge variant="outline">{team.players.length}/5</Badge>
+                <Badge variant="outline" className="text-xs">
+                  {team.players.length}/5
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
                 {team.players.map((player) => {
                   // Convert existing team player to FantasyPlayer format
                   const teamLogoForPlayer = player.team_logo
@@ -139,13 +145,13 @@ export default function TeamViewDialog({ open, onOpenChange, team }: Props) {
 
                       {/* Role Display */}
                       {player.role ? (
-                        <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
+                        <div className="text-center p-1.5 sm:p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
                           <p className="text-xs text-green-400 font-medium uppercase">
                             {player.role.replace(/_/g, " ")}
                           </p>
                         </div>
                       ) : (
-                        <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
+                        <div className="text-center p-1.5 sm:p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
                           <p className="text-xs text-muted-foreground">
                             NO ROLE
                           </p>
@@ -153,7 +159,7 @@ export default function TeamViewDialog({ open, onOpenChange, team }: Props) {
                       )}
 
                       {/* Player Stats */}
-                      <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
+                      <div className="text-center p-1.5 sm:p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
                         <p className="text-sm font-medium text-white">
                           {player.points_earned || 0} pts
                         </p>

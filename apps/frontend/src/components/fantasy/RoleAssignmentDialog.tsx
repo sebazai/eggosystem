@@ -287,19 +287,19 @@ export default function RoleAssignmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[1200px] w-[85vw] max-h-[80vh] h-[80vh] p-0 sm:!max-w-[1200px] overflow-hidden">
+      <DialogContent className="!max-w-[1200px] w-[95vw] sm:w-[85vw] max-h-[98vh] h-[98vh] sm:max-h-[88vh] sm:h-[88vh] p-0 overflow-hidden">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-neutral-800">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 sm:p-6 pb-4 border-b border-neutral-800">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
             <div>
-              <DialogTitle className="text-2xl mb-1">
+              <DialogTitle className="text-xl sm:text-2xl mb-1">
                 Assign Player Role
               </DialogTitle>
               <DialogDescription className="text-sm">
                 Click a role to see details, then assign it to earn bonus points
               </DialogDescription>
             </div>
-            <div className="text-base text-muted-foreground font-medium">
+            <div className="text-sm sm:text-base text-muted-foreground font-medium text-left sm:text-right">
               {currentPlayerIndex + 1} / {players.length}
             </div>
           </div>
@@ -344,16 +344,16 @@ export default function RoleAssignmentDialog({
           </div>
         </div>
 
-        <div className="flex h-[calc(80vh-160px)] overflow-hidden">
-          {/* Left Side - Role Icons Grid */}
-          <div className="flex-1 p-4 flex flex-col overflow-y-auto min-w-0 max-w-[calc(100%-240px)]">
-            <div className="grid grid-cols-6 gap-x-3 gap-y-2.5 mb-3">
+        <div className="flex flex-col sm:flex-row h-[calc(95vh-160px)] sm:h-[calc(80vh-160px)] overflow-hidden">
+          {/* Role Icons Grid */}
+          <div className="flex-1 p-4 flex flex-col overflow-y-auto min-w-0 sm:max-w-[calc(100%-240px)]">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-2 sm:gap-x-3 gap-y-2 sm:gap-y-2.5 mb-3">
               {roles.map((role) => (
                 <button
                   key={role.id}
                   onClick={() => handleRoleClick(role.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center aspect-square p-2 rounded-lg border-2 transition-all hover:scale-105",
+                    "flex flex-col items-center justify-center aspect-square p-1.5 sm:p-2 rounded-lg border-2 transition-all hover:scale-105 touch-manipulation",
                     selectedRole === role.id
                       ? "border-primary bg-primary/20 shadow-2xl shadow-primary/50"
                       : currentPlayer.role === role.id
@@ -363,7 +363,7 @@ export default function RoleAssignmentDialog({
                 >
                   <div
                     className={cn(
-                      "mb-1 w-6 h-6 flex items-center justify-center",
+                      "mb-1 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center",
                       selectedRole === role.id
                         ? "text-primary"
                         : currentPlayer.role === role.id
@@ -371,11 +371,11 @@ export default function RoleAssignmentDialog({
                           : "text-neutral-400"
                     )}
                   >
-                    <div className="scale-[1]">{role.icon}</div>
+                    <div className="scale-[0.9] sm:scale-[1]">{role.icon}</div>
                   </div>
                   <p
                     className={cn(
-                      "text-[10px] text-center font-semibold leading-tight",
+                      "text-[9px] sm:text-[10px] text-center font-semibold leading-tight px-0.5",
                       selectedRole === role.id || currentPlayer.role === role.id
                         ? "text-foreground"
                         : "text-muted-foreground"
@@ -390,7 +390,7 @@ export default function RoleAssignmentDialog({
             {/* No Role Button */}
             <button
               onClick={handleNoRole}
-              className="w-full p-2.5 rounded-lg border-2 border-neutral-800 bg-neutral-900/50 hover:border-neutral-600 transition-all"
+              className="w-full p-2 sm:p-2.5 rounded-lg border-2 border-neutral-800 bg-neutral-900/50 hover:border-neutral-600 transition-all touch-manipulation"
             >
               <p className="text-xs font-semibold text-muted-foreground">
                 <X className="h-4 w-4 inline mr-1" />
@@ -399,17 +399,19 @@ export default function RoleAssignmentDialog({
             </button>
           </div>
 
-          {/* Right Side - Selected Role Details */}
-          <div className="w-[240px] flex-shrink-0 border-l border-neutral-800 p-4 bg-neutral-900/50 overflow-y-auto">
+          {/* Selected Role Details */}
+          <div className="w-full sm:w-[240px] flex-shrink-0 sm:border-l border-neutral-800 p-4 bg-neutral-900/50 overflow-y-auto min-h-[200px] sm:min-h-0">
             {selectedRoleInfo ? (
               <div className="space-y-3">
                 <div className="flex flex-col items-center text-center">
-                  <div className="p-4 rounded-xl bg-primary/20 border-2 border-primary mb-3">
-                    <div className="text-primary w-10 h-10 flex items-center justify-center">
-                      <div className="scale-[1.8]">{selectedRoleInfo.icon}</div>
+                  <div className="p-3 sm:p-4 rounded-xl bg-primary/20 border-2 border-primary mb-3">
+                    <div className="text-primary w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
+                      <div className="scale-[1.5] sm:scale-[1.8]">
+                        {selectedRoleInfo.icon}
+                      </div>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">
                     {selectedRoleInfo.label}
                   </h3>
                   <Badge variant="outline" className="mb-2 text-xs py-0.5 px-2">
@@ -420,7 +422,7 @@ export default function RoleAssignmentDialog({
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-green-950/30 border border-green-900/50">
+                <div className="p-2.5 sm:p-3 rounded-lg bg-green-950/30 border border-green-900/50">
                   <p className="text-xs font-semibold text-green-400 mb-1">
                     Bonus Points
                   </p>
@@ -432,7 +434,7 @@ export default function RoleAssignmentDialog({
                 <Button
                   onClick={handleAssign}
                   size="default"
-                  className="w-full"
+                  className="w-full touch-manipulation"
                 >
                   Assign Role
                 </Button>
@@ -446,8 +448,8 @@ export default function RoleAssignmentDialog({
                 )}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground">
-                <Target className="h-12 w-12 mb-3 opacity-50" />
+              <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground px-4">
+                <Target className="h-10 w-10 sm:h-12 sm:w-12 mb-3 opacity-50" />
                 <p className="text-sm font-medium">
                   Click on a role icon to see details
                 </p>
