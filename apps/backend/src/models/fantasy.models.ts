@@ -1081,6 +1081,7 @@ export const getFantasyOverallLeaderboard = async (
   const leaderboard = topTeams.map((team) => ({
     rank: team.rank,
     fantasy_team_id: team.fantasy_team_id,
+    steam_id: team.steam_id,
     team_name: team.team_name,
     owner_name: team.owner_name,
     total_points: team.total_points,
@@ -1159,6 +1160,7 @@ export const getFantasyLeaderboard = async (
   const leaderboard: LeaderboardEntry[] = topTeams.map((team) => ({
     rank: team.rank,
     fantasy_team_id: team.fantasy_team_id,
+    steam_id: team.steam_id,
     team_name: team.team_name,
     owner_name: team.owner_name,
     total_points: team.total_points,

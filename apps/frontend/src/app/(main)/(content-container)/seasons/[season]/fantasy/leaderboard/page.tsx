@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import useSWR from "swr";
 import { expressFetcher } from "@/lib/utils";
 import { AutoBreadcrumbs } from "@/components/layout/AutoBreadcrumbs";
@@ -33,10 +33,14 @@ import {
 import { Trophy, Medal, Award, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
+import TeamViewDialog from "@/components/fantasy/TeamViewDialog";
+import type { MyFantasyTeam } from "@/hooks/data/useMyFantasyTeam";
+import { useState } from "react";
 
 interface LeaderboardEntry {
   rank: number;
   fantasy_team_id: number;
+  steam_id?: string;
   team_name: string | null;
   owner_name: string;
   total_points: number;
@@ -77,6 +81,10 @@ export default function FantasyLeaderboardPage() {
   const [viewMode, setViewMode] = useState<"division" | "overall">("division");
   const [selectedLeagueId, setSelectedLeagueId] =
     useState<number>(defaultLeagueId);
+
+  // Team view dialog state
+  const [selectedTeam, setSelectedTeam] = useState<MyFantasyTeam | null>(null);
+  const [teamViewDialogOpen, setTeamViewDialogOpen] = useState(false);
 
   // Update selected league when user's league loads or when leagues are fetched
   useEffect(() => {
@@ -123,6 +131,25 @@ export default function FantasyLeaderboardPage() {
         return <Award className="h-5 w-5 text-amber-600" />;
       default:
         return null;
+    }
+  };
+
+  const handleViewTeam = async (entry: LeaderboardEntry) => {
+    if (!entry.steam_id) {
+      console.error("No steam_id in entry:", entry);
+      return;
+    }
+
+    const url = `/api/v1/seasons/${seasonId}/fantasy/teams/${entry.steam_id}`;
+    console.log("Fetching team details from:", url);
+
+    try {
+      const teamData = await expressFetcher<MyFantasyTeam>(url);
+      console.log("Team data received:", teamData);
+      setSelectedTeam(teamData);
+      setTeamViewDialogOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch team details:", error);
     }
   };
 
@@ -202,6 +229,9 @@ export default function FantasyLeaderboardPage() {
               <CardDescription>
                 Top 50 fantasy teams ranked by total points
               </CardDescription>
+              <div className="mt-2 text-sm text-muted-foreground">
+                💡 Click on any team row to view their full roster and details
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <Tabs
@@ -301,8 +331,10 @@ export default function FantasyLeaderboardPage() {
                               key={entry.fantasy_team_id}
                               className={cn(
                                 entry.is_current_user &&
-                                  "bg-blue-50 dark:bg-blue-950 font-semibold"
+                                  "bg-blue-50 dark:bg-blue-950 font-semibold",
+                                "cursor-pointer hover:bg-neutral-800/50 transition-colors"
                               )}
+                              onClick={() => handleViewTeam(entry)}
                             >
                               <TableCell className="font-medium">
                                 <div className="flex items-center gap-2">
@@ -394,8 +426,10 @@ export default function FantasyLeaderboardPage() {
                               key={entry.fantasy_team_id}
                               className={cn(
                                 entry.is_current_user &&
-                                  "bg-blue-50 dark:bg-blue-950 font-semibold"
+                                  "bg-blue-50 dark:bg-blue-950 font-semibold",
+                                "cursor-pointer hover:bg-neutral-800/50 transition-colors"
                               )}
+                              onClick={() => handleViewTeam(entry)}
                             >
                               <TableCell className="font-medium">
                                 <div className="flex items-center gap-2">
@@ -447,6 +481,13 @@ export default function FantasyLeaderboardPage() {
               </Tabs>
             </CardContent>
           </Card>
+
+          {/* Team View Dialog */}
+          <TeamViewDialog
+            open={teamViewDialogOpen}
+            onOpenChange={setTeamViewDialogOpen}
+            team={selectedTeam}
+          />
         </div>
       </div>
     </>
