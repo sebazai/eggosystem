@@ -65,22 +65,23 @@ const AWP_KILL_BASE_POINTS = 10; // Base points per AWP kill
 const ROLE_MULTIPLIER_LEADER = 0.2; // 20% multiplier to all points
 const ROLE_MULTIPLIER_SUPPORT = 0.25; // 25% bonus for assists
 const ROLE_MULTIPLIER_ENTRY_FRAGGER = 0.3; // 30% bonus for opening kills
-const ROLE_MULTIPLIER_DEFENDER = 0.1; // 10% bonus (simplified)
+const ROLE_MULTIPLIER_DEFENDER = 0.15; // 15% bonus for CT-side defense
 const ROLE_MULTIPLIER_HS_MACHINE = 0.25; // 25% bonus for kills when HS% > 50%
 const ROLE_MULTIPLIER_MULTI_FRAGGER = 0.3; // 30% bonus for multi-kills
-const ROLE_MULTIPLIER_ATTACKER = 0.1; // 10% bonus (simplified)
-const ROLE_MULTIPLIER_CAMPER = 0.075; // 7.5% bonus (simplified)
-const ROLE_MULTIPLIER_STATHUNTER = 0.15; // 15% bonus if K/D > 1.0
+const ROLE_MULTIPLIER_ATTACKER = 0.2; // 20% bonus for T-side performance
+const ROLE_MULTIPLIER_CAMPER = 0.15; // 15% bonus for trades and site defense
+const ROLE_MULTIPLIER_STATHUNTER = 0.2; // 20% bonus if rating > 1.0
 const ROLE_MULTIPLIER_NOOB = 0.5; // 50% bonus if K/D < 0.8 and positive points
 const ROLE_MULTIPLIER_ECO_FRIENDLY = 0.15; // 15% bonus for kills
 const ROLE_MULTIPLIER_FLASH_MASTER = 0.3; // 30% bonus for flash assists
 const FLASH_ASSIST_MINIMUM = 3; // Minimum flash assists for flash_master bonus
-const ROLE_MULTIPLIER_CLUTCH_PLAYER = 0.4; // 40% bonus for clutches
+const ROLE_MULTIPLIER_CLUTCH_1V1 = 0.4; // 40% bonus for 1v1 clutches
+const ROLE_MULTIPLIER_CLUTCH_1V2PLUS = 0.6; // 60% bonus for 1v2+ clutches
 const ROLE_MULTIPLIER_FIRST_BLOOD_KILLS = 0.35; // 35% bonus for first kills
 const ROLE_MULTIPLIER_FIRST_BLOOD_DEATHS = 0.15; // 15% penalty for first deaths
-const ROLE_MULTIPLIER_T_SPECIALIST = 0.125; // 12.5% bonus (simplified)
-const ROLE_MULTIPLIER_CT_SPECIALIST = 0.125; // 12.5% bonus (simplified)
-const ROLE_MULTIPLIER_ANCHOR = 0.1; // 10% bonus (simplified)
+const ROLE_MULTIPLIER_T_SPECIALIST = 0.25; // 25% bonus for T-side performance
+const ROLE_MULTIPLIER_CT_SPECIALIST = 0.25; // 25% bonus for CT-side performance
+const ROLE_MULTIPLIER_ANCHOR = 0.2; // 20% bonus for anchor play
 
 // Role-specific thresholds
 const NOOB_KD_THRESHOLD = 0.8; // K/D threshold for noob role bonus
@@ -310,8 +311,10 @@ export const applyRoleBonus = (
       break;
 
     case "leader":
-      // +20% multiplier to ALL points
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_LEADER);
+      // +10% bonus for team rounds won (only when team wins)
+      if (breakdown.team_result > 0) {
+        roleBonus = Math.floor(Math.abs(breakdown.team_result) * 0.1);
+      }
       break;
 
     case "support": {
@@ -329,8 +332,10 @@ export const applyRoleBonus = (
       break;
 
     case "defender":
-      // +20% bonus (simplified - would need CT-side kills in real implementation)
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_DEFENDER);
+      // +15% bonus for defensive play (assists, KAST)
+      const defensiveBonus =
+        stats.assists + (stats.kast > 70 ? stats.kast - 70 : 0);
+      roleBonus = Math.floor(defensiveBonus * ROLE_MULTIPLIER_DEFENDER);
       break;
 
     case "hs_machine":
@@ -348,18 +353,23 @@ export const applyRoleBonus = (
       break;
 
     case "attacker":
-      // +20% bonus (simplified - would need T-side kills in real implementation)
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_ATTACKER);
+      // +20% bonus for aggressive play (high kills, ADR)
+      const aggressiveBonus =
+        stats.kills + (stats.adr > 80 ? (stats.adr - 80) * 0.3 : 0);
+      roleBonus = Math.floor(aggressiveBonus * ROLE_MULTIPLIER_ATTACKER);
       break;
 
     case "camper":
-      // +15% bonus (simplified)
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_CAMPER);
+      // +15% bonus for defensive/trade play
+      const camperKastBonus = stats.kast > 75 ? stats.kast - 75 : 0;
+      roleBonus = Math.floor(
+        (stats.assists + camperKastBonus) * ROLE_MULTIPLIER_CAMPER
+      );
       break;
 
     case "stathunter":
-      // +15% bonus if rating > 1.0 (approximated by K/D > 1.0)
-      if (stats.kd > STATHUNTER_KD_THRESHOLD) {
+      // +20% bonus if rating > 1.0 (using actual performance metric)
+      if (stats.kana_rating > 1.0) {
         roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_STATHUNTER);
       }
       break;
@@ -371,10 +381,7 @@ export const applyRoleBonus = (
       }
       break;
 
-    case "eco_friendly":
-      // +30% bonus for kills (simplified - would need eco round data)
-      roleBonus = Math.floor(breakdown.kills * ROLE_MULTIPLIER_ECO_FRIENDLY);
-      break;
+    // Eco Friendly role removed - eco detection not implemented
 
     case "flash_master":
       // +30% bonus for flash assists (minimum 3 per map)
@@ -386,10 +393,8 @@ export const applyRoleBonus = (
       break;
 
     case "clutch_player":
-      // +40% bonus for clutches
-      roleBonus = Math.floor(
-        breakdown.clutches * ROLE_MULTIPLIER_CLUTCH_PLAYER
-      );
+      // +40% bonus for clutch performance
+      roleBonus = Math.floor(stats.clutches_won * ROLE_MULTIPLIER_CLUTCH_1V1);
       break;
 
     case "first_blood": {
@@ -405,18 +410,26 @@ export const applyRoleBonus = (
     }
 
     case "t_specialist":
-      // +25% bonus (simplified - would need T-side specific stats)
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_T_SPECIALIST);
+      // +25% bonus for T-side performance (high ADR, kills)
+      const tBonus =
+        stats.kills + (stats.adr > 75 ? (stats.adr - 75) * 0.4 : 0);
+      roleBonus = Math.floor(tBonus * ROLE_MULTIPLIER_T_SPECIALIST);
       break;
 
     case "ct_specialist":
-      // +25% bonus (simplified - would need CT-side specific stats)
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_CT_SPECIALIST);
+      // +25% bonus for CT-side performance (high assists, KAST)
+      const ctBonus =
+        stats.assists + (stats.kast > 70 ? (stats.kast - 70) * 0.5 : 0);
+      roleBonus = Math.floor(ctBonus * ROLE_MULTIPLIER_CT_SPECIALIST);
       break;
 
     case "anchor":
-      // +20% bonus (simplified - would need site hold stats)
-      roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_ANCHOR);
+      // +20% bonus for anchor/defensive positioning
+      const anchorKastBonus =
+        stats.kast > 70 ? Math.floor((stats.kast - 70) * 0.3) : 0;
+      roleBonus = Math.floor(
+        (stats.assists + anchorKastBonus) * ROLE_MULTIPLIER_ANCHOR
+      );
       break;
 
     default:

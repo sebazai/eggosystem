@@ -43,7 +43,6 @@ export type PlayerRole =
   | "camper"
   | "stathunter"
   | "noob"
-  | "eco_friendly"
   | "flash_master"
   | "clutch_player"
   | "first_blood"
@@ -68,7 +67,7 @@ const roles: RoleInfo[] = [
     description: "Primary AWPer",
     icon: <Crosshair className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+15% bonus for AWP kills"
+    bonusDescription: "+20% bonus for AWP kills"
   },
   {
     id: "leader",
@@ -76,7 +75,7 @@ const roles: RoleInfo[] = [
     description: "Team captain & IGL",
     icon: <Users className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+10% for team rounds won"
+    bonusDescription: "+10% bonus for team rounds won"
   },
   {
     id: "support",
@@ -84,7 +83,7 @@ const roles: RoleInfo[] = [
     description: "Utility & trades",
     icon: <Shield className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+20% bonus for assists & flash assists"
+    bonusDescription: "+25% bonus for assists & flash assists"
   },
   {
     id: "entry_fragger",
@@ -92,7 +91,7 @@ const roles: RoleInfo[] = [
     description: "Opens sites",
     icon: <Zap className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+25% bonus for entry kills"
+    bonusDescription: "+30% bonus for opening kills"
   },
   {
     id: "defender",
@@ -100,7 +99,7 @@ const roles: RoleInfo[] = [
     description: "Holds positions",
     icon: <Shield className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+15% bonus for CT-side rating"
+    bonusDescription: "+15% bonus for assists & KAST"
   },
   // Specialist Roles
   {
@@ -109,7 +108,7 @@ const roles: RoleInfo[] = [
     description: "Headshot specialist",
     icon: <Target className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+30% bonus for headshot kills"
+    bonusDescription: "+25% bonus for kills when HS% > 50%"
   },
   {
     id: "multi_fragger",
@@ -117,7 +116,7 @@ const roles: RoleInfo[] = [
     description: "Multi-kill rounds",
     icon: <Flame className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+50% bonus for 3K/4K/5K rounds"
+    bonusDescription: "+30% bonus for 3K/4K/5K rounds"
   },
   {
     id: "attacker",
@@ -125,7 +124,7 @@ const roles: RoleInfo[] = [
     description: "Aggressive plays",
     icon: <Swords className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+15% bonus for T-side rating"
+    bonusDescription: "+20% bonus for kills & high ADR"
   },
   {
     id: "flash_master",
@@ -133,7 +132,7 @@ const roles: RoleInfo[] = [
     description: "Flash assist expert",
     icon: <Sparkles className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+40% bonus for flash assists"
+    bonusDescription: "+30% bonus for flash assists (min 3)"
   },
   {
     id: "clutch_player",
@@ -141,7 +140,7 @@ const roles: RoleInfo[] = [
     description: "High KAST player",
     icon: <Star className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+20% bonus for clutch rounds won"
+    bonusDescription: "+40% bonus for 1v1, +60% for 1v2+ clutches"
   },
   {
     id: "first_blood",
@@ -149,7 +148,8 @@ const roles: RoleInfo[] = [
     description: "First kill specialist",
     icon: <Activity className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+30% bonus for first kills"
+    bonusDescription:
+      "+35% bonus for first kills, -15% penalty for first deaths"
   },
   // Side Specialist
   {
@@ -158,7 +158,7 @@ const roles: RoleInfo[] = [
     description: "T-side focused",
     icon: <Zap className="h-5 w-5" />,
     category: "side",
-    bonusDescription: "+25% for T-side performance"
+    bonusDescription: "+25% bonus for kills & high ADR"
   },
   {
     id: "ct_specialist",
@@ -166,7 +166,7 @@ const roles: RoleInfo[] = [
     description: "CT-side focused",
     icon: <Shield className="h-5 w-5" />,
     category: "side",
-    bonusDescription: "+25% for CT-side performance"
+    bonusDescription: "+25% bonus for assists & KAST"
   },
   {
     id: "anchor",
@@ -174,7 +174,7 @@ const roles: RoleInfo[] = [
     description: "Site anchor",
     icon: <Eye className="h-5 w-5" />,
     category: "side",
-    bonusDescription: "+15% for site hold rounds"
+    bonusDescription: "+20% bonus for assists & KAST"
   },
   // Meme/Fun Roles
   {
@@ -183,7 +183,7 @@ const roles: RoleInfo[] = [
     description: "Defensive positioning",
     icon: <Timer className="h-5 w-5" />,
     category: "meme",
-    bonusDescription: "-10% penalty (for fun)"
+    bonusDescription: "+15% bonus for trades & site defense"
   },
   {
     id: "stathunter",
@@ -191,7 +191,7 @@ const roles: RoleInfo[] = [
     description: "Consistent performance",
     icon: <TrendingUp className="h-5 w-5" />,
     category: "meme",
-    bonusDescription: "+5% for exit frags (low impact)"
+    bonusDescription: "+20% bonus if rating > 1.0"
   },
   {
     id: "noob",
@@ -199,15 +199,7 @@ const roles: RoleInfo[] = [
     description: "Learning & improving",
     icon: <Skull className="h-5 w-5" />,
     category: "meme",
-    bonusDescription: "-20% penalty but +50% if 1.5+ KD"
-  },
-  {
-    id: "eco_friendly",
-    label: "Eco Friendly",
-    description: "Eco round specialist",
-    icon: <DollarSign className="h-5 w-5" />,
-    category: "meme",
-    bonusDescription: "+30% bonus for eco round kills"
+    bonusDescription: "+50% bonus if K/D < 0.8 but positive points"
   }
 ];
 
