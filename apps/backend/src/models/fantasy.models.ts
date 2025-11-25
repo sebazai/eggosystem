@@ -568,8 +568,13 @@ export const getFantasyTeamByUser = async (
        AVG(ps.kast) as kast
      FROM FantasyTeamPlayers ftp
      INNER JOIN SteamPlayers sp ON sp.steam_id = ftp.steam_id
-     LEFT JOIN SeasonTeamPlayers stp ON stp.steam_id = ftp.steam_id AND stp.season_id = ?
-     LEFT JOIN Teams t ON t.id = stp.team_id
+     LEFT JOIN SeasonTeamPlayers latest_stp ON latest_stp.steam_id = ftp.steam_id AND latest_stp.season_id = ?
+       AND latest_stp.created_at = (
+         SELECT MAX(created_at)
+         FROM SeasonTeamPlayers
+         WHERE steam_id = ftp.steam_id AND season_id = ?
+       )
+     LEFT JOIN Teams t ON t.id = latest_stp.team_id
      LEFT JOIN PlayerStats ps ON ps.steam_id = ftp.steam_id 
        AND ps.match_game_id IN (
          SELECT mg.id FROM MatchGames mg
@@ -590,17 +595,18 @@ export const getFantasyTeamByUser = async (
        ) latest ON latest.steam_id = fpv.steam_id AND latest.max_created = fpv.created_at
      ) lv ON lv.steam_id = ftp.steam_id
      WHERE ftp.fantasy_team_id = ? AND ftp.is_active = TRUE
-     GROUP BY ftp.id, ftp.steam_id, sp.nickname, t.name, t.team_logo, ftp.role, 
-              ftp.player_value, lv.value, lv.tier, ftp.points_earned, ftp.individual_points, 
+     GROUP BY ftp.id, ftp.steam_id, sp.nickname, t.name, t.team_logo, ftp.role,
+              ftp.player_value, lv.value, lv.tier, ftp.points_earned, ftp.individual_points,
               ftp.team_points, ftp.role_points, ftp.is_active
      ORDER BY ftp.added_at ASC`,
     [
-      seasonId,
+      seasonId, // for week calculation
       weekStartDateObj,
       weekEndDateObj,
-      seasonId,
-      seasonId,
-      seasonId,
+      seasonId, // for stp join
+      seasonId, // for stp subquery MAX(created_at)
+      seasonId, // for PlayerStats subquery
+      seasonId, // for FantasyPlayerValues subquery
       team.id
     ],
     connection
