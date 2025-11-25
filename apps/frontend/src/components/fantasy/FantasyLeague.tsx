@@ -255,9 +255,24 @@ export default function FantasyLeague({ seasonId }: Props) {
 
   const handleAddPlayer = useCallback((player: FantasyPlayer) => {
     setSelectedPlayers((prev) => {
-      if (prev.length >= 5) return prev;
+      // Prevent selecting more than 5 players
+      if (prev.length >= 5) {
+        console.warn('Cannot add player: team already has 5 players');
+        return prev;
+      }
+
+      // Prevent selecting the same player twice
+      if (prev.some((p) => p.id === player.id)) {
+        console.warn('Cannot add player: player already selected');
+        return prev;
+      }
+
       const currentBudgetUsed = prev.reduce((sum, p) => sum + p.value, 0);
-      if (currentBudgetUsed + player.value > BUDGET) return prev;
+      if (currentBudgetUsed + player.value > BUDGET) {
+        console.warn('Cannot add player: insufficient budget');
+        return prev;
+      }
+
       return [...prev, { ...player, role: undefined }];
     });
   }, []);
@@ -527,9 +542,8 @@ export default function FantasyLeague({ seasonId }: Props) {
     setIsSubmitting(true);
 
     try {
-      // Calculate current week number based on season start date
-      // For simplicity, using week 1 as default. In production, this should be calculated based on season start date
-      const weekNumber = 1;
+      // Use current week number from backend, fallback to week 1
+      const weekNumber = existingTeam?.current_week_number || 1;
 
       const response = await expressFetcher<{
         success: boolean;
@@ -595,7 +609,7 @@ export default function FantasyLeague({ seasonId }: Props) {
 
   // Filter and sort players
   let filteredPlayers = fantasyPlayers.filter(
-    (p) => !selectedPlayers.some((sp) => sp.id === p.id)
+    (p) => !selectedPlayers.some((sp) => sp.id === p.id || sp.steam_id === p.steam_id)
   );
 
   if (filterTier !== "all") {
@@ -1057,8 +1071,15 @@ export default function FantasyLeague({ seasonId }: Props) {
     );
   }
 
-  // Show login prompt if not authenticated
-  if (!authLoading && !user) {
+  // Show login prompt if not authenticated or if we get auth errors
+  const isAuthError = teamError && (
+    teamError.message?.includes('token') ||
+    teamError.message?.includes('auth') ||
+    teamError.message?.includes('unauthorized') ||
+    (typeof teamError === 'object' && 'status' in teamError && (teamError.status === 401 || teamError.status === 403))
+  );
+
+  if (!authLoading && (!user || isAuthError)) {
     return (
       <div className="container mx-auto py-6">
         <Card>

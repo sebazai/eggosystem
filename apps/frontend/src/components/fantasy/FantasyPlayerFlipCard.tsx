@@ -90,6 +90,8 @@ export default function FantasyPlayerFlipCard({
     e.stopPropagation();
     if (!isDisabled) {
       onAdd(player);
+    } else {
+      console.warn('Cannot add player: card is disabled');
     }
   };
 
