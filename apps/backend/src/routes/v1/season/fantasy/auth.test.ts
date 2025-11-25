@@ -68,6 +68,9 @@ jest.mock("../../../../controllers/fantasy.controllers", () => ({
   getMyFantasyTeamController: jest.fn((req, res) => {
     res.status(200).json({ id: 1, players: [] });
   }),
+  getFantasyTeamBySteamIdController: jest.fn((req, res) => {
+    res.status(200).json({ id: 1, players: [] });
+  }),
   substitutePlayerController: jest.fn((req, res) => {
     res.status(200).json({ success: true });
   }),

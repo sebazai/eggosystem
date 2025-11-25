@@ -16,6 +16,7 @@ import {
   getFantasyPlayersByLeagueController,
   createFantasyTeamController,
   getMyFantasyTeamController,
+  getFantasyTeamBySteamIdController,
   substitutePlayerController,
   updatePlayerRolesController,
   getFantasyLeaderboardController,
@@ -76,6 +77,12 @@ router.get(
   validateNumericParams(),
   authenticateJWT,
   getMyFantasyTeamController
+);
+
+router.get(
+  "/:season_id/fantasy/teams/:steam_id",
+  validateNumericParams(),
+  getFantasyTeamBySteamIdController
 );
 
 router.put(

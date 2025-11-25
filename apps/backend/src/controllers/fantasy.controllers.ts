@@ -151,6 +151,30 @@ export const getMyFantasyTeamController = async (
 };
 
 /**
+ * Get any user's fantasy team by steam_id (public)
+ */
+export const getFantasyTeamBySteamIdController = async (
+  req: RequestWithParams<{ season_id: string; steam_id: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const seasonId = Number(req.params.season_id);
+  const steamId = req.params.steam_id;
+
+  if (!steamId) {
+    return next(new BadRequestError("steam_id parameter is required"));
+  }
+
+  const team = await getFantasyTeamByUser(steamId, seasonId);
+
+  if (!team) {
+    return next(new NotFoundError("Fantasy team not found"));
+  }
+
+  res.json(team);
+};
+
+/**
  * Substitute a player
  */
 export const substitutePlayerController = async (
