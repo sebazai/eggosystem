@@ -25,8 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, TrendingUp, Award } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import Link from "next/link";
 import { toast } from "sonner";
+import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 
 export type PlayerTier = "bronze" | "silver" | "gold";
 
@@ -647,6 +647,41 @@ export default function FantasyLeague({ seasonId }: Props) {
   // Sort teams alphabetically by name to maintain consistent order during drafting
   const teams = Object.keys(playersByTeam).sort((a, b) => a.localeCompare(b));
 
+  // Show login prompt if not authenticated or if we get auth errors
+  const isAuthError =
+    teamError &&
+    (teamError.message?.includes("token") ||
+      teamError.message?.includes("auth") ||
+      teamError.message?.includes("unauthorized") ||
+      (typeof teamError === "object" &&
+        "status" in teamError &&
+        (teamError.status === 401 || teamError.status === 403)));
+
+  if (!authLoading && (!user || isAuthError)) {
+    return (
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">
+              Fantasy League - Team Selection
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="py-8">
+            <div className="max-w-md mx-auto text-center space-y-4">
+              <div className="text-6xl">🔒</div>
+              <h3 className="text-xl font-semibold">Authentication Required</h3>
+              <p className="text-muted-foreground">
+                You need to be logged in with your Steam account to create and
+                manage fantasy teams.
+              </p>
+              <SteamLoginButton />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Show error if team loading failed (but not for 404 - that means no team exists, which is fine)
   // Check if error is a 404/NotFoundError - if so, treat it as "no team" rather than an error
   const isNotFoundError =
@@ -656,7 +691,7 @@ export default function FantasyLeague({ seasonId }: Props) {
         "status" in teamError &&
         (teamError as { status?: number }).status === 404));
 
-  if (teamError && !isLoadingTeam && !isNotFoundError) {
+  if (teamError && !isLoadingTeam && !isNotFoundError && !isAuthError) {
     return (
       <div className="container mx-auto py-8 text-center space-y-4">
         <div className="p-6 bg-red-950/50 border border-red-800/50 rounded-xl">
@@ -1070,43 +1105,6 @@ export default function FantasyLeague({ seasonId }: Props) {
             seasonId={seasonId}
           />
         )}
-      </div>
-    );
-  }
-
-  // Show login prompt if not authenticated or if we get auth errors
-  const isAuthError =
-    teamError &&
-    (teamError.message?.includes("token") ||
-      teamError.message?.includes("auth") ||
-      teamError.message?.includes("unauthorized") ||
-      (typeof teamError === "object" &&
-        "status" in teamError &&
-        (teamError.status === 401 || teamError.status === 403)));
-
-  if (!authLoading && (!user || isAuthError)) {
-    return (
-      <div className="container mx-auto py-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">
-              Fantasy League - Team Selection
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="py-8">
-            <div className="max-w-md mx-auto text-center space-y-4">
-              <div className="text-6xl">🔒</div>
-              <h3 className="text-xl font-semibold">Authentication Required</h3>
-              <p className="text-muted-foreground">
-                You need to be logged in with your Steam account to create and
-                manage fantasy teams.
-              </p>
-              <Button asChild size="lg" variant="kanaliigaOrange">
-                <Link href="/profile">Log In with Steam</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }

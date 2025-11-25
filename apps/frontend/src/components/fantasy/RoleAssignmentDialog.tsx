@@ -20,7 +20,6 @@ import {
   Flame,
   Skull,
   TrendingUp,
-  DollarSign,
   Timer,
   Sparkles,
   Star,
@@ -43,7 +42,6 @@ export type PlayerRole =
   | "camper"
   | "stathunter"
   | "noob"
-  | "eco_friendly"
   | "flash_master"
   | "clutch_player"
   | "first_blood"
@@ -68,7 +66,7 @@ const roles: RoleInfo[] = [
     description: "Primary AWPer",
     icon: <Crosshair className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+15% bonus for AWP kills"
+    bonusDescription: "+20% bonus for AWP kills"
   },
   {
     id: "leader",
@@ -76,7 +74,7 @@ const roles: RoleInfo[] = [
     description: "Team captain & IGL",
     icon: <Users className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+10% for team rounds won"
+    bonusDescription: "+10% bonus for team rounds won"
   },
   {
     id: "support",
@@ -84,7 +82,7 @@ const roles: RoleInfo[] = [
     description: "Utility & trades",
     icon: <Shield className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+20% bonus for assists & flash assists"
+    bonusDescription: "+25% bonus for assists & flash assists"
   },
   {
     id: "entry_fragger",
@@ -92,7 +90,7 @@ const roles: RoleInfo[] = [
     description: "Opens sites",
     icon: <Zap className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+25% bonus for entry kills"
+    bonusDescription: "+30% bonus for opening kills"
   },
   {
     id: "defender",
@@ -100,7 +98,7 @@ const roles: RoleInfo[] = [
     description: "Holds positions",
     icon: <Shield className="h-5 w-5" />,
     category: "core",
-    bonusDescription: "+15% bonus for CT-side rating"
+    bonusDescription: "+15% bonus for assists & KAST"
   },
   // Specialist Roles
   {
@@ -109,7 +107,7 @@ const roles: RoleInfo[] = [
     description: "Headshot specialist",
     icon: <Target className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+30% bonus for headshot kills"
+    bonusDescription: "+25% bonus for kills when HS% > 50%"
   },
   {
     id: "multi_fragger",
@@ -117,7 +115,7 @@ const roles: RoleInfo[] = [
     description: "Multi-kill rounds",
     icon: <Flame className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+50% bonus for 3K/4K/5K rounds"
+    bonusDescription: "+30% bonus for 3K/4K/5K rounds"
   },
   {
     id: "attacker",
@@ -125,7 +123,7 @@ const roles: RoleInfo[] = [
     description: "Aggressive plays",
     icon: <Swords className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+15% bonus for T-side rating"
+    bonusDescription: "+20% bonus for kills & high ADR"
   },
   {
     id: "flash_master",
@@ -133,7 +131,7 @@ const roles: RoleInfo[] = [
     description: "Flash assist expert",
     icon: <Sparkles className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+40% bonus for flash assists"
+    bonusDescription: "+30% bonus for flash assists (min 3)"
   },
   {
     id: "clutch_player",
@@ -141,7 +139,7 @@ const roles: RoleInfo[] = [
     description: "High KAST player",
     icon: <Star className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+20% bonus for clutch rounds won"
+    bonusDescription: "+40% bonus for 1v1, +60% for 1v2+ clutches"
   },
   {
     id: "first_blood",
@@ -149,7 +147,8 @@ const roles: RoleInfo[] = [
     description: "First kill specialist",
     icon: <Activity className="h-5 w-5" />,
     category: "specialist",
-    bonusDescription: "+30% bonus for first kills"
+    bonusDescription:
+      "+35% bonus for first kills, -15% penalty for first deaths"
   },
   // Side Specialist
   {
@@ -158,7 +157,7 @@ const roles: RoleInfo[] = [
     description: "T-side focused",
     icon: <Zap className="h-5 w-5" />,
     category: "side",
-    bonusDescription: "+25% for T-side performance"
+    bonusDescription: "+25% bonus for kills & high ADR"
   },
   {
     id: "ct_specialist",
@@ -166,7 +165,7 @@ const roles: RoleInfo[] = [
     description: "CT-side focused",
     icon: <Shield className="h-5 w-5" />,
     category: "side",
-    bonusDescription: "+25% for CT-side performance"
+    bonusDescription: "+25% bonus for assists & KAST"
   },
   {
     id: "anchor",
@@ -174,7 +173,7 @@ const roles: RoleInfo[] = [
     description: "Site anchor",
     icon: <Eye className="h-5 w-5" />,
     category: "side",
-    bonusDescription: "+15% for site hold rounds"
+    bonusDescription: "+20% bonus for assists & KAST"
   },
   // Meme/Fun Roles
   {
@@ -183,7 +182,7 @@ const roles: RoleInfo[] = [
     description: "Defensive positioning",
     icon: <Timer className="h-5 w-5" />,
     category: "meme",
-    bonusDescription: "-10% penalty (for fun)"
+    bonusDescription: "+15% bonus for trades & site defense"
   },
   {
     id: "stathunter",
@@ -191,7 +190,7 @@ const roles: RoleInfo[] = [
     description: "Consistent performance",
     icon: <TrendingUp className="h-5 w-5" />,
     category: "meme",
-    bonusDescription: "+5% for exit frags (low impact)"
+    bonusDescription: "+20% bonus if rating > 1.0"
   },
   {
     id: "noob",
@@ -199,15 +198,7 @@ const roles: RoleInfo[] = [
     description: "Learning & improving",
     icon: <Skull className="h-5 w-5" />,
     category: "meme",
-    bonusDescription: "-20% penalty but +50% if 1.5+ KD"
-  },
-  {
-    id: "eco_friendly",
-    label: "Eco Friendly",
-    description: "Eco round specialist",
-    icon: <DollarSign className="h-5 w-5" />,
-    category: "meme",
-    bonusDescription: "+30% bonus for eco round kills"
+    bonusDescription: "+50% bonus if K/D < 0.8 but positive points"
   }
 ];
 
@@ -296,19 +287,19 @@ export default function RoleAssignmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[1200px] w-[85vw] max-h-[80vh] h-[80vh] p-0 sm:!max-w-[1200px] overflow-hidden">
+      <DialogContent className="!max-w-[1200px] w-[95vw] sm:w-[85vw] max-h-[98vh] h-[98vh] sm:max-h-[88vh] sm:h-[88vh] p-0 overflow-hidden">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-neutral-800">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 sm:p-6 pb-4 border-b border-neutral-800">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
             <div>
-              <DialogTitle className="text-2xl mb-1">
+              <DialogTitle className="text-xl sm:text-2xl mb-1">
                 Assign Player Role
               </DialogTitle>
               <DialogDescription className="text-sm">
                 Click a role to see details, then assign it to earn bonus points
               </DialogDescription>
             </div>
-            <div className="text-base text-muted-foreground font-medium">
+            <div className="text-sm sm:text-base text-muted-foreground font-medium text-left sm:text-right">
               {currentPlayerIndex + 1} / {players.length}
             </div>
           </div>
@@ -353,16 +344,16 @@ export default function RoleAssignmentDialog({
           </div>
         </div>
 
-        <div className="flex h-[calc(80vh-160px)] overflow-hidden">
-          {/* Left Side - Role Icons Grid */}
-          <div className="flex-1 p-4 flex flex-col overflow-y-auto min-w-0 max-w-[calc(100%-240px)]">
-            <div className="grid grid-cols-6 gap-x-3 gap-y-2.5 mb-3">
+        <div className="flex flex-col sm:flex-row h-[calc(95vh-160px)] sm:h-[calc(80vh-160px)] overflow-hidden">
+          {/* Role Icons Grid */}
+          <div className="flex-1 p-4 flex flex-col overflow-y-auto min-w-0 sm:max-w-[calc(100%-240px)]">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-x-2 sm:gap-x-3 gap-y-2 sm:gap-y-2.5 mb-3">
               {roles.map((role) => (
                 <button
                   key={role.id}
                   onClick={() => handleRoleClick(role.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center aspect-square p-2 rounded-lg border-2 transition-all hover:scale-105",
+                    "flex flex-col items-center justify-center aspect-square p-1.5 sm:p-2 rounded-lg border-2 transition-all hover:scale-105 touch-manipulation",
                     selectedRole === role.id
                       ? "border-primary bg-primary/20 shadow-2xl shadow-primary/50"
                       : currentPlayer.role === role.id
@@ -372,7 +363,7 @@ export default function RoleAssignmentDialog({
                 >
                   <div
                     className={cn(
-                      "mb-1 w-6 h-6 flex items-center justify-center",
+                      "mb-1 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center",
                       selectedRole === role.id
                         ? "text-primary"
                         : currentPlayer.role === role.id
@@ -380,11 +371,11 @@ export default function RoleAssignmentDialog({
                           : "text-neutral-400"
                     )}
                   >
-                    <div className="scale-[1]">{role.icon}</div>
+                    <div className="scale-[0.9] sm:scale-[1]">{role.icon}</div>
                   </div>
                   <p
                     className={cn(
-                      "text-[10px] text-center font-semibold leading-tight",
+                      "text-[9px] sm:text-[10px] text-center font-semibold leading-tight px-0.5",
                       selectedRole === role.id || currentPlayer.role === role.id
                         ? "text-foreground"
                         : "text-muted-foreground"
@@ -399,7 +390,7 @@ export default function RoleAssignmentDialog({
             {/* No Role Button */}
             <button
               onClick={handleNoRole}
-              className="w-full p-2.5 rounded-lg border-2 border-neutral-800 bg-neutral-900/50 hover:border-neutral-600 transition-all"
+              className="w-full p-2 sm:p-2.5 rounded-lg border-2 border-neutral-800 bg-neutral-900/50 hover:border-neutral-600 transition-all touch-manipulation"
             >
               <p className="text-xs font-semibold text-muted-foreground">
                 <X className="h-4 w-4 inline mr-1" />
@@ -408,17 +399,19 @@ export default function RoleAssignmentDialog({
             </button>
           </div>
 
-          {/* Right Side - Selected Role Details */}
-          <div className="w-[240px] flex-shrink-0 border-l border-neutral-800 p-4 bg-neutral-900/50 overflow-y-auto">
+          {/* Selected Role Details */}
+          <div className="w-full sm:w-[240px] flex-shrink-0 sm:border-l border-neutral-800 p-4 bg-neutral-900/50 overflow-y-auto min-h-[200px] sm:min-h-0">
             {selectedRoleInfo ? (
               <div className="space-y-3">
                 <div className="flex flex-col items-center text-center">
-                  <div className="p-4 rounded-xl bg-primary/20 border-2 border-primary mb-3">
-                    <div className="text-primary w-10 h-10 flex items-center justify-center">
-                      <div className="scale-[1.8]">{selectedRoleInfo.icon}</div>
+                  <div className="p-3 sm:p-4 rounded-xl bg-primary/20 border-2 border-primary mb-3">
+                    <div className="text-primary w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center">
+                      <div className="scale-[1.5] sm:scale-[1.8]">
+                        {selectedRoleInfo.icon}
+                      </div>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">
                     {selectedRoleInfo.label}
                   </h3>
                   <Badge variant="outline" className="mb-2 text-xs py-0.5 px-2">
@@ -429,7 +422,7 @@ export default function RoleAssignmentDialog({
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-green-950/30 border border-green-900/50">
+                <div className="p-2.5 sm:p-3 rounded-lg bg-green-950/30 border border-green-900/50">
                   <p className="text-xs font-semibold text-green-400 mb-1">
                     Bonus Points
                   </p>
@@ -441,7 +434,7 @@ export default function RoleAssignmentDialog({
                 <Button
                   onClick={handleAssign}
                   size="default"
-                  className="w-full"
+                  className="w-full touch-manipulation"
                 >
                   Assign Role
                 </Button>
@@ -455,8 +448,8 @@ export default function RoleAssignmentDialog({
                 )}
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground">
-                <Target className="h-12 w-12 mb-3 opacity-50" />
+              <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground px-4">
+                <Target className="h-10 w-10 sm:h-12 sm:w-12 mb-3 opacity-50" />
                 <p className="text-sm font-medium">
                   Click on a role icon to see details
                 </p>
