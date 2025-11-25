@@ -118,6 +118,33 @@ const getSeasonMenuItems = (
           title: "Faceit Links",
           url: `/seasons/${signupOrActiveSeason.season_id}/faceit-links`,
           hasFilters: false
+        },
+        {
+          title: "Fantasy League",
+          url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
+          hasFilters: false,
+          items: [
+            {
+              title: "Draft Team",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
+              hasFilters: false
+            },
+            {
+              title: "Leaderboard",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/leaderboard`,
+              hasFilters: false
+            },
+            {
+              title: "Top Players",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/top-players`,
+              hasFilters: false
+            },
+            {
+              title: "Price History",
+              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/price-history`,
+              hasFilters: false
+            }
+          ]
         }
       ]
     }

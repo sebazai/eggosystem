@@ -12,6 +12,19 @@ import {
   authenticateJWT,
   checkJWTPermissions
 } from "../../middlewares/auth.middleware";
+import {
+  getFantasyPlayersByLeagueController,
+  createFantasyTeamController,
+  getMyFantasyTeamController,
+  substitutePlayerController,
+  updatePlayerRolesController,
+  getFantasyLeaderboardController,
+  getFantasyOverallLeaderboardController,
+  getFantasyPriceHistoryController,
+  seedInitialPlayerValuesController,
+  getTopPerformingPlayersController,
+  getPlayerPointHistoryController
+} from "../../controllers/fantasy.controllers";
 
 const router = Router();
 
@@ -42,6 +55,79 @@ router.get(
     fallbackRoles: ["admin", "captain", "helpdesk", "caster"]
   }),
   getTeamCaptainsBySeasonIdController
+);
+
+// Fantasy League Routes
+router.get(
+  "/:season_id/fantasy/leagues/:league_id/players",
+  validateNumericParams(),
+  getFantasyPlayersByLeagueController
+);
+
+router.post(
+  "/:season_id/fantasy/teams",
+  validateNumericParams(),
+  authenticateJWT,
+  createFantasyTeamController
+);
+
+router.get(
+  "/:season_id/fantasy/teams/me",
+  validateNumericParams(),
+  authenticateJWT,
+  getMyFantasyTeamController
+);
+
+router.put(
+  "/:season_id/fantasy/teams/me/players",
+  validateNumericParams(),
+  authenticateJWT,
+  substitutePlayerController
+);
+
+router.put(
+  "/:season_id/fantasy/teams/me/roles",
+  validateNumericParams(),
+  authenticateJWT,
+  updatePlayerRolesController
+);
+
+router.get(
+  "/:season_id/fantasy/leagues/:league_id/leaderboard",
+  validateNumericParams(),
+  getFantasyLeaderboardController
+);
+
+router.get(
+  "/:season_id/fantasy/overall-leaderboard",
+  validateNumericParams(),
+  getFantasyOverallLeaderboardController
+);
+
+router.get(
+  "/:season_id/fantasy/leagues/:league_id/price-history",
+  validateNumericParams(),
+  getFantasyPriceHistoryController
+);
+
+router.get(
+  "/:season_id/fantasy/leagues/:league_id/top-players",
+  validateNumericParams(),
+  getTopPerformingPlayersController
+);
+
+router.get(
+  "/:season_id/fantasy/teams/me/players/:player_id/points",
+  validateNumericParams(),
+  authenticateJWT,
+  getPlayerPointHistoryController
+);
+
+router.post(
+  "/:season_id/fantasy/leagues/:league_id/seed-values",
+  validateNumericParams(),
+  authenticateJWT,
+  seedInitialPlayerValuesController
 );
 
 export default router;
