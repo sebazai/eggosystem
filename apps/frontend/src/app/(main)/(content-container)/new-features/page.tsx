@@ -24,14 +24,12 @@ export default function NewFeaturesPage() {
           <div className="space-y-8">
             <div className="flex flex-col md:flex-row gap-6">
               <div className="md:flex-1">
-                <h3 className="text-xl font-bold mb-2">
-                  Fantasy League 🏆
-                </h3>
+                <h3 className="text-xl font-bold mb-2">Fantasy League 🏆</h3>
                 <p className="mb-2">
                   We&apos;re excited to introduce Fantasy League - a seasonal
-                  competition where you can create your own team by drafting real
-                  Kanaliiga players and earn points based on their performance in
-                  actual matches!
+                  competition where you can create your own team by drafting
+                  real Kanaliiga players and earn points based on their
+                  performance in actual matches!
                 </p>
 
                 <h4 className="font-bold text-lg mb-2">Key Features</h4>
@@ -51,9 +49,9 @@ export default function NewFeaturesPage() {
                     match performance
                   </li>
                   <li>
-                    <span className="font-medium">Role Assignments</span> - Assign
-                    specialized roles to players (18 different roles available)
-                    to maximize points through role-specific bonuses
+                    <span className="font-medium">Role Assignments</span> -
+                    Assign specialized roles to players (18 different roles
+                    available) to maximize points through role-specific bonuses
                   </li>
                   <li>
                     <span className="font-medium">Points System</span> - Earn
@@ -69,23 +67,23 @@ export default function NewFeaturesPage() {
                     with other fantasy teams and see your ranking
                   </li>
                   <li>
-                    <span className="font-medium">Price History</span> - Track how
-                    player values change over time throughout the season
+                    <span className="font-medium">Price History</span> - Track
+                    how player values change over time throughout the season
                   </li>
                 </ul>
 
                 <p className="mb-2">
-                  Each season has its own independent fantasy league, and you can
-                  only draft players from the specific division you choose. Perfect
-                  for testing your knowledge of player performance and competing
-                  with friends!
+                  Each season has its own independent fantasy league, and you
+                  can only draft players from the specific division you choose.
+                  Perfect for testing your knowledge of player performance and
+                  competing with friends!
                 </p>
 
                 <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
                   <strong>Where to find it:</strong> Navigate to any season page
-                  and click on &quot;Fantasy League&quot; in the season navigation
-                  menu. You can create your team, view the leaderboard, check top
-                  players, and track price history.
+                  and click on &quot;Fantasy League&quot; in the season
+                  navigation menu. You can create your team, view the
+                  leaderboard, check top players, and track price history.
                 </div>
               </div>
 
@@ -116,8 +114,9 @@ export default function NewFeaturesPage() {
               <h3 className="text-xl font-bold mb-2">My Teams Page 👥</h3>
               <p className="mb-2">
                 We&apos;ve added a new &quot;My Teams&quot; page where you can
-                quickly access all the teams you&apos;re part of. This centralized
-                hub makes it easy to stay updated on your team&apos;s activities.
+                quickly access all the teams you&apos;re part of. This
+                centralized hub makes it easy to stay updated on your
+                team&apos;s activities.
               </p>
 
               <h4 className="font-bold text-lg mb-2">Key Features</h4>
@@ -126,18 +125,14 @@ export default function NewFeaturesPage() {
                 <li>
                   See upcoming matches for your teams with dates and opponents
                 </li>
-                <li>
-                  Quick access to team management and details
-                </li>
-                <li>
-                  Direct links to FaceIT matchrooms for scheduled matches
-                </li>
+                <li>Quick access to team management and details</li>
+                <li>Direct links to FaceIT matchrooms for scheduled matches</li>
               </ul>
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
-                <strong>Where to find it:</strong> Click on your profile menu and
-                select &quot;My Teams&quot;. You&apos;ll need to be logged in to
-                view your teams.
+                <strong>Where to find it:</strong> Click on your profile menu
+                and select &quot;My Teams&quot;. You&apos;ll need to be logged
+                in to view your teams.
               </div>
             </div>
           </div>
@@ -156,15 +151,15 @@ export default function NewFeaturesPage() {
                 2D Viewer Enhancements 🎮
               </h3>
               <p className="mb-2">
-                We&apos;ve made significant improvements to the 2D match viewer to
-                provide a better experience when analyzing matches.
+                We&apos;ve made significant improvements to the 2D match viewer
+                to provide a better experience when analyzing matches.
               </p>
 
               <h4 className="font-bold text-lg mb-2">Key Features</h4>
               <ul className="list-disc pl-5 mb-3">
                 <li>
-                  <span className="font-medium">Flash Duration</span> - Visualize
-                  flashbang effects and their duration on the map
+                  <span className="font-medium">Flash Duration</span> -
+                  Visualize flashbang effects and their duration on the map
                 </li>
                 <li>
                   <span className="font-medium">Dynamic Molotov Burns</span> -
@@ -189,9 +184,9 @@ export default function NewFeaturesPage() {
               </ul>
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
-                <strong>Where to find it:</strong> These improvements are available
-                in the 2D viewer when viewing any match. Click on a match and
-                navigate to the 2D viewer tab.
+                <strong>Where to find it:</strong> These improvements are
+                available in the 2D viewer when viewing any match. Click on a
+                match and navigate to the 2D viewer tab.
               </div>
             </div>
 
@@ -222,8 +217,8 @@ export default function NewFeaturesPage() {
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
                 <strong>Where to find it:</strong> Go to your profile page and
-                look for the Discord settings section. You can link or unlink your
-                Discord account there.
+                look for the Discord settings section. You can link or unlink
+                your Discord account there.
               </div>
             </div>
           </div>
@@ -242,15 +237,17 @@ export default function NewFeaturesPage() {
                 Enhanced Steam ID Input 🔢
               </h3>
               <p className="mb-2">
-                We&apos;ve improved the Steam ID input system to support multiple
-                formats, making it easier to add players and link accounts.
+                We&apos;ve improved the Steam ID input system to support
+                multiple formats, making it easier to add players and link
+                accounts.
               </p>
 
               <h4 className="font-bold text-lg mb-2">Key Features</h4>
               <ul className="list-disc pl-5 mb-3">
                 <li>
-                  <span className="font-medium">Multiple Formats</span> - Support
-                  for Steam Community URLs, Steam ID, Steam ID3, and other formats
+                  <span className="font-medium">Multiple Formats</span> -
+                  Support for Steam Community URLs, Steam ID, Steam ID3, and
+                  other formats
                 </li>
                 <li>
                   <span className="font-medium">Better Validation</span> -
@@ -258,8 +255,9 @@ export default function NewFeaturesPage() {
                   formats
                 </li>
                 <li>
-                  <span className="font-medium">FaceIT Integration</span> - FaceIT
-                  nickname and ID are now automatically saved during signup
+                  <span className="font-medium">FaceIT Integration</span> -
+                  FaceIT nickname and ID are now automatically saved during
+                  signup
                 </li>
                 <li>
                   <span className="font-medium">User-Friendly</span> - You can
@@ -269,8 +267,8 @@ export default function NewFeaturesPage() {
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
                 <strong>Where to find it:</strong> This improvement is available
-                in the signup form when adding players, and in the admin dashboard
-                when adding or validating players.
+                in the signup form when adding players, and in the admin
+                dashboard when adding or validating players.
               </div>
             </div>
           </div>
@@ -312,8 +310,9 @@ export default function NewFeaturesPage() {
               </ul>
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
-                <strong>Where to find it:</strong> Look for FaceIT icons and links
-                on player profile pages, team pages, and upcoming match pages.
+                <strong>Where to find it:</strong> Look for FaceIT icons and
+                links on player profile pages, team pages, and upcoming match
+                pages.
               </div>
             </div>
           </div>
@@ -332,9 +331,9 @@ export default function NewFeaturesPage() {
                 CT/T Side Statistics 📊
               </h3>
               <p className="mb-2">
-                We&apos;ve added separate statistics for Counter-Terrorist (CT) and
-                Terrorist (T) sides, giving you deeper insights into player and
-                team performance on each side.
+                We&apos;ve added separate statistics for Counter-Terrorist (CT)
+                and Terrorist (T) sides, giving you deeper insights into player
+                and team performance on each side.
               </p>
 
               <h4 className="font-bold text-lg mb-2">Key Features</h4>
@@ -342,9 +341,7 @@ export default function NewFeaturesPage() {
                 <li>
                   View side-specific performance breakdowns in match statistics
                 </li>
-                <li>
-                  Compare how players perform on CT side vs T side
-                </li>
+                <li>Compare how players perform on CT side vs T side</li>
                 <li>
                   Enhanced player statistics showing CT/T performance separately
                 </li>
@@ -403,8 +400,8 @@ export default function NewFeaturesPage() {
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
                 <strong>Where to find it:</strong> Team captains and admins can
-                access the substitute player management through the admin dashboard
-                under the players section.
+                access the substitute player management through the admin
+                dashboard under the players section.
               </div>
             </div>
           </div>
@@ -432,7 +429,9 @@ export default function NewFeaturesPage() {
                 <h4 className="font-bold text-lg mb-2">Key Features</h4>
                 <ul className="list-disc pl-5 mb-3">
                   <li>
-                    <span className="font-medium">Interactive Visualization</span>{" "}
+                    <span className="font-medium">
+                      Interactive Visualization
+                    </span>{" "}
                     - View matches from a 2D top-down perspective
                   </li>
                   <li>
@@ -444,12 +443,12 @@ export default function NewFeaturesPage() {
                     representation of weapons and equipment
                   </li>
                   <li>
-                    <span className="font-medium">Kill Markers</span> - Track kills
-                    and events on the map
+                    <span className="font-medium">Kill Markers</span> - Track
+                    kills and events on the map
                   </li>
                   <li>
-                    <span className="font-medium">Round-by-Round</span> - Navigate
-                    through rounds to see how strategies unfold
+                    <span className="font-medium">Round-by-Round</span> -
+                    Navigate through rounds to see how strategies unfold
                   </li>
                 </ul>
 
@@ -459,16 +458,14 @@ export default function NewFeaturesPage() {
                 </p>
 
                 <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
-                  <strong>Where to find it:</strong> Available when viewing match
-                  details. Look for the 2D viewer option in match pages.
+                  <strong>Where to find it:</strong> Available when viewing
+                  match details. Look for the 2D viewer option in match pages.
                 </div>
               </div>
 
               <div className="md:w-2/5">
                 <Image
-                  src={createNextUrl(
-                    "/images/features/2d-viewer-preview.png"
-                  )}
+                  src={createNextUrl("/images/features/2d-viewer-preview.png")}
                   width={600}
                   height={350}
                   alt="2D Viewer Preview"
@@ -503,31 +500,31 @@ export default function NewFeaturesPage() {
                   Compare recent performance and form of both teams
                 </li>
                 <li>
-                  <span className="font-medium">Map Performance Breakdown</span> -
-                  See how each team performs on different maps
+                  <span className="font-medium">Map Performance Breakdown</span>{" "}
+                  - See how each team performs on different maps
                 </li>
                 <li>
                   <span className="font-medium">Team Lineups</span> - Preview
                   expected lineups and player statistics
                 </li>
                 <li>
-                  <span className="font-medium">Combined Map Performance</span> -
-                  Visual radar chart showing team strengths on each map
+                  <span className="font-medium">Combined Map Performance</span>{" "}
+                  - Visual radar chart showing team strengths on each map
                 </li>
                 <li>
-                  <span className="font-medium">Match Statistics</span> - Detailed
-                  stats and predictions for upcoming matches
+                  <span className="font-medium">Match Statistics</span> -
+                  Detailed stats and predictions for upcoming matches
                 </li>
                 <li>
-                  <span className="font-medium">FaceIT Links</span> - Direct links
-                  to FaceIT matchrooms
+                  <span className="font-medium">FaceIT Links</span> - Direct
+                  links to FaceIT matchrooms
                 </li>
               </ul>
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
-                <strong>Where to find it:</strong> Navigate to any upcoming match
-                from the calendar or match listings. The detailed preview page
-                provides comprehensive match analysis.
+                <strong>Where to find it:</strong> Navigate to any upcoming
+                match from the calendar or match listings. The detailed preview
+                page provides comprehensive match analysis.
               </div>
             </div>
 
@@ -540,27 +537,17 @@ export default function NewFeaturesPage() {
 
               <h4 className="font-bold text-lg mb-2">Key Features</h4>
               <ul className="list-disc pl-5 mb-3">
-                <li>
-                  View all scheduled matches in a calendar view
-                </li>
-                <li>
-                  Filter matches by league, tier, and other criteria
-                </li>
-                <li>
-                  See match times, teams, and stream information
-                </li>
-                <li>
-                  Stream reservation system for casters and organizers
-                </li>
-                <li>
-                  Color-coded matches by tier and status
-                </li>
+                <li>View all scheduled matches in a calendar view</li>
+                <li>Filter matches by league, tier, and other criteria</li>
+                <li>See match times, teams, and stream information</li>
+                <li>Stream reservation system for casters and organizers</li>
+                <li>Color-coded matches by tier and status</li>
               </ul>
 
               <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
                 <strong>Where to find it:</strong> Access the calendar from the
-                season navigation menu. You can browse matches by date and filter
-                by various criteria.
+                season navigation menu. You can browse matches by date and
+                filter by various criteria.
               </div>
             </div>
           </div>
