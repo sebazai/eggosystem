@@ -32,16 +32,20 @@ export default function UserDropdown() {
           <DropdownMenuLabel className="flex items-center justify-between">
             Account <ModeToggle />
           </DropdownMenuLabel>
-          <DropdownMenuItem className="cursor-pointer" asChild>
-            <Link href={createNextUrl("/profile")}>
-              <UserIcon /> <span>Profile</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" asChild>
-            <Link href={createNextUrl("/my-team")}>
-              <Users /> <span>My Team</span>
-            </Link>
-          </DropdownMenuItem>
+          {user && (
+            <>
+              <DropdownMenuItem className="cursor-pointer" asChild>
+                <Link href={createNextUrl("/profile")}>
+                  <UserIcon /> <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" asChild>
+                <Link href={createNextUrl("/my-team")}>
+                  <Users /> <span>My Team</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
           {/* <DropdownMenuItem>
             <Settings2Icon /> Settings
           </DropdownMenuItem> */}

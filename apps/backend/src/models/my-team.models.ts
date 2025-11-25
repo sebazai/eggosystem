@@ -3,13 +3,19 @@ import { runQuery } from "../db/mysqlRunQuery";
 import JSONBig from "json-bigint";
 
 /**
- * Gets all teams that a user (by steam_id) is a member of across all active seasons
+ * Gets all teams that a user (by steam_id) is a member of in the latest season
  * Includes team details, league information, and all team members with their roles
  */
 export const getMyTeams = async (
   steam_id: string
 ): Promise<MyTeamDetails[]> => {
   const query = `
+    WITH LatestSeason AS (
+      SELECT MAX(s.id) as latest_season_id
+      FROM Seasons s
+      JOIN SeasonTeamPlayers stp ON stp.season_id = s.id
+      WHERE stp.steam_id = ?
+    )
     SELECT 
       t.id as team_id,
       t.name as team_name,
@@ -30,6 +36,7 @@ export const getMyTeams = async (
         )
       ) as players
     FROM SeasonTeamPlayers stp
+    JOIN LatestSeason ls ON stp.season_id = ls.latest_season_id
     JOIN Teams t ON stp.team_id = t.id
     JOIN Seasons s ON stp.season_id = s.id
     JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = s.id
@@ -38,7 +45,7 @@ export const getMyTeams = async (
     JOIN SteamPlayers sp ON stp_all.steam_id = sp.steam_id
     WHERE stp.steam_id = ?
     GROUP BY t.id, t.name, t.team_logo, s.id, s.name, l.id, l.name, slt.external_team_id, s.platform
-    ORDER BY s.id DESC, l.id ASC
+    ORDER BY l.id ASC
   `;
 
   const results = await runQuery<
@@ -47,7 +54,7 @@ export const getMyTeams = async (
         players: string;
       }
     >
-  >(query, [steam_id]);
+  >(query, [steam_id, steam_id]);
 
   // Parse JSON players array using JSONBig to preserve large integers (Steam IDs)
   // Convert boolean strings back to booleans (MySQL returns booleans as 0/1, JSONBig converts to "0"/"1")
@@ -127,4 +134,36 @@ export const getMyTeamsUpcomingMatches = async (
   `;
 
   return runQuery<MyTeamUpcomingMatch[]>(query, [steam_id]);
+};
+
+/**
+ * Gets all FaceIT championship links for a specific season and league
+ * Returns multiple championships if they exist (e.g., Regular, Playoffs, Groups)
+ */
+export const getMyTeamChampionships = async (
+  season_id: number,
+  league_id: number
+) => {
+  const query = `
+    SELECT 
+      slei.id,
+      slei.external_id,
+      slei.external_league_name,
+      slei.type,
+      st.name as stage_name
+    FROM SeasonLeagueExternalIds slei
+    JOIN Stages st ON slei.stage_id = st.id
+    WHERE slei.season_id = ? AND slei.league_id = ?
+    ORDER BY slei.stage_id ASC, slei.id ASC
+  `;
+
+  return runQuery<
+    Array<{
+      id: number;
+      external_id: string;
+      external_league_name: string;
+      type: string;
+      stage_name: string;
+    }>
+  >(query, [season_id, league_id]);
 };

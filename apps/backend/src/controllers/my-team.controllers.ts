@@ -1,7 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
+import type { RequestWithParams } from "@eggosystem/types";
 import {
   getMyTeams,
-  getMyTeamsUpcomingMatches
+  getMyTeamsUpcomingMatches,
+  getMyTeamChampionships
 } from "../models/my-team.models";
 import { UnauthorizedError } from "../utils/errors";
 
@@ -35,4 +37,18 @@ export const getMyTeamsUpcomingMatchesController = async (
 
   const matches = await getMyTeamsUpcomingMatches(req.auth.provider_id);
   res.json({ matches });
+};
+
+/**
+ * Controller to get FaceIT championships for a specific season and league
+ */
+export const getMyTeamChampionshipsController = async (
+  req: RequestWithParams<{ season_id: string; league_id: string }>,
+  res: Response
+) => {
+  const seasonId = parseInt(req.params.season_id);
+  const leagueId = parseInt(req.params.league_id);
+
+  const championships = await getMyTeamChampionships(seasonId, leagueId);
+  res.json({ championships });
 };

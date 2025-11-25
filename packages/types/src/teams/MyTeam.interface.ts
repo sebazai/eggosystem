@@ -21,6 +21,14 @@ export interface MyTeamDetails {
   platform: string | null;
 }
 
+export interface MyTeamChampionship {
+  id: number;
+  external_id: string;
+  external_league_name: string;
+  type: string;
+  stage_name: string;
+}
+
 export interface MyTeamUpcomingMatch {
   match_id: number;
   team_id: Team["id"];

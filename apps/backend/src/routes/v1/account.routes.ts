@@ -12,7 +12,8 @@ import {
 } from "../../controllers/caster-urls.controllers";
 import {
   getMyTeamsController,
-  getMyTeamsUpcomingMatchesController
+  getMyTeamsUpcomingMatchesController,
+  getMyTeamChampionshipsController
 } from "../../controllers/my-team.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
@@ -93,5 +94,10 @@ router.get(
 // My Team routes
 router.get("/my-teams", getMyTeamsController);
 router.get("/my-teams/upcoming-matches", getMyTeamsUpcomingMatchesController);
+router.get(
+  "/my-teams/championships/:season_id/:league_id",
+  validateNumericParams(["season_id", "league_id"]),
+  getMyTeamChampionshipsController
+);
 
 export default router;
