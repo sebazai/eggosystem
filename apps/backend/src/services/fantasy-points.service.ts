@@ -62,7 +62,7 @@ const TEAM_LOSS_PENALTY = -5; // Points penalty for team loss
 // Role bonus multipliers
 const ROLE_MULTIPLIER_MAIN_AWP = 0.2; // 20% bonus for AWP kills
 const AWP_KILL_BASE_POINTS = 10; // Base points per AWP kill
-const _ROLE_MULTIPLIER_LEADER = 0.2; // 20% multiplier to all points (not currently used)
+const ROLE_MULTIPLIER_LEADER = 0.2; // 20% multiplier to all points
 const ROLE_MULTIPLIER_SUPPORT = 0.25; // 25% bonus for assists
 const ROLE_MULTIPLIER_ENTRY_FRAGGER = 0.3; // 30% bonus for opening kills
 const ROLE_MULTIPLIER_DEFENDER = 0.15; // 15% bonus for CT-side defense
@@ -311,10 +311,8 @@ export const applyRoleBonus = (
       break;
 
     case "leader":
-      // +10% bonus for team rounds won (only when team wins)
-      if (breakdown.team_result > 0) {
-        roleBonus = Math.floor(Math.abs(breakdown.team_result) * 0.1);
-      }
+      // +20% bonus to individual points
+      roleBonus = Math.floor(individualPoints * ROLE_MULTIPLIER_LEADER);
       break;
 
     case "support": {
@@ -397,7 +395,7 @@ export const applyRoleBonus = (
 
     case "clutch_player":
       // +40% bonus for clutch performance
-      roleBonus = Math.floor(stats.clutches_won * ROLE_MULTIPLIER_CLUTCH_1V1);
+      roleBonus = Math.floor(breakdown.clutches * ROLE_MULTIPLIER_CLUTCH_1V1);
       break;
 
     case "first_blood": {
