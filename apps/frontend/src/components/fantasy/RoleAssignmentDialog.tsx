@@ -20,7 +20,6 @@ import {
   Flame,
   Skull,
   TrendingUp,
-  DollarSign,
   Timer,
   Sparkles,
   Star,
