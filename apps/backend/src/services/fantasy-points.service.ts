@@ -62,7 +62,7 @@ const TEAM_LOSS_PENALTY = -5; // Points penalty for team loss
 // Role bonus multipliers
 const ROLE_MULTIPLIER_MAIN_AWP = 0.2; // 20% bonus for AWP kills
 const AWP_KILL_BASE_POINTS = 10; // Base points per AWP kill
-const ROLE_MULTIPLIER_LEADER = 0.2; // 20% multiplier to all points
+const _ROLE_MULTIPLIER_LEADER = 0.2; // 20% multiplier to all points (not currently used)
 const ROLE_MULTIPLIER_SUPPORT = 0.25; // 25% bonus for assists
 const ROLE_MULTIPLIER_ENTRY_FRAGGER = 0.3; // 30% bonus for opening kills
 const ROLE_MULTIPLIER_DEFENDER = 0.15; // 15% bonus for CT-side defense
@@ -72,11 +72,11 @@ const ROLE_MULTIPLIER_ATTACKER = 0.2; // 20% bonus for T-side performance
 const ROLE_MULTIPLIER_CAMPER = 0.15; // 15% bonus for trades and site defense
 const ROLE_MULTIPLIER_STATHUNTER = 0.2; // 20% bonus if rating > 1.0
 const ROLE_MULTIPLIER_NOOB = 0.5; // 50% bonus if K/D < 0.8 and positive points
-const ROLE_MULTIPLIER_ECO_FRIENDLY = 0.15; // 15% bonus for kills
+const _ROLE_MULTIPLIER_ECO_FRIENDLY = 0.15; // 15% bonus for kills (eco role removed)
 const ROLE_MULTIPLIER_FLASH_MASTER = 0.3; // 30% bonus for flash assists
 const FLASH_ASSIST_MINIMUM = 3; // Minimum flash assists for flash_master bonus
 const ROLE_MULTIPLIER_CLUTCH_1V1 = 0.4; // 40% bonus for 1v1 clutches
-const ROLE_MULTIPLIER_CLUTCH_1V2PLUS = 0.6; // 60% bonus for 1v2+ clutches
+const _ROLE_MULTIPLIER_CLUTCH_1V2PLUS = 0.6; // 60% bonus for 1v2+ clutches (not currently used)
 const ROLE_MULTIPLIER_FIRST_BLOOD_KILLS = 0.35; // 35% bonus for first kills
 const ROLE_MULTIPLIER_FIRST_BLOOD_DEATHS = 0.15; // 15% penalty for first deaths
 const ROLE_MULTIPLIER_T_SPECIALIST = 0.25; // 25% bonus for T-side performance
@@ -331,12 +331,13 @@ export const applyRoleBonus = (
       );
       break;
 
-    case "defender":
+    case "defender": {
       // +15% bonus for defensive play (assists, KAST)
       const defensiveBonus =
         stats.assists + (stats.kast > 70 ? stats.kast - 70 : 0);
       roleBonus = Math.floor(defensiveBonus * ROLE_MULTIPLIER_DEFENDER);
       break;
+    }
 
     case "hs_machine":
       // +25% bonus when headshot % > 50%
@@ -352,24 +353,26 @@ export const applyRoleBonus = (
       );
       break;
 
-    case "attacker":
+    case "attacker": {
       // +20% bonus for aggressive play (high kills, ADR)
       const aggressiveBonus =
         stats.kills + (stats.adr > 80 ? (stats.adr - 80) * 0.3 : 0);
       roleBonus = Math.floor(aggressiveBonus * ROLE_MULTIPLIER_ATTACKER);
       break;
+    }
 
-    case "camper":
+    case "camper": {
       // +15% bonus for defensive/trade play
       const camperKastBonus = stats.kast > 75 ? stats.kast - 75 : 0;
       roleBonus = Math.floor(
         (stats.assists + camperKastBonus) * ROLE_MULTIPLIER_CAMPER
       );
       break;
+    }
 
     case "stathunter":
-      // +20% bonus if rating > 1.0 (using actual performance metric)
-      if (stats.kana_rating > 1.0) {
+      // +20% bonus if rating > threshold (using actual performance metric)
+      if (stats.kana_rating > STATHUNTER_KD_THRESHOLD) {
         roleBonus = Math.floor(basePoints * ROLE_MULTIPLIER_STATHUNTER);
       }
       break;
@@ -409,21 +412,23 @@ export const applyRoleBonus = (
       break;
     }
 
-    case "t_specialist":
+    case "t_specialist": {
       // +25% bonus for T-side performance (high ADR, kills)
       const tBonus =
         stats.kills + (stats.adr > 75 ? (stats.adr - 75) * 0.4 : 0);
       roleBonus = Math.floor(tBonus * ROLE_MULTIPLIER_T_SPECIALIST);
       break;
+    }
 
-    case "ct_specialist":
+    case "ct_specialist": {
       // +25% bonus for CT-side performance (high assists, KAST)
       const ctBonus =
         stats.assists + (stats.kast > 70 ? (stats.kast - 70) * 0.5 : 0);
       roleBonus = Math.floor(ctBonus * ROLE_MULTIPLIER_CT_SPECIALIST);
       break;
+    }
 
-    case "anchor":
+    case "anchor": {
       // +20% bonus for anchor/defensive positioning
       const anchorKastBonus =
         stats.kast > 70 ? Math.floor((stats.kast - 70) * 0.3) : 0;
@@ -431,6 +436,7 @@ export const applyRoleBonus = (
         (stats.assists + anchorKastBonus) * ROLE_MULTIPLIER_ANCHOR
       );
       break;
+    }
 
     default:
       roleBonus = 0;
