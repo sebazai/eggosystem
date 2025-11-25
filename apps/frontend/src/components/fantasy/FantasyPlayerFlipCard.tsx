@@ -91,7 +91,7 @@ export default function FantasyPlayerFlipCard({
     if (!isDisabled) {
       onAdd(player);
     } else {
-      console.warn('Cannot add player: card is disabled');
+      console.warn("Cannot add player: card is disabled");
     }
   };
 
