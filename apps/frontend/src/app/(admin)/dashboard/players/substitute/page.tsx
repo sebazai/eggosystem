@@ -131,7 +131,7 @@ export default function AddSubstitutePlayerPage() {
 
       // Send the match ID as-is to the backend for resolution
       // Backend will handle numeric IDs, Faceit room IDs, and Faceit URLs
-      const matchIdValue = matchId.trim() || undefined;
+      const matchIdValue = matchId.trim();
 
       await addSubstitutePlayer({
         seasonId: selectedSeasonId,
@@ -201,8 +201,8 @@ export default function AddSubstitutePlayerPage() {
             <CardHeader>
               <CardTitle>Substitute Player Addition</CardTitle>
               <CardDescription>
-                Select a season, validate the player, choose a team and
-                optionally set a match ID
+                Select a season, validate the player, choose a team and set a
+                match ID
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -268,12 +268,7 @@ export default function AddSubstitutePlayerPage() {
 
               {/* Match ID Input */}
               <div className="space-y-2">
-                <Label htmlFor="matchId">
-                  Match ID (optional)
-                  <span className="text-sm text-muted-foreground ml-2">
-                    Leave empty to add for whole season
-                  </span>
-                </Label>
+                <Label htmlFor="matchId">Match ID</Label>
                 <Input
                   id="matchId"
                   placeholder="Enter match ID, Faceit room ID, or Faceit URL"
@@ -310,7 +305,8 @@ export default function AddSubstitutePlayerPage() {
                   !steamId ||
                   isAdding ||
                   !validationResult ||
-                  !validationResult.overall_success
+                  !validationResult.overall_success ||
+                  !matchId.trim()
                 }
                 className="w-full"
                 data-testid="add-substitute-player-button"

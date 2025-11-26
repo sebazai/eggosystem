@@ -89,7 +89,18 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should add an eligible player to the team", async () => {
-    // Mock player rank data in SeasonPlayerRanks
+    mockRunQuery.mockResolvedValueOnce([
+      { steam_id: "76561198000000001" },
+      { steam_id: "76561198000000002" }
+    ]);
+
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([
       {
         id: 1,
@@ -101,10 +112,7 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
-
-    // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -121,7 +129,6 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock getPlayerDetailsForDashboardBySteamId query
     mockRunQuery.mockResolvedValueOnce([
       {
         steam_id: EligiblePlayerForValidationSteamId,
@@ -136,10 +143,8 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
-    // Mock team player query (success) - insertSeasonTeamPlayer
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
     // Call the controller
@@ -155,17 +160,15 @@ describe("addPlayerToTeamController", () => {
       expect.any(Object)
     );
 
-    // Verify player kana_elo was set
     expect(mockPlayerModels.setPlayerKanaElo).toHaveBeenCalledWith(
       EligiblePlayerForValidationSteamId,
       200,
       expect.any(String),
       14,
-      undefined, // offered_elo parameter
-      expect.any(Object) // connection parameter
+      undefined,
+      expect.any(Object)
     );
 
-    // Verify player was added to team
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId],
@@ -182,15 +185,21 @@ describe("addPlayerToTeamController", () => {
       kana_elo: 200
     });
 
-    // Verify next was not called with errors
     expect(mockNext).not.toHaveBeenCalled();
   });
 
   it("should create player data if missing in SeasonPlayerRanks", async () => {
-    // Mock empty player data - not found in SeasonPlayerRanks
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([]);
 
-    // Mock external services for fetching player data
     mockPlayerRankServices.getCSRank.mockResolvedValueOnce({
       average_rank: 15000,
       rank_updated_at: null
@@ -208,10 +217,8 @@ describe("addPlayerToTeamController", () => {
       }
     });
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
-    // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -228,7 +235,6 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock getPlayerDetailsForDashboardBySteamId query
     mockRunQuery.mockResolvedValueOnce([
       {
         steam_id: EligiblePlayerForValidationSteamId,
@@ -243,15 +249,12 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock FACEIT player rank insertion
     mockRankModels.insertPlayerRankForSeason.mockResolvedValueOnce(
       {} as unknown
     );
 
-    // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
-    // Mock team player query (success) - insertSeasonTeamPlayer
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
     // Call the controller
@@ -270,7 +273,16 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should reject ineligible players", async () => {
-    // Mock player rank data in SeasonPlayerRanks
+    // 1. getPrimaryPlayersForTeam query
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+    // 2. getSeasonById query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([
       {
         id: 1,
@@ -282,10 +294,8 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
-    // Mock eligibility check with ineligible result
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -330,7 +340,16 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should handle database errors", async () => {
-    // Mock player rank data in SeasonPlayerRanks
+    // 1. getPrimaryPlayersForTeam query
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+    // 2. getSeasonById query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([
       {
         id: 1,
@@ -342,10 +361,8 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
-    // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -362,7 +379,6 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock getPlayerDetailsForDashboardBySteamId query
     mockRunQuery.mockResolvedValueOnce([
       {
         steam_id: EligiblePlayerForValidationSteamId,
@@ -377,7 +393,6 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock setPlayerKanaElo failing by throwing an error
     mockPlayerModels.setPlayerKanaElo.mockRejectedValueOnce(
       new Error("Failed to update player's kana_elo")
     );
@@ -433,22 +448,18 @@ describe("addSubstitutePlayerController", () => {
     // Verify no database insertion was performed since no match_id provided
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
-      expect.any(Object)
+      expect.any(Array)
     );
 
-    // Verify success response
-    expect(mockResponse.status).toHaveBeenCalledWith(200);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      message: "Substitute player successfully added to the team",
-      steam_id: EligiblePlayerForValidationSteamId,
-      team_id: 1650,
-      season_id: 14,
-      role: "substitute",
-      match_id: null
-    });
+    // Verify error was passed to next since match_id is required
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "match_id is required"
+      })
+    );
 
-    expect(mockNext).not.toHaveBeenCalled();
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it("should successfully add a substitute player with numeric match_id", async () => {
@@ -462,7 +473,9 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return the same numeric ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([123]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -473,11 +486,7 @@ describe("addSubstitutePlayerController", () => {
     );
 
     // Verify match ID was resolved
-    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
-      "123",
-      14,
-      expect.any(Object)
-    );
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("123", 14);
 
     // Verify no eligibility check was performed
     expect(
@@ -488,16 +497,17 @@ describe("addSubstitutePlayerController", () => {
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 123],
-      expect.any(Object)
+      undefined
     );
 
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: [123]
+      match_id: 123
     });
   });
 
@@ -512,32 +522,31 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to throw validation error
-    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(
-      new Error("Invalid match ID format: invalid")
-    );
+    const validationError = new Error("Invalid match ID format: invalid");
+    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(validationError);
 
-    await addSubstitutePlayerController(
-      requestWithInvalidMatchId,
-      mockResponse,
-      mockNext
-    );
+    // Error will propagate to Express error handler
+    await expect(
+      addSubstitutePlayerController(
+        requestWithInvalidMatchId,
+        mockResponse,
+        mockNext
+      )
+    ).rejects.toThrow("Invalid match ID format: invalid");
 
     // Verify match ID resolution was attempted
-    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
-      "invalid",
-      14,
-      expect.any(Object)
-    );
-
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Invalid match ID format: invalid"
-      })
-    );
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("invalid", 14);
 
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
     ).not.toHaveBeenCalled();
+
+    // Verify no insertion was attempted
+    expect(mockRunQuery).not.toHaveBeenCalled();
+
+    // Verify no success response was sent
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it("should handle database transaction errors", async () => {
@@ -551,25 +560,25 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return the same numeric ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([123]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
 
     // Mock database error
     const dbError = new Error("Database error");
     mockRunQuery.mockRejectedValueOnce(dbError);
 
-    await addSubstitutePlayerController(
-      requestWithMatchId,
-      mockResponse,
-      mockNext
-    );
+    // Error will propagate to Express error handler
+    await expect(
+      addSubstitutePlayerController(requestWithMatchId, mockResponse, mockNext)
+    ).rejects.toThrow("Database error");
 
     // Verify no eligibility check was performed
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
     ).not.toHaveBeenCalled();
 
-    // Verify the error was properly caught and passed to next
-    expect(mockNext).toHaveBeenCalledWith(dbError);
+    // Verify no success response was sent
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it("should resolve Faceit room ID to match ID when provided", async () => {
@@ -583,7 +592,9 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return internal match ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([456]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(456);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -596,24 +607,24 @@ describe("addSubstitutePlayerController", () => {
     // Verify match ID was resolved
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
       "1-ff5e99c3-0765-4173-ba2a-398987b1b3ef",
-      14,
-      expect.any(Object)
+      14
     );
 
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 456],
-      expect.any(Object)
+      undefined
     );
 
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: [456]
+      match_id: 456
     });
   });
 
@@ -630,7 +641,9 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return internal match ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([789]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(789);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -643,24 +656,24 @@ describe("addSubstitutePlayerController", () => {
     // Verify match ID was resolved
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
       "https://www.faceit.com/en/cs2/room/1-abc123-def456-ghi789",
-      14,
-      expect.any(Object)
+      14
     );
 
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 789],
-      expect.any(Object)
+      undefined
     );
 
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: [789]
+      match_id: 789
     });
   });
 
@@ -675,36 +688,32 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to throw error
-    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(
-      new Error("Invalid match ID format: invalid-match-id")
+    const resolutionError = new Error(
+      "Invalid match ID format: invalid-match-id"
     );
+    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(resolutionError);
 
-    await addSubstitutePlayerController(
-      requestWithInvalidMatchId,
-      mockResponse,
-      mockNext
-    );
+    // Error will propagate to Express error handler
+    await expect(
+      addSubstitutePlayerController(
+        requestWithInvalidMatchId,
+        mockResponse,
+        mockNext
+      )
+    ).rejects.toThrow("Invalid match ID format: invalid-match-id");
 
     // Verify match ID resolution was attempted
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
       "invalid-match-id",
-      14,
-      expect.any(Object)
-    );
-
-    // Verify error was passed to next middleware
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Invalid match ID format: invalid-match-id"
-      })
+      14
     );
 
     // Verify no insertion was attempted
-    expect(mockRunQuery).not.toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
-      expect.any(Object)
-    );
+    expect(mockRunQuery).not.toHaveBeenCalled();
+
+    // Verify no success response was sent
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 });
 

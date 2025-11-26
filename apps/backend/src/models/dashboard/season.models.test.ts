@@ -53,14 +53,24 @@ describe("Season Models", () => {
         )
       );
 
-      // Mock league query result (now returns league_id)
       mockRunQuery.mockResolvedValueOnce([
         {
           league_id: 1
         }
       ]);
 
-      // Mock team query result
+      mockRunQuery.mockResolvedValueOnce([
+        { steam_id: "76561198000000001" },
+        { steam_id: "76561198000000002" }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 1,
+          max_players: 9
+        }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           team_id: 1,
@@ -70,7 +80,6 @@ describe("Season Models", () => {
         }
       ]);
 
-      // Mock top teams query result
       mockRunQuery.mockResolvedValueOnce([
         {
           team_id: 2,
@@ -80,7 +89,6 @@ describe("Season Models", () => {
         }
       ]);
 
-      // Mock league name query result
       mockRunQuery.mockResolvedValueOnce([
         {
           league_name: "League 1"
@@ -93,22 +101,20 @@ describe("Season Models", () => {
         "76561198028510846"
       );
 
-      // Check that the queries were called with correct parameters
-      expect(mockRunQuery).toHaveBeenCalledTimes(4);
+      expect(mockRunQuery).toHaveBeenCalledTimes(6);
 
-      // Check the first query (league_id query)
       expect(mockRunQuery.mock.calls[0][0]).toContain("SELECT slt.league_id");
-
-      // Check the second query (team query)
-      expect(mockRunQuery.mock.calls[1][0]).toContain("WITH TeamTopPlayers AS");
-
-      // Check the third query (top teams query)
+      expect(mockRunQuery.mock.calls[1][0]).toContain(
+        "SELECT steam_id FROM SeasonTeamPlayers"
+      );
       expect(mockRunQuery.mock.calls[2][0]).toContain(
+        "SELECT * FROM Seasons WHERE id = ?"
+      );
+      expect(mockRunQuery.mock.calls[3][0]).toContain("WITH TeamTopPlayers AS");
+      expect(mockRunQuery.mock.calls[4][0]).toContain(
         "WITH TeamPlayersKanaElo AS"
       );
-
-      // Check the fourth query (league name query)
-      expect(mockRunQuery.mock.calls[3][0]).toContain(
+      expect(mockRunQuery.mock.calls[5][0]).toContain(
         "SELECT l.name AS league_name"
       );
 
@@ -155,14 +161,37 @@ describe("Season Models", () => {
         )
       );
 
-      // Mock league query result (now returns league_id)
+      // 1. getPrimaryPlayersForTeam query
+      mockRunQuery.mockResolvedValueOnce([
+        { steam_id: "76561198000000001" },
+        { steam_id: "76561198000000002" }
+      ]);
+      // 2. getSeasonById query
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 14,
+          max_players: 9
+        }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           league_id: 1
         }
       ]);
 
-      // Mock team query result
+      mockRunQuery.mockResolvedValueOnce([
+        { steam_id: "76561198000000001" },
+        { steam_id: "76561198000000002" }
+      ]);
+
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 14,
+          max_players: 9
+        }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           team_id: 2053,
@@ -172,7 +201,6 @@ describe("Season Models", () => {
         }
       ]);
 
-      // Mock top teams query result
       mockRunQuery.mockResolvedValueOnce([
         {
           team_id: 1,
@@ -182,7 +210,6 @@ describe("Season Models", () => {
         }
       ]);
 
-      // Mock league name query result
       mockRunQuery.mockResolvedValueOnce([
         {
           league_name: "League 1"
@@ -211,7 +238,16 @@ describe("Season Models", () => {
         )
       );
 
-      // Mock league query result (now returns league_id)
+      // 1. getPrimaryPlayersForTeam query
+      mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+      // 2. getSeasonById query
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 1,
+          max_players: 9
+        }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           league_id: 1
@@ -242,7 +278,16 @@ describe("Season Models", () => {
         )
       );
 
-      // Mock league query result (now returns league_id)
+      // 1. getPrimaryPlayersForTeam query
+      mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+      // 2. getSeasonById query
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 1,
+          max_players: 9
+        }
+      ]);
+
       mockRunQuery.mockResolvedValueOnce([
         {
           league_id: 1
@@ -319,6 +364,16 @@ describe("Season Models", () => {
 
       // Reset mock and set up for this test
       mockRunQuery.mockReset();
+
+      // 1. getPrimaryPlayersForTeam query
+      mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+      // 2. getSeasonById query
+      mockRunQuery.mockResolvedValueOnce([
+        {
+          id: 1,
+          max_players: 9
+        }
+      ]);
 
       // Return data for league query but empty array for selected team query
       mockRunQuery

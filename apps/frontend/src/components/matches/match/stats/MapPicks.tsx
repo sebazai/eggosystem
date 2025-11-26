@@ -1,18 +1,21 @@
+"use client";
+
 import { useMatchMaps } from "@/hooks/data/useMatchMaps";
 import { useMatchMapVetoes } from "@/hooks/data/useMatchMapVetoes";
 import { useMatchInfo } from "@/hooks/data/useMatchInfo";
 import {
   createNextUrl,
   mapToReadableName,
-  createTeamLogoUrl
+  createTeamLogoUrl,
+  cn
 } from "@/lib/utils";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 import { useGetMatchGamesByExternalMatchRoomId } from "@/hooks/data/useGetMatchGamesByExternalMatchRoomId";
 import { useMemo } from "react";
+import { useParams } from "next/navigation";
 
 interface MatchMapPicksProps {
   matchId: number;
-  matchGameId?: number | undefined;
   handleMapSelect: (matchId: number, matchGameId?: number | undefined) => void;
   externalMatchRoomId: string | null;
 }
@@ -22,6 +25,8 @@ export const MatchMapPicks = ({
   handleMapSelect,
   externalMatchRoomId
 }: MatchMapPicksProps) => {
+  const params = useParams();
+  const matchGameId = parseInt(params.match_game_id as string, 10);
   const { maps } = useMatchMaps(matchId);
   const { vetoes } = useMatchMapVetoes(matchId);
   const { matchInfo } = useMatchInfo(String(matchId));
@@ -47,13 +52,19 @@ export const MatchMapPicks = ({
     <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
       {/* Picked Maps Scores */}
       <div className="w-full">
+        <h2 className="text-lg font-bold mb-3">MAPS PLAYED</h2>
         {allMatchGameMaps
           .sort((a, b) => (a.map_order ?? 0) - (b.map_order ?? 0))
           .map((mapMatchGame, index) => {
             return (
               <div
                 key={index}
-                className="relative flex flex-1 min-h-10 items-center cursor-pointer overflow-hidden rounded my-1 border-1 border-transparent hover:border-1 hover:border-kanaliiga-orange"
+                className={cn(
+                  `relative flex flex-1 min-h-10 items-center cursor-pointer overflow-hidden rounded my-1 hover:border-1 hover:border-kanaliiga-orange`,
+                  mapMatchGame.id === matchGameId
+                    ? "border-1 border-kanaliiga-orange"
+                    : "border-1 border-kanaliiga-light-brown/50"
+                )}
                 onClick={() =>
                   handleMapSelect(
                     mapMatchGame.match_id,

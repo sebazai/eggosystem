@@ -24,6 +24,17 @@ export const getSeasonById = async (
   return data;
 };
 
+export const getSeasonByIdOrThrow = async (
+  id: number,
+  connection?: PoolConnection
+) => {
+  const season = await getSeasonById(id, connection);
+  if (!season) {
+    throw new Error(`Season ${id} not found`);
+  }
+  return season;
+};
+
 export const getSeasonDetailsById = async (id: number) => {
   const [data] = await runQuery<Array<SeasonDetails | undefined>>(
     "SELECT s.*, g.app_id FROM Seasons s JOIN Games g ON s.game_id = g.id WHERE s.id = ?",

@@ -12,13 +12,19 @@ import { insertPlayerRankForSeason } from "../../models/season-player-ranks.mode
 import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
-import { type RequestWithParams } from "@eggosystem/types";
+import {
+  type RequestWithParamsAndBody,
+  type RequestWithParams,
+  type InsertSeasonTeamPlayer
+} from "@eggosystem/types";
 import { resolveMatchId } from "../../utils/matchUtils";
 import { getPlayerRankForPlatform } from "../../services/player-ranks.services";
 import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
 import { getPlayerDetailsForDashboardBySteamId } from "../../models/dashboard/player.models";
 import { preparePlayerForSignup } from "../../models/player.models";
 import { normalizeSteamId } from "../../utils/steam-id-validator";
+import { ensureMatchIdAndTeamIdMatches } from "../../models/match.models";
+import { ensureSeasonMaxPlayersForTeam } from "../../services/season.services";
 /**
  * Controller to add a player to a team
  * This will:
@@ -43,6 +49,8 @@ export const addPlayerToTeamController = async (
   if (kana_elo === undefined || kana_elo === null) {
     return next(new BadRequestError("kana_elo is required"));
   }
+
+  await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
 
   // Don't require calculus anymore - it's optional
   const calculusData = calculus || {};
@@ -191,7 +199,7 @@ export const addPlayerToTeamController = async (
     await insertSeasonTeamPlayer(
       seasonId,
       teamId,
-      { steam_id: steamId },
+      { steam_id: steamId } satisfies InsertSeasonTeamPlayer,
       connection
     );
 
@@ -366,19 +374,15 @@ export const validatePlayerController = async (
   }
 };
 
-/**
- * Controller to add a substitute player to a team
- * This will:
- * 1. Add the player to the SeasonTeamPlayers table as 'substitute'
- * 2. Optionally set match_id if provided for single-match substitution
- * Note: No eligibility check needed for substitutes, only validation should be done on frontend
- */
 export const addSubstitutePlayerController = async (
-  req: RequestWithParams<{
-    season_id: string;
-    team_id: string;
-    steam_id: string;
-  }>,
+  req: RequestWithParamsAndBody<
+    {
+      season_id: string;
+      team_id: string;
+      steam_id: string;
+    },
+    { match_id: string }
+  >,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -387,57 +391,29 @@ export const addSubstitutePlayerController = async (
   const steamId = req.params.steam_id;
   const { match_id } = req.body;
 
-  const connection = await getConnection();
-  try {
-    await connection.beginTransaction();
-
-    // Resolve match_id if provided (can be numeric ID, Faceit room ID, or Faceit URL)
-    let resolvedMatchId: number[] | undefined;
-    if (match_id !== undefined && match_id !== null) {
-      try {
-        resolvedMatchId = await resolveMatchId(
-          match_id.toString(),
-          seasonId,
-          connection
-        );
-      } catch (error) {
-        await connection.rollback();
-        return next(error);
-      }
-    }
-
-    if (resolvedMatchId !== undefined) {
-      for (const matchId of resolvedMatchId) {
-        // Add the player to the team as substitute in SeasonTeamPlayers
-        const insertData: {
-          steam_id: string;
-          role: "substitute";
-          match_id?: number;
-        } = {
-          steam_id: steamId,
-          role: "substitute",
-          match_id: matchId
-        };
-        await insertSeasonTeamPlayer(seasonId, teamId, insertData, connection);
-      }
-    }
-
-    await connection.commit();
-
-    res.status(200).json({
-      message: "Substitute player successfully added to the team",
-      steam_id: steamId,
-      team_id: teamId,
-      season_id: seasonId,
-      role: "substitute",
-      match_id: resolvedMatchId || null
-    });
-  } catch (error) {
-    await connection.rollback();
-    return next(error);
-  } finally {
-    connection.release();
+  if (!match_id) {
+    return next(new BadRequestError("match_id is required"));
   }
+
+  const resolvedMatchId = await resolveMatchId(match_id.toString(), seasonId);
+
+  await ensureMatchIdAndTeamIdMatches(resolvedMatchId, teamId);
+
+  const insertData = {
+    steam_id: steamId,
+    role: "substitute",
+    match_id: resolvedMatchId
+  } satisfies InsertSeasonTeamPlayer;
+  await insertSeasonTeamPlayer(seasonId, teamId, insertData);
+
+  res.status(200).json({
+    message: "Substitute player successfully added to the team",
+    steam_id: steamId,
+    team_id: teamId,
+    season_id: seasonId,
+    role: "substitute",
+    match_id: resolvedMatchId || null
+  });
 };
 
 /**

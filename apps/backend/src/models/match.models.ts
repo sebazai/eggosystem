@@ -1060,3 +1060,20 @@ export const getMatchTeamLineups = async (matchId: number) => {
 
   return teams;
 };
+
+export const ensureMatchIdAndTeamIdMatches = async (
+  matchId: number,
+  teamId: number
+) => {
+  const query = `SELECT COUNT(*) as count FROM MatchTeams WHERE match_id = ? AND team_id = ?`;
+  const results = await runQuery<Array<{ count: number }>>(query, [
+    matchId,
+    teamId
+  ]);
+  const result = results[0];
+  if (!result || result.count === 0) {
+    throw new Error(
+      `Match with id ${matchId} does not match team with id ${teamId}`
+    );
+  }
+};

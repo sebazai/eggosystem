@@ -35,7 +35,7 @@ export async function resolveMatchId(
   matchInput: string,
   seasonId: number,
   connection?: PoolConnection
-): Promise<number[]> {
+) {
   if (!matchInput) {
     throw new BadRequestError("Match ID cannot be empty");
   }
@@ -53,13 +53,14 @@ export async function resolveMatchId(
       connection
     );
 
-    if (results.length === 0) {
+    const result = results[0];
+    if (!result) {
       throw new BadRequestError(
         `Match with ID ${numericId} not found in season ${seasonId}`
       );
     }
 
-    return [results[0].id];
+    return result.id;
   }
 
   // Check if it looks like a Faceit room ID (contains hyphens and alphanumeric)
@@ -72,13 +73,14 @@ export async function resolveMatchId(
       connection
     );
 
-    if (results.length === 0) {
+    const result = results[0];
+    if (!result) {
       throw new BadRequestError(
         `Match with Faceit room ID '${processedInput}' not found in season ${seasonId}`
       );
     }
 
-    return results.map((result) => result.id);
+    return result.id;
   }
 
   // If we get here, the input format is invalid

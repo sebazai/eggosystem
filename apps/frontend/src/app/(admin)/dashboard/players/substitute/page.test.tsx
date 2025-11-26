@@ -251,9 +251,11 @@ describe("AddSubstitutePlayerPage", () => {
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
     const teamSelect = screen.getByTestId("team-selector");
+    const matchIdInput = screen.getByTestId("match-id-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
+    fireEvent.change(matchIdInput, { target: { value: "123" } });
     fireEvent.click(teamSelect);
 
     await waitFor(() => {
@@ -267,7 +269,7 @@ describe("AddSubstitutePlayerPage", () => {
     });
   });
 
-  it("should call addSubstitutePlayer when form is submitted without match ID", async () => {
+  it("should keep add button disabled when match ID is missing", async () => {
     // Mock successful validation
     mockUsePlayerValidation.mockReturnValue({
       validationResult: {
@@ -287,18 +289,9 @@ describe("AddSubstitutePlayerPage", () => {
       clearResults: mockClearResults
     });
 
-    mockAddSubstitutePlayer.mockResolvedValue({
-      message: "Substitute player successfully added to the team",
-      steam_id: "76561198000000001",
-      team_id: 1,
-      season_id: 1,
-      role: "substitute",
-      match_id: null
-    });
-
     render(<AddSubstitutePlayerPage />);
 
-    // Fill in required fields
+    // Fill in required fields (but not match ID)
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
 
@@ -314,18 +307,14 @@ describe("AddSubstitutePlayerPage", () => {
       fireEvent.click(teamOption);
     });
 
-    // Click add button
-    const addButton = screen.getByTestId("add-substitute-player-button");
-    fireEvent.click(addButton);
-
+    // Verify button is still disabled because match ID is missing
     await waitFor(() => {
-      expect(mockAddSubstitutePlayer).toHaveBeenCalledWith({
-        seasonId: "1",
-        teamId: "1",
-        steamId: "76561198000000001",
-        matchId: undefined
-      });
+      const addButton = screen.getByTestId("add-substitute-player-button");
+      expect(addButton).toBeDisabled();
     });
+
+    // Verify addSubstitutePlayer was not called
+    expect(mockAddSubstitutePlayer).not.toHaveBeenCalled();
   });
 
   it("should call addSubstitutePlayer with match ID when provided", async () => {
@@ -420,9 +409,11 @@ describe("AddSubstitutePlayerPage", () => {
     // Fill in required fields and submit
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
+    const matchIdInput = screen.getByTestId("match-id-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
+    fireEvent.change(matchIdInput, { target: { value: "123" } });
 
     // Select team
     const teamSelect = screen.getByTestId("team-selector");
@@ -441,7 +432,7 @@ describe("AddSubstitutePlayerPage", () => {
       expect(screen.getByTestId("success-message")).toBeInTheDocument();
       expect(
         screen.getByText(
-          /Substitute player successfully added to Team Alpha for the whole season/
+          /Substitute player successfully added to Team Alpha for match 123/
         )
       ).toBeInTheDocument();
     });
