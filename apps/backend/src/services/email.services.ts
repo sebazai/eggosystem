@@ -25,7 +25,7 @@ export const sendVerificationEmail = async (to: string, token: string) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   const mailOptions = {
-    from: "Kanahub by Kanaliiga <noreply@kanaliiga.fi>",
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
     subject: "Please verify your email address for Kanahub",
     html: `
@@ -90,7 +90,7 @@ export const sendDiscordInviteEmail = async (
 ) => {
   const transporter = createTransporter();
   const mailOptions = {
-    from: "Kanahub by Kanaliiga <noreply@kanaliiga.fi>",
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
     subject: `Welcome to Kanahautomo Discord - ${organizationName}`,
     html: `
@@ -198,7 +198,7 @@ export const sendSeasonCaptainWelcomeEmail = async (
 
   const transporter = createTransporter();
   const mailOptions = {
-    from: "Kanahub by Kanaliiga <noreply@kanaliiga.fi>",
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
     to,
     subject: `Welcome to ${seasonDisplayName} - Kanaliiga`,
     html: `
