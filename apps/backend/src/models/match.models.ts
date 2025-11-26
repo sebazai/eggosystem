@@ -1066,11 +1066,12 @@ export const ensureMatchIdAndTeamIdMatches = async (
   teamId: number
 ) => {
   const query = `SELECT COUNT(*) as count FROM MatchTeams WHERE match_id = ? AND team_id = ?`;
-  const [result] = await runQuery<Array<{ count: number }>>(query, [
+  const results = await runQuery<Array<{ count: number }>>(query, [
     matchId,
     teamId
   ]);
-  if (result.count === 0) {
+  const result = results[0];
+  if (!result || result.count === 0) {
     throw new Error(
       `Match with id ${matchId} does not match team with id ${teamId}`
     );

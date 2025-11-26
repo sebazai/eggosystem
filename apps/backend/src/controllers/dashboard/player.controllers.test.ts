@@ -459,6 +459,8 @@ describe("addSubstitutePlayerController", () => {
 
     // Mock resolveMatchId to return the same numeric ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -576,6 +578,8 @@ describe("addSubstitutePlayerController", () => {
 
     // Mock resolveMatchId to return internal match ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(456);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -623,6 +627,8 @@ describe("addSubstitutePlayerController", () => {
 
     // Mock resolveMatchId to return internal match ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(789);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
