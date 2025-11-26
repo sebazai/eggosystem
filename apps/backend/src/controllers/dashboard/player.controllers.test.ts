@@ -89,7 +89,18 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should add an eligible player to the team", async () => {
-    // Mock player rank data in SeasonPlayerRanks
+    mockRunQuery.mockResolvedValueOnce([
+      { steam_id: "76561198000000001" },
+      { steam_id: "76561198000000002" }
+    ]);
+
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([
       {
         id: 1,
@@ -101,10 +112,7 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
-
-    // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -121,7 +129,6 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock getPlayerDetailsForDashboardBySteamId query
     mockRunQuery.mockResolvedValueOnce([
       {
         steam_id: EligiblePlayerForValidationSteamId,
@@ -136,10 +143,8 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
-    // Mock team player query (success) - insertSeasonTeamPlayer
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
     // Call the controller
@@ -155,17 +160,15 @@ describe("addPlayerToTeamController", () => {
       expect.any(Object)
     );
 
-    // Verify player kana_elo was set
     expect(mockPlayerModels.setPlayerKanaElo).toHaveBeenCalledWith(
       EligiblePlayerForValidationSteamId,
       200,
       expect.any(String),
       14,
-      undefined, // offered_elo parameter
-      expect.any(Object) // connection parameter
+      undefined,
+      expect.any(Object)
     );
 
-    // Verify player was added to team
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId],
@@ -182,15 +185,21 @@ describe("addPlayerToTeamController", () => {
       kana_elo: 200
     });
 
-    // Verify next was not called with errors
     expect(mockNext).not.toHaveBeenCalled();
   });
 
   it("should create player data if missing in SeasonPlayerRanks", async () => {
-    // Mock empty player data - not found in SeasonPlayerRanks
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([]);
 
-    // Mock external services for fetching player data
     mockPlayerRankServices.getCSRank.mockResolvedValueOnce({
       average_rank: 15000,
       rank_updated_at: null
@@ -208,10 +217,8 @@ describe("addPlayerToTeamController", () => {
       }
     });
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
-    // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -228,7 +235,6 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock getPlayerDetailsForDashboardBySteamId query
     mockRunQuery.mockResolvedValueOnce([
       {
         steam_id: EligiblePlayerForValidationSteamId,
@@ -243,15 +249,12 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock FACEIT player rank insertion
     mockRankModels.insertPlayerRankForSeason.mockResolvedValueOnce(
       {} as unknown
     );
 
-    // Mock setPlayerKanaElo
     mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
 
-    // Mock team player query (success) - insertSeasonTeamPlayer
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
     // Call the controller
@@ -270,7 +273,16 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should reject ineligible players", async () => {
-    // Mock player rank data in SeasonPlayerRanks
+    // 1. getPrimaryPlayersForTeam query
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+    // 2. getSeasonById query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([
       {
         id: 1,
@@ -282,10 +294,8 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
-    // Mock eligibility check with ineligible result
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -330,7 +340,16 @@ describe("addPlayerToTeamController", () => {
   });
 
   it("should handle database errors", async () => {
-    // Mock player rank data in SeasonPlayerRanks
+    // 1. getPrimaryPlayersForTeam query
+    mockRunQuery.mockResolvedValueOnce([{ steam_id: "76561198000000001" }]);
+    // 2. getSeasonById query
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 14,
+        max_players: 9
+      }
+    ]);
+
     mockRunQuery.mockResolvedValueOnce([
       {
         id: 1,
@@ -342,10 +361,8 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock tier query - return tier 2 (not tier 1, so eligibility check will be enforced)
     mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
 
-    // Mock eligibility check
     mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
       selectedTeam: {
         team_id: 1650,
@@ -362,7 +379,6 @@ describe("addPlayerToTeamController", () => {
       league_name: "Test League"
     });
 
-    // Mock getPlayerDetailsForDashboardBySteamId query
     mockRunQuery.mockResolvedValueOnce([
       {
         steam_id: EligiblePlayerForValidationSteamId,
@@ -377,7 +393,6 @@ describe("addPlayerToTeamController", () => {
       }
     ]);
 
-    // Mock setPlayerKanaElo failing by throwing an error
     mockPlayerModels.setPlayerKanaElo.mockRejectedValueOnce(
       new Error("Failed to update player's kana_elo")
     );

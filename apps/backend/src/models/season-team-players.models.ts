@@ -127,3 +127,15 @@ export const validatePlayersInTeams = async (
     }
   }
 };
+
+export const getPrimaryPlayersForTeam = async (
+  teamId: number,
+  seasonId: number
+) => {
+  const query = `SELECT steam_id FROM SeasonTeamPlayers WHERE team_id = ? AND season_id = ? AND role = 'primary'`;
+  const result = await runQuery<Array<{ steam_id: string }>>(query, [
+    teamId,
+    seasonId
+  ]);
+  return result.map((r) => r.steam_id);
+};

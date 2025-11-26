@@ -24,6 +24,7 @@ import { getPlayerDetailsForDashboardBySteamId } from "../../models/dashboard/pl
 import { preparePlayerForSignup } from "../../models/player.models";
 import { normalizeSteamId } from "../../utils/steam-id-validator";
 import { ensureMatchIdAndTeamIdMatches } from "../../models/match.models";
+import { ensureSeasonMaxPlayersForTeam } from "../../services/season.services";
 /**
  * Controller to add a player to a team
  * This will:
@@ -48,6 +49,8 @@ export const addPlayerToTeamController = async (
   if (kana_elo === undefined || kana_elo === null) {
     return next(new BadRequestError("kana_elo is required"));
   }
+
+  await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
 
   // Don't require calculus anymore - it's optional
   const calculusData = calculus || {};

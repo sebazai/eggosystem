@@ -4,6 +4,7 @@ import {
 } from "@eggosystem/types";
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../../db/mysqlRunQuery";
+import { ensureSeasonMaxPlayersForTeam } from "../../services/season.services";
 
 /**
  * Gets stabilized kana_elo from CSRankker service
@@ -111,6 +112,7 @@ export const checkPlayerAdditionEligibility = async (
 
   const leagueId = leagueResults[0].league_id;
 
+  await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
   // Get stabilized kana_elo from CSRankker service
   const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
 
