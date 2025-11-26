@@ -30,7 +30,7 @@ describe("Discord Email Services", () => {
       await sendDiscordInviteEmail(to, organizationName, inviteUrl, gameTypes);
 
       expect(mockSendMail).toHaveBeenCalledWith({
-        from: "Kanahub by Kanaliiga <noreply@kanaliiga.fi>",
+        from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
         to,
         subject: `Welcome to Kanahautomo Discord - ${organizationName}`,
         html: expect.stringContaining("Welcome to Kanahautomo"),

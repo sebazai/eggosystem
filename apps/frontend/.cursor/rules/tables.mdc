@@ -1,11 +1,7 @@
 ---
 description: Table component patterns using BaseTable
 alwaysApply: false
-globs:
-  [
-    "apps/frontend/**/components/**/*Table*.tsx",
-    "apps/frontend/**/components/tables/**/*.tsx"
-  ]
+globs: ["apps/frontend/**/components/**/*.tsx"]
 ---
 
 # Table Components Rule

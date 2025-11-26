@@ -198,7 +198,7 @@ const getDefaultMenuItems = (
       },
       ...seasonMenuItems
     ],
-    mobileExtraLinks: [{ name: "Kanaliiga", url: "https://kanaliiga.com" }]
+    mobileExtraLinks: [{ name: "Kanaliiga", url: "https://kanaliiga.fi" }]
   };
   return defaultProps;
 };
