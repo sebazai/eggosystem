@@ -35,7 +35,7 @@ export async function resolveMatchId(
   matchInput: string,
   seasonId: number,
   connection?: PoolConnection
-): Promise<number[]> {
+) {
   if (!matchInput) {
     throw new BadRequestError("Match ID cannot be empty");
   }
@@ -47,38 +47,38 @@ export async function resolveMatchId(
   const numericId = Number(processedInput);
   if (!isNaN(numericId) && Number.isInteger(numericId) && numericId > 0) {
     // Query by numeric ID
-    const results = await runQuery<Array<{ id: number }>>(
+    const [results] = await runQuery<Array<{ id: number }>>(
       "SELECT id FROM Matches WHERE id = ? AND season_id = ?",
       [numericId, seasonId],
       connection
     );
 
-    if (results.length === 0) {
+    if (!results) {
       throw new BadRequestError(
         `Match with ID ${numericId} not found in season ${seasonId}`
       );
     }
 
-    return [results[0].id];
+    return results.id;
   }
 
   // Check if it looks like a Faceit room ID (contains hyphens and alphanumeric)
   const faceitRoomPattern = /^[0-9]+-[a-zA-Z0-9-]+$/;
   if (faceitRoomPattern.test(processedInput)) {
     // Query by Faceit room ID
-    const results = await runQuery<Array<{ id: number }>>(
+    const [results] = await runQuery<Array<{ id: number }>>(
       "SELECT id FROM Matches WHERE external_match_room_id = ? AND season_id = ?",
       [processedInput, seasonId],
       connection
     );
 
-    if (results.length === 0) {
+    if (!results) {
       throw new BadRequestError(
         `Match with Faceit room ID '${processedInput}' not found in season ${seasonId}`
       );
     }
 
-    return results.map((result) => result.id);
+    return results.id;
   }
 
   // If we get here, the input format is invalid

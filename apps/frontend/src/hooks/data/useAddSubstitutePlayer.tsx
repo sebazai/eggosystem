@@ -6,7 +6,7 @@ interface AddSubstitutePlayerParams {
   seasonId: string;
   teamId: string;
   steamId: string;
-  matchId?: string;
+  matchId: string;
 }
 
 interface AddSubstitutePlayerResponse {
@@ -15,7 +15,7 @@ interface AddSubstitutePlayerResponse {
   team_id: number;
   season_id: number;
   role: "substitute";
-  match_id: string | null;
+  match_id: number;
 }
 
 export const useAddSubstitutePlayer = () => {
@@ -25,10 +25,7 @@ export const useAddSubstitutePlayer = () => {
     steamId,
     matchId
   }: AddSubstitutePlayerParams): Promise<AddSubstitutePlayerResponse> => {
-    const body: { match_id?: string } = {};
-    if (matchId !== undefined && matchId !== null) {
-      body.match_id = matchId;
-    }
+    const body: { match_id: string } = { match_id: matchId };
 
     const response = await clientApiFetch<AddSubstitutePlayerResponse>(
       `/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/substitute`,

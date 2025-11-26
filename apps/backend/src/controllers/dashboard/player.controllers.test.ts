@@ -433,22 +433,18 @@ describe("addSubstitutePlayerController", () => {
     // Verify no database insertion was performed since no match_id provided
     expect(mockRunQuery).not.toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
-      expect.any(Object)
+      expect.any(Array)
     );
 
-    // Verify success response
-    expect(mockResponse.status).toHaveBeenCalledWith(200);
-    expect(mockResponse.json).toHaveBeenCalledWith({
-      message: "Substitute player successfully added to the team",
-      steam_id: EligiblePlayerForValidationSteamId,
-      team_id: 1650,
-      season_id: 14,
-      role: "substitute",
-      match_id: null
-    });
+    // Verify error was passed to next since match_id is required
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "match_id is required"
+      })
+    );
 
-    expect(mockNext).not.toHaveBeenCalled();
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it("should successfully add a substitute player with numeric match_id", async () => {
@@ -462,7 +458,7 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return the same numeric ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([123]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -473,11 +469,7 @@ describe("addSubstitutePlayerController", () => {
     );
 
     // Verify match ID was resolved
-    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
-      "123",
-      14,
-      expect.any(Object)
-    );
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("123", 14);
 
     // Verify no eligibility check was performed
     expect(
@@ -488,16 +480,17 @@ describe("addSubstitutePlayerController", () => {
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 123],
-      expect.any(Object)
+      undefined
     );
 
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: [123]
+      match_id: 123
     });
   });
 
@@ -512,32 +505,31 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to throw validation error
-    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(
-      new Error("Invalid match ID format: invalid")
-    );
+    const validationError = new Error("Invalid match ID format: invalid");
+    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(validationError);
 
-    await addSubstitutePlayerController(
-      requestWithInvalidMatchId,
-      mockResponse,
-      mockNext
-    );
+    // Error will propagate to Express error handler
+    await expect(
+      addSubstitutePlayerController(
+        requestWithInvalidMatchId,
+        mockResponse,
+        mockNext
+      )
+    ).rejects.toThrow("Invalid match ID format: invalid");
 
     // Verify match ID resolution was attempted
-    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
-      "invalid",
-      14,
-      expect.any(Object)
-    );
-
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Invalid match ID format: invalid"
-      })
-    );
+    expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("invalid", 14);
 
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
     ).not.toHaveBeenCalled();
+
+    // Verify no insertion was attempted
+    expect(mockRunQuery).not.toHaveBeenCalled();
+
+    // Verify no success response was sent
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it("should handle database transaction errors", async () => {
@@ -551,25 +543,25 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return the same numeric ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([123]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
 
     // Mock database error
     const dbError = new Error("Database error");
     mockRunQuery.mockRejectedValueOnce(dbError);
 
-    await addSubstitutePlayerController(
-      requestWithMatchId,
-      mockResponse,
-      mockNext
-    );
+    // Error will propagate to Express error handler
+    await expect(
+      addSubstitutePlayerController(requestWithMatchId, mockResponse, mockNext)
+    ).rejects.toThrow("Database error");
 
     // Verify no eligibility check was performed
     expect(
       mockSeasonModels.checkPlayerAdditionEligibility
     ).not.toHaveBeenCalled();
 
-    // Verify the error was properly caught and passed to next
-    expect(mockNext).toHaveBeenCalledWith(dbError);
+    // Verify no success response was sent
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 
   it("should resolve Faceit room ID to match ID when provided", async () => {
@@ -583,7 +575,7 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return internal match ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([456]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(456);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -596,24 +588,24 @@ describe("addSubstitutePlayerController", () => {
     // Verify match ID was resolved
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
       "1-ff5e99c3-0765-4173-ba2a-398987b1b3ef",
-      14,
-      expect.any(Object)
+      14
     );
 
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 456],
-      expect.any(Object)
+      undefined
     );
 
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: [456]
+      match_id: 456
     });
   });
 
@@ -630,7 +622,7 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to return internal match ID
-    mockMatchUtils.resolveMatchId.mockResolvedValueOnce([789]);
+    mockMatchUtils.resolveMatchId.mockResolvedValueOnce(789);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -643,24 +635,24 @@ describe("addSubstitutePlayerController", () => {
     // Verify match ID was resolved
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
       "https://www.faceit.com/en/cs2/room/1-abc123-def456-ghi789",
-      14,
-      expect.any(Object)
+      14
     );
 
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
       [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 789],
-      expect.any(Object)
+      undefined
     );
 
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({
       message: "Substitute player successfully added to the team",
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: [789]
+      match_id: 789
     });
   });
 
@@ -675,36 +667,32 @@ describe("addSubstitutePlayerController", () => {
     }>;
 
     // Mock resolveMatchId to throw error
-    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(
-      new Error("Invalid match ID format: invalid-match-id")
+    const resolutionError = new Error(
+      "Invalid match ID format: invalid-match-id"
     );
+    mockMatchUtils.resolveMatchId.mockRejectedValueOnce(resolutionError);
 
-    await addSubstitutePlayerController(
-      requestWithInvalidMatchId,
-      mockResponse,
-      mockNext
-    );
+    // Error will propagate to Express error handler
+    await expect(
+      addSubstitutePlayerController(
+        requestWithInvalidMatchId,
+        mockResponse,
+        mockNext
+      )
+    ).rejects.toThrow("Invalid match ID format: invalid-match-id");
 
     // Verify match ID resolution was attempted
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(
       "invalid-match-id",
-      14,
-      expect.any(Object)
-    );
-
-    // Verify error was passed to next middleware
-    expect(mockNext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Invalid match ID format: invalid-match-id"
-      })
+      14
     );
 
     // Verify no insertion was attempted
-    expect(mockRunQuery).not.toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute"],
-      expect.any(Object)
-    );
+    expect(mockRunQuery).not.toHaveBeenCalled();
+
+    // Verify no success response was sent
+    expect(mockResponse.status).not.toHaveBeenCalled();
+    expect(mockResponse.json).not.toHaveBeenCalled();
   });
 });
 
