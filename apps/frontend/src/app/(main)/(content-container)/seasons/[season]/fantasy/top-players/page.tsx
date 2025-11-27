@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { useSeasonLeagues } from "@/hooks/data/useSeasonLeagues";
 import { useState, useEffect } from "react";
-import { Trophy, TrendingUp, Users } from "lucide-react";
+import { Trophy, TrendingUp } from "lucide-react";
 import { NextImageFallback } from "@/components/layout/NextImageFallback";
 
 type PlayerTier = "bronze" | "silver" | "gold";
@@ -38,7 +38,6 @@ interface TopPerformingPlayer {
   tier: PlayerTier;
   kana_rating: number;
   kd: number;
-  is_on_fantasy_team: boolean;
 }
 
 const getTierColor = (tier: PlayerTier) => {
@@ -156,7 +155,6 @@ export default function TopPlayersPage() {
                       <TableHead className="text-right">Value</TableHead>
                       <TableHead className="text-right">Rating</TableHead>
                       <TableHead className="text-right">K/D</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -256,22 +254,6 @@ export default function TopPlayersPage() {
                           <span className="font-medium">
                             {player.kd.toFixed(2)}
                           </span>
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell className="text-center">
-                          {player.is_on_fantasy_team ? (
-                            <div className="flex items-center justify-center gap-1">
-                              <Users className="h-4 w-4 text-blue-400" />
-                              <span className="text-xs text-blue-400 font-medium">
-                                On Team
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-green-400 font-medium">
-                              Available
-                            </span>
-                          )}
                         </TableCell>
                       </TableRow>
                     ))}
