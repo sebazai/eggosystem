@@ -82,16 +82,20 @@ export default function FantasyLeaderboardPage() {
   const [selectedLeagueId, setSelectedLeagueId] =
     useState<number>(defaultLeagueId);
 
+  // Track if user has made a manual league selection
+  const [hasUserSelectedLeague, setHasUserSelectedLeague] = useState(false);
+
   // Team view dialog state
   const [selectedTeam, setSelectedTeam] = useState<MyFantasyTeam | null>(null);
   const [teamViewDialogOpen, setTeamViewDialogOpen] = useState(false);
 
   // Update selected league when user's league loads or when leagues are fetched
+  // Only update if user hasn't made a manual selection
   useEffect(() => {
-    if (defaultLeagueId && selectedLeagueId !== defaultLeagueId) {
+    if (defaultLeagueId && !hasUserSelectedLeague) {
       setSelectedLeagueId(defaultLeagueId);
     }
-  }, [defaultLeagueId, selectedLeagueId]);
+  }, [defaultLeagueId, hasUserSelectedLeague]);
 
   // Fetch division-specific leaderboard
   const {
@@ -255,9 +259,10 @@ export default function FantasyLeaderboardPage() {
                         <label className="text-sm font-medium">Division:</label>
                         <Select
                           value={selectedLeagueId.toString()}
-                          onValueChange={(v) =>
-                            setSelectedLeagueId(parseInt(v))
-                          }
+                          onValueChange={(v) => {
+                            setSelectedLeagueId(parseInt(v));
+                            setHasUserSelectedLeague(true);
+                          }}
                         >
                           <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Select division" />

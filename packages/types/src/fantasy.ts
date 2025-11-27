@@ -94,14 +94,14 @@ export function calculateValueChangeFromMatch(
   changeBasisPoints: number; // Integer: 100 = 1%, 1000 = 10%, -500 = -5%
   valueChange: number;
 } {
-  const MAX_CHANGE_PERCENT = 10;
+  const MAX_CHANGE_PERCENT = 5; // Reduced from 10% to 5% per match for stability
   const MAX_POINTS = 30;
 
-  // Map individual points (-30 to +30) to change percentage (-10% to +10%)
-  // Linear scaling: points / 30 * 10
+  // Map individual points (-30 to +30) to change percentage (-5% to +5%)
+  // Linear scaling: points / 30 * 5
   const rawChangePercent = (individualPoints / MAX_POINTS) * MAX_CHANGE_PERCENT;
 
-  // Clamp to ±10%
+  // Clamp to ±5%
   const changePercent = Math.max(
     -MAX_CHANGE_PERCENT,
     Math.min(MAX_CHANGE_PERCENT, rawChangePercent)

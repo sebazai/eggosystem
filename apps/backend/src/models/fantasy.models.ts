@@ -1327,35 +1327,31 @@ export const getTopPerformingPlayers = async (
     tier: PlayerTier;
     kana_rating: number;
     kd: number;
-    is_on_fantasy_team: boolean;
   }>
 > => {
   const query = `
     WITH player_points AS (
-      SELECT 
-        ftp.steam_id,
-        SUM(fpl.points_earned) as total_points
-      FROM FantasyTeamPlayers ftp
-      INNER JOIN FantasyPointsLog fpl ON fpl.fantasy_team_player_id = ftp.id
-      INNER JOIN FantasyTeams ft ON ft.id = ftp.fantasy_team_id
-      WHERE ft.season_id = ? AND ft.league_id = ?
-      GROUP BY ftp.steam_id
+      SELECT
+        gpp.steam_id,
+        gpp.total_points
+      FROM GlobalPlayerPoints gpp
+      WHERE gpp.season_id = ?
     ),
     latest_values AS (
-      SELECT 
+      SELECT
         fpv.steam_id,
         fpv.value,
         fpv.tier
-    FROM FantasyPlayerValues fpv
-    INNER JOIN (
-      SELECT steam_id, MAX(created_at) as max_created
-      FROM FantasyPlayerValues
-      WHERE season_id = ?
-      GROUP BY steam_id
-    ) latest ON latest.steam_id = fpv.steam_id AND latest.max_created = fpv.created_at
+      FROM FantasyPlayerValues fpv
+      INNER JOIN (
+        SELECT steam_id, MAX(created_at) as max_created
+        FROM FantasyPlayerValues
+        WHERE season_id = ?
+        GROUP BY steam_id
+      ) latest ON latest.steam_id = fpv.steam_id AND latest.max_created = fpv.created_at
     ),
     avg_stats AS (
-      SELECT 
+      SELECT
         ps.steam_id,
         AVG(ps.kana_rating) as avg_rating,
         SUM(ps.kills) / NULLIF(SUM(ps.deaths), 0) as kd,
@@ -1366,7 +1362,7 @@ export const getTopPerformingPlayers = async (
       WHERE m.season_id = ? AND m.league_id = ?
       GROUP BY ps.steam_id
     )
-    SELECT 
+    SELECT
       sp.steam_id,
       sp.nickname,
       COALESCE(t.name, 'Free Agent') as team_name,
@@ -1376,8 +1372,7 @@ export const getTopPerformingPlayers = async (
       COALESCE(lv.tier, NULL) as db_tier,
       COALESCE(astats.avg_rating, 0) as kana_rating,
       COALESCE(astats.kd, 0) as kd,
-      COALESCE(astats.total_kills, 0) as total_kills,
-      CASE WHEN ftp_check.steam_id IS NOT NULL THEN 1 ELSE 0 END as is_on_fantasy_team
+      COALESCE(astats.total_kills, 0) as total_kills
     FROM SteamPlayers sp
     INNER JOIN SeasonTeamPlayers stp ON stp.steam_id = sp.steam_id AND stp.season_id = ?
     INNER JOIN SeasonLeagueTeams slt ON slt.team_id = stp.team_id AND slt.season_id = stp.season_id AND slt.league_id = ?
@@ -1385,13 +1380,7 @@ export const getTopPerformingPlayers = async (
     LEFT JOIN player_points pp ON pp.steam_id = sp.steam_id
       LEFT JOIN latest_values lv ON lv.steam_id = sp.steam_id
     LEFT JOIN avg_stats astats ON astats.steam_id = sp.steam_id
-      LEFT JOIN (
-        SELECT DISTINCT ftp.steam_id
-        FROM FantasyTeamPlayers ftp
-        INNER JOIN FantasyTeams ft ON ft.id = ftp.fantasy_team_id
-        WHERE ft.season_id = ? AND ft.league_id = ? AND ftp.is_active = TRUE
-      ) ftp_check ON ftp_check.steam_id = sp.steam_id
-    ORDER BY COALESCE(pp.total_points, 0) DESC, COALESCE(astats.avg_rating, 0) DESC
+    ORDER BY COALESCE(pp.total_points, 0) DESC, COALESCE(astats.avg_rating, 0) DESC, COALESCE(astats.total_kills, 0) DESC
     LIMIT ?
   `;
 
@@ -1407,22 +1396,18 @@ export const getTopPerformingPlayers = async (
       kana_rating: number;
       kd: number;
       total_kills: number;
-      is_on_fantasy_team: number;
     }>
   >(
     query,
     [
-      // player_points CTE: seasonId, leagueId
+      // player_points CTE: seasonId
       seasonId,
-      leagueId,
       // latest_values CTE: seasonId
       seasonId,
       // avg_stats CTE: seasonId, leagueId
       seasonId,
       leagueId,
-      // Main query: seasonId (stp), leagueId (slt), seasonId (ftp_check), leagueId (ftp_check), limit
-      seasonId,
-      leagueId,
+      // Main query: seasonId (stp), leagueId (slt), limit
       seasonId,
       leagueId,
       limit
@@ -1438,8 +1423,7 @@ export const getTopPerformingPlayers = async (
         return {
           ...row,
           current_value: row.db_value,
-          tier: row.db_tier,
-          is_on_fantasy_team: row.is_on_fantasy_team === 1
+          tier: row.db_tier
         };
       }
 
@@ -1456,8 +1440,7 @@ export const getTopPerformingPlayers = async (
         return {
           ...row,
           current_value: parsed.value,
-          tier: parsed.tier,
-          is_on_fantasy_team: row.is_on_fantasy_team === 1
+          tier: parsed.tier
         };
       }
 
@@ -1493,8 +1476,7 @@ export const getTopPerformingPlayers = async (
         current_value: initialValue,
         tier: initialTier,
         kana_rating: row.kana_rating,
-        kd: row.kd,
-        is_on_fantasy_team: row.is_on_fantasy_team === 1
+        kd: row.kd
       };
     })
   );

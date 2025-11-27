@@ -17,39 +17,33 @@ const KD_MULTIPLIER = 8; // Multiplier for K/D modifier
 const KD_MIN_POINTS = -5; // Minimum K/D modifier points
 const KD_MAX_POINTS = 8; // Maximum K/D modifier points
 
-// Impact play constants
-const OPENING_KILL_POINTS = 3; // Points per opening kill
-const OPENING_DEATH_PENALTY = 2; // Points penalty per opening death
-const MULTI_KILL_3_POINTS = 2; // Points for 3K
-const MULTI_KILL_4_POINTS = 4; // Points for 4K
-const MULTI_KILL_5_POINTS = 6; // Points for 5K
-const CLUTCH_POINTS = 5; // Points per clutch won
-const MVP_POINTS = 4; // Points per MVP
+// Impact play constants - REDUCED for balance
+const OPENING_KILL_POINTS = 1; // Points per opening kill (reduced from 3)
+const OPENING_DEATH_PENALTY = 1; // Points penalty per opening death (reduced from 2)
+const MULTI_KILL_3_POINTS = 1; // Points for 3K (reduced from 2)
+const MULTI_KILL_4_POINTS = 2; // Points for 4K (reduced from 4)
+const MULTI_KILL_5_POINTS = 3; // Points for 5K (reduced from 6)
+const CLUTCH_POINTS = 2; // Points per clutch won (reduced from 5)
+const MVP_POINTS = 2; // Points per MVP (reduced from 4)
 
-// Performance bonus thresholds
-const ADR_THRESHOLD_100 = 100; // ADR threshold for +5 bonus
-const ADR_THRESHOLD_95 = 95; // ADR threshold for +4 bonus
-const ADR_THRESHOLD_90 = 90; // ADR threshold for +3 bonus
-const ADR_THRESHOLD_85 = 85; // ADR threshold for +2 bonus
-const ADR_THRESHOLD_80 = 80; // ADR threshold for +1 bonus
-const ADR_BONUS_100 = 5;
-const ADR_BONUS_95 = 4;
-const ADR_BONUS_90 = 3;
-const ADR_BONUS_85 = 2;
-const ADR_BONUS_80 = 1;
+// Performance bonus thresholds - REDUCED for balance
+const ADR_THRESHOLD_90 = 90; // ADR threshold for +1 bonus
+const ADR_THRESHOLD_95 = 95; // ADR threshold for +2 bonus
+const ADR_BONUS_90 = 1;
+const ADR_BONUS_95 = 2;
 
-const KAST_THRESHOLD_HIGH = 80; // KAST threshold for +2 bonus
 const KAST_THRESHOLD_MEDIUM = 75; // KAST threshold for +1 bonus
-const KAST_BONUS_HIGH = 2;
+const KAST_THRESHOLD_HIGH = 80; // KAST threshold for +2 bonus
 const KAST_BONUS_MEDIUM = 1;
+const KAST_BONUS_HIGH = 2;
 
-const HS_THRESHOLD_HIGH = 60; // Headshot% threshold for +2 bonus
 const HS_THRESHOLD_MEDIUM = 50; // Headshot% threshold for +1 bonus
-const HS_BONUS_HIGH = 2;
+const HS_THRESHOLD_HIGH = 60; // Headshot% threshold for +2 bonus
 const HS_BONUS_MEDIUM = 1;
+const HS_BONUS_HIGH = 2;
 
-// Assist calculation
-const ASSIST_MULTIPLIER = 0.5; // Multiplier for assists (0.5 points per assist)
+// Assist calculation - REDUCED for balance
+const ASSIST_MULTIPLIER = 0.3; // Multiplier for assists (0.3 points per assist, reduced from 0.5)
 
 // Point clamping limits
 const MIN_INDIVIDUAL_POINTS = -30; // Minimum individual points per match
@@ -217,24 +211,14 @@ export const calculateBasePoints = (
   breakdown.mvps = mvpBonus;
   points += mvpBonus;
 
-  // 4. PERFORMANCE BONUSES (+0 to +6)
+  // 4. PERFORMANCE BONUSES (+0 to +4)
   // ADR bonus (damage output)
-  // 80 is average (gives some points), 100+ is really good
-  if (stats.adr >= ADR_THRESHOLD_100) {
-    breakdown.adr_bonus = ADR_BONUS_100;
-    points += ADR_BONUS_100;
-  } else if (stats.adr >= ADR_THRESHOLD_95) {
+  if (stats.adr >= ADR_THRESHOLD_95) {
     breakdown.adr_bonus = ADR_BONUS_95;
     points += ADR_BONUS_95;
   } else if (stats.adr >= ADR_THRESHOLD_90) {
     breakdown.adr_bonus = ADR_BONUS_90;
     points += ADR_BONUS_90;
-  } else if (stats.adr >= ADR_THRESHOLD_85) {
-    breakdown.adr_bonus = ADR_BONUS_85;
-    points += ADR_BONUS_85;
-  } else if (stats.adr >= ADR_THRESHOLD_80) {
-    breakdown.adr_bonus = ADR_BONUS_80;
-    points += ADR_BONUS_80;
   }
 
   // KAST bonus (consistency)
@@ -528,6 +512,91 @@ const getFantasyTeamPlayersForGame = async (
  * Main function: Calculate and save fantasy points for all players in a match game
  * This should be called after demo processing is complete
  */
+/**
+ * Store global player points (without role bonuses) for leaderboard
+ */
+const storeGlobalPlayerPoints = async (
+  steamId: string,
+  matchGameId: number,
+  individualPoints: number,
+  teamPoints: number,
+  playerStats: PlayerGameStats,
+  pointsBreakdown: PointsBreakdown,
+  connection: PoolConnection
+): Promise<void> => {
+  const totalPoints = individualPoints + teamPoints;
+
+  // Create stats breakdown (raw player stats from the match)
+  const statsBreakdown = {
+    kills: playerStats.kills,
+    deaths: playerStats.deaths,
+    assists: playerStats.assists,
+    flash_assists: playerStats.flash_assists,
+    first_kills: playerStats.first_kills,
+    first_deaths: playerStats.first_deaths,
+    kills_3: playerStats.kills_3,
+    kills_4: playerStats.kills_4,
+    kills_5: playerStats.kills_5,
+    clutches_won: playerStats.clutches_won,
+    awp_kills: playerStats.awp_kills,
+    mvps: playerStats.mvps,
+    kana_rating: playerStats.kana_rating,
+    kd: playerStats.kd,
+    adr: playerStats.adr,
+    kast: playerStats.kast,
+    hs_percent: playerStats.hs_percent,
+    team_won: playerStats.team_won
+  };
+
+  try {
+    // Insert into GlobalPlayerPointsLog
+    await runQuery(
+      `INSERT INTO GlobalPlayerPointsLog
+       (steam_id, match_game_id, points_earned, individual_points, team_points, stats_breakdown, points_breakdown)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        steamId,
+        matchGameId,
+        totalPoints,
+        individualPoints,
+        teamPoints,
+        JSON.stringify(statsBreakdown),
+        JSON.stringify(pointsBreakdown)
+      ],
+      connection
+    );
+
+    // Update or insert GlobalPlayerPoints (aggregated totals)
+    await runQuery(
+      `INSERT INTO GlobalPlayerPoints
+       (steam_id, season_id, total_points, individual_points, team_points, updated_at)
+       VALUES (?, (SELECT season_id FROM MatchGames mg INNER JOIN Matches m ON m.id = mg.match_id WHERE mg.id = ?), ?, ?, ?, NOW())
+       ON DUPLICATE KEY UPDATE
+         total_points = total_points + VALUES(total_points),
+         individual_points = individual_points + VALUES(individual_points),
+         team_points = team_points + VALUES(team_points),
+         updated_at = NOW()`,
+      [steamId, matchGameId, totalPoints, individualPoints, teamPoints],
+      connection
+    );
+  } catch (error: unknown) {
+    // Handle race condition: if another process already logged points for this match
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "ER_DUP_ENTRY"
+    ) {
+      logger.info(
+        `Global points already logged for player ${steamId} in match ${matchGameId}`
+      );
+      return;
+    }
+    // Re-throw other errors
+    throw error;
+  }
+};
+
 export const calculateFantasyPointsForGame = async (
   matchGameId: number
 ): Promise<void> => {
@@ -552,129 +621,138 @@ export const calculateFantasyPointsForGame = async (
       connection
     );
 
-    // Calculate points for each fantasy team player (if any)
-    // Note: Even if there are no fantasy team players, we still need to update player values
-    for (const fantasyPlayer of fantasyTeamPlayers) {
-      const playerStat = playerStats.find(
-        (ps) => ps.steam_id === fantasyPlayer.steam_id
-      );
-
-      if (!playerStat) {
-        continue;
-      }
-
-      // Calculate base points
+    // Calculate points for ALL players (global leaderboard) and fantasy team players
+    for (const playerStat of playerStats) {
+      // Calculate base points (same for all players)
       const { individualPoints, teamPoints, breakdown } =
         calculateBasePoints(playerStat);
 
-      // Apply role bonuses
-      const { totalPoints, roleBonus, updatedBreakdown } = applyRoleBonus(
+      // Store global points (no role bonuses)
+      await storeGlobalPlayerPoints(
+        playerStat.steam_id,
+        matchGameId,
         individualPoints,
         teamPoints,
+        playerStat,
         breakdown,
-        fantasyPlayer.role,
-        playerStat
+        connection
       );
 
-      // Create stats breakdown (raw player stats from the match)
-      const statsBreakdown = {
-        kills: playerStat.kills,
-        deaths: playerStat.deaths,
-        assists: playerStat.assists,
-        flash_assists: playerStat.flash_assists,
-        first_kills: playerStat.first_kills,
-        first_deaths: playerStat.first_deaths,
-        kills_3: playerStat.kills_3,
-        kills_4: playerStat.kills_4,
-        kills_5: playerStat.kills_5,
-        clutches_won: playerStat.clutches_won,
-        awp_kills: playerStat.awp_kills,
-        mvps: playerStat.mvps,
-        kana_rating: playerStat.kana_rating,
-        kd: playerStat.kd,
-        adr: playerStat.adr,
-        kast: playerStat.kast,
-        hs_percent: playerStat.hs_percent,
-        team_won: playerStat.team_won
-      };
+      // Check if this player is on a fantasy team
+      const fantasyPlayer = fantasyTeamPlayers.find(
+        (ftp) => ftp.steam_id === playerStat.steam_id
+      );
 
-      // Try to insert points log - handle race condition via unique constraint
-      // The unique constraint on (fantasy_team_player_id, match_game_id) prevents duplicates
-      try {
-        // Save to FantasyPointsLog
-        await runQuery(
-          `INSERT INTO FantasyPointsLog 
-           (fantasy_team_player_id, match_game_id, points_earned, individual_points, team_points, role_points, stats_breakdown, points_breakdown)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            fantasyPlayer.fantasy_team_player_id,
-            matchGameId,
-            totalPoints,
-            individualPoints,
-            teamPoints,
-            roleBonus,
-            JSON.stringify(statsBreakdown),
-            JSON.stringify(updatedBreakdown)
-          ],
-          connection
+      if (fantasyPlayer) {
+        // Apply role bonuses for fantasy team players
+        const { totalPoints, roleBonus, updatedBreakdown } = applyRoleBonus(
+          individualPoints,
+          teamPoints,
+          breakdown,
+          fantasyPlayer.role,
+          playerStat
         );
 
-        // Update FantasyTeamPlayers points
-        // Note: points_earned should be the sum of individual + team + role
-        await runQuery(
-          `UPDATE FantasyTeamPlayers 
+        // Create stats breakdown (raw player stats from the match)
+        const statsBreakdown = {
+          kills: playerStat.kills,
+          deaths: playerStat.deaths,
+          assists: playerStat.assists,
+          flash_assists: playerStat.flash_assists,
+          first_kills: playerStat.first_kills,
+          first_deaths: playerStat.first_deaths,
+          kills_3: playerStat.kills_3,
+          kills_4: playerStat.kills_4,
+          kills_5: playerStat.kills_5,
+          clutches_won: playerStat.clutches_won,
+          awp_kills: playerStat.awp_kills,
+          mvps: playerStat.mvps,
+          kana_rating: playerStat.kana_rating,
+          kd: playerStat.kd,
+          adr: playerStat.adr,
+          kast: playerStat.kast,
+          hs_percent: playerStat.hs_percent,
+          team_won: playerStat.team_won
+        };
+
+        // Try to insert points log - handle race condition via unique constraint
+        // The unique constraint on (fantasy_team_player_id, match_game_id) prevents duplicates
+        try {
+          // Save to FantasyPointsLog
+          await runQuery(
+            `INSERT INTO FantasyPointsLog
+           (fantasy_team_player_id, match_game_id, points_earned, individual_points, team_points, role_points, stats_breakdown, points_breakdown)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              fantasyPlayer.fantasy_team_player_id,
+              matchGameId,
+              totalPoints,
+              individualPoints,
+              teamPoints,
+              roleBonus,
+              JSON.stringify(statsBreakdown),
+              JSON.stringify(updatedBreakdown)
+            ],
+            connection
+          );
+
+          // Update FantasyTeamPlayers points
+          // Note: points_earned should be the sum of individual + team + role
+          await runQuery(
+            `UPDATE FantasyTeamPlayers
            SET individual_points = individual_points + ?,
                team_points = team_points + ?,
                role_points = role_points + ?,
                points_earned = individual_points + team_points + role_points
            WHERE id = ?`,
+            [
+              individualPoints,
+              teamPoints,
+              roleBonus,
+              fantasyPlayer.fantasy_team_player_id
+            ],
+            connection
+          );
+
+          // Update FantasyTeams total points (only if new log entry was created)
+          await runQuery(
+            `UPDATE FantasyTeams
+           SET total_points = total_points + ?
+           WHERE id = ?`,
+            [totalPoints, fantasyPlayer.fantasy_team_id],
+            connection
+          );
+        } catch (error: unknown) {
+          // Handle race condition: if another process already logged points for this match
+          if (
+            error &&
+            typeof error === "object" &&
+            "code" in error &&
+            (error as { code?: string }).code === "ER_DUP_ENTRY"
+          ) {
+            logger.info(
+              `Points already logged for player ${fantasyPlayer.fantasy_team_player_id} in match ${matchGameId}`
+            );
+            // Skip processing - points were already logged by another process
+            continue;
+          }
+          // Re-throw other errors
+          throw error;
+        }
+
+        // Log to history
+        await runQuery(
+          `INSERT INTO FantasyPlayerHistory
+         (fantasy_team_id, steam_id, action, new_value)
+         VALUES (?, ?, 'points_updated', ?)`,
           [
-            individualPoints,
-            teamPoints,
-            roleBonus,
-            fantasyPlayer.fantasy_team_player_id
+            fantasyPlayer.fantasy_team_id,
+            fantasyPlayer.steam_id,
+            JSON.stringify({ match_game_id: matchGameId, points: totalPoints })
           ],
           connection
         );
-
-        // Update FantasyTeams total points (only if new log entry was created)
-        await runQuery(
-          `UPDATE FantasyTeams 
-           SET total_points = total_points + ?
-           WHERE id = ?`,
-          [totalPoints, fantasyPlayer.fantasy_team_id],
-          connection
-        );
-      } catch (error: unknown) {
-        // Handle race condition: if another process already logged points for this match
-        if (
-          error &&
-          typeof error === "object" &&
-          "code" in error &&
-          (error as { code?: string }).code === "ER_DUP_ENTRY"
-        ) {
-          logger.info(
-            `Points already logged for player ${fantasyPlayer.fantasy_team_player_id} in match ${matchGameId}`
-          );
-          // Skip processing - points were already logged by another process
-          continue;
-        }
-        // Re-throw other errors
-        throw error;
       }
-
-      // Log to history
-      await runQuery(
-        `INSERT INTO FantasyPlayerHistory 
-         (fantasy_team_id, steam_id, action, new_value)
-         VALUES (?, ?, 'points_updated', ?)`,
-        [
-          fantasyPlayer.fantasy_team_id,
-          fantasyPlayer.steam_id,
-          JSON.stringify({ match_game_id: matchGameId, points: totalPoints })
-        ],
-        connection
-      );
     }
 
     // Update player values for ALL players who played in this match
@@ -820,7 +898,7 @@ export const calculateFantasyPointsForGame = async (
         }
 
         // Calculate value change based on individual performance points
-        // This applies a percentage change to current value, capped at ±10%
+        // This applies a percentage change to current value, capped at ±5%
         const { newValue, changeBasisPoints, valueChange } =
           calculateValueChangeFromMatch(currentValue, individualPoints);
         const newTier = calculatePlayerTier(newValue);
