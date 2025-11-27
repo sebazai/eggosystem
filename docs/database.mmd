@@ -53,6 +53,8 @@ erDiagram
 "FantasyTeams" }o--|| "Leagues" : ""
 "FantasyTeams" }o--|| "Seasons" : ""
 "GameTypes" }o--|| "Games" : ""
+"GlobalPlayerPoints" }o--|| "Seasons" : ""
+"GlobalPlayerPointsLog" }o--|| "MatchGames" : ""
 "KanahautomoRegistrationGameTypes" }o--|| "GameTypes" : ""
 "KanahautomoRegistrationGameTypes" }o--|| "KanahautomoRegistrations" : ""
 "KanahautomoRegistrations" }o--|| "Organizations" : ""
@@ -177,6 +179,14 @@ erDiagram
 "GameTypes" {
   int_10__unsigned id PK
   int_10__unsigned game_id FK
+}
+"GlobalPlayerPoints" {
+  int_10__unsigned id PK
+  int_10__unsigned season_id FK
+}
+"GlobalPlayerPointsLog" {
+  int_10__unsigned id PK
+  int_10__unsigned match_game_id FK
 }
 "KanahautomoRegistrationGameTypes" {
   int_10__unsigned game_type_id PK
