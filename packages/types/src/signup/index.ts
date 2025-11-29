@@ -4,7 +4,9 @@ import { SeasonPlatform } from "@eggosystem/types";
 const playerSchema = z
   .object({
     accountId: z.number(),
-    steamId: z.string().length(17),
+    // Allow any non-empty string to support Steam IDs, nicknames, provider_username, and faceit_nickname
+    // Final validation will ensure it's a valid SteamID64 after resolution
+    steamId: z.string().min(1),
     nickname: z.string().min(1).max(50),
     hasValidData: z.boolean().optional(),
     hasValidWorkEmail: z.boolean().optional(),
@@ -27,8 +29,21 @@ const playerSchema = z
     }
   )
   .refine(
-    (player) => !isNaN(Number(player.steamId)) && player.steamId.length === 17,
-    { message: "Invalid SteamID", path: ["steamId"] }
+    // Validate that steamId is a valid SteamID64 format (17 numeric characters)
+    // This allows nicknames during input but ensures final validation requires SteamID64
+    (player) => {
+      // Allow empty strings (will be caught by min(1) above)
+      if (!player.steamId || player.steamId.trim() === "") {
+        return false;
+      }
+      // Check if it's a valid SteamID64 format (17 numeric characters)
+      return !isNaN(Number(player.steamId)) && player.steamId.length === 17;
+    },
+    {
+      message:
+        "Invalid SteamID - must be a valid SteamID64 or resolvable nickname",
+      path: ["steamId"]
+    }
   );
 
 const newOrganizationSchema = z
