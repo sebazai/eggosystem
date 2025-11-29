@@ -51,6 +51,7 @@ import { CS2PremierRankBadge } from "../profile/CS2PremierRankBadge";
 import { Spinner } from "@/components/ui/spinner";
 import { TooltipIcon } from "../ui/icons";
 import Link from "next/link";
+import { ConfirmationModal } from "../ui/ConfirmationModal";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -86,6 +87,10 @@ export const TabPlayers = ({
   const [openItems, setOpenItems] = useState<string[]>([]);
   const [errorIndices, setErrorIndices] = useState<string[]>([]);
   const [hardCarrySteamId, setHardCarrySteamId] = useState("");
+  const [showRemoveConfirmation, setShowRemoveConfirmation] = useState(false);
+  const [playerToRemoveIndex, setPlayerToRemoveIndex] = useState<number | null>(
+    null
+  );
   const { fields, append, remove } = useFieldArray({
     control,
     name: "players"
@@ -107,6 +112,18 @@ export const TabPlayers = ({
   const watchTeamId = useWatch({ control, name: "teamId" });
   const watchOrganizationId = useWatch({ control, name: "organizationId" });
   const steamIds = watchPlayers.map((p) => p.steamId);
+
+  // Helper function to check if a player is fully valid and eligible
+  const isPlayerFullyValid = (player: SignupPlayerType): boolean => {
+    return (
+      player.hasValidData === true &&
+      player.hasValidWorkEmail === true &&
+      player.isEmailVerified === true &&
+      player.rank !== -1 &&
+      (player.externalRank !== -1 || platform === SeasonPlatform.Kanaliiga) &&
+      player.hours !== -1
+    );
+  };
 
   /**
    * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, or custom URL) to SteamID64.
@@ -930,7 +947,14 @@ export const TabPlayers = ({
 
                   <Button
                     variant="destructive"
-                    onClick={() => remove(index)}
+                    onClick={() => {
+                      if (isPlayerFullyValid(player)) {
+                        setPlayerToRemoveIndex(index);
+                        setShowRemoveConfirmation(true);
+                      } else {
+                        remove(index);
+                      }
+                    }}
                     type="button"
                     className="w-full mt-1 sm:mt-4"
                     disabled={fields.length <= 5} // Disable if less than 5 players
@@ -972,6 +996,26 @@ export const TabPlayers = ({
             There must be exactly one captain and one co-captain.
           </div>
         )}
+
+        <ConfirmationModal
+          open={showRemoveConfirmation}
+          onOpenChange={setShowRemoveConfirmation}
+          onConfirm={() => {
+            if (playerToRemoveIndex !== null) {
+              remove(playerToRemoveIndex);
+              setPlayerToRemoveIndex(null);
+            }
+          }}
+          title="Remove Player"
+          description={
+            playerToRemoveIndex !== null
+              ? `Are you sure you want to remove ${watchPlayers[playerToRemoveIndex]?.nickname || "this player"}? This player is fully valid and eligible.`
+              : "Are you sure you want to remove this player?"
+          }
+          confirmText="Remove"
+          cancelText="Cancel"
+          confirmVariant="destructive"
+        />
       </div>
     </TabsContent>
   );
