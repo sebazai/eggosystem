@@ -119,7 +119,7 @@ export const getActiveSignupOrActiveSeasonForAppId = async (
   const [activeSignupOrActiveSeason] = await runQuery<
     Array<ActiveSignupOrSeasonForAppId | undefined>
   >(
-    `SELECT s.id AS season_id, s.platform, s.signup_end_date, s.full_name
+    `SELECT s.id AS season_id, s.platform, s.signup_start_date, s.signup_end_date, s.start_date, s.full_name
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
      JOIN Organizers o ON s.organizer_id = o.id
