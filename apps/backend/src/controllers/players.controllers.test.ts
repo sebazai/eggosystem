@@ -7,12 +7,12 @@ import {
 import * as playerModels from "../models/player.models";
 import * as steamServices from "../services/steam.services";
 import { normalizeSteamId } from "../utils/steam-id-validator";
+import type { RequestWithParams } from "@eggosystem/types";
 // Mock the player models
 jest.mock("../models/player.models");
 jest.mock("../services/steam.services");
 jest.mock("../utils/steam-id-validator");
 const mockedPlayerModels = jest.mocked(playerModels);
-const mockedSteamServices = jest.mocked(steamServices);
 const mockedNormalizeSteamId = normalizeSteamId as jest.MockedFunction<
   typeof normalizeSteamId
 >;
@@ -426,7 +426,7 @@ describe("getPlayerOldKanaEloController", () => {
 });
 
 describe("resolveSteamIdController", () => {
-  let req: Partial<Request & { params: { steam_id: string } }>;
+  let req: Partial<RequestWithParams<{ steam_id: string }>>;
   let res: Partial<Response>;
   let next: NextFunction;
   let mockJson: jest.Mock;
@@ -456,7 +456,11 @@ describe("resolveSteamIdController", () => {
       mockedNormalizeSteamId.mockReturnValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert
       expect(mockedNormalizeSteamId).toHaveBeenCalledWith(steamId64);
@@ -475,7 +479,11 @@ describe("resolveSteamIdController", () => {
       mockedNormalizeSteamId.mockReturnValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert
       expect(mockedNormalizeSteamId).toHaveBeenCalledWith(steamId);
@@ -496,7 +504,11 @@ describe("resolveSteamIdController", () => {
       mockGetPlayerSteamIdByNickname.mockResolvedValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert - Database should be checked first
       expect(mockedNormalizeSteamId).toHaveBeenCalledWith(nickname);
@@ -519,7 +531,11 @@ describe("resolveSteamIdController", () => {
       mockGetPlayerSteamIdByNickname.mockResolvedValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith(
@@ -541,7 +557,11 @@ describe("resolveSteamIdController", () => {
       mockGetPlayerSteamIdByNickname.mockResolvedValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith(
@@ -564,7 +584,11 @@ describe("resolveSteamIdController", () => {
       mockResolveSteamIdVanityURL.mockResolvedValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert - Database should be checked first, then Steam API
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith(vanityUrl);
@@ -587,7 +611,11 @@ describe("resolveSteamIdController", () => {
       );
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith(invalidInput);
@@ -617,7 +645,11 @@ describe("resolveSteamIdController", () => {
       mockResolveSteamIdVanityURL.mockResolvedValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert - Should decode and use decoded value
       expect(mockResolveSteamIdVanityURL).toHaveBeenCalledWith(decodedInput);
@@ -628,7 +660,11 @@ describe("resolveSteamIdController", () => {
       req.params = { steam_id: "" };
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert
       expect(next).toHaveBeenCalledWith(
@@ -650,7 +686,11 @@ describe("resolveSteamIdController", () => {
       mockGetPlayerSteamIdByNickname.mockResolvedValue(steamId64);
 
       // Act
-      await resolveSteamIdController(req as any, res as Response, next);
+      await resolveSteamIdController(
+        req as RequestWithParams<{ steam_id: string }>,
+        res as Response,
+        next
+      );
 
       // Assert - Should trim before searching
       expect(mockGetPlayerSteamIdByNickname).toHaveBeenCalledWith("heppajpg");
