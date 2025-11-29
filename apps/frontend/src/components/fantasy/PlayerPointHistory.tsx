@@ -32,6 +32,7 @@ interface PointsBreakdown {
   clutches: number;
   mvps: number;
   team_result: number;
+  rating_base: number;
   adr_bonus: number;
   kd_bonus: number;
   kast_bonus: number;
@@ -247,6 +248,27 @@ export default function PlayerPointHistory({
                             </Badge>
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-sm">
+                            {/* Rating Base - calculate if missing from breakdown (for old data) */}
+                            {(() => {
+                              const ratingBase =
+                                match.points_breakdown?.rating_base ??
+                                (match.stats_breakdown?.kana_rating
+                                  ? Math.floor(
+                                      (match.stats_breakdown.kana_rating -
+                                        0.7) *
+                                        30
+                                    )
+                                  : 0);
+                              return ratingBase !== 0 ? (
+                                <div className="flex justify-between text-blue-400">
+                                  <span>Rating Base:</span>
+                                  <span>
+                                    {ratingBase > 0 ? "+" : ""}
+                                    {ratingBase}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
                             {/* Kills/Deaths are factored into rating, not shown as separate points */}
                             {match.points_breakdown?.assists > 0 && (
                               <div className="flex justify-between text-green-400">
@@ -378,17 +400,40 @@ export default function PlayerPointHistory({
                           </div>
                         </div>
 
-                        {/* Role Bonus */}
-                        {match.role_points > 0 && (
-                          <div className="p-2 bg-purple-500/10 rounded border border-purple-500/20">
-                            <div className="flex justify-between text-purple-400">
-                              <span className="font-medium">Role Bonus:</span>
-                              <span className="font-bold">
-                                +{match.role_points}
-                              </span>
-                            </div>
+                        {/* Role Bonus - Always show, even if 0 */}
+                        <div
+                          className={cn(
+                            "p-2 rounded border",
+                            match.role_points > 0
+                              ? "bg-purple-500/10 border-purple-500/20"
+                              : match.role_points < 0
+                                ? "bg-red-500/10 border-red-500/20"
+                                : "bg-neutral-800/50 border-neutral-700/50"
+                          )}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium">
+                              Role Bonus
+                            </span>
+                            <Badge variant="outline">{match.role_points}</Badge>
                           </div>
-                        )}
+                          <div
+                            className={cn(
+                              "text-xs",
+                              match.role_points > 0
+                                ? "text-purple-400"
+                                : match.role_points < 0
+                                  ? "text-red-400"
+                                  : "text-muted-foreground"
+                            )}
+                          >
+                            {match.role_points > 0
+                              ? `Role Bonus (+${match.role_points})`
+                              : match.role_points < 0
+                                ? `Role Penalty (${match.role_points})`
+                                : "No role bonus earned (conditions not met)"}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </CardContent>

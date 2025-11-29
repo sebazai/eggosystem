@@ -1533,6 +1533,7 @@ export const getPlayerPointHistory = async (
       clutches: number;
       mvps: number;
       team_result: number;
+      rating_base: number;
       adr_bonus: number;
       kd_bonus: number;
       kast_bonus: number;

@@ -1249,6 +1249,7 @@ describe("Fantasy Controllers", () => {
             clutches: 5,
             mvps: 2,
             team_result: 3,
+            rating_base: 5,
             adr_bonus: 1,
             kd_bonus: 1,
             kast_bonus: 1,
