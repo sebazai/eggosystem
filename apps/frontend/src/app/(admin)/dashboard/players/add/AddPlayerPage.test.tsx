@@ -208,7 +208,9 @@ describe("AddPlayerPage", () => {
     season_id: 14,
     platform: SeasonPlatform.Kanaliiga,
     signup_end_date: "2024-01-31",
-    full_name: "Season 14 - CS:GO"
+    full_name: "Season 14 - CS:GO",
+    signup_start_date: "2024-01-01",
+    start_date: "2024-01-31"
   };
   const mockTeams = [
     {

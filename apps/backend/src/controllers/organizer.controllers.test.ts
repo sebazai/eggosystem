@@ -38,7 +38,9 @@ const mockActiveSeason = {
   season_id: 456,
   platform: SeasonPlatform.FACEIT,
   signup_end_date: "2024-12-31",
-  full_name: "Test Season Full Name"
+  full_name: "Test Season Full Name",
+  signup_start_date: "2024-12-01",
+  start_date: "2024-12-31"
 } satisfies ActiveSignupOrSeasonForAppId;
 
 // Type definitions for test requests

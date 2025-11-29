@@ -204,16 +204,20 @@ export async function clientApiFetch<T>(
 
   const fetchWithRetry = async (retryAttempted = false): Promise<T> => {
     // Prepare headers
+    const methodsWithBody = ["POST", "PUT", "DELETE", "PATCH"];
+    const hasBody =
+      options?.body && methodsWithBody.includes(options?.method || "");
+
     const headers: Record<string, string> = {
       ...((options?.headers as Record<string, string>) || {}),
-      ...((options?.method === "POST" || options?.method === "PUT") && {
+      ...(hasBody && {
         "Content-Type": "application/json"
       })
     };
 
     const response = await fetch(`${envConfig.CLIENT_API_URL}${url}`, {
       method: options?.method ?? "GET",
-      ...((options?.method === "POST" || options?.method === "PUT") && {
+      ...(hasBody && {
         body: options?.body
       }),
       headers,

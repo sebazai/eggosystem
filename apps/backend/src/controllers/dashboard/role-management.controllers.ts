@@ -44,6 +44,10 @@ export const addRole = async (
   res: Response<RoleActionResponse>,
   next: NextFunction
 ) => {
+  if (!req.body) {
+    return next(new BadRequestError("Request body is required"));
+  }
+
   const { steam_id, role } = req.body;
   const userRoles = req.auth?.roles || [];
 
@@ -121,6 +125,10 @@ export const removeRole = async (
   res: Response<RoleActionResponse>,
   next: NextFunction
 ) => {
+  if (!req.body) {
+    return next(new BadRequestError("Request body is required"));
+  }
+
   const { steam_id, role } = req.body;
   const userRoles = req.auth?.roles || [];
 

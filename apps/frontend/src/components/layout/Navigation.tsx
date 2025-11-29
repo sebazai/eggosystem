@@ -76,6 +76,35 @@ const getSeasonMenuItems = (
     return [];
   }
 
+  const now = new Date();
+  const signupStartDate = signupOrActiveSeason.signup_start_date
+    ? new Date(signupOrActiveSeason.signup_start_date)
+    : null;
+  const signupEndDate = signupOrActiveSeason.signup_end_date
+    ? new Date(signupOrActiveSeason.signup_end_date)
+    : null;
+  const startDate = new Date(signupOrActiveSeason.start_date);
+
+  // Check if season is in signup period but hasn't started yet
+  const isInSignupPeriod =
+    signupStartDate &&
+    signupEndDate &&
+    now >= signupStartDate &&
+    now <= signupEndDate &&
+    now < startDate;
+
+  // If in signup period (not started), show only Register button
+  if (isInSignupPeriod) {
+    return [
+      {
+        title: `Register ${convertSeasonToS(signupOrActiveSeason.full_name)}`,
+        url: `/seasons/${signupOrActiveSeason.season_id}/signup`,
+        hasFilters: false
+      }
+    ];
+  }
+
+  // Season has started, show full menu
   return [
     {
       title: `${convertSeasonToS(signupOrActiveSeason.full_name)}`,
@@ -122,29 +151,7 @@ const getSeasonMenuItems = (
         {
           title: "Fantasy League",
           url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
-          hasFilters: false,
-          items: [
-            {
-              title: "Draft Team",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy`,
-              hasFilters: false
-            },
-            {
-              title: "Leaderboard",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/leaderboard`,
-              hasFilters: false
-            },
-            {
-              title: "Top Players",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/top-players`,
-              hasFilters: false
-            },
-            {
-              title: "Price History",
-              url: `/seasons/${signupOrActiveSeason.season_id}/fantasy/price-history`,
-              hasFilters: false
-            }
-          ]
+          hasFilters: false
         }
       ]
     }
