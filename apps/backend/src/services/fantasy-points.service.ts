@@ -121,6 +121,7 @@ export interface PointsBreakdown {
   clutches: number;
   mvps: number;
   team_result: number; // +10 for win, -5 for loss
+  rating_base: number;
   adr_bonus: number;
   kd_bonus: number;
   kast_bonus: number;
@@ -160,6 +161,7 @@ export const calculateBasePoints = (
     clutches: 0,
     mvps: 0,
     team_result: 0,
+    rating_base: 0,
     adr_bonus: 0,
     kd_bonus: 0,
     kast_bonus: 0,
@@ -174,7 +176,8 @@ export const calculateBasePoints = (
   // Kills/deaths are already factored into rating, so they don't give additional points
   breakdown.kills = stats.kills; // Used for role bonuses only, not displayed as points
   breakdown.deaths = -stats.deaths; // Used for reference only, not displayed as points
-  let points = Math.floor(ratingBase);
+  breakdown.rating_base = Math.floor(ratingBase);
+  let points = breakdown.rating_base;
 
   // 2. K/D MODIFIER (-5 to +8)
   // K/D 1.0 = 0, K/D 1.5 = +4, K/D 0.5 = -4
