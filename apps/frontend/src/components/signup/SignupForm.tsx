@@ -32,9 +32,10 @@ import {
 import { signupFormSchema, baseSignupFormSchema } from "@eggosystem/types";
 import { CopyInput } from "@/components/inputs/CopyInput";
 import { envConfig } from "@/configs/env";
-import { Checkbox } from "../ui/checkbox";
-import { RequiredFormLabel } from "../ui/RequiredFormLabel";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RequiredFormLabel } from "@/components/ui/RequiredFormLabel";
 import { toast } from "sonner";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 interface SignupFormProps {
   seasonId: string;
@@ -107,6 +108,7 @@ export const SignupForm = ({
   const [validExternalTeamId, setValidExternalTeamId] = useState(
     platform !== SeasonPlatform.Kanaliiga ? null : true
   );
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 
   const isEditMode = !!editValues;
 
@@ -589,11 +591,8 @@ export const SignupForm = ({
             {!isEditMode && (
               <div className="flex gap-2 w-full pt-5">
                 <Button
-                  type="reset"
-                  onClick={() => {
-                    setActiveTab("organization");
-                    form.reset(defaultValues);
-                  }}
+                  type="button"
+                  onClick={() => setShowResetConfirmation(true)}
                   variant="destructive"
                   className="w-[50%]"
                   disabled={
@@ -617,6 +616,20 @@ export const SignupForm = ({
                 </Button>
               </div>
             )}
+
+            <ConfirmationModal
+              open={showResetConfirmation}
+              onOpenChange={setShowResetConfirmation}
+              onConfirm={() => {
+                setActiveTab("organization");
+                form.reset(defaultValues);
+              }}
+              title="Reset Form"
+              description="The form will be completely wiped. Do you want to continue?"
+              confirmText="Reset"
+              cancelText="Cancel"
+              confirmVariant="destructive"
+            />
           </CardContent>
         </Card>
       </form>
