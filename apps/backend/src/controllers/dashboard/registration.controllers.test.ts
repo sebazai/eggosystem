@@ -6,7 +6,7 @@ import * as registrationModels from "../../models/dashboard/registration.models"
 import * as seasonModels from "../../models/season.models";
 import {
   SeasonPlatform,
-  type ActiveSeasonSignupForAppId
+  type ActiveSignupOrSeasonForAppId
 } from "@eggosystem/types";
 
 // Mock the models
@@ -49,10 +49,12 @@ describe("Registration Controllers", () => {
   describe("bulkApproveTeamRegistrationsController", () => {
     it("should approve teams successfully", async () => {
       // Mock the active season
-      const mockActiveSeason: ActiveSeasonSignupForAppId = {
+      const mockActiveSeason: ActiveSignupOrSeasonForAppId = {
         season_id: 1,
         platform: SeasonPlatform.Kanaliiga,
+        signup_start_date: "2024-01-01",
         signup_end_date: "2024-12-31",
+        start_date: "2025-01-01",
         full_name: "Test Season"
       };
       mockSeasonModels.getActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
