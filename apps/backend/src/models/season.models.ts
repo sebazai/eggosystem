@@ -123,8 +123,18 @@ export const getActiveSignupOrActiveSeasonForAppId = async (
      FROM Seasons s
      JOIN Games g ON s.game_id = g.id
      JOIN Organizers o ON s.organizer_id = o.id
-     WHERE g.app_id = ? AND o.id = ? AND s.end_date >= NOW() OR s.end_date IS NULL OR s.signup_end_date >= NOW()
-     ORDER BY s.id DESC
+     WHERE g.app_id = ? AND o.id = ?
+     AND (
+       (s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()))
+       OR
+       (s.signup_start_date <= NOW() AND (s.signup_end_date IS NULL OR s.signup_end_date >= NOW()) AND s.start_date > NOW())
+     )
+     ORDER BY 
+       CASE 
+         WHEN s.start_date <= NOW() AND (s.end_date IS NULL OR s.end_date >= NOW()) THEN 0
+         ELSE 1
+       END,
+       s.id DESC
      LIMIT 1;`,
     [app_id, organizer_id]
   );
