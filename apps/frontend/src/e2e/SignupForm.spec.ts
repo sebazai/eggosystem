@@ -450,6 +450,96 @@ test.describe("Signup Form", () => {
       // Verify red border appears (indicates validation failure due to lack of organizer approval)
       await expect(steamIdInput2).toHaveClass(/border-red-500/);
     });
+
+    test("should resolve player by nickname from database", async ({
+      page
+    }) => {
+      // Set up form to players section using existing team_id 999
+      await setupFormToPlayersSectionWithTeam999(page);
+
+      // Test searching by nickname (heppajpg is in e2e seed data)
+      const steamIdInput0 = page.locator('[data-testid="steam-id-input-0"]');
+      await steamIdInput0.fill("heppajpg");
+
+      // Wait for search button to appear
+      const searchButton = page.locator('[data-testid="search-button-0"]');
+      await expect(searchButton).toBeVisible();
+
+      // Click search button
+      await searchButton.click();
+
+      // Wait for resolution and player data to load
+      await page.waitForTimeout(3000);
+
+      // Verify the input now contains the resolved SteamID64 (heppajpgSteamId)
+      await expect(steamIdInput0).toHaveValue(heppajpgSteamId);
+
+      // Verify green border appears (indicates successful resolution and validation)
+      await expect(steamIdInput0).toHaveClass(/border-green-500/);
+
+      // Verify nickname is displayed
+      const nicknameSpan = page.locator('[data-testid="player-nickname-0"]');
+      await expect(nicknameSpan).toBeVisible();
+      await expect(nicknameSpan).toContainText(/heppajpg/i);
+    });
+
+    test("should resolve player by nickname using Enter key", async ({
+      page
+    }) => {
+      // Set up form to players section using existing team_id 999
+      await setupFormToPlayersSectionWithTeam999(page);
+
+      // Test searching by nickname using Enter key (Aabe is in e2e seed data)
+      const steamIdInput1 = page.locator('[data-testid="steam-id-input-1"]');
+      await steamIdInput1.fill("Aabe");
+
+      // Wait for search button to appear
+      const searchButton = page.locator('[data-testid="search-button-1"]');
+      await expect(searchButton).toBeVisible();
+
+      // Press Enter to trigger search
+      await steamIdInput1.press("Enter");
+
+      // Wait for resolution and player data to load
+      await page.waitForTimeout(3000);
+
+      // Verify the input now contains the resolved SteamID64 (AabeSteamId)
+      await expect(steamIdInput1).toHaveValue(AabeSteamId);
+
+      // Verify green border appears
+      await expect(steamIdInput1).toHaveClass(/border-green-500/);
+
+      // Verify nickname is displayed
+      const nicknameSpan = page.locator('[data-testid="player-nickname-1"]');
+      await expect(nicknameSpan).toBeVisible();
+      await expect(nicknameSpan).toContainText(/Aabe/i);
+    });
+
+    test("should show error when nickname not found", async ({ page }) => {
+      // Set up form to players section using existing team_id 999
+      await setupFormToPlayersSectionWithTeam999(page);
+
+      // Test searching by non-existent nickname
+      const steamIdInput2 = page.locator('[data-testid="steam-id-input-2"]');
+      await steamIdInput2.fill("NonExistentPlayer123");
+
+      // Wait for search button to appear
+      const searchButton = page.locator('[data-testid="search-button-2"]');
+      await expect(searchButton).toBeVisible();
+
+      // Click search button
+      await searchButton.click();
+
+      // Wait for resolution attempt
+      await page.waitForTimeout(2000);
+
+      // Verify red border appears (indicates resolution failure)
+      await expect(steamIdInput2).toHaveClass(/border-red-500/);
+
+      // Verify error message is shown
+      const errorMessage = page.locator('[data-testid="steam-id-error-2"]');
+      await expect(errorMessage).toBeVisible();
+    });
   });
 
   // Complete Registration Flow tests

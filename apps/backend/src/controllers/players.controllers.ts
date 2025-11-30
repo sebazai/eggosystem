@@ -11,7 +11,8 @@ import {
   getPlayerOldKanaElo,
   getPlayerMapStatsWithFilters,
   setPlayerKanaElo,
-  getAllPlayerStatsByFilters
+  getAllPlayerStatsByFilters,
+  getPlayerSteamIdByNickname
 } from "../models/player.models";
 
 import {
@@ -79,12 +80,20 @@ export const getIsPlayerProfilePublic = async (req: Request, res: Response) => {
 };
 
 /**
- * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, or custom URL) to SteamID64.
+ * Resolves any Steam ID format (SteamID64, SteamID, SteamID3, custom URL, nickname, provider_username, or faceit_nickname) to SteamID64.
+ * Resolution order:
+ * 1. Local normalization (SteamID64, SteamID, SteamID3)
+ * 2. Database search (nickname, provider_username, faceit_nickname) - checked before Steam API
+ * 3. Steam API (custom vanity URLs)
+ *
  * Supports:
  * - SteamID64: 76561198049745649
  * - SteamID: STEAM_0:1:44739960
  * - SteamID3: [U:1:89479921]
  * - Custom URL: sububobi
+ * - Nickname: Player's Steam nickname
+ * - Provider username: LinkedAccounts provider_username for steam provider
+ * - FaceIT nickname: SteamPlayers.faceit_nickname
  *
  * @param req Request with steam_id parameter (can be any format)
  * @param res Response with resolved SteamID64
@@ -119,27 +128,41 @@ export const resolveSteamIdController = async (
       return;
     } catch (err) {
       normalizeError = err instanceof Error ? err : new Error(String(err));
-      // If normalization fails, it might be a custom URL
-      // Continue to try resolving via Steam API
+      // If normalization fails, it might be a custom URL, nickname, or other format
+      // Continue to try resolving via other methods
     }
 
-    // Try resolving as custom URL (vanity URL)
+    // Try searching by nickname, provider_username, or faceit_nickname in our database first
+    // This is faster than Steam API and uses our own data
+    try {
+      const foundSteamId = await getPlayerSteamIdByNickname(input.trim());
+      if (foundSteamId) {
+        res.status(200).json({ steamId64: foundSteamId });
+        return;
+      }
+    } catch (_nicknameError) {
+      logger.debug(
+        `[Steam] Failed to search by nickname/provider_username/faceit_nickname: ${input}, trying Steam API`
+      );
+    }
+
+    // Try resolving as custom URL (vanity URL) via Steam API as last resort
     try {
       steamId64 = await resolveSteamIdVanityURL(input);
       res.status(200).json({ steamId64 });
       return;
-    } catch (vanityError) {
-      logger.warn(
-        `[Steam] Failed to resolve Steam ID: ${input}`,
-        normalizeError,
-        vanityError
-      );
-      return next(
-        new BadRequestError(
-          `Could not resolve Steam ID. Supported formats: SteamID64 (17 digits), SteamID (STEAM_X:Y:Z), SteamID3 ([U:1:AccountID]), or custom URL. Error: ${vanityError instanceof Error ? vanityError.message : "Unknown error"}`
-        )
-      );
+    } catch (_vanityError) {
+      // If vanity URL resolution fails, we've exhausted all options
+      logger.debug(`[Steam] Failed to resolve as vanity URL: ${input}`);
     }
+
+    // If all methods failed, return error
+    logger.warn(`[Steam] Failed to resolve Steam ID: ${input}`, normalizeError);
+    return next(
+      new BadRequestError(
+        `Could not resolve Steam ID. Supported formats: SteamID64 (17 digits), SteamID (STEAM_X:Y:Z), SteamID3 ([U:1:AccountID]), custom URL, nickname, provider username, or FaceIT nickname.`
+      )
+    );
   } catch (error) {
     logger.error(
       `[Steam] Unexpected error resolving Steam ID: ${input}`,

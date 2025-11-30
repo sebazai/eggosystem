@@ -317,7 +317,7 @@ export const SignupForm = ({
 
   /**
    * Converts all Steam IDs in form data to SteamID64 format.
-   * Uses local conversion for SteamID/SteamID3, API call for custom URLs.
+   * Uses local conversion for SteamID/SteamID3, API call for custom URLs, nicknames, provider_username, and faceit_nickname.
    */
   const convertSteamIdsToSteamId64 = async (
     data: SignupFormValues
@@ -334,13 +334,13 @@ export const SignupForm = ({
           return player;
         }
 
-        // Try local conversion first (SteamID, SteamID3)
+        // Try local conversion first (SteamID, SteamID3, /profiles/ URLs)
         const localConverted = await resolveSteamIdToSteamId64(player.steamId);
         if (localConverted) {
           return { ...player, steamId: localConverted };
         }
 
-        // Try API resolution for custom URLs
+        // Try API resolution for custom URLs, nicknames, provider_username, and faceit_nickname
         try {
           const response = await clientApiFetch<{ steamId64: string }>(
             `/api/v1/players/resolve/${encodeURIComponent(player.steamId.trim())}`
