@@ -209,7 +209,14 @@ export default function MyTeamPage() {
                 <div className="flex items-center gap-3">
                   <Trophy className="h-5 w-5" />
                   <div>
-                    <CardTitle>{team.team_name}</CardTitle>
+                    <CardTitle>
+                      <Link
+                        href={createNextUrl(`/teams/${team.team_id}`)}
+                        className="hover:underline"
+                      >
+                        {team.team_name}
+                      </Link>
+                    </CardTitle>
                     <CardDescription>
                       {team.season_name} - {team.league_name}
                     </CardDescription>
