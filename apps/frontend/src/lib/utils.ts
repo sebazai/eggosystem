@@ -170,28 +170,42 @@ export const createDashboardNextUrl = (url: string) => {
   return `/dashboard/${url}`;
 };
 
-export const createOrgLogoUrl = (url: string) => {
-  if (!url) return "";
+export const createOrgLogoUrl = (uuid: string) => {
+  if (!uuid) return "";
 
-  // If the URL is already absolute, return it as is
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  // If it's already a full URL, return as is (backward compatibility)
+  if (uuid.startsWith("http://") || uuid.startsWith("https://")) {
+    return uuid;
   }
 
-  // Ensure the URL starts with a leading slash for Next.js image component
-  return createNextUrl(`/organization-images/${url}`);
+  // Check if it looks like a UUID (contains hyphens) - use image service
+  // Otherwise, assume it's a legacy filename and use local path
+  if (uuid.includes("-") && uuid.length > 30) {
+    // UUID format - use image service
+    return `${envConfig.IMAGE_SERVICE_URL}/images/by-uuid/${uuid}`;
+  }
+
+  // Legacy filename - use local path for backward compatibility during migration
+  return createNextUrl(`/organization-images/${uuid}`);
 };
 
-export const createTeamLogoUrl = (url: string) => {
-  if (!url) return "";
+export const createTeamLogoUrl = (uuid: string) => {
+  if (!uuid) return "";
 
-  // If the URL is already absolute, return it as is
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  // If it's already a full URL, return as is (backward compatibility)
+  if (uuid.startsWith("http://") || uuid.startsWith("https://")) {
+    return uuid;
   }
 
-  // Ensure the URL starts with a leading slash for Next.js image component
-  return createNextUrl(`/team-images/${url}`);
+  // Check if it looks like a UUID (contains hyphens) - use image service
+  // Otherwise, assume it's a legacy filename and use local path
+  if (uuid.includes("-") && uuid.length > 30) {
+    // UUID format - use image service
+    return `${envConfig.IMAGE_SERVICE_URL}/images/by-uuid/${uuid}`;
+  }
+
+  // Legacy filename - use local path for backward compatibility during migration
+  return createNextUrl(`/team-images/${uuid}`);
 };
 
 export function filterParamsToSearchParams(
