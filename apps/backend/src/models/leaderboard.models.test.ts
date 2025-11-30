@@ -16,7 +16,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198049745649",
           nickname: "sububobi",
           team_name: "7dos",
-          team_logo: "faa0c585f21c2d76",
+          team_logo: "cf9838e7641c3333",
           matches_played: 13,
           kana_rating: 1.03
         },
@@ -24,7 +24,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197963921578",
           nickname: "van9",
           team_name: "7dos",
-          team_logo: "faa0c585f21c2d76",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.897059
         },
@@ -32,7 +32,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198001857963",
           nickname: "meppi",
           team_name: "7dos",
-          team_logo: "faa0c585f21c2d76",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.847647
         },
@@ -40,7 +40,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197967885016",
           nickname: "enzoj",
           team_name: "7dos",
-          team_logo: "faa0c585f21c2d76",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.823529
         },
@@ -48,7 +48,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198030886203",
           nickname: "defektro",
           team_name: "7dos",
-          team_logo: "faa0c585f21c2d76",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.608235
         }
@@ -94,7 +94,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198015168566",
           nickname: "gigajaska",
           team_name: "Prove Testaa",
-          team_logo: "d4e1eb9694192b36",
+          team_logo: "c46b6ea1319233cf",
           matches_played: 26,
           deaths: 392
         },
@@ -102,7 +102,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197973115783",
           nickname: "HERRAHEVONEN",
           team_name: "Prove Testaa",
-          team_logo: "d4e1eb9694192b36",
+          team_logo: "c46b6ea1319233cf",
           matches_played: 25,
           deaths: 385
         }
