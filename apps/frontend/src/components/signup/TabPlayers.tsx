@@ -43,7 +43,7 @@ import type {
   SignupPlayerType
 } from "@eggosystem/types";
 import { playerSchema, SeasonPlatform } from "@eggosystem/types";
-import { AlertTriangle, TriangleAlert } from "lucide-react";
+import { AlertTriangle, Search, TriangleAlert } from "lucide-react";
 import { ApiError, clientApiFetch } from "@/lib/apiClient";
 import { SignupPlayerNotification } from "./SignupPlayerNotification";
 import { FaceITLevelIcon } from "../profile/FaceITLevelIcon";
@@ -371,6 +371,88 @@ export const TabPlayers = ({
   );
 
   /**
+   * Handles manual search button click for nickname/provider_username/faceit_nickname resolution.
+   * This is triggered when the user clicks the search button or presses Enter on a text input.
+   */
+  const handleManualSearch = useCallback(
+    async (index: number, searchValue: string) => {
+      if (!searchValue.trim()) {
+        return;
+      }
+
+      // Clear previous values
+      clearValuesForIndex(index);
+
+      // Suppress validation by updating field without validation
+      // This prevents validation errors from showing during the search process
+      setValue(`players.${index}.steamId`, searchValue.trim(), {
+        shouldValidate: false
+      });
+
+      // Set loading state
+      setLoadingStates((prev) => ({
+        ...prev,
+        [index]: true
+      }));
+
+      try {
+        // Try to resolve via API (handles nickname, provider_username, faceit_nickname, and custom URLs)
+        const resolvedSteamId = await resolveSteamId(searchValue.trim());
+
+        if (resolvedSteamId && isValidSteamId(resolvedSteamId)) {
+          // Update the field with resolved SteamID64 and validate
+          setValue(`players.${index}.steamId`, resolvedSteamId, {
+            shouldValidate: true
+          });
+          // Trigger validation to clear any existing errors and validate the resolved SteamID64
+          await trigger(`players.${index}.steamId`);
+
+          // Check duplicates excluding the current player's Steam ID
+          const otherSteamIds = steamIds.filter((_, i) => i !== index);
+          if (!otherSteamIds.includes(resolvedSteamId)) {
+            // Fetch player data
+            await handlePlayer(resolvedSteamId, index);
+          } else {
+            // Duplicate Steam ID detected - clear loading state
+            setLoadingStates((prev) => ({
+              ...prev,
+              [index]: false
+            }));
+          }
+        } else {
+          // Resolution failed - update field and validate to show error
+          setValue(`players.${index}.steamId`, searchValue.trim(), {
+            shouldValidate: true
+          });
+          await trigger(`players.${index}.steamId`);
+          setLoadingStates((prev) => ({
+            ...prev,
+            [index]: false
+          }));
+        }
+      } catch (_error) {
+        // Error handling - update field and validate to show error
+        setValue(`players.${index}.steamId`, searchValue.trim(), {
+          shouldValidate: true
+        });
+        await trigger(`players.${index}.steamId`);
+        setLoadingStates((prev) => ({
+          ...prev,
+          [index]: false
+        }));
+      }
+    },
+    [
+      clearValuesForIndex,
+      resolveSteamId,
+      handlePlayer,
+      steamIds,
+      setValue,
+      trigger
+    ]
+  );
+
+  /**
    * Handles Steam ID input change, converting various formats to SteamID64.
    * Updates the input field with the converted value and triggers player data fetching.
    */
@@ -631,7 +713,7 @@ export const TabPlayers = ({
                               </span>
                             </span>
                           ) : (
-                            "Steam ID"
+                            "Steam ID or Nickname"
                           )}
                         </FormLabel>
                         <FormControl>
@@ -647,11 +729,23 @@ export const TabPlayers = ({
                                   !loadingStates[index] &&
                                   !isEmptySteamId &&
                                   "border-green-500 focus:border-green-500 focus:ring-green-500",
-                                loadingStates[index] && "border-yellow-500"
+                                loadingStates[index] && "border-yellow-500",
+                                // Add padding for search button when visible
+                                !isValidSteamId(field.value) &&
+                                  field.value.trim() !== "" &&
+                                  !loadingStates[index] &&
+                                  "pr-10"
                               )}
                               onClick={(e) => e.stopPropagation()}
                               disabled={loadingStates[index]}
                               data-testid={`steam-id-input-${index}`}
+                              onBlur={() => {
+                                // Suppress validation on blur if we're currently loading (searching)
+                                // This prevents validation errors from showing during the search process
+                                if (!loadingStates[index]) {
+                                  field.onBlur();
+                                }
+                              }}
                               onChange={async (e) => {
                                 await handleSteamIdChange(
                                   index,
@@ -660,6 +754,18 @@ export const TabPlayers = ({
                                   field.onChange,
                                   e
                                 );
+                              }}
+                              onKeyDown={async (e) => {
+                                // Allow Enter key to trigger search for non-Steam ID inputs
+                                if (
+                                  e.key === "Enter" &&
+                                  !isValidSteamId(field.value) &&
+                                  field.value.trim() !== "" &&
+                                  !loadingStates[index]
+                                ) {
+                                  e.preventDefault();
+                                  await handleManualSearch(index, field.value);
+                                }
                               }}
                             />
                             {loadingStates[index] && (
@@ -670,6 +776,31 @@ export const TabPlayers = ({
                                 <Spinner />
                               </div>
                             )}
+                            {!loadingStates[index] &&
+                              !isValidSteamId(field.value) &&
+                              field.value.trim() !== "" && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute inset-y-0 right-0 h-full w-10 rounded-l-none"
+                                  onMouseDown={(e) => {
+                                    // Prevent the button from taking focus, which would trigger onBlur validation
+                                    e.preventDefault();
+                                  }}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    await handleManualSearch(
+                                      index,
+                                      field.value
+                                    );
+                                  }}
+                                  data-testid={`search-button-${index}`}
+                                  aria-label="Search by nickname"
+                                >
+                                  <Search className="h-4 w-4" />
+                                </Button>
+                              )}
                           </div>
                         </FormControl>
                         <FormMessage data-testid={`steam-id-error-${index}`} />

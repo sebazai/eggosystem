@@ -31,6 +31,34 @@ export const getPlayerBySteamId = async (steam_id: string) => {
   );
 };
 
+/**
+ * Search for a player by nickname, provider_username, or faceit_nickname.
+ * Returns the steam_id if found, null otherwise.
+ * @param searchTerm The nickname, provider_username, or faceit_nickname to search for
+ * @returns The steam_id as a string if found, null otherwise
+ */
+export const getPlayerSteamIdByNickname = async (
+  searchTerm: string
+): Promise<string | null> => {
+  const results = await runQuery<Array<{ steam_id: string }>>(
+    `SELECT DISTINCT sp.steam_id
+     FROM SteamPlayers sp
+     LEFT JOIN Accounts a ON a.id = sp.account_id
+     LEFT JOIN LinkedAccounts la ON la.account_id = a.id AND la.provider = 'steam'
+     WHERE sp.nickname = ? 
+        OR sp.faceit_nickname = ?
+        OR la.provider_username = ?
+     LIMIT 1`,
+    [searchTerm, searchTerm, searchTerm]
+  );
+
+  if (results.length > 0 && results[0]) {
+    return String(results[0].steam_id);
+  }
+
+  return null;
+};
+
 export const getPlayerDetailsBySteamId = async (steam_id: string) => {
   const results = await runQuery<PlayerDetailsBySteamId[]>(
     `SELECT
