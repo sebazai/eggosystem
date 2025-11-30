@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "*.allstar.gg"
+      },
+      {
+        protocol: "https",
+        hostname: "imgdev.kanaliiga.fi"
+      },
+      {
+        protocol: "https",
+        hostname: "img.kanaliiga.fi"
       }
     ]
   }

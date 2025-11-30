@@ -342,9 +342,10 @@ export const insertTestOrganization = async (
   const code =
     organizationCode ||
     `TEST-ORG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Use phash for nologo.png (c163141e6bd36e65) instead of filename
   return runQuery<{ insertId: number }>(
     "INSERT INTO Organizations (name, country, organization_code, logo, website) VALUES (?, ?, ?, ?, ?)",
-    [name, "Finland", code, "nologo.png", "http://test.org"]
+    [name, "Finland", code, "c163141e6bd36e65", "http://test.org"]
   );
 };
 

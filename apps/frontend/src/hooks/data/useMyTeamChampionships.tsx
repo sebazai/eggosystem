@@ -15,9 +15,13 @@ export const useMyTeamChampionships = (seasonId: number, leagueId: number) => {
   const { data, error, isLoading, isValidating } = useSWR<
     { championships: Championship[] },
     Error
-  >(`/api/v1/my-teams/championships/${seasonId}/${leagueId}`, clientApiFetch, {
-    revalidateOnFocus: false
-  });
+  >(
+    `/api/v1/accounts/my-teams/championships/${seasonId}/${leagueId}`,
+    clientApiFetch,
+    {
+      revalidateOnFocus: false
+    }
+  );
 
   return {
     championships: data?.championships ?? [],

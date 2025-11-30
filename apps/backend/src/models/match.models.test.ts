@@ -22,9 +22,9 @@ describe("getMatchesByFilters", () => {
         map_name: "de_nuke",
         stage: 2,
         team1_name: "Digia Vengers",
-        team1_logo: "S15_2196.png",
+        team1_logo: "c1663e99856359b6",
         team2_name: "Gigantti",
-        team2_logo: "S14_2065.png",
+        team2_logo: "9e39646633c95966",
         match_game_id: null,
         team1_score: 13,
         team2_score: 8
@@ -36,9 +36,9 @@ describe("getMatchesByFilters", () => {
         map_name: "de_nuke",
         stage: 2,
         team1_name: "Digia Vengers",
-        team1_logo: "S15_2196.png",
+        team1_logo: "c1663e99856359b6",
         team2_name: "Gigantti",
-        team2_logo: "S14_2065.png",
+        team2_logo: "9e39646633c95966",
         match_game_id: null,
         team1_score: 13,
         team2_score: 3

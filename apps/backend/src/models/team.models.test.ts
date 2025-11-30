@@ -21,16 +21,14 @@ describe("getFilteredTopTeams", () => {
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 1,
-        teams:
-          '[{"team_id": 2053, "team_name": "CSKeisari", "team_logo": "S14_2053.png", "matches_played": 10, "kana": 0.921, "rank": 1},{"team_id": 113, "team_name": "Futurice", "team_logo": "S15_2162.png", "matches_played": 10, "kana": 0.890, "rank": 2},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 10, "kana": 0.874, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 10, "kana": 0.820, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 10, "kana": 0.811, "rank": 5}]'
+        teams: `[{"team_id": 2053, "team_name": "CSKeisari", "team_logo": "999a66613266cd9b", "matches_played": 10, "kana": 0.921, "rank": 1},{"team_id": 113, "team_name": "Futurice", "team_logo": "c0f23a0fc5f27a0d", "matches_played": 10, "kana": 0.890, "rank": 2},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 10, "kana": 0.874, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 10, "kana": 0.820, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 10, "kana": 0.811, "rank": 5}]`
       },
       {
         league_id: 1,
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 2,
-        teams:
-          '[{"team_id": 66, "team_name": "Valtori", "team_logo": "S15_2184.png", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "S14_2064.png", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 7, "kana": 0.843, "rank": 5}]'
+        teams: `[{"team_id": 66, "team_name": "Valtori", "team_logo": "c7cf3d3c26643892", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "af95976ac295604b", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 7, "kana": 0.843, "rank": 5}]`
       }
     ]);
   });
@@ -48,32 +46,28 @@ describe("getFilteredTopTeams", () => {
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 1,
-        teams:
-          '[{"team_id": 2053, "team_name": "CSKeisari", "team_logo": "S14_2053.png", "matches_played": 10, "kana": 0.921, "rank": 1},{"team_id": 113, "team_name": "Futurice", "team_logo": "S15_2162.png", "matches_played": 10, "kana": 0.890, "rank": 2},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 10, "kana": 0.874, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 10, "kana": 0.820, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 10, "kana": 0.811, "rank": 5}]'
+        teams: `[{"team_id": 2053, "team_name": "CSKeisari", "team_logo": "999a66613266cd9b", "matches_played": 10, "kana": 0.921, "rank": 1},{"team_id": 113, "team_name": "Futurice", "team_logo": "c0f23a0fc5f27a0d", "matches_played": 10, "kana": 0.890, "rank": 2},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 10, "kana": 0.874, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 10, "kana": 0.820, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 10, "kana": 0.811, "rank": 5}]`
       },
       {
         league_id: 1,
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 2,
-        teams:
-          '[{"team_id": 66, "team_name": "Valtori", "team_logo": "S15_2184.png", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "S14_2064.png", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 7, "kana": 0.843, "rank": 5}]'
+        teams: `[{"team_id": 66, "team_name": "Valtori", "team_logo": "c7cf3d3c26643892", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "af95976ac295604b", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 7, "kana": 0.843, "rank": 5}]`
       },
       {
         league_id: 2,
         league_name: "Challengers",
         league_sort_priority: 2,
         stage: 1,
-        teams:
-          '[{"team_id": 28, "team_name": "Fastems", "team_logo": "S14_2086.png", "matches_played": 10, "kana": 0.964, "rank": 1},{"team_id": 321, "team_name": "Telia Finland", "team_logo": "S15_2257.png", "matches_played": 8, "kana": 0.932, "rank": 2},{"team_id": 1863, "team_name": "ALM Partners Tasetaikurit", "team_logo": "S15_2197.png", "matches_played": 10, "kana": 0.926, "rank": 3},{"team_id": 2004, "team_name": "Onnisen Hosujat", "team_logo": "S14_2004.png", "matches_played": 8, "kana": 0.919, "rank": 4},{"team_id": 1442, "team_name": "Netum", "team_logo": "S14_2080.png", "matches_played": 10, "kana": 0.899, "rank": 5}]'
+        teams: `[{"team_id": 28, "team_name": "Fastems", "team_logo": "a1e5de83d5588974", "matches_played": 10, "kana": 0.964, "rank": 1},{"team_id": 321, "team_name": "Telia Finland", "team_logo": "af49c0c59f368cc9", "matches_played": 8, "kana": 0.932, "rank": 2},{"team_id": 1863, "team_name": "ALM Partners Tasetaikurit", "team_logo": "fae79470839a489b", "matches_played": 10, "kana": 0.926, "rank": 3},{"team_id": 2004, "team_name": "Onnisen Hosujat", "team_logo": "d48c2b33d4cc2f33", "matches_played": 8, "kana": 0.919, "rank": 4},{"team_id": 1442, "team_name": "Netum", "team_logo": "f993866c3993866c", "matches_played": 10, "kana": 0.899, "rank": 5}]`
       },
       {
         league_id: 2,
         league_name: "Challengers",
         league_sort_priority: 2,
         stage: 2,
-        teams:
-          '[{"team_id": 2119, "team_name": "OP Rohkea", "team_logo": "S14_2119.png", "matches_played": 9, "kana": 0.978, "rank": 1},{"team_id": 1938, "team_name": "Frendy Fire", "team_logo": "S15_2259.png", "matches_played": 17, "kana": 0.938, "rank": 2},{"team_id": 1890, "team_name": "Avant Tecno", "team_logo": "S14_2105.png", "matches_played": 9, "kana": 0.898, "rank": 3},{"team_id": 1442, "team_name": "Netum", "team_logo": "S14_2080.png", "matches_played": 12, "kana": 0.869, "rank": 4},{"team_id": 2005, "team_name": "Are Cloud Next Generation", "team_logo": "S14_2005.png", "matches_played": 11, "kana": 0.865, "rank": 5}]'
+        teams: `[{"team_id": 2119, "team_name": "OP Rohkea", "team_logo": "acc3ff90b1c68392", "matches_played": 9, "kana": 0.978, "rank": 1},{"team_id": 1938, "team_name": "Frendy Fire", "team_logo": "ca48b7bb14b44b4b", "matches_played": 17, "kana": 0.938, "rank": 2},{"team_id": 1890, "team_name": "Avant Tecno", "team_logo": "fef881833a7ec481", "matches_played": 9, "kana": 0.898, "rank": 3},{"team_id": 1442, "team_name": "Netum", "team_logo": "f993866c3993866c", "matches_played": 12, "kana": 0.869, "rank": 4},{"team_id": 2005, "team_name": "Are Cloud Next Generation", "team_logo": "e87897876c789187", "matches_played": 11, "kana": 0.865, "rank": 5}]`
       }
     ]);
   });
@@ -91,16 +85,14 @@ describe("getFilteredTopTeams", () => {
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 1,
-        teams:
-          '[{"team_id": 2053, "team_name": "CSKeisari", "team_logo": "S14_2053.png", "matches_played": 10, "kana": 0.921, "rank": 1},{"team_id": 113, "team_name": "Futurice", "team_logo": "S15_2162.png", "matches_played": 10, "kana": 0.890, "rank": 2},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 10, "kana": 0.874, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 10, "kana": 0.820, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 10, "kana": 0.811, "rank": 5}]'
+        teams: `[{"team_id": 2053, "team_name": "CSKeisari", "team_logo": "999a66613266cd9b", "matches_played": 10, "kana": 0.921, "rank": 1},{"team_id": 113, "team_name": "Futurice", "team_logo": "c0f23a0fc5f27a0d", "matches_played": 10, "kana": 0.890, "rank": 2},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 10, "kana": 0.874, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 10, "kana": 0.820, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 10, "kana": 0.811, "rank": 5}]`
       },
       {
         league_id: 1,
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 2,
-        teams:
-          '[{"team_id": 66, "team_name": "Valtori", "team_logo": "S15_2184.png", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "S14_2064.png", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 7, "kana": 0.843, "rank": 5}]'
+        teams: `[{"team_id": 66, "team_name": "Valtori", "team_logo": "c7cf3d3c26643892", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "af95976ac295604b", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 7, "kana": 0.843, "rank": 5}]`
       }
     ]);
   });
@@ -118,8 +110,7 @@ describe("getFilteredTopTeams", () => {
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 2,
-        teams:
-          '[{"team_id": 66, "team_name": "Valtori", "team_logo": "S15_2184.png", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "S14_2064.png", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 7, "kana": 0.843, "rank": 5}]'
+        teams: `[{"team_id": 66, "team_name": "Valtori", "team_logo": "c7cf3d3c26643892", "matches_played": 6, "kana": 0.916, "rank": 1},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 11, "kana": 0.870, "rank": 2},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 8, "kana": 0.848, "rank": 3},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "af95976ac295604b", "matches_played": 6, "kana": 0.845, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 7, "kana": 0.843, "rank": 5}]`
       }
     ]);
   });
@@ -137,16 +128,14 @@ describe("getFilteredTopTeams", () => {
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 1,
-        teams:
-          '[{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 2, "kana": 1.080, "rank": 1},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "S14_2064.png", "matches_played": 1, "kana": 1.056, "rank": 2},{"team_id": 280, "team_name": "OEM eSports", "team_logo": "S14_2074.png", "matches_played": 3, "kana": 0.996, "rank": 3},{"team_id": 66, "team_name": "Valtori", "team_logo": "S15_2184.png", "matches_played": 3, "kana": 0.983, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "S15_2205.png", "matches_played": 1, "kana": 0.960, "rank": 5}]'
+        teams: `[{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 2, "kana": 1.080, "rank": 1},{"team_id": 1550, "team_name": "Accenture Elite", "team_logo": "af95976ac295604b", "matches_played": 1, "kana": 1.056, "rank": 2},{"team_id": 280, "team_name": "OEM eSports", "team_logo": "c59a3b67b8b84345", "matches_played": 3, "kana": 0.996, "rank": 3},{"team_id": 66, "team_name": "Valtori", "team_logo": "c7cf3d3c26643892", "matches_played": 3, "kana": 0.983, "rank": 4},{"team_id": 756, "team_name": "Elisa Hosujat", "team_logo": "bbb1c44e3ab1b10e", "matches_played": 1, "kana": 0.960, "rank": 5}]`
       },
       {
         league_id: 1,
         league_name: "Masters",
         league_sort_priority: 1,
         stage: 2,
-        teams:
-          '[{"team_id": 28, "team_name": "Fastems", "team_logo": "S14_2086.png", "matches_played": 1, "kana": 1.084, "rank": 1},{"team_id": 930, "team_name": "Neste e-sports", "team_logo": "S11_1620.png", "matches_played": 3, "kana": 1.013, "rank": 2},{"team_id": 66, "team_name": "Valtori", "team_logo": "S15_2184.png", "matches_played": 2, "kana": 0.969, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "S15_2196.png", "matches_played": 3, "kana": 0.945, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "S14_2073.png", "matches_played": 2, "kana": 0.937, "rank": 5}]'
+        teams: `[{"team_id": 28, "team_name": "Fastems", "team_logo": "a1e5de83d5588974", "matches_played": 1, "kana": 1.084, "rank": 1},{"team_id": 930, "team_name": "Neste e-sports", "team_logo": "d4b72b48c635c393", "matches_played": 3, "kana": 1.013, "rank": 2},{"team_id": 66, "team_name": "Valtori", "team_logo": "c7cf3d3c26643892", "matches_played": 2, "kana": 0.969, "rank": 3},{"team_id": 1028, "team_name": "Digia Vengers", "team_logo": "c1663e99856359b6", "matches_played": 3, "kana": 0.945, "rank": 4},{"team_id": 875, "team_name": "Mehiläinen Bee Rush", "team_logo": "e492d7695bc63c30", "matches_played": 2, "kana": 0.937, "rank": 5}]`
       }
     ]);
   });
@@ -165,7 +154,7 @@ describe("getTeamsByFilters", () => {
       {
         id: 66,
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         wins: 13,
         losses: 8,
         matches_played: 21,
@@ -187,7 +176,7 @@ describe("getTeamsByFilters", () => {
       {
         id: 66,
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         wins: 9,
         losses: 4,
         matches_played: 13,
@@ -209,7 +198,7 @@ describe("getTeamsByFilters", () => {
       {
         id: 66,
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         wins: 6,
         losses: 0,
         matches_played: 6,
@@ -231,7 +220,7 @@ describe("getTeamsByFilters", () => {
       {
         id: 66,
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         wins: 3,
         losses: 0,
         matches_played: 3,
@@ -249,7 +238,7 @@ describe("getOneTeamByFilters", () => {
     expect(result).toEqual([
       {
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         id: 66,
         latest_season_name: "Season 2",
         latest_league_name: "Masters",
@@ -262,7 +251,7 @@ describe("getOneTeamByFilters", () => {
     expect(result).toEqual([
       {
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         id: 66,
         latest_season_name: "Season 2",
         latest_league_name: "Masters",
@@ -275,7 +264,7 @@ describe("getOneTeamByFilters", () => {
     expect(result).toEqual([
       {
         name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         id: 66,
         latest_season_name: "Season 11",
         latest_league_name: "Masters",
@@ -326,9 +315,9 @@ describe("getTeamMatchesByFilters", () => {
         team_id: 66,
         opponent_id: 113,
         team_name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         opponent_name: "Futurice",
-        opponent_logo: "S15_2162.png",
+        opponent_logo: "c0f23a0fc5f27a0d",
         team_score: 13,
         opponent_score: 8,
         result: "won"
@@ -344,9 +333,9 @@ describe("getTeamMatchesByFilters", () => {
         team_id: 66,
         opponent_id: 1028,
         team_name: "Valtori",
-        team_logo: "S15_2184.png",
+        team_logo: "c7cf3d3c26643892",
         opponent_name: "Digia Vengers",
-        opponent_logo: "S15_2196.png",
+        opponent_logo: "c1663e99856359b6",
         team_score: 11,
         opponent_score: 13,
         result: "lost"
@@ -381,10 +370,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_mirage, de_ancient",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 2042,
         opponent_name: "VILPE SENSE",
-        opponent_logo: "S14_2042.png",
+        opponent_logo: "b8c99336cd31c533",
         result: "lost",
         team_score: 0,
         opponent_score: 2
@@ -398,10 +387,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_dust2, de_mirage",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 418,
         opponent_name: "TEXA",
-        opponent_logo: "S15_2172.png",
+        opponent_logo: "b98cc6731a0e61ed",
         result: "lost",
         team_score: 0,
         opponent_score: 2
@@ -415,10 +404,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_mirage",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 386,
         opponent_name: "Nondest",
-        opponent_logo: "S15_2165.png",
+        opponent_logo: "e0901f6fe0901f6f",
         result: "lost",
         team_score: 2,
         opponent_score: 13
@@ -432,10 +421,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_vertigo",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 386,
         opponent_name: "Nondest",
-        opponent_logo: "S15_2165.png",
+        opponent_logo: "e0901f6fe0901f6f",
         result: "lost",
         team_score: 1,
         opponent_score: 13
@@ -449,10 +438,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_mirage",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 850,
         opponent_name: "lcp",
-        opponent_logo: "S14_2048.png",
+        opponent_logo: "b173ce8c3173c68c",
         result: "lost",
         team_score: 4,
         opponent_score: 13
@@ -466,10 +455,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_inferno",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 850,
         opponent_name: "lcp",
-        opponent_logo: "S14_2048.png",
+        opponent_logo: "b173ce8c3173c68c",
         result: "lost",
         team_score: 4,
         opponent_score: 13
@@ -483,10 +472,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_ancient",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 1863,
         opponent_name: "ALM Partners Tasetaikurit",
-        opponent_logo: "S15_2197.png",
+        opponent_logo: "fae79470839a489b",
         result: "lost",
         team_score: 8,
         opponent_score: 13
@@ -500,10 +489,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_nuke",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 1863,
         opponent_name: "ALM Partners Tasetaikurit",
-        opponent_logo: "S15_2197.png",
+        opponent_logo: "fae79470839a489b",
         result: "lost",
         team_score: 3,
         opponent_score: 13
@@ -517,10 +506,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_anubis",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 1938,
         opponent_name: "Frendy Fire",
-        opponent_logo: "S15_2259.png",
+        opponent_logo: "ca48b7bb14b44b4b",
         result: "lost",
         team_score: 6,
         opponent_score: 13
@@ -534,10 +523,10 @@ describe("getTeamMatchesByFilters", () => {
         maps: "de_mirage",
         team_id: 1993,
         team_name: "SOK Tilipäivä",
-        team_logo: "S14_1993.png",
+        team_logo: "9893674d616cceb2",
         opponent_id: 1938,
         opponent_name: "Frendy Fire",
-        opponent_logo: "S15_2259.png",
+        opponent_logo: "ca48b7bb14b44b4b",
         result: "lost",
         team_score: 8,
         opponent_score: 13
