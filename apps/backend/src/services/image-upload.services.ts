@@ -135,7 +135,7 @@ export async function uploadImageToService(
   let result: ImageServiceResponse;
   try {
     result = JSON.parse(responseText) as ImageServiceResponse;
-  } catch (parseError) {
+  } catch (_parseError) {
     logger.error(
       `Failed to parse image service response. Status: ${statusCode}, Response text: ${responseText}`
     );

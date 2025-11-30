@@ -1,5 +1,5 @@
 import { runQuery } from "../db/mysqlRunQuery";
-import { NotFoundError, ForbiddenError } from "../utils/errors";
+import { NotFoundError } from "../utils/errors";
 
 /**
  * Check if a user (by steam_id) is a captain or co-captain of a team

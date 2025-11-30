@@ -2,10 +2,10 @@ import type { Request, Response, NextFunction } from "express";
 import { uploadTeamLogoController } from "./team-logo.controllers";
 import * as imageUploadService from "../services/image-upload.services";
 import * as teamLogoModels from "../models/team-logo.models";
-import {
-  UnauthorizedError,
-  ForbiddenError,
-  BadRequestError
+import type {
+  UnauthorizedError as _UnauthorizedError,
+  ForbiddenError as _ForbiddenError,
+  BadRequestError as _BadRequestError
 } from "../utils/errors";
 
 jest.mock("../services/image-upload.services");

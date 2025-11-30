@@ -53,7 +53,9 @@
         "RABBITMQ_USER",
         "RABBITMQ_PASSWORD",
         "RABBITMQ_VHOST",
-        "CSRANKKER_BACKEND_API"
+        "CSRANKKER_BACKEND_API",
+        "IMAGE_SERVICE_BASE_URL",
+        "IMAGE_SERVICE_API_KEY"
       ],
       "dependsOn": ["^build"],
       "inputs": [

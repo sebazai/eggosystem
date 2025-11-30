@@ -17,7 +17,6 @@ import { toast } from "sonner";
 import { clientApiFetch } from "@/lib/apiClient";
 import { useMyTeams } from "@/hooks/data/user/useMyTeams";
 import Image from "next/image";
-import { createTeamLogoUrl } from "@/lib/utils";
 
 interface TeamEditDialogProps {
   teamId: number;
