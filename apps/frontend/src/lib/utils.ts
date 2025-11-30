@@ -170,28 +170,28 @@ export const createDashboardNextUrl = (url: string) => {
   return `/dashboard/${url}`;
 };
 
-export const createOrgLogoUrl = (url: string) => {
-  if (!url) return "";
+export const createOrgLogoUrl = (identifier: string) => {
+  if (!identifier) return "";
 
-  // If the URL is already absolute, return it as is
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  // If it's already a full URL, return as is (backward compatibility)
+  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
+    return identifier;
   }
 
-  // Ensure the URL starts with a leading slash for Next.js image component
-  return createNextUrl(`/organization-images/${url}`);
+  // Always use image service phash endpoint
+  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
 };
 
-export const createTeamLogoUrl = (url: string) => {
-  if (!url) return "";
+export const createTeamLogoUrl = (identifier: string) => {
+  if (!identifier) return "";
 
-  // If the URL is already absolute, return it as is
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    return url;
+  // If it's already a full URL, return as is (backward compatibility)
+  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
+    return identifier;
   }
 
-  // Ensure the URL starts with a leading slash for Next.js image component
-  return createNextUrl(`/team-images/${url}`);
+  // Always use image service phash endpoint
+  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
 };
 
 export function filterParamsToSearchParams(
