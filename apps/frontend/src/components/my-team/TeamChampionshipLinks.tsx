@@ -35,13 +35,20 @@ export const TeamChampionshipLinks = ({ team }: TeamChampionshipLinksProps) => {
         {championships.map((championship) => (
           <Link
             key={championship.id}
-            href={`https://www.faceit.com/en/cs2/leagues/${championship.external_id}`}
+            href={`https://www.faceit.com/en/championship/${championship.external_id}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-xs bg-muted text-muted-foreground hover:text-foreground px-2 py-1 rounded border hover:border-primary/50 transition-colors"
-            title={`View ${championship.external_league_name} on FaceIT`}
+            title={`View ${championship.external_league_name} (${championship.stage_name}) on FaceIT`}
           >
-            <span>{championship.external_league_name}</span>
+            <span>
+              {championship.external_league_name}
+              {championship.stage_name && (
+                <span className="ml-1 opacity-75">
+                  ({championship.stage_name})
+                </span>
+              )}
+            </span>
             <ExternalLink className="h-3 w-3" />
           </Link>
         ))}
