@@ -44,11 +44,23 @@ export const getMyTeamsUpcomingMatchesController = async (
  */
 export const getMyTeamChampionshipsController = async (
   req: RequestWithParams<{ season_id: string; league_id: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
-  const seasonId = parseInt(req.params.season_id);
-  const leagueId = parseInt(req.params.league_id);
+  try {
+    const seasonId = parseInt(req.params.season_id);
+    const leagueId = parseInt(req.params.league_id);
 
-  const championships = await getMyTeamChampionships(seasonId, leagueId);
-  res.json({ championships });
+    if (isNaN(seasonId) || isNaN(leagueId)) {
+      res.status(400).json({
+        error: "Invalid season_id or league_id"
+      });
+      return;
+    }
+
+    const championships = await getMyTeamChampionships(seasonId, leagueId);
+    res.json({ championships: championships || [] });
+  } catch (error) {
+    next(error);
+  }
 };

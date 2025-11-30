@@ -13,7 +13,8 @@ if (!process.env.NODE_ENV) {
 
 if (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") {
   logger.info("Loading .env.development & .env file");
-  dotenv.config({ path: [".env", ".env.development"], quiet: true });
+  // Load .env.development first so it takes precedence over .env
+  dotenv.config({ path: [".env.development", ".env"], quiet: true });
 }
 
 if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
@@ -62,7 +63,8 @@ app.use(
     credentials: true
   })
 );
-app.use(express.json());
+// Increase JSON body size limit to 10MB for image uploads
+app.use(express.json({ limit: "10mb" }));
 
 app.use(helmet());
 app.use(

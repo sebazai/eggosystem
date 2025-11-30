@@ -3,6 +3,7 @@
 import { useMyTeams } from "@/hooks/data/user/useMyTeams";
 import { useMyTeamsUpcomingMatches } from "@/hooks/data/user/useMyTeamsUpcomingMatches";
 import { TeamChampionshipLinks } from "@/components/my-team/TeamChampionshipLinks";
+import { TeamEditDialog } from "@/components/my-team/TeamEditDialog";
 import {
   Card,
   CardContent,
@@ -12,11 +13,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Users, CalendarDays, Trophy, ExternalLink } from "lucide-react";
+import { Copy, Users, CalendarDays, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Link from "next/link";
-import { createNextUrl } from "@/lib/utils";
+import Image from "next/image";
+import { createNextUrl, createTeamLogoUrl } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/context/AuthContext";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
@@ -202,12 +204,35 @@ export default function MyTeamPage() {
 
       {/* Teams Section */}
       {teams.map((team) => {
+        const isCaptain = team.players.some(
+          (p) => p.is_captain || p.is_co_captain
+        );
+        const teamLogoUrl = createTeamLogoUrl(team.team_logo);
+
         return (
           <Card key={`${team.team_id}-${team.season_id}`}>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-5 w-5" />
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="border-border flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border">
+                    <Image
+                      src={teamLogoUrl || "/placeholder-team.png"}
+                      alt={`${team.team_name} logo`}
+                      width={64}
+                      height={64}
+                      className="h-full w-full object-contain"
+                      unoptimized
+                    />
+                  </div>
+                  {isCaptain && (
+                    <TeamEditDialog
+                      teamId={team.team_id}
+                      currentLogoUrl={teamLogoUrl}
+                      currentTeamName={team.team_name}
+                    />
+                  )}
+                </div>
+                <div className="flex-1 flex items-start justify-between gap-4">
                   <div>
                     <CardTitle>
                       <Link
@@ -221,8 +246,8 @@ export default function MyTeamPage() {
                       {team.season_name} - {team.league_name}
                     </CardDescription>
                   </div>
+                  <TeamChampionshipLinks team={team} />
                 </div>
-                <TeamChampionshipLinks team={team} />
               </div>
             </CardHeader>
             <CardContent>
