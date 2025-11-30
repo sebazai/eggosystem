@@ -170,42 +170,28 @@ export const createDashboardNextUrl = (url: string) => {
   return `/dashboard/${url}`;
 };
 
-export const createOrgLogoUrl = (uuid: string) => {
-  if (!uuid) return "";
+export const createOrgLogoUrl = (identifier: string) => {
+  if (!identifier) return "";
 
   // If it's already a full URL, return as is (backward compatibility)
-  if (uuid.startsWith("http://") || uuid.startsWith("https://")) {
-    return uuid;
+  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
+    return identifier;
   }
 
-  // Check if it looks like a UUID (contains hyphens) - use image service
-  // Otherwise, assume it's a legacy filename and use local path
-  if (uuid.includes("-") && uuid.length > 30) {
-    // UUID format - use image service
-    return `${envConfig.IMAGE_SERVICE_URL}/images/by-uuid/${uuid}`;
-  }
-
-  // Legacy filename - use local path for backward compatibility during migration
-  return createNextUrl(`/organization-images/${uuid}`);
+  // Always use image service phash endpoint
+  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
 };
 
-export const createTeamLogoUrl = (uuid: string) => {
-  if (!uuid) return "";
+export const createTeamLogoUrl = (identifier: string) => {
+  if (!identifier) return "";
 
   // If it's already a full URL, return as is (backward compatibility)
-  if (uuid.startsWith("http://") || uuid.startsWith("https://")) {
-    return uuid;
+  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
+    return identifier;
   }
 
-  // Check if it looks like a UUID (contains hyphens) - use image service
-  // Otherwise, assume it's a legacy filename and use local path
-  if (uuid.includes("-") && uuid.length > 30) {
-    // UUID format - use image service
-    return `${envConfig.IMAGE_SERVICE_URL}/images/by-uuid/${uuid}`;
-  }
-
-  // Legacy filename - use local path for backward compatibility during migration
-  return createNextUrl(`/team-images/${uuid}`);
+  // Always use image service phash endpoint
+  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
 };
 
 export function filterParamsToSearchParams(

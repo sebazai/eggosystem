@@ -557,14 +557,14 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "S14_2058.png"
+        team_logo: "cf9838e7641c3333"
       },
       {
         steam_id: "76561197967885016",
         nickname: "enzoj",
         team_name: "Polar Squad",
         team_id: 53,
-        team_logo: "S13_1935.png"
+        team_logo: "c7c33c3c61c3963c"
       }
     ]);
   });
@@ -582,7 +582,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "S14_2058.png"
+        team_logo: "cf9838e7641c3333"
       }
     ]);
   });
@@ -600,7 +600,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "S14_2058.png"
+        team_logo: "cf9838e7641c3333"
       }
     ]);
   });
@@ -990,10 +990,10 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-14",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "S14_2058.png",
+        team_logo: "cf9838e7641c3333",
         opponent_id: 2071,
         opponent_name: "Vincit Faija & Sons",
-        opponent_logo: "S14_2071.png",
+        opponent_logo: "b8c99336cd31c533",
         score: 2,
         opponent_score: 1,
         kills: 47,
@@ -1024,10 +1024,10 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-23",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "S14_2058.png",
+        team_logo: "cf9838e7641c3333",
         opponent_id: 2030,
         opponent_name: "Caverion Stadist",
-        opponent_logo: "S14_2030.png",
+        opponent_logo: "afcaf09297258f24",
         score: 0,
         opponent_score: 2,
         kills: 17,
@@ -1058,10 +1058,10 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-30",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "S14_2058.png",
+        team_logo: "cf9838e7641c3333",
         opponent_id: 1019,
         opponent_name: "ALM Partners Riskiryhmä",
-        opponent_logo: "S15_2201.png",
+        opponent_logo: "ca48b7bb14b44b4b",
         score: 0,
         opponent_score: 2,
         kills: 21,

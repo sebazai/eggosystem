@@ -16,7 +16,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198049745649",
           nickname: "sububobi",
           team_name: "7dos",
-          team_logo: "S14_2058.png",
+          team_logo: "cf9838e7641c3333",
           matches_played: 13,
           kana_rating: 1.03
         },
@@ -24,7 +24,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197963921578",
           nickname: "van9",
           team_name: "7dos",
-          team_logo: "S14_2058.png",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.897059
         },
@@ -32,7 +32,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198001857963",
           nickname: "meppi",
           team_name: "7dos",
-          team_logo: "S14_2058.png",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.847647
         },
@@ -40,7 +40,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197967885016",
           nickname: "enzoj",
           team_name: "7dos",
-          team_logo: "S14_2058.png",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.823529
         },
@@ -48,7 +48,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198030886203",
           nickname: "defektro",
           team_name: "7dos",
-          team_logo: "S14_2058.png",
+          team_logo: "cf9838e7641c3333",
           matches_played: 17,
           kana_rating: 0.608235
         }
@@ -70,7 +70,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198437815468",
           nickname: "HuputonRosvo",
           team_name: "Evitec Esports",
-          team_logo: "S15_2126.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 26,
           deaths: 439
         },
@@ -78,7 +78,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197979955992",
           nickname: "tiMMyd",
           team_name: "Evitec Esports",
-          team_logo: "S15_2126.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 26,
           deaths: 436
         },
@@ -86,7 +86,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198282583074",
           nickname: "Pepso",
           team_name: "Evitec Esports",
-          team_logo: "S15_2126.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 26,
           deaths: 433
         },
@@ -94,7 +94,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198015168566",
           nickname: "gigajaska",
           team_name: "Prove Testaa",
-          team_logo: "S14_2060.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 26,
           deaths: 392
         },
@@ -102,7 +102,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561197973115783",
           nickname: "HERRAHEVONEN",
           team_name: "Prove Testaa",
-          team_logo: "S14_2060.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 25,
           deaths: 385
         }
@@ -124,7 +124,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198437815468",
           nickname: "HuputonRosvo",
           team_name: "Evitec Esports",
-          team_logo: "S15_2126.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 3,
           kast: 83
         },
@@ -132,7 +132,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198113913968",
           nickname: "Danon1no",
           team_name: "Futurice",
-          team_logo: "S15_2162.png",
+          team_logo: "c0f23a0fc5f27a0d",
           matches_played: 3,
           kast: 81
         },
@@ -140,7 +140,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198119062598",
           nickname: "paBlo=D",
           team_name: "Elisa Hosujat",
-          team_logo: "S15_2205.png",
+          team_logo: "bbb1c44e3ab1b10e",
           matches_played: 3,
           kast: 80.6667
         },
@@ -148,7 +148,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198367129350",
           nickname: "Gee",
           team_name: "Evitec Esports",
-          team_logo: "S15_2126.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 3,
           kast: 78.6667
         },
@@ -156,7 +156,7 @@ describe("getLeaderboard", () => {
           steam_id: "76561198282583074",
           nickname: "Pepso",
           team_name: "Evitec Esports",
-          team_logo: "S15_2126.png",
+          team_logo: "b8c99336cd31c533",
           matches_played: 3,
           kast: 78
         }
