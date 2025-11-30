@@ -557,7 +557,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "faa0c585f21c2d76"
+        team_logo: "cf9838e7641c3333"
       },
       {
         steam_id: "76561197967885016",
@@ -582,7 +582,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "faa0c585f21c2d76"
+        team_logo: "cf9838e7641c3333"
       }
     ]);
   });
@@ -600,7 +600,7 @@ describe("getPlayerTeamDetailsWithFilters", () => {
         nickname: "enzoj",
         team_name: "7dos",
         team_id: 1650,
-        team_logo: "faa0c585f21c2d76"
+        team_logo: "cf9838e7641c3333"
       }
     ]);
   });
@@ -990,10 +990,10 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-14",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "faa0c585f21c2d76",
+        team_logo: "cf9838e7641c3333",
         opponent_id: 2071,
         opponent_name: "Vincit Faija & Sons",
-        opponent_logo: "b8c99336cd31c533",
+        opponent_logo: "ef66f0989b0d0d43",
         score: 2,
         opponent_score: 1,
         kills: 47,
@@ -1024,7 +1024,7 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-23",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "faa0c585f21c2d76",
+        team_logo: "cf9838e7641c3333",
         opponent_id: 2030,
         opponent_name: "Caverion Stadist",
         opponent_logo: "afcaf09297258f24",
@@ -1058,10 +1058,10 @@ describe("getPlayerMatchHistoryByFilters", () => {
         match_date: "2024-10-30",
         team_id: 1650,
         team_name: "7dos",
-        team_logo: "faa0c585f21c2d76",
+        team_logo: "cf9838e7641c3333",
         opponent_id: 1019,
         opponent_name: "ALM Partners Riskiryhmä",
-        opponent_logo: "ca48b7bb14b44b4b",
+        opponent_logo: "fae79470839a489b",
         score: 0,
         opponent_score: 2,
         kills: 21,
