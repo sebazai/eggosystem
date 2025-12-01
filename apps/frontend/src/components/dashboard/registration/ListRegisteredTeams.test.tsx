@@ -280,6 +280,42 @@ describe("ListRegisteredTeams", () => {
       expect(screen.getByText("Captain1")).toBeInTheDocument();
     });
 
+    it("should expand all rows when 'Expand All' button is clicked", () => {
+      render(<ListRegisteredTeams />);
+
+      // Initially should show "Expand All" button
+      const expandAllButton = screen.getByText("Expand All");
+      expect(expandAllButton).toBeInTheDocument();
+
+      // Click expand all
+      fireEvent.click(expandAllButton);
+
+      // Should show expanded content for all teams
+      expect(screen.getAllByText("Team Leadership")).toHaveLength(2);
+      expect(screen.getAllByText("Players")).toHaveLength(2);
+      expect(screen.getByText("Captain1")).toBeInTheDocument();
+      expect(screen.getByText("Captain2")).toBeInTheDocument();
+    });
+
+    it("should collapse all rows when 'Collapse All' button is clicked", () => {
+      render(<ListRegisteredTeams />);
+
+      // Click expand all first
+      const expandAllButton = screen.getByText("Expand All");
+      fireEvent.click(expandAllButton);
+
+      // Should now show "Collapse All" button
+      const collapseAllButton = screen.getByText("Collapse All");
+      expect(collapseAllButton).toBeInTheDocument();
+
+      // Click collapse all
+      fireEvent.click(collapseAllButton);
+
+      // Should not show expanded content
+      expect(screen.queryByText("Team Leadership")).not.toBeInTheDocument();
+      expect(screen.queryByText("Players")).not.toBeInTheDocument();
+    });
+
     it("should show players in expanded row", () => {
       render(<ListRegisteredTeams />);
 

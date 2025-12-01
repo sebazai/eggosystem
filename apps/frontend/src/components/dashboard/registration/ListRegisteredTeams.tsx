@@ -20,7 +20,12 @@ import type {
   CustomColumnMeta
 } from "@eggosystem/types";
 import { useMemo, useState } from "react";
-import { ExternalLink, CheckCircle } from "lucide-react";
+import {
+  ExternalLink,
+  CheckCircle,
+  ChevronsDown,
+  ChevronsUp
+} from "lucide-react";
 import { envConfig } from "@/configs/env";
 import { createPlatformTeamUrl } from "@/lib/utils";
 import Link from "next/link";
@@ -324,6 +329,10 @@ export const ListRegisteredTeams = () => {
     }
   };
 
+  const handleToggleAllRows = () => {
+    table.toggleAllRowsExpanded();
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-32">
@@ -399,8 +408,28 @@ export const ListRegisteredTeams = () => {
 
       {/* Table */}
       <div className="bg-card rounded-md overflow-hidden">
-        <div className="text-sm text-muted-foreground p-2">
-          Total teams: {registeredTeams.length}
+        <div className="flex items-center justify-between p-2">
+          <div className="text-sm text-muted-foreground">
+            Total teams: {registeredTeams.length}
+          </div>
+          <Button
+            onClick={handleToggleAllRows}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            {table.getIsAllRowsExpanded() ? (
+              <>
+                <ChevronsUp className="w-4 h-4" />
+                Collapse All
+              </>
+            ) : (
+              <>
+                <ChevronsDown className="w-4 h-4" />
+                Expand All
+              </>
+            )}
+          </Button>
         </div>
         <BaseTable
           table={table}
