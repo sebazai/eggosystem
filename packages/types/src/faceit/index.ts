@@ -7,5 +7,6 @@ export * from "./ChampionshipDetails.interface";
 export * from "./FaceitMatchesResponse.interface";
 export * from "./FaceitMatchStatsResponse.interface";
 export * from "./FaceitPlayerDetails.interface";
+export * from "./FaceitRosterValidation.interface";
 
 export type FaceitValidationError = "ZOD_VALIDATION_ERROR" | "UNKNOWN_ERROR";

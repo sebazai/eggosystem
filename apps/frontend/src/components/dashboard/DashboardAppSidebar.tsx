@@ -134,6 +134,18 @@ const data: { navMain: Array<MenuItem> } = {
       ] satisfies Array<SubMenuItem>
     },
     {
+      title: "FaceIt",
+      url: "#",
+      requiredRoles: ["admin", "helpdesk"],
+      items: [
+        {
+          title: "Roster Validation",
+          url: createDashboardNextUrl("faceit-roster-validation"),
+          requiredRoles: ["admin", "helpdesk"]
+        }
+      ] satisfies Array<SubMenuItem>
+    },
+    {
       title: "Redis Management",
       url: createDashboardNextUrl("redis"),
       requiredRoles: ["admin"],
