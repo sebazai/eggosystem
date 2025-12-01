@@ -14,6 +14,7 @@ import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { AcceptPolicyProvider } from "@/context/AcceptPolicyContext";
 import { createPageMetadata } from "@/lib/metadata";
+import { UpcomingMatchToast } from "@/components/matches/UpcomingMatchBanner";
 
 const META_THEME_COLORS = {
   light: "#ffffff",
@@ -132,6 +133,7 @@ export default function RootLayout({
             <div className="min-h-svh min-w-[320px] w-full">
               <AuthProvider>
                 <ConditionalNavigation />
+                <UpcomingMatchToast />
                 <AcceptPolicyProvider>
                   <main className="w-full" id="main-content">
                     {children}
