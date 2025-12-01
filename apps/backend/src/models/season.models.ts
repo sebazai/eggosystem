@@ -183,3 +183,48 @@ export const createSeason = async (
 
   return result;
 };
+
+export const updateSeason = async (
+  seasonId: number,
+  seasonData: SeasonFormRaw,
+  connection?: PoolConnection
+): Promise<{ affectedRows: number }> => {
+  const query = `
+    UPDATE Seasons SET
+      game_id = ?,
+      game_type_id = ?,
+      organizer_id = ?,
+      name = ?,
+      full_name = ?,
+      signup_start_date = ?,
+      signup_end_date = ?,
+      start_date = ?,
+      end_date = ?,
+      platform = ?,
+      is_round_robin_bo2_as_2xbo1 = ?,
+      payment_link = ?
+    WHERE id = ?
+  `;
+
+  const result = await runQuery<{ affectedRows: number }>(
+    query,
+    [
+      seasonData.game_id,
+      seasonData.game_type_id,
+      seasonData.organizer_id,
+      seasonData.name,
+      seasonData.full_name,
+      seasonData.signup_start_date,
+      seasonData.signup_end_date,
+      seasonData.start_date,
+      seasonData.end_date,
+      seasonData.platform,
+      seasonData.is_round_robin_bo2_as_2xbo1,
+      seasonData.payment_link,
+      seasonId
+    ],
+    connection
+  );
+
+  return result;
+};
