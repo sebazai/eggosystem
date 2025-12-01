@@ -118,6 +118,12 @@ const data: { navMain: Array<MenuItem> } = {
       items: [] satisfies Array<SubMenuItem>
     },
     {
+      title: "Season League Mapper",
+      url: createDashboardNextUrl("season-league-mapper"),
+      requiredRoles: ["admin"],
+      items: [] satisfies Array<SubMenuItem>
+    },
+    {
       title: "Demo parser",
       url: "#",
       requiredRoles: ["admin"],
