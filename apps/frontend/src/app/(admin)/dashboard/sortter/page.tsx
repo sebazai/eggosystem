@@ -13,6 +13,13 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { SeasonSelector } from "@/components/sortter/SeasonSelector";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { PlayerValuesFloatingWindow } from "@/components/dashboard/PlayerValuesFloatingWindow";
 import { WithRoleProtection } from "@/components/dashboard/WithRoleProtection";
 import { CommentsProvider, useComments } from "@/contexts/CommentsContext";
@@ -198,8 +205,8 @@ const isKanaeloMissingError = (error: unknown): boolean => {
 
 // Wrapper component that provides the CommentsContext
 function SortterPageContent() {
-  // TODO: Could be moved into a state / dropdown
-  const teamsPerDivision = 12;
+  // Teams per division selector - used when generating initial placements
+  const [teamsPerDivision, setTeamsPerDivision] = useState<number>(12);
   // Get comments from the context
   const { comments, setCommentForTeam } = useComments();
 
@@ -271,7 +278,7 @@ function SortterPageContent() {
     );
 
     return actualMaxDivision;
-  }, [teams, divisions, placements]);
+  }, [teams, divisions, placements, teamsPerDivision]);
 
   // Memoize division options to prevent recalculation on every render
   const divisionOptions = React.useMemo(
@@ -316,7 +323,7 @@ function SortterPageContent() {
     }
 
     return summary;
-  }, [teams, divisions, maxDivision, placements]);
+  }, [teams, divisions, maxDivision, placements, teamsPerDivision]);
 
   // Handle populating kanaelo queue
   const handlePopulateKanaeloQueue = async () => {
@@ -399,14 +406,34 @@ function SortterPageContent() {
           </div>
 
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium">Season:</span>
-              <SeasonSelector
-                seasons={sortedSeasons || []}
-                selectedSeason={selectedSeason}
-                onChange={setSelectedSeason}
-                isLoading={isLoadingSeasons}
-              />
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">Season:</span>
+                <SeasonSelector
+                  seasons={sortedSeasons || []}
+                  selectedSeason={selectedSeason}
+                  onChange={setSelectedSeason}
+                  isLoading={isLoadingSeasons}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">Teams per Division:</span>
+                <Select
+                  value={teamsPerDivision.toString()}
+                  onValueChange={(value) => setTeamsPerDivision(Number(value))}
+                  disabled={isViewMode}
+                >
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="8">8</SelectItem>
+                    <SelectItem value="12">12</SelectItem>
+                    <SelectItem value="16">16</SelectItem>
+                    <SelectItem value="24">24</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button

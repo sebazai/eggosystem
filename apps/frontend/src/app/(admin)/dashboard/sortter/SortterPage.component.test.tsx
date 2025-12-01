@@ -151,6 +151,59 @@ jest.mock("@/components/ui/textarea", () => ({
   )
 }));
 
+interface SelectProps {
+  value?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+interface SelectTriggerProps {
+  className?: string;
+  children: React.ReactNode;
+}
+
+interface SelectContentProps {
+  children: React.ReactNode;
+}
+
+interface SelectItemProps {
+  value: string;
+  children: React.ReactNode;
+}
+
+interface SelectValueProps {
+  placeholder?: string;
+}
+
+jest.mock("@/components/ui/select", () => ({
+  Select: ({ value, onValueChange, disabled, children }: SelectProps) => (
+    <div data-testid="select" data-value={value} data-disabled={disabled}>
+      <select
+        value={value}
+        onChange={(e) => onValueChange?.(e.target.value)}
+        disabled={disabled}
+      >
+        {children}
+      </select>
+    </div>
+  ),
+  SelectTrigger: ({ className, children }: SelectTriggerProps) => (
+    <div className={className} data-testid="select-trigger">
+      {children}
+    </div>
+  ),
+  SelectContent: ({ children }: SelectContentProps) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectItem: ({ value, children }: SelectItemProps) => (
+    <option value={value}>{children}</option>
+  ),
+  SelectValue: ({ placeholder }: SelectValueProps) => (
+    <span data-testid="select-value">{placeholder}</span>
+  )
+}));
+
 jest.mock("@/components/ui/card", () => ({
   Card: ({ children, className }: CardProps) => (
     <div className={className} data-testid="card">
