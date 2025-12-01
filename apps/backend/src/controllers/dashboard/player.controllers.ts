@@ -18,7 +18,7 @@ import {
   type RequestWithParams,
   type InsertSeasonTeamPlayer
 } from "@eggosystem/types";
-import { resolveMatchId } from "../../utils/matchUtils";
+import * as matchUtils from "../../utils/matchUtils";
 import { getPlayerRankForPlatform } from "../../services/player-ranks.services";
 import { SeasonPlatform, type PlayerValidationResult } from "@eggosystem/types";
 import { getPlayerDetailsForDashboardBySteamId } from "../../models/dashboard/player.models";
@@ -460,39 +460,58 @@ export const addSubstitutePlayerController = async (
       team_id: string;
       steam_id: string;
     },
-    { match_id: string }
+    {
+      match_id: string;
+      replaces_steam_id?: string;
+      ticket_number: string;
+    }
   >,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const seasonId = Number(req.params.season_id);
-  const teamId = Number(req.params.team_id);
-  const steamId = req.params.steam_id;
-  const { match_id } = req.body;
+  try {
+    const seasonId = Number(req.params.season_id);
+    const teamId = Number(req.params.team_id);
+    const steamId = req.params.steam_id;
+    const { match_id, replaces_steam_id, ticket_number } = req.body;
 
-  if (!match_id) {
-    return next(new BadRequestError("match_id is required"));
+    if (!match_id) {
+      return next(new BadRequestError("match_id is required"));
+    }
+
+    if (!ticket_number || ticket_number.trim() === "") {
+      return next(new BadRequestError("ticket_number is required"));
+    }
+
+    const resolvedMatchId = await matchUtils.resolveMatchId(
+      match_id.toString(),
+      seasonId
+    );
+
+    await ensureMatchIdAndTeamIdMatches(resolvedMatchId, teamId);
+
+    const insertData = {
+      steam_id: steamId,
+      role: "substitute",
+      match_id: resolvedMatchId,
+      replaces_steam_id: replaces_steam_id || undefined,
+      ticket_number: ticket_number.trim()
+    } satisfies InsertSeasonTeamPlayer;
+    await insertSeasonTeamPlayer(seasonId, teamId, insertData);
+
+    res.status(200).json({
+      message: "Substitute player successfully added to the team",
+      steam_id: steamId,
+      team_id: teamId,
+      season_id: seasonId,
+      role: "substitute",
+      match_id: resolvedMatchId || null,
+      replaces_steam_id: replaces_steam_id || null,
+      ticket_number: ticket_number.trim()
+    });
+  } catch (error) {
+    next(error);
   }
-
-  const resolvedMatchId = await resolveMatchId(match_id.toString(), seasonId);
-
-  await ensureMatchIdAndTeamIdMatches(resolvedMatchId, teamId);
-
-  const insertData = {
-    steam_id: steamId,
-    role: "substitute",
-    match_id: resolvedMatchId
-  } satisfies InsertSeasonTeamPlayer;
-  await insertSeasonTeamPlayer(seasonId, teamId, insertData);
-
-  res.status(200).json({
-    message: "Substitute player successfully added to the team",
-    steam_id: steamId,
-    team_id: teamId,
-    season_id: seasonId,
-    role: "substitute",
-    match_id: resolvedMatchId || null
-  });
 };
 
 /**

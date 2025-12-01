@@ -5,17 +5,22 @@ import {
   type TeamSortterValuesRaw,
   type PlayerSortterValues
 } from "@eggosystem/types";
+import {
+  buildComparisonAvgSQL,
+  buildTopPlayersFilter,
+  SQL_COLUMNS,
+  TOP_N_FOR_DISPLAY
+} from "../../utils/team-calculations";
 
 /**
- * Gets team values for sorter functionality:
+ * Gets team values for sortter functionality:
  * - Team name
- * - Sum of kanaelo for top 5 players in the team
- * - Average of kanaelo for top 4 players in the team
+ * - Sum of kanaelo for top N players in the team (configurable via TOP_N_FOR_DISPLAY)
+ * - Average of kanaelo for comparison (configurable via TOP_N_FOR_COMPARISON)
  * - Team league
- * - Kanaelo values for top 5 players as an array
+ * - Kanaelo values for top N players as an array
  *
  * @param seasonId The season ID to filter teams by
- * @param
  * @returns Array of team values
  */
 export const getTeamValuesForSortter = async (
@@ -42,7 +47,7 @@ export const getTeamValuesForSortter = async (
         AND str.approved = 1
       ORDER BY t.id, spr.kana_elo DESC
     ),
-    TeamTop5Players AS (
+    TeamTopPlayers AS (
       SELECT
         team_id,
         team_name,
@@ -52,7 +57,7 @@ export const getTeamValuesForSortter = async (
         kana_elo,
         offered_elo
       FROM TeamPlayersKanaElo
-      WHERE player_rank <= 5
+      WHERE ${buildTopPlayersFilter()}
     ),
     TeamValues AS (
       SELECT
@@ -60,12 +65,12 @@ export const getTeamValuesForSortter = async (
         team_name,
         team_logo,
         league_name,
-        SUM(kana_elo) AS top5_sum,
-        ROUND(AVG(CASE WHEN player_rank <= 4 THEN kana_elo ELSE NULL END), 3) AS avg4,
-        ROUND(AVG(CASE WHEN player_rank <= 4 THEN offered_elo ELSE NULL END), 3) AS orig4,
-        JSON_ARRAYAGG(kana_elo ORDER BY player_rank) AS top5_values,
-        JSON_ARRAYAGG(offered_elo ORDER BY player_rank) AS top5_offered_values
-      FROM TeamTop5Players
+        SUM(kana_elo) AS top${TOP_N_FOR_DISPLAY}_sum,
+        ${buildComparisonAvgSQL()} AS ${SQL_COLUMNS.COMPARISON_AVG},
+        ${buildComparisonAvgSQL("offered_elo")} AS ${SQL_COLUMNS.ORIGINAL_COMPARISON_AVG},
+        JSON_ARRAYAGG(kana_elo ORDER BY player_rank) AS top${TOP_N_FOR_DISPLAY}_values,
+        JSON_ARRAYAGG(offered_elo ORDER BY player_rank) AS top${TOP_N_FOR_DISPLAY}_offered_values
+      FROM TeamTopPlayers
       GROUP BY team_id, team_name, team_logo, league_name
     )
     SELECT
@@ -73,13 +78,13 @@ export const getTeamValuesForSortter = async (
       team_name,
       team_logo,
       league_name,
-      top5_sum,
-      avg4,
-      orig4,
-      top5_values,
-      top5_offered_values
+      top${TOP_N_FOR_DISPLAY}_sum,
+      ${SQL_COLUMNS.COMPARISON_AVG},
+      ${SQL_COLUMNS.ORIGINAL_COMPARISON_AVG},
+      top${TOP_N_FOR_DISPLAY}_values,
+      top${TOP_N_FOR_DISPLAY}_offered_values
     FROM TeamValues
-    ORDER BY avg4 DESC
+    ORDER BY ${SQL_COLUMNS.COMPARISON_AVG} DESC
   `;
 
   const rawResults = await runQuery<TeamSortterValuesRaw[]>(query, [seasonId]);

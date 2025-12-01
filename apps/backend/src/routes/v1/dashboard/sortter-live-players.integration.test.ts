@@ -55,10 +55,6 @@ describe("GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/live-pla
       "/api/v1/dashboard/sortter/season/14/team/2021/live-playervalues"
     );
 
-    if (response.status !== 200) {
-      console.log("Error response:", response.body);
-    }
-
     expect(response.status).toBe(200);
 
     expect(Array.isArray(response.body)).toBe(true);

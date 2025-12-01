@@ -20,26 +20,35 @@ import {
   CardTitle
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Users, XCircle } from "lucide-react";
 
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
 import { useAllSeasons } from "@/hooks/data/useAllSeasons";
 import { useDashboardSeasonTeams } from "@/hooks/data/useDashboardSeasonTeams";
 import { usePlayerValidation } from "@/hooks/data/dashboard/usePlayerValidation";
 import { useAddSubstitutePlayer } from "@/hooks/data/useAddSubstitutePlayer";
+import { usePlayerTeamEligibility } from "@/hooks/data/usePlayerTeamEligibility";
 import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
 import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationForm";
 import { convertSteamIdToSteamId64 } from "@/lib/utils";
 import { ApiError } from "@/lib/apiClient";
+import { LiveTeamPlayersPopup } from "@/components/dashboard/LiveTeamPlayersPopup";
+import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AddSubstitutePlayerPage() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
   const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [steamId, setSteamId] = useState<string>("");
   const [matchId, setMatchId] = useState<string>("");
+  const [replacingSteamId, setReplacingSteamId] = useState<string>("");
+  const [checkEligibility, setCheckEligibility] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState<string>("");
   const [isAdding, setIsAdding] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showRosterPopup, setShowRosterPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
   // Get all seasons
   const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
@@ -48,9 +57,39 @@ export default function AddSubstitutePlayerPage() {
   const { signupOrActiveSeason: activeSeason } =
     useActiveSignupOrActiveSeasonForApp(730);
 
-  // Get teams for the selected season
-  const { teams, isLoading: isLoadingTeams } =
-    useDashboardSeasonTeams(selectedSeasonId);
+  // Get teams for the current active season (not selected season)
+  const { teams, isLoading: isLoadingTeams } = useDashboardSeasonTeams(
+    activeSeason?.season_id.toString() ?? null
+  );
+
+  // Get the selected team
+  const selectedTeam = teams?.find(
+    (team) => team.team_id.toString() === selectedTeamId
+  );
+
+  // Live team roster hook - uses current active season
+  const {
+    players: liveTeamPlayers,
+    isLoading: isLoadingLiveRoster,
+    mutate: mutateLiveRoster
+  } = useTeamPlayersLive(
+    activeSeason?.season_id ?? null,
+    selectedTeamId ? Number(selectedTeamId) : null
+  );
+
+  // Get player eligibility check with optional exclusion
+  const {
+    eligibilityResult,
+    isLoading: isCheckingEligibility,
+    isError: eligibilityError,
+    checkEligibility: performEligibilityCheck,
+    clearResult: clearEligibilityResult
+  } = usePlayerTeamEligibility(
+    selectedSeasonId,
+    selectedTeamId,
+    steamId,
+    replacingSteamId
+  );
 
   // Get player validation hook
   const {
@@ -89,7 +128,9 @@ export default function AddSubstitutePlayerPage() {
     setSelectedSeasonId(value);
     // Clear team selection and results when season changes
     setSelectedTeamId("");
+    setReplacingSteamId("");
     clearValidationResults();
+    clearEligibilityResult();
     setSuccess(null);
     setApiError(null);
   };
@@ -99,6 +140,7 @@ export default function AddSubstitutePlayerPage() {
     // Clear results when steam ID changes - but only if the value actually changed
     if (value !== steamId) {
       clearValidationResults();
+      clearEligibilityResult();
       setSuccess(null);
       setApiError(null);
     }
@@ -106,6 +148,8 @@ export default function AddSubstitutePlayerPage() {
 
   const handleTeamChange = (value: string) => {
     setSelectedTeamId(value);
+    setReplacingSteamId("");
+    clearEligibilityResult();
     setSuccess(null);
     setApiError(null);
   };
@@ -114,6 +158,25 @@ export default function AddSubstitutePlayerPage() {
     setMatchId(value);
     setSuccess(null);
     setApiError(null);
+  };
+
+  const handleReplacingPlayerChange = (value: string) => {
+    setReplacingSteamId(value);
+    clearEligibilityResult();
+    setSuccess(null);
+    setApiError(null);
+  };
+
+  const handleCheckEligibilityClick = async () => {
+    if (!selectedSeasonId || !selectedTeamId || !steamId) {
+      return;
+    }
+
+    try {
+      await performEligibilityCheck();
+    } catch (err) {
+      console.error("Eligibility check failed:", err);
+    }
   };
 
   const handleAddSubstitutePlayer = async () => {
@@ -137,7 +200,9 @@ export default function AddSubstitutePlayerPage() {
         seasonId: selectedSeasonId,
         teamId: selectedTeamId,
         steamId: convertedSteamId,
-        matchId: matchIdValue
+        matchId: matchIdValue,
+        replacesSteamId: replacingSteamId || undefined,
+        ticketNumber: ticketNumber.trim()
       });
 
       const selectedTeam = teams?.find(
@@ -153,8 +218,12 @@ export default function AddSubstitutePlayerPage() {
 
       // Clear validation results after successful addition
       clearValidationResults();
+      clearEligibilityResult();
       setSteamId("");
       setMatchId("");
+      setTicketNumber("");
+      setReplacingSteamId("");
+      setCheckEligibility(false);
     } catch (err) {
       console.error("Failed to add substitute player:", err);
       setSuccess(null);
@@ -264,17 +333,138 @@ export default function AddSubstitutePlayerPage() {
                     )}
                   </SelectContent>
                 </Select>
+
+                {/* View Team Roster Button */}
+                {selectedTeamId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setPopupPosition({
+                        x: rect.left,
+                        y: rect.bottom + 10
+                      });
+                      setShowRosterPopup(true);
+                      mutateLiveRoster();
+                    }}
+                    className="w-full mt-2"
+                    data-testid="view-roster-button"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    View Current Team Roster
+                  </Button>
+                )}
               </div>
+
+              {/* Check Eligibility Checkbox */}
+              {selectedTeamId && validationResult?.overall_success && (
+                <div className="flex items-center space-x-2 rounded-md border p-3">
+                  <Checkbox
+                    id="check-eligibility"
+                    checked={checkEligibility}
+                    onCheckedChange={(checked) => {
+                      setCheckEligibility(checked === true);
+                      if (!checked) {
+                        setReplacingSteamId("");
+                        clearEligibilityResult();
+                      }
+                    }}
+                    data-testid="check-eligibility-checkbox"
+                  />
+                  <Label
+                    htmlFor="check-eligibility"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Check team eligibility (for substitutes that might affect
+                    balance)
+                  </Label>
+                </div>
+              )}
+
+              {/* Player Selection for Substitution */}
+              {checkEligibility && liveTeamPlayers && (
+                <div className="space-y-2">
+                  <Label htmlFor="replacing-player">
+                    Who will this substitute replace? (Optional)
+                  </Label>
+                  <Select
+                    value={replacingSteamId || "none"}
+                    onValueChange={(value) =>
+                      handleReplacingPlayerChange(value === "none" ? "" : value)
+                    }
+                    data-testid="replacing-player-select"
+                  >
+                    <SelectTrigger data-testid="replacing-player-selector">
+                      <SelectValue placeholder="Select player to replace" />
+                    </SelectTrigger>
+                    <SelectContent data-testid="replacing-player-dropdown">
+                      <SelectItem
+                        value="none"
+                        data-testid="no-replacement-option"
+                      >
+                        No specific replacement
+                      </SelectItem>
+                      {liveTeamPlayers
+                        .filter((p) => p.role === "primary")
+                        .map((player) => (
+                          <SelectItem
+                            key={player.steamid}
+                            value={player.steamid}
+                            data-testid={`replacing-player-option-${player.steamid}`}
+                          >
+                            {player.name} (Kana ELO: {player.kana_elo})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Selecting a player will exclude them from eligibility
+                    calculations, simulating the team balance with the
+                    substitute instead.
+                  </p>
+                </div>
+              )}
+
+              {/* Check Eligibility Button */}
+              {checkEligibility && (
+                <Button
+                  onClick={handleCheckEligibilityClick}
+                  disabled={
+                    !selectedSeasonId ||
+                    !selectedTeamId ||
+                    !steamId ||
+                    isCheckingEligibility ||
+                    !validationResult ||
+                    !validationResult.overall_success
+                  }
+                  className="w-full"
+                  variant="secondary"
+                  data-testid="check-eligibility-button"
+                >
+                  {isCheckingEligibility ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking...
+                    </>
+                  ) : (
+                    "Check Team Eligibility"
+                  )}
+                </Button>
+              )}
 
               {/* Match ID Input */}
               <div className="space-y-2">
-                <Label htmlFor="matchId">Match ID</Label>
+                <Label htmlFor="matchId">
+                  Match ID <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="matchId"
                   placeholder="Enter match ID, Faceit room ID, or Faceit URL"
                   value={matchId}
                   onChange={(e) => handleMatchIdChange(e.target.value)}
                   data-testid="match-id-input"
+                  required
                 />
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p>Supported formats:</p>
@@ -296,6 +486,40 @@ export default function AddSubstitutePlayerPage() {
                 </div>
               </div>
 
+              {/* Ticket Number Input */}
+              <div className="space-y-2">
+                <Label htmlFor="ticketNumber">
+                  Helpdesk Ticket Number{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="ticketNumber"
+                  placeholder="e.g., HD-12345 or ticket reference"
+                  value={ticketNumber}
+                  onChange={(e) => setTicketNumber(e.target.value)}
+                  data-testid="ticket-number-input"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Required for audit trail. Enter the helpdesk ticket number or
+                  reference.
+                </p>
+              </div>
+
+              {/* Eligibility Error Display */}
+              {eligibilityError && checkEligibility && (
+                <Alert
+                  variant="destructive"
+                  data-testid="eligibility-error-message"
+                >
+                  <AlertDescription>
+                    {eligibilityError instanceof Error
+                      ? eligibilityError.message
+                      : "Failed to check eligibility"}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Add Substitute Player Button */}
               <Button
                 onClick={handleAddSubstitutePlayer}
@@ -306,7 +530,12 @@ export default function AddSubstitutePlayerPage() {
                   isAdding ||
                   !validationResult ||
                   !validationResult.overall_success ||
-                  !matchId.trim()
+                  !matchId.trim() ||
+                  !ticketNumber.trim() ||
+                  (checkEligibility && !eligibilityResult) ||
+                  (checkEligibility &&
+                    eligibilityResult &&
+                    !eligibilityResult.canAddPlayer)
                 }
                 className="w-full"
                 data-testid="add-substitute-player-button"
@@ -319,7 +548,9 @@ export default function AddSubstitutePlayerPage() {
                 ) : (
                   <>
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    2. Add Substitute Player
+                    {checkEligibility
+                      ? "3. Add Substitute Player"
+                      : "2. Add Substitute Player"}
                   </>
                 )}
               </Button>
@@ -354,8 +585,120 @@ export default function AddSubstitutePlayerPage() {
               variant="compact"
             />
           )}
+
+          {/* Eligibility Results Display */}
+          {checkEligibility && eligibilityResult && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {eligibilityResult.canAddPlayer ? (
+                    <>
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      Can Add Player
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-5 w-5 text-red-500" />
+                      Cannot Add Player
+                    </>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  {replacingSteamId
+                    ? "Eligibility check with player replacement"
+                    : "Eligibility check without replacement"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <h3 className="font-semibold">
+                    {eligibilityResult.selectedTeam.team_name}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>Current Top 3 Avg:</div>
+                    <div className="font-mono">
+                      {eligibilityResult.selectedTeam.current_top3_avg}
+                    </div>
+                    <div>Current Top 4 Avg:</div>
+                    <div className="font-mono">
+                      {eligibilityResult.selectedTeam.current_top4_avg}
+                    </div>
+                    <div>New Player Kana ELO:</div>
+                    <div className="font-mono">
+                      {eligibilityResult.selectedTeam.new_player_kana_elo}
+                    </div>
+                    <div>New Avg with Player:</div>
+                    <div className="font-mono font-bold">
+                      {eligibilityResult.selectedTeam.new_avg_with_player}
+                    </div>
+                  </div>
+
+                  {replacingSteamId && (
+                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-900/20">
+                      <AlertDescription className="text-blue-700 dark:text-blue-300">
+                        Calculations exclude the selected player, showing the
+                        team balance if they were substituted.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="pt-2">
+                    <h4 className="font-semibold mb-2">
+                      Top Teams in {eligibilityResult.league_name}
+                    </h4>
+                    <div className="space-y-1 text-sm">
+                      {eligibilityResult.topTeamsInLeague.map((team, idx) => (
+                        <div
+                          key={team.team_id}
+                          className="flex justify-between items-center"
+                        >
+                          <span>
+                            #{idx + 1} {team.team_name}
+                          </span>
+                          <span className="font-mono">{team.avg4}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {eligibilityResult.canAddPlayer ? (
+                    <Alert className="border-green-500 bg-green-50 dark:bg-green-900/20">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <AlertDescription className="text-green-700 dark:text-green-300">
+                        Player can be added. New team average (
+                        {eligibilityResult.selectedTeam.new_avg_with_player}) is
+                        within acceptable range.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Alert variant="destructive">
+                      <XCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Player cannot be added. New team average (
+                        {eligibilityResult.selectedTeam.new_avg_with_player})
+                        would exceed the top team&apos;s average (
+                        {eligibilityResult.topTeamsInLeague[0]?.avg4}).
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
+
+      {/* Live Team Roster Popup */}
+      {showRosterPopup && selectedTeamId && selectedTeam && activeSeason && (
+        <LiveTeamPlayersPopup
+          players={liveTeamPlayers || []}
+          teamName={selectedTeam.team_name}
+          seasonName={activeSeason.full_name}
+          position={popupPosition}
+          isLoading={isLoadingLiveRoster}
+          onClose={() => setShowRosterPopup(false)}
+        />
+      )}
     </WithRoleProtection>
   );
 }
