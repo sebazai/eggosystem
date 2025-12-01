@@ -37,12 +37,14 @@ interface SeasonFormProps {
   onSubmit?: (data: SeasonFormRaw) => void | Promise<void>;
   initialValues?: Partial<SeasonFormValues>;
   isLoading?: boolean;
+  mode?: "create" | "edit";
 }
 
 export function SeasonForm({
   onSubmit,
   initialValues,
-  isLoading = false
+  isLoading = false,
+  mode = "create"
 }: SeasonFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { games, isLoading: gamesLoading } = useGames();
@@ -111,7 +113,9 @@ export function SeasonForm({
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle>Create New Season</CardTitle>
+        <CardTitle>
+          {mode === "edit" ? "Edit Season" : "Create New Season"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>

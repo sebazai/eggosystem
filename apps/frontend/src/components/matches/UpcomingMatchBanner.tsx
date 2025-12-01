@@ -4,7 +4,7 @@ import { useMyTeamsUpcomingMatches } from "@/hooks/data/user/useMyTeamsUpcomingM
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
-import { ExternalLink, Clock, Swords } from "lucide-react";
+import { ExternalLink, Swords } from "lucide-react";
 import Link from "next/link";
 import { createNextUrl } from "@/lib/utils";
 

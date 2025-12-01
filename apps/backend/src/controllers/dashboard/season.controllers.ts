@@ -5,7 +5,11 @@ import {
 import { type Response, type NextFunction } from "express";
 import { getTeamsForSeason } from "../../models/team.models";
 import { checkPlayerAdditionEligibility } from "../../models/dashboard/season.models";
-import { createSeason } from "../../models/season.models";
+import {
+  createSeason,
+  updateSeason,
+  getSeasonById
+} from "../../models/season.models";
 import {
   seasonFormSchema,
   type SeasonFormRaw,
@@ -112,6 +116,67 @@ export const createSeasonController = async (
     res.status(201).json({
       message: "Season created successfully",
       seasonId: result.insertId
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return next(error);
+    }
+    next(error);
+  }
+};
+
+/**
+ * Controller to update an existing season
+ * Validates the request body with Zod schema and updates the season
+ */
+export const updateSeasonController = async (
+  req: RequestWithParams<{ id: string }> & RequestWithBody<SeasonFormValues>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const seasonId = Number(req.params.id);
+
+    // Check if season exists
+    const existingSeason = await getSeasonById(seasonId);
+    if (!existingSeason) {
+      res.status(404).json({ message: "Season not found" });
+      return;
+    }
+
+    // Validate the request body with Zod schema
+    const validatedData = seasonFormSchema.parse(req.body);
+
+    // Convert form data to raw format for database update
+    const seasonData: SeasonFormRaw = {
+      game_id: validatedData.game_id,
+      game_type_id: validatedData.game_type_id,
+      organizer_id: validatedData.organizer_id,
+      name: validatedData.name,
+      full_name: validatedData.full_name,
+      signup_start_date: validatedData.signup_start_date
+        ? convertToUTC(validatedData.signup_start_date, validatedData.timezone)
+        : null,
+      signup_end_date: validatedData.signup_end_date
+        ? convertToUTC(validatedData.signup_end_date, validatedData.timezone)
+        : null,
+      start_date: new Date(validatedData.start_date)
+        .toISOString()
+        .split("T")[0], // YYYY-MM-DD format
+      end_date: validatedData.end_date
+        ? new Date(validatedData.end_date).toISOString().split("T")[0]
+        : null,
+      platform: validatedData.platform,
+      is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
+      payment_link: validatedData.payment_link || null
+    };
+
+    // Update the season in the database
+    await updateSeason(seasonId, seasonData);
+
+    res.json({
+      message: "Season updated successfully",
+      seasonId
     });
   } catch (error) {
     if (error instanceof ZodError) {
