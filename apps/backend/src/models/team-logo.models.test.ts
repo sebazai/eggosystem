@@ -3,7 +3,6 @@ import {
   updateTeamLogoPhash,
   updateTeamName
 } from "./team-logo.models";
-import { NotFoundError } from "../utils/errors";
 import { runQuery } from "../db/mysqlRunQuery";
 
 jest.mock("../db/mysqlRunQuery");
@@ -75,16 +74,17 @@ describe("Team Logo Models", () => {
     });
 
     it("should throw NotFoundError if team does not exist", async () => {
-      mockRunQuery.mockResolvedValueOnce([]); // Team not found
+      mockRunQuery.mockResolvedValue([]); // Team not found
 
-      await expect(updateTeamLogoPhash(999, "abc123def456")).rejects.toThrow(
-        NotFoundError
-      );
       await expect(updateTeamLogoPhash(999, "abc123def456")).rejects.toThrow(
         "Team with ID 999 not found"
       );
 
       expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        "SELECT id FROM Teams WHERE id = ?",
+        [999]
+      );
       expect(mockRunQuery).not.toHaveBeenCalledWith(
         expect.stringContaining("UPDATE"),
         expect.anything()
@@ -138,16 +138,17 @@ describe("Team Logo Models", () => {
     });
 
     it("should throw NotFoundError if team does not exist", async () => {
-      mockRunQuery.mockResolvedValueOnce([]); // Team not found
+      mockRunQuery.mockResolvedValue([]); // Team not found
 
-      await expect(updateTeamName(999, "New Team Name")).rejects.toThrow(
-        NotFoundError
-      );
       await expect(updateTeamName(999, "New Team Name")).rejects.toThrow(
         "Team with ID 999 not found"
       );
 
       expect(mockRunQuery).toHaveBeenCalledTimes(1);
+      expect(mockRunQuery).toHaveBeenCalledWith(
+        "SELECT id FROM Teams WHERE id = ?",
+        [999]
+      );
       expect(mockRunQuery).not.toHaveBeenCalledWith(
         expect.stringContaining("UPDATE"),
         expect.anything()

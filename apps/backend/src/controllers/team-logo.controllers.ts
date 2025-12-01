@@ -1,11 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/app-logger";
 import { uploadImageToService } from "../services/image-upload.services";
-import {
-  updateTeamLogoPhash,
-  updateTeamName,
-  isUserTeamCaptain
-} from "../models/team-logo.models";
+import * as teamLogoModels from "../models/team-logo.models";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -35,19 +31,20 @@ export const uploadTeamLogoController = async (
   const body = req.body as UploadTeamLogoRequestBody;
   const steamId = req.auth.provider_id;
   const teamId = body.team_id;
+  const teamName = body.team_name; // Store locally to avoid modification
 
   if (!teamId) {
     return next(new BadRequestError("team_id is required"));
   }
 
-  if (!body.image_data && !body.team_name) {
+  if (!body.image_data && !teamName) {
     return next(
       new BadRequestError("Either image_data or team_name must be provided")
     );
   }
 
   // Check if user is captain or co-captain
-  const isCaptain = await isUserTeamCaptain(steamId, teamId);
+  const isCaptain = await teamLogoModels.isUserTeamCaptain(steamId, teamId);
   if (!isCaptain) {
     return next(
       new ForbiddenError(
@@ -60,7 +57,7 @@ export const uploadTeamLogoController = async (
     let phash: string | undefined;
 
     logger.info(
-      `Team details update request: teamId=${teamId}, hasImageData=${!!body.image_data}, hasTeamName=${!!body.team_name}`
+      `Team details update request: teamId=${teamId}, hasImageData=${!!body.image_data}, hasTeamName=${!!teamName}`
     );
 
     // Handle image upload if provided
@@ -75,7 +72,7 @@ export const uploadTeamLogoController = async (
 
       if (body.image_data.startsWith("data:")) {
         // Format: "data:image/png;base64,iVBORw0KGgo..."
-        const matches = body.image_data.match(/^data:([^;]+);base64,(.+)$/);
+        const matches = body.image_data.match(/^data:([^;]+);base64,(.*)$/);
         if (!matches) {
           logger.error(
             `Invalid data URI format: ${body.image_data.substring(0, 50)}...`
@@ -106,11 +103,17 @@ export const uploadTeamLogoController = async (
         logger.info(`Parsed plain base64: bufferLength=${imageBuffer.length}`);
       }
 
+      // Validate image buffer
+      if (imageBuffer.length === 0) {
+        logger.warn(`Image buffer is empty for ${filename} (${contentType})`);
+        return next(new BadRequestError("Invalid image data"));
+      }
+
       // Validate that the buffer contains valid image data
       const isValidImage = (() => {
         if (contentType === "image/png") {
           return (
-            imageBuffer.length > 8 &&
+            imageBuffer.length >= 8 &&
             imageBuffer
               .slice(0, 8)
               .equals(
@@ -122,18 +125,18 @@ export const uploadTeamLogoController = async (
           contentType === "image/jpg"
         ) {
           return (
-            imageBuffer.length > 2 &&
+            imageBuffer.length >= 2 &&
             imageBuffer.slice(0, 2).equals(Buffer.from([0xff, 0xd8]))
           );
         } else if (contentType === "image/gif") {
           return (
-            imageBuffer.length > 6 &&
+            imageBuffer.length >= 6 &&
             (imageBuffer.slice(0, 6).equals(Buffer.from("GIF87a")) ||
               imageBuffer.slice(0, 6).equals(Buffer.from("GIF89a")))
           );
         } else if (contentType === "image/webp") {
           return (
-            imageBuffer.length > 12 &&
+            imageBuffer.length >= 12 &&
             imageBuffer.slice(0, 4).equals(Buffer.from("RIFF")) &&
             imageBuffer.slice(8, 12).equals(Buffer.from("WEBP"))
           );
@@ -155,12 +158,6 @@ export const uploadTeamLogoController = async (
       logger.info(
         `Image validation passed: contentType=${contentType}, size=${imageBuffer.length} bytes`
       );
-
-      // Validate image buffer
-      if (imageBuffer.length === 0) {
-        logger.warn(`Image buffer is empty for ${filename} (${contentType})`);
-        return next(new BadRequestError("Invalid image data"));
-      }
 
       logger.info(
         `Processing image upload: ${filename}, size=${imageBuffer.length} bytes, contentType=${contentType}`
@@ -188,30 +185,27 @@ export const uploadTeamLogoController = async (
       phash = uploadResult.phash;
 
       // Update team logo phash in database
-      await updateTeamLogoPhash(teamId, uploadResult.phash);
+      await teamLogoModels.updateTeamLogoPhash(teamId, uploadResult.phash);
     }
 
     // Handle team name update if provided
-    if (body.team_name) {
-      if (
-        typeof body.team_name !== "string" ||
-        body.team_name.trim().length === 0
-      ) {
+    if (teamName) {
+      if (typeof teamName !== "string" || teamName.trim().length === 0) {
         return next(new BadRequestError("Team name cannot be empty"));
       }
-      await updateTeamName(teamId, body.team_name.trim());
+      await teamLogoModels.updateTeamName(teamId, teamName.trim());
     }
 
     const messages: string[] = [];
     if (phash) {
       messages.push("Team logo updated successfully");
     }
-    if (body.team_name) {
+    if (teamName) {
       messages.push("Team name updated successfully");
     }
 
     logger.info(
-      `Team details update completed: teamId=${teamId}, phash=${phash}, teamName=${body.team_name ? "updated" : "not changed"}`
+      `Team details update completed: teamId=${teamId}, phash=${phash}, teamName=${teamName ? "updated" : "not changed"}`
     );
     res.json({
       success: true,
