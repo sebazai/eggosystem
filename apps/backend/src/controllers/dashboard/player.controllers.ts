@@ -12,6 +12,7 @@ import { insertPlayerRankForSeason } from "../../models/season-player-ranks.mode
 import { getFaceITCS2Rank } from "../../services/faceit.services";
 import { setPlayerKanaElo } from "../../models/player.models";
 import { insertSeasonTeamPlayer } from "../../models/season-team-players.models";
+import { insertSeasonTeamRegistrationPlayer } from "../../models/season-team-registration-player.models";
 import {
   type RequestWithParamsAndBody,
   type RequestWithParams,
@@ -28,8 +29,9 @@ import { ensureSeasonMaxPlayersForTeam } from "../../services/season.services";
 /**
  * Controller to add a player to a team
  * This will:
- * 1. Set the player's kana_elo value
- * 2. Add the player to the SeasonTeamPlayers table as 'primary'
+ * 1. Set the player's kana_elo value (for finalized seasons)
+ * 2. Add the player to SeasonTeamPlayers (finalized) or SeasonTeamRegistrationPlayers (registration)
+ * Supports query parameter ?context=registration to add to active registrations
  */
 export const addPlayerToTeamController = async (
   req: RequestWithParams<{
@@ -44,13 +46,20 @@ export const addPlayerToTeamController = async (
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
   const { kana_elo, calculus } = req.body;
+  const context =
+    (req.query.context as string) === "registration"
+      ? "registration"
+      : "finalized";
 
   // Validate required fields
   if (kana_elo === undefined || kana_elo === null) {
     return next(new BadRequestError("kana_elo is required"));
   }
 
-  await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
+  // Skip max players check for registration context
+  if (context === "finalized") {
+    await ensureSeasonMaxPlayersForTeam(seasonId, teamId);
+  }
 
   // Don't require calculus anymore - it's optional
   const calculusData = calculus || {};
@@ -58,6 +67,60 @@ export const addPlayerToTeamController = async (
   const connection = await getConnection();
   try {
     await connection.beginTransaction();
+
+    // For registration context, simplified flow
+    if (context === "registration") {
+      // 1. Verify player has valid profile
+      const playerProfile =
+        await getPlayerDetailsForDashboardBySteamId(steamId);
+      if (
+        !playerProfile ||
+        !playerProfile.account_id ||
+        !playerProfile.nickname ||
+        !playerProfile.work_email_verified ||
+        !playerProfile.is_valid_full_name ||
+        !playerProfile.is_valid_work_email
+      ) {
+        return next(
+          new BadRequestError(
+            "Cannot add player: Profile validation is required. The player must have a verified Kanahub profile with valid email and full name before being added to a team."
+          )
+        );
+      }
+
+      // 2. Check eligibility (mainly for kana_elo calculation)
+      const eligibility = await checkPlayerAdditionEligibility(
+        seasonId,
+        teamId,
+        steamId,
+        { connection, context: "registration" }
+      );
+
+      // 3. Add player to SeasonTeamRegistrationPlayers (not captain, not co-captain)
+      await insertSeasonTeamRegistrationPlayer(
+        seasonId,
+        teamId,
+        {
+          steam_id: steamId,
+          is_captain: false,
+          is_co_captain: false
+        },
+        connection
+      );
+
+      await connection.commit();
+
+      res.status(200).json({
+        message: "Player successfully added to the registration",
+        steam_id: steamId,
+        team_id: teamId,
+        season_id: seasonId,
+        context: "registration"
+      });
+      return;
+    }
+
+    // Finalized season context - original logic
     // 1. First, check if player has all required data in SeasonPlayerRanks
     const checkPlayerQuery = `
         SELECT 
@@ -153,7 +216,7 @@ export const addPlayerToTeamController = async (
       seasonId,
       teamId,
       steamId,
-      { connection }
+      { connection, context: "finalized" }
     );
 
     // 5. Verify player is eligible (skip check for tier 1 teams)
@@ -195,7 +258,7 @@ export const addPlayerToTeamController = async (
       connection
     );
 
-    // 7. Finally add the player to the team in SeasonTeamPlayers
+    // 8. Finally add the player to the team in SeasonTeamPlayers
     await insertSeasonTeamPlayer(
       seasonId,
       teamId,
@@ -210,7 +273,8 @@ export const addPlayerToTeamController = async (
       steam_id: steamId,
       team_id: teamId,
       season_id: seasonId,
-      kana_elo
+      kana_elo,
+      context: "finalized"
     });
   } catch (error) {
     await connection.rollback();

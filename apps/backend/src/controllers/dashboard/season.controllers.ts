@@ -38,14 +38,19 @@ const convertToUTC = (dateString: string, timezone?: string): string => {
 /**
  * Controller to get all teams for a specific season
  * Returns teams with their league information
+ * Supports query parameter ?context=registration to fetch teams from SeasonTeamRegistrationPlayers
  */
 export const getTeamsForSeasonController = async (
   req: RequestWithParams<{ season_id: string }>,
   res: Response
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
+  const context =
+    (req.query.context as string) === "registration"
+      ? "registration"
+      : "finalized";
 
-  const teams = await getTeamsForSeason(seasonId);
+  const teams = await getTeamsForSeason(seasonId, context);
   res.json(teams);
 };
 

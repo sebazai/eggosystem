@@ -657,19 +657,26 @@ export const getTeamCaptainsBySeasonId = async (
  * Returns teams with their league information and tier
  *
  * @param seasonId The season ID to filter by
+ * @param context The context to determine which table to query ('finalized' for SeasonTeamPlayers, 'registration' for SeasonTeamRegistrationPlayers)
  */
 export const getTeamsForSeason = async (
-  seasonId: number
+  seasonId: number,
+  context: "finalized" | "registration" = "finalized"
 ): Promise<DashboardSeasonTeam[]> => {
+  const playerTable =
+    context === "finalized"
+      ? "SeasonTeamPlayers"
+      : "SeasonTeamRegistrationPlayers";
+
   const query = `
     SELECT DISTINCT
       t.id AS team_id,
       t.name AS team_name,
-      COALESCE(l.name, 'Unassigned') AS league_name,
+      COALESCE(l.name, 'Registration') AS league_name,
       sl.tier
     FROM Teams t
-    JOIN SeasonTeamPlayers strp ON strp.team_id = t.id
-    JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
+    JOIN ${playerTable} strp ON strp.team_id = t.id
+    LEFT JOIN SeasonLeagueTeams slt ON slt.team_id = t.id AND slt.season_id = strp.season_id
     LEFT JOIN Leagues l ON l.id = slt.league_id
     LEFT JOIN SeasonLeagues sl ON sl.season_id = slt.season_id AND sl.league_id = slt.league_id
     WHERE strp.season_id = ?

@@ -13,9 +13,10 @@ export const useAddPlayer = () => {
     seasonId: string,
     teamId: string,
     steamId: string,
-    payload: AddPlayerPayload
+    payload: AddPlayerPayload,
+    context: "finalized" | "registration" = "finalized"
   ) => {
-    const url = `/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add`;
+    const url = `/api/v1/dashboard/players/${steamId}/team/${teamId}/season/${seasonId}/add?context=${context}`;
 
     // Make the POST request
     const result = await clientApiFetch(url, {
