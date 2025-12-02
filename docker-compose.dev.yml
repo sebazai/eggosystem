@@ -82,7 +82,7 @@ services:
     restart: always
 
   eggo-dev-db:
-    image: bitnamilegacy/mariadb:11.8.3
+    image: mariadb:11.8.5
     container_name: eggo-dev-db
     restart: always
     environment:
@@ -107,8 +107,8 @@ services:
       timeout: 20s
       retries: 10
     volumes:
-      - ./my.cnf:/opt/bitnami/mariadb/conf/my.cnf
-      - ./db-data:/bitnami/mariadb
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db-data/data:/var/lib/mysql
 
   eggo-dev-redis:
     image: redis:8-alpine

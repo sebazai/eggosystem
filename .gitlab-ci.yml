@@ -223,7 +223,7 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: bitnamilegacy/mariadb:11.8.3
+    - name: mariadb:11.8.5
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
@@ -323,7 +323,7 @@ test-e2e:frontend:
     - build:types
     - build:shared-msw
   services:
-    - name: bitnamilegacy/mariadb:11.8.3
+    - name: mariadb:11.8.5
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis
