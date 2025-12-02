@@ -353,3 +353,92 @@ export const sendSeasonCaptainWelcomeEmail = async (
 
   await transporter?.sendMail(mailOptions);
 };
+
+export const sendMatchScheduleChangeEmail = async (
+  to: string,
+  matchDetails: {
+    teamNames: string;
+    oldDate: string;
+    oldTime: string;
+    newDate: string;
+    newTime: string;
+    reservationHash: string;
+  }
+) => {
+  const transporter = createTransporter();
+  const removalUrl = `${process.env.FRONTEND_URL}/api/v1/reservations/remove/${matchDetails.reservationHash}`;
+
+  const mailOptions = {
+    from: "Kanahub by Kanaliiga <cs@kanaliiga.fi>",
+    to,
+    subject: `Match Schedule Changed - ${matchDetails.teamNames}`,
+    html: `
+        <div style="font-family: Arial, sans-serif; color: #333; font-size: 16px; line-height: 1.5; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: hsl(35, 93%, 49%); font-size: 24px; text-align: left;">Match Schedule Changed</h1>
+          
+          <p>Hello,</p>
+  
+          <p>The schedule for a match you reserved for streaming has been changed.</p>
+  
+          <h2 style="color: hsl(35, 93%, 49%); font-size: 20px; margin-top: 30px; margin-bottom: 15px;">Match Details</h2>
+          
+          <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse: collapse; margin: 20px 0; background-color: #f9f9f9; border-radius: 6px;">
+            <tr>
+              <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Teams:</strong></td>
+              <td style="padding: 12px; border-bottom: 1px solid #eee;">${matchDetails.teamNames}</td>
+            </tr>
+            <tr style="background-color: #fff3cd;">
+              <td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Previous Time:</strong></td>
+              <td style="padding: 12px; border-bottom: 1px solid #eee; text-decoration: line-through; color: #666;">${matchDetails.oldDate} at ${matchDetails.oldTime}</td>
+            </tr>
+            <tr style="background-color: #d4edda;">
+              <td style="padding: 12px;"><strong>New Time:</strong></td>
+              <td style="padding: 12px; font-weight: bold; color: hsl(35, 93%, 49%);">${matchDetails.newDate} at ${matchDetails.newTime}</td>
+            </tr>
+          </table>
+  
+          <p>If the new time doesn't work for you, you can easily remove your reservation by clicking the button below:</p>
+  
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr>
+              <td align="center" style="text-align: center; padding: 0;">
+                <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                  <tr>
+                    <td align="center" style="background-color: #dc3545; border-radius: 6px;">
+                      <a href="${removalUrl}" 
+                         style="background-color: #dc3545; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center; font-family: Arial, sans-serif;">
+                        Remove My Reservation
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+  
+          <p>If you are unable to click the button, you can also copy and paste the following link into your browser:</p>
+  
+          <p style="word-break: break-all;">
+            <pre>${removalUrl.replace("https://", "")}</pre>
+          </p>
+  
+          <hr style="border: none; border-top: 1px solid #eee; margin: 40px 0;" />
+  
+          <p style="font-size: 14px; color: #777;">
+            If you can still stream at the new time, no action is needed. Your reservation remains active.
+          </p>
+  
+          <p style="font-size: 14px; color: #777;">
+            &copy; ${new Date().getFullYear()} Kanaliiga – All rights reserved.
+          </p>
+        </div>
+      `,
+    headers: {
+      Date: new Date().toUTCString(),
+      "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@kanaliiga.fi>`,
+      "Content-Type": "text/html; charset=UTF-8"
+    }
+  };
+
+  await transporter?.sendMail(mailOptions);
+};

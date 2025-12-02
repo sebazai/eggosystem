@@ -86,3 +86,35 @@ export const getStreamReservationsByMatch = async (
     [matchId]
   );
 };
+
+export const getReservationByHash = async (
+  hash: string
+): Promise<Reservation | null> => {
+  const [reservation] = await runQuery<Reservation[]>(
+    `SELECT * FROM Reservations WHERE hash = ?`,
+    [hash]
+  );
+  return reservation || null;
+};
+
+export const deleteReservationByHash = async (
+  hash: string
+): Promise<boolean> => {
+  const result = await runQuery<{ affectedRows: number }>(
+    `DELETE FROM Reservations WHERE hash = ?`,
+    [hash]
+  );
+  return result.affectedRows > 0;
+};
+
+export const getReservationsWithEmailForMatch = async (
+  matchId: number
+): Promise<Array<Reservation & { email: string | null }>> => {
+  return await runQuery<Array<Reservation & { email: string | null }>>(
+    `SELECT r.*, a.email 
+     FROM Reservations r 
+     LEFT JOIN Accounts a ON r.account_id = a.id 
+     WHERE r.match_id = ?`,
+    [matchId]
+  );
+};
