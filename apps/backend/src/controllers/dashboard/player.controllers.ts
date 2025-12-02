@@ -96,7 +96,22 @@ export const addPlayerToTeamController = async (
         { connection, context: "registration" }
       );
 
-      // 3. Add player to SeasonTeamRegistrationPlayers (not captain, not co-captain)
+      // 3. Set the player's kana_elo from the eligibility check
+      const calculusString =
+        typeof eligibility.selectedTeam.csrankker_components === "object"
+          ? JSON.stringify(eligibility.selectedTeam.csrankker_components)
+          : String(eligibility.selectedTeam.csrankker_components || "{}");
+
+      await setPlayerKanaElo(
+        steamId,
+        eligibility.selectedTeam.new_player_kana_elo,
+        calculusString,
+        seasonId,
+        undefined, // offered_elo (not needed here)
+        connection
+      );
+
+      // 5. Add player to SeasonTeamRegistrationPlayers (not captain, not co-captain)
       await insertSeasonTeamRegistrationPlayer(
         seasonId,
         teamId,
