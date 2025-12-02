@@ -9,6 +9,10 @@ import {
   deleteStreamReservation,
   getStreamReservationsByMatch
 } from "../models/match-streams.models";
+import {
+  getMatchIs2xBO1,
+  getMatchIdsWithSameExternalMatchRoomId
+} from "../models/match.models";
 import { ConflictError } from "../utils/errors";
 import type {
   RequestWithParams,
@@ -19,6 +23,7 @@ import { ZodError } from "zod";
 
 // Mock dependencies
 jest.mock("../models/match-streams.models");
+jest.mock("../models/match.models");
 
 const mockCreateStreamReservation =
   createStreamReservation as jest.MockedFunction<
@@ -31,6 +36,13 @@ const mockDeleteStreamReservation =
 const mockGetStreamReservationsByMatch =
   getStreamReservationsByMatch as jest.MockedFunction<
     typeof getStreamReservationsByMatch
+  >;
+const mockGetMatchIs2xBO1 = getMatchIs2xBO1 as jest.MockedFunction<
+  typeof getMatchIs2xBO1
+>;
+const mockGetMatchIdsWithSameExternalMatchRoomId =
+  getMatchIdsWithSameExternalMatchRoomId as jest.MockedFunction<
+    typeof getMatchIdsWithSameExternalMatchRoomId
   >;
 
 const mockReservation: Reservation = {
@@ -81,6 +93,7 @@ describe("match-streams controllers", () => {
     >;
 
     it("should successfully reserve a stream for a caster", async () => {
+      mockGetMatchIs2xBO1.mockResolvedValue(false);
       mockCreateStreamReservation.mockResolvedValue(mockReservation);
 
       await reserveStreamController(mockReq, res as Response, next);
@@ -118,6 +131,7 @@ describe("match-streams controllers", () => {
     });
 
     it("should handle conflict when match already reserved", async () => {
+      mockGetMatchIs2xBO1.mockResolvedValue(false);
       const conflictError = new ConflictError(
         "You have already reserved this match for streaming"
       );

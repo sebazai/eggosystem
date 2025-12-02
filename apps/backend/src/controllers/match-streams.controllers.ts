@@ -151,7 +151,7 @@ export const getMatchStreamReservationsController = async (
   // Extract stream URLs from reservations
   const streamUrls = reservations.map((reservation) => reservation.stream_url);
 
-  res.json(streamUrls);
+  res.json({ streamUrls });
 };
 
 export const removeReservationByHashController = async (
