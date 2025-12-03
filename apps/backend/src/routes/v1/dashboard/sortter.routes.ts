@@ -41,9 +41,9 @@ router.get(
   getTeamPlayerValuesController
 );
 
-// GET /api/v1/dashboard/sortter/season/:season/team/:team/live-playervalues
+// GET /api/v1/dashboard/sortter/season/:season/team/:team/players
 router.get(
-  "/season/:season_id/team/:team_id/live-playervalues",
+  "/season/:season_id/team/:team_id/players",
   validateNumericParams(),
   getTeamPlayerValuesLiveController
 );

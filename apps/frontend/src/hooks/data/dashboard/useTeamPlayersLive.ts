@@ -32,7 +32,7 @@ export function useTeamPlayersLive(
 } {
   const key =
     seasonId && teamId
-      ? `/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/live-playervalues`
+      ? `/api/v1/dashboard/sortter/season/${seasonId}/team/${teamId}/players`
       : null;
 
   const { data, error, isLoading, isValidating, mutate } = useSWR<

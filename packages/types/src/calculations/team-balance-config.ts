@@ -84,3 +84,20 @@ export const validateTeamBalanceConfig = (): void => {
 
 // Run validation on module load
 validateTeamBalanceConfig();
+
+export const calculateAverageFromValues = (
+  values: number[],
+  topN: number = TOP_N_FOR_COMPARISON
+): string => {
+  if (!values || values.length < topN) {
+    const availableCount = values?.length || 0;
+    if (availableCount === 0) return "0";
+
+    const sum = values.reduce((acc, val) => acc + val, 0);
+    return (sum / availableCount).toFixed(3);
+  }
+
+  const topValues = values.slice(0, topN);
+  const sum = topValues.reduce((acc, val) => acc + val, 0);
+  return (sum / topN).toFixed(3);
+};
