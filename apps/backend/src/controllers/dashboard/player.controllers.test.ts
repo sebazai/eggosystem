@@ -56,7 +56,8 @@ describe("addPlayerToTeamController", () => {
     body: {
       kana_elo: 200,
       calculus: { test: "data" }
-    }
+    },
+    query: {}
   } as unknown as RequestWithParams<{
     season_id: string;
     team_id: string;
@@ -182,7 +183,8 @@ describe("addPlayerToTeamController", () => {
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
-      kana_elo: 200
+      kana_elo: 200,
+      context: "finalized"
     });
 
     expect(mockNext).not.toHaveBeenCalled();

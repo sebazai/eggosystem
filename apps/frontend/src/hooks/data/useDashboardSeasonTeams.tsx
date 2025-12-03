@@ -4,9 +4,12 @@ import { clientApiFetch } from "@/lib/apiClient";
 import useSWR from "swr";
 import type { DashboardSeasonTeam } from "@eggosystem/types";
 
-export const useDashboardSeasonTeams = (seasonId: string | number | null) => {
+export const useDashboardSeasonTeams = (
+  seasonId: string | number | null,
+  context: "finalized" | "registration" = "finalized"
+) => {
   const apiUrl = seasonId
-    ? `/api/v1/dashboard/seasons/${seasonId}/teams`
+    ? `/api/v1/dashboard/seasons/${seasonId}/teams?context=${context}`
     : null;
 
   const { data, error, isValidating, isLoading } = useSWR<

@@ -79,19 +79,67 @@ async function fetchCSRankkerComponents(
  * Checks if a player can be added to a team based on kana_elo balance
  * Returns analysis including:
  * - Selected team's current top 3 players + new player average
- * - Top 3 teams in the same league with their avg4 values
+ * - Top 3 teams in the same league with their avg4 values (for finalized seasons only)
  * - Whether the player can be added
  *
  * @param seasonId The season ID
  * @param teamId The team ID
  * @param newPlayerSteamId The steam ID of the player to check
+ * @param options Additional options including connection and context
  */
 export const checkPlayerAdditionEligibility = async (
   seasonId: number,
   teamId: number,
   newPlayerSteamId: string,
-  options?: { connection?: PoolConnection }
+  options?: {
+    connection?: PoolConnection;
+    context?: "finalized" | "registration";
+  }
 ): Promise<TeamEligibilityResult> => {
+  const context = options?.context || "finalized";
+
+  // For registration context, skip league checks
+  if (context === "registration") {
+    // Get stabilized kana_elo from CSRankker service
+    const stabilizedKanaElo = await getStabilizedKanaElo(newPlayerSteamId);
+
+    // Get CSRankker components for display
+    const csrankkerComponents =
+      await fetchCSRankkerComponents(newPlayerSteamId);
+
+    // Get the selected team's info from registrations
+    const teamQuery = `
+      SELECT t.id AS team_id, t.name AS team_name
+      FROM Teams t
+      WHERE t.id = ?
+    `;
+
+    const [teamResult] = await runQuery<
+      Array<{ team_id: number; team_name: string }>
+    >(teamQuery, [teamId], options?.connection);
+
+    if (!teamResult) {
+      throw new Error(`Team ${teamId} not found`);
+    }
+
+    // For registrations, we don't have league comparisons
+    return {
+      selectedTeam: {
+        team_id: teamResult.team_id,
+        team_name: teamResult.team_name,
+        current_top3_avg: 0,
+        current_top4_avg: 0,
+        new_player_kana_elo: stabilizedKanaElo,
+        new_avg_with_player: 0,
+        csrankker_components: csrankkerComponents
+      },
+      topTeamsInLeague: [],
+      canAddPlayer: true, // Always true for registrations
+      league_name: "Registration"
+    };
+  }
+
+  // Finalized season context - original logic
   // First, get the league for the selected team
   const leagueQuery = `
       SELECT slt.league_id
