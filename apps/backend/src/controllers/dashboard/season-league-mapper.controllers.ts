@@ -89,7 +89,7 @@ export const createSeasonLeagueExternalIdController = async (
     external_id,
     external_league_name,
     stage_id,
-    type,
+    type: game_mode,
     manual_group
   } = req.body;
 
@@ -100,7 +100,7 @@ export const createSeasonLeagueExternalIdController = async (
     !external_id ||
     !external_league_name ||
     !stage_id ||
-    !type
+    !game_mode
   ) {
     return next(
       new BadRequestError(
@@ -110,7 +110,9 @@ export const createSeasonLeagueExternalIdController = async (
   }
 
   if (
-    !["roundRobin", "doubleElimination", "singleElimination"].includes(type)
+    !["roundRobin", "doubleElimination", "singleElimination"].includes(
+      game_mode
+    )
   ) {
     return next(
       new BadRequestError(
@@ -145,7 +147,7 @@ export const createSeasonLeagueExternalIdController = async (
     season_id,
     league_id,
     stage_id,
-    type,
+    game_mode,
     manual_group
   );
 
@@ -169,11 +171,16 @@ export const updateSeasonLeagueExternalIdController = async (
     return next(new BadRequestError("Invalid id parameter"));
   }
 
-  const { external_id, external_league_name, stage_id, type, manual_group } =
-    req.body;
+  const {
+    external_id,
+    external_league_name,
+    stage_id,
+    type: game_mode,
+    manual_group
+  } = req.body;
 
   // Validation
-  if (!external_id || !external_league_name || !stage_id || !type) {
+  if (!external_id || !external_league_name || !stage_id || !game_mode) {
     return next(
       new BadRequestError(
         "Missing required fields: external_id, external_league_name, stage_id, type"
@@ -182,7 +189,9 @@ export const updateSeasonLeagueExternalIdController = async (
   }
 
   if (
-    !["roundRobin", "doubleElimination", "singleElimination"].includes(type)
+    !["roundRobin", "doubleElimination", "singleElimination"].includes(
+      game_mode
+    )
   ) {
     return next(
       new BadRequestError(
@@ -221,7 +230,7 @@ export const updateSeasonLeagueExternalIdController = async (
     external_id,
     external_league_name,
     stage_id,
-    type,
+    type: game_mode,
     manual_group
   });
 
