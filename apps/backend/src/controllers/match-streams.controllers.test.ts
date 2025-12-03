@@ -40,7 +40,7 @@ const mockGetStreamReservationsByMatch =
 const mockGetMatchIs2xBO1 = getMatchIs2xBO1 as jest.MockedFunction<
   typeof getMatchIs2xBO1
 >;
-const mockGetMatchIdsWithSameExternalMatchRoomId =
+const _mockGetMatchIdsWithSameExternalMatchRoomId =
   getMatchIdsWithSameExternalMatchRoomId as jest.MockedFunction<
     typeof getMatchIdsWithSameExternalMatchRoomId
   >;
