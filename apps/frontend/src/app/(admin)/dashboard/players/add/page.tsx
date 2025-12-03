@@ -103,7 +103,7 @@ export default function AddPlayerPage() {
     isLoading: isLoadingLiveRoster,
     mutate: mutateLiveRoster
   } = useTeamPlayersLive(
-    activeSeason?.season_id ?? null,
+    activeSignupSeason?.season_id ?? null,
     selectedTeamId ? Number(selectedTeamId) : null
   );
 
@@ -902,16 +902,19 @@ export default function AddPlayerPage() {
       </div>
 
       {/* Live Team Roster Popup */}
-      {showRosterPopup && selectedTeamId && selectedTeam && activeSeason && (
-        <LiveTeamPlayersPopup
-          players={liveTeamPlayers || []}
-          teamName={selectedTeam.team_name}
-          seasonName={activeSeason.full_name}
-          position={popupPosition}
-          isLoading={isLoadingLiveRoster}
-          onClose={() => setShowRosterPopup(false)}
-        />
-      )}
+      {showRosterPopup &&
+        selectedTeamId &&
+        selectedTeam &&
+        activeSignupSeason && (
+          <LiveTeamPlayersPopup
+            players={liveTeamPlayers || []}
+            teamName={selectedTeam.team_name}
+            seasonName={activeSignupSeason.full_name}
+            position={popupPosition}
+            isLoading={isLoadingLiveRoster}
+            onClose={() => setShowRosterPopup(false)}
+          />
+        )}
     </WithRoleProtection>
   );
 }
