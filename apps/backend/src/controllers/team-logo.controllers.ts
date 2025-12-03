@@ -2,7 +2,6 @@ import type { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/app-logger";
 import { uploadImageToService } from "../services/image-upload.services";
 import * as teamLogoModels from "../models/team-logo.models";
-import { fileTypeFromBuffer } from "file-type";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -111,6 +110,8 @@ export const uploadTeamLogoController = async (
       }
 
       // Validate that the buffer contains valid image data using file-type
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { fileTypeFromBuffer } = (await import("file-type")) as any;
       const detectedType = await fileTypeFromBuffer(imageBuffer);
 
       if (!detectedType) {

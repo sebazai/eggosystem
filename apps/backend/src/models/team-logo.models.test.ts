@@ -18,19 +18,19 @@ describe("Team Logo Models", () => {
     it("should return true if user is captain", async () => {
       mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
 
-      const result = await isUserTeamCaptain("76561198000000001", 1);
+      const result = await isUserTeamCaptain(1, 1);
 
       expect(result).toBe(true);
       expect(mockRunQuery).toHaveBeenCalledWith(
         expect.stringContaining("SELECT COUNT(*) as count"),
-        ["76561198000000001", 1, 1]
+        [1, 1, 1, 1]
       );
     });
 
     it("should return true if user is co-captain", async () => {
       mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
 
-      const result = await isUserTeamCaptain("76561198000000001", 1);
+      const result = await isUserTeamCaptain(1, 1);
 
       expect(result).toBe(true);
     });
@@ -38,7 +38,7 @@ describe("Team Logo Models", () => {
     it("should return false if user is not captain or co-captain", async () => {
       mockRunQuery.mockResolvedValueOnce([{ count: 0 }]);
 
-      const result = await isUserTeamCaptain("76561198000000001", 1);
+      const result = await isUserTeamCaptain(1, 1);
 
       expect(result).toBe(false);
     });
@@ -46,7 +46,7 @@ describe("Team Logo Models", () => {
     it("should return false if count is undefined", async () => {
       mockRunQuery.mockResolvedValueOnce([{}]);
 
-      const result = await isUserTeamCaptain("76561198000000001", 1);
+      const result = await isUserTeamCaptain(1, 1);
 
       expect(result).toBe(false);
     });
