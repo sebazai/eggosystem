@@ -485,6 +485,79 @@ export const getFaceitPlayerDetailsBySteamId = async (
   return fetchFaceitPlayerData(steam_id, "cs2");
 };
 
+/**
+ * Gets player details from Faceit API by FaceIt user_id (player_id)
+ * @param faceit_user_id The FaceIt user ID of the player
+ * @returns Player details from Faceit or null if not found
+ */
+export const getFaceitPlayerDetails = async (
+  faceit_user_id: string
+): Promise<FaceitPlayerDetails | null> => {
+  const redisKey = `faceit-player-by-id-${faceit_user_id}`;
+  const redisData = await redisClient.get(redisKey);
+  if (redisData) {
+    return JSON.parse(redisData) as FaceitPlayerDetails;
+  }
+
+  const { controller, clearAbortTimeout } = createAbortController(
+    "getFaceitPlayerDetails"
+  );
+
+  try {
+    const webURL = `https://open.faceit.com/data/v4/players/${faceit_user_id}`;
+    const headers = {
+      Accept: "application/json",
+      Authorization: `Bearer ${process.env.FACEIT_API_KEY}`,
+      "User-Agent": "Kanaliiga-Eggosystem/1.0"
+    };
+
+    const response = await fetch(webURL, {
+      headers,
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      const duration = clearAbortTimeout();
+      logger.warn(
+        `[FaceIT] API returned ${response.status} ${response.statusText} for faceit_user_id: ${faceit_user_id} (${duration}ms)`
+      );
+
+      // Player not found
+      if (response.status === 404) {
+        logger.warn(
+          `[FaceIT] Player not found for faceit_user_id: ${faceit_user_id} (${duration}ms)`
+        );
+        return null;
+      }
+
+      throw new Error(
+        `Failed to fetch Faceit player data: ${response.statusText}`
+      );
+    }
+
+    const data: FaceitPlayerDetails = await response.json();
+    clearAbortTimeout();
+
+    // Fix the faceit_url by replacing {lang} placeholder with 'en'
+    if (data.faceit_url) {
+      data.faceit_url = data.faceit_url
+        .replace(/\{lang\}/g, "en")
+        .replace(/%7Blang%7D/g, "en");
+    }
+
+    // Cache the result in Redis
+    await redisClient.set(redisKey, JSON.stringify(data), "EX", expireInOneDay);
+    return data;
+  } catch (error) {
+    clearAbortTimeout();
+    logger.error(
+      `[FaceIT] Error fetching player data for faceit_user_id: ${faceit_user_id}:`,
+      error
+    );
+    return null;
+  }
+};
+
 export const getFaceITChampionshipDetails = async <T>(
   championship_id: string
 ) => {
@@ -552,6 +625,81 @@ export const getAllFaceITChampionshipSubscriptions = async (
     start: 0,
     end: allItems.length
   };
+};
+
+export interface ChampionshipTeamMember {
+  faceit_user_id: string;
+  nickname: string;
+  steam_id: string | null;
+}
+
+export interface ChampionshipTeamWithMembers {
+  team_id: string;
+  team_name: string;
+  members: ChampionshipTeamMember[];
+}
+
+/**
+ * Fetches all teams in a championship with full member details including Steam IDs
+ * @param championship_id The FaceIt championship ID
+ * @returns Array of teams with member details
+ */
+export const getChampionshipTeamsWithMembers = async (
+  championship_id: string
+): Promise<ChampionshipTeamWithMembers[]> => {
+  logger.info(
+    `[FaceIT] Fetching championship teams with members for championship: ${championship_id}`
+  );
+
+  const subscriptions =
+    await getAllFaceITChampionshipSubscriptions(championship_id);
+
+  const teams: ChampionshipTeamWithMembers[] = [];
+
+  for (const subscription of subscriptions.items) {
+    const teamMembers: ChampionshipTeamMember[] = [];
+
+    logger.info(
+      `[FaceIT] Processing team: ${subscription.team.name} with ${subscription.team.members.length} members`
+    );
+
+    // Get player details for each team member
+    for (const member of subscription.team.members) {
+      const playerDetails = await getFaceitPlayerDetails(member.user_id);
+
+      if (playerDetails?.games?.cs2) {
+        teamMembers.push({
+          faceit_user_id: member.user_id,
+          nickname: playerDetails.nickname,
+          steam_id: playerDetails.games.cs2.game_player_id || null
+        });
+        logger.info(
+          `[FaceIT] ✅ Got player details: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
+        );
+      } else {
+        logger.warn(
+          `[FaceIT] ❌ Failed to get CS2 Steam ID for: ${member.nickname} (${member.user_id})`
+        );
+        teamMembers.push({
+          faceit_user_id: member.user_id,
+          nickname: member.nickname,
+          steam_id: null
+        });
+      }
+    }
+
+    logger.info(
+      `[FaceIT] Team ${subscription.team.name} final member count: ${teamMembers.length}/${subscription.team.members.length}`
+    );
+
+    teams.push({
+      team_id: subscription.team.team_id,
+      team_name: subscription.team.name,
+      members: teamMembers
+    });
+  }
+
+  return teams;
 };
 
 export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
