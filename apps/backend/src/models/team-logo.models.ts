@@ -2,21 +2,25 @@ import { runQuery } from "../db/mysqlRunQuery";
 import { NotFoundError } from "../utils/errors";
 
 /**
- * Check if a user (by steam_id) is a captain or co-captain of a team
- * @param steamId - The user's Steam ID
+ * Check if a user (by account_id) is a captain of a team
+ * @param accountId - The user's account ID from JWT
  * @param teamId - The team ID to check
- * @returns True if user is captain or co-captain
+ * @returns True if user has captain role for the team
  */
 export async function isUserTeamCaptain(
-  steamId: string,
+  accountId: number,
   teamId: number
 ): Promise<boolean> {
   const query = `
     SELECT COUNT(*) as count
-    FROM SeasonTeamPlayers stp
-    WHERE stp.steam_id = ?
+    FROM AccountRoles ar
+    JOIN Roles r ON r.id = ar.role_id
+    JOIN SeasonTeamPlayers stp ON stp.steam_id = (
+      SELECT steam_id FROM Accounts WHERE id = ?
+    )
+    WHERE ar.account_id = ?
+      AND r.role_name = 'captain'
       AND stp.team_id = ?
-      AND (stp.is_captain = 1 OR stp.is_co_captain = 1)
       AND stp.season_id = (
         SELECT MAX(s.id)
         FROM Seasons s
@@ -26,7 +30,8 @@ export async function isUserTeamCaptain(
   `;
 
   const [result] = await runQuery<Array<{ count: number }>>(query, [
-    steamId,
+    accountId,
+    accountId,
     teamId,
     teamId
   ]);

@@ -93,10 +93,11 @@ router.get(
 );
 
 // My Team routes
-router.get("/my-teams", getMyTeamsController);
-router.get("/my-teams/upcoming-matches", getMyTeamsUpcomingMatchesController);
+router.get("/my-teams", authenticateJWT, getMyTeamsController);
+router.get("/my-teams/upcoming-matches", authenticateJWT, getMyTeamsUpcomingMatchesController);
 router.get(
   "/my-teams/championships/:season_id/:league_id",
+  authenticateJWT,
   validateNumericParams(["season_id", "league_id"]),
   getMyTeamChampionshipsController
 );

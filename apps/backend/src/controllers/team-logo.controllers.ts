@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/app-logger";
 import { uploadImageToService } from "../services/image-upload.services";
 import * as teamLogoModels from "../models/team-logo.models";
+import { fileTypeFromBuffer } from "file-type";
 import {
   UnauthorizedError,
   ForbiddenError,
@@ -24,12 +25,12 @@ export const uploadTeamLogoController = async (
   res: Response,
   next: NextFunction
 ) => {
-  if (!req.auth || req.auth.provider !== "steam") {
+  if (!req.auth || !req.auth.account_id) {
     return next(new UnauthorizedError("Unauthorized"));
   }
 
   const body = req.body as UploadTeamLogoRequestBody;
-  const steamId = req.auth.provider_id;
+  const accountId = req.auth.account_id as number;
   const teamId = body.team_id;
   const teamName = body.team_name; // Store locally to avoid modification
 
@@ -43,12 +44,12 @@ export const uploadTeamLogoController = async (
     );
   }
 
-  // Check if user is captain or co-captain
-  const isCaptain = await teamLogoModels.isUserTeamCaptain(steamId, teamId);
+  // Check if user is captain
+  const isCaptain = await teamLogoModels.isUserTeamCaptain(accountId, teamId);
   if (!isCaptain) {
     return next(
       new ForbiddenError(
-        "Only team captains and co-captains can update team information"
+        "Only team captains can update team information"
       )
     );
   }
@@ -109,54 +110,37 @@ export const uploadTeamLogoController = async (
         return next(new BadRequestError("Invalid image data"));
       }
 
-      // Validate that the buffer contains valid image data
-      const isValidImage = (() => {
-        if (contentType === "image/png") {
-          return (
-            imageBuffer.length >= 8 &&
-            imageBuffer
-              .slice(0, 8)
-              .equals(
-                Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-              )
-          );
-        } else if (
-          contentType === "image/jpeg" ||
-          contentType === "image/jpg"
-        ) {
-          return (
-            imageBuffer.length >= 2 &&
-            imageBuffer.slice(0, 2).equals(Buffer.from([0xff, 0xd8]))
-          );
-        } else if (contentType === "image/gif") {
-          return (
-            imageBuffer.length >= 6 &&
-            (imageBuffer.slice(0, 6).equals(Buffer.from("GIF87a")) ||
-              imageBuffer.slice(0, 6).equals(Buffer.from("GIF89a")))
-          );
-        } else if (contentType === "image/webp") {
-          return (
-            imageBuffer.length >= 12 &&
-            imageBuffer.slice(0, 4).equals(Buffer.from("RIFF")) &&
-            imageBuffer.slice(8, 12).equals(Buffer.from("WEBP"))
-          );
-        }
-        return false;
-      })();
+      // Validate that the buffer contains valid image data using file-type
+      const detectedType = await fileTypeFromBuffer(imageBuffer);
 
-      if (!isValidImage) {
+      if (!detectedType) {
         logger.error(
-          `Invalid image data received: contentType=${contentType}, size=${imageBuffer.length}, firstBytes=${imageBuffer.slice(0, Math.min(20, imageBuffer.length)).toString("hex")}`
+          `Could not detect file type: size=${imageBuffer.length}, firstBytes=${imageBuffer.slice(0, Math.min(20, imageBuffer.length)).toString("hex")}`
         );
         return next(
           new BadRequestError(
-            `Invalid image data: file does not appear to be a valid ${contentType} image`
+            "Invalid image data: unable to detect file type"
+          )
+        );
+      }
+
+      // Check if detected type is a supported image format
+      const supportedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
+      const detectedMimeType = detectedType.mime;
+
+      if (!supportedTypes.includes(detectedMimeType)) {
+        logger.error(
+          `Unsupported image type detected: ${detectedMimeType}, size=${imageBuffer.length}`
+        );
+        return next(
+          new BadRequestError(
+            `Unsupported image type: ${detectedMimeType}. Supported types: PNG, JPEG, GIF, WebP`
           )
         );
       }
 
       logger.info(
-        `Image validation passed: contentType=${contentType}, size=${imageBuffer.length} bytes`
+        `Image validation passed: detectedType=${detectedMimeType}, size=${imageBuffer.length} bytes`
       );
 
       logger.info(
@@ -205,7 +189,7 @@ export const uploadTeamLogoController = async (
     }
 
     logger.info(
-      `Team details update completed: teamId=${teamId}, phash=${phash}, teamName=${teamName ? "updated" : "not changed"}`
+      `Team details update completed: teamId=${teamId}, accountId=${accountId}, phash=${phash}, teamName=${teamName ? "updated" : "not changed"}`
     );
     res.json({
       success: true,
