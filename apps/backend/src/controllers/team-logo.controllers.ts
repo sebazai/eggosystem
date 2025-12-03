@@ -47,9 +47,7 @@ export const uploadTeamLogoController = async (
   const isCaptain = await teamLogoModels.isUserTeamCaptain(accountId, teamId);
   if (!isCaptain) {
     return next(
-      new ForbiddenError(
-        "Only team captains can update team information"
-      )
+      new ForbiddenError("Only team captains can update team information")
     );
   }
 
@@ -119,14 +117,18 @@ export const uploadTeamLogoController = async (
           `Could not detect file type: size=${imageBuffer.length}, firstBytes=${imageBuffer.slice(0, Math.min(20, imageBuffer.length)).toString("hex")}`
         );
         return next(
-          new BadRequestError(
-            "Invalid image data: unable to detect file type"
-          )
+          new BadRequestError("Invalid image data: unable to detect file type")
         );
       }
 
       // Check if detected type is a supported image format
-      const supportedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
+      const supportedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/jpg",
+        "image/gif",
+        "image/webp"
+      ];
       const detectedMimeType = detectedType.mime;
 
       if (!supportedTypes.includes(detectedMimeType)) {
