@@ -15,6 +15,7 @@ import {
   getMyTeamsUpcomingMatchesController,
   getMyTeamChampionshipsController
 } from "../../controllers/my-team.controllers";
+import { uploadTeamLogoController } from "../../controllers/team-logo.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
 import { type UserProfilePayload } from "@eggosystem/types";
@@ -92,12 +93,18 @@ router.get(
 );
 
 // My Team routes
-router.get("/my-teams", getMyTeamsController);
-router.get("/my-teams/upcoming-matches", getMyTeamsUpcomingMatchesController);
+router.get("/my-teams", authenticateJWT, getMyTeamsController);
+router.get(
+  "/my-teams/upcoming-matches",
+  authenticateJWT,
+  getMyTeamsUpcomingMatchesController
+);
 router.get(
   "/my-teams/championships/:season_id/:league_id",
+  authenticateJWT,
   validateNumericParams(["season_id", "league_id"]),
   getMyTeamChampionshipsController
 );
+router.post("/my-teams/upload-logo", authenticateJWT, uploadTeamLogoController);
 
 export default router;
