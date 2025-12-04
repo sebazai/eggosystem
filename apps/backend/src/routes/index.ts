@@ -20,6 +20,7 @@ import matchGameRouter from "./v1/match-game.routes";
 import discordRouter from "./v1/discord.routes";
 import eloRouter from "./v1/elo.routes";
 import { verifyEmailController } from "../controllers/account.controllers";
+import { removeReservationByHashController } from "../controllers/match-streams.controllers";
 import { landingPageStatistics } from "../services/landing-page.services";
 import parseQueryFilterParams from "../middlewares/parse-query-filter-params.middleware";
 import { cacheResponseMiddleware } from "../middlewares/cache-filtered-queries";
@@ -44,6 +45,11 @@ v1Router.use("/dashboard", corsMiddleware, authenticateJWT, dashboardRouter);
 v1Router.use("/kanahautomo", corsMiddleware, kanahautomoRouter);
 v1Router.use("/discord", corsMiddleware, discordRouter);
 v1Router.post("/verify-email", corsMiddleware, verifyEmailController);
+v1Router.get(
+  "/reservations/remove/:hash",
+  corsMiddleware,
+  removeReservationByHashController
+);
 v1Router.use("/registrations", corsMiddleware, registrationsRouter);
 v1Router.use("/faceit", corsMiddleware, faceitRouter);
 v1Router.use("/players", playerRouter);

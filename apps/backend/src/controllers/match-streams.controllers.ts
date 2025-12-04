@@ -3,14 +3,16 @@ import {
   createStreamReservation,
   deleteStreamReservation,
   getStreamReservationsByMatch,
-  updateStreamReservation
+  updateStreamReservation,
+  getReservationByHash,
+  deleteReservationByHash
 } from "../models/match-streams.models";
 import type {
   RequestWithParams,
   RequestWithParamsAndBody,
   Reservation
 } from "@eggosystem/types";
-import { NotFoundError } from "../utils/errors";
+import { NotFoundError, BadRequestError } from "../utils/errors";
 import { z } from "zod";
 import {
   getMatchIdsWithSameExternalMatchRoomId,
@@ -142,15 +144,40 @@ export const getMatchStreamReservationsController = async (
   req: RequestWithParams<{ match_id: string }>,
   res: Response
 ) => {
-  // validateNumericParams middleware guarantees this is a valid number
   const matchId = +req.params.match_id;
 
   const reservations = await getStreamReservationsByMatch(matchId);
 
-  // Extract just the stream URLs for the frontend
+  // Extract stream URLs from reservations
   const streamUrls = reservations.map((reservation) => reservation.stream_url);
 
+  res.json({ streamUrls });
+};
+
+export const removeReservationByHashController = async (
+  req: RequestWithParams<{ hash: string }>,
+  res: Response
+) => {
+  const { hash } = req.params;
+
+  if (!hash) {
+    throw new BadRequestError("Reservation hash is required");
+  }
+
+  // Check if reservation exists
+  const reservation = await getReservationByHash(hash);
+  if (!reservation) {
+    throw new NotFoundError("Reservation not found or already removed");
+  }
+
+  // Delete the reservation
+  const deleted = await deleteReservationByHash(hash);
+
+  if (!deleted) {
+    throw new NotFoundError("Failed to remove reservation");
+  }
+
   res.json({
-    streamUrls
+    message: "Stream reservation removed successfully"
   });
 };

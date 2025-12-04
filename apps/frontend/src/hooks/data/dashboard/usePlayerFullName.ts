@@ -8,29 +8,49 @@ export function usePlayerFullName(steamId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!steamId || !/^[0-9]{17}$/.test(steamId)) {
-      setFullName(null);
-      setError(null);
-      setLoading(false);
+    const isValidSteamId = steamId && /^[0-9]{17}$/.test(steamId);
+
+    if (!isValidSteamId) {
       return;
     }
-    setLoading(true);
-    setError(null);
-    setFullName(null);
-    clientApiFetch<PlayerFullName>(
-      `/api/v1/dashboard/registration/players/${steamId}/full-name`,
-      {
-        method: "GET"
-      }
-    )
-      .then(async (res) => {
-        setFullName(res.full_name || null);
-      })
-      .catch(() => {
+
+    let cancelled = false;
+
+    const fetchFullName = async () => {
+      if (cancelled) return;
+
+      try {
+        setLoading(true);
+        setError(null);
         setFullName(null);
-        setError("Not found");
-      })
-      .finally(() => setLoading(false));
+
+        const res = await clientApiFetch<PlayerFullName>(
+          `/api/v1/dashboard/registration/players/${steamId}/full-name`,
+          {
+            method: "GET"
+          }
+        );
+
+        if (!cancelled) {
+          setFullName(res.full_name || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setFullName(null);
+          setError("Not found");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchFullName();
+
+    return () => {
+      cancelled = true;
+    };
   }, [steamId]);
 
   return { fullName, loading, error };

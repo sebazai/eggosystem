@@ -3,13 +3,17 @@ import { validateNumericParams } from "../../../middlewares/validate-numeric-par
 import {
   getTeamsForSeasonController,
   checkPlayerAdditionEligibilityController,
-  createSeasonController
+  createSeasonController,
+  updateSeasonController
 } from "../../../controllers/dashboard/season.controllers";
 
 const router = Router();
 
 // POST /api/v1/dashboard/seasons
 router.post("/", createSeasonController);
+
+// PUT /api/v1/dashboard/seasons/:id
+router.put("/:id", validateNumericParams(), updateSeasonController);
 
 // GET /api/v1/dashboard/seasons/:season_id/teams
 router.get(

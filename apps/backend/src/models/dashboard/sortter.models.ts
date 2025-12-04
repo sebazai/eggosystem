@@ -5,17 +5,22 @@ import {
   type TeamSortterValuesRaw,
   type PlayerSortterValues
 } from "@eggosystem/types";
+import {
+  buildComparisonAvgSQL,
+  buildTopPlayersFilter,
+  SQL_COLUMNS,
+  TOP_N_FOR_DISPLAY
+} from "../../utils/team-calculations";
 
 /**
- * Gets team values for sorter functionality:
+ * Gets team values for sortter functionality:
  * - Team name
- * - Sum of kanaelo for top 5 players in the team
- * - Average of kanaelo for top 4 players in the team
+ * - Sum of kanaelo for top N players in the team (configurable via TOP_N_FOR_DISPLAY)
+ * - Average of kanaelo for comparison (configurable via TOP_N_FOR_COMPARISON)
  * - Team league
- * - Kanaelo values for top 5 players as an array
+ * - Kanaelo values for top N players as an array
  *
  * @param seasonId The season ID to filter teams by
- * @param
  * @returns Array of team values
  */
 export const getTeamValuesForSortter = async (
@@ -42,7 +47,7 @@ export const getTeamValuesForSortter = async (
         AND str.approved = 1
       ORDER BY t.id, spr.kana_elo DESC
     ),
-    TeamTop5Players AS (
+    TeamTopPlayers AS (
       SELECT
         team_id,
         team_name,
@@ -52,7 +57,7 @@ export const getTeamValuesForSortter = async (
         kana_elo,
         offered_elo
       FROM TeamPlayersKanaElo
-      WHERE player_rank <= 5
+      WHERE ${buildTopPlayersFilter()}
     ),
     TeamValues AS (
       SELECT
@@ -60,12 +65,12 @@ export const getTeamValuesForSortter = async (
         team_name,
         team_logo,
         league_name,
-        SUM(kana_elo) AS top5_sum,
-        ROUND(AVG(CASE WHEN player_rank <= 4 THEN kana_elo ELSE NULL END), 3) AS avg4,
-        ROUND(AVG(CASE WHEN player_rank <= 4 THEN offered_elo ELSE NULL END), 3) AS orig4,
-        JSON_ARRAYAGG(kana_elo ORDER BY player_rank) AS top5_values,
-        JSON_ARRAYAGG(offered_elo ORDER BY player_rank) AS top5_offered_values
-      FROM TeamTop5Players
+        SUM(kana_elo) AS top${TOP_N_FOR_DISPLAY}_sum,
+        ${buildComparisonAvgSQL()} AS ${SQL_COLUMNS.COMPARISON_AVG},
+        ${buildComparisonAvgSQL("offered_elo")} AS ${SQL_COLUMNS.ORIGINAL_COMPARISON_AVG},
+        JSON_ARRAYAGG(kana_elo ORDER BY player_rank) AS top${TOP_N_FOR_DISPLAY}_values,
+        JSON_ARRAYAGG(offered_elo ORDER BY player_rank) AS top${TOP_N_FOR_DISPLAY}_offered_values
+      FROM TeamTopPlayers
       GROUP BY team_id, team_name, team_logo, league_name
     )
     SELECT
@@ -73,13 +78,13 @@ export const getTeamValuesForSortter = async (
       team_name,
       team_logo,
       league_name,
-      top5_sum,
-      avg4,
-      orig4,
-      top5_values,
-      top5_offered_values
+      top${TOP_N_FOR_DISPLAY}_sum,
+      ${SQL_COLUMNS.COMPARISON_AVG},
+      ${SQL_COLUMNS.ORIGINAL_COMPARISON_AVG},
+      top${TOP_N_FOR_DISPLAY}_values,
+      top${TOP_N_FOR_DISPLAY}_offered_values
     FROM TeamValues
-    ORDER BY avg4 DESC
+    ORDER BY ${SQL_COLUMNS.COMPARISON_AVG} DESC
   `;
 
   const rawResults = await runQuery<TeamSortterValuesRaw[]>(query, [seasonId]);
@@ -221,6 +226,120 @@ export const getTeamPlayerValuesForSortter = async (
     seasonId,
     teamId
   ]);
+
+  return results;
+};
+
+/**
+ * Gets LIVE player values for a specific team and season:
+ * Uses SeasonTeamPlayers (live data) instead of SeasonTeamRegistrationPlayers
+ * This shows players who are currently registered to the team, including those added after sortter finalization
+ *
+ * Returns:
+ * - Player name
+ * - Steam ID
+ * - CS2 rank
+ * - Faceit level
+ * - Faceit ELO
+ * - CS hours
+ * - Kana rating (average from all games player played)
+ * - FKD (Faceit K/D ratio)
+ * - Role (primary/substitute)
+ * - Captain/Co-captain status
+ *
+ * @param seasonId The season ID to filter by
+ * @param teamId The team ID to filter by
+ * @returns Array of player values with role information
+ */
+export const getTeamPlayerValuesLive = async (
+  seasonId: number,
+  teamId: number
+): Promise<
+  (PlayerSortterValues & {
+    role: string;
+    is_captain: boolean;
+    is_co_captain: boolean;
+    match_id: number | null;
+    match_info: string | null;
+  })[]
+> => {
+  const query = `
+    SELECT
+      sp.nickname AS name,
+      sp.steam_id AS steamid,
+      spr.cs2_rank,
+      spr.faceit_level,
+      spr.faceit_elo,
+      spr.cs_hours AS hours,
+      ROUND(AVG(ps.kana_rating), 6) AS kanarating,
+      spr.faceit_kd AS fkd,
+      spr.kana_elo,
+      spr.offered_elo,
+      spr.calculus,
+      stp.role,
+      stp.is_captain,
+      stp.is_co_captain,
+      stp.match_id,
+      CASE 
+        WHEN stp.match_id IS NOT NULL THEN 
+          CONCAT(
+            'Match #', stp.match_id,
+            ' (', DATE_FORMAT(m.match_date, '%Y-%m-%d'), ')',
+            CASE 
+              WHEN match_teams IS NOT NULL THEN CONCAT(' - ', match_teams)
+              ELSE ''
+            END
+          )
+        ELSE NULL
+      END AS match_info
+    FROM Teams t
+    JOIN SeasonTeamPlayers stp ON stp.team_id = t.id
+    JOIN SteamPlayers sp ON sp.steam_id = stp.steam_id
+    JOIN SeasonPlayerRanks spr ON spr.steam_id = stp.steam_id AND spr.season_id = stp.season_id
+    LEFT JOIN PlayerStats ps ON ps.steam_id = sp.steam_id
+    LEFT JOIN MatchGames mg ON mg.id = ps.match_game_id
+    LEFT JOIN Matches m_stats ON m_stats.id = mg.match_id AND m_stats.season_id = stp.season_id
+    LEFT JOIN Matches m ON m.id = stp.match_id
+    LEFT JOIN (
+      SELECT 
+        mt.match_id,
+        GROUP_CONCAT(t_match.name ORDER BY t_match.name SEPARATOR ' vs ') as match_teams
+      FROM MatchTeams mt
+      JOIN Teams t_match ON mt.team_id = t_match.id
+      GROUP BY mt.match_id
+    ) teams_in_match ON teams_in_match.match_id = stp.match_id
+    WHERE stp.season_id = ?
+      AND stp.team_id = ?
+    GROUP BY
+      sp.nickname,
+      sp.steam_id,
+      spr.cs2_rank,
+      spr.faceit_level,
+      spr.faceit_elo,
+      spr.cs_hours,
+      spr.faceit_kd,
+      spr.kana_elo,
+      spr.calculus,
+      stp.role,
+      stp.is_captain,
+      stp.is_co_captain,
+      stp.match_id,
+      m.match_date,
+      match_teams
+    ORDER BY
+      CASE stp.role WHEN 'primary' THEN 0 ELSE 1 END,
+      spr.kana_elo DESC
+  `;
+
+  const results = await runQuery<
+    (PlayerSortterValues & {
+      role: string;
+      is_captain: boolean;
+      is_co_captain: boolean;
+      match_id: number | null;
+      match_info: string | null;
+    })[]
+  >(query, [seasonId, teamId]);
 
   return results;
 };

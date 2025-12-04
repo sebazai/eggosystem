@@ -5,7 +5,11 @@ import {
 import { type Response, type NextFunction } from "express";
 import { getTeamsForSeason } from "../../models/team.models";
 import { checkPlayerAdditionEligibility } from "../../models/dashboard/season.models";
-import { createSeason } from "../../models/season.models";
+import {
+  createSeason,
+  updateSeason,
+  getSeasonById
+} from "../../models/season.models";
 import {
   seasonFormSchema,
   type SeasonFormRaw,
@@ -34,20 +38,28 @@ const convertToUTC = (dateString: string, timezone?: string): string => {
 /**
  * Controller to get all teams for a specific season
  * Returns teams with their league information
+ * Supports query parameter ?context=registration to fetch teams from SeasonTeamRegistrationPlayers
  */
 export const getTeamsForSeasonController = async (
   req: RequestWithParams<{ season_id: string }>,
   res: Response
 ): Promise<void> => {
   const seasonId = Number(req.params.season_id);
+  const context =
+    (req.query.context as string) === "registration"
+      ? "registration"
+      : "finalized";
 
-  const teams = await getTeamsForSeason(seasonId);
+  const teams = await getTeamsForSeason(seasonId, context);
   res.json(teams);
 };
 
 /**
  * Controller to check if a player can be added to a team
  * Returns analysis of the player's impact on team balance
+ *
+ * Query Parameters:
+ * - excludeSteamId (optional): Steam ID of player to exclude from calculations (for substitution scenarios)
  */
 export const checkPlayerAdditionEligibilityController = async (
   req: RequestWithParams<{
@@ -60,11 +72,13 @@ export const checkPlayerAdditionEligibilityController = async (
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
+  const excludeSteamId = req.query.excludeSteamId as string | undefined;
 
   const eligibility = await checkPlayerAdditionEligibility(
     seasonId,
     teamId,
-    steamId
+    steamId,
+    { excludeSteamId }
   );
   res.json(eligibility);
 };
@@ -112,6 +126,67 @@ export const createSeasonController = async (
     res.status(201).json({
       message: "Season created successfully",
       seasonId: result.insertId
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return next(error);
+    }
+    next(error);
+  }
+};
+
+/**
+ * Controller to update an existing season
+ * Validates the request body with Zod schema and updates the season
+ */
+export const updateSeasonController = async (
+  req: RequestWithParams<{ id: string }> & RequestWithBody<SeasonFormValues>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const seasonId = Number(req.params.id);
+
+    // Check if season exists
+    const existingSeason = await getSeasonById(seasonId);
+    if (!existingSeason) {
+      res.status(404).json({ message: "Season not found" });
+      return;
+    }
+
+    // Validate the request body with Zod schema
+    const validatedData = seasonFormSchema.parse(req.body);
+
+    // Convert form data to raw format for database update
+    const seasonData: SeasonFormRaw = {
+      game_id: validatedData.game_id,
+      game_type_id: validatedData.game_type_id,
+      organizer_id: validatedData.organizer_id,
+      name: validatedData.name,
+      full_name: validatedData.full_name,
+      signup_start_date: validatedData.signup_start_date
+        ? convertToUTC(validatedData.signup_start_date, validatedData.timezone)
+        : null,
+      signup_end_date: validatedData.signup_end_date
+        ? convertToUTC(validatedData.signup_end_date, validatedData.timezone)
+        : null,
+      start_date: new Date(validatedData.start_date)
+        .toISOString()
+        .split("T")[0], // YYYY-MM-DD format
+      end_date: validatedData.end_date
+        ? new Date(validatedData.end_date).toISOString().split("T")[0]
+        : null,
+      platform: validatedData.platform,
+      is_round_robin_bo2_as_2xbo1: validatedData.is_round_robin_bo2_as_2xbo1,
+      payment_link: validatedData.payment_link || null
+    };
+
+    // Update the season in the database
+    await updateSeason(seasonId, seasonData);
+
+    res.json({
+      message: "Season updated successfully",
+      seasonId
     });
   } catch (error) {
     if (error instanceof ZodError) {

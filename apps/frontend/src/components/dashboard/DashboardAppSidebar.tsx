@@ -118,6 +118,12 @@ const data: { navMain: Array<MenuItem> } = {
       items: [] satisfies Array<SubMenuItem>
     },
     {
+      title: "Season League Mapper",
+      url: createDashboardNextUrl("season-league-mapper"),
+      requiredRoles: ["admin"],
+      items: [] satisfies Array<SubMenuItem>
+    },
+    {
       title: "Demo parser",
       url: "#",
       requiredRoles: ["admin"],
@@ -130,6 +136,18 @@ const data: { navMain: Array<MenuItem> } = {
         {
           title: "Flagged matches",
           url: createDashboardNextUrl("matches/flagged")
+        }
+      ] satisfies Array<SubMenuItem>
+    },
+    {
+      title: "FaceIt",
+      url: "#",
+      requiredRoles: ["admin", "helpdesk"],
+      items: [
+        {
+          title: "Roster Validation",
+          url: createDashboardNextUrl("faceit-roster-validation"),
+          requiredRoles: ["admin", "helpdesk"]
         }
       ] satisfies Array<SubMenuItem>
     },

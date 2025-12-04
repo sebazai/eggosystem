@@ -11,6 +11,8 @@ import playerRouter from "./player.routes";
 import roleManagementRouter from "./role-management.routes";
 import redisRouter from "./redis.routes";
 import demoRouter from "./demo.routes";
+import seasonLeagueMapperRouter from "./season-league-mapper.routes";
+import faceitValidationRouter from "./faceit-validation.routes";
 
 const router = Router();
 
@@ -83,6 +85,20 @@ router.use(
     fallbackRoles: ["admin", "helpdesk"]
   }),
   demoRouter
+);
+router.use(
+  "/season-league-mapper",
+  checkPermissions({
+    fallbackRoles: ["admin"]
+  }),
+  seasonLeagueMapperRouter
+);
+router.use(
+  "/faceit-validation",
+  checkPermissions({
+    fallbackRoles: ["admin", "helpdesk"]
+  }),
+  faceitValidationRouter
 );
 router.get(
   "/",

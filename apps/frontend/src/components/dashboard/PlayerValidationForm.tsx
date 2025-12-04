@@ -25,7 +25,8 @@ interface PlayerValidationFormProps {
   error: string | null;
   success?: string | null;
   onValidate: () => void | Promise<void>;
-  activeSeason?: { season_id: number } | null;
+  activeSeason?: { season_id: number; full_name?: string } | null;
+  activeRegistrationSeason?: { season_id: number; full_name?: string } | null;
   buttonText?: string;
   disabled?: boolean;
   "data-testid"?: string;
@@ -43,6 +44,7 @@ export function PlayerValidationForm({
   success,
   onValidate,
   activeSeason,
+  activeRegistrationSeason,
   buttonText = "Validate Player",
   disabled = false,
   "data-testid": testId = "validate-player-button"
@@ -84,28 +86,47 @@ export function PlayerValidationForm({
               >
                 Loading seasons...
               </SelectItem>
-            ) : seasons && seasons.length > 0 ? (
-              seasons
-                .sort((a, b) => b.id - a.id) // Sort by ID descending (newest first)
-                .map((season) => (
-                  <SelectItem
-                    key={season.id}
-                    value={season.id.toString()}
-                    data-value={season.id.toString()}
-                    data-testid={`season-option-${season.id}`}
-                  >
-                    {season.full_name}
-                    {activeSeason?.season_id === season.id && " (Active)"}
-                  </SelectItem>
-                ))
             ) : (
-              <SelectItem
-                value="no-seasons"
-                disabled
-                data-testid="no-seasons-option"
-              >
-                No seasons available
-              </SelectItem>
+              <>
+                {/* Active Registration Option */}
+                {activeRegistrationSeason && (
+                  <SelectItem
+                    key={`registration-${activeRegistrationSeason.season_id}`}
+                    value={`registration-${activeRegistrationSeason.season_id}`}
+                    data-value={`registration-${activeRegistrationSeason.season_id}`}
+                    data-testid={`season-option-registration-${activeRegistrationSeason.season_id}`}
+                  >
+                    {activeRegistrationSeason.full_name ||
+                      `Season ${activeRegistrationSeason.season_id}`}{" "}
+                    (Active Registration)
+                  </SelectItem>
+                )}
+
+                {/* Finalized Seasons */}
+                {seasons && seasons.length > 0 ? (
+                  seasons
+                    .sort((a, b) => b.id - a.id) // Sort by ID descending (newest first)
+                    .map((season) => (
+                      <SelectItem
+                        key={season.id}
+                        value={season.id.toString()}
+                        data-value={season.id.toString()}
+                        data-testid={`season-option-${season.id}`}
+                      >
+                        {season.full_name}
+                        {activeSeason?.season_id === season.id && " (Active)"}
+                      </SelectItem>
+                    ))
+                ) : (
+                  <SelectItem
+                    value="no-seasons"
+                    disabled
+                    data-testid="no-seasons-option"
+                  >
+                    No seasons available
+                  </SelectItem>
+                )}
+              </>
             )}
           </SelectContent>
         </Select>

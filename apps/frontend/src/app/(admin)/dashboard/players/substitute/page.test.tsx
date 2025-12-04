@@ -254,10 +254,12 @@ describe("AddSubstitutePlayerPage", () => {
     const seasonSelect = screen.getByTestId("season-select");
     const teamSelect = screen.getByTestId("team-selector");
     const matchIdInput = screen.getByTestId("match-id-input");
+    const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "123" } });
+    fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
     fireEvent.click(teamSelect);
 
     await waitFor(() => {
@@ -354,10 +356,12 @@ describe("AddSubstitutePlayerPage", () => {
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
+    const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "123" } });
+    fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
     // Select team
     const teamSelect = screen.getByTestId("team-selector");
@@ -377,7 +381,8 @@ describe("AddSubstitutePlayerPage", () => {
         seasonId: "1",
         teamId: "1",
         steamId: "76561198000000001",
-        matchId: "123"
+        matchId: "123",
+        ticketNumber: "TICKET-123"
       });
     });
   });
@@ -412,10 +417,12 @@ describe("AddSubstitutePlayerPage", () => {
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
+    const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "123" } });
+    fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
     // Select team
     const teamSelect = screen.getByTestId("team-selector");
@@ -501,10 +508,12 @@ describe("AddSubstitutePlayerPage", () => {
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
+    const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "1-invalid-room" } });
+    fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
     // Select team
     const teamSelect = screen.getByTestId("team-selector");
@@ -563,10 +572,12 @@ describe("AddSubstitutePlayerPage", () => {
     const steamIdInput = screen.getByTestId("steam-id-input");
     const seasonSelect = screen.getByTestId("season-select");
     const matchIdInput = screen.getByTestId("match-id-input");
+    const ticketNumberInput = screen.getByTestId("ticket-number-input");
 
     fireEvent.change(steamIdInput, { target: { value: "76561198000000001" } });
     fireEvent.change(seasonSelect, { target: { value: "1" } });
     fireEvent.change(matchIdInput, { target: { value: "invalid-id" } });
+    fireEvent.change(ticketNumberInput, { target: { value: "TICKET-123" } });
 
     // Select team
     const teamSelect = screen.getByTestId("team-selector");

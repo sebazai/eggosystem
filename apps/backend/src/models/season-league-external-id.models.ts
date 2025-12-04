@@ -73,3 +73,78 @@ export const getActiveSeasonChampionshipIds = async (): Promise<
 
   return results;
 };
+
+export const getSeasonLeagueExternalIdsBySeasonId = async (
+  seasonId: number,
+  connection?: PoolConnection
+) => {
+  const query = `
+    SELECT 
+      slei.*,
+      st.name as stage_name
+    FROM SeasonLeagueExternalIds slei
+    JOIN Stages st ON slei.stage_id = st.id
+    WHERE slei.season_id = ?
+    ORDER BY slei.league_id, slei.stage_id
+  `;
+  const results = await runQuery<
+    Array<SeasonLeagueExternalId & { stage_name: string }>
+  >(query, [seasonId], connection);
+  return results;
+};
+
+export const getSeasonLeagueExternalIdById = async (
+  id: number,
+  connection?: PoolConnection
+) => {
+  const query = `SELECT * FROM SeasonLeagueExternalIds WHERE id = ?`;
+  const [result] = await runQuery<Array<SeasonLeagueExternalId | undefined>>(
+    query,
+    [id],
+    connection
+  );
+  return result;
+};
+
+export const updateSeasonLeagueExternalId = async (
+  id: number,
+  data: {
+    external_id: string;
+    external_league_name: string;
+    stage_id: number;
+    type: string;
+    manual_group: Nullable<number>;
+  },
+  connection?: PoolConnection
+) => {
+  const query = `
+    UPDATE SeasonLeagueExternalIds 
+    SET 
+      external_id = ?,
+      external_league_name = ?,
+      stage_id = ?,
+      type = ?,
+      manual_group = ?
+    WHERE id = ?
+  `;
+  await runQuery(
+    query,
+    [
+      data.external_id,
+      data.external_league_name,
+      data.stage_id,
+      data.type,
+      data.manual_group,
+      id
+    ],
+    connection
+  );
+};
+
+export const deleteSeasonLeagueExternalId = async (
+  id: number,
+  connection?: PoolConnection
+) => {
+  const query = `DELETE FROM SeasonLeagueExternalIds WHERE id = ?`;
+  await runQuery(query, [id], connection);
+};

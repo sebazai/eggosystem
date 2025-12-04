@@ -56,7 +56,8 @@ describe("addPlayerToTeamController", () => {
     body: {
       kana_elo: 200,
       calculus: { test: "data" }
-    }
+    },
+    query: {}
   } as unknown as RequestWithParams<{
     season_id: string;
     team_id: string;
@@ -182,7 +183,8 @@ describe("addPlayerToTeamController", () => {
       steam_id: EligiblePlayerForValidationSteamId,
       team_id: 1650,
       season_id: 14,
-      kana_elo: 200
+      kana_elo: 200,
+      context: "finalized"
     });
 
     expect(mockNext).not.toHaveBeenCalled();
@@ -465,7 +467,7 @@ describe("addSubstitutePlayerController", () => {
   it("should successfully add a substitute player with numeric match_id", async () => {
     const requestWithMatchId = {
       ...mockRequest,
-      body: { match_id: 123 }
+      body: { match_id: 123, ticket_number: "TICKET-123" }
     } as unknown as RequestWithParams<{
       season_id: string;
       team_id: string;
@@ -496,7 +498,14 @@ describe("addSubstitutePlayerController", () => {
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 123],
+      expect.arrayContaining([
+        14,
+        1650,
+        EligiblePlayerForValidationSteamId,
+        "substitute",
+        123,
+        "TICKET-123"
+      ]),
       undefined
     );
 
@@ -507,14 +516,16 @@ describe("addSubstitutePlayerController", () => {
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: 123
+      match_id: 123,
+      replaces_steam_id: null,
+      ticket_number: "TICKET-123"
     });
   });
 
   it("should validate match_id format when provided", async () => {
     const requestWithInvalidMatchId = {
       ...mockRequest,
-      body: { match_id: "invalid" }
+      body: { match_id: "invalid", ticket_number: "TICKET-123" }
     } as unknown as RequestWithParams<{
       season_id: string;
       team_id: string;
@@ -525,14 +536,14 @@ describe("addSubstitutePlayerController", () => {
     const validationError = new Error("Invalid match ID format: invalid");
     mockMatchUtils.resolveMatchId.mockRejectedValueOnce(validationError);
 
-    // Error will propagate to Express error handler
-    await expect(
-      addSubstitutePlayerController(
-        requestWithInvalidMatchId,
-        mockResponse,
-        mockNext
-      )
-    ).rejects.toThrow("Invalid match ID format: invalid");
+    // Error will propagate to Express error handler via next()
+    await addSubstitutePlayerController(
+      requestWithInvalidMatchId,
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(validationError);
 
     // Verify match ID resolution was attempted
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("invalid", 14);
@@ -552,7 +563,7 @@ describe("addSubstitutePlayerController", () => {
   it("should handle database transaction errors", async () => {
     const requestWithMatchId = {
       ...mockRequest,
-      body: { match_id: 123 }
+      body: { match_id: 123, ticket_number: "TICKET-123" }
     } as unknown as RequestWithParams<{
       season_id: string;
       team_id: string;
@@ -561,15 +572,21 @@ describe("addSubstitutePlayerController", () => {
 
     // Mock resolveMatchId to return the same numeric ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
+    // Mock ensureMatchIdAndTeamIdMatches COUNT query
+    mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
 
     // Mock database error
     const dbError = new Error("Database error");
     mockRunQuery.mockRejectedValueOnce(dbError);
 
-    // Error will propagate to Express error handler
-    await expect(
-      addSubstitutePlayerController(requestWithMatchId, mockResponse, mockNext)
-    ).rejects.toThrow("Database error");
+    // Error will propagate to Express error handler via next()
+    await addSubstitutePlayerController(
+      requestWithMatchId,
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(dbError);
 
     // Verify no eligibility check was performed
     expect(
@@ -584,7 +601,10 @@ describe("addSubstitutePlayerController", () => {
   it("should resolve Faceit room ID to match ID when provided", async () => {
     const requestWithFaceitRoomId = {
       ...mockRequest,
-      body: { match_id: "1-ff5e99c3-0765-4173-ba2a-398987b1b3ef" }
+      body: {
+        match_id: "1-ff5e99c3-0765-4173-ba2a-398987b1b3ef",
+        ticket_number: "TICKET-456"
+      }
     } as unknown as RequestWithParams<{
       season_id: string;
       team_id: string;
@@ -613,7 +633,14 @@ describe("addSubstitutePlayerController", () => {
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 456],
+      expect.arrayContaining([
+        14,
+        1650,
+        EligiblePlayerForValidationSteamId,
+        "substitute",
+        456,
+        "TICKET-456"
+      ]),
       undefined
     );
 
@@ -624,7 +651,9 @@ describe("addSubstitutePlayerController", () => {
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: 456
+      match_id: 456,
+      replaces_steam_id: null,
+      ticket_number: "TICKET-456"
     });
   });
 
@@ -632,7 +661,8 @@ describe("addSubstitutePlayerController", () => {
     const requestWithFaceitUrl = {
       ...mockRequest,
       body: {
-        match_id: "https://www.faceit.com/en/cs2/room/1-abc123-def456-ghi789"
+        match_id: "https://www.faceit.com/en/cs2/room/1-abc123-def456-ghi789",
+        ticket_number: "TICKET-789"
       }
     } as unknown as RequestWithParams<{
       season_id: string;
@@ -662,7 +692,14 @@ describe("addSubstitutePlayerController", () => {
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO SeasonTeamPlayers"),
-      [14, 1650, EligiblePlayerForValidationSteamId, "substitute", 789],
+      expect.arrayContaining([
+        14,
+        1650,
+        EligiblePlayerForValidationSteamId,
+        "substitute",
+        789,
+        "TICKET-789"
+      ]),
       undefined
     );
 
@@ -673,14 +710,16 @@ describe("addSubstitutePlayerController", () => {
       team_id: 1650,
       season_id: 14,
       role: "substitute",
-      match_id: 789
+      match_id: 789,
+      replaces_steam_id: null,
+      ticket_number: "TICKET-789"
     });
   });
 
   it("should handle match ID resolution errors", async () => {
     const requestWithInvalidMatchId = {
       ...mockRequest,
-      body: { match_id: "invalid-match-id" }
+      body: { match_id: "invalid-match-id", ticket_number: "TICKET-123" }
     } as unknown as RequestWithParams<{
       season_id: string;
       team_id: string;
@@ -693,14 +732,14 @@ describe("addSubstitutePlayerController", () => {
     );
     mockMatchUtils.resolveMatchId.mockRejectedValueOnce(resolutionError);
 
-    // Error will propagate to Express error handler
-    await expect(
-      addSubstitutePlayerController(
-        requestWithInvalidMatchId,
-        mockResponse,
-        mockNext
-      )
-    ).rejects.toThrow("Invalid match ID format: invalid-match-id");
+    // Error will propagate to Express error handler via next()
+    await addSubstitutePlayerController(
+      requestWithInvalidMatchId,
+      mockResponse,
+      mockNext
+    );
+
+    expect(mockNext).toHaveBeenCalledWith(resolutionError);
 
     // Verify match ID resolution was attempted
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith(

@@ -9,6 +9,7 @@ export interface FaceitPlayerDetails {
     [key: string]: {
       skill_level: number;
       faceit_elo: number;
+      game_player_id?: string;
     };
   };
   faceit_url: string;

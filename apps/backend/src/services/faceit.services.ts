@@ -30,6 +30,9 @@ import {
 } from "../models/match.models";
 import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
 import { getActiveSeasonChampionshipIds } from "../models/season-league-external-id.models";
+import { getReservationsWithEmailForMatch } from "../models/match-streams.models";
+import { sendMatchScheduleChangeEmail } from "./email.services";
+import { runQuery } from "../db/mysqlRunQuery";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
@@ -485,6 +488,79 @@ export const getFaceitPlayerDetailsBySteamId = async (
   return fetchFaceitPlayerData(steam_id, "cs2");
 };
 
+/**
+ * Gets player details from Faceit API by FaceIt user_id (player_id)
+ * @param faceit_user_id The FaceIt user ID of the player
+ * @returns Player details from Faceit or null if not found
+ */
+export const getFaceitPlayerDetails = async (
+  faceit_user_id: string
+): Promise<FaceitPlayerDetails | null> => {
+  const redisKey = `faceit-player-by-id-${faceit_user_id}`;
+  const redisData = await redisClient.get(redisKey);
+  if (redisData) {
+    return JSON.parse(redisData) as FaceitPlayerDetails;
+  }
+
+  const { controller, clearAbortTimeout } = createAbortController(
+    "getFaceitPlayerDetails"
+  );
+
+  try {
+    const webURL = `https://open.faceit.com/data/v4/players/${faceit_user_id}`;
+    const headers = {
+      Accept: "application/json",
+      Authorization: `Bearer ${process.env.FACEIT_API_KEY}`,
+      "User-Agent": "Kanaliiga-Eggosystem/1.0"
+    };
+
+    const response = await fetch(webURL, {
+      headers,
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      const duration = clearAbortTimeout();
+      logger.warn(
+        `[FaceIT] API returned ${response.status} ${response.statusText} for faceit_user_id: ${faceit_user_id} (${duration}ms)`
+      );
+
+      // Player not found
+      if (response.status === 404) {
+        logger.warn(
+          `[FaceIT] Player not found for faceit_user_id: ${faceit_user_id} (${duration}ms)`
+        );
+        return null;
+      }
+
+      throw new Error(
+        `Failed to fetch Faceit player data: ${response.statusText}`
+      );
+    }
+
+    const data: FaceitPlayerDetails = await response.json();
+    clearAbortTimeout();
+
+    // Fix the faceit_url by replacing {lang} placeholder with 'en'
+    if (data.faceit_url) {
+      data.faceit_url = data.faceit_url
+        .replace(/\{lang\}/g, "en")
+        .replace(/%7Blang%7D/g, "en");
+    }
+
+    // Cache the result in Redis
+    await redisClient.set(redisKey, JSON.stringify(data), "EX", expireInOneDay);
+    return data;
+  } catch (error) {
+    clearAbortTimeout();
+    logger.error(
+      `[FaceIT] Error fetching player data for faceit_user_id: ${faceit_user_id}:`,
+      error
+    );
+    return null;
+  }
+};
+
 export const getFaceITChampionshipDetails = async <T>(
   championship_id: string
 ) => {
@@ -552,6 +628,81 @@ export const getAllFaceITChampionshipSubscriptions = async (
     start: 0,
     end: allItems.length
   };
+};
+
+export interface ChampionshipTeamMember {
+  faceit_user_id: string;
+  nickname: string;
+  steam_id: string | null;
+}
+
+export interface ChampionshipTeamWithMembers {
+  team_id: string;
+  team_name: string;
+  members: ChampionshipTeamMember[];
+}
+
+/**
+ * Fetches all teams in a championship with full member details including Steam IDs
+ * @param championship_id The FaceIt championship ID
+ * @returns Array of teams with member details
+ */
+export const getChampionshipTeamsWithMembers = async (
+  championship_id: string
+): Promise<ChampionshipTeamWithMembers[]> => {
+  logger.info(
+    `[FaceIT] Fetching championship teams with members for championship: ${championship_id}`
+  );
+
+  const subscriptions =
+    await getAllFaceITChampionshipSubscriptions(championship_id);
+
+  const teams: ChampionshipTeamWithMembers[] = [];
+
+  for (const subscription of subscriptions.items) {
+    const teamMembers: ChampionshipTeamMember[] = [];
+
+    logger.info(
+      `[FaceIT] Processing team: ${subscription.team.name} with ${subscription.team.members.length} members`
+    );
+
+    // Get player details for each team member
+    for (const member of subscription.team.members) {
+      const playerDetails = await getFaceitPlayerDetails(member.user_id);
+
+      if (playerDetails?.games?.cs2) {
+        teamMembers.push({
+          faceit_user_id: member.user_id,
+          nickname: playerDetails.nickname,
+          steam_id: playerDetails.games.cs2.game_player_id || null
+        });
+        logger.info(
+          `[FaceIT] ✅ Got player details: ${playerDetails.nickname} (Steam ID: ${playerDetails.games.cs2.game_player_id})`
+        );
+      } else {
+        logger.warn(
+          `[FaceIT] ❌ Failed to get CS2 Steam ID for: ${member.nickname} (${member.user_id})`
+        );
+        teamMembers.push({
+          faceit_user_id: member.user_id,
+          nickname: member.nickname,
+          steam_id: null
+        });
+      }
+    }
+
+    logger.info(
+      `[FaceIT] Team ${subscription.team.name} final member count: ${teamMembers.length}/${subscription.team.members.length}`
+    );
+
+    teams.push({
+      team_id: subscription.team.team_id,
+      team_name: subscription.team.name,
+      members: teamMembers
+    });
+  }
+
+  return teams;
 };
 
 export const getDemoDownloadUrl = async (matchGameDemoUrl: string) => {
@@ -649,14 +800,34 @@ export const syncMatchSchedule = async (
       faceitSchedule.start_time
     );
 
+    // Notify reservations for first match
+    await notifyReservationsOfScheduleChange(
+      firstMatch.id,
+      first_match_date,
+      first_match_time,
+      faceitSchedule.match_date,
+      faceitSchedule.start_time
+    );
+
     // Second match gets +1 hour from the first match
     const secondMatchSchedule = adjustMatchDateTime(
       faceitSchedule.match_date,
       faceitSchedule.start_time,
       { hours: 1 }
     );
+    const second_match_old_date = databaseMatches[1].match_date;
+    const second_match_old_time = databaseMatches[1].start_time;
     await updateMatchDateAndStartTime(
       databaseMatches[1].id,
+      secondMatchSchedule.match_date,
+      secondMatchSchedule.start_time
+    );
+
+    // Notify reservations for second match
+    await notifyReservationsOfScheduleChange(
+      databaseMatches[1].id,
+      second_match_old_date,
+      second_match_old_time,
       secondMatchSchedule.match_date,
       secondMatchSchedule.start_time
     );
@@ -671,10 +842,99 @@ export const syncMatchSchedule = async (
       faceitSchedule.start_time
     );
 
+    // Notify reservations
+    await notifyReservationsOfScheduleChange(
+      databaseMatches[0].id,
+      first_match_date,
+      first_match_time,
+      faceitSchedule.match_date,
+      faceitSchedule.start_time
+    );
+
     logger.info(
       `Updated single match ${databaseMatches[0].id} schedule: ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
     );
   }
+};
+
+/**
+ * Notifies casters with reservations when a match schedule changes
+ */
+const notifyReservationsOfScheduleChange = async (
+  matchId: number,
+  oldDate: string,
+  oldTime: string,
+  newDate: string,
+  newTime: string
+): Promise<void> => {
+  try {
+    // Get all reservations for this match with caster emails
+    const reservations = await getReservationsWithEmailForMatch(matchId);
+
+    if (reservations.length === 0) {
+      logger.debug(`No reservations found for match ${matchId}`);
+      return;
+    }
+
+    // Get team names for the match
+    const teamNames = await getMatchTeamNames(matchId);
+
+    // Send email to each caster
+    for (const reservation of reservations) {
+      if (!reservation.email) {
+        logger.warn(
+          `No email found for reservation ${reservation.id}, skipping notification`
+        );
+        continue;
+      }
+
+      try {
+        await sendMatchScheduleChangeEmail(reservation.email, {
+          teamNames,
+          oldDate,
+          oldTime,
+          newDate,
+          newTime,
+          reservationHash: reservation.hash
+        });
+
+        logger.info(
+          `Sent schedule change notification to ${reservation.email} for match ${matchId}`
+        );
+      } catch (emailError) {
+        logger.error(
+          `Failed to send schedule change email to ${reservation.email}:`,
+          emailError
+        );
+      }
+    }
+  } catch (error) {
+    logger.error(`Error notifying reservations for match ${matchId}:`, error);
+  }
+};
+
+/**
+ * Gets team names for a match in "Team A vs Team B" format
+ */
+const getMatchTeamNames = async (matchId: number): Promise<string> => {
+  const teams = await runQuery<Array<{ name: string }>>(
+    `SELECT t.name 
+     FROM Teams t
+     JOIN MatchTeams mt ON t.id = mt.team_id
+     WHERE mt.match_id = ?
+     ORDER BY t.name`,
+    [matchId]
+  );
+
+  if (teams.length === 0) {
+    return "Unknown Teams";
+  }
+
+  if (teams.length === 1) {
+    return teams[0].name;
+  }
+
+  return `${teams[0].name} vs ${teams[1].name}`;
 };
 
 export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
