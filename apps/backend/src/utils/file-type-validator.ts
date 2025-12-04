@@ -10,6 +10,7 @@ export async function validateImageBuffer(
   // NOTE: The type definitions say fromBuffer is a named export, but at runtime
   // it's actually under default.fromBuffer. This is a bug in file-type's types.
   // We use 'as any' to work around the incorrect type definitions.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fileType = (await import("file-type")) as any;
   return await fileType.default.fromBuffer(buffer);
 }
