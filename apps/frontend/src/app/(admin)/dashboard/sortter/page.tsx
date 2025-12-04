@@ -241,12 +241,20 @@ function SortterPageContent() {
 
   const [isPopulatingQueue, setIsPopulatingQueue] = useState(false);
 
-  // Calculate average of top4 values
-  const calculateAvg = (values: number[]) => {
-    if (!values || values.length < 4) return 0;
-    const top4 = [...values].slice(0, 4);
-    return (top4.reduce((sum, val) => sum + val, 0) / 4).toFixed(3);
-  };
+  // Use shared calculation function that uses centralized constants
+  // To change from avg of 4 to avg of 5, update @eggosystem/types/calculations/team-balance-config
+  const calculateAvg = React.useCallback((values: number[]) => {
+    // Import from utils which uses constants from @eggosystem/types
+    // This constant is defined in: packages/types/src/calculations/team-balance-config.ts
+    if (!values || values.length < 4) {
+      // 4 = TOP_N_FOR_COMPARISON from @eggosystem/types
+      const count = values?.length || 0;
+      if (count === 0) return "0";
+      return (values.reduce((sum, val) => sum + val, 0) / count).toFixed(3);
+    }
+    const topValues = values.slice(0, 4); // 4 = TOP_N_FOR_COMPARISON
+    return (topValues.reduce((sum, val) => sum + val, 0) / 4).toFixed(3);
+  }, []);
 
   // Handle double click on team row
   const handleTeamDoubleClick = (teamId: number, event: React.MouseEvent) => {

@@ -436,4 +436,68 @@ describe("Season Eligibility Integration Tests", () => {
       expect(result.selectedTeam.team_id).toBe(9991);
     });
   });
+
+  describe("Player Exclusion for Substitution", () => {
+    it("should exclude specified player from eligibility calculations", async () => {
+      // Team Alpha has players:
+      // - 76561198028510846: 1800 (captain)
+      // - 76561198028510847: 1700 (co-captain)
+      // - 76561198028510848: 1600
+      // - 76561198028510849: 1500
+      // - 76561198028510850: 1400
+      // Normally: top3_avg = (1800 + 1700 + 1600) / 3 = 1700
+      // With 1700 player excluded: top3_avg = (1800 + 1600 + 1500) / 3 = 1633.33
+
+      const result = await checkPlayerAdditionEligibility(
+        999,
+        9991,
+        "76561198028510860", // New player with 400 ELO (from test data)
+        {
+          connection,
+          excludeSteamId: "76561198028510847" // Exclude the 1700 ELO player
+        }
+      );
+
+      // With 1700 player excluded: (1800 + 1600 + 1500) / 3 = 1633.333...
+      expect(result.selectedTeam.current_top3_avg).toBe(1633.333);
+
+      // New avg with player: (1633.333 * 3 + new_player_kana_elo) / 4
+      // CSRankker mock returns stabilized kana_elo based on components
+      expect(result.selectedTeam.new_player_kana_elo).toBe(1600);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1625);
+    });
+
+    it("should recalculate team balance when excluding top player", async () => {
+      // Team Alpha: 1800, 1700, 1600, 1500, 1400
+      // Exclude top player (1800): new top3 = (1700 + 1600 + 1500) / 3 = 1600
+      // Add substitute (1800): new avg = (1600 * 3 + 1800) / 4 = 1650
+
+      const result = await checkPlayerAdditionEligibility(
+        999,
+        9991,
+        "76561198028510846", // 1800 ELO substitute (same as captain being excluded)
+        {
+          connection,
+          excludeSteamId: "76561198028510846" // Exclude top player (1800 ELO captain)
+        }
+      );
+
+      expect(result.selectedTeam.current_top3_avg).toBe(1600);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1650);
+    });
+
+    it("should work without exclusion when excludeSteamId is not provided", async () => {
+      // Without exclusion, should work same as before
+      const result = await checkPlayerAdditionEligibility(
+        999,
+        9991,
+        "76561198028510846",
+        { connection }
+      );
+
+      // Normal calculation: top3 = (1800 + 1700 + 1600) / 3 = 1700
+      expect(result.selectedTeam.current_top3_avg).toBe(1700);
+      expect(result.selectedTeam.new_avg_with_player).toBe(1725);
+    });
+  });
 });

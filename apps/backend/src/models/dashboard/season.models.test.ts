@@ -110,7 +110,9 @@ describe("Season Models", () => {
       expect(mockRunQuery.mock.calls[2][0]).toContain(
         "SELECT * FROM Seasons WHERE id = ?"
       );
-      expect(mockRunQuery.mock.calls[3][0]).toContain("WITH TeamTopPlayers AS");
+      expect(mockRunQuery.mock.calls[3][0]).toContain(
+        "WITH FilteredPlayers AS"
+      );
       expect(mockRunQuery.mock.calls[4][0]).toContain(
         "WITH TeamPlayersKanaElo AS"
       );

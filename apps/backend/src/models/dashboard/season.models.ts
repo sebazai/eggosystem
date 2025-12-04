@@ -5,6 +5,13 @@ import {
 import { type PoolConnection } from "mysql2/promise";
 import { runQuery } from "../../db/mysqlRunQuery";
 import { ensureSeasonMaxPlayersForTeam } from "../../services/season.services";
+import {
+  buildCurrentAvgSQL,
+  buildComparisonAvgSQL,
+  calculateNewTeamAverage,
+  canAddPlayerToTeam,
+  SQL_COLUMNS
+} from "../../utils/team-calculations";
 
 /**
  * Gets stabilized kana_elo from CSRankker service
@@ -85,6 +92,8 @@ async function fetchCSRankkerComponents(
  * @param seasonId The season ID
  * @param teamId The team ID
  * @param newPlayerSteamId The steam ID of the player to check
+ * @param options.connection Optional database connection for transactions
+ * @param options.excludeSteamId Optional steam ID to exclude from calculations (for substitution scenarios)
  * @param options Additional options including connection and context
  */
 export const checkPlayerAdditionEligibility = async (
@@ -93,6 +102,7 @@ export const checkPlayerAdditionEligibility = async (
   newPlayerSteamId: string,
   options?: {
     connection?: PoolConnection;
+    excludeSteamId?: string;
     context?: "finalized" | "registration";
   }
 ): Promise<TeamEligibilityResult> => {
@@ -168,25 +178,39 @@ export const checkPlayerAdditionEligibility = async (
   const csrankkerComponents = await fetchCSRankkerComponents(newPlayerSteamId);
 
   // Get the selected team's current top players + new player analysis
+  // If excludeSteamId is provided, we exclude that player from calculations (for substitution scenarios)
+  const excludeClause = options?.excludeSteamId ? "AND strp.steam_id != ?" : "";
+  const queryParams: (number | string)[] = options?.excludeSteamId
+    ? [seasonId, seasonId, teamId, options.excludeSteamId]
+    : [seasonId, seasonId, teamId];
+
   const selectedTeamQuery = `
-      WITH TeamTopPlayers AS (
+      WITH FilteredPlayers AS (
         SELECT
           t.id AS team_id,
           t.name AS team_name,
-          spr.kana_elo,
-          ROW_NUMBER() OVER (ORDER BY spr.kana_elo DESC) AS player_rank
+          spr.kana_elo
         FROM Teams t
         JOIN SeasonTeamPlayers strp ON strp.team_id = t.id AND strp.season_id = ? AND strp.role = 'primary'
         JOIN SeasonLeagueTeams str ON str.team_id = t.id AND str.season_id = strp.season_id
         JOIN SeasonPlayerRanks spr ON spr.steam_id = strp.steam_id AND spr.season_id = ?
         WHERE t.id = ?
           AND spr.kana_elo IS NOT NULL
+          ${excludeClause}
+      ),
+      TeamTopPlayers AS (
+        SELECT
+          team_id,
+          team_name,
+          kana_elo,
+          ROW_NUMBER() OVER (ORDER BY kana_elo DESC) AS player_rank
+        FROM FilteredPlayers
       )
       SELECT
         ttp.team_id,
         ttp.team_name,
-        ROUND(AVG(CASE WHEN ttp.player_rank <= 3 THEN ttp.kana_elo ELSE NULL END), 3) AS current_top3_avg,
-        ROUND(AVG(CASE WHEN ttp.player_rank <= 4 THEN ttp.kana_elo ELSE NULL END), 3) AS current_top4_avg
+        ${buildCurrentAvgSQL()} AS ${SQL_COLUMNS.CURRENT_TOP_AVG},
+        ${buildComparisonAvgSQL("ttp.kana_elo")} AS ${SQL_COLUMNS.CURRENT_COMPARISON_AVG}
       FROM TeamTopPlayers ttp
       GROUP BY ttp.team_id, ttp.team_name
     `;
@@ -195,10 +219,9 @@ export const checkPlayerAdditionEligibility = async (
     Array<{
       team_id: number;
       team_name: string;
-      current_top3_avg: number;
-      current_top4_avg: number;
+      [key: string]: number | string; // Dynamic column names based on constants
     }>
-  >(selectedTeamQuery, [seasonId, seasonId, teamId], options?.connection);
+  >(selectedTeamQuery, queryParams, options?.connection);
 
   if (!selectedTeamResult) {
     throw new Error(
@@ -206,13 +229,21 @@ export const checkPlayerAdditionEligibility = async (
     );
   }
 
-  // Calculate new average with the stabilized kana_elo
-  const newAvgWithPlayer =
-    Math.round(
-      ((selectedTeamResult.current_top3_avg * 3 + stabilizedKanaElo) / 4) * 1000
-    ) / 1000;
+  // Extract averages using dynamic column names
+  const currentTopAvg = selectedTeamResult[
+    SQL_COLUMNS.CURRENT_TOP_AVG
+  ] as number;
+  const currentComparisonAvg = selectedTeamResult[
+    SQL_COLUMNS.CURRENT_COMPARISON_AVG
+  ] as number;
 
-  // Get top 3 teams in the same league with their avg4 values
+  // Calculate new average with the stabilized kana_elo using shared utility
+  const newAvgWithPlayer = calculateNewTeamAverage(
+    currentTopAvg,
+    stabilizedKanaElo
+  );
+
+  // Get top 3 teams in the same league with their comparison averages
   const topTeamsQuery = `
       WITH TeamPlayersKanaElo AS (
         SELECT
@@ -228,22 +259,22 @@ export const checkPlayerAdditionEligibility = async (
           AND spr.kana_elo IS NOT NULL
         ORDER BY t.id, spr.kana_elo DESC
       ),
-      TeamAvg4 AS (
+      TeamAvgComparison AS (
         SELECT
           team_id,
           team_name,
-          ROUND(AVG(CASE WHEN player_rank <= 4 THEN kana_elo ELSE NULL END), 3) AS avg4
+          ${buildComparisonAvgSQL()} AS ${SQL_COLUMNS.COMPARISON_AVG}
         FROM TeamPlayersKanaElo
         GROUP BY team_id, team_name
       )
       SELECT
         team_id,
         team_name,
-        avg4,
-        ROW_NUMBER() OVER (ORDER BY avg4 DESC) AS rank
-      FROM TeamAvg4
-      WHERE avg4 IS NOT NULL
-      ORDER BY avg4 DESC
+        ${SQL_COLUMNS.COMPARISON_AVG},
+        ROW_NUMBER() OVER (ORDER BY ${SQL_COLUMNS.COMPARISON_AVG} DESC) AS rank
+      FROM TeamAvgComparison
+      WHERE ${SQL_COLUMNS.COMPARISON_AVG} IS NOT NULL
+      ORDER BY ${SQL_COLUMNS.COMPARISON_AVG} DESC
       LIMIT 3
     `;
 
@@ -251,14 +282,14 @@ export const checkPlayerAdditionEligibility = async (
     Array<{
       team_id: number;
       team_name: string;
-      avg4: number;
+      [key: string]: number | string; // Dynamic column names
       rank: number;
     }>
   >(topTeamsQuery, [seasonId, leagueId, teamId], options?.connection);
 
-  // Check if the selected team's new average would be lower than the top team's avg4
-  const topTeamAvg4 = topTeams[0]?.avg4 || 0;
-  const canAddPlayer = newAvgWithPlayer <= topTeamAvg4;
+  // Check if the selected team's new average would be within acceptable range
+  const topTeamAvg = (topTeams[0]?.[SQL_COLUMNS.COMPARISON_AVG] as number) || 0;
+  const canAddPlayer = canAddPlayerToTeam(newAvgWithPlayer, topTeamAvg);
 
   // Get league name for display purposes only
   const leagueNameQuery = `
@@ -273,17 +304,25 @@ export const checkPlayerAdditionEligibility = async (
     options?.connection
   );
 
+  // Map results to expected format with backward-compatible column names
+  const topTeamsFormatted = topTeams.map((team) => ({
+    team_id: team.team_id,
+    team_name: team.team_name,
+    avg4: team[SQL_COLUMNS.COMPARISON_AVG] as number, // Keep as avg4 for backward compatibility
+    rank: team.rank
+  }));
+
   return {
     selectedTeam: {
       team_id: selectedTeamResult.team_id,
-      team_name: selectedTeamResult.team_name,
-      current_top3_avg: selectedTeamResult.current_top3_avg,
-      current_top4_avg: selectedTeamResult.current_top4_avg,
+      team_name: selectedTeamResult.team_name as string,
+      current_top3_avg: currentTopAvg,
+      current_top4_avg: currentComparisonAvg, // Keep name for backward compatibility
       new_player_kana_elo: stabilizedKanaElo,
       new_avg_with_player: newAvgWithPlayer,
       csrankker_components: csrankkerComponents
     },
-    topTeamsInLeague: topTeams,
+    topTeamsInLeague: topTeamsFormatted,
     canAddPlayer,
     league_name: leagueNameResult.league_name
   };

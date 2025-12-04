@@ -7,13 +7,20 @@ import useSWR from "swr";
 export const usePlayerTeamEligibility = (
   seasonId: string | null,
   teamId: string | null,
-  steamId: string | null
+  steamId: string | null,
+  excludeSteamId?: string | null
 ) => {
   // Only create the key if all required parameters are present
-  const key =
+  const baseUrl =
     seasonId && teamId && steamId
       ? `/api/v1/dashboard/seasons/${seasonId}/team/${teamId}/player/${steamId}/eligibility`
       : null;
+
+  // Add excludeSteamId as query parameter if provided
+  const key =
+    baseUrl && excludeSteamId
+      ? `${baseUrl}?excludeSteamId=${excludeSteamId}`
+      : baseUrl;
 
   const { data, error, isValidating, isLoading, mutate } =
     useSWR<TeamEligibilityResult>(key, clientApiFetch, {

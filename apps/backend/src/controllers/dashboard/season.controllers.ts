@@ -57,6 +57,9 @@ export const getTeamsForSeasonController = async (
 /**
  * Controller to check if a player can be added to a team
  * Returns analysis of the player's impact on team balance
+ *
+ * Query Parameters:
+ * - excludeSteamId (optional): Steam ID of player to exclude from calculations (for substitution scenarios)
  */
 export const checkPlayerAdditionEligibilityController = async (
   req: RequestWithParams<{
@@ -69,11 +72,13 @@ export const checkPlayerAdditionEligibilityController = async (
   const seasonId = Number(req.params.season_id);
   const teamId = Number(req.params.team_id);
   const steamId = req.params.steam_id;
+  const excludeSteamId = req.query.excludeSteamId as string | undefined;
 
   const eligibility = await checkPlayerAdditionEligibility(
     seasonId,
     teamId,
-    steamId
+    steamId,
+    { excludeSteamId }
   );
   res.json(eligibility);
 };

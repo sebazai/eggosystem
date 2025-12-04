@@ -3,6 +3,7 @@ import {
   getTeamValuesController,
   getTeamValueByIdController,
   getTeamPlayerValuesController,
+  getTeamPlayerValuesLiveController,
   getTeamFlagsController,
   refreshTeamFlagsFromDatabaseController,
   refreshTeamFlagsForSeasonController
@@ -38,6 +39,13 @@ router.get(
   "/season/:season_id/team/:team_id/playervalues",
   validateNumericParams(),
   getTeamPlayerValuesController
+);
+
+// GET /api/v1/dashboard/sortter/season/:season/team/:team/players
+router.get(
+  "/season/:season_id/team/:team_id/players",
+  validateNumericParams(),
+  getTeamPlayerValuesLiveController
 );
 
 // POST /api/v1/dashboard/sortter/season/:season_id/populate-kanaelo-queue

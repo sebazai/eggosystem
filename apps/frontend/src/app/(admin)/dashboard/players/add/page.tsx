@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Users } from "lucide-react";
 import { extractErrorMessage } from "@/lib/apiClient";
 
 import { useActiveSignupOrActiveSeasonForApp } from "@/hooks/data/useActiveSignupOrActiveSeasonForApp";
@@ -34,6 +34,8 @@ import { useAddPlayer } from "@/hooks/data/useAddPlayer";
 import { PlayerValidationDisplay } from "@/components/dashboard/PlayerValidationDisplay";
 import { PlayerValidationForm } from "@/components/dashboard/PlayerValidationForm";
 import { convertSteamIdToSteamId64 } from "@/lib/utils";
+import { LiveTeamPlayersPopup } from "@/components/dashboard/LiveTeamPlayersPopup";
+import { useTeamPlayersLive } from "@/hooks/data/dashboard/useTeamPlayersLive";
 
 export default function AddPlayerPage() {
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>("");
@@ -46,6 +48,8 @@ export default function AddPlayerPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [apiError, setApiError] = useState<React.ReactNode | null>(null);
   const [skipProfileValidation, setSkipProfileValidation] = useState(false);
+  const [showRosterPopup, setShowRosterPopup] = useState(false);
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
 
   // Get all seasons
   const { seasons, isLoading: isLoadingSeasons } = useAllSeasons();
@@ -92,6 +96,16 @@ export default function AddPlayerPage() {
 
   // Add player hook
   const { addPlayer } = useAddPlayer();
+
+  // Live team roster hook - uses current active season, not selected season
+  const {
+    players: liveTeamPlayers,
+    isLoading: isLoadingLiveRoster,
+    mutate: mutateLiveRoster
+  } = useTeamPlayersLive(
+    activeSignupSeason?.season_id ?? null,
+    selectedTeamId ? Number(selectedTeamId) : null
+  );
 
   // Set selected season to active season when it loads
   useEffect(() => {
@@ -341,6 +355,28 @@ export default function AddPlayerPage() {
                     )}
                   </SelectContent>
                 </Select>
+
+                {/* View Team Roster Button */}
+                {selectedTeamId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setPopupPosition({
+                        x: rect.left,
+                        y: rect.bottom + 10
+                      });
+                      setShowRosterPopup(true);
+                      mutateLiveRoster();
+                    }}
+                    className="w-full mt-2"
+                    data-testid="view-roster-button"
+                  >
+                    <Users className="mr-2 h-4 w-4" />
+                    View Current Team Roster
+                  </Button>
+                )}
               </div>
 
               {/* Skip Profile Validation Checkbox - Show when profile validation fails but ranks/hours are present */}
@@ -864,6 +900,21 @@ export default function AddPlayerPage() {
             )}
         </div>
       </div>
+
+      {/* Live Team Roster Popup */}
+      {showRosterPopup &&
+        selectedTeamId &&
+        selectedTeam &&
+        activeSignupSeason && (
+          <LiveTeamPlayersPopup
+            players={liveTeamPlayers || []}
+            teamName={selectedTeam.team_name}
+            seasonName={activeSignupSeason.full_name}
+            position={popupPosition}
+            isLoading={isLoadingLiveRoster}
+            onClose={() => setShowRosterPopup(false)}
+          />
+        )}
     </WithRoleProtection>
   );
 }
