@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { uploadTeamLogoController } from "./team-logo.controllers";
 import * as imageUploadService from "../services/image-upload.services";
 import * as teamLogoModels from "../models/team-logo.models";
+import * as fileTypeValidator from "../utils/file-type-validator";
 import type {
   UnauthorizedError as _UnauthorizedError,
   ForbiddenError as _ForbiddenError,
@@ -10,6 +11,7 @@ import type {
 
 jest.mock("../services/image-upload.services");
 jest.mock("../models/team-logo.models");
+jest.mock("../utils/file-type-validator");
 
 const mockUploadImageToService =
   imageUploadService.uploadImageToService as jest.MockedFunction<
@@ -26,6 +28,10 @@ const mockUpdateTeamLogoPhash =
 const mockUpdateTeamName = teamLogoModels.updateTeamName as jest.MockedFunction<
   typeof teamLogoModels.updateTeamName
 >;
+const mockValidateImageBuffer =
+  fileTypeValidator.validateImageBuffer as jest.MockedFunction<
+    typeof fileTypeValidator.validateImageBuffer
+  >;
 
 describe("Team Logo Controllers", () => {
   let mockReq: Partial<Request>;
@@ -40,6 +46,12 @@ describe("Team Logo Controllers", () => {
     // Set up environment variables
     process.env.IMAGE_SERVICE_BASE_URL = "https://img.kanaliiga.fi";
     process.env.IMAGE_SERVICE_API_KEY = "test-api-key";
+
+    // Mock file-type validator to return valid PNG by default
+    mockValidateImageBuffer.mockResolvedValue({
+      ext: "png",
+      mime: "image/png"
+    });
 
     mockJson = jest.fn().mockReturnThis();
     mockStatus = jest.fn().mockReturnThis();
@@ -95,10 +107,7 @@ describe("Team Logo Controllers", () => {
         mockNext
       );
 
-      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(
-        "76561198000000001",
-        1
-      );
+      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(123, 1);
       expect(mockUploadImageToService).toHaveBeenCalled();
       expect(mockUpdateTeamLogoPhash).toHaveBeenCalledWith(1, "abc123def456");
       expect(mockJson).toHaveBeenCalledWith({
@@ -127,7 +136,7 @@ describe("Team Logo Controllers", () => {
       expect(mockIsUserTeamCaptain).not.toHaveBeenCalled();
     });
 
-    it("should return error if user is not authenticated via Steam", async () => {
+    it("should work with non-Steam providers", async () => {
       mockReq.auth = {
         account_id: 123,
         provider_id: "discord-123",
@@ -137,19 +146,22 @@ describe("Team Logo Controllers", () => {
         provider: "discord"
       };
 
+      mockIsUserTeamCaptain.mockResolvedValue(true);
+      mockUpdateTeamName.mockResolvedValue(undefined);
+      mockReq.body = {
+        team_id: 1,
+        team_name: "Test Team"
+      };
+
       await uploadTeamLogoController(
         mockReq as Request,
         mockRes as Response,
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "Unauthorized",
-          status: 401
-        })
-      );
-      expect(mockIsUserTeamCaptain).not.toHaveBeenCalled();
+      // Should work fine with non-Steam providers
+      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(123, 1);
+      expect(mockJson).toHaveBeenCalled();
     });
 
     it("should return error if team_id is missing", async () => {
@@ -199,14 +211,10 @@ describe("Team Logo Controllers", () => {
         mockNext
       );
 
-      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(
-        "76561198000000001",
-        1
-      );
+      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(123, 1);
       expect(mockNext).toHaveBeenCalledWith(
         expect.objectContaining({
-          message:
-            "Only team captains and co-captains can update team information",
+          message: "Only team captains can update team information",
           status: 403
         })
       );
@@ -268,10 +276,12 @@ describe("Team Logo Controllers", () => {
     it("should return error if image data is invalid", async () => {
       mockReq.body = {
         team_id: 1,
-        image_data: "invalid-base64-data!!!"
+        image_data: "data:image/png;base64,invalid!!!"
       };
 
       mockIsUserTeamCaptain.mockResolvedValue(true);
+      // Mock validateImageBuffer to return undefined for invalid data
+      mockValidateImageBuffer.mockResolvedValue(undefined);
 
       await uploadTeamLogoController(
         mockReq as Request,
@@ -280,7 +290,11 @@ describe("Team Logo Controllers", () => {
       );
 
       // Should handle the error gracefully
-      expect(mockNext).toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("unable to detect file type")
+        })
+      );
     });
 
     it("should handle upload service errors", async () => {
@@ -347,10 +361,7 @@ describe("Team Logo Controllers", () => {
         mockNext
       );
 
-      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(
-        "76561198000000001",
-        1
-      );
+      expect(mockIsUserTeamCaptain).toHaveBeenCalledWith(123, 1);
       expect(mockUpdateTeamName).toHaveBeenCalledWith(1, "New Team Name");
       expect(mockUploadImageToService).not.toHaveBeenCalled();
       expect(mockUpdateTeamLogoPhash).not.toHaveBeenCalled();
@@ -448,6 +459,8 @@ describe("Team Logo Controllers", () => {
       };
 
       mockIsUserTeamCaptain.mockResolvedValue(true);
+      // Mock validateImageBuffer to return undefined for invalid data
+      mockValidateImageBuffer.mockResolvedValue(undefined);
 
       await uploadTeamLogoController(
         mockReq as Request,
@@ -456,7 +469,11 @@ describe("Team Logo Controllers", () => {
       );
 
       // Should handle the error gracefully
-      expect(mockNext).toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining("unable to detect file type")
+        })
+      );
     });
 
     it("should handle very long team names", async () => {
