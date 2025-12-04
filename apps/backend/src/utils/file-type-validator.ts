@@ -7,7 +7,9 @@ export async function validateImageBuffer(
   buffer: Buffer
 ): Promise<{ ext: string; mime: string } | undefined> {
   // Dynamic import of file-type (ESM module)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { fileTypeFromBuffer } = (await import("file-type")) as any;
-  return await fileTypeFromBuffer(buffer);
+  // NOTE: The type definitions say fromBuffer is a named export, but at runtime
+  // it's actually under default.fromBuffer. This is a bug in file-type's types.
+  // We use 'as any' to work around the incorrect type definitions.
+  const fileType = (await import("file-type")) as any;
+  return await fileType.default.fromBuffer(buffer);
 }
