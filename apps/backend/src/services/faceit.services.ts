@@ -30,6 +30,9 @@ import {
 } from "../models/match.models";
 import { fetchAllItemsWithPagination } from "../utils/pagination-utils";
 import { getActiveSeasonChampionshipIds } from "../models/season-league-external-id.models";
+import { getReservationsWithEmailForMatch } from "../models/match-streams.models";
+import { sendMatchScheduleChangeEmail } from "./email.services";
+import { runQuery } from "../db/mysqlRunQuery";
 
 export const convertFaceitGameToAppId = (game: string) => {
   switch (game) {
@@ -797,14 +800,34 @@ export const syncMatchSchedule = async (
       faceitSchedule.start_time
     );
 
+    // Notify reservations for first match
+    await notifyReservationsOfScheduleChange(
+      firstMatch.id,
+      first_match_date,
+      first_match_time,
+      faceitSchedule.match_date,
+      faceitSchedule.start_time
+    );
+
     // Second match gets +1 hour from the first match
     const secondMatchSchedule = adjustMatchDateTime(
       faceitSchedule.match_date,
       faceitSchedule.start_time,
       { hours: 1 }
     );
+    const second_match_old_date = databaseMatches[1].match_date;
+    const second_match_old_time = databaseMatches[1].start_time;
     await updateMatchDateAndStartTime(
       databaseMatches[1].id,
+      secondMatchSchedule.match_date,
+      secondMatchSchedule.start_time
+    );
+
+    // Notify reservations for second match
+    await notifyReservationsOfScheduleChange(
+      databaseMatches[1].id,
+      second_match_old_date,
+      second_match_old_time,
       secondMatchSchedule.match_date,
       secondMatchSchedule.start_time
     );
@@ -819,10 +842,99 @@ export const syncMatchSchedule = async (
       faceitSchedule.start_time
     );
 
+    // Notify reservations
+    await notifyReservationsOfScheduleChange(
+      databaseMatches[0].id,
+      first_match_date,
+      first_match_time,
+      faceitSchedule.match_date,
+      faceitSchedule.start_time
+    );
+
     logger.info(
       `Updated single match ${databaseMatches[0].id} schedule: ${faceitSchedule.match_date} ${faceitSchedule.start_time}`
     );
   }
+};
+
+/**
+ * Notifies casters with reservations when a match schedule changes
+ */
+const notifyReservationsOfScheduleChange = async (
+  matchId: number,
+  oldDate: string,
+  oldTime: string,
+  newDate: string,
+  newTime: string
+): Promise<void> => {
+  try {
+    // Get all reservations for this match with caster emails
+    const reservations = await getReservationsWithEmailForMatch(matchId);
+
+    if (reservations.length === 0) {
+      logger.debug(`No reservations found for match ${matchId}`);
+      return;
+    }
+
+    // Get team names for the match
+    const teamNames = await getMatchTeamNames(matchId);
+
+    // Send email to each caster
+    for (const reservation of reservations) {
+      if (!reservation.email) {
+        logger.warn(
+          `No email found for reservation ${reservation.id}, skipping notification`
+        );
+        continue;
+      }
+
+      try {
+        await sendMatchScheduleChangeEmail(reservation.email, {
+          teamNames,
+          oldDate,
+          oldTime,
+          newDate,
+          newTime,
+          reservationHash: reservation.hash
+        });
+
+        logger.info(
+          `Sent schedule change notification to ${reservation.email} for match ${matchId}`
+        );
+      } catch (emailError) {
+        logger.error(
+          `Failed to send schedule change email to ${reservation.email}:`,
+          emailError
+        );
+      }
+    }
+  } catch (error) {
+    logger.error(`Error notifying reservations for match ${matchId}:`, error);
+  }
+};
+
+/**
+ * Gets team names for a match in "Team A vs Team B" format
+ */
+const getMatchTeamNames = async (matchId: number): Promise<string> => {
+  const teams = await runQuery<Array<{ name: string }>>(
+    `SELECT t.name 
+     FROM Teams t
+     JOIN MatchTeams mt ON t.id = mt.team_id
+     WHERE mt.match_id = ?
+     ORDER BY t.name`,
+    [matchId]
+  );
+
+  if (teams.length === 0) {
+    return "Unknown Teams";
+  }
+
+  if (teams.length === 1) {
+    return teams[0].name;
+  }
+
+  return `${teams[0].name} vs ${teams[1].name}`;
 };
 
 export const syncAllFaceitChampionshipMatches = async (): Promise<void> => {
