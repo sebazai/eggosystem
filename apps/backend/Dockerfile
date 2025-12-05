@@ -18,8 +18,8 @@ FROM base AS builder
 # Install dependencies first - this layer will be cached if package.json files haven't changed
 ARG CI=false
 RUN if [ "${CI}" = "true" ]; then \
-      pnpm config set registry http://172.17.0.1:4873; \
-    fi
+  pnpm config set registry http://172.17.0.1:4873; \
+  fi
 RUN pnpm install --frozen-lockfile
 # Build types first
 RUN pnpm build --filter=@eggosystem/types
@@ -51,13 +51,10 @@ ENV OTEL_EXPORTER_OTLP_LOGS_PROTOCOL="http/json"
 # We need to copy these for backend express etc
 COPY --from=leaner --chown=node:node /usr/src/app/node_modules ./node_modules
 COPY --from=leaner --chown=node:node /usr/src/app/apps/backend/node_modules ./apps/backend/node_modules
-# Copy the types package and its dist folder
+# Copy the types package with its dependencies
+COPY --from=leaner --chown=node:node /usr/src/app/packages/types/node_modules ./packages/types/node_modules
 COPY --from=builder --chown=node:node /usr/src/app/packages/types/dist ./packages/types/dist
 COPY --from=builder --chown=node:node /usr/src/app/packages/types/package.json ./packages/types/
-# Explicitly make zod available to the types package
-RUN npm install -g zod@3.24.2
-RUN mkdir -p ./packages/types/node_modules
-RUN ln -s /usr/local/lib/node_modules/zod ./packages/types/node_modules/zod
 # Copy app dist
 COPY --from=builder --chown=node:node /usr/src/app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder --chown=node:node /usr/src/app/apps/backend/*.pem ./
