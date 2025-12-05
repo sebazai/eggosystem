@@ -11,6 +11,7 @@ export const transformIgnorePatterns = [
 ];
 export const openHandlesTimeout = 2 * 1000;
 export const testMatch = ["**/?(*.)+(spec|test).ts?(x)"];
+export const testPathIgnorePatterns = ["/node_modules/", "<rootDir>/dist/"];
 export const reporters = [
   "default",
   [
@@ -32,6 +33,14 @@ export const coveragePathIgnorePatterns = [
   "/src/types"
 ];
 export const coverageProvider = "v8";
+export const coverageThreshold = {
+  global: {
+    branches: 65,
+    functions: 50,
+    lines: 60,
+    statements: 60
+  }
+};
 export const moduleNameMapper = {
   "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js",
   "^@eggosystem/shared-msw$":
