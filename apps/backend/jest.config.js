@@ -22,7 +22,7 @@ export const reporters = [
 
 // Coverage configuration
 export const collectCoverage = true;
-export const coverageReporters = ["text", "cobertura"];
+export const coverageReporters = ["text", "cobertura", "json"];
 export const coverageDirectory = "coverage";
 export const collectCoverageFrom = ["src/**/*.{js,jsx,ts,tsx}"];
 export const coveragePathIgnorePatterns = [
@@ -41,13 +41,13 @@ const isShardedCI =
 export const coverageThreshold = isShardedCI
   ? undefined
   : {
-      global: {
-        branches: 65,
-        functions: 50,
-        lines: 60,
-        statements: 60
-      }
-    };
+    global: {
+      branches: 65,
+      functions: 50,
+      lines: 60,
+      statements: 60
+    }
+  };
 export const moduleNameMapper = {
   "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js",
   "^@eggosystem/shared-msw$":

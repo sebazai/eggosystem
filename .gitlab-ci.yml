@@ -240,9 +240,7 @@ test:backend:
     - pnpm --filter=backend seed
     - pnpm migrate
   script:
-    - cd apps/backend && NODE_ENV=test npx jest --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL --coverage --coverageReporters=json --coverageReporters=text --coverageReporters=cobertura --ci --detectOpenHandles
-    # Rename coverage file to include shard index for merging
-    - mv apps/backend/coverage/coverage-final.json apps/backend/coverage/coverage-final-$CI_NODE_INDEX.json
+    - cd apps/backend && NODE_ENV=test npx jest --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL --coverage --ci --detectOpenHandles && mv coverage/coverage-final.json coverage/coverage-final-$CI_NODE_INDEX.json
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
