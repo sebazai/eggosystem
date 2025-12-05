@@ -205,11 +205,43 @@ audit:
     - pnpm audit --json > gl-dependency-scanning-report.json || true
     - apt update && apt install -y jq
     - ./scripts/audit.sh
+    # Count vulnerabilities by severity
+    - |
+      if [ -f gl-dependency-scanning-report.json ]; then
+        CRITICAL=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "critical")] | length' 2>/dev/null || echo 0)
+        HIGH=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "high")] | length' 2>/dev/null || echo 0)
+        MODERATE=$(cat gl-dependency-scanning-report.json | jq '[.advisories | to_entries[]?.value | select(.severity == "moderate")] | length' 2>/dev/null || echo 0)
+        
+        echo ""
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║           NPM DEPENDENCY AUDIT RESULTS                       ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║  🔴 CRITICAL: $CRITICAL                                      "
+        echo "║  🟠 HIGH:     $HIGH                                          "
+        echo "║  🟡 MODERATE: $MODERATE                                      "
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo ""
+        
+        # Fail pipeline if CRITICAL vulnerabilities found
+        if [ "$CRITICAL" -gt 0 ]; then
+          echo "❌ CRITICAL npm vulnerabilities found! Pipeline blocked."
+          echo "   Run 'pnpm audit' locally to see details and fix."
+          exit 1
+        fi
+        
+        # Warn but don't fail on HIGH (can be changed to fail if desired)
+        if [ "$HIGH" -gt 0 ]; then
+          echo "⚠️ HIGH severity npm vulnerabilities found."
+          echo "   Consider fixing these before merging."
+        fi
+      fi
   artifacts:
     reports:
       dependency_scanning: gl-dependency-scanning.json
     paths:
       - gl-dependency-scanning.json
+      - gl-dependency-scanning-report.json
+  allow_failure: false
 
 secrets_scan:
   stage: security
@@ -578,6 +610,9 @@ push-dockerfile:frontend:
           -t $REGISTRY/eggo-frontend:latest \
           -f apps/frontend/Dockerfile .
       fi
+
+# Trivy container scanning is handled in a separate scheduled pipeline
+# See: .gitlab/trivy-scan.gitlab-ci.yml
 
 deploy-prod:
   image: alpine:latest
