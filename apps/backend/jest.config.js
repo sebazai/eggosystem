@@ -33,14 +33,21 @@ export const coveragePathIgnorePatterns = [
   "/src/types"
 ];
 export const coverageProvider = "v8";
-export const coverageThreshold = {
-  global: {
-    branches: 65,
-    functions: 50,
-    lines: 60,
-    statements: 60
-  }
-};
+// Coverage thresholds - only enforce when not running in sharded CI mode
+// In sharded mode, each shard only runs a subset of tests, so individual coverage will be lower
+// A separate job merges coverage and enforces thresholds on the merged result
+const isShardedCI =
+  process.env.CI_NODE_TOTAL && parseInt(process.env.CI_NODE_TOTAL, 10) > 1;
+export const coverageThreshold = isShardedCI
+  ? undefined
+  : {
+      global: {
+        branches: 65,
+        functions: 50,
+        lines: 60,
+        statements: 60
+      }
+    };
 export const moduleNameMapper = {
   "^@eggosystem/types$": "<rootDir>/../../packages/types/dist/index.js",
   "^@eggosystem/shared-msw$":
