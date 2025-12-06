@@ -39,6 +39,7 @@ services:
       BACKEND_SERVICE_API_KEY: ${STAGE_SERVICE_API_KEY}
       JWT_SECRET: $JWT_SECRET
       FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
+      IMAGE_SERVICE_API_KEY: $IMG_API_KEY
     networks:
       - web
     volumes:
