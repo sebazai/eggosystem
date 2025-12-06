@@ -46,6 +46,7 @@ services:
       BACKEND_SERVICE_API_KEY: ${PROD_SERVICE_API_KEY}
       JWT_SECRET: $JWT_SECRET
       FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
+      IMAGE_SERVICE_API_KEY: $IMG_API_KEY
     networks:
       - web
     volumes:
@@ -99,7 +100,7 @@ services:
     restart: always
 
   eggo-prod-db:
-    image: bitnamilegacy/mariadb:11.8.3
+    image: mariadb:11.8.5
     container_name: eggo-prod-db
     restart: always
     environment:
@@ -124,8 +125,8 @@ services:
       timeout: 20s
       retries: 10
     volumes:
-      - ./my.cnf:/opt/bitnami/mariadb/conf/my.cnf
-      - ./db-data:/bitnami/mariadb
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db-data/data:/var/lib/mysql
 
   eggo-prod-redis:
     image: redis:8-alpine

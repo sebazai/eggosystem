@@ -18,7 +18,7 @@ services:
     networks:
       - eggo-dev
     volumes:
-      - ../conf/mariadb/my.cnf:/opt/bitnami/mariadb/conf/my.cnf
+      - ../conf/mariadb/my.cnf:/etc/mysql/conf.d/my.cnf
     ports:
       - 3306:3306
 
