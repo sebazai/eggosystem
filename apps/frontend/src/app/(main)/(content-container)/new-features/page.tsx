@@ -14,6 +14,134 @@ export default function NewFeaturesPage() {
       <h1 className="text-4xl font-heading font-bold mb-6">New Features</h1>
 
       <div className="space-y-8">
+        {/* December 6, 2025 Features */}
+        <section className="bg-card p-6 rounded-lg shadow-md">
+          <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
+            <CalendarDays className="h-5 w-5" />
+            <h2 className="text-xl font-bold">December 6, 2025</h2>
+          </div>
+
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="md:flex-1">
+                <h3 className="text-xl font-bold mb-2">Trophy System 🏆</h3>
+                <p className="mb-2">
+                  We&apos;re excited to introduce the Trophy System! Players and
+                  teams can now earn and display trophies for their achievements
+                  in Kanaliiga.
+                </p>
+
+                <h4 className="font-bold text-lg mb-2">Trophy Types</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>
+                    <span className="font-medium">Season Placement</span> -
+                    Gold, Silver, and Bronze trophies for 1st, 2nd, and 3rd
+                    place finishes in any division
+                  </li>
+                  <li>
+                    <span className="font-medium">Kanarating Champions</span> -
+                    Top 3 players with the highest Kanarating in each division
+                    per season earn special MKP (Most Kana Player) trophies
+                  </li>
+                </ul>
+
+                <h4 className="font-bold text-lg mb-2">Key Features</h4>
+                <ul className="list-disc pl-5 mb-3">
+                  <li>
+                    Trophies are automatically awarded based on historical data
+                    across all seasons
+                  </li>
+                  <li>
+                    Players inherit team trophies from seasons where they were
+                    primary roster members
+                  </li>
+                  <li>
+                    Each trophy displays the season number for easy
+                    identification
+                  </li>
+                  <li>
+                    Hover over any trophy to see the full details including
+                    division and season name
+                  </li>
+                </ul>
+
+                <div className="mt-3 p-2 bg-muted/50 rounded-md text-sm">
+                  <strong>Where to find it:</strong> Trophies appear on both
+                  player profile pages and team pages. Look for the
+                  &quot;Trophies&quot; section to see all earned awards.
+                </div>
+              </div>
+
+              <div className="md:w-2/5">
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Season Placement Trophies
+                    </p>
+                    <div className="flex gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.kanaliiga.fi/images/by-hash/phash/cdc33b3c160c3b1e"
+                        width={64}
+                        height={64}
+                        alt="Gold Trophy"
+                        className="rounded-lg"
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.kanaliiga.fi/images/by-hash/phash/cdc33b38065c3b4e"
+                        width={64}
+                        height={64}
+                        alt="Silver Trophy"
+                        className="rounded-lg"
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.kanaliiga.fi/images/by-hash/phash/cfc3323c360c3b1e"
+                        width={64}
+                        height={64}
+                        alt="Bronze Trophy"
+                        className="rounded-lg"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Kanarating (MKP) Trophies
+                    </p>
+                    <div className="flex gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.kanaliiga.fi/images/by-hash/phash/96b067e73c69491a"
+                        width={64}
+                        height={64}
+                        alt="MKP Gold"
+                        className="rounded-lg"
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.kanaliiga.fi/images/by-hash/phash/95b4674e58435b9a"
+                        width={64}
+                        height={64}
+                        alt="MKP Silver"
+                        className="rounded-lg"
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="https://img.kanaliiga.fi/images/by-hash/phash/909771634f78499b"
+                        width={64}
+                        height={64}
+                        alt="MKP Bronze"
+                        className="rounded-lg"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* November 24, 2025 Features */}
         <section className="bg-card p-6 rounded-lg shadow-md">
           <div className="flex items-center gap-2 mb-6 text-kanaliiga-orange border-b pb-2">
