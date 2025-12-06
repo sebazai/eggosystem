@@ -88,7 +88,7 @@ export const TrophyBadge = ({
           colors.badge
         )}
       >
-        #{seasonId}
+        S{seasonId}
       </div>
     </div>
   );
