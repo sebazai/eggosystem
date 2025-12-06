@@ -16,6 +16,7 @@ import {
   getPlayerHistoricalAverageController,
   resolveSteamIdController
 } from "../../controllers/players.controllers";
+import { getPlayerTrophiesController } from "../../controllers/trophies.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { createApiKeyValidator } from "../../middlewares/api-key-auth.middleware";
 import { corsMiddleware } from "../../middlewares/cors.middleware";
@@ -53,6 +54,7 @@ router.get(
   getPlayerPlatformRank
 );
 router.get("/:steam_id/kanarank", corsMiddleware, getPlayerKanaRankController);
+router.get("/:steam_id/trophies", corsMiddleware, getPlayerTrophiesController);
 router.get(
   "/:steam_id/latest-season-stats",
   corsMiddleware,
