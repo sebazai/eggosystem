@@ -272,7 +272,7 @@ test:backend:
     - pnpm --filter=backend seed
     - pnpm migrate
   script:
-    - cd apps/backend && NODE_ENV=test npx jest --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL --coverage --ci --detectOpenHandles
+    - cd apps/backend && NODE_ENV=test npx jest --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL --coverage --ci --detectOpenHandles && mv coverage/coverage-final.json coverage/coverage-final-$CI_NODE_INDEX.json
   coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
   artifacts:
     when: always
@@ -285,6 +285,30 @@ test:backend:
     paths:
       - apps/backend/test-results/junit/results.xml
       - apps/backend/coverage/cobertura-coverage.xml
+      - apps/backend/coverage/coverage-final-*.json
+
+# Merge coverage from all shards and enforce thresholds
+test:backend:coverage-merge:
+  stage: test
+  extends: [.prepare-pnpm, .mr-backend]
+  needs:
+    - job: test:backend
+      artifacts: true
+  script:
+    - cd apps/backend
+    # Install nyc for coverage merging
+    - npx nyc merge coverage coverage/.nyc_output/merged.json
+    - npx nyc report --reporter=text --reporter=text-summary --temp-dir=coverage/.nyc_output
+    # Check coverage thresholds
+    - |
+      npx nyc check-coverage \
+        --temp-dir=coverage/.nyc_output \
+        --branches 65 \
+        --functions 50 \
+        --lines 60 \
+        --statements 60
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  allow_failure: false
 
 test:frontend:
   stage: test

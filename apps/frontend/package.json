@@ -68,6 +68,7 @@
     "zod": "4.1.12"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
     "@eggosystem/eslint": "workspace:*",
     "@eggosystem/tsconfig": "workspace:*",
     "@eslint/eslintrc": "3.3.1",
