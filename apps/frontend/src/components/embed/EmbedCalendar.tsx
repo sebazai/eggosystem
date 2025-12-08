@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -156,9 +156,8 @@ export default function EmbedCalendar({
   theme = "light"
 }: EmbedCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
-  const [view, setView] = useState<"dayGridMonth" | "timeGridWeek">(
-    defaultView === "week" ? "timeGridWeek" : "dayGridMonth"
-  );
+  const view: "dayGridMonth" | "timeGridWeek" =
+    defaultView === "week" ? "timeGridWeek" : "dayGridMonth";
 
   // Build the API URL
   const apiUrl = useMemo(() => {
@@ -306,7 +305,7 @@ export default function EmbedCalendar({
       className={`embed-calendar-container bg-background text-foreground ${theme}`}
       style={{ height, width, overflow: "auto" }}
     >
-      <style jsx global>{`
+      <style>{`
         .embed-calendar-container .fc {
           font-family: inherit;
         }
