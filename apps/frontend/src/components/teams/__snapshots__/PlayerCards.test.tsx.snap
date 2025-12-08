@@ -1,0 +1,1157 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`PlayerCards Snapshot Tests renders correctly in error state 1`] = `
+<div>
+  <div
+    class="text-red-500"
+  >
+    Failed to load player data
+  </div>
+</div>
+`;
+
+exports[`PlayerCards Snapshot Tests renders correctly in loading state 1`] = `
+<div>
+  <div
+    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3"
+  >
+    <div
+      class="bg-card rounded-lg p-4 animate-pulse"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="h-20 w-20 bg-kanaliiga-light-brown/30 rounded-full"
+        />
+      </div>
+      <div
+        class="h-4 w-24 bg-kanaliiga-light-brown/30 mx-auto rounded mb-3"
+      />
+      <div
+        class="space-y-2"
+      >
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-lg p-4 animate-pulse"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="h-20 w-20 bg-kanaliiga-light-brown/30 rounded-full"
+        />
+      </div>
+      <div
+        class="h-4 w-24 bg-kanaliiga-light-brown/30 mx-auto rounded mb-3"
+      />
+      <div
+        class="space-y-2"
+      >
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-lg p-4 animate-pulse"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="h-20 w-20 bg-kanaliiga-light-brown/30 rounded-full"
+        />
+      </div>
+      <div
+        class="h-4 w-24 bg-kanaliiga-light-brown/30 mx-auto rounded mb-3"
+      />
+      <div
+        class="space-y-2"
+      >
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-lg p-4 animate-pulse"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="h-20 w-20 bg-kanaliiga-light-brown/30 rounded-full"
+        />
+      </div>
+      <div
+        class="h-4 w-24 bg-kanaliiga-light-brown/30 mx-auto rounded mb-3"
+      />
+      <div
+        class="space-y-2"
+      >
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+      </div>
+    </div>
+    <div
+      class="bg-card rounded-lg p-4 animate-pulse"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="h-20 w-20 bg-kanaliiga-light-brown/30 rounded-full"
+        />
+      </div>
+      <div
+        class="h-4 w-24 bg-kanaliiga-light-brown/30 mx-auto rounded mb-3"
+      />
+      <div
+        class="space-y-2"
+      >
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+        <div
+          class="h-4 bg-kanaliiga-light-brown/30 rounded"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`PlayerCards Snapshot Tests renders correctly with fewer than 5 players 1`] = `
+<div>
+  <div
+    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3"
+  >
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345678?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER1
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            250
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            180
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.39
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            88.5
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.35
+          </span>
+        </div>
+      </div>
+    </a>
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345679?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER2
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            220
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            190
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.16
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            82.1
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.22
+          </span>
+        </div>
+      </div>
+    </a>
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345680?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER3
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            200
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            200
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.00
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            75.5
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.10
+          </span>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+`;
+
+exports[`PlayerCards Snapshot Tests renders correctly with null players 1`] = `
+<div>
+  <div
+    class="text-red-500"
+  >
+    Failed to load player data
+  </div>
+</div>
+`;
+
+exports[`PlayerCards Snapshot Tests renders correctly with top 5 players 1`] = `
+<div>
+  <div
+    class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3"
+  >
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345678?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER1
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            250
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            180
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.39
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            88.5
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.35
+          </span>
+        </div>
+      </div>
+    </a>
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345679?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER2
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            220
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            190
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.16
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            82.1
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.22
+          </span>
+        </div>
+      </div>
+    </a>
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345680?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER3
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            200
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            200
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.00
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            75.5
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            1.10
+          </span>
+        </div>
+      </div>
+    </a>
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345681?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER4
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            180
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            210
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            0.86
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            68.2
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            0.95
+          </span>
+        </div>
+      </div>
+    </a>
+    <a
+      class="bg-card rounded-lg p-4 transition-all hover:bg-kanaliiga-light-brown/10 cursor-pointer flex flex-col"
+      href="/players/76561198012345682?"
+    >
+      <div
+        class="flex justify-center mb-3"
+      >
+        <div
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-user h-12 w-12"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+            />
+            <circle
+              cx="12"
+              cy="7"
+              r="4"
+            />
+          </svg>
+        </div>
+      </div>
+      <div
+        class="flex items-center justify-center mb-2"
+      >
+        <h3
+          class="text-center font-bold text-kanaliiga-orange truncate"
+        >
+          TOPPLAYER5
+        </h3>
+      </div>
+      <div
+        class="space-y-1 mt-1"
+      >
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Kills
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            160
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Deaths
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            220
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            K/D
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            0.73
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            ADR
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            62.0
+          </span>
+        </div>
+        <div
+          class="flex justify-between text-sm"
+        >
+          <span
+            class="text-muted-foreground"
+          >
+            Rating
+          </span>
+          <span
+            class="font-medium text-right"
+          >
+            0.85
+          </span>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+`;
