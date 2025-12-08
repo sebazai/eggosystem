@@ -510,6 +510,7 @@ export const SignupForm = ({
                 seasonId={seasonId}
                 validCaptainSelection={validCaptainSelection}
                 prefilledPlayerSteamIds={prefilledPlayerSteamIds}
+                teamId={watchTeamId}
               />
             </Tabs>
 

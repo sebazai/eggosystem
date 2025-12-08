@@ -39,3 +39,4 @@ export * from "./Organizer.interface";
 export * from "./SteamPlayerKanaElo.interface";
 export * from "./KanahautomoRegistration.interface";
 export * from "./CasterUrl.interface";
+export * from "./RosterHistory.interface";
