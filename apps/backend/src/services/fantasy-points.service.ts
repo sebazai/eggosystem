@@ -641,12 +641,13 @@ export const calculateFantasyPointsForGame = async (
         connection
       );
 
-      // Check if this player is on a fantasy team
-      const fantasyPlayer = fantasyTeamPlayers.find(
+      // Check if this player is on ANY fantasy teams (can be on multiple teams!)
+      const playerFantasyTeams = fantasyTeamPlayers.filter(
         (ftp) => ftp.steam_id === playerStat.steam_id
       );
 
-      if (fantasyPlayer) {
+      // Process points for EACH fantasy team this player is on
+      for (const fantasyPlayer of playerFantasyTeams) {
         // Apply role bonuses for fantasy team players
         const { totalPoints, roleBonus, updatedBreakdown } = applyRoleBonus(
           individualPoints,
