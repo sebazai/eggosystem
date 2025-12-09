@@ -512,7 +512,9 @@ describe("addSubstitutePlayerController", () => {
         new_avg_with_player: 198,
         csrankker_components: { trueLevel: 5, mm: 10, hour: 5, kana: 5 }
       },
-      topTeamsInLeague: [{ team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }],
+      topTeamsInLeague: [
+        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
+      ],
       canAddPlayer: true,
       league_name: "Test League"
     });
@@ -531,9 +533,7 @@ describe("addSubstitutePlayerController", () => {
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("123", 14);
 
     // Verify eligibility check WAS performed (for non-tier1)
-    expect(
-      mockSeasonModels.checkPlayerAdditionEligibility
-    ).toHaveBeenCalled();
+    expect(mockSeasonModels.checkPlayerAdditionEligibility).toHaveBeenCalled();
 
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
@@ -667,7 +667,14 @@ describe("addSubstitutePlayerController", () => {
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock SeasonPlayerRanks check - player already has complete data
     mockRunQuery.mockResolvedValueOnce([
-      { id: 1, cs2_rank: 15000, faceit_level: 5, faceit_elo: 1500, cs_hours: 1000, kana_elo: 150 }
+      {
+        id: 1,
+        cs2_rank: 15000,
+        faceit_level: 5,
+        faceit_elo: 1500,
+        cs_hours: 1000,
+        kana_elo: 150
+      }
     ]);
     // Mock tier query - tier 1 (Masters) to skip eligibility
     mockRunQuery.mockResolvedValueOnce([{ tier: 1 }]);
@@ -742,7 +749,14 @@ describe("addSubstitutePlayerController", () => {
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
     // Mock SeasonPlayerRanks check - player already has complete data
     mockRunQuery.mockResolvedValueOnce([
-      { id: 1, cs2_rank: 15000, faceit_level: 5, faceit_elo: 1500, cs_hours: 1000, kana_elo: 150 }
+      {
+        id: 1,
+        cs2_rank: 15000,
+        faceit_level: 5,
+        faceit_elo: 1500,
+        cs_hours: 1000,
+        kana_elo: 150
+      }
     ]);
     // Mock tier query - tier 1 (Masters) to skip eligibility
     mockRunQuery.mockResolvedValueOnce([{ tier: 1 }]);

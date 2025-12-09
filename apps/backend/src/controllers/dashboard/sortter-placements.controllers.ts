@@ -315,7 +315,10 @@ export const finalizeTeamPlacementsController = async (
 
     if (playersWithoutRanks.length > 0) {
       const missingPlayersList = playersWithoutRanks
-        .map(p => `${p.nickname || p.steam_id} (team: ${p.team_name || p.team_id})`)
+        .map(
+          (p) =>
+            `${p.nickname || p.steam_id} (team: ${p.team_name || p.team_id})`
+        )
         .join(", ");
       logger.error(
         `Cannot finalize: ${playersWithoutRanks.length} players missing SeasonPlayerRanks: ${missingPlayersList}`
@@ -323,7 +326,7 @@ export const finalizeTeamPlacementsController = async (
       return next(
         new BadRequestError(
           `Cannot finalize placements: ${playersWithoutRanks.length} player(s) are missing rank data. ` +
-          `Please ensure all players have completed rank processing. Missing: ${missingPlayersList}`
+            `Please ensure all players have completed rank processing. Missing: ${missingPlayersList}`
         )
       );
     }
@@ -362,7 +365,10 @@ export const finalizeTeamPlacementsController = async (
 
     if (playersWithNullRanks.length > 0) {
       const incompletePlayersList = playersWithNullRanks
-        .map(p => `${p.nickname || p.steam_id} (team: ${p.team_name || p.team_id}, kana_elo: ${p.kana_elo ?? 'NULL'})`)
+        .map(
+          (p) =>
+            `${p.nickname || p.steam_id} (team: ${p.team_name || p.team_id}, kana_elo: ${p.kana_elo ?? "NULL"})`
+        )
         .join(", ");
       logger.error(
         `Cannot finalize: ${playersWithNullRanks.length} players have incomplete rank data: ${incompletePlayersList}`
@@ -370,12 +376,14 @@ export const finalizeTeamPlacementsController = async (
       return next(
         new BadRequestError(
           `Cannot finalize placements: ${playersWithNullRanks.length} player(s) have incomplete rank data (missing kana_elo). ` +
-          `Please ensure kana_elo calculation is complete. Incomplete: ${incompletePlayersList}`
+            `Please ensure kana_elo calculation is complete. Incomplete: ${incompletePlayersList}`
         )
       );
     }
 
-    logger.info(`Pre-flight validation passed: all players have complete SeasonPlayerRanks data`);
+    logger.info(
+      `Pre-flight validation passed: all players have complete SeasonPlayerRanks data`
+    );
 
     // Create a map to track which league IDs we need to process
     const requiredLeagues = new Map<

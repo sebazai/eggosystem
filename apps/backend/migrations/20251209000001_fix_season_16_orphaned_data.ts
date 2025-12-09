@@ -12,16 +12,20 @@ export async function up(knex: Knex): Promise<void> {
   console.log("Starting data cleanup migration for season 16...");
 
   // Check if season 16 exists - this migration is production-specific
-  const seasonExists = await knex('Seasons').where({ id: 16 }).first();
+  const seasonExists = await knex("Seasons").where({ id: 16 }).first();
 
   if (!seasonExists) {
-    console.log("Season 16 not found - skipping production-specific data cleanup migration");
+    console.log(
+      "Season 16 not found - skipping production-specific data cleanup migration"
+    );
     return;
   }
 
   // 1. Fix player 76561198116385133 (has SeasonTeamPlayers but no SeasonPlayerRanks)
   // Only if the player exists in SteamPlayers
-  const player1Exists = await knex('SteamPlayers').where({ steam_id: '76561198116385133' }).first();
+  const player1Exists = await knex("SteamPlayers")
+    .where({ steam_id: "76561198116385133" })
+    .first();
   if (player1Exists) {
     console.log("Creating SeasonPlayerRanks for player 76561198116385133...");
     await knex.raw(`
@@ -62,11 +66,15 @@ export async function up(knex: Knex): Promise<void> {
         hours_updated_at = VALUES(hours_updated_at)
     `);
   } else {
-    console.log("Player 76561198116385133 not found in SteamPlayers - skipping");
+    console.log(
+      "Player 76561198116385133 not found in SteamPlayers - skipping"
+    );
   }
 
   // 2. Fix player 76561199133774369 (has SeasonTeamPlayers but no SeasonPlayerRanks)
-  const player2Exists = await knex('SteamPlayers').where({ steam_id: '76561199133774369' }).first();
+  const player2Exists = await knex("SteamPlayers")
+    .where({ steam_id: "76561199133774369" })
+    .first();
   if (player2Exists) {
     console.log("Creating SeasonPlayerRanks for player 76561199133774369...");
     await knex.raw(`
@@ -104,12 +112,14 @@ export async function up(knex: Knex): Promise<void> {
         kana_elo = VALUES(kana_elo)
     `);
   } else {
-    console.log("Player 76561199133774369 not found in SteamPlayers - skipping");
+    console.log(
+      "Player 76561199133774369 not found in SteamPlayers - skipping"
+    );
   }
 
   // 3. Update player 76561198128248609 (has SeasonPlayerRanks but with NULL cs2_rank)
-  const player3Exists = await knex('SeasonPlayerRanks')
-    .where({ steam_id: '76561198128248609', season_id: 16 })
+  const player3Exists = await knex("SeasonPlayerRanks")
+    .where({ steam_id: "76561198128248609", season_id: 16 })
     .first();
 
   if (player3Exists) {
@@ -127,26 +137,30 @@ export async function up(knex: Knex): Promise<void> {
       WHERE steam_id = '76561198128248609' AND season_id = 16
     `);
   } else {
-    console.log("Player 76561198128248609 not found in SeasonPlayerRanks - skipping");
+    console.log(
+      "Player 76561198128248609 not found in SeasonPlayerRanks - skipping"
+    );
   }
 
   // 4. Delete orphaned manual ranks (SeasonPlayerRanks without SeasonTeamPlayers)
   console.log("Deleting orphaned manual ranks...");
   const orphanedManualRanks = [
-    '76561198262659571',
-    '76561197983184888',
-    '76561198071674766',
-    '76561199045305187'
+    "76561198262659571",
+    "76561197983184888",
+    "76561198071674766",
+    "76561199045305187"
   ];
 
   for (const steamId of orphanedManualRanks) {
-    const deleted = await knex('SeasonPlayerRanks')
+    const deleted = await knex("SeasonPlayerRanks")
       .where({ steam_id: steamId, season_id: 16 })
       .whereNotExists(function () {
-        this.select('*')
-          .from('SeasonTeamPlayers')
-          .whereRaw('SeasonTeamPlayers.steam_id = SeasonPlayerRanks.steam_id')
-          .whereRaw('SeasonTeamPlayers.season_id = SeasonPlayerRanks.season_id');
+        this.select("*")
+          .from("SeasonTeamPlayers")
+          .whereRaw("SeasonTeamPlayers.steam_id = SeasonPlayerRanks.steam_id")
+          .whereRaw(
+            "SeasonTeamPlayers.season_id = SeasonPlayerRanks.season_id"
+          );
       })
       .delete();
 
@@ -158,11 +172,13 @@ export async function up(knex: Knex): Promise<void> {
   console.log("Data cleanup migration completed successfully!");
 }
 
-export async function down(knex: Knex): Promise<void> {
+export async function down(_knex: Knex): Promise<void> {
   console.log("Rolling back data cleanup migration...");
 
   // This migration is data-fixing, not schema-changing
   // Rollback would delete the fixed data, which is not desirable
-  console.log("Note: This migration fixes data integrity issues and cannot be safely rolled back.");
+  console.log(
+    "Note: This migration fixes data integrity issues and cannot be safely rolled back."
+  );
   console.log("Manual intervention required if rollback is needed.");
 }

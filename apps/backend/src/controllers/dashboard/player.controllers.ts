@@ -174,35 +174,52 @@ export const addPlayerToTeamController = async (
       // Fetch real CS2 rank data from Leetify (range 1000-30000)
       const rankData = await getCSRank(steamId);
       const playerCS2Rank =
-        rankData.average_rank !== -1 ? rankData.average_rank : existingPlayer?.cs2_rank ?? null;
+        rankData.average_rank !== -1
+          ? rankData.average_rank
+          : (existingPlayer?.cs2_rank ?? null);
 
       // Fetch real hours played from Steam API
       const hoursData = await getPlayerHoursForSteamAppId(steamId, 730);
-      const playerCSHours = hoursData.hours !== -1 ? hoursData.hours : existingPlayer?.cs_hours ?? null;
+      const playerCSHours =
+        hoursData.hours !== -1
+          ? hoursData.hours
+          : (existingPlayer?.cs_hours ?? null);
 
       // Fetch real FACEIT data (levels 1-10, ELO values)
       const faceitData = await getFaceITCS2Rank(steamId);
 
       // Only fail if we have no data at all (neither from API nor existing)
-      if (faceitData.faceit_elo < 0 && (!existingPlayer || existingPlayer.faceit_elo === null)) {
+      if (
+        faceitData.faceit_elo < 0 &&
+        (!existingPlayer || existingPlayer.faceit_elo === null)
+      ) {
         return next(new BadRequestError("FaceIT data not found"));
       }
 
-      if (rankData.average_rank < 0 && (!existingPlayer || existingPlayer.cs2_rank === null)) {
+      if (
+        rankData.average_rank < 0 &&
+        (!existingPlayer || existingPlayer.cs2_rank === null)
+      ) {
         return next(new BadRequestError("CS2 rank not found"));
       }
 
-      if (hoursData.hours < 0 && (!existingPlayer || existingPlayer.cs_hours === null)) {
+      if (
+        hoursData.hours < 0 &&
+        (!existingPlayer || existingPlayer.cs_hours === null)
+      ) {
         return next(new BadRequestError("Hours not found"));
       }
 
       // Use API data if available, otherwise fall back to existing data
-      const finalFaceitData = faceitData.faceit_elo >= 0 ? faceitData : {
-        faceit_level: existingPlayer?.faceit_level ?? undefined,
-        faceit_elo: existingPlayer?.faceit_elo ?? undefined,
-        faceit_kd: undefined,
-        faceit_date: undefined
-      };
+      const finalFaceitData =
+        faceitData.faceit_elo >= 0
+          ? faceitData
+          : {
+              faceit_level: existingPlayer?.faceit_level ?? undefined,
+              faceit_elo: existingPlayer?.faceit_elo ?? undefined,
+              faceit_kd: undefined,
+              faceit_date: undefined
+            };
 
       // Create or update player in SeasonPlayerRanks with real data
       await insertPlayerRankForSeason(
@@ -367,8 +384,8 @@ export const validatePlayerController = async (
       externalRankData =
         propertyName in platformRankData.value
           ? platformRankData.value[
-          propertyName as keyof typeof platformRankData.value
-          ]
+              propertyName as keyof typeof platformRankData.value
+            ]
           : -1;
     }
 
@@ -419,25 +436,25 @@ export const validatePlayerController = async (
         data:
           playerData.status === "fulfilled" && playerData.value
             ? {
-              account_id: playerData.value.account_id,
-              nickname: playerData.value.nickname,
-              steam_id: playerData.value.steam_id,
-              discord: playerData.value.discord || null,
-              discord_linked: Boolean(playerData.value.discord_linked),
-              work_email: playerData.value.work_email || null,
-              work_email_verified: Boolean(
-                playerData.value.work_email_verified
-              ),
-              is_work_email_personal_email: Boolean(
-                playerData.value.is_work_email_personal_email
-              ),
-              is_valid_full_name: Boolean(
-                playerData.value.is_valid_full_name
-              ),
-              is_valid_work_email: Boolean(
-                playerData.value.is_valid_work_email
-              )
-            }
+                account_id: playerData.value.account_id,
+                nickname: playerData.value.nickname,
+                steam_id: playerData.value.steam_id,
+                discord: playerData.value.discord || null,
+                discord_linked: Boolean(playerData.value.discord_linked),
+                work_email: playerData.value.work_email || null,
+                work_email_verified: Boolean(
+                  playerData.value.work_email_verified
+                ),
+                is_work_email_personal_email: Boolean(
+                  playerData.value.is_work_email_personal_email
+                ),
+                is_valid_full_name: Boolean(
+                  playerData.value.is_valid_full_name
+                ),
+                is_valid_work_email: Boolean(
+                  playerData.value.is_valid_work_email
+                )
+              }
             : null,
         error:
           playerData.status === "rejected"
@@ -542,38 +559,61 @@ export const addSubstitutePlayerController = async (
       // Fetch real CS2 rank data from Leetify (range 1000-30000)
       const rankData = await getCSRank(steamId);
       const playerCS2Rank =
-        rankData.average_rank !== -1 ? rankData.average_rank : existingPlayer?.cs2_rank ?? null;
+        rankData.average_rank !== -1
+          ? rankData.average_rank
+          : (existingPlayer?.cs2_rank ?? null);
 
       // Fetch real hours played from Steam API
       const hoursData = await getPlayerHoursForSteamAppId(steamId, 730);
-      const playerCSHours = hoursData.hours !== -1 ? hoursData.hours : existingPlayer?.cs_hours ?? null;
+      const playerCSHours =
+        hoursData.hours !== -1
+          ? hoursData.hours
+          : (existingPlayer?.cs_hours ?? null);
 
       // Fetch real FACEIT data (levels 1-10, ELO values)
       const faceitData = await getFaceITCS2Rank(steamId);
 
       // Only fail if we have no data at all (neither from API nor existing)
-      if (faceitData.faceit_elo < 0 && (!existingPlayer || existingPlayer.faceit_elo === null)) {
+      if (
+        faceitData.faceit_elo < 0 &&
+        (!existingPlayer || existingPlayer.faceit_elo === null)
+      ) {
         await connection.rollback();
-        return next(new BadRequestError("FaceIT data not found for substitute player"));
+        return next(
+          new BadRequestError("FaceIT data not found for substitute player")
+        );
       }
 
-      if (rankData.average_rank < 0 && (!existingPlayer || existingPlayer.cs2_rank === null)) {
+      if (
+        rankData.average_rank < 0 &&
+        (!existingPlayer || existingPlayer.cs2_rank === null)
+      ) {
         await connection.rollback();
-        return next(new BadRequestError("CS2 rank not found for substitute player"));
+        return next(
+          new BadRequestError("CS2 rank not found for substitute player")
+        );
       }
 
-      if (hoursData.hours < 0 && (!existingPlayer || existingPlayer.cs_hours === null)) {
+      if (
+        hoursData.hours < 0 &&
+        (!existingPlayer || existingPlayer.cs_hours === null)
+      ) {
         await connection.rollback();
-        return next(new BadRequestError("CS hours not found for substitute player"));
+        return next(
+          new BadRequestError("CS hours not found for substitute player")
+        );
       }
 
       // Use API data if available, otherwise fall back to existing data
-      const finalFaceitData = faceitData.faceit_elo >= 0 ? faceitData : {
-        faceit_level: existingPlayer?.faceit_level ?? undefined,
-        faceit_elo: existingPlayer?.faceit_elo ?? undefined,
-        faceit_kd: undefined,
-        faceit_date: undefined
-      };
+      const finalFaceitData =
+        faceitData.faceit_elo >= 0
+          ? faceitData
+          : {
+              faceit_level: existingPlayer?.faceit_level ?? undefined,
+              faceit_elo: existingPlayer?.faceit_elo ?? undefined,
+              faceit_kd: undefined,
+              faceit_date: undefined
+            };
 
       // Create or update player in SeasonPlayerRanks with real data
       await insertPlayerRankForSeason(
@@ -618,7 +658,9 @@ export const addSubstitutePlayerController = async (
       if (!eligibility.canAddPlayer) {
         await connection.rollback();
         return next(
-          new BadRequestError("Substitute player is not eligible to be added to this team")
+          new BadRequestError(
+            "Substitute player is not eligible to be added to this team"
+          )
         );
       }
 
