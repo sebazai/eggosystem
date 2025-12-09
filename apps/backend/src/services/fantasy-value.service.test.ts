@@ -6,39 +6,39 @@ import {
 
 describe("Fantasy Value Service", () => {
   describe("calculatePlayerTier", () => {
-    it("should return gold tier for value >= 210000", () => {
-      expect(calculatePlayerTier(210000)).toBe("gold");
-      expect(calculatePlayerTier(220000)).toBe("gold");
-      expect(calculatePlayerTier(240000)).toBe("gold");
+    it("should return gold tier for value >= 215000", () => {
+      expect(calculatePlayerTier(215000)).toBe("gold");
+      expect(calculatePlayerTier(230000)).toBe("gold");
+      expect(calculatePlayerTier(250000)).toBe("gold");
     });
 
-    it("should return silver tier for value 180000-209999", () => {
-      expect(calculatePlayerTier(180000)).toBe("silver");
+    it("should return silver tier for value 175000-214999", () => {
+      expect(calculatePlayerTier(175000)).toBe("silver");
       expect(calculatePlayerTier(195000)).toBe("silver");
-      expect(calculatePlayerTier(209999)).toBe("silver");
+      expect(calculatePlayerTier(214999)).toBe("silver");
     });
 
-    it("should return bronze tier for value < 180000", () => {
-      expect(calculatePlayerTier(179999)).toBe("bronze");
-      expect(calculatePlayerTier(170000)).toBe("bronze");
-      expect(calculatePlayerTier(160000)).toBe("bronze");
+    it("should return bronze tier for value < 175000", () => {
+      expect(calculatePlayerTier(174999)).toBe("bronze");
+      expect(calculatePlayerTier(165000)).toBe("bronze");
+      expect(calculatePlayerTier(150000)).toBe("bronze");
     });
   });
 
   describe("calculatePlayerValue", () => {
-    it("should return values within range 160K-240K", () => {
+    it("should return values within range 150K-250K", () => {
       const value1 = calculatePlayerValue(0.4, 1.0, 100);
       const value2 = calculatePlayerValue(1.1, 1.5, 500);
       const value3 = calculatePlayerValue(0.75, 1.0, 250);
 
-      expect(value1).toBeGreaterThanOrEqual(160000);
-      expect(value1).toBeLessThanOrEqual(240000);
+      expect(value1).toBeGreaterThanOrEqual(150000);
+      expect(value1).toBeLessThanOrEqual(250000);
 
-      expect(value2).toBeGreaterThanOrEqual(160000);
-      expect(value2).toBeLessThanOrEqual(240000);
+      expect(value2).toBeGreaterThanOrEqual(150000);
+      expect(value2).toBeLessThanOrEqual(250000);
 
-      expect(value3).toBeGreaterThanOrEqual(160000);
-      expect(value3).toBeLessThanOrEqual(240000);
+      expect(value3).toBeGreaterThanOrEqual(150000);
+      expect(value3).toBeLessThanOrEqual(250000);
     });
 
     it("should give higher value for better rating", () => {
@@ -62,12 +62,12 @@ describe("Fantasy Value Service", () => {
       expect(highKills).toBeGreaterThan(lowKills);
     });
 
-    it("should cluster values around 200K for average players", () => {
+    it("should cluster values around 190K for average players", () => {
       const avgValue = calculatePlayerValue(0.75, 1.0, 200);
 
-      // Average players should be within 180K-220K range
-      expect(avgValue).toBeGreaterThan(180000);
-      expect(avgValue).toBeLessThan(220000);
+      // Average players should be within 170K-210K range (Silver tier center)
+      expect(avgValue).toBeGreaterThan(170000);
+      expect(avgValue).toBeLessThan(215000);
     });
   });
 
@@ -87,9 +87,9 @@ describe("Fantasy Value Service", () => {
       const bronzePlayer = calculatePlayerValueData(0.5, 0.8, 50);
 
       expect(goldPlayer.tier).toBe("gold");
-      // Note: The tier is based on value, not rating. A player with rating 0.85 might still be gold if their value is >= 210000
+      // Note: The tier is based on value, not rating. A player with rating 0.85 might still be gold if their value is >= 215000
       expect(["silver", "gold"]).toContain(silverPlayer.tier);
-      // Bronze tier is for values < 180000. Lower rating/kd/kills should produce bronze
+      // Bronze tier is for values < 175000. Lower rating/kd/kills should produce bronze
       expect(["bronze", "silver"]).toContain(bronzePlayer.tier);
 
       // Generally, gold players should be more expensive than silver

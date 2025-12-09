@@ -5,22 +5,23 @@
 
 /**
  * Player tier based on current market value
- * Tier assignment:
- * - Gold: €210K+ (top tier, elite players)
- * - Silver: €180K-€210K (mid tier, solid players)
- * - Bronze: €160K-€180K (budget tier, entry-level players)
+ * Tier assignment (adjusted for €150K-€250K range):
+ * - Gold: €215K+ (top tier, elite players ~15%)
+ * - Silver: €175K-€215K (mid tier, most players ~60%)
+ * - Bronze: €150K-€175K (budget tier, entry-level players ~25%)
  */
 export type PlayerTier = "bronze" | "silver" | "gold";
 
 /**
  * Value boundaries for tier calculation
+ * Adjusted for wider range and Silver as most common tier
  */
 export const TIER_BOUNDARIES = {
-  GOLD_MIN: 210000,
-  SILVER_MIN: 180000,
-  BRONZE_MIN: 160000,
-  VALUE_MIN: 160000,
-  VALUE_MAX: 240000
+  GOLD_MIN: 215000,
+  SILVER_MIN: 175000,
+  BRONZE_MIN: 150000,
+  VALUE_MIN: 150000,
+  VALUE_MAX: 250000
 } as const;
 
 /**
@@ -37,39 +38,59 @@ export function calculatePlayerTier(value: number): PlayerTier {
 /**
  * Calculate initial player value from season stats
  * This is used for initial seeding at season start
+ * Distribution aims for: ~15% Gold, ~60% Silver, ~25% Bronze
  * @param rating - Kana rating (typically 0.40 - 1.10)
  * @param kd - Kill/Death ratio
  * @param kills - Total kills
+ * @param kanaElo - Optional Kana ELO (typically 50-350) - if provided, weights the calculation
  * @returns Player value in euros (e.g., 195000 = 195K €)
  */
 export function calculateInitialPlayerValue(
   rating: number,
   kd: number,
-  kills: number
+  kills: number,
+  kanaElo?: number | null
 ): number {
   const MIN_RATING = 0.4;
   const MAX_RATING = 1.1;
 
+  // Normalize rating to 0-1 scale
   const normalizedRating = Math.min(
     1,
     Math.max(0, (rating - MIN_RATING) / (MAX_RATING - MIN_RATING))
   );
 
-  // Sigmoid with factor 4 (gentler curve for better spread)
-  const curved = 1 / (1 + Math.exp(-4 * (normalizedRating - 0.5)));
+  // If kana_elo is provided, blend it with rating for better distribution
+  // ELO range: ~50 (bronze) to ~350 (top players)
+  let blendedScore = normalizedRating;
+  if (kanaElo !== undefined && kanaElo !== null && kanaElo > 0) {
+    const MIN_ELO = 50;
+    const MAX_ELO = 350;
+    const normalizedElo = Math.min(
+      1,
+      Math.max(0, (kanaElo - MIN_ELO) / (MAX_ELO - MIN_ELO))
+    );
+    // Weight: 60% ELO, 40% rating - ELO is more reliable for skill assessment
+    blendedScore = normalizedElo * 0.6 + normalizedRating * 0.4;
+  }
 
-  // Map to wider base range: 155K to 225K (70K spread)
-  let baseValue = 155000 + curved * 70000;
+  // Sigmoid with factor 4 for good spread
+  // This creates a natural S-curve distribution
+  const curved = 1 / (1 + Math.exp(-4 * (blendedScore - 0.5)));
 
-  // K/D bonus ±8%
-  const kdBonus = Math.min(Math.max((kd - 1.0) * 0.08, -0.04), 0.08);
+  // Map to new range: 150K to 230K base (80K spread)
+  // Center (~0.5 sigmoid output) = €190K (solidly in Silver tier: €175K-€215K)
+  let baseValue = 150000 + curved * 80000;
+
+  // K/D bonus ±5% (reduced to prevent pushing too many players to Gold)
+  const kdBonus = Math.min(Math.max((kd - 1.0) * 0.05, -0.025), 0.05);
   baseValue = baseValue * (1 + kdBonus);
 
-  // Kills bonus up to 5%
-  const killBonus = Math.min(kills / 4000, 0.05);
+  // Kills bonus up to 3% (small bonus for consistency/experience)
+  const killBonus = Math.min(kills / 6000, 0.03);
   baseValue = baseValue * (1 + killBonus);
 
-  // Final bounds: 160K to 240K
+  // Final bounds: 150K to 250K
   return Math.floor(
     Math.max(
       TIER_BOUNDARIES.VALUE_MIN,
@@ -80,7 +101,7 @@ export function calculateInitialPlayerValue(
 
 /**
  * Calculate value change after a match based on fantasy points earned
- * This applies a percentage change to the current value, capped at ±10%
+ * This applies a percentage change to the current value, capped at ±3%
  *
  * @param currentValue - Player's current market value
  * @param individualPoints - Individual fantasy points earned (-30 to +30)
@@ -94,14 +115,14 @@ export function calculateValueChangeFromMatch(
   changeBasisPoints: number; // Integer: 100 = 1%, 1000 = 10%, -500 = -5%
   valueChange: number;
 } {
-  const MAX_CHANGE_PERCENT = 5; // Reduced from 10% to 5% per match for stability
+  const MAX_CHANGE_PERCENT = 3; // Reduced from 5% to 3% per match for smoother progression
   const MAX_POINTS = 30;
 
-  // Map individual points (-30 to +30) to change percentage (-5% to +5%)
-  // Linear scaling: points / 30 * 5
+  // Map individual points (-30 to +30) to change percentage (-3% to +3%)
+  // Linear scaling: points / 30 * 3
   const rawChangePercent = (individualPoints / MAX_POINTS) * MAX_CHANGE_PERCENT;
 
-  // Clamp to ±5%
+  // Clamp to ±3%
   const changePercent = Math.max(
     -MAX_CHANGE_PERCENT,
     Math.min(MAX_CHANGE_PERCENT, rawChangePercent)

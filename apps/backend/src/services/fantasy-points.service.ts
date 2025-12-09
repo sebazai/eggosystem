@@ -55,7 +55,7 @@ const TEAM_LOSS_PENALTY = -5; // Points penalty for team loss
 
 // Role bonus multipliers
 const ROLE_MULTIPLIER_MAIN_AWP = 0.2; // 20% bonus for AWP kills
-const AWP_KILL_BASE_POINTS = 10; // Base points per AWP kill
+const AWP_KILL_BASE_POINTS = 5; // Base points per AWP kill (reduced from 10 for balance)
 const ROLE_MULTIPLIER_LEADER = 0.2; // 20% multiplier to all points
 const ROLE_MULTIPLIER_SUPPORT = 0.25; // 25% bonus for assists
 const ROLE_MULTIPLIER_ENTRY_FRAGGER = 0.3; // 30% bonus for opening kills
