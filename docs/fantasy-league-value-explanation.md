@@ -31,18 +31,18 @@
 - **How it's calculated**:
   - Starts with initial value based on stats (rating, K/D, kills)
   - After each match: Uses the **latest value from `FantasyPlayerValues`** (or snapshot if first match)
-  - Formula: `newValue = currentValue + (currentValue * (pointsEarned / 30) * 0.10)`
-  - Capped at ±10% change per match
-  - Clamped between €160K and €240K
+  - Formula: `newValue = currentValue + (currentValue * (pointsEarned / 30) * 0.03)`
+  - Capped at ±3% change per match
+  - Clamped between €150K and €250K
   - **Important**: Each match builds on the previous match's value, not the snapshot value
 
 **Example**:
 
 - Player A starts at €200K
 - Player A earns +15 points in a match
-- New value = €200K + (€200K _ (15/30) _ 0.10) = €200K + €10K = €210K
-- `FantasyPlayerValues.value` = €210K
-- `FantasyPlayerValues.performance_stats` = `{"match_game_id": 107288, "individual_points": 15, "change_basis_points": 500, "value_change": 10000, "old_value": 200000}`
+- New value = €200K + (€200K _ (15/30) _ 0.03) = €200K + €3K = €203K
+- `FantasyPlayerValues.value` = €203K
+- `FantasyPlayerValues.performance_stats` = `{"match_game_id": 107288, "individual_points": 15, "change_basis_points": 150, "value_change": 3000, "old_value": 200000}`
 
 ### 3. `FantasyPlayerValues.performance_stats` (Metadata)
 
@@ -73,9 +73,9 @@ The code already does this correctly:
    - **Third**: Calculate from historical average stats
    - **Fourth**: Calculate from current match stats (last resort)
 3. **Points calculated** → Individual points, team points, role points
-4. **Value change calculated** → `newValue = currentValue + (currentValue * (pointsEarned / 30) * 0.10)`
-   - Capped at ±10% change per match
-   - Clamped between €160K and €240K
+4. **Value change calculated** → `newValue = currentValue + (currentValue * (pointsEarned / 30) * 0.03)`
+   - Capped at ±3% change per match
+   - Clamped between €150K and €250K
 5. **Value updated** → `FantasyPlayerValues.value` updated (or inserted if doesn't exist)
 6. **Metadata saved** → `FantasyPlayerValues.performance_stats` stores update details
 7. **History logged** → `FantasyPlayerHistory` logs the change (if player is on a team)

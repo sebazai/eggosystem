@@ -893,134 +893,139 @@ export default function FantasyLeague({ seasonId }: Props) {
                 <Badge variant="outline">{existingTeam.players.length}/5</Badge>
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                {existingTeam.players.map((player) => {
-                  // Convert existing team player to FantasyPlayer format
-                  // Use same logo logic as draft page - fallback to team name-based logo
-                  const teamLogoForPlayer = player.team_logo
-                    ? createTeamLogoUrl(player.team_logo)
-                    : player.team_name
-                      ? createTeamLogoUrl(
-                          player.team_name.toLowerCase().replace(/\s+/g, "-") +
-                            ".png"
-                        )
-                      : "/team-images/nologo.png";
+                {/* Sort players by steam_id for stable ordering (prevents reorder on role change) */}
+                {[...existingTeam.players]
+                  .sort((a, b) => a.steam_id.localeCompare(b.steam_id))
+                  .map((player) => {
+                    // Convert existing team player to FantasyPlayer format
+                    // Use same logo logic as draft page - fallback to team name-based logo
+                    const teamLogoForPlayer = player.team_logo
+                      ? createTeamLogoUrl(player.team_logo)
+                      : player.team_name
+                        ? createTeamLogoUrl(
+                            player.team_name
+                              .toLowerCase()
+                              .replace(/\s+/g, "-") + ".png"
+                          )
+                        : "/team-images/nologo.png";
 
-                  const fantasyPlayer: FantasyPlayer = {
-                    id: parseInt(String(player.steam_id).slice(-9)),
-                    steam_id: String(player.steam_id),
-                    name: player.nickname,
-                    team: player.team_name || "Free Agent",
-                    teamLogo: teamLogoForPlayer,
-                    value: player.player_value,
-                    tier: player.tier || calculateTier(player.player_value), // Use tier from backend if available
-                    photo: undefined,
-                    stats: {
-                      rating: player.kana_rating || 0,
-                      kills: player.kills || 0,
-                      deaths: player.deaths || 0,
-                      kd: player.kd || 0,
-                      adr: player.adr || undefined,
-                      adrT: player.adr_t || undefined,
-                      adrCT: player.adr_ct || undefined,
-                      headshots: player.headshots || 0,
-                      headshotPercentage: player.headshot_percentage || 0,
-                      flashAssists: player.flash_assists || 0,
-                      firstKills: player.first_kills || 0,
-                      firstDeaths: player.first_deaths || 0,
-                      kast: player.kast || 0
-                    },
-                    role: player.role || undefined,
-                    points: player.points_earned || 0
-                  };
+                    const fantasyPlayer: FantasyPlayer = {
+                      id: parseInt(String(player.steam_id).slice(-9)),
+                      steam_id: String(player.steam_id),
+                      name: player.nickname,
+                      team: player.team_name || "Free Agent",
+                      teamLogo: teamLogoForPlayer,
+                      value: player.player_value,
+                      tier: player.tier || calculateTier(player.player_value), // Use tier from backend if available
+                      photo: undefined,
+                      stats: {
+                        rating: player.kana_rating || 0,
+                        kills: player.kills || 0,
+                        deaths: player.deaths || 0,
+                        kd: player.kd || 0,
+                        adr: player.adr || undefined,
+                        adrT: player.adr_t || undefined,
+                        adrCT: player.adr_ct || undefined,
+                        headshots: player.headshots || 0,
+                        headshotPercentage: player.headshot_percentage || 0,
+                        flashAssists: player.flash_assists || 0,
+                        firstKills: player.first_kills || 0,
+                        firstDeaths: player.first_deaths || 0,
+                        kast: player.kast || 0
+                      },
+                      role: player.role || undefined,
+                      points: player.points_earned || 0
+                    };
 
-                  return (
-                    <div key={player.steam_id} className="space-y-2">
-                      <FantasyPlayerFlipCard
-                        player={fantasyPlayer}
-                        onAdd={() => {}}
-                        disabled={true}
-                        budgetRemaining={existingTeam.budget_remaining}
-                        isExistingTeamPlayer={true}
-                      />
+                    return (
+                      <div key={player.steam_id} className="space-y-2">
+                        <FantasyPlayerFlipCard
+                          player={fantasyPlayer}
+                          onAdd={() => {}}
+                          disabled={true}
+                          budgetRemaining={existingTeam.budget_remaining}
+                          isExistingTeamPlayer={true}
+                        />
 
-                      {/* Controls below the card */}
-                      <div className="space-y-2">
-                        {/* Role Display */}
-                        {player.role ? (
-                          <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
-                            <p className="text-xs text-green-400 font-medium">
-                              {player.role.replace(/_/g, " ").toUpperCase()}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
-                            <p className="text-xs text-muted-foreground">
-                              NO ROLE ASSIGNED
-                            </p>
-                          </div>
-                        )}
+                        {/* Controls below the card */}
+                        <div className="space-y-2">
+                          {/* Role Display */}
+                          {player.role ? (
+                            <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
+                              <p className="text-xs text-green-400 font-medium">
+                                {player.role.replace(/_/g, " ").toUpperCase()}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="text-center p-2 bg-neutral-900/50 border border-neutral-800 rounded-lg">
+                              <p className="text-xs text-muted-foreground">
+                                NO ROLE ASSIGNED
+                              </p>
+                            </div>
+                          )}
 
-                        {/* Assign/Swap Role Button */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            // Initialize temp roles with current roles
-                            const currentRoles: Record<
-                              string,
-                              string | undefined
-                            > = {};
-                            existingTeam.players.forEach((p) => {
-                              currentRoles[p.steam_id] = p.role || undefined;
-                            });
-                            setTempRoles(currentRoles);
-                            // Set the current player index
-                            const playerIndex = existingTeam.players.findIndex(
-                              (p) => p.steam_id === player.steam_id
-                            );
-                            setCurrentRolePlayerIndex(playerIndex);
-                            setRoleDialogOpen(true);
-                          }}
-                          disabled={roleChangesRemaining <= 0}
-                          className="w-full"
-                        >
-                          {player.role ? "Swap Role" : "Assign Role"}
-                        </Button>
+                          {/* Assign/Swap Role Button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Initialize temp roles with current roles
+                              const currentRoles: Record<
+                                string,
+                                string | undefined
+                              > = {};
+                              existingTeam.players.forEach((p) => {
+                                currentRoles[p.steam_id] = p.role || undefined;
+                              });
+                              setTempRoles(currentRoles);
+                              // Set the current player index
+                              const playerIndex =
+                                existingTeam.players.findIndex(
+                                  (p) => p.steam_id === player.steam_id
+                                );
+                              setCurrentRolePlayerIndex(playerIndex);
+                              setRoleDialogOpen(true);
+                            }}
+                            disabled={roleChangesRemaining <= 0}
+                            className="w-full"
+                          >
+                            {player.role ? "Swap Role" : "Assign Role"}
+                          </Button>
 
-                        {/* Replace Player Button */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleSubstitutePlayer(player)}
-                          disabled={
-                            substitutionsRemaining <= 0 ||
-                            player.has_played_this_week
-                          }
-                          className="w-full"
-                          title={
-                            player.has_played_this_week
-                              ? "This player has already played this week and cannot be substituted"
-                              : ""
-                          }
-                        >
-                          {player.has_played_this_week
-                            ? "Locked (Played)"
-                            : "Replace Player"}
-                        </Button>
+                          {/* Replace Player Button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSubstitutePlayer(player)}
+                            disabled={
+                              substitutionsRemaining <= 0 ||
+                              player.has_played_this_week
+                            }
+                            className="w-full"
+                            title={
+                              player.has_played_this_week
+                                ? "This player has already played this week and cannot be substituted"
+                                : ""
+                            }
+                          >
+                            {player.has_played_this_week
+                              ? "Locked (Played)"
+                              : "Replace Player"}
+                          </Button>
 
-                        {/* View Points Button */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedPlayerForPoints(player)}
-                          className="w-full"
-                        >
-                          View Points
-                        </Button>
+                          {/* View Points Button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedPlayerForPoints(player)}
+                            className="w-full"
+                          >
+                            View Points
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
 
