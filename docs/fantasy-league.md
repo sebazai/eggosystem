@@ -37,9 +37,9 @@ The Fantasy League is a seasonal competition where players can create their own 
 
 **Typical Player Values:**
 
-- Bronze: $100k - $180k
-- Silver: $180k - $250k
-- Gold: $250k - $350k+
+- Bronze: €150k - €175k
+- Silver: €175k - €215k
+- Gold: €215k - €250k
 
 ### 2. Player Valuation System
 
@@ -49,22 +49,22 @@ Player values are calculated before the season starts based on:
 
 1. **Existing Players (played previous season):**
    - Base calculation: `kana_rating` (last season performance)
-   - Modifier: `kana_elo` (current skill level)
-   - Formula: `base_value = f(kana_rating, kana_elo)`
+   - Modifier: `kana_elo` (current skill level) - weighted 60%
+   - Formula: `value = f(kana_rating * 0.4 + kana_elo * 0.6, kd, kills)`
 
 2. **New Players (never played in Kanaliiga):**
    - Primary factor: `kana_elo` approximation
    - Estimated tier based on ELO thresholds
-   - Conservative initial value (e.g., $180k for unknown potential)
+   - Conservative initial value (e.g., €185k for unknown potential)
 
 #### Dynamic Value Changes
 
 Player values update throughout the season:
 
-- **Performance-based:** Points earned, K/D ratio, ADR, clutches
-- **Frequency:** Weekly updates (after match rounds)
-- **Change rate:** ±5-15% per week based on performance
-- **Example:** Player starts at $180k → performs well → rises to $235k
+- **Performance-based:** Points earned per match (-30 to +30)
+- **Frequency:** After every match (instant pricing)
+- **Change rate:** ±3% per match (capped)
+- **Example:** Player starts at €190k → performs well → rises to €215k
 
 ### 3. Team Composition & Roles
 

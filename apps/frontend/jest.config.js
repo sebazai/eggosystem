@@ -23,6 +23,14 @@ const customJestConfig = {
   modulePathIgnorePatterns: ["<rootDir>/.next/standalone/", "<rootDir>/dist/"],
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov", "cobertura"],
+  coverageThreshold: {
+    global: {
+      branches: 60,
+      functions: 70,
+      lines: 70,
+      statements: 70
+    }
+  },
   reporters: [
     "default",
     [

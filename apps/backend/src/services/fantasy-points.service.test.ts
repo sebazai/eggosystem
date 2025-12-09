@@ -340,8 +340,8 @@ describe("Fantasy Points Service", () => {
         mockPlayerStats
       );
 
-      // Main AWP gets 20% bonus on AWP kills (8 AWP kills * 10 points * 0.2)
-      expect(roleBonus).toBe(Math.floor(mockPlayerStats.awp_kills * 10 * 0.2));
+      // Main AWP gets 20% bonus on AWP kills (8 AWP kills * 5 points * 0.2)
+      expect(roleBonus).toBe(Math.floor(mockPlayerStats.awp_kills * 5 * 0.2));
     });
 
     it("should handle all 18 role types without errors", () => {

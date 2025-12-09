@@ -1,0 +1,206 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`RoundBreakdown Snapshot Tests renders correctly when starting as Counter-Terrorist side 1`] = `
+<div>
+  <div
+    class="flex justify-between items-center"
+  >
+    <span
+      class="text-muted-foreground"
+    >
+      Breakdown
+    </span>
+    <div
+      class="flex items-center gap-2"
+    >
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Counter-Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/ct-side-pliers.webp"
+          width="16"
+        />
+        <span
+          class="text-blue-500"
+        >
+          7
+        </span>
+      </div>
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/t-side-crossed-swords.webp"
+          width="16"
+        />
+        <span
+          class="text-yellow-500"
+        >
+          6
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`RoundBreakdown Snapshot Tests renders correctly when starting as Terrorist side 1`] = `
+<div>
+  <div
+    class="flex justify-between items-center"
+  >
+    <span
+      class="text-muted-foreground"
+    >
+      Breakdown
+    </span>
+    <div
+      class="flex items-center gap-2"
+    >
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/t-side-crossed-swords.webp"
+          width="16"
+        />
+        <span
+          class="text-yellow-500"
+        >
+          8
+        </span>
+      </div>
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Counter-Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/ct-side-pliers.webp"
+          width="16"
+        />
+        <span
+          class="text-blue-500"
+        >
+          5
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`RoundBreakdown Snapshot Tests renders correctly with overtime rounds 1`] = `
+<div>
+  <div
+    class="flex justify-between items-center"
+  >
+    <span
+      class="text-muted-foreground"
+    >
+      Breakdown
+    </span>
+    <div
+      class="flex items-center gap-2"
+    >
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/t-side-crossed-swords.webp"
+          width="16"
+        />
+        <span
+          class="text-yellow-500"
+        >
+          6
+        </span>
+      </div>
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Counter-Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/ct-side-pliers.webp"
+          width="16"
+        />
+        <span
+          class="text-blue-500"
+        >
+          6
+        </span>
+      </div>
+      <div>
+        (
+        4
+        )
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`RoundBreakdown Snapshot Tests renders correctly with zero overtime (overtime not displayed) 1`] = `
+<div>
+  <div
+    class="flex justify-between items-center"
+  >
+    <span
+      class="text-muted-foreground"
+    >
+      Breakdown
+    </span>
+    <div
+      class="flex items-center gap-2"
+    >
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Counter-Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/ct-side-pliers.webp"
+          width="16"
+        />
+        <span
+          class="text-blue-500"
+        >
+          9
+        </span>
+      </div>
+      <div
+        class="flex items-center"
+      >
+        <img
+          alt="Terrorist"
+          class="mr-1"
+          height="16"
+          src="/images/t-side-crossed-swords.webp"
+          width="16"
+        />
+        <span
+          class="text-yellow-500"
+        >
+          4
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
