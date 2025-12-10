@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/javascript-node:22-bullseye
+FROM mcr.microsoft.com/devcontainers/javascript-node:24-bullseye
 ENV TBLS_VERSION=1.86.1
 WORKDIR /workspace
 
