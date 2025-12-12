@@ -16,6 +16,7 @@ import {
   getMyTeamChampionshipsController
 } from "../../controllers/my-team.controllers";
 import { uploadTeamLogoController } from "../../controllers/team-logo.controllers";
+import { uploadPlayerAvatarController } from "../../controllers/player-avatar.controllers";
 import { validateNumericParams } from "../../middlewares/validate-numeric-params";
 import { getAuthUserBySteamId } from "../../models/auth.models";
 import { type UserProfilePayload } from "@eggosystem/types";
@@ -106,5 +107,8 @@ router.get(
   getMyTeamChampionshipsController
 );
 router.post("/my-teams/upload-logo", authenticateJWT, uploadTeamLogoController);
+
+// Avatar upload route
+router.post("/upload-avatar", authenticateJWT, uploadPlayerAvatarController);
 
 export default router;

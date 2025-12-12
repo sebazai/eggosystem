@@ -294,7 +294,7 @@ export const PlayerMatchHistoryTable = ({ steamId }: PlayerDetailsProps) => {
     const url = match.match_game_id
       ? `/matches/${match.match_id}/games/${match.match_game_id}`
       : `/matches/${match.match_id}`;
-    window.open(url, "_blank");
+    window.location.href = url;
   };
 
   const handleRowMiddleClick = (match: MatchHistoryResult) => {
