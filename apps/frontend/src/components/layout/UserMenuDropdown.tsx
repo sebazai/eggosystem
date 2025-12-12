@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { UserCheckIcon, UserIcon, Users } from "lucide-react";
+import { UserCheckIcon, UserIcon, Users, BarChart3 } from "lucide-react";
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -44,6 +44,13 @@ export default function UserDropdown() {
                   <Users /> <span>My Team</span>
                 </Link>
               </DropdownMenuItem>
+              {user.provider_id && (
+                <DropdownMenuItem className="cursor-pointer" asChild>
+                  <Link href={createNextUrl(`/players/${user.provider_id}`)}>
+                    <BarChart3 /> <span>My Player Page</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </>
           )}
           {/* <DropdownMenuItem>

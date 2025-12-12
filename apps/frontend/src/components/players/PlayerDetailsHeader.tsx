@@ -13,7 +13,7 @@ import { ContentContainer } from "../layout/ContentContainer";
 import { useFilters } from "@/context/FilterContext";
 import { PlayerWinsLosses } from "./PlayerWinsLosses";
 import { useSteamPlayer } from "@/hooks/data/useSteamPlayer";
-import { createTeamLogoUrl } from "@/lib/utils";
+import { createTeamLogoUrl, createAvatarUrl } from "@/lib/utils";
 import { useFaceitPlayerData } from "@/hooks/data/useFaceitPlayerData";
 import { FaceitLink } from "../ui/FaceitLink";
 
@@ -55,13 +55,26 @@ export const PlayerDetailsHeader = ({ steamId }: { steamId: string }) => {
   }
 
   const playerTeam = playerTeamDetails?.[0] ?? null;
+  const avatarUrl = steamPlayer?.avatar
+    ? createAvatarUrl(steamPlayer.avatar)
+    : null;
 
   return (
     <div className="bg-card rounded-md overflow-hidden">
       <div className="p-3 sm:p-6 border-b border-kanaliiga-orange border-b-2">
         <div className="flex items-center gap-2 sm:gap-4">
-          <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl font-bold">
-            {steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U"}
+          <div className="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl font-bold overflow-hidden">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={steamPlayer?.nickname ?? "Player avatar"}
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              (steamPlayer?.nickname.charAt(0).toUpperCase() ?? "U")
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-kanaliiga-orange">

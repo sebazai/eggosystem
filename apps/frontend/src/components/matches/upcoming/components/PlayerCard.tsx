@@ -1,6 +1,8 @@
 import React from "react";
+import Image from "next/image";
 import { User, Flag } from "lucide-react";
 import type { Player, TeamColor } from "@eggosystem/types";
+import { createAvatarUrl } from "@/lib/utils";
 
 interface PlayerCardProps {
   player: Player;
@@ -31,6 +33,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
     }
   };
 
+  const avatarUrl = player.avatar ? createAvatarUrl(player.avatar) : null;
+
   return (
     <div
       className="cursor-pointer transition-all duration-200 w-full group"
@@ -43,8 +47,18 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
             : `${colorClasses[teamColor].hover} ${colorClasses[teamColor].border}`
         }`}
       >
-        <div className="h-24 sm:h-28 bg-gray-700 rounded-t-lg flex items-center justify-center group-hover:bg-gray-600 transition-colors">
-          <User className="h-12 w-12 text-gray-400 group-hover:text-gray-300 transition-colors" />
+        <div className="h-24 sm:h-28 bg-gray-700 rounded-t-lg flex items-center justify-center group-hover:bg-gray-600 transition-colors overflow-hidden">
+          {avatarUrl ? (
+            <Image
+              src={avatarUrl}
+              alt={player.nickname}
+              width={112}
+              height={112}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <User className="h-12 w-12 text-gray-400 group-hover:text-gray-300 transition-colors" />
+          )}
         </div>
 
         {/* Country flag indicator */}

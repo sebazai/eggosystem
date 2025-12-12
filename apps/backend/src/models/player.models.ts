@@ -23,10 +23,14 @@ import { type PoolConnection } from "mysql2/promise";
 export const getPlayerBySteamId = async (steam_id: string) => {
   return runQuery<
     Array<
-      Pick<SteamPlayer, "nickname" | "steam_id" | "faceit_nickname"> | undefined
+      | Pick<
+          SteamPlayer,
+          "nickname" | "steam_id" | "faceit_nickname" | "avatar"
+        >
+      | undefined
     >
   >(
-    "SELECT nickname, steam_id, faceit_nickname FROM SteamPlayers WHERE steam_id = ?",
+    "SELECT nickname, steam_id, faceit_nickname, avatar FROM SteamPlayers WHERE steam_id = ?",
     [steam_id]
   );
 };
@@ -445,7 +449,8 @@ export const getMultiplePlayerStatsByFilters = async ({
   const baseQuery = `
     SELECT 
       p.steam_id,
-      p.nickname, 
+      p.nickname,
+      p.avatar,
       ${hasMapFilter ? "COUNT(DISTINCT ps.match_game_id)" : "COALESCE(COUNT(DISTINCT ps.match_game_id), 0)"} as maps_played,
       ${hasMapFilter ? "SUM(ps.kills)" : "COALESCE(SUM(ps.kills), 0)"} as kills,
       ${hasMapFilter ? "SUM(ps.assists)" : "COALESCE(SUM(ps.assists), 0)"} as assists,
@@ -467,7 +472,7 @@ export const getMultiplePlayerStatsByFilters = async ({
     ${joinType} MatchGames mg ON mg.match_id = m.id${mapConditions}
     ${joinType} PlayerStats ps ON ps.match_game_id = mg.id AND ps.steam_id = stp.steam_id
     ${whereClause}
-    GROUP BY p.steam_id, p.nickname
+    GROUP BY p.steam_id, p.nickname, p.avatar
     ORDER BY kana_rating DESC
   `;
 
@@ -1199,4 +1204,17 @@ export const setPlayerKanaElo = async (
 
     return result.affectedRows > 0;
   }
+};
+
+/**
+ * Update player avatar phash
+ */
+export const updatePlayerAvatar = async (
+  steamId: string,
+  avatar: string
+): Promise<void> => {
+  await runQuery("UPDATE SteamPlayers SET avatar = ? WHERE steam_id = ?", [
+    avatar,
+    steamId
+  ]);
 };
