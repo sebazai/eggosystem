@@ -474,6 +474,7 @@ export const SignupForm = ({
               <TabOrganization
                 control={control}
                 resetField={resetField}
+                setValue={setValue}
                 onNext={onNext}
                 validOrganizationSelection={validOrganizationSelection}
                 watchOrgId={watchOrgId}
@@ -484,6 +485,7 @@ export const SignupForm = ({
                 organizationId={watchOrgId}
                 control={control}
                 resetField={resetField}
+                setValue={setValue}
                 onNext={onNext}
                 validTeamSelection={validTeamSelection}
                 watchTeamId={watchTeamId}
@@ -508,6 +510,7 @@ export const SignupForm = ({
                 seasonId={seasonId}
                 validCaptainSelection={validCaptainSelection}
                 prefilledPlayerSteamIds={prefilledPlayerSteamIds}
+                teamId={watchTeamId}
               />
             </Tabs>
 

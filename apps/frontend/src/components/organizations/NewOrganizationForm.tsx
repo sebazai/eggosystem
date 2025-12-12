@@ -6,21 +6,47 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RequiredFormLabel } from "@/components/ui/RequiredFormLabel";
-import type { Control, Path, FieldValues } from "react-hook-form";
+import { ImageUploadField } from "@/components/signup/ImageUploadField";
+import type {
+  Control,
+  Path,
+  FieldValues,
+  UseFormSetValue
+} from "react-hook-form";
+import { useCallback } from "react";
 
 interface NewOrganizationFormProps<T extends FieldValues> {
   control: Control<T>;
   nameKey: Path<T>;
   orgCodeKey: Path<T>;
   websiteKey: Path<T>;
+  /** Optional: Key for image data (base64) */
+  imageDataKey?: Path<T>;
+  /** Optional: Key for image filename */
+  imageFilenameKey?: Path<T>;
+  /** Optional: setValue function for form (required if image keys are provided) */
+  setValue?: UseFormSetValue<T>;
 }
 
 export const NewOrganizationForm = <T extends FieldValues>({
   control,
   nameKey,
   orgCodeKey,
-  websiteKey
+  websiteKey,
+  imageDataKey,
+  imageFilenameKey,
+  setValue
 }: NewOrganizationFormProps<T>) => {
+  const handleImageSelect = useCallback(
+    (imageData: string | undefined, filename: string | undefined) => {
+      if (setValue && imageDataKey && imageFilenameKey) {
+        setValue(imageDataKey, imageData as T[keyof T]);
+        setValue(imageFilenameKey, filename as T[keyof T]);
+      }
+    },
+    [setValue, imageDataKey, imageFilenameKey]
+  );
+
   return (
     <div className="pt-4 space-y-4" data-testid="new-organization-fields">
       <FormField
@@ -74,6 +100,16 @@ export const NewOrganizationForm = <T extends FieldValues>({
           </FormItem>
         )}
       />
+
+      {/* Optional Image Upload for Organization Logo */}
+      {imageDataKey && imageFilenameKey && setValue && (
+        <ImageUploadField
+          id="organization-logo"
+          label="Organization Logo (Optional)"
+          onImageSelect={handleImageSelect}
+          helpText="Upload a logo for your organization. Supported formats: PNG, JPG, GIF, WEBP. Max size: 10MB"
+        />
+      )}
     </div>
   );
 };

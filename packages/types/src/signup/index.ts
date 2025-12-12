@@ -50,13 +50,19 @@ const newOrganizationSchema = z
   .object({
     name: z.string().min(2).max(50),
     organization_code: z.string().min(2).max(50),
-    website: z.string().url()
+    website: z.string().url(),
+    // Optional image upload data (base64 encoded)
+    image_data: z.string().optional(),
+    image_filename: z.string().optional()
   })
   .optional();
 
 const newTeamSchema = z
   .object({
-    name: z.string().min(2).max(50)
+    name: z.string().min(2).max(50),
+    // Optional image upload data (base64 encoded)
+    image_data: z.string().optional(),
+    image_filename: z.string().optional()
   })
   .optional();
 

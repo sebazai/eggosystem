@@ -11,8 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
 import type { MultiSelect } from "@/types/MultiSelectType";
-import { useEffect, useState } from "react";
-import type { Control, UseFormResetField } from "react-hook-form";
+import { useCallback, useEffect, useState } from "react";
+import type {
+  Control,
+  UseFormResetField,
+  UseFormSetValue
+} from "react-hook-form";
 import { useOrganizationTeams } from "@/hooks/data/useOrganizationTeams";
 import { SeasonPlatform, type SignupFormValues } from "@eggosystem/types";
 import { useTeamsWithoutOrgs } from "@/hooks/data/useTeamsWithoutOrgs";
@@ -20,12 +24,14 @@ import { ContentContainer } from "../layout/ContentContainer";
 import { Checkbox } from "../ui/checkbox";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
 import { useFormContext } from "react-hook-form";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface TabTeamProps {
   watchTeamId: number;
   organizationId?: number;
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
+  setValue: UseFormSetValue<SignupFormValues>;
   validTeamSelection: boolean;
   onNext: (value: string) => void;
   platform: string;
@@ -48,12 +54,20 @@ export const TabTeam = ({
   organizationId,
   control,
   resetField,
+  setValue,
   validTeamSelection,
   onNext,
   platform,
   fetchingExternalData,
   isEditMode
 }: TabTeamProps) => {
+  const handleTeamImageSelect = useCallback(
+    (imageData: string | undefined, filename: string | undefined) => {
+      setValue("newTeam.image_data" as "newTeam.name", imageData as string);
+      setValue("newTeam.image_filename" as "newTeam.name", filename as string);
+    },
+    [setValue]
+  );
   const [fetchTeamsWithoutOrg, setFetchTeamsWithoutOrg] = useState(false);
   const [openFilter, setOpenFilter] = useState<string | null>(null);
   const platformText = platform.charAt(0).toUpperCase() + platform.slice(1);
@@ -196,6 +210,14 @@ export const TabTeam = ({
                 <FormMessage />
               </FormItem>
             )}
+          />
+
+          {/* Team Logo Upload */}
+          <ImageUploadField
+            id="team-logo"
+            label="Team Logo (Optional)"
+            onImageSelect={handleTeamImageSelect}
+            helpText="Upload a logo for your team. Supported formats: PNG, JPG, GIF, WEBP. Max size: 10MB"
           />
         </div>
       )}

@@ -16,7 +16,10 @@ import {
   updateSeasonTeamRegistration
 } from "../models/season-team-registration.models";
 
-import { insertOrganization } from "../models/organization.models";
+import {
+  insertOrganization,
+  updateOrganizationLogo
+} from "../models/organization.models";
 import { getTeamWithIdWithoutOrg, insertTeam } from "../models/team.models";
 import { isTeamPartOfOrganization } from "./team.services";
 import { areSteamProfilesPublic } from "./steam.services";
@@ -36,6 +39,7 @@ import { insertSeasonTeamRegistrationPlayer } from "../models/season-team-regist
 import { updateSteamPlayerFaceitData } from "../models/player.models";
 import { logger } from "../utils/app-logger";
 import { sendSeasonCaptainWelcomeEmail } from "./email.services";
+import { uploadSignupImage } from "./signup-image-upload.services";
 
 export const ensurePlayerSteamProfilesPublic = async (
   playerSteamIds: string[]
@@ -473,6 +477,31 @@ export const handleSignupFormForSeason = async (
         connection
       );
 
+      // Upload organization logo if provided
+      if (formData.newOrganization.image_data) {
+        try {
+          const imageResult = await uploadSignupImage(
+            formData.newOrganization.image_data,
+            formData.newOrganization.image_filename,
+            "organization",
+            newOrg.insertId
+          );
+          await updateOrganizationLogo(
+            newOrg.insertId,
+            imageResult.phash,
+            connection
+          );
+          logger.info(
+            `Uploaded organization logo during signup: orgId=${newOrg.insertId}, phash=${imageResult.phash}`
+          );
+        } catch (imageError) {
+          // Log error but don't fail signup for image upload issues
+          logger.warn(
+            `Failed to upload organization logo during signup: ${imageError}`
+          );
+        }
+      }
+
       // If new organization, and an existing team from older seasons that does not have an org.
       if (rogueTeam) {
         await runQuery(
@@ -504,14 +533,39 @@ export const handleSignupFormForSeason = async (
 
       // New org and new team.
       if (formData.newTeam) {
+        // Determine team logo if image was uploaded
+        let teamLogo: string | undefined;
+        if (formData.newTeam.image_data) {
+          try {
+            const imageResult = await uploadSignupImage(
+              formData.newTeam.image_data,
+              formData.newTeam.image_filename,
+              "team",
+              0 // Temporary ID, will be updated after insert
+            );
+            teamLogo = imageResult.phash;
+          } catch (imageError) {
+            logger.warn(
+              `Failed to upload team logo during signup: ${imageError}`
+            );
+          }
+        }
+
         const newTeam = await insertTeam(
           {
             name: formData.newTeam.name,
             organization_id: newOrg.insertId,
-            org_approved: true
+            org_approved: true,
+            team_logo: teamLogo
           },
           connection
         );
+
+        if (teamLogo) {
+          logger.info(
+            `Uploaded team logo during signup: teamId=${newTeam.insertId}, phash=${teamLogo}`
+          );
+        }
 
         await handleSeasonTeamRegistration(
           season.id,
@@ -539,14 +593,39 @@ export const handleSignupFormForSeason = async (
   // Handle existing org and new team
   if (formData.organizationId !== -1) {
     if (formData.teamId === -1 && formData.newTeam) {
+      // Determine team logo if image was uploaded
+      let teamLogo: string | undefined;
+      if (formData.newTeam.image_data) {
+        try {
+          const imageResult = await uploadSignupImage(
+            formData.newTeam.image_data,
+            formData.newTeam.image_filename,
+            "team",
+            0 // Temporary ID, will be updated after insert
+          );
+          teamLogo = imageResult.phash;
+        } catch (imageError) {
+          logger.warn(
+            `Failed to upload team logo during signup: ${imageError}`
+          );
+        }
+      }
+
       const newTeam = await insertTeam(
         {
           name: formData.newTeam.name,
           organization_id: formData.organizationId,
-          org_approved: false
+          org_approved: false,
+          team_logo: teamLogo
         },
         connection
       );
+
+      if (teamLogo) {
+        logger.info(
+          `Uploaded team logo during signup: teamId=${newTeam.insertId}, phash=${teamLogo}`
+        );
+      }
 
       await handleSeasonTeamRegistration(
         season.id,
