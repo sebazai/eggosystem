@@ -52,6 +52,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { TooltipIcon } from "../ui/icons";
 import Link from "next/link";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
+import { RosterImportModal } from "./RosterImportModal";
+import { Upload } from "lucide-react";
 
 interface TabPlayersProps {
   control: Control<SignupFormValues>;
@@ -65,6 +67,7 @@ interface TabPlayersProps {
   seasonId: string;
   validCaptainSelection: boolean;
   prefilledPlayerSteamIds: string[];
+  teamId?: number;
 }
 
 export const TabPlayers = ({
@@ -78,7 +81,8 @@ export const TabPlayers = ({
   platform,
   seasonId,
   validCaptainSelection,
-  prefilledPlayerSteamIds
+  prefilledPlayerSteamIds,
+  teamId
 }: TabPlayersProps) => {
   const [promiseErrors, setPromiseErrors] = useState<Record<string, string[]>>(
     {}
@@ -91,6 +95,7 @@ export const TabPlayers = ({
   const [playerToRemoveIndex, setPlayerToRemoveIndex] = useState<number | null>(
     null
   );
+  const [showRosterImportModal, setShowRosterImportModal] = useState(false);
   const { fields, append, remove } = useFieldArray({
     control,
     name: "players"
@@ -659,10 +664,70 @@ export const TabPlayers = ({
     }
   };
 
+  const handleRosterImport = (players: SignupPlayerType[]) => {
+    // Set the imported players into the form
+    // We need to ensure we have the right number of player slots
+    const minPlayers = 5;
+    const maxPlayers = 9;
+    const importedCount = Math.min(players.length, maxPlayers);
+
+    // Remove excess players if current count exceeds imported + extra slots
+    while (fields.length > Math.max(importedCount, minPlayers)) {
+      remove(fields.length - 1);
+    }
+
+    // Add missing player slots if needed
+    while (fields.length < importedCount) {
+      append({
+        accountId: 0,
+        steamId: "",
+        nickname: "",
+        captain: false,
+        coCaptain: false
+      });
+    }
+
+    // Set the player data
+    players.slice(0, maxPlayers).forEach((player, index) => {
+      setValue(`players.${index}.steamId`, player.steamId);
+      setValue(`players.${index}.nickname`, player.nickname);
+      setValue(`players.${index}.captain`, player.captain ?? false);
+      setValue(`players.${index}.coCaptain`, player.coCaptain ?? false);
+      // Clear other fields to trigger re-validation
+      setValue(`players.${index}.hasValidData`, undefined);
+      setValue(`players.${index}.hasValidWorkEmail`, undefined);
+      setValue(`players.${index}.isEmailVerified`, undefined);
+      setValue(`players.${index}.hours`, undefined);
+      setValue(`players.${index}.rank`, undefined);
+      setValue(`players.${index}.externalRank`, undefined);
+    });
+
+    // Trigger player data fetching for all imported players
+    players.slice(0, maxPlayers).forEach((player, index) => {
+      if (isValidSteamId(player.steamId)) {
+        handlePlayer(player.steamId, index);
+      }
+    });
+  };
+
   return (
     <TabsContent value="players">
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Players</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Players</h3>
+          {teamId && teamId !== -1 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRosterImportModal(true)}
+              data-testid="roster-import-button"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import from previous season
+            </Button>
+          )}
+        </div>
         <Accordion
           type="multiple"
           value={openItems}
@@ -1146,6 +1211,13 @@ export const TabPlayers = ({
           confirmText="Remove"
           cancelText="Cancel"
           confirmVariant="destructive"
+        />
+
+        <RosterImportModal
+          teamId={teamId}
+          open={showRosterImportModal}
+          onOpenChange={setShowRosterImportModal}
+          onImport={handleRosterImport}
         />
       </div>
     </TabsContent>
