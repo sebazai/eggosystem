@@ -13,8 +13,6 @@ const uploadAvatarSchema = z.object({
   image_data: z.string().min(1, "Image data is required")
 });
 
-type UploadAvatarPayload = z.infer<typeof uploadAvatarSchema>;
-
 /**
  * Upload player avatar controller
  * Allows authenticated users to upload their own avatar
