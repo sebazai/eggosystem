@@ -12,7 +12,11 @@ import { useOrganizations } from "@/hooks/data/useOrganizations";
 import type { MultiSelect } from "@/types/MultiSelectType";
 import type { SignupFormValues } from "@eggosystem/types";
 import { useState } from "react";
-import type { Control, UseFormResetField } from "react-hook-form";
+import type {
+  Control,
+  UseFormResetField,
+  UseFormSetValue
+} from "react-hook-form";
 import { RequiredFormLabel } from "../ui/RequiredFormLabel";
 import { NewOrganizationForm } from "../organizations/NewOrganizationForm";
 
@@ -20,6 +24,7 @@ interface TabOrganizationProps {
   watchOrgId: number;
   control: Control<SignupFormValues>;
   resetField: UseFormResetField<SignupFormValues>;
+  setValue: UseFormSetValue<SignupFormValues>;
   validOrganizationSelection: boolean;
   onNext: (value: string) => void;
   isEditMode: boolean;
@@ -29,6 +34,7 @@ export const TabOrganization = ({
   watchOrgId,
   control,
   resetField,
+  setValue,
   validOrganizationSelection,
   onNext,
   isEditMode
@@ -114,6 +120,9 @@ export const TabOrganization = ({
           nameKey={"newOrganization.name"}
           orgCodeKey={"newOrganization.organization_code"}
           websiteKey={"newOrganization.website"}
+          imageDataKey={"newOrganization.image_data"}
+          imageFilenameKey={"newOrganization.image_filename"}
+          setValue={setValue}
         />
       )}
       <Button
