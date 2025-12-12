@@ -47,7 +47,7 @@ services:
       JWT_SECRET: $JWT_SECRET
       FACEIT_WEBHOOK_API_KEY: $FACEIT_WEBHOOK_API_KEY
       IMAGE_SERVICE_API_KEY: $IMG_API_KEY
-      IMAGE_SERVICE_URL: $IMG_PROD_PUBLIC_URL
+      IMAGE_SERVICE_URL: https://$IMG_PROD_PUBLIC_URL
     networks:
       - web
     volumes:
@@ -82,7 +82,7 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}
-      NEXT_PUBLIC_IMAGE_SERVICE_URL: ${IMG_PROD_PUBLIC_URL}
+      NEXT_PUBLIC_IMAGE_SERVICE_URL: https://${IMG_PROD_PUBLIC_URL}
     networks:
       - web
     labels:
@@ -113,7 +113,17 @@ services:
     networks:
       - web
     healthcheck:
-      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p$MARIADB_ROOT_PASSWORD" ]
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$MARIADB_ROOT_PASSWORD"
+        ]
       timeout: 20s
       retries: 10
     volumes:
@@ -141,7 +151,7 @@ services:
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
       WAIT_FOR_DB: ${KANA}
-    entrypoint: [ "scripts/wait-for-kanadb.sh" ]
+    entrypoint: ["scripts/wait-for-kanadb.sh"]
     command: "npx knex migrate:latest"
     networks:
       - web

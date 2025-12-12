@@ -194,6 +194,18 @@ export const createTeamLogoUrl = (identifier: string) => {
   return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
 };
 
+export const createAvatarUrl = (identifier: string) => {
+  if (!identifier) return "";
+
+  // If it's already a full URL, return as is (backward compatibility)
+  if (identifier.startsWith("http://") || identifier.startsWith("https://")) {
+    return identifier;
+  }
+
+  // Always use image service phash endpoint
+  return `${envConfig.IMAGE_SERVICE_URL}/images/by-hash/phash/${identifier}`;
+};
+
 export function filterParamsToSearchParams(
   filterParams: Partial<FilterParamsQuery> | null,
   excludeKeys: (keyof FilterParamsQuery)[] = []

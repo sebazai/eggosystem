@@ -4,6 +4,7 @@ import { Nullable } from "../utils";
 export interface PlayerStatsTable {
   steam_id: SteamPlayer["steam_id"];
   nickname: SteamPlayer["nickname"];
+  avatar?: Nullable<SteamPlayer["avatar"]>;
   team_name?: Team["name"];
   maps_played: number;
   kills: number;

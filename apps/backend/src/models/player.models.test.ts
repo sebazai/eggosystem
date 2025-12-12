@@ -42,6 +42,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198049745649",
         nickname: "sububobi",
+        avatar: null,
         maps_played: 13,
         kills: 243,
         assists: 63,
@@ -60,6 +61,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197963921578",
         nickname: "van9",
+        avatar: null,
         maps_played: 17,
         kills: 245,
         assists: 90,
@@ -78,6 +80,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198001857963",
         nickname: "meppi",
+        avatar: null,
         maps_played: 17,
         kills: 253,
         assists: 66,
@@ -96,6 +99,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197967885016",
         nickname: "enzoj",
+        avatar: null,
         maps_played: 17,
         kills: 232,
         assists: 100,
@@ -114,6 +118,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198030886203",
         nickname: "defektro",
+        avatar: null,
         maps_played: 17,
         kills: 136,
         assists: 72,
@@ -132,6 +137,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198043033465",
         nickname: "toro",
+        avatar: null,
         maps_played: 4,
         kills: 15,
         assists: 16,
@@ -163,6 +169,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197979215448",
         nickname: "Säästö-Sauli",
+        avatar: null,
         maps_played: 11,
         kills: 295,
         assists: 48,
@@ -181,6 +188,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198032101165",
         nickname: "Noppasäkki",
+        avatar: null,
         maps_played: 15,
         kills: 348,
         assists: 56,
@@ -199,6 +207,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198052713232",
         nickname: "Olavi",
+        avatar: null,
         maps_played: 13,
         kills: 315,
         assists: 45,
@@ -217,6 +226,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198186718465",
         nickname: "KioskNiko",
+        avatar: null,
         maps_played: 15,
         kills: 283,
         assists: 76,
@@ -235,6 +245,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198871831679",
         nickname: "Mc Jarruraita",
+        avatar: null,
         maps_played: 15,
         kills: 293,
         assists: 72,
@@ -253,6 +264,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197977142767",
         nickname: "Ruato",
+        avatar: null,
         maps_played: 15,
         kills: 240,
         assists: 72,
@@ -271,6 +283,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198046785345",
         nickname: "Niiles",
+        avatar: null,
         maps_played: 13,
         kills: 250,
         assists: 50,
@@ -289,6 +302,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198012114691",
         nickname: "Tsikken",
+        avatar: null,
         maps_played: 15,
         kills: 243,
         assists: 63,
@@ -307,6 +321,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198996818419",
         nickname: "Manetski",
+        avatar: null,
         maps_played: 12,
         kills: 195,
         assists: 44,
@@ -325,6 +340,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197979028801",
         nickname: "fps_",
+        avatar: null,
         maps_played: 13,
         kills: 197,
         assists: 42,
@@ -343,6 +359,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197960930455",
         nickname: "siili",
+        avatar: null,
         maps_played: 13,
         kills: 131,
         assists: 49,
@@ -374,6 +391,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198032101165",
         nickname: "Noppasäkki",
+        avatar: null,
         maps_played: 4,
         kills: 90,
         assists: 10,
@@ -392,6 +410,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198186718465",
         nickname: "KioskNiko",
+        avatar: null,
         maps_played: 4,
         kills: 91,
         assists: 20,
@@ -410,6 +429,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561197977142767",
         nickname: "Ruato",
+        avatar: null,
         maps_played: 4,
         kills: 68,
         assists: 30,
@@ -428,6 +448,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198871831679",
         nickname: "Mc Jarruraita",
+        avatar: null,
         maps_played: 4,
         kills: 79,
         assists: 19,
@@ -446,6 +467,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
       {
         steam_id: "76561198012114691",
         nickname: "Tsikken",
+        avatar: null,
         maps_played: 4,
         kills: 70,
         assists: 18,
@@ -477,6 +499,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         {
           steam_id: "76561197967885016",
           nickname: "enzoj",
+          avatar: null,
           maps_played: 4,
           kills: 98,
           assists: 30,
@@ -507,6 +530,7 @@ describe("getMultiplePlayerStatsByFilters", () => {
         {
           steam_id: "76561197967885016",
           nickname: "enzoj",
+          avatar: null,
           maps_played: 4,
           kills: 98,
           assists: 30,

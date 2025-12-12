@@ -197,7 +197,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with fewer than 5 players 
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -315,7 +315,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with fewer than 5 players 
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -433,7 +433,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with fewer than 5 players 
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -570,7 +570,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with top 5 players 1`] = `
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -688,7 +688,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with top 5 players 1`] = `
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -806,7 +806,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with top 5 players 1`] = `
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -924,7 +924,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with top 5 players 1`] = `
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
@@ -1042,7 +1042,7 @@ exports[`PlayerCards Snapshot Tests renders correctly with top 5 players 1`] = `
         class="flex justify-center mb-3"
       >
         <div
-          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground"
+          class="w-20 h-20 bg-kanaliiga-light-brown/30 rounded-full flex items-center justify-center text-3xl text-muted-foreground overflow-hidden"
         >
           <svg
             aria-hidden="true"
