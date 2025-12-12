@@ -474,10 +474,52 @@ describe("addSubstitutePlayerController", () => {
       steam_id: string;
     }>;
 
+    // Mock database connection for transaction
+    const mockConnection = {
+      beginTransaction: jest.fn().mockResolvedValue(undefined),
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      release: jest.fn().mockResolvedValue(undefined),
+      execute: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(mockConnection as never);
+
     // Mock resolveMatchId to return the same numeric ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(123);
     // Mock ensureMatchIdAndTeamIdMatches COUNT query
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
+    // Mock SeasonPlayerRanks check - player already has complete data
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 1,
+        cs2_rank: 15000,
+        faceit_level: 5,
+        faceit_elo: 1500,
+        cs_hours: 1000,
+        kana_elo: 150
+      }
+    ]);
+    // Mock tier query - not tier 1
+    mockRunQuery.mockResolvedValueOnce([{ tier: 2 }]);
+    // Mock eligibility check
+    mockSeasonModels.checkPlayerAdditionEligibility.mockResolvedValueOnce({
+      selectedTeam: {
+        team_id: 1650,
+        team_name: "Test Team",
+        current_top3_avg: 200,
+        current_top4_avg: 195,
+        new_player_kana_elo: 150,
+        new_avg_with_player: 198,
+        csrankker_components: { trueLevel: 5, mm: 10, hour: 5, kana: 5 }
+      },
+      topTeamsInLeague: [
+        { team_id: 1, team_name: "Top Team", avg4: 210, rank: 1 }
+      ],
+      canAddPlayer: true,
+      league_name: "Test League"
+    });
+    // Mock setPlayerKanaElo
+    mockPlayerModels.setPlayerKanaElo.mockResolvedValueOnce(true);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -490,10 +532,8 @@ describe("addSubstitutePlayerController", () => {
     // Verify match ID was resolved
     expect(mockMatchUtils.resolveMatchId).toHaveBeenCalledWith("123", 14);
 
-    // Verify no eligibility check was performed
-    expect(
-      mockSeasonModels.checkPlayerAdditionEligibility
-    ).not.toHaveBeenCalled();
+    // Verify eligibility check WAS performed (for non-tier1)
+    expect(mockSeasonModels.checkPlayerAdditionEligibility).toHaveBeenCalled();
 
     // Verify substitute player was added with resolved match_id
     expect(mockRunQuery).toHaveBeenCalledWith(
@@ -506,7 +546,7 @@ describe("addSubstitutePlayerController", () => {
         123,
         "TICKET-123"
       ]),
-      undefined
+      expect.any(Object)
     );
 
     expect(mockResponse.status).toHaveBeenCalledWith(200);
@@ -611,10 +651,33 @@ describe("addSubstitutePlayerController", () => {
       steam_id: string;
     }>;
 
+    // Mock database connection for transaction
+    const mockConnection = {
+      beginTransaction: jest.fn().mockResolvedValue(undefined),
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      release: jest.fn().mockResolvedValue(undefined),
+      execute: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(mockConnection as never);
+
     // Mock resolveMatchId to return internal match ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(456);
     // Mock ensureMatchIdAndTeamIdMatches COUNT query
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
+    // Mock SeasonPlayerRanks check - player already has complete data
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 1,
+        cs2_rank: 15000,
+        faceit_level: 5,
+        faceit_elo: 1500,
+        cs_hours: 1000,
+        kana_elo: 150
+      }
+    ]);
+    // Mock tier query - tier 1 (Masters) to skip eligibility
+    mockRunQuery.mockResolvedValueOnce([{ tier: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -641,7 +704,7 @@ describe("addSubstitutePlayerController", () => {
         456,
         "TICKET-456"
       ]),
-      undefined
+      expect.any(Object)
     );
 
     expect(mockResponse.status).toHaveBeenCalledWith(200);
@@ -670,10 +733,33 @@ describe("addSubstitutePlayerController", () => {
       steam_id: string;
     }>;
 
+    // Mock database connection for transaction
+    const mockConnection = {
+      beginTransaction: jest.fn().mockResolvedValue(undefined),
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      release: jest.fn().mockResolvedValue(undefined),
+      execute: jest.fn()
+    };
+    mockGetConnection.mockResolvedValue(mockConnection as never);
+
     // Mock resolveMatchId to return internal match ID
     mockMatchUtils.resolveMatchId.mockResolvedValueOnce(789);
     // Mock ensureMatchIdAndTeamIdMatches COUNT query
     mockRunQuery.mockResolvedValueOnce([{ count: 1 }]);
+    // Mock SeasonPlayerRanks check - player already has complete data
+    mockRunQuery.mockResolvedValueOnce([
+      {
+        id: 1,
+        cs2_rank: 15000,
+        faceit_level: 5,
+        faceit_elo: 1500,
+        cs_hours: 1000,
+        kana_elo: 150
+      }
+    ]);
+    // Mock tier query - tier 1 (Masters) to skip eligibility
+    mockRunQuery.mockResolvedValueOnce([{ tier: 1 }]);
     // Mock successful insertion
     mockRunQuery.mockResolvedValueOnce({ insertId: 1 });
 
@@ -700,7 +786,7 @@ describe("addSubstitutePlayerController", () => {
         789,
         "TICKET-789"
       ]),
-      undefined
+      expect.any(Object)
     );
 
     expect(mockResponse.status).toHaveBeenCalledWith(200);

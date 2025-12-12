@@ -288,6 +288,103 @@ export const finalizeTeamPlacementsController = async (
       );
     }
 
+    // PRE-FLIGHT VALIDATION: Ensure all players in approved registrations have SeasonPlayerRanks
+    const playersWithoutRanksQuery = `
+      SELECT 
+        strp.steam_id, 
+        strp.team_id,
+        t.name as team_name,
+        sp.nickname
+      FROM SeasonTeamRegistrationPlayers strp
+      INNER JOIN SeasonTeamRegistrations str 
+        ON str.season_id = strp.season_id AND str.team_id = strp.team_id
+      LEFT JOIN SeasonPlayerRanks spr 
+        ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
+      LEFT JOIN Teams t ON t.id = strp.team_id
+      LEFT JOIN SteamPlayers sp ON sp.steam_id = strp.steam_id
+      WHERE strp.season_id = ? AND str.approved = 1 AND spr.id IS NULL
+    `;
+    const playersWithoutRanks = await runQuery<
+      Array<{
+        steam_id: string;
+        team_id: number;
+        team_name: string | null;
+        nickname: string | null;
+      }>
+    >(playersWithoutRanksQuery, [seasonId], connection);
+
+    if (playersWithoutRanks.length > 0) {
+      const missingPlayersList = playersWithoutRanks
+        .map(
+          (p) =>
+            `${p.nickname || p.steam_id} (team: ${p.team_name || p.team_id})`
+        )
+        .join(", ");
+      logger.error(
+        `Cannot finalize: ${playersWithoutRanks.length} players missing SeasonPlayerRanks: ${missingPlayersList}`
+      );
+      return next(
+        new BadRequestError(
+          `Cannot finalize placements: ${playersWithoutRanks.length} player(s) are missing rank data. ` +
+            `Please ensure all players have completed rank processing. Missing: ${missingPlayersList}`
+        )
+      );
+    }
+
+    // Also check for players with null critical rank values
+    const playersWithNullRanksQuery = `
+      SELECT 
+        strp.steam_id, 
+        strp.team_id,
+        t.name as team_name,
+        sp.nickname,
+        spr.cs2_rank,
+        spr.cs_hours,
+        spr.kana_elo
+      FROM SeasonTeamRegistrationPlayers strp
+      INNER JOIN SeasonTeamRegistrations str 
+        ON str.season_id = strp.season_id AND str.team_id = strp.team_id
+      INNER JOIN SeasonPlayerRanks spr 
+        ON spr.steam_id = strp.steam_id AND spr.season_id = strp.season_id
+      LEFT JOIN Teams t ON t.id = strp.team_id
+      LEFT JOIN SteamPlayers sp ON sp.steam_id = strp.steam_id
+      WHERE strp.season_id = ? AND str.approved = 1 
+        AND (spr.kana_elo IS NULL OR spr.kana_elo = 0)
+    `;
+    const playersWithNullRanks = await runQuery<
+      Array<{
+        steam_id: string;
+        team_id: number;
+        team_name: string | null;
+        nickname: string | null;
+        cs2_rank: number | null;
+        cs_hours: number | null;
+        kana_elo: number | null;
+      }>
+    >(playersWithNullRanksQuery, [seasonId], connection);
+
+    if (playersWithNullRanks.length > 0) {
+      const incompletePlayersList = playersWithNullRanks
+        .map(
+          (p) =>
+            `${p.nickname || p.steam_id} (team: ${p.team_name || p.team_id}, kana_elo: ${p.kana_elo ?? "NULL"})`
+        )
+        .join(", ");
+      logger.error(
+        `Cannot finalize: ${playersWithNullRanks.length} players have incomplete rank data: ${incompletePlayersList}`
+      );
+      return next(
+        new BadRequestError(
+          `Cannot finalize placements: ${playersWithNullRanks.length} player(s) have incomplete rank data (missing kana_elo). ` +
+            `Please ensure kana_elo calculation is complete. Incomplete: ${incompletePlayersList}`
+        )
+      );
+    }
+
+    logger.info(
+      `Pre-flight validation passed: all players have complete SeasonPlayerRanks data`
+    );
+
     // Create a map to track which league IDs we need to process
     const requiredLeagues = new Map<
       number,

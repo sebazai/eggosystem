@@ -174,38 +174,64 @@ export const addPlayerToTeamController = async (
       // Fetch real CS2 rank data from Leetify (range 1000-30000)
       const rankData = await getCSRank(steamId);
       const playerCS2Rank =
-        rankData.average_rank !== -1 ? rankData.average_rank : null;
+        rankData.average_rank !== -1
+          ? rankData.average_rank
+          : (existingPlayer?.cs2_rank ?? null);
 
       // Fetch real hours played from Steam API
       const hoursData = await getPlayerHoursForSteamAppId(steamId, 730);
-      const playerCSHours = hoursData.hours !== -1 ? hoursData.hours : null;
+      const playerCSHours =
+        hoursData.hours !== -1
+          ? hoursData.hours
+          : (existingPlayer?.cs_hours ?? null);
 
       // Fetch real FACEIT data (levels 1-10, ELO values)
       const faceitData = await getFaceITCS2Rank(steamId);
 
-      if (faceitData.faceit_elo < 0) {
+      // Only fail if we have no data at all (neither from API nor existing)
+      if (
+        faceitData.faceit_elo < 0 &&
+        (!existingPlayer || existingPlayer.faceit_elo === null)
+      ) {
         return next(new BadRequestError("FaceIT data not found"));
       }
 
-      if (rankData.average_rank < 0) {
+      if (
+        rankData.average_rank < 0 &&
+        (!existingPlayer || existingPlayer.cs2_rank === null)
+      ) {
         return next(new BadRequestError("CS2 rank not found"));
       }
 
-      if (hoursData.hours < 0) {
+      if (
+        hoursData.hours < 0 &&
+        (!existingPlayer || existingPlayer.cs_hours === null)
+      ) {
         return next(new BadRequestError("Hours not found"));
       }
+
+      // Use API data if available, otherwise fall back to existing data
+      const finalFaceitData =
+        faceitData.faceit_elo >= 0
+          ? faceitData
+          : {
+              faceit_level: existingPlayer?.faceit_level ?? undefined,
+              faceit_elo: existingPlayer?.faceit_elo ?? undefined,
+              faceit_kd: undefined,
+              faceit_date: undefined
+            };
 
       // Create or update player in SeasonPlayerRanks with real data
       await insertPlayerRankForSeason(
         steamId,
         seasonId,
-        playerCS2Rank, // Real CS2 rank (1000-30000 range)
-        playerCSHours, // Real hours played from Steam
+        playerCS2Rank, // Real CS2 rank (1000-30000 range) or existing
+        playerCSHours, // Real hours played from Steam or existing
         {
-          faceit_level: faceitData.faceit_level,
-          faceit_elo: faceitData.faceit_elo,
-          faceit_kd: faceitData.faceit_kd,
-          faceit_date: faceitData.faceit_date
+          faceit_level: finalFaceitData.faceit_level,
+          faceit_elo: finalFaceitData.faceit_elo,
+          faceit_kd: finalFaceitData.faceit_kd,
+          faceit_date: finalFaceitData.faceit_date
         },
         { connection }
       );
@@ -469,17 +495,22 @@ export const addSubstitutePlayerController = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const connection = await getConnection();
   try {
+    await connection.beginTransaction();
+
     const seasonId = Number(req.params.season_id);
     const teamId = Number(req.params.team_id);
     const steamId = req.params.steam_id;
     const { match_id, replaces_steam_id, ticket_number } = req.body;
 
     if (!match_id) {
+      await connection.rollback();
       return next(new BadRequestError("match_id is required"));
     }
 
     if (!ticket_number || ticket_number.trim() === "") {
+      await connection.rollback();
       return next(new BadRequestError("ticket_number is required"));
     }
 
@@ -490,6 +521,165 @@ export const addSubstitutePlayerController = async (
 
     await ensureMatchIdAndTeamIdMatches(resolvedMatchId, teamId);
 
+    // Check if player has all required data in SeasonPlayerRanks
+    const checkPlayerQuery = `
+        SELECT 
+          id, 
+          cs2_rank, 
+          faceit_level, 
+          faceit_elo, 
+          cs_hours, 
+          kana_elo 
+        FROM SeasonPlayerRanks 
+        WHERE season_id = ? AND steam_id = ?
+      `;
+    const existingPlayerResult = await runQuery<
+      Array<{
+        id: number;
+        cs2_rank: number | null;
+        faceit_level: number | null;
+        faceit_elo: number | null;
+        cs_hours: number | null;
+        kana_elo: number | null;
+      }>
+    >(checkPlayerQuery, [seasonId, steamId], connection);
+
+    const existingPlayer =
+      existingPlayerResult && existingPlayerResult.length > 0
+        ? existingPlayerResult[0]
+        : null;
+
+    // If player data is incomplete, fetch it from external services
+    if (
+      !existingPlayer ||
+      existingPlayer.cs2_rank === null ||
+      existingPlayer.faceit_level === null ||
+      existingPlayer.cs_hours === null
+    ) {
+      // Fetch real CS2 rank data from Leetify (range 1000-30000)
+      const rankData = await getCSRank(steamId);
+      const playerCS2Rank =
+        rankData.average_rank !== -1
+          ? rankData.average_rank
+          : (existingPlayer?.cs2_rank ?? null);
+
+      // Fetch real hours played from Steam API
+      const hoursData = await getPlayerHoursForSteamAppId(steamId, 730);
+      const playerCSHours =
+        hoursData.hours !== -1
+          ? hoursData.hours
+          : (existingPlayer?.cs_hours ?? null);
+
+      // Fetch real FACEIT data (levels 1-10, ELO values)
+      const faceitData = await getFaceITCS2Rank(steamId);
+
+      // Only fail if we have no data at all (neither from API nor existing)
+      if (
+        faceitData.faceit_elo < 0 &&
+        (!existingPlayer || existingPlayer.faceit_elo === null)
+      ) {
+        await connection.rollback();
+        return next(
+          new BadRequestError("FaceIT data not found for substitute player")
+        );
+      }
+
+      if (
+        rankData.average_rank < 0 &&
+        (!existingPlayer || existingPlayer.cs2_rank === null)
+      ) {
+        await connection.rollback();
+        return next(
+          new BadRequestError("CS2 rank not found for substitute player")
+        );
+      }
+
+      if (
+        hoursData.hours < 0 &&
+        (!existingPlayer || existingPlayer.cs_hours === null)
+      ) {
+        await connection.rollback();
+        return next(
+          new BadRequestError("CS hours not found for substitute player")
+        );
+      }
+
+      // Use API data if available, otherwise fall back to existing data
+      const finalFaceitData =
+        faceitData.faceit_elo >= 0
+          ? faceitData
+          : {
+              faceit_level: existingPlayer?.faceit_level ?? undefined,
+              faceit_elo: existingPlayer?.faceit_elo ?? undefined,
+              faceit_kd: undefined,
+              faceit_date: undefined
+            };
+
+      // Create or update player in SeasonPlayerRanks with real data
+      await insertPlayerRankForSeason(
+        steamId,
+        seasonId,
+        playerCS2Rank, // Real CS2 rank (1000-30000 range) or existing
+        playerCSHours, // Real hours played from Steam or existing
+        {
+          faceit_level: finalFaceitData.faceit_level,
+          faceit_elo: finalFaceitData.faceit_elo,
+          faceit_kd: finalFaceitData.faceit_kd,
+          faceit_date: finalFaceitData.faceit_date
+        },
+        { connection, ticket_id: ticket_number.trim() }
+      );
+    }
+
+    // Check if team is in tier 1 league (Masters - skip eligibility for tier 1)
+    const tierQuery = `
+      SELECT sl.tier
+      FROM SeasonLeagueTeams slt
+      JOIN SeasonLeagues sl ON sl.season_id = slt.season_id AND sl.league_id = slt.league_id
+      WHERE slt.team_id = ? AND slt.season_id = ?
+      LIMIT 1
+    `;
+    const tierResults = await runQuery<Array<{ tier: number }>>(
+      tierQuery,
+      [teamId, seasonId],
+      connection
+    );
+    const isTier1 = tierResults.length > 0 && tierResults[0].tier === 1;
+
+    // Check eligibility for substitute players (skip only for tier 1 teams)
+    if (!isTier1) {
+      const eligibility = await checkPlayerAdditionEligibility(
+        seasonId,
+        teamId,
+        steamId,
+        { connection, context: "finalized" }
+      );
+
+      if (!eligibility.canAddPlayer) {
+        await connection.rollback();
+        return next(
+          new BadRequestError(
+            "Substitute player is not eligible to be added to this team"
+          )
+        );
+      }
+
+      // Set the player's kana_elo from the eligibility check
+      const calculusString =
+        typeof eligibility.selectedTeam.csrankker_components === "object"
+          ? JSON.stringify(eligibility.selectedTeam.csrankker_components)
+          : String(eligibility.selectedTeam.csrankker_components || "{}");
+
+      await setPlayerKanaElo(
+        steamId,
+        eligibility.selectedTeam.new_player_kana_elo,
+        calculusString,
+        seasonId,
+        undefined, // offered_elo (not needed here)
+        connection
+      );
+    }
+
     const insertData = {
       steam_id: steamId,
       role: "substitute",
@@ -497,7 +687,9 @@ export const addSubstitutePlayerController = async (
       replaces_steam_id: replaces_steam_id || undefined,
       ticket_number: ticket_number.trim()
     } satisfies InsertSeasonTeamPlayer;
-    await insertSeasonTeamPlayer(seasonId, teamId, insertData);
+    await insertSeasonTeamPlayer(seasonId, teamId, insertData, connection);
+
+    await connection.commit();
 
     res.status(200).json({
       message: "Substitute player successfully added to the team",
@@ -510,7 +702,10 @@ export const addSubstitutePlayerController = async (
       ticket_number: ticket_number.trim()
     });
   } catch (error) {
+    await connection.rollback();
     next(error);
+  } finally {
+    connection.release();
   }
 };
 
