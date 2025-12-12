@@ -64,6 +64,7 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUBDEV_PUBLIC_URL}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUBDEV_PUBLIC_URL}
       NEXT_PUBLIC_BASE_URL: https://${HUBDEV_PUBLIC_URL}
+      NEXT_PUBLIC_IMAGE_SERVICE_URL: ${IMG_DEV_PUBLIC_URL}
     networks:
       - web
     labels:
@@ -94,17 +95,7 @@ services:
     networks:
       - web
     healthcheck:
-      test:
-        [
-          "CMD",
-          "mariadb-admin",
-          "ping",
-          "-h",
-          "localhost",
-          "-u",
-          "root",
-          "-p$MARIADB_DEV_ROOT_PASSWORD"
-        ]
+      test: [ "CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p$MARIADB_DEV_ROOT_PASSWORD" ]
       timeout: 20s
       retries: 10
     volumes:
@@ -162,7 +153,7 @@ services:
       DB_NAME: ${MARIADB_DATABASE}
       DB_PORT: 3306
       WAIT_FOR_DB: ${KANA}
-    entrypoint: ["scripts/wait-for-kanadb.sh"]
+    entrypoint: [ "scripts/wait-for-kanadb.sh" ]
     command: "npx knex migrate:latest"
     networks:
       - web

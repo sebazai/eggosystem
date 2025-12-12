@@ -82,6 +82,7 @@ services:
       NEXT_PUBLIC_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_CLIENT_API_URL: https://${HUB_PUBLIC_URL}
       NEXT_PUBLIC_BASE_URL: https://${HUB_PUBLIC_URL}
+      NEXT_PUBLIC_IMAGE_SERVICE_URL: ${IMG_PROD_PUBLIC_URL}
     networks:
       - web
     labels:
