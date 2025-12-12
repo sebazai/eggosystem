@@ -81,3 +81,18 @@ export const getOrganizationDiscordInviteLink = async (
   if (result.length === 0) return null;
   return result[0].discord_invite_link;
 };
+
+/**
+ * Update organization logo phash
+ */
+export const updateOrganizationLogo = async (
+  organizationId: number,
+  logo: string,
+  connection?: PoolConnection
+): Promise<void> => {
+  await runQuery(
+    "UPDATE Organizations SET logo = ? WHERE id = ?",
+    [logo, organizationId],
+    connection
+  );
+};
