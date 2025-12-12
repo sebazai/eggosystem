@@ -591,6 +591,7 @@ push-dockerfile:frontend:
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBDEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBDEV_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_IMAGE_SERVICE_URL=https://$IMG_DEV_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
           --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
@@ -608,6 +609,7 @@ push-dockerfile:frontend:
           --build-arg NEXT_PUBLIC_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUBSTAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUBSTAGE_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_IMAGE_SERVICE_URL=https://$IMG_STAGE_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
           --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
@@ -626,6 +628,7 @@ push-dockerfile:frontend:
           --build-arg NEXT_PUBLIC_API_URL=https://$HUB_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://$HUB_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_BASE_URL=https://$HUB_PUBLIC_URL \
+          --build-arg NEXT_PUBLIC_IMAGE_SERVICE_URL=https://$IMG_PROD_PUBLIC_URL \
           --build-arg NEXT_PUBLIC_GIT_SHA=$CI_COMMIT_SHA \
           --build-arg NEXT_PUBLIC_GITLAB_URL=$CI_PROJECT_URL/-/commit/$CI_COMMIT_SHA \
           --build-arg CI=true \
@@ -810,6 +813,7 @@ deploy-ondemand:
       --build-arg NEXT_PUBLIC_CLIENT_API_URL=https://hubod.kanaliiga.fi/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_PATH=/$ENV_ID
       --build-arg NEXT_PUBLIC_BASE_URL=https://hubod.kanaliiga.fi
+      --build-arg NEXT_PUBLIC_IMAGE_SERVICE_URL=https://$IMG_DEV_PUBLIC_URL
       --build-arg CI=true
       --push
       -t $REGISTRY/eggo-frontend:${ENV_ID}
