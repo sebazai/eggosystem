@@ -47,7 +47,7 @@ export default function UserDropdown() {
               {user.provider_id && (
                 <DropdownMenuItem className="cursor-pointer" asChild>
                   <Link href={createNextUrl(`/players/${user.provider_id}`)}>
-                    <BarChart3 /> <span>My Player Page</span>
+                    <BarChart3 /> <span>My Page</span>
                   </Link>
                 </DropdownMenuItem>
               )}

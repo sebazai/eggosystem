@@ -406,7 +406,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
                 >
                   <Badge
                     variant="secondary"
-                    className="bg-green-500/20 text-green-400 border-green-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl hover:bg-green-500/30 cursor-pointer transition-colors"
+                    className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl hover:bg-orange-500/30 cursor-pointer transition-colors"
                   >
                     Registration for Season {seasonStatus.seasonNumber} Open →
                   </Badge>
@@ -414,7 +414,7 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
               ) : (
                 <Badge
                   variant="secondary"
-                  className="bg-slate-500/20 text-slate-400 border-slate-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
+                  className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
                 >
                   CS2 Corporate League
                 </Badge>
