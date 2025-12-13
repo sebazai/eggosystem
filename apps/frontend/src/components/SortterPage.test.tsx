@@ -30,6 +30,16 @@ jest.mock("@/hooks/data/dashboard/useSortter", () => ({
   useSortter: jest.fn()
 }));
 
+// Mock the useTeamHistory hook
+jest.mock("@/hooks/data/dashboard/useTeamHistory", () => ({
+  useTeamHistory: jest.fn(() => ({
+    history: [],
+    isLoading: false,
+    isValidating: false,
+    error: null
+  }))
+}));
+
 // Mock WithRoleProtection component
 jest.mock("@/components/dashboard/WithRoleProtection", () => ({
   WithRoleProtection: ({ children }: { children: React.ReactNode }) => (

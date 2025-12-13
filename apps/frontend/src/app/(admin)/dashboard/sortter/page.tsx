@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/chart";
 import { XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
 import { AlertTriangle } from "lucide-react";
+import { TeamHistoryBadge } from "@/components/sortter/TeamHistoryBadge";
 
 // Enhanced line chart component using shadcn Chart
 const MiniChart = ({ data }: { data: number[] }) => {
@@ -623,6 +624,9 @@ function SortterPageContent() {
                         <th className="text-center p-2 font-medium text-sm w-72">
                           Graph (0-350)
                         </th>
+                        <th className="text-left p-2 font-medium text-sm w-48">
+                          History
+                        </th>
                         <th className="text-left p-2 font-medium text-sm w-72">
                           Comments
                         </th>
@@ -658,7 +662,7 @@ function SortterPageContent() {
                           <React.Fragment key={team.team_id}>
                             {isFirstInDivision && index > 0 && (
                               <tr className="border-t-4 border-gray-800 dark:border-gray-200">
-                                <td colSpan={6} className="h-1 p-0"></td>
+                                <td colSpan={7} className="h-1 p-0"></td>
                               </tr>
                             )}
                             <tr
@@ -702,6 +706,12 @@ function SortterPageContent() {
                                 <div className="w-full h-[120px]">
                                   <MiniChart data={team.top5_values} />
                                 </div>
+                              </td>
+                              <td className="p-2">
+                                <TeamHistoryBadge
+                                  seasonId={selectedSeason}
+                                  teamId={team.team_id}
+                                />
                               </td>
                               <td className="p-2">
                                 <Textarea

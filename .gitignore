@@ -73,3 +73,6 @@ dbdoc/
 
 # standings ui
 standings-ui/
+
+# agent
+.agent/

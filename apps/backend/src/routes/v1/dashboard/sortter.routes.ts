@@ -8,6 +8,7 @@ import {
   refreshTeamFlagsFromDatabaseController,
   refreshTeamFlagsForSeasonController
 } from "../../../controllers/dashboard/sortter.controllers";
+import { getTeamHistoryController } from "../../../controllers/dashboard/sortter-history.controllers";
 import { retryFailedKanaeloCalculationsController } from "../../../controllers/dashboard/kanaelo-retry.controllers";
 import {
   getPreliminaryPlacementsController,
@@ -46,6 +47,13 @@ router.get(
   "/season/:season_id/team/:team_id/players",
   validateNumericParams(),
   getTeamPlayerValuesLiveController
+);
+
+// GET /api/v1/dashboard/sortter/season/:season_id/team/:team_id/history
+router.get(
+  "/season/:season_id/team/:team_id/history",
+  validateNumericParams(),
+  getTeamHistoryController
 );
 
 // POST /api/v1/dashboard/sortter/season/:season_id/populate-kanaelo-queue
