@@ -40,7 +40,8 @@ const mockActiveSeason = {
   signup_end_date: "2024-12-31",
   full_name: "Test Season Full Name",
   signup_start_date: "2024-12-01",
-  start_date: "2024-12-31"
+  start_date: "2024-12-31",
+  end_date: "2025-03-31"
 } satisfies ActiveSignupOrSeasonForAppId;
 
 // Type definitions for test requests

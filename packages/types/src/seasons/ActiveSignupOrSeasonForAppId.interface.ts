@@ -6,5 +6,6 @@ export interface ActiveSignupOrSeasonForAppId {
   signup_start_date: Season["signup_start_date"];
   signup_end_date: Season["signup_end_date"];
   start_date: Season["start_date"];
+  end_date: Season["end_date"];
   full_name: Season["full_name"];
 }
