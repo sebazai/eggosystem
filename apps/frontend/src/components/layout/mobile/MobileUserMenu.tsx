@@ -1,7 +1,7 @@
 import { MobileLogOut } from "@/components/profile/MobileLogOut";
 import { SteamLoginButton } from "@/components/profile/SteamLoginButton";
 import { useAuth } from "@/context/AuthContext";
-import { SettingsIcon, Users } from "lucide-react";
+import { SettingsIcon, Users, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { ModeToggle } from "../ThemeToggle";
 import { createNextUrl } from "@/lib/utils";
@@ -39,6 +39,17 @@ export const MobileUserMenu = ({ setIsSheetOpen }: MobileUserMenuProps) => {
               My Team
             </Link>
           </div>
+          {user.provider_id && (
+            <div className="flex items-center gap-2">
+              <BarChart3 className="min-w-4 min-h-4 w-4 h-4 xxs:w-6 xxs:h-6" />
+              <Link
+                href={createNextUrl(`/players/${user.provider_id}`)}
+                onClick={() => setIsSheetOpen(false)}
+              >
+                My Page
+              </Link>
+            </div>
+          )}
         </>
       )}
       <div>

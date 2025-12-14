@@ -8,7 +8,7 @@ import { envConfig } from "@/configs/env";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import HeroSection from "@/components/layout/HeroSection";
-import { SeasonButtons } from "@/components/landing/SeasonButtons";
+import { SeasonStatusSection } from "@/components/landing/SeasonStatusSection";
 import { Navigation } from "@/components/layout/Navigation";
 import { createNextUrl } from "@/lib/utils";
 
@@ -126,32 +126,8 @@ export default async function Home() {
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
 
-            {/* CS2 Season 4 Current Season */}
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-white">
-              🎮 CS2 Season 4 – Live Now
-            </h2>
-            <p className="text-lg mb-2 text-slate-300">
-              <strong>Season is currently in progress</strong>
-              <br />
-              <strong>Watch live matches and follow your favorite teams</strong>
-            </p>
-
-            <p className="mb-6 text-slate-300">
-              The fourth installment of our most competitive and
-              community-driven Counter-Strike 2 season is now live! With
-              hundreds of teams competing across multiple divisions,{" "}
-              <strong>CS2 Season 4</strong> is delivering intense matches, epic
-              plays, and unmatched corporate camaraderie every week.
-            </p>
-
-            <ul className="list-disc list-inside mb-10 px-4 pb-2 text-slate-300">
-              <li>Watch live matches on our Twitch streams</li>
-              <li>Follow your favorite teams and players</li>
-              <li>Track standings and statistics in real-time</li>
-              <li>Join the community discussions and predictions</li>
-            </ul>
-
-            <SeasonButtons />
+            {/* Dynamic Season Status Section */}
+            <SeasonStatusSection />
 
             <Separator className="bg-kanaliiga-orange my-3 md:my-6" />
             {/*             

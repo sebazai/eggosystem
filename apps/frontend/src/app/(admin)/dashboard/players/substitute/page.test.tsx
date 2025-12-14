@@ -150,7 +150,8 @@ describe("AddSubstitutePlayerPage", () => {
         signup_end_date: "2024-01-31",
         full_name: "Season 1",
         signup_start_date: "2024-01-01",
-        start_date: "2024-01-31"
+        start_date: "2024-01-31",
+        end_date: "2024-03-31"
       },
       isLoading: false,
       isError: null,

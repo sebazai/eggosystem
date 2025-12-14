@@ -55,6 +55,7 @@ describe("Registration Controllers", () => {
         signup_start_date: "2024-01-01",
         signup_end_date: "2024-12-31",
         start_date: "2025-01-01",
+        end_date: "2025-03-31",
         full_name: "Test Season"
       };
       mockSeasonModels.getActiveSignupOrActiveSeasonForAppId.mockResolvedValue(
