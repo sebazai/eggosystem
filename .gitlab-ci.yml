@@ -48,6 +48,7 @@ variables:
 
 .prepare-pnpm:
   before_script:
+    - npm install -g corepack
     - corepack enable
     - corepack prepare pnpm@10.17.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
