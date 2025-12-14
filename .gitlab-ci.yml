@@ -48,7 +48,7 @@ variables:
 
 .prepare-pnpm:
   before_script:
-    - npm install -g corepack
+    - npm install -g corepack --force
     - corepack enable
     - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
@@ -173,7 +173,7 @@ install:
   stage: install
   extends: [.mr-all-app]
   before_script:
-    - npm install -g corepack
+    - npm install -g corepack --force
     - corepack enable
     - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
@@ -265,7 +265,7 @@ test:backend:
     <<: *overwrite-variables
   parallel: 4
   before_script:
-    - npm install -g corepack
+    - npm install -g corepack --force
     - corepack enable
     - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
@@ -317,7 +317,7 @@ test:frontend:
   stage: test
   extends: [.mr-frontend]
   before_script:
-    - npm install -g corepack
+    - npm install -g corepack --force
     - corepack enable
     - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
@@ -401,7 +401,7 @@ test-e2e:frontend:
       openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem &&
       openssl genpkey -algorithm RSA -out apps/backend/private_refresh_token.pem &&
       openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
-    - npm install -g corepack
+    - npm install -g corepack --force
     - corepack enable
     - corepack prepare pnpm@10.25.0 --activate
     - export $(grep -v '^#' .env.development | xargs)
