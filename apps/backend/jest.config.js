@@ -7,7 +7,7 @@ export const transform = {
   "^.+\\.(js|jsx)$": "babel-jest"
 };
 export const transformIgnorePatterns = [
-  "node_modules/(?!(@eggosystem/shared-msw)/)"
+  "node_modules/(?!(@eggosystem/shared-msw|msw|until-async)/)"
 ];
 export const openHandlesTimeout = 2 * 1000;
 export const testMatch = ["**/?(*.)+(spec|test).ts?(x)"];
