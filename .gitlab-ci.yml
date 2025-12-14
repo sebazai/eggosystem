@@ -1,4 +1,4 @@
-image: node:22-slim
+image: node:25-slim
 
 variables:
   # Docker configuration
@@ -48,8 +48,9 @@ variables:
 
 .prepare-pnpm:
   before_script:
+    - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
@@ -125,10 +126,10 @@ variables:
 # Define a base Docker build configuration without rules
 .docker-build-base: &docker-build-base
   stage: build-docker
-  image: docker:28.1.1-alpine3.21
+  image: docker:28.2.2-alpine3.21
   # Define global services for the entire pipeline
   services:
-    - name: docker:28.1.1-dind-alpine3.21
+    - name: docker:28.2.2-dind-alpine3.21
       alias: docker
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
@@ -172,8 +173,9 @@ install:
   stage: install
   extends: [.mr-all-app]
   before_script:
+    - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873 #172.17.0.1 aridivereci!
   script:
@@ -245,7 +247,7 @@ audit:
 
 secrets_scan:
   stage: security
-  image: python:3.13
+  image: python:3.14
   extends: [.mr-all-app]
   script:
     - pip install trufflehog
@@ -255,7 +257,7 @@ test:backend:
   stage: test
   extends: [.mr-backend]
   services:
-    - name: mariadb:11.8.5
+    - name: mariadb:12.1.2
       alias: eggo-devdb
     # - name: redis:8-alpine
     #   alias: eggo-redis
@@ -263,8 +265,9 @@ test:backend:
     <<: *overwrite-variables
   parallel: 4
   before_script:
+    - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - npx turbo run build --filter='@eggosystem/shared-msw'
@@ -314,8 +317,9 @@ test:frontend:
   stage: test
   extends: [.mr-frontend]
   before_script:
+    - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
@@ -371,7 +375,7 @@ build:backend:
       - apps/backend/dist/
 
 test-e2e:frontend:
-  image: mcr.microsoft.com/playwright:v1.56.1-jammy
+  image: mcr.microsoft.com/playwright:v1.57.0-jammy
   stage: test-e2e
   dependencies:
     - build:backend
@@ -379,7 +383,7 @@ test-e2e:frontend:
     - build:types
     - build:shared-msw
   services:
-    - name: mariadb:11.8.5
+    - name: mariadb:12.1.2
       alias: eggo-devdb
     - name: redis:8-alpine
       alias: eggo-redis
@@ -397,8 +401,9 @@ test-e2e:frontend:
       openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem &&
       openssl genpkey -algorithm RSA -out apps/backend/private_refresh_token.pem &&
       openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
+    - npm install -g corepack --force
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - export $(grep -v '^#' .env.development | xargs)
     # Ensure PRIVACY_POLICY_VERSION is set for E2E tests
     - export PRIVACY_POLICY_VERSION=1
@@ -761,7 +766,7 @@ deploy-dev:
 
 deploy-ondemand:
   <<: *docker-build-base
-  image: docker:28.1.1-alpine3.21
+  image: docker:28.2.2-alpine3.21
   tags:
     - hub # use this so we have whitelisted runner for portainer
   stage: on-demand-env
@@ -856,7 +861,7 @@ stop-ondemand:
   stage: cleanup
   tags:
     - hub
-  image: docker:28.1.1-alpine3.21
+  image: docker:28.2.2-alpine3.21
   allow_failure: true # Make on-demand jobs optional for merge requests
   needs: [deploy-ondemand]
   dependencies: []

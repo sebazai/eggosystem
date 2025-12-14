@@ -25,8 +25,10 @@ export interface TeamSortterValues {
 /**
  * Interface for raw database results before parsing
  */
-export interface TeamSortterValuesRaw
-  extends Omit<TeamSortterValues, "top5_values" | "top5_offered_values"> {
+export interface TeamSortterValuesRaw extends Omit<
+  TeamSortterValues,
+  "top5_values" | "top5_offered_values"
+> {
   top5_values: string;
   top5_offered_values?: string;
 }

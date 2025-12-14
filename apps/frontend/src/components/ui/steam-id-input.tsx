@@ -8,8 +8,10 @@ import { cn } from "@/lib/utils";
 import { convertSteamIdToSteamId64, isValidSteamId } from "@/lib/utils";
 import type { ComponentProps } from "react";
 
-interface SteamIdInputProps
-  extends Omit<ComponentProps<typeof Input>, "onChange" | "value"> {
+interface SteamIdInputProps extends Omit<
+  ComponentProps<typeof Input>,
+  "onChange" | "value"
+> {
   value: string;
   onChange: (value: string) => void;
   label?: string;

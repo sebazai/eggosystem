@@ -86,7 +86,7 @@ services:
       - "traefik.docker.network=web"
 
   eggo-devdb-${ENV_ID}:
-    image: mariadb:11.8.5
+    image: mariadb:12.1.2
     restart: always
     container_name: eggo-devdb-${ENV_ID}
     environment:
@@ -137,7 +137,7 @@ services:
       - web
 
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin:5.2.2
+    image: phpmyadmin/phpmyadmin:5.2.3
     depends_on:
       eggo-devdb-${ENV_ID}:
         condition: service_healthy

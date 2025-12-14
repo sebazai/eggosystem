@@ -102,7 +102,7 @@ services:
     restart: always
 
   eggo-prod-db:
-    image: mariadb:11.8.5
+    image: mariadb:12.1.2
     container_name: eggo-prod-db
     restart: always
     environment:
@@ -170,7 +170,7 @@ services:
   phpmyadmin-hub:
     depends_on:
       - eggo-prod-db
-    image: phpmyadmin/phpmyadmin:5.2.2
+    image: phpmyadmin/phpmyadmin:5.2.3
     restart: always
     environment:
       PMA_HOST: eggo-prod-db
@@ -220,7 +220,7 @@ services:
       - web
 
   eggo-prod-rabbitmq:
-    image: rabbitmq:4.1.5-management
+    image: rabbitmq:4.2.1-management
     container_name: eggo-prod-rabbitmq
     restart: always
     environment:

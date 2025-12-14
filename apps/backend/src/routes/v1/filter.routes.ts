@@ -46,9 +46,9 @@ router.get("/", async (req, res) => {
   );
   const hasTeamFilters = Boolean(
     season_ids?.length ||
-      league_ids?.length ||
-      stages?.length ||
-      map_ids?.length
+    league_ids?.length ||
+    stages?.length ||
+    map_ids?.length
   );
 
   // Build parameterized query parts

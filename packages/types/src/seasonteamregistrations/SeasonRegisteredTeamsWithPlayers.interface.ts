@@ -10,8 +10,7 @@ export interface RegisteredTeamPlayer {
   work_email_verified: Account["work_email_verified"];
 }
 
-export interface SeasonRegisteredTeamsWithPlayers
-  extends SeasonTeamRegistration {
+export interface SeasonRegisteredTeamsWithPlayers extends SeasonTeamRegistration {
   team_id: Team["id"];
   season_id: Season["id"];
   team_name: Team["name"];
@@ -21,8 +20,7 @@ export interface SeasonRegisteredTeamsWithPlayers
   players: RegisteredTeamPlayer[];
 }
 
-export interface SeasonRegisteredTeamsWithPlayersValidatedTeams
-  extends SeasonRegisteredTeamsWithPlayers {
+export interface SeasonRegisteredTeamsWithPlayersValidatedTeams extends SeasonRegisteredTeamsWithPlayers {
   is_valid: boolean;
   invalid_players: Array<RegisteredTeamPlayer>;
 }
