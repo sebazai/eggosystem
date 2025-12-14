@@ -2,8 +2,9 @@ import { cn } from "@/lib/utils";
 import React from "react";
 import { FormLabel } from "./form";
 
-interface RequiredFormLabelProps
-  extends React.ComponentPropsWithoutRef<typeof FormLabel> {
+interface RequiredFormLabelProps extends React.ComponentPropsWithoutRef<
+  typeof FormLabel
+> {
   required?: boolean;
 }
 

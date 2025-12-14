@@ -16,7 +16,9 @@ export interface MatchesWithTeamData {
   teams: Record<string, MatchTeamInfo>;
 }
 
-export interface MatchesWithTeamDataQuery
-  extends Omit<MatchesWithTeamData, "teams"> {
+export interface MatchesWithTeamDataQuery extends Omit<
+  MatchesWithTeamData,
+  "teams"
+> {
   teams: string; // JSON stringified array of MatchTeamInfo
 }

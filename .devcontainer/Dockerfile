@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/devcontainers/javascript-node:22-bullseye
+FROM mcr.microsoft.com/devcontainers/javascript-node:24-bullseye
 ENV TBLS_VERSION=1.86.1
 WORKDIR /workspace
 
 RUN npm install -g typescript
-RUN npm install -g pnpm@10.17.0
+RUN npm install -g pnpm@10.25.0
 
 # Install tbls (database documentation tool)
 RUN ARCH=$(dpkg --print-architecture) && \

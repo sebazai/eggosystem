@@ -95,7 +95,7 @@ services:
     restart: always
 
   eggo-stage-db:
-    image: mariadb:11.8.5
+    image: mariadb:12.1.2
     container_name: eggo-stage-db
     restart: always
     environment:
@@ -135,7 +135,7 @@ services:
   phpmyadmin-hubstage:
     depends_on:
       - eggo-stage-db
-    image: phpmyadmin/phpmyadmin:5.2.2
+    image: phpmyadmin/phpmyadmin:5.2.3
     restart: always
     environment:
       PMA_HOST: eggo-stage-db
@@ -180,7 +180,7 @@ services:
     restart: no
 
   eggo-stage-rabbitmq:
-    image: rabbitmq:4.1.5-management
+    image: rabbitmq:4.2.1-management
     container_name: eggo-stage-rabbitmq
     restart: always
     environment:

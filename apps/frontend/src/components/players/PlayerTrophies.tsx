@@ -1,18 +1,31 @@
 import React from "react";
 import { usePlayerTrophies } from "../../hooks/data/usePlayerTrophies";
+import { usePlayerAwardTrophies } from "../../hooks/data/usePlayerAwardTrophies";
 import { createNextUrl } from "@/lib/utils";
 import Image from "next/image";
+import { TrophyBadge } from "../trophies/TrophyBadge";
+import type { TrophyAssignment } from "@eggosystem/types";
 
 interface PlayerTrophiesProps {
   steamId: string;
 }
 
 export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
-  const { data, isLoading, error } = usePlayerTrophies(steamId);
+  const { data: kanaRankData, isLoading: kanaRankLoading } =
+    usePlayerTrophies(steamId);
+  const { data: awardData, isLoading: awardLoading } =
+    usePlayerAwardTrophies(steamId);
 
-  if (isLoading) return <div className="p-4">Loading trophies...</div>;
-  if (error) return null;
-  if (!data) return null;
+  const isLoading = kanaRankLoading || awardLoading;
+
+  // Don't show section if no data at all
+  if (
+    !isLoading &&
+    !kanaRankData &&
+    (!awardData || awardData.trophies.length === 0)
+  ) {
+    return null;
+  }
 
   // Get rank image based on rank and subrank
   const getRankImage = (rank: string, subrank: number) => {
@@ -33,36 +46,58 @@ export const PlayerTrophies = ({ steamId }: PlayerTrophiesProps) => {
     return `${rank} ${subrank}`;
   };
 
-  const rankImage = getRankImage(data.rank, data.subrank);
-  const rankDescription = getRankDescription(data.rank, data.subrank);
-
   return (
     <div className="bg-card rounded-lg mb-4">
       <h2 className="text-base font-bold mb-3">Trophies</h2>
       <div className="flex gap-3 items-center flex-wrap">
-        {/* Kanarank trophy */}
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <div className="w-12 h-12 rounded-full overflow-hidden">
-              <Image
-                src={rankImage}
-                alt={rankDescription}
-                width={48}
-                height={48}
-                className="object-cover w-full h-full"
-                title={rankDescription}
-              />
-            </div>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        )}
 
-            {/* Show position for top 50 players */}
-            {data.is_top50 && data.position && (
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
-                #{data.position}
+        {/* Kanarank trophy */}
+        {kanaRankData && (
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-full overflow-hidden">
+                <Image
+                  src={getRankImage(kanaRankData.rank, kanaRankData.subrank)}
+                  alt={getRankDescription(
+                    kanaRankData.rank,
+                    kanaRankData.subrank
+                  )}
+                  width={48}
+                  height={48}
+                  className="object-cover w-full h-full"
+                  title={getRankDescription(
+                    kanaRankData.rank,
+                    kanaRankData.subrank
+                  )}
+                />
               </div>
-            )}
+
+              {/* Show position for top 50 players */}
+              {kanaRankData.is_top50 && kanaRankData.position && (
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-black">
+                  #{kanaRankData.position}
+                </div>
+              )}
+            </div>
+            <span className="text-xs mt-1">Kanarank</span>
           </div>
-          <span className="text-xs mt-1">Kanarank</span>
-        </div>
+        )}
+
+        {/* Award trophies */}
+        {awardData?.trophies.map((trophy: TrophyAssignment) => (
+          <TrophyBadge
+            key={trophy.id}
+            imagePhash={trophy.image_phash}
+            displayText={trophy.display_text}
+            seasonId={trophy.season_id}
+            placement={trophy.placement}
+            category={trophy.trophy_category}
+          />
+        ))}
       </div>
     </div>
   );

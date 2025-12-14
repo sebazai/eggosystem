@@ -1,6 +1,7 @@
 "use client";
 import { MultiFilters } from "@/components/filters/MultiFilters";
 import { TeamsHeader } from "@/components/teams/TeamsHeader";
+import { TeamTrophies } from "@/components/teams/TeamTrophies";
 import { useFilters } from "@/context/FilterContext";
 import { FilterProvider } from "@/context/FilterContext";
 import Link from "next/link";
@@ -71,6 +72,7 @@ function TeamTabLayoutContent({
       />
 
       <TeamsHeader />
+      <TeamTrophies teamId={Number(teamId)} />
 
       {/* Sticky Tabs */}
       <div className="sticky top-0 z-10 bg-card rounded-b-md shadow-sm">

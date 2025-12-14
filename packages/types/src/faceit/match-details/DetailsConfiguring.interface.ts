@@ -62,8 +62,7 @@ interface ChampionshipDetailsConfiguringBase extends DetailsConfiguringBase {
   group: number;
 }
 
-export interface ChampionshipDetailsConfiguring
-  extends ChampionshipDetailsConfiguringBase {
+export interface ChampionshipDetailsConfiguring extends ChampionshipDetailsConfiguringBase {
   status: typeof FaceitMatchStatus.CONFIGURING;
 }
 

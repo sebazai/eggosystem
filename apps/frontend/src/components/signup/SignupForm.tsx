@@ -226,17 +226,17 @@ export const SignupForm = ({
 
   const validOrganizationSelection = Boolean(
     (validOrgId.success && validOrgId.data.organizationId !== -1) ||
-      (validOrg.success &&
-        validOrgId.data?.organizationId === -1 &&
-        validOrg.data.newOrganization)
+    (validOrg.success &&
+      validOrgId.data?.organizationId === -1 &&
+      validOrg.data.newOrganization)
   );
 
   const validTeamSelection =
     Boolean(
       (validTeamId.success && validTeamId.data.teamId !== -1) ||
-        (validTeam.success &&
-          validTeamId.data?.teamId === -1 &&
-          validTeam.data.newTeam)
+      (validTeam.success &&
+        validTeamId.data?.teamId === -1 &&
+        validTeam.data.newTeam)
     ) &&
     validTeamExternalIdInForm.success &&
     !!validExternalTeamId;
