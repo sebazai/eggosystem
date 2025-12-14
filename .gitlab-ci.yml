@@ -50,7 +50,7 @@ variables:
   before_script:
     - npm install -g corepack
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
@@ -173,8 +173,9 @@ install:
   stage: install
   extends: [.mr-all-app]
   before_script:
+    - npm install -g corepack
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set store-dir $PNPM_STORE_PATH
     - pnpm config set registry http://172.17.0.1:4873 #172.17.0.1 aridivereci!
   script:
@@ -264,8 +265,9 @@ test:backend:
     <<: *overwrite-variables
   parallel: 4
   before_script:
+    - npm install -g corepack
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - npx turbo run build --filter='@eggosystem/shared-msw'
@@ -315,8 +317,9 @@ test:frontend:
   stage: test
   extends: [.mr-frontend]
   before_script:
+    - npm install -g corepack
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - pnpm config set registry http://172.17.0.1:4873
     - pnpm install --frozen-lockfile
     - pnpm --filter=@eggosystem/types build
@@ -398,8 +401,9 @@ test-e2e:frontend:
       openssl rsa -pubout -in apps/backend/private_access_token.pem -out apps/backend/public_access_token.pem &&
       openssl genpkey -algorithm RSA -out apps/backend/private_refresh_token.pem &&
       openssl rsa -pubout -in apps/backend/private_refresh_token.pem -out apps/backend/public_refresh_token.pem
+    - npm install -g corepack
     - corepack enable
-    - corepack prepare pnpm@10.17.0 --activate
+    - corepack prepare pnpm@10.25.0 --activate
     - export $(grep -v '^#' .env.development | xargs)
     # Ensure PRIVACY_POLICY_VERSION is set for E2E tests
     - export PRIVACY_POLICY_VERSION=1
