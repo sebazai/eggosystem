@@ -273,9 +273,66 @@ function MatchesLoadingSkeleton() {
 export default function HeroSection({ device: _device }: HeroSectionProps) {
   const router = useRouter();
 
+  // Track if component is mounted (client-side) to avoid hydration mismatch
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Get current season (CS2 app ID is typically 1)
   const { signupOrActiveSeason } = useActiveSignupOrActiveSeasonForApp(730);
   const currentSeasonId = signupOrActiveSeason?.season_id?.toString() || "16"; // fallback to season 16
+
+  // Determine season status based on dates - only calculate on client to avoid hydration mismatch
+  const seasonStatus = useMemo(() => {
+    if (!signupOrActiveSeason || !isMounted) {
+      return {
+        isSeasonLive: false,
+        isSignupOpen: false,
+        seasonName: null,
+        seasonNumber: null
+      };
+    }
+
+    const now = new Date();
+    const startDate = signupOrActiveSeason.start_date
+      ? new Date(signupOrActiveSeason.start_date)
+      : null;
+    const endDate = signupOrActiveSeason.end_date
+      ? new Date(signupOrActiveSeason.end_date)
+      : null;
+    const signupStartDate = signupOrActiveSeason.signup_start_date
+      ? new Date(signupOrActiveSeason.signup_start_date)
+      : null;
+    const signupEndDate = signupOrActiveSeason.signup_end_date
+      ? new Date(signupOrActiveSeason.signup_end_date)
+      : null;
+
+    // Season is live if: start_date <= now AND (end_date is null OR end_date >= now)
+    const isSeasonLive =
+      startDate && startDate <= now && (endDate === null || endDate >= now);
+
+    // Signup is open if: signup_start_date <= now AND signup_end_date >= now AND start_date > now
+    const isSignupOpen =
+      signupStartDate &&
+      signupStartDate <= now &&
+      signupEndDate &&
+      signupEndDate >= now &&
+      startDate &&
+      startDate > now;
+
+    // Extract season number from full_name (e.g., "CS2 Season 4" -> "4")
+    const seasonName =
+      signupOrActiveSeason.full_name ||
+      `Season ${signupOrActiveSeason.season_id ?? "Unknown"}`;
+    const seasonNumberMatch = seasonName.match(/Season\s+(\d+)/i);
+    const seasonNumber = seasonNumberMatch
+      ? seasonNumberMatch[1]
+      : (signupOrActiveSeason.season_id?.toString() ?? "Unknown");
+
+    return { isSeasonLive, isSignupOpen, seasonName, seasonNumber };
+  }, [signupOrActiveSeason, isMounted]);
 
   // Get upcoming matches for all divisions
   const { data: calendarMatches, isLoading: isLoadingMatches } =
@@ -336,12 +393,32 @@ export default function HeroSection({ device: _device }: HeroSectionProps) {
           {/* Left Side - Hero Content */}
           <div className="space-y-6">
             <div className="space-y-3">
-              <Badge
-                variant="secondary"
-                className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
-              >
-                CS2 Season 4 • Live Now
-              </Badge>
+              {seasonStatus.isSeasonLive ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
+                >
+                  CS2 Season {seasonStatus.seasonNumber} • Live Now
+                </Badge>
+              ) : seasonStatus.isSignupOpen ? (
+                <Link
+                  href={createNextUrl(`/seasons/${currentSeasonId}/signup`)}
+                >
+                  <Badge
+                    variant="secondary"
+                    className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl hover:bg-orange-500/30 cursor-pointer transition-colors"
+                  >
+                    Registration for Season {seasonStatus.seasonNumber} Open →
+                  </Badge>
+                </Link>
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="bg-orange-500/20 text-orange-400 border-orange-500/30 text-sm sm:text-base lg:text-lg 2xl:text-xl"
+                >
+                  CS2 Corporate League
+                </Badge>
+              )}
 
               <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-6xl font-bold text-white leading-tight">
                 Finland&apos;s Premier
